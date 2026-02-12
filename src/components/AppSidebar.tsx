@@ -1,7 +1,7 @@
 import {
   GraduationCap, Users, UserPlus, BookOpen, Calculator,
   Settings, Bell, ScanLine, Library, BarChart3, LogOut,
-  Home, CreditCard, ClipboardList, Award, RefreshCw
+  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -53,6 +53,7 @@ const navSections = [
     roles: ['admin', 'secretaire', 'comptable'] as const,
     items: [
       { title: 'Cantine & QR', url: '/cantine', icon: ScanLine },
+      { title: 'Transport', url: '/transport', icon: Bus },
       { title: 'Bibliothèque', url: '/bibliotheque', icon: Library },
       { title: 'Notifications', url: '/notifications', icon: Bell },
     ],

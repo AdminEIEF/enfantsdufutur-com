@@ -19,6 +19,7 @@ import Paiements from "./pages/Paiements";
 import Depenses from "./pages/Depenses";
 import Finances from "./pages/Finances";
 import Cantine from "./pages/Cantine";
+import Transport from "./pages/Transport";
 import Bibliotheque from "./pages/Bibliotheque";
 import Notifications from "./pages/Notifications";
 import Reinscription from "./pages/Reinscription";
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/depenses" element={<ProtectedRoute><Depenses /></ProtectedRoute>} />
             <Route path="/finances" element={<ProtectedRoute><Finances /></ProtectedRoute>} />
             <Route path="/cantine" element={<ProtectedRoute><Cantine /></ProtectedRoute>} />
+            <Route path="/transport" element={<ProtectedRoute><Transport /></ProtectedRoute>} />
             <Route path="/bibliotheque" element={<ProtectedRoute><Bibliotheque /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
