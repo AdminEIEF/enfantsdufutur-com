@@ -201,10 +201,10 @@ export default function Inscriptions() {
                   </div>
                   <div>
                     <Label>Famille (fratrie)</Label>
-                    <Select value={familleId} onValueChange={setFamilleId}>
+                    <Select value={familleId} onValueChange={(v) => setFamilleId(v === '__none__' ? '' : v)}>
                       <SelectTrigger><SelectValue placeholder="Aucune" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Aucune</SelectItem>
+                        <SelectItem value="__none__">Aucune</SelectItem>
                         {familles.map((f: any) => (
                           <SelectItem key={f.id} value={f.id}>{f.nom_famille}</SelectItem>
                         ))}
@@ -230,10 +230,10 @@ export default function Inscriptions() {
                 <CardContent className="space-y-3">
                   <div>
                     <Label>Zone de transport</Label>
-                    <Select value={transportZone} onValueChange={setTransportZone}>
+                    <Select value={transportZone} onValueChange={(v) => setTransportZone(v === '__none__' ? '' : v)}>
                       <SelectTrigger><SelectValue placeholder="Pas de transport" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Pas de transport</SelectItem>
+                        <SelectItem value="__none__">Pas de transport</SelectItem>
                         <SelectItem value="zone_1">Zone 1</SelectItem>
                         <SelectItem value="zone_2">Zone 2</SelectItem>
                         <SelectItem value="zone_3">Zone 3</SelectItem>
