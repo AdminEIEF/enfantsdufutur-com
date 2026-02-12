@@ -369,7 +369,13 @@ export default function Cantine() {
           {badgeEleve && (
             <div className="flex flex-col items-center gap-4 py-4">
               <div className="p-4 bg-white rounded-lg border">
-                <QRCodeSVG value={badgeEleve.qr_code || ''} size={180} />
+                <QRCodeSVG value={JSON.stringify({
+                  matricule: badgeEleve.matricule || '',
+                  nom: badgeEleve.nom,
+                  prenom: badgeEleve.prenom,
+                  classe: badgeEleve.classes?.nom || '',
+                  url: `${window.location.origin}/eleves?matricule=${encodeURIComponent(badgeEleve.matricule || badgeEleve.id)}`,
+                })} size={180} />
               </div>
               <div className="text-center">
                 <p className="text-lg font-bold">{badgeEleve.prenom} {badgeEleve.nom}</p>
