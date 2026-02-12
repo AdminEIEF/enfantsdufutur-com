@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Circle, Printer, Download, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -49,7 +50,7 @@ export default function Paiements() {
   const [canal, setCanal] = useState('especes');
   const [typePaiement, setTypePaiement] = useState('scolarite');
   const [reference, setReference] = useState('');
-  const [moisConcerne, setMoisConcerne] = useState('');
+  const [moisCoches, setMoisCoches] = useState<string[]>([]);
 
   const { data: paiements = [], isLoading } = useQuery({
     queryKey: ['paiements'],
@@ -101,24 +102,58 @@ export default function Paiements() {
       .filter(Boolean) as string[];
   }, [paiementsScolariteEleve]);
 
-  // Suggest montant based on type
+  // Auto-calculate montant from checked months
+  const montantScolarite = moisCoches.length * fraisMensuel;
+
+  // When moisCoches changes, update montant for scolarité
+  const handleMoisToggle = (mois: string, checked: boolean) => {
+    const next = checked ? [...moisCoches, mois] : moisCoches.filter(m => m !== mois);
+    setMoisCoches(next);
+    if (typePaiement === 'scolarite') {
+      setMontant(String(next.length * fraisMensuel));
+    }
+  };
+
+  // Auto-check months when montant is manually changed for scolarité
+  const handleMontantChange = (val: string) => {
+    setMontant(val);
+    if (typePaiement === 'scolarite' && fraisMensuel > 0) {
+      const nbMois = Math.floor(Number(val) / fraisMensuel);
+      const moisDisponibles = MOIS_SCOLAIRES.filter(m => !moisPayes.includes(m));
+      setMoisCoches(moisDisponibles.slice(0, nbMois));
+    }
+  };
+
+  // Suggest montant based on type (transport only now)
   const suggestedMontant = useMemo(() => {
     if (!selectedEleve) return null;
-    if (typePaiement === 'scolarite') return fraisMensuel;
     if (typePaiement === 'transport') return Number((selectedEleve.zones_transport as any)?.prix_mensuel || 0);
     return null;
-  }, [selectedEleve, typePaiement, fraisMensuel]);
+  }, [selectedEleve, typePaiement]);
 
   const createPaiement = useMutation({
     mutationFn: async () => {
       if (!eleveId || !montant || parseFloat(montant) <= 0) throw new Error('Élève et montant valide requis');
-      if (typePaiement === 'scolarite' && !moisConcerne) throw new Error('Veuillez sélectionner le mois concerné');
-      const { error } = await supabase.from('paiements').insert({
-        eleve_id: eleveId, montant: parseFloat(montant), canal, type_paiement: typePaiement,
-        reference: reference || null,
-        mois_concerne: typePaiement === 'scolarite' ? moisConcerne : null,
-      } as any);
-      if (error) throw error;
+      if (typePaiement === 'scolarite' && moisCoches.length === 0) throw new Error('Veuillez cocher au moins un mois');
+      if (typePaiement === 'scolarite') {
+        // Insert one payment per checked month
+        const montantParMois = fraisMensuel;
+        for (const mois of moisCoches) {
+          const { error } = await supabase.from('paiements').insert({
+            eleve_id: eleveId, montant: montantParMois, canal, type_paiement: typePaiement,
+            reference: (canal !== 'especes' && reference) ? reference : null,
+            mois_concerne: mois,
+          } as any);
+          if (error) throw error;
+        }
+      } else {
+        const { error } = await supabase.from('paiements').insert({
+          eleve_id: eleveId, montant: parseFloat(montant), canal, type_paiement: typePaiement,
+          reference: (canal !== 'especes' && reference) ? reference : null,
+          mois_concerne: null,
+        } as any);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['paiements'] });
@@ -132,9 +167,9 @@ export default function Paiements() {
           matricule: selectedEleve.matricule || '',
           classe: selectedEleve.classes?.nom || '—',
           montant: parseFloat(montant),
-          mois: moisConcerne,
+          mois: moisCoches.join(', '),
           canal: CANAUX.find(c => c.value === canal)?.label || canal,
-          reference: reference || null,
+          reference: (canal !== 'especes' && reference) ? reference : null,
           date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
           totalAnnuel,
           totalPaye: newTotalPaye,
@@ -142,7 +177,7 @@ export default function Paiements() {
         });
       }
 
-      setEleveId(''); setMontant(''); setCanal('especes'); setTypePaiement('scolarite'); setReference(''); setMoisConcerne('');
+      setEleveId(''); setMontant(''); setCanal('especes'); setTypePaiement('scolarite'); setReference(''); setMoisCoches([]);
       setOpen(false);
     },
     onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
@@ -208,7 +243,7 @@ export default function Paiements() {
               </div>
               <div>
                 <Label>Type de paiement *</Label>
-                <Select value={typePaiement} onValueChange={(v) => { setTypePaiement(v); setMoisConcerne(''); }}>
+                <Select value={typePaiement} onValueChange={(v) => { setTypePaiement(v); setMoisCoches([]); setMontant(''); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {TYPES.map(t => {
@@ -230,51 +265,61 @@ export default function Paiements() {
                   <CardContent className="pt-4 space-y-3">
                     <div className="grid grid-cols-3 gap-2 text-center text-sm">
                       <div>
-                        <p className="text-muted-foreground text-xs">Total annuel (9 mois)</p>
-                        <p className="font-bold">{totalAnnuel.toLocaleString()} F</p>
+                        <p className="text-muted-foreground text-xs">Prix mensuel</p>
+                        <p className="font-bold">{fraisMensuel.toLocaleString()} GNF</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground text-xs">Déjà payé</p>
-                        <p className="font-bold text-green-600">{totalPaye.toLocaleString()} F</p>
+                        <p className="text-muted-foreground text-xs">Total annuel (9 × {fraisMensuel.toLocaleString()})</p>
+                        <p className="font-bold">{totalAnnuel.toLocaleString()} GNF</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground text-xs">Reste à payer</p>
-                        <p className="font-bold text-destructive">{resteAPayer.toLocaleString()} F</p>
+                        <p className="font-bold text-destructive">{resteAPayer.toLocaleString()} GNF</p>
                       </div>
                     </div>
                     <div>
-                      <p className="text-xs font-medium mb-2">Mois payés :</p>
+                      <p className="text-xs font-medium mb-2">Cochez les mois à payer :</p>
                       <div className="grid grid-cols-3 gap-1.5">
                         {MOIS_SCOLAIRES.map(m => {
                           const isPaid = moisPayes.includes(m);
+                          const isChecked = moisCoches.includes(m);
                           return (
-                            <div key={m} className={`flex items-center gap-1.5 text-xs rounded px-2 py-1 ${isPaid ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
-                              {isPaid ? <CheckCircle className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
-                              {m}
-                            </div>
+                            <label key={m} className={`flex items-center gap-1.5 text-xs rounded px-2 py-1.5 cursor-pointer select-none ${isPaid ? 'bg-green-100 text-green-700' : isChecked ? 'bg-primary/10 text-primary border border-primary/30' : 'bg-muted text-muted-foreground'}`}>
+                              {isPaid ? (
+                                <CheckCircle className="h-3.5 w-3.5" />
+                              ) : (
+                                <Checkbox
+                                  checked={isChecked}
+                                  onCheckedChange={(checked) => handleMoisToggle(m, !!checked)}
+                                  className="h-3.5 w-3.5"
+                                />
+                              )}
+                              {m}{isPaid ? ' ✓' : ''}
+                            </label>
                           );
                         })}
                       </div>
                     </div>
-                    <div>
-                      <Label>Mois concerné *</Label>
-                      <Select value={moisConcerne} onValueChange={setMoisConcerne}>
-                        <SelectTrigger><SelectValue placeholder="Sélectionner le mois" /></SelectTrigger>
-                        <SelectContent>
-                          {MOIS_SCOLAIRES.map(m => {
-                            const isPaid = moisPayes.includes(m);
-                            return <SelectItem key={m} value={m} disabled={isPaid}>{m}{isPaid ? ' ✓' : ''}</SelectItem>;
-                          })}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {moisCoches.length > 0 && (
+                      <div className="text-center p-2 bg-primary/10 rounded-md">
+                        <p className="text-xs text-muted-foreground">{moisCoches.length} mois × {fraisMensuel.toLocaleString()} GNF</p>
+                        <p className="text-lg font-bold text-primary">{montantScolarite.toLocaleString()} GNF</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
 
               <div>
                 <Label>Montant (GNF) *</Label>
-                <Input type="number" value={montant} onChange={e => setMontant(e.target.value)} placeholder="0" />
+                <Input
+                  type="number"
+                  value={montant}
+                  onChange={e => handleMontantChange(e.target.value)}
+                  placeholder="0"
+                  readOnly={typePaiement === 'scolarite'}
+                  className={typePaiement === 'scolarite' ? 'bg-muted cursor-not-allowed' : ''}
+                />
                 {suggestedMontant && suggestedMontant > 0 && montant !== String(suggestedMontant) && (
                   <button type="button" className="text-xs text-primary underline mt-1" onClick={() => setMontant(String(suggestedMontant))}>
                     💡 Montant suggéré: {suggestedMontant.toLocaleString()} GNF — Cliquer pour appliquer
@@ -290,9 +335,6 @@ export default function Paiements() {
               </div>
               {(canal === 'orange_money' || canal === 'mtn_momo') && (
                 <div><Label>Référence transaction *</Label><Input value={reference} onChange={e => setReference(e.target.value)} placeholder="N° transaction mobile money" /></div>
-              )}
-              {canal === 'especes' && (
-                <div><Label>Référence (optionnel)</Label><Input value={reference} onChange={e => setReference(e.target.value)} placeholder="N° reçu" /></div>
               )}
               <Button onClick={() => createPaiement.mutate()} disabled={createPaiement.isPending} className="w-full">Enregistrer le paiement</Button>
             </div>
