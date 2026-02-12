@@ -567,6 +567,10 @@ const TARIF_CATEGORIES = [
   { value: 'transport', label: 'Transport' },
   { value: 'cantine', label: 'Cantine' },
   { value: 'fournitures', label: 'Fournitures' },
+  { value: 'uniforme_scolaire', label: 'Tenue scolaire' },
+  { value: 'uniforme_polo_lacoste', label: 'Polo Lacoste' },
+  { value: 'uniforme_sport', label: 'Tenue de Sport' },
+  { value: 'uniforme_karate', label: 'Tenue de Karaté' },
 ];
 
 function TarifsTab() {
