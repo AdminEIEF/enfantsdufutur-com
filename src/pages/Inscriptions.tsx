@@ -44,6 +44,8 @@ export default function Inscriptions() {
   const [mandataires, setMandataires] = useState<Mandataire[]>(createEmptyMandataires());
   const [photoEleve, setPhotoEleve] = useState<File | null>(null);
   const [photoElevePreview, setPhotoElevePreview] = useState<string | null>(null);
+  const [typeInscription, setTypeInscription] = useState<'inscription' | 'reinscription'>('inscription');
+  const [moisAPayer, setMoisAPayer] = useState(1);
 
   const { data: eleves = [], isLoading } = useQuery({
     queryKey: ['eleves'],
@@ -224,6 +226,7 @@ export default function Inscriptions() {
     setNomPrenomPere(''); setNomPrenomMere('');
     setMandataires(createEmptyMandataires());
     setPhotoEleve(null); setPhotoElevePreview(null);
+    setTypeInscription('inscription'); setMoisAPayer(1);
   };
 
   // Calculate fees for selected class
@@ -246,16 +249,26 @@ export default function Inscriptions() {
   // Transport fee from zone
   const fraisTransport = selectedZone ? Number(selectedZone.prix_mensuel) : 0;
 
-  // Uniform fees
+  // Uniform fees with individual prices
   const getUniformFee = (label: string) => tarifs.find((t: any) => t.categorie === 'uniforme' && t.label === label)?.montant || 0;
+  const prixTenueScolaire = getUniformFee('Tenue scolaire');
+  const prixTenueSport = getUniformFee('Sport');
+  const prixPoloLacoste = getUniformFee('Polo Lacoste');
+  const prixKarate = getUniformFee('Karaté');
   const fraisUniformes =
-    (uniformeScolaire ? getUniformFee('Tenue scolaire') : 0) +
-    (uniformeSport ? getUniformFee('Sport') : 0) +
-    (uniformePolo ? getUniformFee('Polo Lacoste') : 0) +
-    (uniformeKarate ? getUniformFee('Karaté') : 0);
+    (uniformeScolaire ? prixTenueScolaire : 0) +
+    (uniformeSport ? prixTenueSport : 0) +
+    (uniformePolo ? prixPoloLacoste : 0) +
+    (uniformeKarate ? prixKarate : 0);
+
+  // Inscription / Réinscription fee
+  const fraisInscription = typeInscription === 'inscription' ? 100000 : 150000;
+
+  // Scolarité mensuelle × nombre de mois
+  const fraisScolariteMois = fraisApresReduction * moisAPayer;
 
   const fraisFournitures = optionFournitures ? (tarifs.find((t: any) => t.categorie === 'fournitures')?.montant || 0) : 0;
-  const totalFrais = fraisApresReduction + fraisTransport + fraisUniformes + fraisFournitures;
+  const totalFrais = fraisInscription + fraisScolariteMois + fraisTransport * moisAPayer + fraisUniformes + fraisFournitures;
 
   const filtered = eleves.filter((e: any) =>
     `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase())
@@ -305,6 +318,34 @@ export default function Inscriptions() {
                         <span className="text-xs text-primary hover:underline">{photoElevePreview ? 'Changer' : 'Télécharger'}</span>
                       </label>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Type d'inscription */}
+              <Card>
+                <CardHeader className="pb-3"><CardTitle className="text-base">Type d'inscription</CardTitle></CardHeader>
+                <CardContent className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Type *</Label>
+                    <Select value={typeInscription} onValueChange={(v: 'inscription' | 'reinscription') => setTypeInscription(v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="inscription">Inscription — 100 000 GNF</SelectItem>
+                        <SelectItem value="reinscription">Réinscription — 150 000 GNF</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Nombre de mois à payer</Label>
+                    <Select value={String(moisAPayer)} onValueChange={(v) => setMoisAPayer(Number(v))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 10 }, (_, i) => i + 1).map(m => (
+                          <SelectItem key={m} value={String(m)}>{m} mois</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </CardContent>
               </Card>
@@ -402,10 +443,10 @@ export default function Inscriptions() {
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="flex items-center gap-2"><Checkbox checked={uniformeScolaire} onCheckedChange={(v) => setUniformeScolaire(!!v)} /><Label>Tenue scolaire</Label></div>
-                    <div className="flex items-center gap-2"><Checkbox checked={uniformeSport} onCheckedChange={(v) => setUniformeSport(!!v)} /><Label>Tenue sport</Label></div>
-                    <div className="flex items-center gap-2"><Checkbox checked={uniformePolo} onCheckedChange={(v) => setUniformePolo(!!v)} /><Label>Polo Lacoste</Label></div>
-                    <div className="flex items-center gap-2"><Checkbox checked={uniformeKarate} onCheckedChange={(v) => setUniformeKarate(!!v)} /><Label>Tenue de Karaté</Label></div>
+                    <div className="flex items-center gap-2"><Checkbox checked={uniformeScolaire} onCheckedChange={(v) => setUniformeScolaire(!!v)} /><Label>Tenue scolaire {prixTenueScolaire > 0 && <span className="text-muted-foreground font-normal">— {prixTenueScolaire.toLocaleString()} GNF</span>}</Label></div>
+                    <div className="flex items-center gap-2"><Checkbox checked={uniformeSport} onCheckedChange={(v) => setUniformeSport(!!v)} /><Label>Tenue sport {prixTenueSport > 0 && <span className="text-muted-foreground font-normal">— {prixTenueSport.toLocaleString()} GNF</span>}</Label></div>
+                    <div className="flex items-center gap-2"><Checkbox checked={uniformePolo} onCheckedChange={(v) => setUniformePolo(!!v)} /><Label>Polo Lacoste {prixPoloLacoste > 0 && <span className="text-muted-foreground font-normal">— {prixPoloLacoste.toLocaleString()} GNF</span>}</Label></div>
+                    <div className="flex items-center gap-2"><Checkbox checked={uniformeKarate} onCheckedChange={(v) => setUniformeKarate(!!v)} /><Label>Tenue de Karaté {prixKarate > 0 && <span className="text-muted-foreground font-normal">— {prixKarate.toLocaleString()} GNF</span>}</Label></div>
                   </div>
                   <div className="flex items-center gap-2"><Checkbox checked={optionCantine} onCheckedChange={(v) => setOptionCantine(!!v)} /><Label>Cantine</Label></div>
                   <div className="flex items-center gap-2"><Checkbox checked={optionFournitures} onCheckedChange={(v) => setOptionFournitures(!!v)} /><Label>Fournitures scolaires</Label></div>
@@ -421,15 +462,16 @@ export default function Inscriptions() {
               <Card className="border-primary/30 bg-primary/5">
                 <CardHeader className="pb-3"><CardTitle className="text-base">Résumé des frais</CardTitle></CardHeader>
                 <CardContent className="space-y-1 text-sm">
-                  <div className="flex justify-between"><span>Scolarité</span><span>{fraisScolarite.toLocaleString()} GNF</span></div>
+                  <div className="flex justify-between font-medium"><span>{typeInscription === 'inscription' ? 'Frais d\'inscription' : 'Frais de réinscription'}</span><span>{fraisInscription.toLocaleString()} GNF</span></div>
+                  <div className="flex justify-between"><span>Scolarité ({moisAPayer} mois × {fraisApresReduction.toLocaleString()} GNF)</span><span>{fraisScolariteMois.toLocaleString()} GNF</span></div>
                   {reduction > 0 && (
-                    <div className="flex justify-between text-success"><span>Réduction fratrie (-{reduction * 100}%)</span><span>-{(fraisScolarite * reduction).toLocaleString()} GNF</span></div>
+                    <div className="flex justify-between text-success"><span>Réduction fratrie (-{reduction * 100}%)</span><span>incluse</span></div>
                   )}
-                  {fraisTransport > 0 && <div className="flex justify-between"><span>Transport ({selectedZone?.nom})</span><span>{fraisTransport.toLocaleString()} GNF/mois</span></div>}
+                  {fraisTransport > 0 && <div className="flex justify-between"><span>Transport ({selectedZone?.nom}) × {moisAPayer} mois</span><span>{(fraisTransport * moisAPayer).toLocaleString()} GNF</span></div>}
                   {fraisUniformes > 0 && <div className="flex justify-between"><span>Uniformes</span><span>{fraisUniformes.toLocaleString()} GNF</span></div>}
                   {fraisFournitures > 0 && <div className="flex justify-between"><span>Fournitures</span><span>{fraisFournitures.toLocaleString()} GNF</span></div>}
                   <div className="flex justify-between font-bold text-base pt-2 border-t">
-                    <span>TOTAL</span><span>{totalFrais.toLocaleString()} GNF</span>
+                    <span>TOTAL À PAYER</span><span>{totalFrais.toLocaleString()} GNF</span>
                   </div>
                 </CardContent>
               </Card>
