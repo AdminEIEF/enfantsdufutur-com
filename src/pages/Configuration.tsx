@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -1000,9 +1001,25 @@ function CorbeilleTab() {
                     <Button variant="outline" size="sm" onClick={() => restore.mutate(e.id)} title="Restaurer">
                       <RotateCcw className="h-4 w-4 mr-1" /> Restaurer
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => deletePermanently.mutate(e.id)} title="Supprimer définitivement">
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" title="Supprimer définitivement">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Suppression définitive</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Cette action est irréversible. L'élève {e.prenom} {e.nom} sera supprimé définitivement de la base de données.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deletePermanently.mutate(e.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Supprimer définitivement</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </TableCell>
               </TableRow>
