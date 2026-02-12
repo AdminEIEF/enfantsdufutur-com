@@ -107,10 +107,11 @@ export type Database = {
           created_at: string
           date_naissance: string | null
           famille_id: string | null
-          filiation: string | null
           id: string
           matricule: string | null
           nom: string
+          nom_prenom_mere: string | null
+          nom_prenom_pere: string | null
           option_cantine: boolean | null
           option_fournitures: boolean | null
           photo_url: string | null
@@ -136,10 +137,11 @@ export type Database = {
           created_at?: string
           date_naissance?: string | null
           famille_id?: string | null
-          filiation?: string | null
           id?: string
           matricule?: string | null
           nom: string
+          nom_prenom_mere?: string | null
+          nom_prenom_pere?: string | null
           option_cantine?: boolean | null
           option_fournitures?: boolean | null
           photo_url?: string | null
@@ -165,10 +167,11 @@ export type Database = {
           created_at?: string
           date_naissance?: string | null
           famille_id?: string | null
-          filiation?: string | null
           id?: string
           matricule?: string | null
           nom?: string
+          nom_prenom_mere?: string | null
+          nom_prenom_pere?: string | null
           option_cantine?: boolean | null
           option_fournitures?: boolean | null
           photo_url?: string | null
@@ -405,6 +408,7 @@ export type Database = {
           date_paiement: string
           eleve_id: string
           id: string
+          mois_concerne: string | null
           montant: number
           reference: string | null
           type_paiement: string
@@ -416,6 +420,7 @@ export type Database = {
           date_paiement?: string
           eleve_id: string
           id?: string
+          mois_concerne?: string | null
           montant: number
           reference?: string | null
           type_paiement: string
@@ -427,6 +432,7 @@ export type Database = {
           date_paiement?: string
           eleve_id?: string
           id?: string
+          mois_concerne?: string | null
           montant?: number
           reference?: string | null
           type_paiement?: string

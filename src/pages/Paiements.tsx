@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone } from 'lucide-react';
+import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Circle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -31,6 +31,10 @@ const TYPES = [
   { value: 'autre', label: 'Autre' },
 ];
 
+const MOIS_SCOLAIRES = [
+  'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+];
+
 export default function Paiements() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -43,6 +47,7 @@ export default function Paiements() {
   const [canal, setCanal] = useState('especes');
   const [typePaiement, setTypePaiement] = useState('scolarite');
   const [reference, setReference] = useState('');
+  const [moisConcerne, setMoisConcerne] = useState('');
 
   const { data: paiements = [], isLoading } = useQuery({
     queryKey: ['paiements'],
@@ -71,27 +76,52 @@ export default function Paiements() {
 
   const selectedEleve = eleves.find((e: any) => e.id === eleveId);
 
+  // Scolarité info for selected élève
+  const fraisMensuel = useMemo(() => {
+    if (!selectedEleve) return 0;
+    return Number(selectedEleve.classes?.niveaux?.frais_scolarite || 0);
+  }, [selectedEleve]);
+
+  const totalAnnuel = fraisMensuel * 9;
+
+  // Payments for selected élève (scolarité only)
+  const paiementsScolariteEleve = useMemo(() => {
+    if (!eleveId) return [];
+    return paiements.filter((p: any) => p.eleve_id === eleveId && p.type_paiement === 'scolarite');
+  }, [paiements, eleveId]);
+
+  const totalPaye = paiementsScolariteEleve.reduce((s: number, p: any) => s + Number(p.montant), 0);
+  const resteAPayer = Math.max(0, totalAnnuel - totalPaye);
+
+  const moisPayes = useMemo(() => {
+    return paiementsScolariteEleve
+      .map((p: any) => (p as any).mois_concerne)
+      .filter(Boolean) as string[];
+  }, [paiementsScolariteEleve]);
+
   // Suggest montant based on type
   const suggestedMontant = useMemo(() => {
     if (!selectedEleve) return null;
-    if (typePaiement === 'scolarite') return Number(selectedEleve.classes?.niveaux?.frais_scolarite || 0);
+    if (typePaiement === 'scolarite') return fraisMensuel;
     if (typePaiement === 'transport') return Number((selectedEleve.zones_transport as any)?.prix_mensuel || 0);
     return null;
-  }, [selectedEleve, typePaiement]);
+  }, [selectedEleve, typePaiement, fraisMensuel]);
 
   const createPaiement = useMutation({
     mutationFn: async () => {
       if (!eleveId || !montant || parseFloat(montant) <= 0) throw new Error('Élève et montant valide requis');
+      if (typePaiement === 'scolarite' && !moisConcerne) throw new Error('Veuillez sélectionner le mois concerné');
       const { error } = await supabase.from('paiements').insert({
         eleve_id: eleveId, montant: parseFloat(montant), canal, type_paiement: typePaiement,
         reference: reference || null,
-      });
+        mois_concerne: typePaiement === 'scolarite' ? moisConcerne : null,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['paiements'] });
       toast({ title: 'Paiement enregistré', description: `${parseInt(montant).toLocaleString()} FCFA via ${CANAUX.find(c => c.value === canal)?.label}` });
-      setEleveId(''); setMontant(''); setCanal('especes'); setTypePaiement('scolarite'); setReference('');
+      setEleveId(''); setMontant(''); setCanal('especes'); setTypePaiement('scolarite'); setReference(''); setMoisConcerne('');
       setOpen(false);
     },
     onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
@@ -106,14 +136,12 @@ export default function Paiements() {
 
   const totalRecettes = filtered.reduce((sum: number, p: any) => sum + Number(p.montant), 0);
 
-  // Stats by type
   const statsByType = TYPES.map(t => ({
     ...t,
     total: paiements.filter((p: any) => p.type_paiement === t.value).reduce((s: number, p: any) => s + Number(p.montant), 0),
     count: paiements.filter((p: any) => p.type_paiement === t.value).length,
   })).filter(s => s.total > 0);
 
-  // Monthly chart data (last 6 months)
   const chartData = useMemo(() => {
     const months = [];
     for (let i = 5; i >= 0; i--) {
@@ -143,7 +171,7 @@ export default function Paiements() {
         </h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" /> Nouveau Paiement</Button></DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Enregistrer un paiement</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div>
@@ -159,11 +187,10 @@ export default function Paiements() {
               </div>
               <div>
                 <Label>Type de paiement *</Label>
-                <Select value={typePaiement} onValueChange={setTypePaiement}>
+                <Select value={typePaiement} onValueChange={(v) => { setTypePaiement(v); setMoisConcerne(''); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {TYPES.map(t => {
-                      // Disable transport if no zone
                       const disabled = t.value === 'transport' && selectedEleve && !selectedEleve.zone_transport_id;
                       return <SelectItem key={t.value} value={t.value} disabled={disabled}>{t.label}{disabled ? ' (pas de zone)' : ''}</SelectItem>;
                     })}
@@ -175,6 +202,55 @@ export default function Paiements() {
                   </p>
                 )}
               </div>
+
+              {/* Scolarité summary */}
+              {selectedEleve && typePaiement === 'scolarite' && (
+                <Card className="border-primary/30 bg-primary/5">
+                  <CardContent className="pt-4 space-y-3">
+                    <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                      <div>
+                        <p className="text-muted-foreground text-xs">Total annuel (9 mois)</p>
+                        <p className="font-bold">{totalAnnuel.toLocaleString()} F</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Déjà payé</p>
+                        <p className="font-bold text-green-600">{totalPaye.toLocaleString()} F</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Reste à payer</p>
+                        <p className="font-bold text-destructive">{resteAPayer.toLocaleString()} F</p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium mb-2">Mois payés :</p>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {MOIS_SCOLAIRES.map(m => {
+                          const isPaid = moisPayes.includes(m);
+                          return (
+                            <div key={m} className={`flex items-center gap-1.5 text-xs rounded px-2 py-1 ${isPaid ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+                              {isPaid ? <CheckCircle className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
+                              {m}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Mois concerné *</Label>
+                      <Select value={moisConcerne} onValueChange={setMoisConcerne}>
+                        <SelectTrigger><SelectValue placeholder="Sélectionner le mois" /></SelectTrigger>
+                        <SelectContent>
+                          {MOIS_SCOLAIRES.map(m => {
+                            const isPaid = moisPayes.includes(m);
+                            return <SelectItem key={m} value={m} disabled={isPaid}>{m}{isPaid ? ' ✓' : ''}</SelectItem>;
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <div>
                 <Label>Montant (FCFA) *</Label>
                 <Input type="number" value={montant} onChange={e => setMontant(e.target.value)} placeholder="0" />
@@ -220,7 +296,6 @@ export default function Paiements() {
         <TabsList><TabsTrigger value="historique">Historique</TabsTrigger><TabsTrigger value="tendances">Tendances</TabsTrigger></TabsList>
 
         <TabsContent value="historique" className="space-y-4 mt-4">
-          {/* Filters */}
           <div className="flex gap-3 flex-wrap">
             <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -253,20 +328,21 @@ export default function Paiements() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead><TableHead>Élève</TableHead><TableHead>Matricule</TableHead>
-                    <TableHead>Type</TableHead><TableHead>Montant</TableHead><TableHead>Canal</TableHead><TableHead>Référence</TableHead>
+                    <TableHead>Type</TableHead><TableHead>Mois</TableHead><TableHead>Montant</TableHead><TableHead>Canal</TableHead><TableHead>Référence</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
                   ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun paiement</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun paiement</TableCell></TableRow>
                   ) : filtered.map((p: any) => (
                     <TableRow key={p.id}>
                       <TableCell className="text-xs">{format(new Date(p.date_paiement), 'dd MMM yyyy', { locale: fr })}</TableCell>
                       <TableCell className="font-medium">{p.eleves?.prenom} {p.eleves?.nom}</TableCell>
                       <TableCell className="font-mono text-xs">{p.eleves?.matricule || '—'}</TableCell>
                       <TableCell><Badge variant="outline">{TYPES.find(t => t.value === p.type_paiement)?.label || p.type_paiement}</Badge></TableCell>
+                      <TableCell className="text-xs">{(p as any).mois_concerne || '—'}</TableCell>
                       <TableCell className="font-mono font-bold">{Number(p.montant).toLocaleString()} F</TableCell>
                       <TableCell><Badge variant={p.canal === 'especes' ? 'secondary' : 'default'}>{CANAUX.find(c => c.value === p.canal)?.label || p.canal}</Badge></TableCell>
                       <TableCell className="text-xs text-muted-foreground">{p.reference || '—'}</TableCell>

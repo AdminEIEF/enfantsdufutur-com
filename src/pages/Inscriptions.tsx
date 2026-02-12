@@ -38,7 +38,8 @@ export default function Inscriptions() {
   const [optionCantine, setOptionCantine] = useState(false);
   const [optionFournitures, setOptionFournitures] = useState(false);
   const [checkPhoto, setCheckPhoto] = useState(false);
-  const [filiation, setFiliation] = useState('');
+  const [nomPrenomPere, setNomPrenomPere] = useState('');
+  const [nomPrenomMere, setNomPrenomMere] = useState('');
 
   const { data: eleves = [], isLoading } = useQuery({
     queryKey: ['eleves'],
@@ -127,7 +128,8 @@ export default function Inscriptions() {
         uniforme_scolaire: uniformeScolaire, uniforme_sport: uniformeSport,
         uniforme_polo_lacoste: uniformePolo, uniforme_karate: uniformeKarate,
         option_cantine: optionCantine, option_fournitures: optionFournitures,
-        filiation: filiation || null,
+        nom_prenom_pere: nomPrenomPere || null,
+        nom_prenom_mere: nomPrenomMere || null,
         statut: 'inscrit',
       } as any);
       if (error) throw error;
@@ -176,7 +178,7 @@ export default function Inscriptions() {
     setCheckLivret(false); setCheckRames(false); setCheckMarqueurs(false); setCheckPhoto(false);
     setUniformeScolaire(false); setUniformeSport(false); setUniformePolo(false); setUniformeKarate(false);
     setOptionCantine(false); setOptionFournitures(false);
-    setFiliation('');
+    setNomPrenomPere(''); setNomPrenomMere('');
   };
 
   // Calculate fees for selected class
@@ -273,9 +275,13 @@ export default function Inscriptions() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="col-span-2">
-                    <Label>Filiation (lien de parenté)</Label>
-                    <Input value={filiation} onChange={e => setFiliation(e.target.value)} placeholder="Ex: Fils de M. Kouamé et Mme Bamba" />
+                  <div>
+                    <Label>Nom & Prénom du père</Label>
+                    <Input value={nomPrenomPere} onChange={e => setNomPrenomPere(e.target.value)} placeholder="Ex: Kouamé Jean-Pierre" />
+                  </div>
+                  <div>
+                    <Label>Nom & Prénom de la mère</Label>
+                    <Input value={nomPrenomMere} onChange={e => setNomPrenomMere(e.target.value)} placeholder="Ex: Bamba Fatou" />
                   </div>
                 </CardContent>
               </Card>
@@ -407,7 +413,7 @@ export default function Inscriptions() {
                     <TableCell className="font-medium">{e.nom}</TableCell>
                     <TableCell>{e.prenom}</TableCell>
                     <TableCell>{e.classes?.nom || '—'}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">{(e as any).filiation || '—'}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">{(e as any).nom_prenom_pere || (e as any).nom_prenom_mere ? `${(e as any).nom_prenom_pere || '—'} / ${(e as any).nom_prenom_mere || '—'}` : '—'}</TableCell>
                     <TableCell>
                       {manquants.length > 0 ? (
                         <Badge variant="outline" className="text-warning border-warning/30 text-xs">{manquants.length} manquant(s)</Badge>
