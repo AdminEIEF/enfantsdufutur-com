@@ -8,7 +8,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, ShieldCheck } from 'lucide-react';
+import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, ShieldCheck, Users } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -52,7 +53,7 @@ export default function Inscriptions() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('*, classes(nom, niveau_id, niveaux:niveau_id(nom, cycle_id, cycles:cycle_id(nom))), familles(nom_famille)')
+        .select('*, classes(nom, niveau_id, niveaux:niveau_id(nom, cycle_id, cycles:cycle_id(nom))), familles(nom_famille, telephone_pere, telephone_mere)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
@@ -558,7 +559,20 @@ export default function Inscriptions() {
         </Dialog>
       </div>
 
-      {/* Search & List */}
+      {/* Gender stats */}
+      <div className="flex items-center gap-4">
+        <Badge variant="outline" className="gap-1 text-sm py-1 px-3">
+          <Users className="h-4 w-4" /> Total: {filtered.length}
+        </Badge>
+        <Badge variant="outline" className="gap-1 text-sm py-1 px-3 text-blue-600 border-blue-300">
+          ♂ Garçons: {filtered.filter((e: any) => e.sexe === 'M').length}
+        </Badge>
+        <Badge variant="outline" className="gap-1 text-sm py-1 px-3 text-pink-600 border-pink-300">
+          ♀ Filles: {filtered.filter((e: any) => e.sexe === 'F').length}
+        </Badge>
+      </div>
+
+      {/* Search */}
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input placeholder="Rechercher un élève..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
@@ -586,11 +600,13 @@ export default function Inscriptions() {
                 <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
               ) : filtered.map((e: any) => {
                 const manquants = [
-                  !e.checklist_livret && 'Livret',
-                  !e.checklist_rames && 'Rames',
+                  !e.checklist_livret && 'Livret scolaire',
+                  !e.checklist_rames && 'Paquet de Rames',
                   !e.checklist_marqueurs && 'Marqueurs',
-                  !e.checklist_photo && 'Photo',
-                ].filter(Boolean);
+                  !e.checklist_photo && "Photo d'identité",
+                ].filter(Boolean) as string[];
+                const telPere = e.familles?.telephone_pere;
+                const telMere = e.familles?.telephone_mere;
                 return (
                   <TableRow key={e.id}>
                     <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
@@ -600,7 +616,23 @@ export default function Inscriptions() {
                     <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">{(e as any).nom_prenom_pere || (e as any).nom_prenom_mere ? `${(e as any).nom_prenom_pere || '—'} / ${(e as any).nom_prenom_mere || '—'}` : '—'}</TableCell>
                     <TableCell>
                       {manquants.length > 0 ? (
-                        <Badge variant="outline" className="text-warning border-warning/30 text-xs">{manquants.length} manquant(s)</Badge>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button className="cursor-pointer">
+                              <Badge variant="outline" className="text-warning border-warning/30 text-xs hover:bg-warning/10 transition-colors">{manquants.length} manquant(s)</Badge>
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-56 p-3">
+                            <p className="font-semibold text-sm mb-2">Documents manquants :</p>
+                            <ul className="space-y-1">
+                              {manquants.map((doc) => (
+                                <li key={doc} className="text-sm flex items-center gap-1.5">
+                                  <span className="text-destructive">✗</span> {doc}
+                                </li>
+                              ))}
+                            </ul>
+                          </PopoverContent>
+                        </Popover>
                       ) : (
                         <Badge variant="default" className="text-xs">Complet</Badge>
                       )}
@@ -610,9 +642,28 @@ export default function Inscriptions() {
                     </TableCell>
                     <TableCell>
                       {manquants.length > 0 && (
-                        <Button variant="ghost" size="sm" onClick={() => sendRappel.mutate(e)} title="Envoyer un rappel">
-                          <Bell className="h-4 w-4 text-warning" />
-                        </Button>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="ghost" size="sm" title="Envoyer un rappel aux parents">
+                              <Bell className="h-4 w-4 text-warning" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-72 p-3">
+                            <p className="font-semibold text-sm mb-2">Notifier les parents de {e.prenom} {e.nom}</p>
+                            <p className="text-xs text-muted-foreground mb-2">Documents manquants : {manquants.join(', ')}</p>
+                            {(telPere || telMere) ? (
+                              <div className="space-y-1.5 mb-3">
+                                {telPere && <p className="text-sm">📱 Père : <a href={`tel:${telPere}`} className="text-primary underline">{telPere}</a></p>}
+                                {telMere && <p className="text-sm">📱 Mère : <a href={`tel:${telMere}`} className="text-primary underline">{telMere}</a></p>}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground mb-3">Aucun numéro de téléphone enregistré.</p>
+                            )}
+                            <Button size="sm" className="w-full" onClick={() => sendRappel.mutate(e)}>
+                              <Bell className="h-3.5 w-3.5 mr-1" /> Envoyer le rappel
+                            </Button>
+                          </PopoverContent>
+                        </Popover>
                       )}
                     </TableCell>
                   </TableRow>
