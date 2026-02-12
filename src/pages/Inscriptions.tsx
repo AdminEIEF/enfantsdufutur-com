@@ -96,17 +96,31 @@ export default function Inscriptions() {
 
   const selectedZone = zones?.find((z: any) => z.id === zoneTransportId);
 
+  const generateMatricule = async () => {
+    const now = new Date();
+    const prefix = `EDU-${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const { count } = await supabase
+      .from('eleves')
+      .select('*', { count: 'exact', head: true })
+      .like('matricule', `${prefix}%`);
+    const seq = String((count || 0) + 1).padStart(4, '0');
+    return `${prefix}-${seq}`;
+  };
+
   const inscription = useMutation({
     mutationFn: async () => {
-      if (!nom || !prenom || !classeId) {
+      if (!nom.trim() || !prenom.trim() || !classeId) {
         throw new Error('Nom, prénom et classe sont obligatoires');
       }
       if (!checkLivret || !checkRames || !checkMarqueurs) {
         throw new Error('Tous les éléments de la check-list sont obligatoires');
       }
+      const matricule = await generateMatricule();
+      const qrCode = matricule;
       const { error } = await supabase.from('eleves').insert({
-        nom, prenom, sexe: sexe || null, date_naissance: dateNaissance || null,
+        nom: nom.trim(), prenom: prenom.trim(), sexe: sexe || null, date_naissance: dateNaissance || null,
         classe_id: classeId, famille_id: familleId || null,
+        matricule, qr_code: qrCode,
         transport_zone: selectedZone?.nom || null,
         zone_transport_id: zoneTransportId || null,
         checklist_livret: checkLivret, checklist_rames: checkRames, checklist_marqueurs: checkMarqueurs,
@@ -119,6 +133,7 @@ export default function Inscriptions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['eleves'] });
+      queryClient.invalidateQueries({ queryKey: ['eleves-full'] });
       toast({ title: 'Inscription réussie', description: `${prenom} ${nom} a été inscrit(e) avec succès.` });
       resetForm();
       setOpen(false);
