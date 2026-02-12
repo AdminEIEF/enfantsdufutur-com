@@ -369,7 +369,7 @@ function MatieresTab() {
     setEditId(m.id); setNom(m.nom); setCycleId(m.cycle_id ?? ''); setCoefficient(m.coefficient); setPole(m.pole ?? ''); setOpen(true);
   };
 
-  const poles = ['Langues', 'Sciences', 'Arts', 'Sport', 'Éveil', 'Technique'];
+  const poles = ['Littéraire', 'Scientifique', 'Expérimentale'];
 
   return (
     <Card>

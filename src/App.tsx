@@ -25,6 +25,7 @@ import Notifications from "./pages/Notifications";
 import Reinscription from "./pages/Reinscription";
 import Configuration from "./pages/Configuration";
 import NotFound from "./pages/NotFound";
+import ElevePublic from "./pages/ElevePublic";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
+            <Route path="/eleve/:matricule" element={<ElevePublic />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/inscriptions" element={<ProtectedRoute><Inscriptions /></ProtectedRoute>} />

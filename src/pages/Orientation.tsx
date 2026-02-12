@@ -78,7 +78,7 @@ function useNotesEleve(eleveId: string) {
 }
 
 // Poles for radar
-const DEFAULT_POLES = ['Sciences', 'Langues', 'Arts', 'Sport', 'Éveil', 'Technique'];
+const DEFAULT_POLES = ['Littéraire', 'Scientifique', 'Expérimentale'];
 
 function getSuggestion(radarData: { pole: string; moyenne: number }[]): { orientation: string; detail: string; color: string } {
   if (!radarData.length) return { orientation: '—', detail: 'Données insuffisantes', color: 'text-muted-foreground' };
@@ -88,8 +88,9 @@ function getSuggestion(radarData: { pole: string; moyenne: number }[]): { orient
   const secondBest = sorted[1];
 
   if (best.moyenne >= 14) {
-    if (best.pole === 'Sciences') return { orientation: 'Filière Scientifique', detail: `Excellent profil scientifique (${best.moyenne.toFixed(1)}/20)`, color: 'text-primary' };
-    if (best.pole === 'Langues') return { orientation: 'Filière Littéraire', detail: `Fort potentiel littéraire (${best.moyenne.toFixed(1)}/20)`, color: 'text-accent' };
+    if (best.pole === 'Scientifique') return { orientation: 'Filière Scientifique', detail: `Excellent profil scientifique (${best.moyenne.toFixed(1)}/20)`, color: 'text-primary' };
+    if (best.pole === 'Littéraire') return { orientation: 'Filière Littéraire', detail: `Fort potentiel littéraire (${best.moyenne.toFixed(1)}/20)`, color: 'text-accent' };
+    if (best.pole === 'Expérimentale') return { orientation: 'Filière Expérimentale', detail: `Fort potentiel expérimental (${best.moyenne.toFixed(1)}/20)`, color: 'text-primary' };
     return { orientation: `Spécialisation ${best.pole}`, detail: `Forte aptitude en ${best.pole} (${best.moyenne.toFixed(1)}/20)`, color: 'text-primary' };
   }
   if (best.moyenne >= 10) {
