@@ -101,11 +101,13 @@ export type Database = {
         Row: {
           checklist_livret: boolean | null
           checklist_marqueurs: boolean | null
+          checklist_photo: boolean | null
           checklist_rames: boolean | null
           classe_id: string | null
           created_at: string
           date_naissance: string | null
           famille_id: string | null
+          filiation: string | null
           id: string
           matricule: string | null
           nom: string
@@ -128,11 +130,13 @@ export type Database = {
         Insert: {
           checklist_livret?: boolean | null
           checklist_marqueurs?: boolean | null
+          checklist_photo?: boolean | null
           checklist_rames?: boolean | null
           classe_id?: string | null
           created_at?: string
           date_naissance?: string | null
           famille_id?: string | null
+          filiation?: string | null
           id?: string
           matricule?: string | null
           nom: string
@@ -155,11 +159,13 @@ export type Database = {
         Update: {
           checklist_livret?: boolean | null
           checklist_marqueurs?: boolean | null
+          checklist_photo?: boolean | null
           checklist_rames?: boolean | null
           classe_id?: string | null
           created_at?: string
           date_naissance?: string | null
           famille_id?: string | null
+          filiation?: string | null
           id?: string
           matricule?: string | null
           nom?: string

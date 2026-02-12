@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Search, Plus, CheckCircle2, MapPin } from 'lucide-react';
+import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -37,6 +37,8 @@ export default function Inscriptions() {
   const [uniformeKarate, setUniformeKarate] = useState(false);
   const [optionCantine, setOptionCantine] = useState(false);
   const [optionFournitures, setOptionFournitures] = useState(false);
+  const [checkPhoto, setCheckPhoto] = useState(false);
+  const [filiation, setFiliation] = useState('');
 
   const { data: eleves = [], isLoading } = useQuery({
     queryKey: ['eleves'],
@@ -112,9 +114,6 @@ export default function Inscriptions() {
       if (!nom.trim() || !prenom.trim() || !classeId) {
         throw new Error('Nom, prénom et classe sont obligatoires');
       }
-      if (!checkLivret || !checkRames || !checkMarqueurs) {
-        throw new Error('Tous les éléments de la check-list sont obligatoires');
-      }
       const matricule = await generateMatricule();
       const qrCode = matricule;
       const { error } = await supabase.from('eleves').insert({
@@ -124,9 +123,11 @@ export default function Inscriptions() {
         transport_zone: selectedZone?.nom || null,
         zone_transport_id: zoneTransportId || null,
         checklist_livret: checkLivret, checklist_rames: checkRames, checklist_marqueurs: checkMarqueurs,
+        checklist_photo: checkPhoto,
         uniforme_scolaire: uniformeScolaire, uniforme_sport: uniformeSport,
         uniforme_polo_lacoste: uniformePolo, uniforme_karate: uniformeKarate,
         option_cantine: optionCantine, option_fournitures: optionFournitures,
+        filiation: filiation || null,
         statut: 'inscrit',
       } as any);
       if (error) throw error;
@@ -143,12 +144,39 @@ export default function Inscriptions() {
     },
   });
 
+  const sendRappel = useMutation({
+    mutationFn: async (eleve: any) => {
+      const manquants = [
+        !eleve.checklist_livret && 'Livret scolaire',
+        !eleve.checklist_rames && 'Paquet de Rames',
+        !eleve.checklist_marqueurs && 'Marqueurs',
+        !eleve.checklist_photo && "Photo d'identité",
+      ].filter(Boolean);
+      if (!manquants.length) throw new Error('Tous les documents sont fournis');
+      const { error } = await supabase.from('notifications').insert({
+        titre: 'Documents manquants',
+        message: `L'élève ${eleve.prenom} ${eleve.nom} n'a pas encore fourni : ${manquants.join(', ')}.`,
+        type: 'alerte',
+        destinataire_type: 'famille',
+        destinataire_ref: eleve.famille_id || null,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: 'Rappel envoyé', description: 'La notification a été créée avec succès.' });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+    },
+  });
+
   const resetForm = () => {
     setNom(''); setPrenom(''); setSexe(''); setDateNaissance(''); setClasseId('');
     setFamilleId(''); setZoneTransportId(''); setAdresse('');
-    setCheckLivret(false); setCheckRames(false); setCheckMarqueurs(false);
+    setCheckLivret(false); setCheckRames(false); setCheckMarqueurs(false); setCheckPhoto(false);
     setUniformeScolaire(false); setUniformeSport(false); setUniformePolo(false); setUniformeKarate(false);
     setOptionCantine(false); setOptionFournitures(false);
+    setFiliation('');
   };
 
   // Calculate fees for selected class
@@ -245,16 +273,27 @@ export default function Inscriptions() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="col-span-2">
+                    <Label>Filiation (lien de parenté)</Label>
+                    <Input value={filiation} onChange={e => setFiliation(e.target.value)} placeholder="Ex: Fils de M. Kouamé et Mme Bamba" />
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Check-list */}
               <Card>
-                <CardHeader className="pb-3"><CardTitle className="text-base">Check-list obligatoire</CardTitle></CardHeader>
+                <CardHeader className="pb-3"><CardTitle className="text-base">Check-list documents</CardTitle></CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex items-center gap-2"><Checkbox checked={checkLivret} onCheckedChange={(v) => setCheckLivret(!!v)} /><Label>Livret scolaire</Label></div>
                   <div className="flex items-center gap-2"><Checkbox checked={checkRames} onCheckedChange={(v) => setCheckRames(!!v)} /><Label>Paquet de Rames</Label></div>
                   <div className="flex items-center gap-2"><Checkbox checked={checkMarqueurs} onCheckedChange={(v) => setCheckMarqueurs(!!v)} /><Label>Marqueurs</Label></div>
+                  <div className="flex items-center gap-2"><Checkbox checked={checkPhoto} onCheckedChange={(v) => setCheckPhoto(!!v)} /><Label>Photo d'identité</Label></div>
+                  {(!checkLivret || !checkRames || !checkMarqueurs || !checkPhoto) && nom.trim() && (
+                    <div className="mt-2 p-2 rounded bg-warning/10 border border-warning/30 text-xs text-warning">
+                      ⚠️ L'élève <strong>{prenom || '?'} {nom}</strong> n'a pas encore fourni :{' '}
+                      {[!checkLivret && 'Livret scolaire', !checkRames && 'Paquet de Rames', !checkMarqueurs && 'Marqueurs', !checkPhoto && "Photo d'identité"].filter(Boolean).join(', ')}.
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -297,7 +336,7 @@ export default function Inscriptions() {
                     <div className="flex items-center gap-2"><Checkbox checked={uniformeScolaire} onCheckedChange={(v) => setUniformeScolaire(!!v)} /><Label>Tenue scolaire</Label></div>
                     <div className="flex items-center gap-2"><Checkbox checked={uniformeSport} onCheckedChange={(v) => setUniformeSport(!!v)} /><Label>Tenue sport</Label></div>
                     <div className="flex items-center gap-2"><Checkbox checked={uniformePolo} onCheckedChange={(v) => setUniformePolo(!!v)} /><Label>Polo Lacoste</Label></div>
-                    <div className="flex items-center gap-2"><Checkbox checked={uniformeKarate} onCheckedChange={(v) => setUniformeKarate(!!v)} /><Label>Karaté</Label></div>
+                    <div className="flex items-center gap-2"><Checkbox checked={uniformeKarate} onCheckedChange={(v) => setUniformeKarate(!!v)} /><Label>Tenue de Karaté</Label></div>
                   </div>
                   <div className="flex items-center gap-2"><Checkbox checked={optionCantine} onCheckedChange={(v) => setOptionCantine(!!v)} /><Label>Cantine</Label></div>
                   <div className="flex items-center gap-2"><Checkbox checked={optionFournitures} onCheckedChange={(v) => setOptionFournitures(!!v)} /><Label>Fournitures scolaires</Label></div>
@@ -344,27 +383,51 @@ export default function Inscriptions() {
                 <TableHead>Nom</TableHead>
                 <TableHead>Prénom</TableHead>
                 <TableHead>Classe</TableHead>
-                <TableHead>Famille</TableHead>
+                <TableHead>Filiation</TableHead>
+                <TableHead>Documents</TableHead>
                 <TableHead>Statut</TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
-              ) : filtered.map((e: any) => (
-                <TableRow key={e.id}>
-                  <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
-                  <TableCell className="font-medium">{e.nom}</TableCell>
-                  <TableCell>{e.prenom}</TableCell>
-                  <TableCell>{e.classes?.nom || '—'}</TableCell>
-                  <TableCell>{e.familles?.nom_famille || '—'}</TableCell>
-                  <TableCell>
-                    <Badge variant={e.statut === 'inscrit' ? 'default' : 'secondary'}>{e.statut}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
+                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
+              ) : filtered.map((e: any) => {
+                const manquants = [
+                  !e.checklist_livret && 'Livret',
+                  !e.checklist_rames && 'Rames',
+                  !e.checklist_marqueurs && 'Marqueurs',
+                  !e.checklist_photo && 'Photo',
+                ].filter(Boolean);
+                return (
+                  <TableRow key={e.id}>
+                    <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
+                    <TableCell className="font-medium">{e.nom}</TableCell>
+                    <TableCell>{e.prenom}</TableCell>
+                    <TableCell>{e.classes?.nom || '—'}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">{(e as any).filiation || '—'}</TableCell>
+                    <TableCell>
+                      {manquants.length > 0 ? (
+                        <Badge variant="outline" className="text-warning border-warning/30 text-xs">{manquants.length} manquant(s)</Badge>
+                      ) : (
+                        <Badge variant="default" className="text-xs">Complet</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={e.statut === 'inscrit' ? 'default' : 'secondary'}>{e.statut}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {manquants.length > 0 && (
+                        <Button variant="ghost" size="sm" onClick={() => sendRappel.mutate(e)} title="Envoyer un rappel">
+                          <Bell className="h-4 w-4 text-warning" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
