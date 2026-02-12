@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Bus, MapPin, Users, Search, Wallet, CheckCircle, Circle, Download, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { exportToExcel } from '@/lib/excelUtils';
 import { useToast } from '@/hooks/use-toast';
@@ -26,9 +26,11 @@ const COLORS = [
 
 export default function Transport() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [filterZone, setFilterZone] = useState('all');
   const [selectedZone, setSelectedZone] = useState<any>(null);
+  const [quickPay, setQuickPay] = useState<{ eleveId: string; eleveName: string; mois: string; montant: number } | null>(null);
 
   // Zones
   const { data: zones = [] } = useQuery({
@@ -401,11 +403,17 @@ export default function Transport() {
                           {MOIS_SCOLAIRES.map(m => {
                             const paid = e.moisPayes.includes(m);
                             return (
-                              <TableCell key={m} className="text-center">
+                              <TableCell key={m} className="text-center p-1">
                                 {paid ? (
                                   <CheckCircle className="h-4 w-4 text-accent mx-auto" />
                                 ) : (
-                                  <Circle className="h-4 w-4 text-muted-foreground/30 mx-auto" />
+                                  <button
+                                    className="mx-auto flex items-center justify-center rounded-full h-6 w-6 hover:bg-primary/10 transition-colors group"
+                                    title={`Payer ${m} pour ${e.nom}`}
+                                    onClick={() => setQuickPay({ eleveId: e.id, eleveName: e.nom, mois: m, montant: selectedZone.prixMensuel })}
+                                  >
+                                    <Circle className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-colors" />
+                                  </button>
                                 )}
                               </TableCell>
                             );
@@ -433,6 +441,45 @@ export default function Transport() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Quick pay dialog */}
+      <Dialog open={!!quickPay} onOpenChange={() => setQuickPay(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Confirmer le paiement transport</DialogTitle></DialogHeader>
+          {quickPay && (
+            <div className="space-y-4">
+              <div className="text-sm space-y-1">
+                <p><strong>Élève :</strong> {quickPay.eleveName}</p>
+                <p><strong>Mois :</strong> {quickPay.mois}</p>
+                <p><strong>Zone :</strong> {selectedZone?.nom}</p>
+                <p><strong>Montant :</strong> <span className="text-lg font-bold">{quickPay.montant.toLocaleString()} GNF</span></p>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setQuickPay(null)}>Annuler</Button>
+                <Button onClick={async () => {
+                  try {
+                    const { error } = await supabase.from('paiements').insert({
+                      eleve_id: quickPay.eleveId,
+                      montant: quickPay.montant,
+                      type_paiement: 'transport',
+                      canal: 'especes',
+                      mois_concerne: quickPay.mois,
+                    } as any);
+                    if (error) throw error;
+                    queryClient.invalidateQueries({ queryKey: ['transport-paiements'] });
+                    toast({ title: 'Paiement enregistré', description: `${quickPay.eleveName} — ${quickPay.mois} — ${quickPay.montant.toLocaleString()} GNF` });
+                    setQuickPay(null);
+                  } catch (err: any) {
+                    toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+                  }
+                }}>
+                  Confirmer le paiement
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
