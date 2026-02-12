@@ -48,18 +48,21 @@ export type Database = {
       }
       cycles: {
         Row: {
+          bareme: number
           created_at: string
           id: string
           nom: string
           ordre: number
         }
         Insert: {
+          bareme?: number
           created_at?: string
           id?: string
           nom: string
           ordre?: number
         }
         Update: {
+          bareme?: number
           created_at?: string
           id?: string
           nom?: string
@@ -564,6 +567,7 @@ export type Database = {
         Row: {
           categorie: string
           created_at: string
+          cycle_id: string | null
           id: string
           label: string
           montant: number
@@ -573,6 +577,7 @@ export type Database = {
         Insert: {
           categorie: string
           created_at?: string
+          cycle_id?: string | null
           id?: string
           label: string
           montant?: number
@@ -582,13 +587,22 @@ export type Database = {
         Update: {
           categorie?: string
           created_at?: string
+          cycle_id?: string | null
           id?: string
           label?: string
           montant?: number
           updated_at?: string
           zone_transport?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tarifs_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
