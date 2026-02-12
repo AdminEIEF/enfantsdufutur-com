@@ -193,7 +193,7 @@ export default function Finances() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="service" tick={{ fontSize: 11 }} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(v: number) => `${v.toLocaleString()} FCFA`} />
+                    <Tooltip formatter={(v: number) => `${v.toLocaleString()} GNF`} />
                     <Legend />
                     <Bar dataKey="recettes" fill="#22c55e" name="Recettes" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="depenses" fill="#ef4444" name="Dépenses" radius={[4, 4, 0, 0]} />
@@ -212,7 +212,7 @@ export default function Finances() {
                         {byCanal.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                       </Pie>
                       <Legend />
-                      <Tooltip formatter={(v: number) => `${v.toLocaleString()} FCFA`} />
+                      <Tooltip formatter={(v: number) => `${v.toLocaleString()} GNF`} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : <p className="text-center text-muted-foreground py-12">Aucun paiement</p>}
@@ -275,7 +275,7 @@ export default function Finances() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="mois" fontSize={11} />
                     <YAxis fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(v: number) => `${v.toLocaleString()} FCFA`} />
+                    <Tooltip formatter={(v: number) => `${v.toLocaleString()} GNF`} />
                     <Legend />
                     <Area type="monotone" dataKey="recettes" stroke="#22c55e" fill="#22c55e" fillOpacity={0.15} name="Recettes" />
                     <Area type="monotone" dataKey="depenses" stroke="#ef4444" fill="#ef4444" fillOpacity={0.15} name="Dépenses" />
@@ -301,7 +301,7 @@ export default function Finances() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="mois" fontSize={11} />
                     <YAxis fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(v: number) => v ? `${v.toLocaleString()} FCFA` : '—'} />
+                    <Tooltip formatter={(v: number) => v ? `${v.toLocaleString()} GNF` : '—'} />
                     <Legend />
                     <Line type="monotone" dataKey="recettes" stroke="#22c55e" strokeWidth={2} name="Recettes (réel)" dot />
                     <Line type="monotone" dataKey="depenses" stroke="#ef4444" strokeWidth={2} name="Dépenses (réel)" dot />

@@ -116,7 +116,7 @@ export default function Notifications() {
       } else if (type === 'cantine') {
         notifs = elevesCantine.map((e: any) => ({
           titre: `Solde cantine faible — ${e.prenom} ${e.nom}`,
-          message: `Le solde cantine de ${e.prenom} ${e.nom} est de ${Number(e.solde_cantine).toLocaleString()} FCFA (seuil: ${SEUIL_CANTINE.toLocaleString()} FCFA). Contact: ${e.familles?.telephone_pere || e.familles?.telephone_mere || '—'}`,
+          message: `Le solde cantine de ${e.prenom} ${e.nom} est de ${Number(e.solde_cantine).toLocaleString()} GNF (seuil: ${SEUIL_CANTINE.toLocaleString()} GNF). Contact: ${e.familles?.telephone_pere || e.familles?.telephone_mere || '—'}`,
           type: 'cantine',
           destinataire_type: 'famille',
           destinataire_ref: e.id,
@@ -124,7 +124,7 @@ export default function Notifications() {
       } else if (type === 'paiement') {
         notifs = elevesRetard.map((e: any) => ({
           titre: `Retard de paiement — ${e.prenom} ${e.nom}`,
-          message: `${e.prenom} ${e.nom} a payé ${Number(e.total_paye).toLocaleString()} / ${Number(e.frais).toLocaleString()} FCFA. Reste: ${(e.frais - e.total_paye).toLocaleString()} FCFA. Contact: ${e.familles?.telephone_pere || e.familles?.telephone_mere || '—'}`,
+          message: `${e.prenom} ${e.nom} a payé ${Number(e.total_paye).toLocaleString()} / ${Number(e.frais).toLocaleString()} GNF. Reste: ${(e.frais - e.total_paye).toLocaleString()} GNF. Contact: ${e.familles?.telephone_pere || e.familles?.telephone_mere || '—'}`,
           type: 'paiement',
           destinataire_type: 'famille',
           destinataire_ref: e.id,

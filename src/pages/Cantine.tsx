@@ -131,7 +131,7 @@ export default function Cantine() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['eleves-cantine'] });
-      toast.success(`Solde rechargé de ${rechargeAmount.toLocaleString()} FCFA`);
+      toast.success(`Solde rechargé de ${rechargeAmount.toLocaleString()} GNF`);
       setRechargeOpen(false);
       setSelectedEleve(null);
     },
@@ -190,7 +190,7 @@ export default function Cantine() {
               <Wallet className="h-8 w-8 text-accent" />
               <div>
                 <p className="text-sm text-muted-foreground">Solde total</p>
-                <p className="text-2xl font-bold">{totalSolde.toLocaleString()} FCFA</p>
+                <p className="text-2xl font-bold">{totalSolde.toLocaleString()} GNF</p>
               </div>
             </div>
           </CardContent>
@@ -235,7 +235,7 @@ export default function Cantine() {
                   </p>
                   <p className="text-xl font-bold mt-2">
                     Solde: <span className={Number(selectedEleve.solde_cantine || 0) < Number(tarifRepas || 1000) ? 'text-destructive' : 'text-accent'}>
-                      {Number(selectedEleve.solde_cantine || 0).toLocaleString()} FCFA
+                      {Number(selectedEleve.solde_cantine || 0).toLocaleString()} GNF
                     </span>
                   </p>
                 </div>
@@ -287,7 +287,7 @@ export default function Cantine() {
                   <TableCell>{e.classes?.nom || '—'}</TableCell>
                   <TableCell>
                     <Badge variant={Number(e.solde_cantine || 0) < Number(tarifRepas || 1000) ? 'destructive' : 'default'}>
-                      {Number(e.solde_cantine || 0).toLocaleString()} FCFA
+                      {Number(e.solde_cantine || 0).toLocaleString()} GNF
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -325,9 +325,9 @@ export default function Cantine() {
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
               Élève: <strong>{selectedEleve?.prenom} {selectedEleve?.nom}</strong><br />
-              Solde actuel: <strong>{Number(selectedEleve?.solde_cantine || 0).toLocaleString()} FCFA</strong>
+              Solde actuel: <strong>{Number(selectedEleve?.solde_cantine || 0).toLocaleString()} GNF</strong>
             </p>
-            <div><Label>Montant à créditer (FCFA)</Label><Input type="number" value={rechargeAmount} onChange={e => setRechargeAmount(Number(e.target.value))} min={0} /></div>
+            <div><Label>Montant à créditer (GNF)</Label><Input type="number" value={rechargeAmount} onChange={e => setRechargeAmount(Number(e.target.value))} min={0} /></div>
           </div>
           <DialogFooter><Button onClick={() => rechargeSolde.mutate()} disabled={rechargeSolde.isPending}>Recharger</Button></DialogFooter>
         </DialogContent>
@@ -352,7 +352,7 @@ export default function Cantine() {
                   {repasHistory.map((r: any) => (
                     <TableRow key={r.id}>
                       <TableCell>{new Date(r.date_repas).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</TableCell>
-                      <TableCell>{Number(r.montant_debite).toLocaleString()} FCFA</TableCell>
+                      <TableCell>{Number(r.montant_debite).toLocaleString()} GNF</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
