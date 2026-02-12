@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Plus, Trash2, Pencil, GraduationCap, BookOpen, School, Tag } from 'lucide-react';
+import { Settings, Plus, Trash2, Pencil, GraduationCap, BookOpen, School, Tag, Calendar, Bus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -53,6 +55,28 @@ function useMatieres() {
       const { data, error } = await supabase.from('matieres').select('*, cycles(nom)').order('nom');
       if (error) throw error;
       return data;
+    },
+  });
+}
+
+function usePeriodes() {
+  return useQuery({
+    queryKey: ['periodes'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('periodes').select('*').order('ordre');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useZonesTransport() {
+  return useQuery({
+    queryKey: ['zones_transport'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('zones_transport' as any).select('*').order('nom');
+      if (error) throw error;
+      return data as any[];
     },
   });
 }
@@ -427,7 +451,7 @@ function MatieresTab() {
   );
 }
 
-// ─── Hook: Tarifs ────────────────────────────────────────
+// ─── Hook & Tab: Tarifs ──────────────────────────────────
 function useTarifs() {
   return useQuery({
     queryKey: ['tarifs'],
@@ -446,12 +470,10 @@ const TARIF_CATEGORIES = [
   { value: 'fournitures', label: 'Fournitures' },
 ];
 
-const ZONES_TRANSPORT = ['Zone 1', 'Zone 2', 'Zone 3', 'Zone 4'];
-
-// ─── Tab: Tarifs ─────────────────────────────────────────
 function TarifsTab() {
   const qc = useQueryClient();
   const { data: tarifs, isLoading } = useTarifs();
+  const { data: zones } = useZonesTransport();
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [label, setLabel] = useState('');
@@ -566,12 +588,225 @@ function TarifsTab() {
                   <SelectTrigger><SelectValue placeholder="Aucune zone" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">Aucune zone</SelectItem>
-                    {ZONES_TRANSPORT.map(z => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+                    {zones?.map((z: any) => <SelectItem key={z.id} value={z.nom}>{z.nom}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             )}
             <div><Label>Montant (FCFA)</Label><Input type="number" value={montant} onChange={e => setMontant(Number(e.target.value))} min={0} /></div>
+          </div>
+          <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
+// ─── Tab: Périodes ────────────────────────────────────────
+function PeriodesTab() {
+  const qc = useQueryClient();
+  const { data: periodes, isLoading } = usePeriodes();
+  const [open, setOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [nom, setNom] = useState('');
+  const [ordre, setOrdre] = useState(1);
+  const [anneeScolaire, setAnneeScolaire] = useState('2025-2026');
+  const [estRattrapage, setEstRattrapage] = useState(false);
+
+  const reset = () => { setEditId(null); setNom(''); setOrdre(1); setAnneeScolaire('2025-2026'); setEstRattrapage(false); setOpen(false); };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!nom) throw new Error('Le nom est requis');
+      const payload = { nom, ordre, annee_scolaire: anneeScolaire, est_rattrapage: estRattrapage };
+      if (editId) {
+        const { error } = await supabase.from('periodes').update(payload).eq('id', editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('periodes').insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['periodes'] }); toast.success('Période enregistrée'); reset(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('periodes').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['periodes'] }); toast.success('Période supprimée'); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const openEdit = (p: any) => {
+    setEditId(p.id); setNom(p.nom); setOrdre(p.ordre); setAnneeScolaire(p.annee_scolaire); setEstRattrapage(p.est_rattrapage ?? false); setOpen(true);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2"><Calendar className="h-5 w-5" /> Périodes scolaires</CardTitle>
+        <Button size="sm" onClick={() => { reset(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nom</TableHead>
+              <TableHead>Année scolaire</TableHead>
+              <TableHead>Ordre</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead className="w-24">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Chargement…</TableCell></TableRow>
+            ) : periodes?.length === 0 ? (
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Aucune période</TableCell></TableRow>
+            ) : periodes?.map((p: any) => (
+              <TableRow key={p.id}>
+                <TableCell className="font-medium">{p.nom}</TableCell>
+                <TableCell>{p.annee_scolaire}</TableCell>
+                <TableCell>{p.ordre}</TableCell>
+                <TableCell>
+                  {p.est_rattrapage ? (
+                    <Badge variant="secondary">Rattrapage</Badge>
+                  ) : (
+                    <Badge variant="default">Évaluation</Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => remove.mutate(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editId ? 'Modifier' : 'Ajouter'} une période</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Nom</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Semestre 1, Trimestre 2" /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Année scolaire</Label><Input value={anneeScolaire} onChange={e => setAnneeScolaire(e.target.value)} placeholder="2025-2026" /></div>
+              <div><Label>Ordre</Label><Input type="number" value={ordre} onChange={e => setOrdre(Number(e.target.value))} min={1} /></div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={estRattrapage} onCheckedChange={(v) => setEstRattrapage(!!v)} />
+              <Label>Période de rattrapage</Label>
+            </div>
+          </div>
+          <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
+// ─── Tab: Zones Transport ────────────────────────────────
+function ZonesTransportTab() {
+  const qc = useQueryClient();
+  const { data: zones, isLoading } = useZonesTransport();
+  const [open, setOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [nom, setNom] = useState('');
+  const [prixMensuel, setPrixMensuel] = useState(0);
+  const [chauffeurBus, setChauffeurBus] = useState('');
+  const [quartiersInput, setQuartiersInput] = useState('');
+
+  const reset = () => { setEditId(null); setNom(''); setPrixMensuel(0); setChauffeurBus(''); setQuartiersInput(''); setOpen(false); };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!nom) throw new Error('Le nom est requis');
+      const quartiers = quartiersInput.split(',').map(q => q.trim()).filter(Boolean);
+      const payload = { nom, prix_mensuel: prixMensuel, chauffeur_bus: chauffeurBus || null, quartiers };
+      if (editId) {
+        const { error } = await supabase.from('zones_transport' as any).update(payload).eq('id', editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('zones_transport' as any).insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['zones_transport'] }); toast.success('Zone enregistrée'); reset(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('zones_transport' as any).delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['zones_transport'] }); toast.success('Zone supprimée'); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const openEdit = (z: any) => {
+    setEditId(z.id); setNom(z.nom); setPrixMensuel(z.prix_mensuel); setChauffeurBus(z.chauffeur_bus ?? '');
+    setQuartiersInput((z.quartiers ?? []).join(', ')); setOpen(true);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2"><Bus className="h-5 w-5" /> Zones de Transport</CardTitle>
+        <Button size="sm" onClick={() => { reset(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nom de la zone</TableHead>
+              <TableHead>Prix mensuel</TableHead>
+              <TableHead>Chauffeur / Bus</TableHead>
+              <TableHead>Quartiers couverts</TableHead>
+              <TableHead className="w-24">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Chargement…</TableCell></TableRow>
+            ) : (zones?.length ?? 0) === 0 ? (
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Aucune zone configurée</TableCell></TableRow>
+            ) : zones?.map((z: any) => (
+              <TableRow key={z.id}>
+                <TableCell className="font-medium">{z.nom}</TableCell>
+                <TableCell>{Number(z.prix_mensuel).toLocaleString()} FCFA</TableCell>
+                <TableCell>{z.chauffeur_bus ?? '—'}</TableCell>
+                <TableCell className="max-w-[200px] truncate">{(z.quartiers ?? []).join(', ') || '—'}</TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(z)}><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => remove.mutate(z.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editId ? 'Modifier' : 'Ajouter'} une zone de transport</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Nom de la zone</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Zone Nord" /></div>
+            <div><Label>Prix mensuel (FCFA)</Label><Input type="number" value={prixMensuel} onChange={e => setPrixMensuel(Number(e.target.value))} min={0} /></div>
+            <div><Label>Chauffeur / Bus</Label><Input value={chauffeurBus} onChange={e => setChauffeurBus(e.target.value)} placeholder="Ex: Bus A – M. Diallo" /></div>
+            <div>
+              <Label>Quartiers couverts (séparés par des virgules)</Label>
+              <Input value={quartiersInput} onChange={e => setQuartiersInput(e.target.value)} placeholder="Ex: Quartier A, Quartier B, Quartier C" />
+              <p className="text-xs text-muted-foreground mt-1">Ces quartiers servent à suggérer automatiquement la zone en fonction de l'adresse de l'élève.</p>
+            </div>
           </div>
           <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
         </DialogContent>
@@ -588,16 +823,20 @@ export default function Configuration() {
         <Settings className="h-7 w-7 text-primary" /> Configuration
       </h1>
       <Tabs defaultValue="niveaux">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="niveaux">Niveaux</TabsTrigger>
           <TabsTrigger value="classes">Classes</TabsTrigger>
           <TabsTrigger value="matieres">Matières</TabsTrigger>
+          <TabsTrigger value="periodes">Périodes</TabsTrigger>
           <TabsTrigger value="tarifs">Tarifs</TabsTrigger>
+          <TabsTrigger value="transport">Transport</TabsTrigger>
         </TabsList>
         <TabsContent value="niveaux"><NiveauxTab /></TabsContent>
         <TabsContent value="classes"><ClassesTab /></TabsContent>
         <TabsContent value="matieres"><MatieresTab /></TabsContent>
+        <TabsContent value="periodes"><PeriodesTab /></TabsContent>
         <TabsContent value="tarifs"><TarifsTab /></TabsContent>
+        <TabsContent value="transport"><ZonesTransportTab /></TabsContent>
       </Tabs>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,10 +8,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Search, Plus, CheckCircle2 } from 'lucide-react';
+import { UserPlus, Search, Plus, CheckCircle2, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
+import { useZonesTransport } from './Configuration';
 
 export default function Inscriptions() {
   const [open, setOpen] = useState(false);
@@ -25,7 +26,8 @@ export default function Inscriptions() {
   const [dateNaissance, setDateNaissance] = useState('');
   const [classeId, setClasseId] = useState('');
   const [familleId, setFamilleId] = useState('');
-  const [transportZone, setTransportZone] = useState('');
+  const [zoneTransportId, setZoneTransportId] = useState('');
+  const [adresse, setAdresse] = useState('');
   const [checkLivret, setCheckLivret] = useState(false);
   const [checkRames, setCheckRames] = useState(false);
   const [checkMarqueurs, setCheckMarqueurs] = useState(false);
@@ -77,6 +79,23 @@ export default function Inscriptions() {
     },
   });
 
+  const { data: zones = [] } = useZonesTransport();
+
+  // Suggest zone based on address
+  const suggestedZoneId = useMemo(() => {
+    if (!adresse || !zones?.length) return null;
+    const adresseLower = adresse.toLowerCase();
+    for (const z of zones) {
+      const quartiers = (z.quartiers ?? []) as string[];
+      if (quartiers.some((q: string) => adresseLower.includes(q.toLowerCase()))) {
+        return z.id;
+      }
+    }
+    return null;
+  }, [adresse, zones]);
+
+  const selectedZone = zones?.find((z: any) => z.id === zoneTransportId);
+
   const inscription = useMutation({
     mutationFn: async () => {
       if (!nom || !prenom || !classeId) {
@@ -88,13 +107,14 @@ export default function Inscriptions() {
       const { error } = await supabase.from('eleves').insert({
         nom, prenom, sexe: sexe || null, date_naissance: dateNaissance || null,
         classe_id: classeId, famille_id: familleId || null,
-        transport_zone: transportZone || null,
+        transport_zone: selectedZone?.nom || null,
+        zone_transport_id: zoneTransportId || null,
         checklist_livret: checkLivret, checklist_rames: checkRames, checklist_marqueurs: checkMarqueurs,
         uniforme_scolaire: uniformeScolaire, uniforme_sport: uniformeSport,
         uniforme_polo_lacoste: uniformePolo, uniforme_karate: uniformeKarate,
         option_cantine: optionCantine, option_fournitures: optionFournitures,
         statut: 'inscrit',
-      });
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -110,7 +130,7 @@ export default function Inscriptions() {
 
   const resetForm = () => {
     setNom(''); setPrenom(''); setSexe(''); setDateNaissance(''); setClasseId('');
-    setFamilleId(''); setTransportZone('');
+    setFamilleId(''); setZoneTransportId(''); setAdresse('');
     setCheckLivret(false); setCheckRames(false); setCheckMarqueurs(false);
     setUniformeScolaire(false); setUniformeSport(false); setUniformePolo(false); setUniformeKarate(false);
     setOptionCantine(false); setOptionFournitures(false);
@@ -133,9 +153,8 @@ export default function Inscriptions() {
   const reduction = getReduction(nbEnfantsFamille + 1);
   const fraisApresReduction = fraisScolarite * (1 - reduction);
 
-  // Transport fee
-  const tarifTransport = tarifs.find((t: any) => t.categorie === 'transport' && t.zone_transport === transportZone);
-  const fraisTransport = tarifTransport?.montant || 0;
+  // Transport fee from zone
+  const fraisTransport = selectedZone ? Number(selectedZone.prix_mensuel) : 0;
 
   // Uniform fees
   const getUniformFee = (label: string) => tarifs.find((t: any) => t.categorie === 'uniforme' && t.label === label)?.montant || 0;
@@ -201,7 +220,7 @@ export default function Inscriptions() {
                   </div>
                   <div>
                     <Label>Famille (fratrie)</Label>
-                    <Select value={familleId} onValueChange={(v) => setFamilleId(v === '__none__' ? '' : v)}>
+                    <Select value={familleId || '__none__'} onValueChange={(v) => setFamilleId(v === '__none__' ? '' : v)}>
                       <SelectTrigger><SelectValue placeholder="Aucune" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="__none__">Aucune</SelectItem>
@@ -226,19 +245,38 @@ export default function Inscriptions() {
 
               {/* Options */}
               <Card>
-                <CardHeader className="pb-3"><CardTitle className="text-base">Options</CardTitle></CardHeader>
+                <CardHeader className="pb-3"><CardTitle className="text-base">Options & Transport</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
+                  {/* Adresse pour suggestion de zone */}
+                  <div>
+                    <Label className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> Adresse de l'élève</Label>
+                    <Input value={adresse} onChange={e => setAdresse(e.target.value)} placeholder="Ex: Quartier Riviera, Cocody" />
+                    {suggestedZoneId && suggestedZoneId !== zoneTransportId && (
+                      <button
+                        type="button"
+                        className="mt-1 text-xs text-primary underline cursor-pointer"
+                        onClick={() => setZoneTransportId(suggestedZoneId)}
+                      >
+                        💡 Zone suggérée : {zones.find((z: any) => z.id === suggestedZoneId)?.nom} — Cliquer pour appliquer
+                      </button>
+                    )}
+                  </div>
                   <div>
                     <Label>Zone de transport</Label>
-                    <Select value={transportZone} onValueChange={(v) => setTransportZone(v === '__none__' ? '' : v)}>
+                    <Select value={zoneTransportId || '__none__'} onValueChange={(v) => setZoneTransportId(v === '__none__' ? '' : v)}>
                       <SelectTrigger><SelectValue placeholder="Pas de transport" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="__none__">Pas de transport</SelectItem>
-                        <SelectItem value="zone_1">Zone 1</SelectItem>
-                        <SelectItem value="zone_2">Zone 2</SelectItem>
-                        <SelectItem value="zone_3">Zone 3</SelectItem>
+                        {zones?.map((z: any) => (
+                          <SelectItem key={z.id} value={z.id}>
+                            {z.nom} — {Number(z.prix_mensuel).toLocaleString()} FCFA/mois
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
+                    {selectedZone?.chauffeur_bus && (
+                      <p className="text-xs text-muted-foreground mt-1">🚌 {selectedZone.chauffeur_bus}</p>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="flex items-center gap-2"><Checkbox checked={uniformeScolaire} onCheckedChange={(v) => setUniformeScolaire(!!v)} /><Label>Tenue scolaire</Label></div>
@@ -259,7 +297,7 @@ export default function Inscriptions() {
                   {reduction > 0 && (
                     <div className="flex justify-between text-success"><span>Réduction fratrie (-{reduction * 100}%)</span><span>-{(fraisScolarite * reduction).toLocaleString()} FCFA</span></div>
                   )}
-                  {fraisTransport > 0 && <div className="flex justify-between"><span>Transport</span><span>{fraisTransport.toLocaleString()} FCFA</span></div>}
+                  {fraisTransport > 0 && <div className="flex justify-between"><span>Transport ({selectedZone?.nom})</span><span>{fraisTransport.toLocaleString()} FCFA/mois</span></div>}
                   {fraisUniformes > 0 && <div className="flex justify-between"><span>Uniformes</span><span>{fraisUniformes.toLocaleString()} FCFA</span></div>}
                   {fraisFournitures > 0 && <div className="flex justify-between"><span>Fournitures</span><span>{fraisFournitures.toLocaleString()} FCFA</span></div>}
                   <div className="flex justify-between font-bold text-base pt-2 border-t">
