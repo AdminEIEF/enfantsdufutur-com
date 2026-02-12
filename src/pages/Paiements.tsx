@@ -87,14 +87,30 @@ export default function Paiements() {
 
   const totalAnnuel = fraisMensuel * 9;
 
+  // Transport info for selected élève
+  const prixTransportMensuel = useMemo(() => {
+    if (!selectedEleve) return 0;
+    return Number((selectedEleve.zones_transport as any)?.prix_mensuel || 0);
+  }, [selectedEleve]);
+  const totalAnnuelTransport = prixTransportMensuel * 9;
+
   // Payments for selected élève (scolarité only)
   const paiementsScolariteEleve = useMemo(() => {
     if (!eleveId) return [];
     return paiements.filter((p: any) => p.eleve_id === eleveId && p.type_paiement === 'scolarite');
   }, [paiements, eleveId]);
 
+  // Payments for selected élève (transport only)
+  const paiementsTransportEleve = useMemo(() => {
+    if (!eleveId) return [];
+    return paiements.filter((p: any) => p.eleve_id === eleveId && p.type_paiement === 'transport');
+  }, [paiements, eleveId]);
+
   const totalPaye = paiementsScolariteEleve.reduce((s: number, p: any) => s + Number(p.montant), 0);
   const resteAPayer = Math.max(0, totalAnnuel - totalPaye);
+
+  const totalPayeTransport = paiementsTransportEleve.reduce((s: number, p: any) => s + Number(p.montant), 0);
+  const resteAPayerTransport = Math.max(0, totalAnnuelTransport - totalPayeTransport);
 
   const moisPayes = useMemo(() => {
     return paiementsScolariteEleve
@@ -102,42 +118,54 @@ export default function Paiements() {
       .filter(Boolean) as string[];
   }, [paiementsScolariteEleve]);
 
-  // Auto-calculate montant from checked months
-  const montantScolarite = moisCoches.length * fraisMensuel;
+  const moisPayesTransport = useMemo(() => {
+    return paiementsTransportEleve
+      .map((p: any) => (p as any).mois_concerne)
+      .filter(Boolean) as string[];
+  }, [paiementsTransportEleve]);
 
-  // When moisCoches changes, update montant for scolarité
+  // Auto-calculate montant from checked months
+  const montantFromMois = useMemo(() => {
+    if (typePaiement === 'scolarite') return moisCoches.length * fraisMensuel;
+    if (typePaiement === 'transport') return moisCoches.length * prixTransportMensuel;
+    return 0;
+  }, [moisCoches, typePaiement, fraisMensuel, prixTransportMensuel]);
+
+  // When moisCoches changes, update montant
   const handleMoisToggle = (mois: string, checked: boolean) => {
     const next = checked ? [...moisCoches, mois] : moisCoches.filter(m => m !== mois);
     setMoisCoches(next);
     if (typePaiement === 'scolarite') {
       setMontant(String(next.length * fraisMensuel));
+    } else if (typePaiement === 'transport') {
+      setMontant(String(next.length * prixTransportMensuel));
     }
   };
 
-  // Auto-check months when montant is manually changed for scolarité
+  // Auto-check months when montant is manually changed
   const handleMontantChange = (val: string) => {
     setMontant(val);
     if (typePaiement === 'scolarite' && fraisMensuel > 0) {
       const nbMois = Math.floor(Number(val) / fraisMensuel);
       const moisDisponibles = MOIS_SCOLAIRES.filter(m => !moisPayes.includes(m));
       setMoisCoches(moisDisponibles.slice(0, nbMois));
+    } else if (typePaiement === 'transport' && prixTransportMensuel > 0) {
+      const nbMois = Math.floor(Number(val) / prixTransportMensuel);
+      const moisDisponibles = MOIS_SCOLAIRES.filter(m => !moisPayesTransport.includes(m));
+      setMoisCoches(moisDisponibles.slice(0, nbMois));
     }
   };
 
-  // Suggest montant based on type (transport only now)
-  const suggestedMontant = useMemo(() => {
-    if (!selectedEleve) return null;
-    if (typePaiement === 'transport') return Number((selectedEleve.zones_transport as any)?.prix_mensuel || 0);
-    return null;
-  }, [selectedEleve, typePaiement]);
+  // Suggest montant removed - now calculated from checkboxes
 
   const createPaiement = useMutation({
     mutationFn: async () => {
       if (!eleveId || !montant || parseFloat(montant) <= 0) throw new Error('Élève et montant valide requis');
       if (typePaiement === 'scolarite' && moisCoches.length === 0) throw new Error('Veuillez cocher au moins un mois');
-      if (typePaiement === 'scolarite') {
+      if (typePaiement === 'transport' && moisCoches.length === 0) throw new Error('Veuillez cocher au moins un mois');
+      if (typePaiement === 'scolarite' || typePaiement === 'transport') {
         // Insert one payment per checked month
-        const montantParMois = fraisMensuel;
+        const montantParMois = typePaiement === 'scolarite' ? fraisMensuel : prixTransportMensuel;
         for (const mois of moisCoches) {
           const { error } = await supabase.from('paiements').insert({
             eleve_id: eleveId, montant: montantParMois, canal, type_paiement: typePaiement,
@@ -263,17 +291,21 @@ export default function Paiements() {
               {selectedEleve && typePaiement === 'scolarite' && (
                 <Card className="border-primary/30 bg-primary/5">
                   <CardContent className="pt-4 space-y-3">
-                    <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                    <div className="grid grid-cols-4 gap-2 text-center text-sm">
                       <div>
-                        <p className="text-muted-foreground text-xs">Prix mensuel</p>
+                        <p className="text-muted-foreground text-xs">Prix/mois</p>
                         <p className="font-bold">{fraisMensuel.toLocaleString()} GNF</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground text-xs">Total annuel (9 × {fraisMensuel.toLocaleString()})</p>
+                        <p className="text-muted-foreground text-xs">Total annuel</p>
                         <p className="font-bold">{totalAnnuel.toLocaleString()} GNF</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground text-xs">Reste à payer</p>
+                        <p className="text-muted-foreground text-xs">Déjà payé</p>
+                        <p className="font-bold text-green-600">{totalPaye.toLocaleString()} GNF</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Reste</p>
                         <p className="font-bold text-destructive">{resteAPayer.toLocaleString()} GNF</p>
                       </div>
                     </div>
@@ -303,7 +335,62 @@ export default function Paiements() {
                     {moisCoches.length > 0 && (
                       <div className="text-center p-2 bg-primary/10 rounded-md">
                         <p className="text-xs text-muted-foreground">{moisCoches.length} mois × {fraisMensuel.toLocaleString()} GNF</p>
-                        <p className="text-lg font-bold text-primary">{montantScolarite.toLocaleString()} GNF</p>
+                        <p className="text-lg font-bold text-primary">{montantFromMois.toLocaleString()} GNF</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Transport summary */}
+              {selectedEleve && typePaiement === 'transport' && selectedEleve.zones_transport && (
+                <Card className="border-orange-300/50 bg-orange-50/50">
+                  <CardContent className="pt-4 space-y-3">
+                    <div className="grid grid-cols-4 gap-2 text-center text-sm">
+                      <div>
+                        <p className="text-muted-foreground text-xs">Prix/mois</p>
+                        <p className="font-bold">{prixTransportMensuel.toLocaleString()} GNF</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Total annuel</p>
+                        <p className="font-bold">{totalAnnuelTransport.toLocaleString()} GNF</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Déjà payé</p>
+                        <p className="font-bold text-green-600">{totalPayeTransport.toLocaleString()} GNF</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Reste</p>
+                        <p className="font-bold text-destructive">{resteAPayerTransport.toLocaleString()} GNF</p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium mb-2">Cochez les mois à payer :</p>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {MOIS_SCOLAIRES.map(m => {
+                          const isPaid = moisPayesTransport.includes(m);
+                          const isChecked = moisCoches.includes(m);
+                          return (
+                            <label key={m} className={`flex items-center gap-1.5 text-xs rounded px-2 py-1.5 cursor-pointer select-none ${isPaid ? 'bg-green-100 text-green-700' : isChecked ? 'bg-orange-100 text-orange-700 border border-orange-300' : 'bg-muted text-muted-foreground'}`}>
+                              {isPaid ? (
+                                <CheckCircle className="h-3.5 w-3.5" />
+                              ) : (
+                                <Checkbox
+                                  checked={isChecked}
+                                  onCheckedChange={(checked) => handleMoisToggle(m, !!checked)}
+                                  className="h-3.5 w-3.5"
+                                />
+                              )}
+                              {m}{isPaid ? ' ✓' : ''}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {moisCoches.length > 0 && (
+                      <div className="text-center p-2 bg-orange-100 rounded-md">
+                        <p className="text-xs text-muted-foreground">{moisCoches.length} mois × {prixTransportMensuel.toLocaleString()} GNF</p>
+                        <p className="text-lg font-bold text-orange-700">{montantFromMois.toLocaleString()} GNF</p>
                       </div>
                     )}
                   </CardContent>
@@ -317,14 +404,9 @@ export default function Paiements() {
                   value={montant}
                   onChange={e => handleMontantChange(e.target.value)}
                   placeholder="0"
-                  readOnly={typePaiement === 'scolarite'}
-                  className={typePaiement === 'scolarite' ? 'bg-muted cursor-not-allowed' : ''}
+                  readOnly={typePaiement === 'scolarite' || typePaiement === 'transport'}
+                  className={(typePaiement === 'scolarite' || typePaiement === 'transport') ? 'bg-muted cursor-not-allowed' : ''}
                 />
-                {suggestedMontant && suggestedMontant > 0 && montant !== String(suggestedMontant) && (
-                  <button type="button" className="text-xs text-primary underline mt-1" onClick={() => setMontant(String(suggestedMontant))}>
-                    💡 Montant suggéré: {suggestedMontant.toLocaleString()} GNF — Cliquer pour appliquer
-                  </button>
-                )}
               </div>
               <div>
                 <Label>Canal de paiement *</Label>
