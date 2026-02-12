@@ -40,6 +40,7 @@ export default function Notifications() {
         .from('eleves')
         .select('id, nom, prenom, matricule, statut, familles(nom_famille, telephone_pere, telephone_mere, email_parent), classes(nom)')
         .eq('statut', 'à réinscrire')
+        .is('deleted_at', null)
         .order('nom');
       if (error) throw error;
       return data;

@@ -16,7 +16,8 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, statut, option_cantine, solde_cantine, classe_id, created_at, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycles:cycle_id(nom)))');
+        .select('id, nom, prenom, statut, option_cantine, solde_cantine, classe_id, created_at, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycles:cycle_id(nom)))')
+        .is('deleted_at', null);
       if (error) throw error;
       return data;
     },

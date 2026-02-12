@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Plus, Trash2, Pencil, GraduationCap, BookOpen, School, Tag, Calendar, Bus, Ruler } from 'lucide-react';
+import { Settings, Plus, Trash2, Pencil, GraduationCap, BookOpen, School, Tag, Calendar, Bus, Ruler, RotateCcw, Archive } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -925,6 +925,95 @@ function ZonesTransportTab() {
   );
 }
 
+// ─── Tab: Corbeille ──────────────────────────────────────
+function CorbeilleTab() {
+  const qc = useQueryClient();
+  const { data: deleted = [], isLoading } = useQuery({
+    queryKey: ['eleves-corbeille'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('eleves')
+        .select('*, classes(nom)')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const restore = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('eleves').update({ deleted_at: null } as any).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['eleves-corbeille'] });
+      qc.invalidateQueries({ queryKey: ['eleves'] });
+      toast.success('Élève restauré avec succès');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deletePermanently = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('eleves').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['eleves-corbeille'] });
+      toast.success('Élève supprimé définitivement');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Archive className="h-5 w-5" /> Corbeille ({deleted.length})</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Matricule</TableHead>
+              <TableHead>Nom</TableHead>
+              <TableHead>Prénom</TableHead>
+              <TableHead>Classe</TableHead>
+              <TableHead>Supprimé le</TableHead>
+              <TableHead className="w-32">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Chargement…</TableCell></TableRow>
+            ) : deleted.length === 0 ? (
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">La corbeille est vide</TableCell></TableRow>
+            ) : deleted.map((e: any) => (
+              <TableRow key={e.id}>
+                <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
+                <TableCell className="font-medium">{e.nom}</TableCell>
+                <TableCell>{e.prenom}</TableCell>
+                <TableCell>{e.classes?.nom || '—'}</TableCell>
+                <TableCell className="text-xs text-muted-foreground">{new Date(e.deleted_at).toLocaleDateString('fr-FR')}</TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button variant="outline" size="sm" onClick={() => restore.mutate(e.id)} title="Restaurer">
+                      <RotateCcw className="h-4 w-4 mr-1" /> Restaurer
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => deletePermanently.mutate(e.id)} title="Supprimer définitivement">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────
 export default function Configuration() {
   return (
@@ -941,6 +1030,7 @@ export default function Configuration() {
           <TabsTrigger value="periodes">Périodes</TabsTrigger>
           <TabsTrigger value="tarifs">Tarifs</TabsTrigger>
           <TabsTrigger value="transport">Transport</TabsTrigger>
+          <TabsTrigger value="corbeille">🗑️ Corbeille</TabsTrigger>
         </TabsList>
         <TabsContent value="cycles"><CyclesTab /></TabsContent>
         <TabsContent value="niveaux"><NiveauxTab /></TabsContent>
@@ -949,6 +1039,7 @@ export default function Configuration() {
         <TabsContent value="periodes"><PeriodesTab /></TabsContent>
         <TabsContent value="tarifs"><TarifsTab /></TabsContent>
         <TabsContent value="transport"><ZonesTransportTab /></TabsContent>
+        <TabsContent value="corbeille"><CorbeilleTab /></TabsContent>
       </Tabs>
     </div>
   );

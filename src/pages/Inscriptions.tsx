@@ -8,8 +8,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, ShieldCheck, Users } from 'lucide-react';
+import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, ShieldCheck, Users, Download, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { exportToExcel } from '@/lib/excelUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -54,6 +56,7 @@ export default function Inscriptions() {
       const { data, error } = await supabase
         .from('eleves')
         .select('*, classes(nom, niveau_id, niveaux:niveau_id(nom, cycle_id, cycles:cycle_id(nom))), familles(nom_famille, telephone_pere, telephone_mere)')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
@@ -284,6 +287,52 @@ export default function Inscriptions() {
     },
   });
 
+  const softDelete = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('eleves').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['eleves'] });
+      toast({ title: 'Élève supprimé', description: 'L\'élève a été déplacé dans la corbeille.' });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+    },
+  });
+
+  const handleExportExcel = () => {
+    const data = filtered.map((e: any) => {
+      const manquants = [
+        !e.checklist_livret && 'Livret scolaire',
+        !e.checklist_rames && 'Paquet de Rames',
+        !e.checklist_marqueurs && 'Marqueurs',
+        !e.checklist_photo && "Photo d'identité",
+      ].filter(Boolean) as string[];
+      return {
+        Matricule: e.matricule || '',
+        Nom: e.nom,
+        Prénom: e.prenom,
+        Sexe: e.sexe || '',
+        Classe: e.classes?.nom || '',
+        Famille: e.familles?.nom_famille || '',
+        Statut: e.statut,
+        'Père': (e as any).nom_prenom_pere || '',
+        'Mère': (e as any).nom_prenom_mere || '',
+        'Tél. Père': e.familles?.telephone_pere || '',
+        'Tél. Mère': e.familles?.telephone_mere || '',
+        'Documents manquants': manquants.length > 0 ? manquants.join(', ') : 'Complet',
+        'Nb manquants': manquants.length,
+      };
+    });
+    if (data.length === 0) {
+      toast({ title: 'Aucune donnée à exporter', variant: 'destructive' });
+      return;
+    }
+    exportToExcel(data, 'liste-eleves-inscrits', 'Élèves');
+    toast({ title: `${data.length} élève(s) exporté(s)` });
+  };
+
   const resetForm = () => {
     setNom(''); setPrenom(''); setSexe(''); setDateNaissance(''); setClasseId('');
     setFamilleId(''); setZoneTransportId(''); setAdresse('');
@@ -355,10 +404,12 @@ export default function Inscriptions() {
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
           <UserPlus className="h-7 w-7 text-primary" /> Inscriptions
         </h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Nouvelle Inscription</Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportExcel}><Download className="h-4 w-4 mr-2" /> Export Excel</Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="h-4 w-4 mr-2" /> Nouvelle Inscription</Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Formulaire d'inscription</DialogTitle></DialogHeader>
             <div className="grid gap-4">
@@ -557,6 +608,7 @@ export default function Inscriptions() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Gender stats */}
@@ -640,7 +692,7 @@ export default function Inscriptions() {
                     <TableCell>
                       <Badge variant={e.statut === 'inscrit' ? 'default' : 'secondary'}>{e.statut}</Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="flex gap-1">
                       {manquants.length > 0 && (
                         <Popover>
                           <PopoverTrigger asChild>
@@ -665,6 +717,25 @@ export default function Inscriptions() {
                           </PopoverContent>
                         </Popover>
                       )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" title="Supprimer">
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Supprimer cet élève ?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {e.prenom} {e.nom} sera déplacé dans la corbeille (Configuration). Vous pourrez le restaurer ultérieurement.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => softDelete.mutate(e.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Supprimer</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </TableCell>
                   </TableRow>
                 );

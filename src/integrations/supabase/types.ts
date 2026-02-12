@@ -109,6 +109,7 @@ export type Database = {
           classe_id: string | null
           created_at: string
           date_naissance: string | null
+          deleted_at: string | null
           famille_id: string | null
           id: string
           matricule: string | null
@@ -139,6 +140,7 @@ export type Database = {
           classe_id?: string | null
           created_at?: string
           date_naissance?: string | null
+          deleted_at?: string | null
           famille_id?: string | null
           id?: string
           matricule?: string | null
@@ -169,6 +171,7 @@ export type Database = {
           classe_id?: string | null
           created_at?: string
           date_naissance?: string | null
+          deleted_at?: string | null
           famille_id?: string | null
           id?: string
           matricule?: string | null
