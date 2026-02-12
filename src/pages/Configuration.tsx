@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Plus, Trash2, Pencil, GraduationCap, BookOpen, School, Tag, Calendar, Bus } from 'lucide-react';
+import { Settings, Plus, Trash2, Pencil, GraduationCap, BookOpen, School, Tag, Calendar, Bus, Ruler } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,6 +79,105 @@ export function useZonesTransport() {
       return data as any[];
     },
   });
+}
+
+// ─── Tab: Cycles (Barème) ────────────────────────────────
+function CyclesTab() {
+  const qc = useQueryClient();
+  const { data: cycles, isLoading } = useCycles();
+  const [open, setOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [nom, setNom] = useState('');
+  const [ordre, setOrdre] = useState(1);
+  const [bareme, setBareme] = useState(20);
+
+  const reset = () => { setEditId(null); setNom(''); setOrdre(1); setBareme(20); setOpen(false); };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!nom) throw new Error('Le nom est requis');
+      const payload = { nom, ordre, bareme };
+      if (editId) {
+        const { error } = await supabase.from('cycles').update(payload as any).eq('id', editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('cycles').insert(payload as any);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['cycles'] }); toast.success('Cycle enregistré'); reset(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('cycles').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['cycles'] }); toast.success('Cycle supprimé'); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const openEdit = (c: any) => {
+    setEditId(c.id); setNom(c.nom); setOrdre(c.ordre); setBareme(c.bareme ?? 20); setOpen(true);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2"><Ruler className="h-5 w-5" /> Cycles & Barèmes</CardTitle>
+        <Button size="sm" onClick={() => { reset(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Cycle</TableHead>
+              <TableHead>Ordre</TableHead>
+              <TableHead>Barème des notes</TableHead>
+              <TableHead className="w-24">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">Chargement…</TableCell></TableRow>
+            ) : cycles?.length === 0 ? (
+              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">Aucun cycle</TableCell></TableRow>
+            ) : cycles?.map((c: any) => (
+              <TableRow key={c.id}>
+                <TableCell className="font-medium">{c.nom}</TableCell>
+                <TableCell>{c.ordre}</TableCell>
+                <TableCell>
+                  <Badge variant="outline">/ {c.bareme ?? 20}</Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => remove.mutate(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editId ? 'Modifier' : 'Ajouter'} un cycle</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Nom du cycle</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Primaire" /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Ordre</Label><Input type="number" value={ordre} onChange={e => setOrdre(Number(e.target.value))} min={1} /></div>
+              <div><Label>Barème des notes (ex: 10, 20)</Label><Input type="number" value={bareme} onChange={e => setBareme(Number(e.target.value))} min={1} /></div>
+            </div>
+            <p className="text-xs text-muted-foreground">Le barème définit la note maximale pour ce cycle. Ex: /10 pour le Primaire, /20 pour le Collège/Lycée.</p>
+          </div>
+          <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
 }
 
 // ─── Tab: Niveaux ────────────────────────────────────────
@@ -473,18 +572,18 @@ const TARIF_CATEGORIES = [
 function TarifsTab() {
   const qc = useQueryClient();
   const { data: tarifs, isLoading } = useTarifs();
-  const { data: zones } = useZonesTransport();
+  const { data: cycles } = useCycles();
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [label, setLabel] = useState('');
   const [categorie, setCategorie] = useState('');
   const [montant, setMontant] = useState(0);
-  const [zoneTransport, setZoneTransport] = useState('');
+  const [cycleId, setCycleId] = useState('');
   const [filterCat, setFilterCat] = useState('');
 
   const filtered = tarifs?.filter((t: any) => !filterCat || t.categorie === filterCat) ?? [];
 
-  const reset = () => { setEditId(null); setLabel(''); setCategorie(''); setMontant(0); setZoneTransport(''); setOpen(false); };
+  const reset = () => { setEditId(null); setLabel(''); setCategorie(''); setMontant(0); setCycleId(''); setOpen(false); };
 
   const save = useMutation({
     mutationFn: async () => {
@@ -493,7 +592,8 @@ function TarifsTab() {
         label,
         categorie,
         montant,
-        zone_transport: categorie === 'transport' ? (zoneTransport || null) : null,
+        cycle_id: categorie === 'scolarite' ? (cycleId || null) : null,
+        zone_transport: null,
       };
       if (editId) {
         const { error } = await supabase.from('tarifs').update(payload).eq('id', editId);
@@ -517,7 +617,13 @@ function TarifsTab() {
   });
 
   const openEdit = (t: any) => {
-    setEditId(t.id); setLabel(t.label); setCategorie(t.categorie); setMontant(t.montant); setZoneTransport(t.zone_transport ?? ''); setOpen(true);
+    setEditId(t.id); setLabel(t.label); setCategorie(t.categorie); setMontant(t.montant); setCycleId(t.cycle_id ?? ''); setOpen(true);
+  };
+
+  const getCycleName = (cId: string | null) => {
+    if (!cId || !cycles) return '—';
+    const c = cycles.find((cy: any) => cy.id === cId);
+    return c ? c.nom : '—';
   };
 
   return (
@@ -541,7 +647,7 @@ function TarifsTab() {
             <TableRow>
               <TableHead>Libellé</TableHead>
               <TableHead>Catégorie</TableHead>
-              <TableHead>Zone</TableHead>
+              <TableHead>Cycle</TableHead>
               <TableHead>Montant</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
@@ -555,7 +661,7 @@ function TarifsTab() {
               <TableRow key={t.id}>
                 <TableCell className="font-medium">{t.label}</TableCell>
                 <TableCell className="capitalize">{t.categorie}</TableCell>
-                <TableCell>{t.zone_transport ?? '—'}</TableCell>
+                <TableCell>{getCycleName(t.cycle_id)}</TableCell>
                 <TableCell>{Number(t.montant).toLocaleString()} GNF</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
@@ -582,13 +688,13 @@ function TarifsTab() {
               </Select>
             </div>
             <div><Label>Libellé</Label><Input value={label} onChange={e => setLabel(e.target.value)} placeholder="Ex: Frais d'inscription" /></div>
-            {categorie === 'transport' && (
-              <div><Label>Zone de transport</Label>
-                <Select value={zoneTransport || '__none__'} onValueChange={(v) => setZoneTransport(v === '__none__' ? '' : v)}>
-                  <SelectTrigger><SelectValue placeholder="Aucune zone" /></SelectTrigger>
+            {categorie === 'scolarite' && (
+              <div><Label>Cycle</Label>
+                <Select value={cycleId || '__none__'} onValueChange={(v) => setCycleId(v === '__none__' ? '' : v)}>
+                  <SelectTrigger><SelectValue placeholder="Tous les cycles" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">Aucune zone</SelectItem>
-                    {zones?.map((z: any) => <SelectItem key={z.id} value={z.nom}>{z.nom}</SelectItem>)}
+                    <SelectItem value="__none__">Tous les cycles</SelectItem>
+                    {cycles?.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -822,8 +928,9 @@ export default function Configuration() {
       <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
         <Settings className="h-7 w-7 text-primary" /> Configuration
       </h1>
-      <Tabs defaultValue="niveaux">
+      <Tabs defaultValue="cycles">
         <TabsList className="flex-wrap">
+          <TabsTrigger value="cycles">Cycles & Barèmes</TabsTrigger>
           <TabsTrigger value="niveaux">Niveaux</TabsTrigger>
           <TabsTrigger value="classes">Classes</TabsTrigger>
           <TabsTrigger value="matieres">Matières</TabsTrigger>
@@ -831,6 +938,7 @@ export default function Configuration() {
           <TabsTrigger value="tarifs">Tarifs</TabsTrigger>
           <TabsTrigger value="transport">Transport</TabsTrigger>
         </TabsList>
+        <TabsContent value="cycles"><CyclesTab /></TabsContent>
         <TabsContent value="niveaux"><NiveauxTab /></TabsContent>
         <TabsContent value="classes"><ClassesTab /></TabsContent>
         <TabsContent value="matieres"><MatieresTab /></TabsContent>
