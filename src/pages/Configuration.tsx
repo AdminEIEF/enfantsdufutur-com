@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Plus, Trash2, Pencil, GraduationCap, BookOpen, School } from 'lucide-react';
+import { Settings, Plus, Trash2, Pencil, GraduationCap, BookOpen, School, Tag } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -427,6 +427,159 @@ function MatieresTab() {
   );
 }
 
+// ─── Hook: Tarifs ────────────────────────────────────────
+function useTarifs() {
+  return useQuery({
+    queryKey: ['tarifs'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('tarifs').select('*').order('categorie').order('label');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+const TARIF_CATEGORIES = [
+  { value: 'scolarite', label: 'Scolarité' },
+  { value: 'transport', label: 'Transport' },
+  { value: 'cantine', label: 'Cantine' },
+  { value: 'fournitures', label: 'Fournitures' },
+];
+
+const ZONES_TRANSPORT = ['Zone 1', 'Zone 2', 'Zone 3', 'Zone 4'];
+
+// ─── Tab: Tarifs ─────────────────────────────────────────
+function TarifsTab() {
+  const qc = useQueryClient();
+  const { data: tarifs, isLoading } = useTarifs();
+  const [open, setOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [label, setLabel] = useState('');
+  const [categorie, setCategorie] = useState('');
+  const [montant, setMontant] = useState(0);
+  const [zoneTransport, setZoneTransport] = useState('');
+  const [filterCat, setFilterCat] = useState('');
+
+  const filtered = tarifs?.filter((t: any) => !filterCat || t.categorie === filterCat) ?? [];
+
+  const reset = () => { setEditId(null); setLabel(''); setCategorie(''); setMontant(0); setZoneTransport(''); setOpen(false); };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!label || !categorie) throw new Error('Champs requis');
+      const payload = {
+        label,
+        categorie,
+        montant,
+        zone_transport: categorie === 'transport' ? (zoneTransport || null) : null,
+      };
+      if (editId) {
+        const { error } = await supabase.from('tarifs').update(payload).eq('id', editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('tarifs').insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tarifs'] }); toast.success('Tarif enregistré'); reset(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('tarifs').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tarifs'] }); toast.success('Tarif supprimé'); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const openEdit = (t: any) => {
+    setEditId(t.id); setLabel(t.label); setCategorie(t.categorie); setMontant(t.montant); setZoneTransport(t.zone_transport ?? ''); setOpen(true);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2"><Tag className="h-5 w-5" /> Tarifs</CardTitle>
+        <div className="flex gap-2 items-center">
+          <Select value={filterCat || '__all__'} onValueChange={(v) => setFilterCat(v === '__all__' ? '' : v)}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Toutes catégories" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Toutes catégories</SelectItem>
+              {TARIF_CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button size="sm" onClick={() => { reset(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Libellé</TableHead>
+              <TableHead>Catégorie</TableHead>
+              <TableHead>Zone</TableHead>
+              <TableHead>Montant</TableHead>
+              <TableHead className="w-24">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Chargement…</TableCell></TableRow>
+            ) : filtered.length === 0 ? (
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Aucun tarif</TableCell></TableRow>
+            ) : filtered.map((t: any) => (
+              <TableRow key={t.id}>
+                <TableCell className="font-medium">{t.label}</TableCell>
+                <TableCell className="capitalize">{t.categorie}</TableCell>
+                <TableCell>{t.zone_transport ?? '—'}</TableCell>
+                <TableCell>{Number(t.montant).toLocaleString()} FCFA</TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(t)}><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => remove.mutate(t.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editId ? 'Modifier' : 'Ajouter'} un tarif</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Catégorie</Label>
+              <Select value={categorie} onValueChange={setCategorie}>
+                <SelectTrigger><SelectValue placeholder="Choisir une catégorie" /></SelectTrigger>
+                <SelectContent>
+                  {TARIF_CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Libellé</Label><Input value={label} onChange={e => setLabel(e.target.value)} placeholder="Ex: Frais d'inscription" /></div>
+            {categorie === 'transport' && (
+              <div><Label>Zone de transport</Label>
+                <Select value={zoneTransport || '__none__'} onValueChange={(v) => setZoneTransport(v === '__none__' ? '' : v)}>
+                  <SelectTrigger><SelectValue placeholder="Aucune zone" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Aucune zone</SelectItem>
+                    {ZONES_TRANSPORT.map(z => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div><Label>Montant (FCFA)</Label><Input type="number" value={montant} onChange={e => setMontant(Number(e.target.value))} min={0} /></div>
+          </div>
+          <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────
 export default function Configuration() {
   return (
@@ -439,10 +592,12 @@ export default function Configuration() {
           <TabsTrigger value="niveaux">Niveaux</TabsTrigger>
           <TabsTrigger value="classes">Classes</TabsTrigger>
           <TabsTrigger value="matieres">Matières</TabsTrigger>
+          <TabsTrigger value="tarifs">Tarifs</TabsTrigger>
         </TabsList>
         <TabsContent value="niveaux"><NiveauxTab /></TabsContent>
         <TabsContent value="classes"><ClassesTab /></TabsContent>
         <TabsContent value="matieres"><MatieresTab /></TabsContent>
+        <TabsContent value="tarifs"><TarifsTab /></TabsContent>
       </Tabs>
     </div>
   );
