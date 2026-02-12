@@ -123,6 +123,7 @@ export type Database = {
           uniforme_scolaire: boolean | null
           uniforme_sport: boolean | null
           updated_at: string
+          zone_transport_id: string | null
         }
         Insert: {
           checklist_livret?: boolean | null
@@ -149,6 +150,7 @@ export type Database = {
           uniforme_scolaire?: boolean | null
           uniforme_sport?: boolean | null
           updated_at?: string
+          zone_transport_id?: string | null
         }
         Update: {
           checklist_livret?: boolean | null
@@ -175,6 +177,7 @@ export type Database = {
           uniforme_scolaire?: boolean | null
           uniforme_sport?: boolean | null
           updated_at?: string
+          zone_transport_id?: string | null
         }
         Relationships: [
           {
@@ -189,6 +192,13 @@ export type Database = {
             columns: ["famille_id"]
             isOneToOne: false
             referencedRelation: "familles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eleves_zone_transport_id_fkey"
+            columns: ["zone_transport_id"]
+            isOneToOne: false
+            referencedRelation: "zones_transport"
             referencedColumns: ["id"]
           },
         ]
@@ -586,6 +596,36 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      zones_transport: {
+        Row: {
+          chauffeur_bus: string | null
+          created_at: string
+          id: string
+          nom: string
+          prix_mensuel: number
+          quartiers: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          chauffeur_bus?: string | null
+          created_at?: string
+          id?: string
+          nom: string
+          prix_mensuel?: number
+          quartiers?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          chauffeur_bus?: string | null
+          created_at?: string
+          id?: string
+          nom?: string
+          prix_mensuel?: number
+          quartiers?: string[] | null
+          updated_at?: string
         }
         Relationships: []
       }
