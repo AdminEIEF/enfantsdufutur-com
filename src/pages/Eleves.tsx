@@ -99,10 +99,22 @@ export default function Eleves() {
     });
   };
 
+  const buildQrData = (eleve: any) => {
+    const baseUrl = window.location.origin;
+    return JSON.stringify({
+      matricule: eleve.matricule || '',
+      nom: eleve.nom,
+      prenom: eleve.prenom,
+      classe: eleve.classes?.nom || '',
+      sexe: eleve.sexe || '',
+      url: `${baseUrl}/eleves?matricule=${encodeURIComponent(eleve.matricule || eleve.id)}`,
+    });
+  };
+
   const printBadge = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow || !badgeEleve) return;
-    const qrValue = badgeEleve.qr_code || badgeEleve.matricule || badgeEleve.id;
+    const qrValue = buildQrData(badgeEleve);
     printWindow.document.write(`<!DOCTYPE html><html><head><title>Badge ${badgeEleve.prenom} ${badgeEleve.nom}</title>
       <style>
         body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
@@ -124,7 +136,7 @@ export default function Eleves() {
       </div>
       <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
       <script>
-        QRCode.toCanvas(document.createElement('canvas'), '${qrValue}', { width: 150 }, function(err, canvas) {
+        QRCode.toCanvas(document.createElement('canvas'), ${JSON.stringify(qrValue)}, { width: 150 }, function(err, canvas) {
           document.querySelector('.qr').appendChild(canvas);
           setTimeout(() => window.print(), 300);
         });
@@ -369,7 +381,7 @@ export default function Eleves() {
                 <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Carte Scolaire</p>
                 <p className="text-xs text-muted-foreground">{badgeEleve.classes?.niveaux?.cycles?.nom} — {badgeEleve.classes?.nom}</p>
                 <div className="flex justify-center">
-                  <QRCodeSVG value={badgeEleve.qr_code || badgeEleve.matricule || badgeEleve.id} size={150} />
+                  <QRCodeSVG value={buildQrData(badgeEleve)} size={150} />
                 </div>
                 <p className="text-lg font-bold">{badgeEleve.prenom} {badgeEleve.nom}</p>
                 <p className="text-sm text-muted-foreground">{badgeEleve.sexe} • {badgeEleve.date_naissance || ''}</p>
