@@ -8,13 +8,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Circle } from 'lucide-react';
+import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Circle, Printer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { generateRecuPDF } from '@/lib/generateRecuPDF';
 
 const CANAUX = [
   { value: 'especes', label: 'Espèces', icon: Wallet },
@@ -120,7 +121,26 @@ export default function Paiements() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['paiements'] });
-      toast({ title: 'Paiement enregistré', description: `${parseInt(montant).toLocaleString()} FCFA via ${CANAUX.find(c => c.value === canal)?.label}` });
+      toast({ title: 'Paiement enregistré', description: `${parseInt(montant).toLocaleString()} GNF via ${CANAUX.find(c => c.value === canal)?.label}` });
+
+      // Generate receipt for scolarité payments
+      if (typePaiement === 'scolarite' && selectedEleve) {
+        const newTotalPaye = totalPaye + parseFloat(montant);
+        generateRecuPDF({
+          eleve: `${selectedEleve.prenom} ${selectedEleve.nom}`,
+          matricule: selectedEleve.matricule || '',
+          classe: selectedEleve.classes?.nom || '—',
+          montant: parseFloat(montant),
+          mois: moisConcerne,
+          canal: CANAUX.find(c => c.value === canal)?.label || canal,
+          reference: reference || null,
+          date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
+          totalAnnuel,
+          totalPaye: newTotalPaye,
+          resteAPayer: Math.max(0, totalAnnuel - newTotalPaye),
+        });
+      }
+
       setEleveId(''); setMontant(''); setCanal('especes'); setTypePaiement('scolarite'); setReference(''); setMoisConcerne('');
       setOpen(false);
     },
@@ -198,7 +218,7 @@ export default function Paiements() {
                 </Select>
                 {selectedEleve && typePaiement === 'transport' && selectedEleve.zones_transport && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    🚌 Zone: {(selectedEleve.zones_transport as any)?.nom} — {Number((selectedEleve.zones_transport as any)?.prix_mensuel).toLocaleString()} FCFA/mois
+                    🚌 Zone: {(selectedEleve.zones_transport as any)?.nom} — {Number((selectedEleve.zones_transport as any)?.prix_mensuel).toLocaleString()} GNF/mois
                   </p>
                 )}
               </div>
@@ -252,11 +272,11 @@ export default function Paiements() {
               )}
 
               <div>
-                <Label>Montant (FCFA) *</Label>
+                <Label>Montant (GNF) *</Label>
                 <Input type="number" value={montant} onChange={e => setMontant(e.target.value)} placeholder="0" />
                 {suggestedMontant && suggestedMontant > 0 && montant !== String(suggestedMontant) && (
                   <button type="button" className="text-xs text-primary underline mt-1" onClick={() => setMontant(String(suggestedMontant))}>
-                    💡 Montant suggéré: {suggestedMontant.toLocaleString()} FCFA — Cliquer pour appliquer
+                    💡 Montant suggéré: {suggestedMontant.toLocaleString()} GNF — Cliquer pour appliquer
                   </button>
                 )}
               </div>
@@ -318,7 +338,7 @@ export default function Paiements() {
             <div className="ml-auto flex items-center gap-2 text-sm">
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Total:</span>
-              <span className="font-bold">{totalRecettes.toLocaleString()} FCFA</span>
+              <span className="font-bold">{totalRecettes.toLocaleString()} GNF</span>
             </div>
           </div>
 
@@ -328,15 +348,20 @@ export default function Paiements() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead><TableHead>Élève</TableHead><TableHead>Matricule</TableHead>
-                    <TableHead>Type</TableHead><TableHead>Mois</TableHead><TableHead>Montant</TableHead><TableHead>Canal</TableHead><TableHead>Référence</TableHead>
+                    <TableHead>Type</TableHead><TableHead>Mois</TableHead><TableHead>Montant</TableHead><TableHead>Canal</TableHead><TableHead>Référence</TableHead><TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
                   ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun paiement</TableCell></TableRow>
-                  ) : filtered.map((p: any) => (
+                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Aucun paiement</TableCell></TableRow>
+                  ) : filtered.map((p: any) => {
+                    const eleveForReceipt = eleves.find((e: any) => e.id === p.eleve_id);
+                    const frais = Number(eleveForReceipt?.classes?.niveaux?.frais_scolarite || 0);
+                    const annuel = frais * 9;
+                    const totalPayeEleve = paiements.filter((pp: any) => pp.eleve_id === p.eleve_id && pp.type_paiement === 'scolarite').reduce((s: number, pp: any) => s + Number(pp.montant), 0);
+                    return (
                     <TableRow key={p.id}>
                       <TableCell className="text-xs">{format(new Date(p.date_paiement), 'dd MMM yyyy', { locale: fr })}</TableCell>
                       <TableCell className="font-medium">{p.eleves?.prenom} {p.eleves?.nom}</TableCell>
@@ -346,8 +371,27 @@ export default function Paiements() {
                       <TableCell className="font-mono font-bold">{Number(p.montant).toLocaleString()} F</TableCell>
                       <TableCell><Badge variant={p.canal === 'especes' ? 'secondary' : 'default'}>{CANAUX.find(c => c.value === p.canal)?.label || p.canal}</Badge></TableCell>
                       <TableCell className="text-xs text-muted-foreground">{p.reference || '—'}</TableCell>
+                      <TableCell>
+                        {p.type_paiement === 'scolarite' && (
+                          <Button variant="ghost" size="icon" title="Imprimer reçu" onClick={() => generateRecuPDF({
+                            eleve: `${p.eleves?.prenom} ${p.eleves?.nom}`,
+                            matricule: p.eleves?.matricule || '',
+                            classe: eleveForReceipt?.classes?.nom || '—',
+                            montant: Number(p.montant),
+                            mois: (p as any).mois_concerne || '—',
+                            canal: CANAUX.find(c => c.value === p.canal)?.label || p.canal,
+                            reference: p.reference,
+                            date: format(new Date(p.date_paiement), 'dd MMMM yyyy', { locale: fr }),
+                            totalAnnuel: annuel,
+                            totalPaye: totalPayeEleve,
+                            resteAPayer: Math.max(0, annuel - totalPayeEleve),
+                          })}>
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  );})}
                 </TableBody>
               </Table>
             </CardContent>
@@ -364,7 +408,7 @@ export default function Paiements() {
                   <BarChart data={chartData}>
                     <XAxis dataKey="mois" fontSize={12} />
                     <YAxis fontSize={12} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(v: number) => `${v.toLocaleString()} FCFA`} />
+                    <Tooltip formatter={(v: number) => `${v.toLocaleString()} GNF`} />
                     <Legend />
                     {TYPES.map((t, i) => (
                       <Bar key={t.value} dataKey={t.label} stackId="a" fill={typeColors[i]} />

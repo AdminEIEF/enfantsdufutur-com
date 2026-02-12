@@ -2,10 +2,11 @@ import { useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Users, UserPlus, CreditCard, BookOpen, GraduationCap, TrendingUp, Utensils, AlertTriangle, Wallet, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 export default function Dashboard() {
   const { roles } = useAuth();
@@ -15,7 +16,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, statut, option_cantine, solde_cantine, classe_id, created_at, classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom)))');
+        .select('id, nom, prenom, statut, option_cantine, solde_cantine, classe_id, created_at, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycles:cycle_id(nom)))');
       if (error) throw error;
       return data;
     },
@@ -26,7 +27,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('paiements')
-        .select('id, montant, type_paiement, date_paiement, canal')
+        .select('id, montant, type_paiement, date_paiement, canal, eleve_id')
         .order('date_paiement', { ascending: false });
       if (error) throw error;
       return data;
@@ -70,8 +71,61 @@ export default function Dashboard() {
   const cantineInscrits = eleves.filter((e: any) => e.option_cantine).length;
   const cantineSoldeFaible = eleves.filter((e: any) => e.option_cantine && Number(e.solde_cantine || 0) < 1000).length;
 
+  // ─── Taux de recouvrement par classe ──────────────────
+  const recouvrementParClasse = useMemo(() => {
+    const classeMap: Record<string, { nom: string; totalAttendu: number; totalPaye: number; effectif: number }> = {};
+
+    eleves.forEach((e: any) => {
+      if (!e.classe_id || !e.classes) return;
+      const classeNom = e.classes.nom;
+      const fraisMensuel = Number(e.classes.niveaux?.frais_scolarite || 0);
+      const totalAnnuel = fraisMensuel * 9;
+
+      if (!classeMap[e.classe_id]) {
+        classeMap[e.classe_id] = { nom: classeNom, totalAttendu: 0, totalPaye: 0, effectif: 0 };
+      }
+      classeMap[e.classe_id].totalAttendu += totalAnnuel;
+      classeMap[e.classe_id].effectif += 1;
+    });
+
+    // Sum scolarité payments per class
+    paiements.filter((p: any) => p.type_paiement === 'scolarite').forEach((p: any) => {
+      const eleve = eleves.find((e: any) => e.id === p.eleve_id);
+      if (eleve?.classe_id && classeMap[eleve.classe_id]) {
+        classeMap[eleve.classe_id].totalPaye += Number(p.montant);
+      }
+    });
+
+    return Object.values(classeMap)
+      .filter(c => c.totalAttendu > 0)
+      .map(c => ({
+        ...c,
+        taux: Math.min(100, Math.round((c.totalPaye / c.totalAttendu) * 100)),
+        reste: c.totalAttendu - c.totalPaye,
+      }))
+      .sort((a, b) => a.taux - b.taux);
+  }, [eleves, paiements]);
+
+  const tauxGlobal = useMemo(() => {
+    const totalAttendu = recouvrementParClasse.reduce((s, c) => s + c.totalAttendu, 0);
+    const totalPaye = recouvrementParClasse.reduce((s, c) => s + c.totalPaye, 0);
+    return totalAttendu > 0 ? Math.round((totalPaye / totalAttendu) * 100) : 0;
+  }, [recouvrementParClasse]);
+
+  // ─── Alertes cantine détaillées ──────────────────────
+  const alertesCantine = useMemo(() => {
+    return eleves
+      .filter((e: any) => e.option_cantine && Number(e.solde_cantine || 0) < 1000)
+      .map((e: any) => ({
+        id: e.id,
+        nom: `${e.prenom} ${e.nom}`,
+        classe: e.classes?.nom || '—',
+        solde: Number(e.solde_cantine || 0),
+      }))
+      .sort((a, b) => a.solde - b.solde);
+  }, [eleves]);
+
   // ─── Charts data ──────────────────────────────────────
-  // Recettes par type
   const recettesParType = useMemo(() => {
     const map: Record<string, number> = {};
     paiements.forEach((p: any) => {
@@ -81,7 +135,6 @@ export default function Dashboard() {
     return Object.entries(map).map(([name, value]) => ({ name, value }));
   }, [paiements]);
 
-  // Dépenses par service
   const depensesParService = useMemo(() => {
     const map: Record<string, number> = {};
     depenses.forEach((d: any) => {
@@ -91,7 +144,6 @@ export default function Dashboard() {
     return Object.entries(map).map(([name, value]) => ({ name, value }));
   }, [depenses]);
 
-  // Monthly trend (last 6 months)
   const monthlyTrend = useMemo(() => {
     const months: string[] = [];
     for (let i = 5; i >= 0; i--) {
@@ -111,7 +163,6 @@ export default function Dashboard() {
     });
   }, [paiements, depenses]);
 
-  // Effectif par cycle
   const effectifParCycle = useMemo(() => {
     const map: Record<string, number> = {};
     eleves.forEach((e: any) => {
@@ -120,16 +171,6 @@ export default function Dashboard() {
     });
     return Object.entries(map).map(([name, value]) => ({ name, value }));
   }, [eleves]);
-
-  // Canal paiements
-  const paiementsParCanal = useMemo(() => {
-    const map: Record<string, number> = {};
-    paiements.forEach((p: any) => {
-      const canal = p.canal || 'especes';
-      map[canal] = (map[canal] || 0) + Number(p.montant);
-    });
-    return Object.entries(map).map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value }));
-  }, [paiements]);
 
   const COLORS = [
     'hsl(220, 70%, 45%)',
@@ -193,7 +234,7 @@ export default function Dashboard() {
             <CreditCard className="h-5 w-5 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalRecettesMois.toLocaleString()} <span className="text-sm font-normal">FCFA</span></div>
+            <div className="text-2xl font-bold">{totalRecettesMois.toLocaleString()} <span className="text-sm font-normal">GNF</span></div>
             <p className="text-xs text-muted-foreground mt-1">{paiementsMois.length} paiements</p>
           </CardContent>
         </Card>
@@ -203,17 +244,18 @@ export default function Dashboard() {
             <ArrowDownRight className="h-5 w-5 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalDepensesMois.toLocaleString()} <span className="text-sm font-normal">FCFA</span></div>
+            <div className="text-2xl font-bold">{totalDepensesMois.toLocaleString()} <span className="text-sm font-normal">GNF</span></div>
             <p className="text-xs text-muted-foreground mt-1">{depensesMois.length} dépenses</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Notes saisies</CardTitle>
-            <BookOpen className="h-5 w-5 text-info" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Recouvrement scolarité</CardTitle>
+            <TrendingUp className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{notesCount}</div>
+            <div className="text-2xl font-bold">{tauxGlobal}%</div>
+            <p className="text-xs text-muted-foreground mt-1">Taux global</p>
           </CardContent>
         </Card>
       </div>
@@ -225,7 +267,7 @@ export default function Dashboard() {
             <TrendingUp className="h-10 w-10 text-accent" />
             <div>
               <p className="text-sm text-muted-foreground">Total recettes</p>
-              <p className="text-xl font-bold">{totalRecettes.toLocaleString()} FCFA</p>
+              <p className="text-xl font-bold">{totalRecettes.toLocaleString()} GNF</p>
             </div>
           </CardContent>
         </Card>
@@ -234,7 +276,7 @@ export default function Dashboard() {
             <ArrowDownRight className="h-10 w-10 text-destructive" />
             <div>
               <p className="text-sm text-muted-foreground">Total dépenses</p>
-              <p className="text-xl font-bold">{totalDepenses.toLocaleString()} FCFA</p>
+              <p className="text-xl font-bold">{totalDepenses.toLocaleString()} GNF</p>
             </div>
           </CardContent>
         </Card>
@@ -244,20 +286,61 @@ export default function Dashboard() {
             <div>
               <p className="text-sm text-muted-foreground">Solde net</p>
               <p className={`text-xl font-bold ${totalRecettes - totalDepenses >= 0 ? 'text-accent' : 'text-destructive'}`}>
-                {(totalRecettes - totalDepenses).toLocaleString()} FCFA
+                {(totalRecettes - totalDepenses).toLocaleString()} GNF
               </p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Cantine alerts */}
+      {/* Taux de recouvrement par classe */}
+      {recouvrementParClasse.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <GraduationCap className="h-5 w-5" /> Taux de recouvrement scolarité par classe
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Classe</TableHead>
+                  <TableHead className="text-center">Effectif</TableHead>
+                  <TableHead className="text-right">Attendu</TableHead>
+                  <TableHead className="text-right">Payé</TableHead>
+                  <TableHead className="text-right">Reste</TableHead>
+                  <TableHead className="text-center">Taux</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recouvrementParClasse.map((c, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="font-medium">{c.nom}</TableCell>
+                    <TableCell className="text-center">{c.effectif}</TableCell>
+                    <TableCell className="text-right">{c.totalAttendu.toLocaleString()} F</TableCell>
+                    <TableCell className="text-right text-accent">{c.totalPaye.toLocaleString()} F</TableCell>
+                    <TableCell className="text-right text-destructive">{c.reste.toLocaleString()} F</TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant={c.taux >= 75 ? 'default' : c.taux >= 50 ? 'secondary' : 'destructive'}>
+                        {c.taux}%
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Alertes cantine */}
       {cantineInscrits > 0 && (
         <Card className={cantineSoldeFaible > 0 ? 'border-warning/40' : ''}>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2"><Utensils className="h-5 w-5" /> Cantine</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
             <div className="flex gap-6">
               <div>
                 <p className="text-sm text-muted-foreground">Inscrits</p>
@@ -271,6 +354,35 @@ export default function Dashboard() {
                 </p>
               </div>
             </div>
+            {alertesCantine.length > 0 && (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Élève</TableHead>
+                      <TableHead>Classe</TableHead>
+                      <TableHead className="text-right">Solde</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {alertesCantine.slice(0, 10).map((a) => (
+                      <TableRow key={a.id}>
+                        <TableCell className="font-medium">{a.nom}</TableCell>
+                        <TableCell>{a.classe}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="destructive">{a.solde.toLocaleString()} GNF</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {alertesCantine.length > 10 && (
+                  <p className="text-xs text-muted-foreground text-center py-2">
+                    … et {alertesCantine.length - 10} autre(s)
+                  </p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -291,7 +403,7 @@ export default function Dashboard() {
                   <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                   <Tooltip
                     contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--popover-foreground))' }}
-                    formatter={(value: number) => [`${value.toLocaleString()} FCFA`]}
+                    formatter={(value: number) => [`${value.toLocaleString()} GNF`]}
                   />
                   <Bar dataKey="recettes" fill="hsl(162, 63%, 41%)" name="Recettes" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="depenses" fill="hsl(0, 72%, 51%)" name="Dépenses" radius={[4, 4, 0, 0]} />
@@ -339,7 +451,7 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                   <YAxis dataKey="name" type="category" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} width={100} />
-                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--popover-foreground))' }} formatter={(value: number) => [`${value.toLocaleString()} FCFA`]} />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--popover-foreground))' }} formatter={(value: number) => [`${value.toLocaleString()} GNF`]} />
                   <Bar dataKey="value" fill="hsl(220, 70%, 45%)" name="Montant" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -363,7 +475,7 @@ export default function Dashboard() {
                       <Cell key={i} fill={COLORS[(i + 2) % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--popover-foreground))' }} formatter={(value: number) => [`${value.toLocaleString()} FCFA`]} />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--popover-foreground))' }} formatter={(value: number) => [`${value.toLocaleString()} GNF`]} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>

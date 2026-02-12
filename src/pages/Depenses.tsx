@@ -72,7 +72,7 @@ export default function Depenses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['depenses'] });
-      toast({ title: 'Dépense enregistrée', description: `${libelle} — ${parseInt(montant).toLocaleString()} FCFA` });
+      toast({ title: 'Dépense enregistrée', description: `${libelle} — ${parseInt(montant).toLocaleString()} GNF` });
       setLibelle(''); setMontant(''); setService(''); setOpen(false);
     },
     onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
@@ -153,7 +153,7 @@ export default function Depenses() {
             <DialogHeader><DialogTitle>Enregistrer une dépense</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div><Label>Libellé *</Label><Input value={libelle} onChange={e => setLibelle(e.target.value)} placeholder="Ex: Carburant bus, Matériel cuisine" /></div>
-              <div><Label>Montant (FCFA) *</Label><Input type="number" value={montant} onChange={e => setMontant(e.target.value)} placeholder="0" /></div>
+              <div><Label>Montant (GNF) *</Label><Input type="number" value={montant} onChange={e => setMontant(e.target.value)} placeholder="0" /></div>
               <div>
                 <Label>Service *</Label>
                 <Select value={service} onValueChange={setService}>
@@ -211,7 +211,7 @@ export default function Depenses() {
             <div className="ml-auto flex items-center gap-2 text-sm">
               <TrendingDown className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Total:</span>
-              <span className="font-bold">{totalFiltered.toLocaleString()} FCFA</span>
+              <span className="font-bold">{totalFiltered.toLocaleString()} GNF</span>
             </div>
           </div>
 
@@ -257,7 +257,7 @@ export default function Depenses() {
                     <BarChart data={chartData}>
                       <XAxis dataKey="mois" fontSize={12} />
                       <YAxis fontSize={12} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                      <Tooltip formatter={(v: number) => `${v.toLocaleString()} FCFA`} />
+                       <Tooltip formatter={(v: number) => `${v.toLocaleString()} GNF`} />
                       <Legend />
                       {SERVICES.map(s => (
                         <Bar key={s} dataKey={s} stackId="a" fill={SERVICE_COLORS[s]} />
@@ -279,7 +279,7 @@ export default function Depenses() {
                           <Cell key={entry.name} fill={SERVICE_COLORS[entry.name]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(v: number) => `${v.toLocaleString()} FCFA`} />
+                      <Tooltip formatter={(v: number) => `${v.toLocaleString()} GNF`} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>

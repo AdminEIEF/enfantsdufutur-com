@@ -151,7 +151,7 @@ function NiveauxTab() {
                 <TableCell className="font-medium">{n.nom}</TableCell>
                 <TableCell>{n.cycles?.nom}</TableCell>
                 <TableCell>{n.ordre}</TableCell>
-                <TableCell>{Number(n.frais_scolarite).toLocaleString()} FCFA</TableCell>
+                <TableCell>{Number(n.frais_scolarite).toLocaleString()} GNF</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(n)}><Pencil className="h-4 w-4" /></Button>
@@ -177,7 +177,7 @@ function NiveauxTab() {
             <div><Label>Nom</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: CP1" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Ordre</Label><Input type="number" value={ordre} onChange={e => setOrdre(Number(e.target.value))} /></div>
-              <div><Label>Frais scolarité (FCFA)</Label><Input type="number" value={frais} onChange={e => setFrais(Number(e.target.value))} /></div>
+              <div><Label>Frais scolarité (GNF)</Label><Input type="number" value={frais} onChange={e => setFrais(Number(e.target.value))} /></div>
             </div>
           </div>
           <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
@@ -556,7 +556,7 @@ function TarifsTab() {
                 <TableCell className="font-medium">{t.label}</TableCell>
                 <TableCell className="capitalize">{t.categorie}</TableCell>
                 <TableCell>{t.zone_transport ?? '—'}</TableCell>
-                <TableCell>{Number(t.montant).toLocaleString()} FCFA</TableCell>
+                <TableCell>{Number(t.montant).toLocaleString()} GNF</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(t)}><Pencil className="h-4 w-4" /></Button>
@@ -593,7 +593,7 @@ function TarifsTab() {
                 </Select>
               </div>
             )}
-            <div><Label>Montant (FCFA)</Label><Input type="number" value={montant} onChange={e => setMontant(Number(e.target.value))} min={0} /></div>
+            <div><Label>Montant (GNF)</Label><Input type="number" value={montant} onChange={e => setMontant(Number(e.target.value))} min={0} /></div>
           </div>
           <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
         </DialogContent>
@@ -780,7 +780,7 @@ function ZonesTransportTab() {
             ) : zones?.map((z: any) => (
               <TableRow key={z.id}>
                 <TableCell className="font-medium">{z.nom}</TableCell>
-                <TableCell>{Number(z.prix_mensuel).toLocaleString()} FCFA</TableCell>
+                <TableCell>{Number(z.prix_mensuel).toLocaleString()} GNF</TableCell>
                 <TableCell>{z.chauffeur_bus ?? '—'}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{(z.quartiers ?? []).join(', ') || '—'}</TableCell>
                 <TableCell>
@@ -800,7 +800,7 @@ function ZonesTransportTab() {
           <DialogHeader><DialogTitle>{editId ? 'Modifier' : 'Ajouter'} une zone de transport</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Nom de la zone</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Zone Nord" /></div>
-            <div><Label>Prix mensuel (FCFA)</Label><Input type="number" value={prixMensuel} onChange={e => setPrixMensuel(Number(e.target.value))} min={0} /></div>
+            <div><Label>Prix mensuel (GNF)</Label><Input type="number" value={prixMensuel} onChange={e => setPrixMensuel(Number(e.target.value))} min={0} /></div>
             <div><Label>Chauffeur / Bus</Label><Input value={chauffeurBus} onChange={e => setChauffeurBus(e.target.value)} placeholder="Ex: Bus A – M. Diallo" /></div>
             <div>
               <Label>Quartiers couverts (séparés par des virgules)</Label>

@@ -329,7 +329,7 @@ export default function Inscriptions() {
                         <SelectItem value="__none__">Pas de transport</SelectItem>
                         {zones?.map((z: any) => (
                           <SelectItem key={z.id} value={z.id}>
-                            {z.nom} — {Number(z.prix_mensuel).toLocaleString()} FCFA/mois
+                            {z.nom} — {Number(z.prix_mensuel).toLocaleString()} GNF/mois
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -353,15 +353,15 @@ export default function Inscriptions() {
               <Card className="border-primary/30 bg-primary/5">
                 <CardHeader className="pb-3"><CardTitle className="text-base">Résumé des frais</CardTitle></CardHeader>
                 <CardContent className="space-y-1 text-sm">
-                  <div className="flex justify-between"><span>Scolarité</span><span>{fraisScolarite.toLocaleString()} FCFA</span></div>
+                  <div className="flex justify-between"><span>Scolarité</span><span>{fraisScolarite.toLocaleString()} GNF</span></div>
                   {reduction > 0 && (
-                    <div className="flex justify-between text-success"><span>Réduction fratrie (-{reduction * 100}%)</span><span>-{(fraisScolarite * reduction).toLocaleString()} FCFA</span></div>
+                    <div className="flex justify-between text-success"><span>Réduction fratrie (-{reduction * 100}%)</span><span>-{(fraisScolarite * reduction).toLocaleString()} GNF</span></div>
                   )}
-                  {fraisTransport > 0 && <div className="flex justify-between"><span>Transport ({selectedZone?.nom})</span><span>{fraisTransport.toLocaleString()} FCFA/mois</span></div>}
-                  {fraisUniformes > 0 && <div className="flex justify-between"><span>Uniformes</span><span>{fraisUniformes.toLocaleString()} FCFA</span></div>}
-                  {fraisFournitures > 0 && <div className="flex justify-between"><span>Fournitures</span><span>{fraisFournitures.toLocaleString()} FCFA</span></div>}
+                  {fraisTransport > 0 && <div className="flex justify-between"><span>Transport ({selectedZone?.nom})</span><span>{fraisTransport.toLocaleString()} GNF/mois</span></div>}
+                  {fraisUniformes > 0 && <div className="flex justify-between"><span>Uniformes</span><span>{fraisUniformes.toLocaleString()} GNF</span></div>}
+                  {fraisFournitures > 0 && <div className="flex justify-between"><span>Fournitures</span><span>{fraisFournitures.toLocaleString()} GNF</span></div>}
                   <div className="flex justify-between font-bold text-base pt-2 border-t">
-                    <span>TOTAL</span><span>{totalFrais.toLocaleString()} FCFA</span>
+                    <span>TOTAL</span><span>{totalFrais.toLocaleString()} GNF</span>
                   </div>
                 </CardContent>
               </Card>
