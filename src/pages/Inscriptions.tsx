@@ -317,7 +317,15 @@ export default function Inscriptions() {
 
   // Uniform fees with individual prices (categories match DB constraint)
   const getUniformFee = (cat: string) => tarifs.find((t: any) => t.categorie === cat)?.montant || 0;
-  const prixTenueScolaire = getUniformFee('uniforme_scolaire');
+  // Tenue scolaire: pick by cycle (Primaire vs Collège/Lycée)
+  const selectedCycleNom = selectedClass?.niveaux?.cycles?.nom || '';
+  const isPrimaire = ['Crèche', 'Maternelle', 'Primaire'].includes(selectedCycleNom);
+  const tenueScolaireEntries = tarifs.filter((t: any) => t.categorie === 'uniforme_scolaire');
+  const prixTenueScolaire = tenueScolaireEntries.length > 1
+    ? (tenueScolaireEntries.find((t: any) =>
+        isPrimaire ? t.label.toLowerCase().includes('primaire') : (t.label.toLowerCase().includes('collège') || t.label.toLowerCase().includes('lycée'))
+      )?.montant || tenueScolaireEntries[0]?.montant || 0)
+    : (tenueScolaireEntries[0]?.montant || 0);
   const prixTenueSport = getUniformFee('uniforme_sport');
   const prixPoloLacoste = getUniformFee('uniforme_polo_lacoste');
   const prixKarate = getUniformFee('uniforme_karate');
@@ -509,7 +517,7 @@ export default function Inscriptions() {
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="flex items-center gap-2"><Checkbox checked={uniformeScolaire} onCheckedChange={(v) => setUniformeScolaire(!!v)} /><Label>Tenue scolaire {prixTenueScolaire > 0 && <span className="text-muted-foreground font-normal">— {prixTenueScolaire.toLocaleString()} GNF</span>}</Label></div>
+                    <div className="flex items-center gap-2"><Checkbox checked={uniformeScolaire} onCheckedChange={(v) => setUniformeScolaire(!!v)} /><Label>Tenue scolaire {selectedCycleNom ? `(${isPrimaire ? 'Primaire' : 'Collège/Lycée'})` : ''} {prixTenueScolaire > 0 && <span className="text-muted-foreground font-normal">— {prixTenueScolaire.toLocaleString()} GNF</span>}</Label></div>
                     <div className="flex items-center gap-2"><Checkbox checked={uniformeSport} onCheckedChange={(v) => setUniformeSport(!!v)} /><Label>Tenue sport {prixTenueSport > 0 && <span className="text-muted-foreground font-normal">— {prixTenueSport.toLocaleString()} GNF</span>}</Label></div>
                     <div className="flex items-center gap-2"><Checkbox checked={uniformePolo} onCheckedChange={(v) => setUniformePolo(!!v)} /><Label>Polo Lacoste {prixPoloLacoste > 0 && <span className="text-muted-foreground font-normal">— {prixPoloLacoste.toLocaleString()} GNF</span>}</Label></div>
                     <div className="flex items-center gap-2"><Checkbox checked={uniformeKarate} onCheckedChange={(v) => setUniformeKarate(!!v)} /><Label>Tenue de Karaté {prixKarate > 0 && <span className="text-muted-foreground font-normal">— {prixKarate.toLocaleString()} GNF</span>}</Label></div>
