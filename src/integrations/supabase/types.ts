@@ -248,6 +248,50 @@ export type Database = {
         }
         Relationships: []
       }
+      mandataires: {
+        Row: {
+          created_at: string
+          eleve_id: string
+          id: string
+          lien_parente: string
+          nom: string
+          ordre: number
+          photo_url: string | null
+          prenom: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          eleve_id: string
+          id?: string
+          lien_parente: string
+          nom: string
+          ordre?: number
+          photo_url?: string | null
+          prenom: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          eleve_id?: string
+          id?: string
+          lien_parente?: string
+          nom?: string
+          ordre?: number
+          photo_url?: string | null
+          prenom?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mandataires_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matieres: {
         Row: {
           coefficient: number

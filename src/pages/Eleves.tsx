@@ -8,12 +8,13 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download } from 'lucide-react';
+import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
 import { useToast } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/excelUtils';
+import { generateBadgeRetrait } from '@/lib/generateBadgeRetrait';
 
 export default function Eleves() {
   const [search, setSearch] = useState('');
@@ -51,6 +52,15 @@ export default function Eleves() {
     queryKey: ['classes-all'],
     queryFn: async () => {
       const { data, error } = await supabase.from('classes').select('*, niveaux:niveau_id(nom, cycle_id)').order('nom');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: mandatairesAll = [] } = useQuery({
+    queryKey: ['mandataires-all'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('mandataires').select('*').order('ordre');
       if (error) throw error;
       return data;
     },
@@ -375,21 +385,71 @@ export default function Eleves() {
       <Dialog open={!!badgeEleve} onOpenChange={() => setBadgeEleve(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><QrCode className="h-5 w-5" /> Badge QR</DialogTitle></DialogHeader>
-          {badgeEleve && (
-            <div className="text-center space-y-4">
-              <div className="border rounded-xl p-6 space-y-3">
-                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Carte Scolaire</p>
-                <p className="text-xs text-muted-foreground">{badgeEleve.classes?.niveaux?.cycles?.nom} — {badgeEleve.classes?.nom}</p>
-                <div className="flex justify-center">
-                  <QRCodeSVG value={buildQrData(badgeEleve)} size={150} />
+          {badgeEleve && (() => {
+            const cycleName = badgeEleve.classes?.niveaux?.cycles?.nom?.toLowerCase() || '';
+            const isCrecheMaternelle = cycleName.includes('crèche') || cycleName.includes('creche') || cycleName.includes('maternelle');
+            const eleveMandataires = (mandatairesAll as any[]).filter((m: any) => m.eleve_id === badgeEleve.id);
+
+            return (
+              <div className="text-center space-y-4">
+                <div className="border rounded-xl p-6 space-y-3">
+                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Carte Scolaire</p>
+                  <p className="text-xs text-muted-foreground">{badgeEleve.classes?.niveaux?.cycles?.nom} — {badgeEleve.classes?.nom}</p>
+                  {badgeEleve.photo_url && (
+                    <img src={badgeEleve.photo_url} alt={badgeEleve.prenom} className="w-20 h-20 rounded-full object-cover border-2 border-primary mx-auto" />
+                  )}
+                  <div className="flex justify-center">
+                    <QRCodeSVG value={buildQrData(badgeEleve)} size={150} />
+                  </div>
+                  <p className="text-lg font-bold">{badgeEleve.prenom} {badgeEleve.nom}</p>
+                  <p className="text-sm text-muted-foreground">{badgeEleve.sexe} • {badgeEleve.date_naissance || ''}</p>
+                  <p className="font-mono text-sm">{badgeEleve.matricule || '—'}</p>
                 </div>
-                <p className="text-lg font-bold">{badgeEleve.prenom} {badgeEleve.nom}</p>
-                <p className="text-sm text-muted-foreground">{badgeEleve.sexe} • {badgeEleve.date_naissance || ''}</p>
-                <p className="font-mono text-sm">{badgeEleve.matricule || '—'}</p>
+
+                {/* Mandataires preview for Crèche/Maternelle */}
+                {isCrecheMaternelle && eleveMandataires.length > 0 && (
+                  <div className="border rounded-lg p-3 text-left space-y-2">
+                    <p className="text-xs font-semibold flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5 text-orange-600" /> Personnes autorisées</p>
+                    {eleveMandataires.map((m: any) => (
+                      <div key={m.id} className="flex items-center gap-2 text-sm">
+                        {m.photo_url ? (
+                          <img src={m.photo_url} className="w-8 h-8 rounded-full object-cover border" alt={m.prenom} />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs">👤</div>
+                        )}
+                        <span className="font-medium">{m.prenom} {m.nom}</span>
+                        <span className="text-muted-foreground text-xs">({m.lien_parente})</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2 justify-center flex-wrap">
+                  <Button onClick={printBadge} className="gap-2"><Printer className="h-4 w-4" /> Badge standard</Button>
+                  {isCrecheMaternelle && eleveMandataires.length > 0 && (
+                    <Button
+                      variant="outline"
+                      className="gap-2 border-orange-300 text-orange-700 hover:bg-orange-50"
+                      onClick={() => generateBadgeRetrait({
+                        eleve: {
+                          nom: badgeEleve.nom,
+                          prenom: badgeEleve.prenom,
+                          matricule: badgeEleve.matricule || '',
+                          classe: badgeEleve.classes?.nom || '',
+                          cycle: badgeEleve.classes?.niveaux?.cycles?.nom || '',
+                          photo_url: badgeEleve.photo_url,
+                        },
+                        mandataires: eleveMandataires,
+                        qrValue: buildQrData(badgeEleve),
+                      })}
+                    >
+                      <ShieldCheck className="h-4 w-4" /> Badge de retrait
+                    </Button>
+                  )}
+                </div>
               </div>
-              <Button onClick={printBadge} className="gap-2"><Printer className="h-4 w-4" /> Imprimer le badge</Button>
-            </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>

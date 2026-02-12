@@ -8,11 +8,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell } from 'lucide-react';
+import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { useZonesTransport } from './Configuration';
+import MandatairesForm, { Mandataire, createEmptyMandataires, uploadMandatairePhotos } from '@/components/MandatairesForm';
 
 export default function Inscriptions() {
   const [open, setOpen] = useState(false);
@@ -40,6 +41,9 @@ export default function Inscriptions() {
   const [checkPhoto, setCheckPhoto] = useState(false);
   const [nomPrenomPere, setNomPrenomPere] = useState('');
   const [nomPrenomMere, setNomPrenomMere] = useState('');
+  const [mandataires, setMandataires] = useState<Mandataire[]>(createEmptyMandataires());
+  const [photoEleve, setPhotoEleve] = useState<File | null>(null);
+  const [photoElevePreview, setPhotoElevePreview] = useState<string | null>(null);
 
   const { data: eleves = [], isLoading } = useQuery({
     queryKey: ['eleves'],
@@ -99,6 +103,13 @@ export default function Inscriptions() {
 
   const selectedZone = zones?.find((z: any) => z.id === zoneTransportId);
 
+  // Detect if selected class is Crèche or Maternelle
+  const isCrecheMaternelle = useMemo(() => {
+    if (!classeId || !classes.length) return false;
+    const cl = classes.find((c: any) => c.id === classeId);
+    const cycleName = cl?.niveaux?.cycles?.nom?.toLowerCase() || '';
+    return cycleName.includes('crèche') || cycleName.includes('creche') || cycleName.includes('maternelle');
+  }, [classeId, classes]);
   const generateMatricule = async () => {
     const now = new Date();
     const prefix = `EDU-${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -117,7 +128,20 @@ export default function Inscriptions() {
       }
       const matricule = await generateMatricule();
       const qrCode = matricule;
-      const { error } = await supabase.from('eleves').insert({
+
+      // Upload child photo if provided
+      let photoUrl: string | null = null;
+      if (photoEleve) {
+        const ext = photoEleve.name.split('.').pop() || 'jpg';
+        const path = `eleves/${matricule}.${ext}`;
+        const { error: uploadErr } = await supabase.storage.from('photos').upload(path, photoEleve, { upsert: true });
+        if (!uploadErr) {
+          const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
+          photoUrl = urlData.publicUrl;
+        }
+      }
+
+      const { data: insertedEleve, error } = await supabase.from('eleves').insert({
         nom: nom.trim(), prenom: prenom.trim(), sexe: sexe || null, date_naissance: dateNaissance || null,
         classe_id: classeId, famille_id: familleId || null,
         matricule, qr_code: qrCode,
@@ -131,8 +155,27 @@ export default function Inscriptions() {
         nom_prenom_pere: nomPrenomPere || null,
         nom_prenom_mere: nomPrenomMere || null,
         statut: 'inscrit',
-      } as any);
+        photo_url: photoUrl,
+      } as any).select('id').single();
       if (error) throw error;
+
+      // Save mandataires for Crèche/Maternelle
+      if (isCrecheMaternelle && insertedEleve) {
+        const uploaded = await uploadMandatairePhotos(mandataires, insertedEleve.id);
+        const mandatairesData = uploaded.map((m, i) => ({
+          eleve_id: insertedEleve.id,
+          nom: m.nom.trim(),
+          prenom: m.prenom.trim(),
+          lien_parente: m.lien_parente,
+          photo_url: m.photo_url,
+          ordre: i + 1,
+        }));
+        const validMandataires = mandatairesData.filter(m => m.nom && m.prenom);
+        if (validMandataires.length > 0) {
+          const { error: mErr } = await supabase.from('mandataires').insert(validMandataires as any);
+          if (mErr) console.error('Mandataires error:', mErr);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['eleves'] });
@@ -179,6 +222,8 @@ export default function Inscriptions() {
     setUniformeScolaire(false); setUniformeSport(false); setUniformePolo(false); setUniformeKarate(false);
     setOptionCantine(false); setOptionFournitures(false);
     setNomPrenomPere(''); setNomPrenomMere('');
+    setMandataires(createEmptyMandataires());
+    setPhotoEleve(null); setPhotoElevePreview(null);
   };
 
   // Calculate fees for selected class
@@ -243,6 +288,24 @@ export default function Inscriptions() {
                     </Select>
                   </div>
                   <div><Label>Date de naissance</Label><Input type="date" value={dateNaissance} onChange={e => setDateNaissance(e.target.value)} /></div>
+                  {/* Photo de l'élève */}
+                  <div className="col-span-2">
+                    <Label>Photo de l'élève</Label>
+                    <div className="flex items-center gap-3 mt-1">
+                      {photoElevePreview ? (
+                        <img src={photoElevePreview} alt="Photo élève" className="w-16 h-16 rounded-lg object-cover border" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground/40 text-2xl">👤</div>
+                      )}
+                      <label className="cursor-pointer">
+                        <input type="file" accept="image/*" className="hidden" onChange={e => {
+                          const f = e.target.files?.[0];
+                          if (f) { setPhotoEleve(f); setPhotoElevePreview(URL.createObjectURL(f)); }
+                        }} />
+                        <span className="text-xs text-primary hover:underline">{photoElevePreview ? 'Changer' : 'Télécharger'}</span>
+                      </label>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -348,6 +411,11 @@ export default function Inscriptions() {
                   <div className="flex items-center gap-2"><Checkbox checked={optionFournitures} onCheckedChange={(v) => setOptionFournitures(!!v)} /><Label>Fournitures scolaires</Label></div>
                 </CardContent>
               </Card>
+
+              {/* Mandataires Crèche/Maternelle */}
+              {isCrecheMaternelle && (
+                <MandatairesForm mandataires={mandataires} onChange={setMandataires} />
+              )}
 
               {/* Résumé frais */}
               <Card className="border-primary/30 bg-primary/5">
