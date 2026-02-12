@@ -178,6 +178,72 @@ export default function Inscriptions() {
           if (mErr) console.error('Mandataires error:', mErr);
         }
       }
+
+      // Auto-create payments
+      if (insertedEleve) {
+        const paiements: any[] = [];
+        const moisLabels = ['Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
+
+        // Frais d'inscription/réinscription
+        paiements.push({
+          eleve_id: insertedEleve.id,
+          montant: typeInscription === 'inscription' ? 100000 : 150000,
+          type_paiement: typeInscription,
+          canal: 'especes',
+          mois_concerne: null,
+        });
+
+        // Scolarité par mois
+        for (let i = 0; i < moisAPayer; i++) {
+          paiements.push({
+            eleve_id: insertedEleve.id,
+            montant: fraisApresReduction,
+            type_paiement: 'scolarite',
+            canal: 'especes',
+            mois_concerne: moisLabels[i] || `Mois ${i + 1}`,
+          });
+        }
+
+        // Transport par mois
+        if (fraisTransport > 0) {
+          for (let i = 0; i < moisAPayer; i++) {
+            paiements.push({
+              eleve_id: insertedEleve.id,
+              montant: fraisTransport,
+              type_paiement: 'transport',
+              canal: 'especes',
+              mois_concerne: moisLabels[i] || `Mois ${i + 1}`,
+            });
+          }
+        }
+
+        // Uniformes (one-time)
+        if (fraisUniformes > 0) {
+          paiements.push({
+            eleve_id: insertedEleve.id,
+            montant: fraisUniformes,
+            type_paiement: 'boutique',
+            canal: 'especes',
+            mois_concerne: null,
+          });
+        }
+
+        // Fournitures (one-time)
+        if (fraisFournitures > 0) {
+          paiements.push({
+            eleve_id: insertedEleve.id,
+            montant: fraisFournitures,
+            type_paiement: 'boutique',
+            canal: 'especes',
+            mois_concerne: null,
+          });
+        }
+
+        if (paiements.length > 0) {
+          const { error: pErr } = await supabase.from('paiements').insert(paiements as any);
+          if (pErr) console.error('Paiements error:', pErr);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['eleves'] });
@@ -249,12 +315,12 @@ export default function Inscriptions() {
   // Transport fee from zone
   const fraisTransport = selectedZone ? Number(selectedZone.prix_mensuel) : 0;
 
-  // Uniform fees with individual prices
-  const getUniformFee = (label: string) => tarifs.find((t: any) => t.categorie === 'uniforme' && t.label === label)?.montant || 0;
-  const prixTenueScolaire = getUniformFee('Tenue scolaire');
-  const prixTenueSport = getUniformFee('Sport');
-  const prixPoloLacoste = getUniformFee('Polo Lacoste');
-  const prixKarate = getUniformFee('Karaté');
+  // Uniform fees with individual prices (categories match DB constraint)
+  const getUniformFee = (cat: string) => tarifs.find((t: any) => t.categorie === cat)?.montant || 0;
+  const prixTenueScolaire = getUniformFee('uniforme_scolaire');
+  const prixTenueSport = getUniformFee('uniforme_sport');
+  const prixPoloLacoste = getUniformFee('uniforme_polo_lacoste');
+  const prixKarate = getUniformFee('uniforme_karate');
   const fraisUniformes =
     (uniformeScolaire ? prixTenueScolaire : 0) +
     (uniformeSport ? prixTenueSport : 0) +
