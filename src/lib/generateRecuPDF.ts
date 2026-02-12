@@ -71,7 +71,7 @@ export function generateRecuPDF(paiement: {
       <p>${paiement.date}</p>
     </div>
     <div class="info-item">
-      <label>Mois concerné</label>
+      <label>Mois concerné(s)</label>
       <p>${paiement.mois}</p>
     </div>
     <div class="info-item">
