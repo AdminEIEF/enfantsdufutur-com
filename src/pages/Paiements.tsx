@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Circle, Printer } from 'lucide-react';
+import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Circle, Printer, Download, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -16,6 +16,7 @@ import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { generateRecuPDF } from '@/lib/generateRecuPDF';
+import { exportToExcel, readExcelFile } from '@/lib/excelUtils';
 
 const CANAUX = [
   { value: 'especes', label: 'Espèces', icon: Wallet },
@@ -339,6 +340,65 @@ export default function Paiements() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Total:</span>
               <span className="font-bold">{totalRecettes.toLocaleString()} GNF</span>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => {
+              const rows = filtered.map((p: any) => ({
+                Date: format(new Date(p.date_paiement), 'dd/MM/yyyy', { locale: fr }),
+                Élève: `${p.eleves?.prenom} ${p.eleves?.nom}`,
+                Matricule: p.eleves?.matricule || '',
+                Type: TYPES.find(t => t.value === p.type_paiement)?.label || p.type_paiement,
+                Mois: (p as any).mois_concerne || '',
+                'Montant (GNF)': Number(p.montant),
+                Canal: CANAUX.find(c => c.value === p.canal)?.label || p.canal,
+                Référence: p.reference || '',
+              }));
+              exportToExcel(rows, `paiements_${format(new Date(), 'yyyy-MM-dd')}`);
+              toast({ title: 'Export réussi', description: `${rows.length} paiement(s) exporté(s)` });
+            }}>
+              <Download className="h-4 w-4 mr-1" /> Exporter
+            </Button>
+            <div className="relative">
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    const rows = await readExcelFile(file);
+                    let imported = 0;
+                    for (const row of rows) {
+                      const eleve = eleves.find((el: any) =>
+                        el.matricule === String(row['Matricule'] || '') ||
+                        `${el.prenom} ${el.nom}` === String(row['Élève'] || '')
+                      );
+                      if (!eleve) continue;
+                      const montantVal = Number(row['Montant (GNF)'] || row['Montant'] || 0);
+                      if (montantVal <= 0) continue;
+                      const typeVal = TYPES.find(t => t.label === String(row['Type'] || ''))?.value || 'autre';
+                      const canalVal = CANAUX.find(c => c.label === String(row['Canal'] || ''))?.value || 'especes';
+                      const { error } = await supabase.from('paiements').insert({
+                        eleve_id: eleve.id,
+                        montant: montantVal,
+                        type_paiement: typeVal,
+                        canal: canalVal,
+                        reference: String(row['Référence'] || '') || null,
+                        mois_concerne: typeVal === 'scolarite' ? String(row['Mois'] || '') || null : null,
+                      } as any);
+                      if (!error) imported++;
+                    }
+                    queryClient.invalidateQueries({ queryKey: ['paiements'] });
+                    toast({ title: 'Import terminé', description: `${imported} paiement(s) importé(s) sur ${rows.length} ligne(s)` });
+                  } catch (err: any) {
+                    toast({ title: 'Erreur d\'import', description: err.message, variant: 'destructive' });
+                  }
+                  e.target.value = '';
+                }}
+              />
+              <Button variant="outline" size="sm">
+                <Upload className="h-4 w-4 mr-1" /> Importer
+              </Button>
             </div>
           </div>
 
