@@ -8,11 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer } from 'lucide-react';
+import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
 import { useToast } from '@/hooks/use-toast';
+import { exportToExcel } from '@/lib/excelUtils';
 
 export default function Eleves() {
   const [search, setSearch] = useState('');
@@ -182,6 +183,37 @@ export default function Eleves() {
             <SelectItem value="individuel">Individuel</SelectItem>
           </SelectContent>
         </Select>
+        <Button variant="outline" size="sm" className="ml-auto" onClick={() => {
+          const rows = filtered.map((e: any) => ({
+            Matricule: e.matricule || '',
+            Nom: e.nom,
+            Prénom: e.prenom,
+            Sexe: e.sexe || '',
+            'Date de naissance': e.date_naissance || '',
+            Cycle: e.classes?.niveaux?.cycles?.nom || '',
+            Classe: e.classes?.nom || '',
+            Statut: e.statut,
+            'Nom du père': e.nom_prenom_pere || '',
+            'Nom de la mère': e.nom_prenom_mere || '',
+            Famille: e.familles?.nom_famille || '',
+            'Tél. père': e.familles?.telephone_pere || '',
+            'Tél. mère': e.familles?.telephone_mere || '',
+            Email: e.familles?.email_parent || '',
+            Cantine: e.option_cantine ? 'Oui' : 'Non',
+            'Solde cantine': Number(e.solde_cantine || 0),
+            Transport: e.transport_zone || '',
+            'Uniforme scolaire': e.uniforme_scolaire ? 'Oui' : 'Non',
+            'Uniforme sport': e.uniforme_sport ? 'Oui' : 'Non',
+            'Livret': e.checklist_livret ? 'Oui' : 'Non',
+            'Rames': e.checklist_rames ? 'Oui' : 'Non',
+            'Marqueurs': e.checklist_marqueurs ? 'Oui' : 'Non',
+            'Photo': e.checklist_photo ? 'Oui' : 'Non',
+          }));
+          exportToExcel(rows, `eleves_${new Date().toISOString().slice(0, 10)}`, 'Élèves');
+          toast({ title: 'Export réussi', description: `${rows.length} élève(s) exporté(s)` });
+        }}>
+          <Download className="h-4 w-4 mr-1" /> Exporter Excel
+        </Button>
       </div>
 
       {/* Table */}
