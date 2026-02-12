@@ -1,25 +1,36 @@
 import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ClipboardList, Search, User } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { QRCodeSVG } from 'qrcode.react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Eleves() {
   const [search, setSearch] = useState('');
   const [filterCycle, setFilterCycle] = useState('all');
+  const [filterClasse, setFilterClasse] = useState('all');
+  const [filterType, setFilterType] = useState<'all' | 'famille' | 'individuel'>('all');
   const [selected, setSelected] = useState<any>(null);
+  const [editing, setEditing] = useState<any>(null);
+  const [badgeEleve, setBadgeEleve] = useState<any>(null);
+  const { toast } = useToast();
+  const qc = useQueryClient();
 
   const { data: eleves = [], isLoading } = useQuery({
     queryKey: ['eleves-full'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('*, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycle_id, cycles:cycle_id(nom, id))), familles(nom_famille, telephone_pere, telephone_mere, email_parent)')
+        .select('*, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycle_id, cycles:cycle_id(nom, id))), familles(id, nom_famille, telephone_pere, telephone_mere, email_parent)')
         .order('nom');
       if (error) throw error;
       return data;
@@ -35,11 +46,91 @@ export default function Eleves() {
     },
   });
 
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes-all'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('classes').select('*, niveaux:niveau_id(nom, cycle_id)').order('nom');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (updates: any) => {
+      const { id, ...rest } = updates;
+      const { error } = await supabase.from('eleves').update(rest).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['eleves-full'] });
+      setEditing(null);
+      toast({ title: 'Élève mis à jour' });
+    },
+  });
+
+  const filteredClasses = filterCycle === 'all'
+    ? classes
+    : classes.filter((c: any) => c.niveaux?.cycle_id === filterCycle);
+
   const filtered = eleves.filter((e: any) => {
     const matchSearch = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase());
     const matchCycle = filterCycle === 'all' || e.classes?.niveaux?.cycles?.id === filterCycle;
-    return matchSearch && matchCycle;
+    const matchClasse = filterClasse === 'all' || e.classe_id === filterClasse;
+    const isFamille = !!e.famille_id;
+    const matchType = filterType === 'all' || (filterType === 'famille' ? isFamille : !isFamille);
+    return matchSearch && matchCycle && matchClasse && matchType;
   });
+
+  const totalFamille = eleves.filter((e: any) => !!e.famille_id).length;
+  const totalIndividuel = eleves.filter((e: any) => !e.famille_id).length;
+
+  const handleSaveEdit = () => {
+    if (!editing) return;
+    updateMutation.mutate({
+      id: editing.id,
+      nom: editing.nom,
+      prenom: editing.prenom,
+      sexe: editing.sexe,
+      date_naissance: editing.date_naissance,
+      classe_id: editing.classe_id,
+      transport_zone: editing.transport_zone,
+      option_cantine: editing.option_cantine,
+    });
+  };
+
+  const printBadge = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow || !badgeEleve) return;
+    const qrValue = badgeEleve.qr_code || badgeEleve.matricule || badgeEleve.id;
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Badge ${badgeEleve.prenom} ${badgeEleve.nom}</title>
+      <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .badge { border: 2px solid #333; border-radius: 12px; padding: 24px; width: 320px; text-align: center; }
+        .badge h2 { margin: 0 0 4px; font-size: 18px; }
+        .badge .school { color: #666; font-size: 12px; margin-bottom: 16px; }
+        .badge .name { font-size: 22px; font-weight: bold; margin: 12px 0 4px; }
+        .badge .info { color: #555; font-size: 13px; }
+        .badge .matricule { font-family: monospace; font-size: 14px; margin-top: 8px; color: #333; }
+        .qr { margin: 16px auto; }
+      </style></head><body>
+      <div class="badge">
+        <h2>Carte Scolaire</h2>
+        <p class="school">${badgeEleve.classes?.niveaux?.cycles?.nom || ''} — ${badgeEleve.classes?.nom || ''}</p>
+        <div class="qr"><svg id="qr"></svg></div>
+        <p class="name">${badgeEleve.prenom} ${badgeEleve.nom}</p>
+        <p class="info">${badgeEleve.sexe || ''} • ${badgeEleve.date_naissance || ''}</p>
+        <p class="matricule">${badgeEleve.matricule || '—'}</p>
+      </div>
+      <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
+      <script>
+        QRCode.toCanvas(document.createElement('canvas'), '${qrValue}', { width: 150 }, function(err, canvas) {
+          document.querySelector('.qr').appendChild(canvas);
+          setTimeout(() => window.print(), 300);
+        });
+      <\/script>
+      </body></html>`);
+    printWindow.document.close();
+  };
 
   return (
     <div className="space-y-6">
@@ -47,37 +138,78 @@ export default function Eleves() {
         <ClipboardList className="h-7 w-7 text-primary" /> Élèves
       </h1>
 
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card><CardContent className="pt-4 flex items-center gap-3">
+          <Users className="h-8 w-8 text-primary" />
+          <div><p className="text-2xl font-bold">{eleves.length}</p><p className="text-xs text-muted-foreground">Total élèves</p></div>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4 flex items-center gap-3">
+          <Users className="h-8 w-8 text-blue-500" />
+          <div><p className="text-2xl font-bold">{totalFamille}</p><p className="text-xs text-muted-foreground">En famille</p></div>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4 flex items-center gap-3">
+          <UserCheck className="h-8 w-8 text-orange-500" />
+          <div><p className="text-2xl font-bold">{totalIndividuel}</p><p className="text-xs text-muted-foreground">Individuels</p></div>
+        </CardContent></Card>
+      </div>
+
+      {/* Filters */}
       <div className="flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Rechercher nom, prénom, matricule..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <Select value={filterCycle} onValueChange={setFilterCycle}>
-          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+        <Select value={filterCycle} onValueChange={v => { setFilterCycle(v); setFilterClasse('all'); }}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Cycle" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les cycles</SelectItem>
             {cycles.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={filterClasse} onValueChange={setFilterClasse}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Classe" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes les classes</SelectItem>
+            {filteredClasses.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterType} onValueChange={v => setFilterType(v as any)}>
+          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les types</SelectItem>
+            <SelectItem value="famille">En famille</SelectItem>
+            <SelectItem value="individuel">Individuel</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
+      {/* Table */}
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Type</TableHead>
                 <TableHead>Matricule</TableHead><TableHead>Nom</TableHead><TableHead>Prénom</TableHead>
                 <TableHead>Sexe</TableHead><TableHead>Cycle</TableHead><TableHead>Classe</TableHead>
-                <TableHead>Statut</TableHead>
+                <TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
               ) : filtered.map((e: any) => (
                 <TableRow key={e.id} className="cursor-pointer" onClick={() => setSelected(e)}>
+                  <TableCell>
+                    {e.famille_id ? (
+                      <Badge variant="default" className="gap-1 text-xs"><Users className="h-3 w-3" />Famille</Badge>
+                    ) : (
+                      <Badge variant="outline" className="gap-1 text-xs"><UserCheck className="h-3 w-3" />Individuel</Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
                   <TableCell className="font-medium">{e.nom}</TableCell>
                   <TableCell>{e.prenom}</TableCell>
@@ -85,6 +217,12 @@ export default function Eleves() {
                   <TableCell><Badge variant="outline">{e.classes?.niveaux?.cycles?.nom || '—'}</Badge></TableCell>
                   <TableCell>{e.classes?.nom || '—'}</TableCell>
                   <TableCell><Badge variant={e.statut === 'inscrit' ? 'default' : 'secondary'}>{e.statut}</Badge></TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex gap-1 justify-end" onClick={ev => ev.stopPropagation()}>
+                      <Button size="icon" variant="ghost" onClick={() => setEditing({ ...e })}><Edit className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => setBadgeEleve(e)}><QrCode className="h-4 w-4" /></Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -92,55 +230,124 @@ export default function Eleves() {
         </CardContent>
       </Card>
 
+      <div className="text-sm text-muted-foreground">{filtered.length} élève(s) trouvé(s)</div>
+
       {/* Detail dialog */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><User className="h-5 w-5" /> {selected?.prenom} {selected?.nom}</DialogTitle></DialogHeader>
           {selected && (
-            <div className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-2">
-                <div><strong>Matricule:</strong> {selected.matricule || '—'}</div>
-                <div><strong>Sexe:</strong> {selected.sexe || '—'}</div>
-                <div><strong>Date de naissance:</strong> {selected.date_naissance || '—'}</div>
-                <div><strong>Statut:</strong> <Badge>{selected.statut}</Badge></div>
-                <div><strong>Cycle:</strong> {selected.classes?.niveaux?.cycles?.nom || '—'}</div>
-                <div><strong>Classe:</strong> {selected.classes?.nom || '—'}</div>
-              </div>
-              {selected.familles && (
+            <Tabs defaultValue="info" className="mt-2">
+              <TabsList className="grid w-full grid-cols-3"><TabsTrigger value="info">Informations</TabsTrigger><TabsTrigger value="options">Options</TabsTrigger><TabsTrigger value="famille">Famille</TabsTrigger></TabsList>
+              <TabsContent value="info" className="space-y-3 text-sm mt-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div><strong>Matricule:</strong> {selected.matricule || '—'}</div>
+                  <div><strong>Sexe:</strong> {selected.sexe || '—'}</div>
+                  <div><strong>Date de naissance:</strong> {selected.date_naissance || '—'}</div>
+                  <div><strong>Statut:</strong> <Badge>{selected.statut}</Badge></div>
+                  <div><strong>Cycle:</strong> {selected.classes?.niveaux?.cycles?.nom || '—'}</div>
+                  <div><strong>Classe:</strong> {selected.classes?.nom || '—'}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <strong>Type:</strong>
+                  {selected.famille_id ? <Badge className="gap-1"><Users className="h-3 w-3" />En famille — {selected.familles?.nom_famille}</Badge> : <Badge variant="outline" className="gap-1"><UserCheck className="h-3 w-3" />Individuel</Badge>}
+                </div>
+              </TabsContent>
+              <TabsContent value="options" className="space-y-3 text-sm mt-3">
                 <div>
-                  <h4 className="font-semibold mb-1">Famille: {selected.familles.nom_famille}</h4>
-                  <div className="text-muted-foreground space-y-1">
-                    {selected.familles.telephone_pere && <p>Tél. père: {selected.familles.telephone_pere}</p>}
-                    {selected.familles.telephone_mere && <p>Tél. mère: {selected.familles.telephone_mere}</p>}
-                    {selected.familles.email_parent && <p>Email: {selected.familles.email_parent}</p>}
+                  <h4 className="font-semibold mb-1">Check-list</h4>
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge variant={selected.checklist_livret ? 'default' : 'outline'}>Livret {selected.checklist_livret ? '✓' : '✗'}</Badge>
+                    <Badge variant={selected.checklist_rames ? 'default' : 'outline'}>Rames {selected.checklist_rames ? '✓' : '✗'}</Badge>
+                    <Badge variant={selected.checklist_marqueurs ? 'default' : 'outline'}>Marqueurs {selected.checklist_marqueurs ? '✓' : '✗'}</Badge>
                   </div>
                 </div>
-              )}
-              <div>
-                <h4 className="font-semibold mb-1">Check-list</h4>
-                <div className="flex gap-2 flex-wrap">
-                  <Badge variant={selected.checklist_livret ? 'default' : 'outline'}>Livret {selected.checklist_livret ? '✓' : '✗'}</Badge>
-                  <Badge variant={selected.checklist_rames ? 'default' : 'outline'}>Rames {selected.checklist_rames ? '✓' : '✗'}</Badge>
-                  <Badge variant={selected.checklist_marqueurs ? 'default' : 'outline'}>Marqueurs {selected.checklist_marqueurs ? '✓' : '✗'}</Badge>
+                <div>
+                  <h4 className="font-semibold mb-1">Options</h4>
+                  <div className="flex gap-2 flex-wrap">
+                    {selected.transport_zone && <Badge variant="outline">Transport: {selected.transport_zone}</Badge>}
+                    {selected.option_cantine && <Badge variant="outline">Cantine</Badge>}
+                    {selected.uniforme_scolaire && <Badge variant="outline">Uniforme scolaire</Badge>}
+                    {selected.uniforme_sport && <Badge variant="outline">Uniforme sport</Badge>}
+                    {selected.uniforme_polo_lacoste && <Badge variant="outline">Polo Lacoste</Badge>}
+                    {selected.uniforme_karate && <Badge variant="outline">Karaté</Badge>}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-1">Options</h4>
-                <div className="flex gap-2 flex-wrap">
-                  {selected.transport_zone && <Badge variant="outline">Transport: {selected.transport_zone}</Badge>}
-                  {selected.option_cantine && <Badge variant="outline">Cantine</Badge>}
-                  {selected.uniforme_scolaire && <Badge variant="outline">Uniforme scolaire</Badge>}
-                  {selected.uniforme_sport && <Badge variant="outline">Uniforme sport</Badge>}
-                  {selected.uniforme_polo_lacoste && <Badge variant="outline">Polo Lacoste</Badge>}
-                  {selected.uniforme_karate && <Badge variant="outline">Karaté</Badge>}
-                </div>
-              </div>
-            </div>
+              </TabsContent>
+              <TabsContent value="famille" className="space-y-3 text-sm mt-3">
+                {selected.familles ? (
+                  <div>
+                    <h4 className="font-semibold mb-1">Famille: {selected.familles.nom_famille}</h4>
+                    <div className="text-muted-foreground space-y-1">
+                      {selected.familles.telephone_pere && <p>Tél. père: {selected.familles.telephone_pere}</p>}
+                      {selected.familles.telephone_mere && <p>Tél. mère: {selected.familles.telephone_mere}</p>}
+                      {selected.familles.email_parent && <p>Email: {selected.familles.email_parent}</p>}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">Élève inscrit individuellement, non rattaché à une famille.</p>
+                )}
+              </TabsContent>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>
 
-      <div className="text-sm text-muted-foreground">{filtered.length} élève(s) trouvé(s)</div>
+      {/* Edit dialog */}
+      <Dialog open={!!editing} onOpenChange={() => setEditing(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Modifier l'élève</DialogTitle></DialogHeader>
+          {editing && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Nom</Label><Input value={editing.nom} onChange={e => setEditing({ ...editing, nom: e.target.value })} /></div>
+                <div><Label>Prénom</Label><Input value={editing.prenom} onChange={e => setEditing({ ...editing, prenom: e.target.value })} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Sexe</Label>
+                  <Select value={editing.sexe || ''} onValueChange={v => setEditing({ ...editing, sexe: v })}>
+                    <SelectTrigger><SelectValue placeholder="Sexe" /></SelectTrigger>
+                    <SelectContent><SelectItem value="M">M</SelectItem><SelectItem value="F">F</SelectItem></SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Date de naissance</Label><Input type="date" value={editing.date_naissance || ''} onChange={e => setEditing({ ...editing, date_naissance: e.target.value })} /></div>
+              </div>
+              <div><Label>Classe</Label>
+                <Select value={editing.classe_id || ''} onValueChange={v => setEditing({ ...editing, classe_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
+                  <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Annuler</Button>
+            <Button onClick={handleSaveEdit} disabled={updateMutation.isPending}>{updateMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Badge QR dialog */}
+      <Dialog open={!!badgeEleve} onOpenChange={() => setBadgeEleve(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><QrCode className="h-5 w-5" /> Badge QR</DialogTitle></DialogHeader>
+          {badgeEleve && (
+            <div className="text-center space-y-4">
+              <div className="border rounded-xl p-6 space-y-3">
+                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Carte Scolaire</p>
+                <p className="text-xs text-muted-foreground">{badgeEleve.classes?.niveaux?.cycles?.nom} — {badgeEleve.classes?.nom}</p>
+                <div className="flex justify-center">
+                  <QRCodeSVG value={badgeEleve.qr_code || badgeEleve.matricule || badgeEleve.id} size={150} />
+                </div>
+                <p className="text-lg font-bold">{badgeEleve.prenom} {badgeEleve.nom}</p>
+                <p className="text-sm text-muted-foreground">{badgeEleve.sexe} • {badgeEleve.date_naissance || ''}</p>
+                <p className="font-mono text-sm">{badgeEleve.matricule || '—'}</p>
+              </div>
+              <Button onClick={printBadge} className="gap-2"><Printer className="h-4 w-4" /> Imprimer le badge</Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
