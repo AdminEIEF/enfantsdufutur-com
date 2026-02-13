@@ -301,6 +301,7 @@ export type Database = {
           created_at: string
           cycle_id: string | null
           id: string
+          niveau_id: string | null
           nom: string
           pole: string | null
         }
@@ -309,6 +310,7 @@ export type Database = {
           created_at?: string
           cycle_id?: string | null
           id?: string
+          niveau_id?: string | null
           nom: string
           pole?: string | null
         }
@@ -317,6 +319,7 @@ export type Database = {
           created_at?: string
           cycle_id?: string | null
           id?: string
+          niveau_id?: string | null
           nom?: string
           pole?: string | null
         }
@@ -326,6 +329,13 @@ export type Database = {
             columns: ["cycle_id"]
             isOneToOne: false
             referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matieres_niveau_id_fkey"
+            columns: ["niveau_id"]
+            isOneToOne: false
+            referencedRelation: "niveaux"
             referencedColumns: ["id"]
           },
         ]
