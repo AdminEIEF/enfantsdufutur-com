@@ -8,7 +8,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, ShieldCheck, Users, Download, Trash2 } from 'lucide-react';
+import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, ShieldCheck, Users, Download, Trash2, Pencil } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { exportToExcel } from '@/lib/excelUtils';
@@ -21,6 +22,16 @@ import MandatairesForm, { Mandataire, createEmptyMandataires, uploadMandatairePh
 export default function Inscriptions() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [editOpen, setEditOpen] = useState(false);
+  const [editEleve, setEditEleve] = useState<any>(null);
+  const [editNom, setEditNom] = useState('');
+  const [editPrenom, setEditPrenom] = useState('');
+  const [editSexe, setEditSexe] = useState('');
+  const [editDateNaissance, setEditDateNaissance] = useState('');
+  const [editClasseId, setEditClasseId] = useState('');
+  const [editFamilleId, setEditFamilleId] = useState('');
+  const [editZoneTransportId, setEditZoneTransportId] = useState('');
+  const [editForfait, setEditForfait] = useState(false);
   const queryClient = useQueryClient();
 
   // Form state
@@ -398,6 +409,41 @@ export default function Inscriptions() {
     `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase())
   );
 
+  const openEditDialog = (e: any) => {
+    setEditEleve(e);
+    setEditNom(e.nom);
+    setEditPrenom(e.prenom);
+    setEditSexe(e.sexe || '');
+    setEditDateNaissance(e.date_naissance || '');
+    setEditClasseId(e.classe_id || '');
+    setEditFamilleId(e.famille_id || '');
+    setEditZoneTransportId(e.zone_transport_id || '');
+    setEditForfait(false);
+    setEditOpen(true);
+  };
+
+  const updateEleve = useMutation({
+    mutationFn: async () => {
+      if (!editEleve) throw new Error('Aucun élève sélectionné');
+      const { error } = await supabase.from('eleves').update({
+        nom: editNom.trim(),
+        prenom: editPrenom.trim(),
+        sexe: editSexe || null,
+        date_naissance: editDateNaissance || null,
+        classe_id: editClasseId || null,
+        famille_id: editFamilleId || null,
+        zone_transport_id: editZoneTransportId || null,
+      } as any).eq('id', editEleve.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['eleves'] });
+      toast({ title: 'Élève modifié', description: `${editPrenom} ${editNom} mis à jour.` });
+      setEditOpen(false);
+    },
+    onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -693,6 +739,9 @@ export default function Inscriptions() {
                       <Badge variant={e.statut === 'inscrit' ? 'default' : 'secondary'}>{e.statut}</Badge>
                     </TableCell>
                     <TableCell className="flex gap-1">
+                      <Button variant="ghost" size="sm" title="Modifier" onClick={() => openEditDialog(e)}>
+                        <Pencil className="h-4 w-4 text-primary" />
+                      </Button>
                       {manquants.length > 0 && (
                         <Popover>
                           <PopoverTrigger asChild>
@@ -744,6 +793,79 @@ export default function Inscriptions() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Modifier l'élève</DialogTitle></DialogHeader>
+          {editEleve && (
+            <div className="grid gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Nom *</Label><Input value={editNom} onChange={e => setEditNom(e.target.value)} /></div>
+                <div><Label>Prénom *</Label><Input value={editPrenom} onChange={e => setEditPrenom(e.target.value)} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Sexe</Label>
+                  <Select value={editSexe} onValueChange={setEditSexe}>
+                    <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                    <SelectContent><SelectItem value="M">Masculin</SelectItem><SelectItem value="F">Féminin</SelectItem></SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Date de naissance</Label><Input type="date" value={editDateNaissance} onChange={e => setEditDateNaissance(e.target.value)} /></div>
+              </div>
+              <div>
+                <Label>Classe</Label>
+                <Select value={editClasseId} onValueChange={setEditClasseId}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                  <SelectContent>
+                    {classes.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>{c.niveaux?.cycles?.nom} — {c.niveaux?.nom} — {c.nom}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Famille</Label>
+                  <Select value={editFamilleId || '__none__'} onValueChange={(v) => setEditFamilleId(v === '__none__' ? '' : v)}>
+                    <SelectTrigger><SelectValue placeholder="Aucune" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Aucune</SelectItem>
+                      {familles.map((f: any) => <SelectItem key={f.id} value={f.id}>{f.nom_famille}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Zone de transport</Label>
+                  <Select value={editZoneTransportId || '__none__'} onValueChange={(v) => setEditZoneTransportId(v === '__none__' ? '' : v)}>
+                    <SelectTrigger><SelectValue placeholder="Pas de transport" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Pas de transport</SelectItem>
+                      {zones?.map((z: any) => <SelectItem key={z.id} value={z.id}>{z.nom} — {Number(z.prix_mensuel).toLocaleString()} GNF/mois</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+                <div>
+                  <p className="text-sm font-medium">Prix forfaitaire famille</p>
+                  <p className="text-xs text-muted-foreground">Appliquer un tarif forfaitaire pour cette famille (3+ enfants)</p>
+                </div>
+                <Switch checked={editForfait} onCheckedChange={setEditForfait} />
+              </div>
+              {editForfait && (
+                <div className="p-2 rounded bg-primary/10 text-xs text-primary text-center">
+                  🏠 Le prix forfaitaire sera appliqué automatiquement pour les paiements de cette famille
+                </div>
+              )}
+              <Button onClick={() => updateEleve.mutate()} disabled={updateEleve.isPending} className="w-full">
+                Enregistrer les modifications
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
