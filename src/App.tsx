@@ -17,6 +17,7 @@ import Bulletins from "./pages/Bulletins";
 import Orientation from "./pages/Orientation";
 import Paiements from "./pages/Paiements";
 import Depenses from "./pages/Depenses";
+import Impayes from "./pages/Impayes";
 import Finances from "./pages/Finances";
 import Cantine from "./pages/Cantine";
 import Transport from "./pages/Transport";
@@ -76,6 +77,7 @@ const App = () => (
             <Route path="/orientation" element={<ProtectedRoute><Orientation /></ProtectedRoute>} />
             <Route path="/paiements" element={<ProtectedRoute><Paiements /></ProtectedRoute>} />
             <Route path="/depenses" element={<ProtectedRoute><Depenses /></ProtectedRoute>} />
+            <Route path="/impayes" element={<ProtectedRoute><Impayes /></ProtectedRoute>} />
             <Route path="/finances" element={<ProtectedRoute><Finances /></ProtectedRoute>} />
             <Route path="/cantine" element={<ProtectedRoute><Cantine /></ProtectedRoute>} />
             <Route path="/transport" element={<ProtectedRoute><Transport /></ProtectedRoute>} />

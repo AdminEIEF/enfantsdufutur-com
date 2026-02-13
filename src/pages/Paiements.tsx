@@ -57,7 +57,7 @@ export default function Paiements() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('paiements')
-        .select('*, eleves(nom, prenom, matricule, zone_transport_id, zones_transport:zone_transport_id(nom, prix_mensuel))')
+        .select('*, eleves(nom, prenom, matricule, zone_transport_id, zones_transport:zone_transport_id(nom, prix_mensuel, chauffeur_bus, telephone_chauffeur))')
         .order('date_paiement', { ascending: false });
       if (error) throw error;
       return data;
@@ -69,7 +69,7 @@ export default function Paiements() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, zone_transport_id, zones_transport:zone_transport_id(nom, prix_mensuel), classes(nom, niveaux:niveau_id(frais_scolarite))')
+        .select('id, nom, prenom, matricule, famille_id, zone_transport_id, zones_transport:zone_transport_id(nom, prix_mensuel, chauffeur_bus, telephone_chauffeur), classes(nom, niveaux:niveau_id(frais_scolarite))')
         .eq('statut', 'inscrit')
         .order('nom');
       if (error) throw error;
@@ -88,6 +88,14 @@ export default function Paiements() {
   const totalAnnuel = fraisMensuel * 9;
 
   // Transport info for selected élève
+  // Family flat rate: from 3+ kids in same family, transport = 1 single price (forfait)
+  const familySiblingCount = useMemo(() => {
+    if (!selectedEleve?.famille_id) return 1;
+    return eleves.filter((e: any) => e.famille_id === selectedEleve.famille_id).length;
+  }, [selectedEleve, eleves]);
+
+  const transportForfaitaire = familySiblingCount >= 3;
+
   const prixTransportMensuel = useMemo(() => {
     if (!selectedEleve) return 0;
     return Number((selectedEleve.zones_transport as any)?.prix_mensuel || 0);
@@ -187,10 +195,14 @@ export default function Paiements() {
       queryClient.invalidateQueries({ queryKey: ['paiements'] });
       toast({ title: 'Paiement enregistré', description: `${parseInt(montant).toLocaleString()} GNF via ${CANAUX.find(c => c.value === canal)?.label}` });
 
-      // Generate receipt for scolarité payments
-      if (typePaiement === 'scolarite' && selectedEleve) {
-        const newTotalPaye = totalPaye + parseFloat(montant);
+      // Generate receipt for scolarité or transport payments
+      if ((typePaiement === 'scolarite' || typePaiement === 'transport') && selectedEleve) {
+        const isTransport = typePaiement === 'transport';
+        const newTotalPaye = isTransport ? (totalPayeTransport + parseFloat(montant)) : (totalPaye + parseFloat(montant));
+        const annuelCalc = isTransport ? totalAnnuelTransport : totalAnnuel;
+        const transportZone = (selectedEleve.zones_transport as any);
         generateRecuPDF({
+          type: typePaiement as 'scolarite' | 'transport',
           eleve: `${selectedEleve.prenom} ${selectedEleve.nom}`,
           matricule: selectedEleve.matricule || '',
           classe: selectedEleve.classes?.nom || '—',
@@ -199,9 +211,10 @@ export default function Paiements() {
           canal: CANAUX.find(c => c.value === canal)?.label || canal,
           reference: (canal !== 'especes' && reference) ? reference : null,
           date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
-          totalAnnuel,
+          totalAnnuel: annuelCalc,
           totalPaye: newTotalPaye,
-          resteAPayer: Math.max(0, totalAnnuel - newTotalPaye),
+          resteAPayer: Math.max(0, annuelCalc - newTotalPaye),
+          zone: transportZone?.nom,
         });
       }
 
@@ -346,6 +359,12 @@ export default function Paiements() {
               {selectedEleve && typePaiement === 'transport' && selectedEleve.zones_transport && (
                 <Card className="border-orange-300/50 bg-orange-50/50">
                   <CardContent className="pt-4 space-y-3">
+                    {transportForfaitaire && (
+                      <div className="text-center p-2 bg-orange-200/50 rounded-md">
+                        <Badge variant="outline" className="text-orange-700 border-orange-400">🏠 Forfait famille ({familySiblingCount} enfants)</Badge>
+                        <p className="text-xs text-muted-foreground mt-1">Prix forfaitaire appliqué pour les familles de 3+ enfants</p>
+                      </div>
+                    )}
                     <div className="grid grid-cols-4 gap-2 text-center text-sm">
                       <div>
                         <p className="text-muted-foreground text-xs">Prix/mois</p>
@@ -556,20 +575,29 @@ export default function Paiements() {
                       <TableCell><Badge variant={p.canal === 'especes' ? 'secondary' : 'default'}>{CANAUX.find(c => c.value === p.canal)?.label || p.canal}</Badge></TableCell>
                       <TableCell className="text-xs text-muted-foreground">{p.reference || '—'}</TableCell>
                       <TableCell>
-                        {p.type_paiement === 'scolarite' && (
-                          <Button variant="ghost" size="icon" title="Imprimer reçu" onClick={() => generateRecuPDF({
-                            eleve: `${p.eleves?.prenom} ${p.eleves?.nom}`,
-                            matricule: p.eleves?.matricule || '',
-                            classe: eleveForReceipt?.classes?.nom || '—',
-                            montant: Number(p.montant),
-                            mois: (p as any).mois_concerne || '—',
-                            canal: CANAUX.find(c => c.value === p.canal)?.label || p.canal,
-                            reference: p.reference,
-                            date: format(new Date(p.date_paiement), 'dd MMMM yyyy', { locale: fr }),
-                            totalAnnuel: annuel,
-                            totalPaye: totalPayeEleve,
-                            resteAPayer: Math.max(0, annuel - totalPayeEleve),
-                          })}>
+                      {(p.type_paiement === 'scolarite' || p.type_paiement === 'transport') && (
+                          <Button variant="ghost" size="icon" title="Imprimer reçu" onClick={() => {
+                            const isTransport = p.type_paiement === 'transport';
+                            const transportZone = isTransport ? (p.eleves as any)?.zones_transport : null;
+                            const prixMensuel = isTransport ? Number(transportZone?.prix_mensuel || 0) : frais;
+                            const annuelCalc = prixMensuel * 9;
+                            const totalPayeType = paiements.filter((pp: any) => pp.eleve_id === p.eleve_id && pp.type_paiement === p.type_paiement).reduce((s: number, pp: any) => s + Number(pp.montant), 0);
+                            generateRecuPDF({
+                              type: p.type_paiement as 'scolarite' | 'transport',
+                              eleve: `${p.eleves?.prenom} ${p.eleves?.nom}`,
+                              matricule: p.eleves?.matricule || '',
+                              classe: eleveForReceipt?.classes?.nom || '—',
+                              montant: Number(p.montant),
+                              mois: (p as any).mois_concerne || '—',
+                              canal: CANAUX.find(c => c.value === p.canal)?.label || p.canal,
+                              reference: p.reference,
+                              date: format(new Date(p.date_paiement), 'dd MMMM yyyy', { locale: fr }),
+                              totalAnnuel: annuelCalc,
+                              totalPaye: totalPayeType,
+                              resteAPayer: Math.max(0, annuelCalc - totalPayeType),
+                              zone: transportZone?.nom,
+                            });
+                          }}>
                             <Printer className="h-4 w-4" />
                           </Button>
                         )}

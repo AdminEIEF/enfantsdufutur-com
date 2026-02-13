@@ -51,7 +51,7 @@ export default function Transport() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, statut, zone_transport_id, classe_id, classes(nom), zones_transport:zone_transport_id(id, nom, prix_mensuel, chauffeur_bus, quartiers)')
+        .select('id, nom, prenom, matricule, statut, zone_transport_id, classe_id, classes(nom), zones_transport:zone_transport_id(id, nom, prix_mensuel, chauffeur_bus, telephone_chauffeur, quartiers)')
         .not('zone_transport_id', 'is', null)
         .eq('statut', 'inscrit')
         .order('nom');
@@ -98,6 +98,7 @@ export default function Transport() {
         id: z.id,
         nom: z.nom,
         chauffeur: z.chauffeur_bus || '—',
+        telephoneChauffeur: z.telephone_chauffeur || '',
         quartiers: z.quartiers || [],
         prixMensuel: Number(z.prix_mensuel),
         effectif: elevesZone.length,
@@ -214,6 +215,7 @@ export default function Transport() {
                     <TableRow>
                       <TableHead>Zone</TableHead>
                       <TableHead>Chauffeur/Bus</TableHead>
+                      <TableHead>Contact</TableHead>
                       <TableHead className="text-center">Effectif</TableHead>
                       <TableHead className="text-right">Prix/mois</TableHead>
                       <TableHead className="text-center">Taux</TableHead>
@@ -221,7 +223,7 @@ export default function Transport() {
                   </TableHeader>
                   <TableBody>
                     {statsParZone.length === 0 ? (
-                      <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucune zone configurée</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucune zone configurée</TableCell></TableRow>
                     ) : statsParZone.map((z) => (
                       <TableRow key={z.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedZone(z)}>
                         <TableCell>
@@ -233,6 +235,7 @@ export default function Transport() {
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">{z.chauffeur}</TableCell>
+                        <TableCell className="text-sm">{z.telephoneChauffeur || '—'}</TableCell>
                         <TableCell className="text-center font-bold">{z.effectif}</TableCell>
                         <TableCell className="text-right font-mono">{z.prixMensuel.toLocaleString()} F</TableCell>
                         <TableCell className="text-center">

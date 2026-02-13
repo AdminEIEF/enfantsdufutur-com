@@ -831,15 +831,16 @@ function ZonesTransportTab() {
   const [nom, setNom] = useState('');
   const [prixMensuel, setPrixMensuel] = useState(0);
   const [chauffeurBus, setChauffeurBus] = useState('');
+  const [telephoneChauffeur, setTelephoneChauffeur] = useState('');
   const [quartiersInput, setQuartiersInput] = useState('');
 
-  const reset = () => { setEditId(null); setNom(''); setPrixMensuel(0); setChauffeurBus(''); setQuartiersInput(''); setOpen(false); };
+  const reset = () => { setEditId(null); setNom(''); setPrixMensuel(0); setChauffeurBus(''); setTelephoneChauffeur(''); setQuartiersInput(''); setOpen(false); };
 
   const save = useMutation({
     mutationFn: async () => {
       if (!nom) throw new Error('Le nom est requis');
       const quartiers = quartiersInput.split(',').map(q => q.trim()).filter(Boolean);
-      const payload = { nom, prix_mensuel: prixMensuel, chauffeur_bus: chauffeurBus || null, quartiers };
+      const payload = { nom, prix_mensuel: prixMensuel, chauffeur_bus: chauffeurBus || null, telephone_chauffeur: telephoneChauffeur || null, quartiers };
       if (editId) {
         const { error } = await supabase.from('zones_transport' as any).update(payload).eq('id', editId);
         if (error) throw error;
@@ -863,6 +864,7 @@ function ZonesTransportTab() {
 
   const openEdit = (z: any) => {
     setEditId(z.id); setNom(z.nom); setPrixMensuel(z.prix_mensuel); setChauffeurBus(z.chauffeur_bus ?? '');
+    setTelephoneChauffeur(z.telephone_chauffeur ?? '');
     setQuartiersInput((z.quartiers ?? []).join(', ')); setOpen(true);
   };
 
@@ -879,20 +881,22 @@ function ZonesTransportTab() {
               <TableHead>Nom de la zone</TableHead>
               <TableHead>Prix mensuel</TableHead>
               <TableHead>Chauffeur / Bus</TableHead>
+              <TableHead>Contact</TableHead>
               <TableHead>Quartiers couverts</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Chargement…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Chargement…</TableCell></TableRow>
             ) : (zones?.length ?? 0) === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Aucune zone configurée</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Aucune zone configurée</TableCell></TableRow>
             ) : zones?.map((z: any) => (
               <TableRow key={z.id}>
                 <TableCell className="font-medium">{z.nom}</TableCell>
                 <TableCell>{Number(z.prix_mensuel).toLocaleString()} GNF</TableCell>
                 <TableCell>{z.chauffeur_bus ?? '—'}</TableCell>
+                <TableCell>{z.telephone_chauffeur ?? '—'}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{(z.quartiers ?? []).join(', ') || '—'}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
@@ -913,6 +917,7 @@ function ZonesTransportTab() {
             <div><Label>Nom de la zone</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Zone Nord" /></div>
             <div><Label>Prix mensuel (GNF)</Label><Input type="number" value={prixMensuel} onChange={e => setPrixMensuel(Number(e.target.value))} min={0} /></div>
             <div><Label>Chauffeur / Bus</Label><Input value={chauffeurBus} onChange={e => setChauffeurBus(e.target.value)} placeholder="Ex: Bus A – M. Diallo" /></div>
+            <div><Label>Téléphone chauffeur</Label><Input value={telephoneChauffeur} onChange={e => setTelephoneChauffeur(e.target.value)} placeholder="Ex: 620 00 00 00" /></div>
             <div>
               <Label>Quartiers couverts (séparés par des virgules)</Label>
               <Input value={quartiersInput} onChange={e => setQuartiersInput(e.target.value)} placeholder="Ex: Quartier A, Quartier B, Quartier C" />
