@@ -680,6 +680,7 @@ export type Database = {
           nom: string
           prix_mensuel: number
           quartiers: string[] | null
+          telephone_chauffeur: string | null
           updated_at: string
         }
         Insert: {
@@ -689,6 +690,7 @@ export type Database = {
           nom: string
           prix_mensuel?: number
           quartiers?: string[] | null
+          telephone_chauffeur?: string | null
           updated_at?: string
         }
         Update: {
@@ -698,6 +700,7 @@ export type Database = {
           nom?: string
           prix_mensuel?: number
           quartiers?: string[] | null
+          telephone_chauffeur?: string | null
           updated_at?: string
         }
         Relationships: []

@@ -1,5 +1,5 @@
 import {
-  GraduationCap, Users, UserPlus, BookOpen, Calculator,
+  GraduationCap, Users, UserPlus, BookOpen, Calculator, AlertTriangle,
   Settings, Bell, ScanLine, Library, BarChart3, LogOut,
   Home, CreditCard, ClipboardList, Award, RefreshCw, Bus
 } from 'lucide-react';
@@ -45,6 +45,7 @@ const navSections = [
     items: [
       { title: 'Paiements', url: '/paiements', icon: CreditCard },
       { title: 'Dépenses', url: '/depenses', icon: Calculator },
+      { title: 'Impayés', url: '/impayes', icon: AlertTriangle },
       { title: 'Tableau financier', url: '/finances', icon: BarChart3 },
     ],
   },
