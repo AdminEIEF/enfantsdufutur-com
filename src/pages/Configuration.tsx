@@ -53,7 +53,7 @@ function useMatieres() {
   return useQuery({
     queryKey: ['matieres'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('matieres').select('*, cycles(nom)').order('nom');
+      const { data, error } = await supabase.from('matieres').select('*, cycles(nom), niveaux:niveau_id(nom)').order('nom');
       if (error) throw error;
       return data;
     },
@@ -427,23 +427,26 @@ function ClassesTab() {
 function MatieresTab() {
   const qc = useQueryClient();
   const { data: cycles } = useCycles();
+  const { data: niveaux } = useNiveaux();
   const { data: matieres, isLoading } = useMatieres();
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [nom, setNom] = useState('');
   const [cycleId, setCycleId] = useState('');
+  const [niveauId, setNiveauId] = useState('');
   const [coefficient, setCoefficient] = useState(1);
   const [pole, setPole] = useState('');
   const [filterCycle, setFilterCycle] = useState('');
 
+  const filteredNiveaux = niveaux?.filter((n: any) => !cycleId || n.cycle_id === cycleId) ?? [];
   const filteredMatieres = matieres?.filter((m: any) => !filterCycle || m.cycle_id === filterCycle) ?? [];
 
-  const reset = () => { setEditId(null); setNom(''); setCycleId(''); setCoefficient(1); setPole(''); setOpen(false); };
+  const reset = () => { setEditId(null); setNom(''); setCycleId(''); setNiveauId(''); setCoefficient(1); setPole(''); setOpen(false); };
 
   const save = useMutation({
     mutationFn: async () => {
       if (!nom || !cycleId) throw new Error('Champs requis');
-      const payload = { nom, cycle_id: cycleId, coefficient, pole: pole || null };
+      const payload = { nom, cycle_id: cycleId, niveau_id: niveauId || null, coefficient, pole: pole || null } as any;
       if (editId) {
         const { error } = await supabase.from('matieres').update(payload).eq('id', editId);
         if (error) throw error;
@@ -466,7 +469,7 @@ function MatieresTab() {
   });
 
   const openEdit = (m: any) => {
-    setEditId(m.id); setNom(m.nom); setCycleId(m.cycle_id ?? ''); setCoefficient(m.coefficient); setPole(m.pole ?? ''); setOpen(true);
+    setEditId(m.id); setNom(m.nom); setCycleId(m.cycle_id ?? ''); setNiveauId((m as any).niveau_id ?? ''); setCoefficient(m.coefficient); setPole(m.pole ?? ''); setOpen(true);
   };
 
   const poles = ['Littéraire', 'Scientifique', 'Expérimentale'];
@@ -492,6 +495,7 @@ function MatieresTab() {
             <TableRow>
               <TableHead>Nom</TableHead>
               <TableHead>Cycle</TableHead>
+              <TableHead>Niveau</TableHead>
               <TableHead>Pôle</TableHead>
               <TableHead>Coefficient</TableHead>
               <TableHead className="w-24">Actions</TableHead>
@@ -499,13 +503,14 @@ function MatieresTab() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Chargement…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Chargement…</TableCell></TableRow>
             ) : filteredMatieres.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Aucune matière</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Aucune matière</TableCell></TableRow>
             ) : filteredMatieres.map((m: any) => (
               <TableRow key={m.id}>
                 <TableCell className="font-medium">{m.nom}</TableCell>
                 <TableCell>{m.cycles?.nom}</TableCell>
+                <TableCell>{m.niveaux?.nom || <span className="text-muted-foreground text-xs">Tous</span>}</TableCell>
                 <TableCell>{m.pole ?? '—'}</TableCell>
                 <TableCell>{m.coefficient}</TableCell>
                 <TableCell>
@@ -524,10 +529,19 @@ function MatieresTab() {
         <DialogContent>
           <DialogHeader><DialogTitle>{editId ? 'Modifier' : 'Ajouter'} une matière</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Cycle</Label>
-              <Select value={cycleId} onValueChange={setCycleId}>
+            <div><Label>Cycle *</Label>
+              <Select value={cycleId} onValueChange={(v) => { setCycleId(v); setNiveauId(''); }}>
                 <SelectTrigger><SelectValue placeholder="Choisir un cycle" /></SelectTrigger>
                 <SelectContent>{cycles?.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div><Label>Niveau (optionnel — vide = tous les niveaux du cycle)</Label>
+              <Select value={niveauId || '__all__'} onValueChange={(v) => setNiveauId(v === '__all__' ? '' : v)} disabled={!cycleId}>
+                <SelectTrigger><SelectValue placeholder="Tous les niveaux" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Tous les niveaux du cycle</SelectItem>
+                  {filteredNiveaux.map((n: any) => <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
             <div><Label>Nom</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Mathématiques" /></div>
@@ -550,7 +564,6 @@ function MatieresTab() {
     </Card>
   );
 }
-
 // ─── Hook & Tab: Tarifs ──────────────────────────────────
 function useTarifs() {
   return useQuery({
