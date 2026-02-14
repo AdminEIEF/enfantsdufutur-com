@@ -63,6 +63,21 @@ export default function Dashboard() {
 
   const newInscriptions = eleves.filter((e: any) => e.created_at?.startsWith(thisMonth)).length;
 
+  // Separate inscription vs réinscription counts
+  const { data: paiementsInscription = [] } = useQuery({
+    queryKey: ['dashboard-paiements-inscription'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('paiements')
+        .select('id, type_paiement')
+        .in('type_paiement', ['inscription', 'reinscription']);
+      if (error) throw error;
+      return data;
+    },
+  });
+  const totalInscriptions = paiementsInscription.filter((p: any) => p.type_paiement === 'inscription').length;
+  const totalReinscriptions = paiementsInscription.filter((p: any) => p.type_paiement === 'reinscription').length;
+
   const paiementsMois = paiements.filter((p: any) => p.date_paiement?.startsWith(thisMonth));
   const totalRecettesMois = paiementsMois.reduce((s: number, p: any) => s + Number(p.montant), 0);
 
@@ -214,7 +229,7 @@ export default function Dashboard() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Élèves inscrits</CardTitle>
@@ -231,6 +246,26 @@ export default function Dashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Inscriptions</CardTitle>
+            <UserPlus className="h-5 w-5 text-accent" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalInscriptions}</div>
+            <p className="text-xs text-muted-foreground mt-1">Nouvelles inscriptions</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Réinscriptions</CardTitle>
+            <UserPlus className="h-5 w-5 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalReinscriptions}</div>
+            <p className="text-xs text-muted-foreground mt-1">Réinscriptions</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Recettes du mois</CardTitle>
             <CreditCard className="h-5 w-5 text-accent" />
           </CardHeader>
@@ -241,17 +276,7 @@ export default function Dashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Dépenses du mois</CardTitle>
-            <ArrowDownRight className="h-5 w-5 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalDepensesMois.toLocaleString()} <span className="text-sm font-normal">GNF</span></div>
-            <p className="text-xs text-muted-foreground mt-1">{depensesMois.length} dépenses</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Recouvrement scolarité</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Recouvrement</CardTitle>
             <TrendingUp className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
