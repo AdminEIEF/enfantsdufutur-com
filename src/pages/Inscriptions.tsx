@@ -8,7 +8,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, ShieldCheck, Users, Download, Trash2, Pencil } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, ShieldCheck, Users, Download, Trash2, Pencil, Phone } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -32,6 +33,13 @@ export default function Inscriptions() {
   const [editFamilleId, setEditFamilleId] = useState('');
   const [editZoneTransportId, setEditZoneTransportId] = useState('');
   const [editForfait, setEditForfait] = useState(false);
+  const [editOptionCantine, setEditOptionCantine] = useState(false);
+  const [editCheckLivret, setEditCheckLivret] = useState(false);
+  const [editCheckRames, setEditCheckRames] = useState(false);
+  const [editCheckMarqueurs, setEditCheckMarqueurs] = useState(false);
+  const [editCheckPhoto, setEditCheckPhoto] = useState(false);
+  const [editNomPrenomPere, setEditNomPrenomPere] = useState('');
+  const [editNomPrenomMere, setEditNomPrenomMere] = useState('');
   const queryClient = useQueryClient();
 
   // Form state
@@ -59,7 +67,6 @@ export default function Inscriptions() {
   const [photoEleve, setPhotoEleve] = useState<File | null>(null);
   const [photoElevePreview, setPhotoElevePreview] = useState<string | null>(null);
   const [typeInscription, setTypeInscription] = useState<'inscription' | 'reinscription'>('inscription');
-  const [moisAPayer, setMoisAPayer] = useState(1);
 
   const { data: eleves = [], isLoading } = useQuery({
     queryKey: ['eleves'],
@@ -127,6 +134,7 @@ export default function Inscriptions() {
     const cycleName = cl?.niveaux?.cycles?.nom?.toLowerCase() || '';
     return cycleName.includes('crèche') || cycleName.includes('creche') || cycleName.includes('maternelle');
   }, [classeId, classes]);
+
   const generateMatricule = async () => {
     const now = new Date();
     const prefix = `EDU-${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -194,10 +202,9 @@ export default function Inscriptions() {
         }
       }
 
-      // Auto-create payments
+      // Auto-create only inscription/réinscription payment + uniformes + fournitures
       if (insertedEleve) {
         const paiements: any[] = [];
-        const moisLabels = ['Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 
         // Frais d'inscription/réinscription
         paiements.push({
@@ -207,30 +214,6 @@ export default function Inscriptions() {
           canal: 'especes',
           mois_concerne: null,
         });
-
-        // Scolarité par mois
-        for (let i = 0; i < moisAPayer; i++) {
-          paiements.push({
-            eleve_id: insertedEleve.id,
-            montant: fraisApresReduction,
-            type_paiement: 'scolarite',
-            canal: 'especes',
-            mois_concerne: moisLabels[i] || `Mois ${i + 1}`,
-          });
-        }
-
-        // Transport par mois
-        if (fraisTransport > 0) {
-          for (let i = 0; i < moisAPayer; i++) {
-            paiements.push({
-              eleve_id: insertedEleve.id,
-              montant: fraisTransport,
-              type_paiement: 'transport',
-              canal: 'especes',
-              mois_concerne: moisLabels[i] || `Mois ${i + 1}`,
-            });
-          }
-        }
 
         // Uniformes (one-time)
         if (fraisUniformes > 0) {
@@ -306,6 +289,7 @@ export default function Inscriptions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['eleves'] });
       toast({ title: 'Élève supprimé', description: 'L\'élève a été déplacé dans la corbeille.' });
+      setEditOpen(false);
     },
     onError: (err: Error) => {
       toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
@@ -353,7 +337,7 @@ export default function Inscriptions() {
     setNomPrenomPere(''); setNomPrenomMere('');
     setMandataires(createEmptyMandataires());
     setPhotoEleve(null); setPhotoElevePreview(null);
-    setTypeInscription('inscription'); setMoisAPayer(1);
+    setTypeInscription('inscription');
   };
 
   // Calculate fees for selected class
@@ -376,9 +360,8 @@ export default function Inscriptions() {
   // Transport fee from zone
   const fraisTransport = selectedZone ? Number(selectedZone.prix_mensuel) : 0;
 
-  // Uniform fees with individual prices (categories match DB constraint)
+  // Uniform fees
   const getUniformFee = (cat: string) => tarifs.find((t: any) => t.categorie === cat)?.montant || 0;
-  // Tenue scolaire: pick by cycle (Primaire vs Collège/Lycée)
   const selectedCycleNom = selectedClass?.niveaux?.cycles?.nom || '';
   const isPrimaire = ['Crèche', 'Maternelle', 'Primaire'].includes(selectedCycleNom);
   const tenueScolaireEntries = tarifs.filter((t: any) => t.categorie === 'uniforme_scolaire');
@@ -399,11 +382,8 @@ export default function Inscriptions() {
   // Inscription / Réinscription fee
   const fraisInscription = typeInscription === 'inscription' ? 100000 : 150000;
 
-  // Scolarité mensuelle × nombre de mois
-  const fraisScolariteMois = fraisApresReduction * moisAPayer;
-
   const fraisFournitures = optionFournitures ? (tarifs.find((t: any) => t.categorie === 'fournitures')?.montant || 0) : 0;
-  const totalFrais = fraisInscription + fraisScolariteMois + fraisTransport * moisAPayer + fraisUniformes + fraisFournitures;
+  const totalFrais = fraisInscription + fraisUniformes + fraisFournitures;
 
   const filtered = eleves.filter((e: any) =>
     `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase())
@@ -419,8 +399,17 @@ export default function Inscriptions() {
     setEditFamilleId(e.famille_id || '');
     setEditZoneTransportId(e.zone_transport_id || '');
     setEditForfait(false);
+    setEditOptionCantine(!!e.option_cantine);
+    setEditCheckLivret(!!e.checklist_livret);
+    setEditCheckRames(!!e.checklist_rames);
+    setEditCheckMarqueurs(!!e.checklist_marqueurs);
+    setEditCheckPhoto(!!e.checklist_photo);
+    setEditNomPrenomPere(e.nom_prenom_pere || '');
+    setEditNomPrenomMere(e.nom_prenom_mere || '');
     setEditOpen(true);
   };
+
+  const editSelectedZone = zones?.find((z: any) => z.id === editZoneTransportId);
 
   const updateEleve = useMutation({
     mutationFn: async () => {
@@ -433,6 +422,14 @@ export default function Inscriptions() {
         classe_id: editClasseId || null,
         famille_id: editFamilleId || null,
         zone_transport_id: editZoneTransportId || null,
+        transport_zone: editSelectedZone?.nom || null,
+        option_cantine: editOptionCantine,
+        checklist_livret: editCheckLivret,
+        checklist_rames: editCheckRames,
+        checklist_marqueurs: editCheckMarqueurs,
+        checklist_photo: editCheckPhoto,
+        nom_prenom_pere: editNomPrenomPere || null,
+        nom_prenom_mere: editNomPrenomMere || null,
       } as any).eq('id', editEleve.id);
       if (error) throw error;
     },
@@ -473,7 +470,6 @@ export default function Inscriptions() {
                     </Select>
                   </div>
                   <div><Label>Date de naissance</Label><Input type="date" value={dateNaissance} onChange={e => setDateNaissance(e.target.value)} /></div>
-                  {/* Photo de l'élève */}
                   <div className="col-span-2">
                     <Label>Photo de l'élève</Label>
                     <div className="flex items-center gap-3 mt-1">
@@ -494,10 +490,10 @@ export default function Inscriptions() {
                 </CardContent>
               </Card>
 
-              {/* Type d'inscription */}
+              {/* Type d'inscription — sans choix de mois */}
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-base">Type d'inscription</CardTitle></CardHeader>
-                <CardContent className="grid grid-cols-2 gap-3">
+                <CardContent>
                   <div>
                     <Label>Type *</Label>
                     <Select value={typeInscription} onValueChange={(v: 'inscription' | 'reinscription') => setTypeInscription(v)}>
@@ -505,17 +501,6 @@ export default function Inscriptions() {
                       <SelectContent>
                         <SelectItem value="inscription">Inscription — 100 000 GNF</SelectItem>
                         <SelectItem value="reinscription">Réinscription — 150 000 GNF</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Nombre de mois à payer</Label>
-                    <Select value={String(moisAPayer)} onValueChange={(v) => setMoisAPayer(Number(v))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 10 }, (_, i) => i + 1).map(m => (
-                          <SelectItem key={m} value={String(m)}>{m} mois</SelectItem>
-                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -583,7 +568,6 @@ export default function Inscriptions() {
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-base">Options & Transport</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  {/* Adresse pour suggestion de zone */}
                   <div>
                     <Label className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> Adresse de l'élève</Label>
                     <Input value={adresse} onChange={e => setAdresse(e.target.value)} placeholder="Ex: Quartier Riviera, Cocody" />
@@ -593,7 +577,7 @@ export default function Inscriptions() {
                         className="mt-1 text-xs text-primary underline cursor-pointer"
                         onClick={() => setZoneTransportId(suggestedZoneId)}
                       >
-                        💡 Zone suggérée : {zones.find((z: any) => z.id === suggestedZoneId)?.nom} — Cliquer pour appliquer
+                        💡 Zone suggérée : {zones.find((z: any) => z.id === suggestedZoneId)?.nom} — {Number(zones.find((z: any) => z.id === suggestedZoneId)?.prix_mensuel || 0).toLocaleString()} GNF/mois — Cliquer pour appliquer
                       </button>
                     )}
                   </div>
@@ -610,8 +594,11 @@ export default function Inscriptions() {
                         ))}
                       </SelectContent>
                     </Select>
-                    {selectedZone?.chauffeur_bus && (
-                      <p className="text-xs text-muted-foreground mt-1">🚌 {selectedZone.chauffeur_bus}</p>
+                    {selectedZone && (
+                      <p className="text-xs text-accent mt-1 font-medium">
+                        💰 Prix transport mensuel : {Number(selectedZone.prix_mensuel).toLocaleString()} GNF
+                        {selectedZone.chauffeur_bus && ` — 🚌 ${selectedZone.chauffeur_bus}`}
+                      </p>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -630,21 +617,28 @@ export default function Inscriptions() {
                 <MandatairesForm mandataires={mandataires} onChange={setMandataires} />
               )}
 
-              {/* Résumé frais */}
+              {/* Résumé frais — sans scolarité/transport mensuels */}
               <Card className="border-primary/30 bg-primary/5">
-                <CardHeader className="pb-3"><CardTitle className="text-base">Résumé des frais</CardTitle></CardHeader>
+                <CardHeader className="pb-3"><CardTitle className="text-base">Résumé des frais à l'inscription</CardTitle></CardHeader>
                 <CardContent className="space-y-1 text-sm">
-                  <div className="flex justify-between font-medium"><span>{typeInscription === 'inscription' ? 'Frais d\'inscription' : 'Frais de réinscription'}</span><span>{fraisInscription.toLocaleString()} GNF</span></div>
-                  <div className="flex justify-between"><span>Scolarité ({moisAPayer} mois × {fraisApresReduction.toLocaleString()} GNF)</span><span>{fraisScolariteMois.toLocaleString()} GNF</span></div>
+                  <div className="flex justify-between font-medium"><span>{typeInscription === 'inscription' ? "Frais d'inscription" : 'Frais de réinscription'}</span><span>{fraisInscription.toLocaleString()} GNF</span></div>
                   {reduction > 0 && (
-                    <div className="flex justify-between text-success"><span>Réduction fratrie (-{reduction * 100}%)</span><span>incluse</span></div>
+                    <div className="flex justify-between text-accent"><span>Réduction fratrie (-{reduction * 100}%)</span><span>applicable sur la scolarité</span></div>
                   )}
-                  {fraisTransport > 0 && <div className="flex justify-between"><span>Transport ({selectedZone?.nom}) × {moisAPayer} mois</span><span>{(fraisTransport * moisAPayer).toLocaleString()} GNF</span></div>}
                   {fraisUniformes > 0 && <div className="flex justify-between"><span>Uniformes</span><span>{fraisUniformes.toLocaleString()} GNF</span></div>}
                   {fraisFournitures > 0 && <div className="flex justify-between"><span>Fournitures</span><span>{fraisFournitures.toLocaleString()} GNF</span></div>}
+                  {fraisTransport > 0 && (
+                    <div className="flex justify-between text-muted-foreground"><span>Transport (mensuel, payable dans Paiements)</span><span>{fraisTransport.toLocaleString()} GNF/mois</span></div>
+                  )}
+                  {fraisScolarite > 0 && (
+                    <div className="flex justify-between text-muted-foreground"><span>Scolarité (mensuelle, payable dans Paiements)</span><span>{fraisApresReduction.toLocaleString()} GNF/mois</span></div>
+                  )}
                   <div className="flex justify-between font-bold text-base pt-2 border-t">
-                    <span>TOTAL À PAYER</span><span>{totalFrais.toLocaleString()} GNF</span>
+                    <span>TOTAL À PAYER MAINTENANT</span><span>{totalFrais.toLocaleString()} GNF</span>
                   </div>
+                  <p className="text-xs text-muted-foreground pt-1">
+                    ℹ️ La scolarité et le transport sont à payer dans l'onglet <strong>Paiements</strong>.
+                  </p>
                 </CardContent>
               </Card>
 
@@ -766,25 +760,6 @@ export default function Inscriptions() {
                           </PopoverContent>
                         </Popover>
                       )}
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" title="Supprimer">
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Supprimer cet élève ?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {e.prenom} {e.nom} sera déplacé dans la corbeille (Configuration). Vous pourrez le restaurer ultérieurement.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => softDelete.mutate(e.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Supprimer</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
                     </TableCell>
                   </TableRow>
                 );
@@ -794,40 +769,55 @@ export default function Inscriptions() {
         </CardContent>
       </Card>
 
-      {/* Edit Dialog */}
+      {/* Edit Dialog with 3 Tabs */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Modifier l'élève</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Fiche de {editEleve?.prenom} {editEleve?.nom}</DialogTitle></DialogHeader>
           {editEleve && (
-            <div className="grid gap-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Nom *</Label><Input value={editNom} onChange={e => setEditNom(e.target.value)} /></div>
-                <div><Label>Prénom *</Label><Input value={editPrenom} onChange={e => setEditPrenom(e.target.value)} /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+            <Tabs defaultValue="informations" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="informations">Informations</TabsTrigger>
+                <TabsTrigger value="famille">Famille</TabsTrigger>
+                <TabsTrigger value="options">Options</TabsTrigger>
+              </TabsList>
+
+              {/* Tab Informations */}
+              <TabsContent value="informations" className="space-y-3 mt-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Nom *</Label><Input value={editNom} onChange={e => setEditNom(e.target.value)} /></div>
+                  <div><Label>Prénom *</Label><Input value={editPrenom} onChange={e => setEditPrenom(e.target.value)} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Sexe</Label>
+                    <Select value={editSexe} onValueChange={setEditSexe}>
+                      <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                      <SelectContent><SelectItem value="M">Masculin</SelectItem><SelectItem value="F">Féminin</SelectItem></SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label>Date de naissance</Label><Input type="date" value={editDateNaissance} onChange={e => setEditDateNaissance(e.target.value)} /></div>
+                </div>
                 <div>
-                  <Label>Sexe</Label>
-                  <Select value={editSexe} onValueChange={setEditSexe}>
-                    <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
-                    <SelectContent><SelectItem value="M">Masculin</SelectItem><SelectItem value="F">Féminin</SelectItem></SelectContent>
+                  <Label>Classe</Label>
+                  <Select value={editClasseId} onValueChange={setEditClasseId}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                    <SelectContent>
+                      {classes.map((c: any) => (
+                        <SelectItem key={c.id} value={c.id}>{c.niveaux?.cycles?.nom} — {c.niveaux?.nom} — {c.nom}</SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
-                <div><Label>Date de naissance</Label><Input type="date" value={editDateNaissance} onChange={e => setEditDateNaissance(e.target.value)} /></div>
-              </div>
-              <div>
-                <Label>Classe</Label>
-                <Select value={editClasseId} onValueChange={setEditClasseId}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                  <SelectContent>
-                    {classes.map((c: any) => (
-                      <SelectItem key={c.id} value={c.id}>{c.niveaux?.cycles?.nom} — {c.niveaux?.nom} — {c.nom}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Famille</Label>
+                  <Label>Matricule</Label>
+                  <Input value={editEleve.matricule || '—'} disabled className="bg-muted" />
+                </div>
+              </TabsContent>
+
+              {/* Tab Famille */}
+              <TabsContent value="famille" className="space-y-3 mt-4">
+                <div>
+                  <Label>Famille (fratrie)</Label>
                   <Select value={editFamilleId || '__none__'} onValueChange={(v) => setEditFamilleId(v === '__none__' ? '' : v)}>
                     <SelectTrigger><SelectValue placeholder="Aucune" /></SelectTrigger>
                     <SelectContent>
@@ -837,7 +827,51 @@ export default function Inscriptions() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Zone de transport</Label>
+                  <Label>Nom & Prénom du père</Label>
+                  <Input value={editNomPrenomPere} onChange={e => setEditNomPrenomPere(e.target.value)} placeholder="Ex: Kouamé Jean-Pierre" />
+                </div>
+                <div>
+                  <Label>Nom & Prénom de la mère</Label>
+                  <Input value={editNomPrenomMere} onChange={e => setEditNomPrenomMere(e.target.value)} placeholder="Ex: Bamba Fatou" />
+                </div>
+                {editEleve.familles && (
+                  <Card className="bg-muted/50">
+                    <CardContent className="pt-4 space-y-2">
+                      <p className="text-sm font-medium">Contacts famille</p>
+                      {editEleve.familles.telephone_pere && (
+                        <p className="text-sm flex items-center gap-2">
+                          <Phone className="h-3.5 w-3.5" /> Père : <a href={`tel:${editEleve.familles.telephone_pere}`} className="text-primary underline">{editEleve.familles.telephone_pere}</a>
+                        </p>
+                      )}
+                      {editEleve.familles.telephone_mere && (
+                        <p className="text-sm flex items-center gap-2">
+                          <Phone className="h-3.5 w-3.5" /> Mère : <a href={`tel:${editEleve.familles.telephone_mere}`} className="text-primary underline">{editEleve.familles.telephone_mere}</a>
+                        </p>
+                      )}
+                      {!editEleve.familles.telephone_pere && !editEleve.familles.telephone_mere && (
+                        <p className="text-xs text-muted-foreground">Aucun numéro enregistré</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+
+              {/* Tab Options */}
+              <TabsContent value="options" className="space-y-4 mt-4">
+                {/* Check-list documents */}
+                <div>
+                  <p className="text-sm font-medium mb-2">Check-list documents</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2"><Checkbox checked={editCheckLivret} onCheckedChange={(v) => setEditCheckLivret(!!v)} /><Label>Livret scolaire</Label></div>
+                    <div className="flex items-center gap-2"><Checkbox checked={editCheckRames} onCheckedChange={(v) => setEditCheckRames(!!v)} /><Label>Paquet de Rames</Label></div>
+                    <div className="flex items-center gap-2"><Checkbox checked={editCheckMarqueurs} onCheckedChange={(v) => setEditCheckMarqueurs(!!v)} /><Label>Marqueurs</Label></div>
+                    <div className="flex items-center gap-2"><Checkbox checked={editCheckPhoto} onCheckedChange={(v) => setEditCheckPhoto(!!v)} /><Label>Photo d'identité</Label></div>
+                  </div>
+                </div>
+
+                {/* Transport */}
+                <div>
+                  <p className="text-sm font-medium mb-2">Transport</p>
                   <Select value={editZoneTransportId || '__none__'} onValueChange={(v) => setEditZoneTransportId(v === '__none__' ? '' : v)}>
                     <SelectTrigger><SelectValue placeholder="Pas de transport" /></SelectTrigger>
                     <SelectContent>
@@ -845,24 +879,55 @@ export default function Inscriptions() {
                       {zones?.map((z: any) => <SelectItem key={z.id} value={z.id}>{z.nom} — {Number(z.prix_mensuel).toLocaleString()} GNF/mois</SelectItem>)}
                     </SelectContent>
                   </Select>
+                  {editSelectedZone && (
+                    <p className="text-xs text-accent mt-1">💰 {Number(editSelectedZone.prix_mensuel).toLocaleString()} GNF/mois</p>
+                  )}
                 </div>
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
-                <div>
-                  <p className="text-sm font-medium">Prix forfaitaire famille</p>
-                  <p className="text-xs text-muted-foreground">Appliquer un tarif forfaitaire pour cette famille (3+ enfants)</p>
+
+                {/* Cantine */}
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+                  <div>
+                    <p className="text-sm font-medium">Cantine</p>
+                    <p className="text-xs text-muted-foreground">Activer/désactiver l'option cantine</p>
+                  </div>
+                  <Switch checked={editOptionCantine} onCheckedChange={setEditOptionCantine} />
                 </div>
-                <Switch checked={editForfait} onCheckedChange={setEditForfait} />
-              </div>
-              {editForfait && (
-                <div className="p-2 rounded bg-primary/10 text-xs text-primary text-center">
-                  🏠 Le prix forfaitaire sera appliqué automatiquement pour les paiements de cette famille
+
+                {/* Forfait */}
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+                  <div>
+                    <p className="text-sm font-medium">Prix forfaitaire famille</p>
+                    <p className="text-xs text-muted-foreground">Tarif forfaitaire pour cette famille (3+ enfants)</p>
+                  </div>
+                  <Switch checked={editForfait} onCheckedChange={setEditForfait} />
                 </div>
-              )}
-              <Button onClick={() => updateEleve.mutate()} disabled={updateEleve.isPending} className="w-full">
+
+                {/* Supprimer */}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="w-full">
+                      <Trash2 className="h-4 w-4 mr-2" /> Supprimer le dossier
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Supprimer cet élève ?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {editEleve.prenom} {editEleve.nom} sera déplacé dans la corbeille. Vous pourrez le restaurer ultérieurement.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => softDelete.mutate(editEleve.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Supprimer</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </TabsContent>
+
+              <Button onClick={() => updateEleve.mutate()} disabled={updateEleve.isPending} className="w-full mt-4">
                 Enregistrer les modifications
               </Button>
-            </div>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>
