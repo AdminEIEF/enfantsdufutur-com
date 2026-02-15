@@ -617,9 +617,9 @@ export default function Inscriptions() {
                 <MandatairesForm mandataires={mandataires} onChange={setMandataires} />
               )}
 
-              {/* Résumé frais — sans scolarité/transport mensuels */}
+              {/* Résumé frais — facture avec 3 tranches */}
               <Card className="border-primary/30 bg-primary/5">
-                <CardHeader className="pb-3"><CardTitle className="text-base">Résumé des frais à l'inscription</CardTitle></CardHeader>
+                <CardHeader className="pb-3"><CardTitle className="text-base">Facture — Résumé des frais</CardTitle></CardHeader>
                 <CardContent className="space-y-1 text-sm">
                   <div className="flex justify-between font-medium"><span>{typeInscription === 'inscription' ? "Frais d'inscription" : 'Frais de réinscription'}</span><span>{fraisInscription.toLocaleString()} GNF</span></div>
                   {reduction > 0 && (
@@ -627,17 +627,57 @@ export default function Inscriptions() {
                   )}
                   {fraisUniformes > 0 && <div className="flex justify-between"><span>Uniformes</span><span>{fraisUniformes.toLocaleString()} GNF</span></div>}
                   {fraisFournitures > 0 && <div className="flex justify-between"><span>Fournitures</span><span>{fraisFournitures.toLocaleString()} GNF</span></div>}
-                  {fraisTransport > 0 && (
-                    <div className="flex justify-between text-muted-foreground"><span>Transport (mensuel, payable dans Paiements)</span><span>{fraisTransport.toLocaleString()} GNF/mois</span></div>
-                  )}
-                  {fraisScolarite > 0 && (
-                    <div className="flex justify-between text-muted-foreground"><span>Scolarité (mensuelle, payable dans Paiements)</span><span>{fraisApresReduction.toLocaleString()} GNF/mois</span></div>
-                  )}
                   <div className="flex justify-between font-bold text-base pt-2 border-t">
                     <span>TOTAL À PAYER MAINTENANT</span><span>{totalFrais.toLocaleString()} GNF</span>
                   </div>
+
+                  {/* Scolarité en 3 tranches */}
+                  {fraisScolarite > 0 && (
+                    <div className="mt-3 pt-3 border-t space-y-2">
+                      <p className="text-xs font-semibold text-primary">📋 FACTURE SCOLARITÉ — 3 Tranches</p>
+                      <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                        <div className="bg-background rounded p-2">
+                          <p className="text-muted-foreground">Total Annuel</p>
+                          <p className="font-bold">{(fraisApresReduction * 9).toLocaleString()} GNF</p>
+                        </div>
+                        <div className="bg-background rounded p-2">
+                          <p className="text-muted-foreground">1ère Tranche</p>
+                          <p className="font-bold">{(fraisApresReduction * 3).toLocaleString()} GNF</p>
+                          <p className="text-muted-foreground" style={{ fontSize: '10px' }}>Oct-Déc</p>
+                        </div>
+                        <div className="bg-background rounded p-2">
+                          <p className="text-muted-foreground">2ème Tranche</p>
+                          <p className="font-bold">{(fraisApresReduction * 3).toLocaleString()} GNF</p>
+                          <p className="text-muted-foreground" style={{ fontSize: '10px' }}>Jan-Mar</p>
+                        </div>
+                        <div className="bg-background rounded p-2">
+                          <p className="text-muted-foreground">3ème Tranche</p>
+                          <p className="font-bold">{(fraisApresReduction * 3).toLocaleString()} GNF</p>
+                          <p className="text-muted-foreground" style={{ fontSize: '10px' }}>Avr-Juin</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center text-xs bg-background rounded p-2">
+                        <div>
+                          <p className="text-muted-foreground">Déjà payé</p>
+                          <p className="font-bold text-green-600">0 GNF</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Reste à payer</p>
+                          <p className="font-bold text-destructive">{(fraisApresReduction * 9).toLocaleString()} GNF</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Prix/mois</p>
+                          <p className="font-bold">{fraisApresReduction.toLocaleString()} GNF</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {fraisTransport > 0 && (
+                    <div className="flex justify-between text-muted-foreground pt-1"><span>Transport (mensuel, via Paiements)</span><span>{fraisTransport.toLocaleString()} GNF/mois</span></div>
+                  )}
                   <p className="text-xs text-muted-foreground pt-1">
-                    ℹ️ La scolarité et le transport sont à payer dans l'onglet <strong>Paiements</strong>.
+                    ℹ️ La scolarité se paie en <strong>3 tranches</strong> dans l'onglet <strong>Paiements</strong>.
                   </p>
                 </CardContent>
               </Card>

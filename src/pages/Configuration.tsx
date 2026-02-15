@@ -1049,6 +1049,124 @@ function CorbeilleTab() {
   );
 }
 
+// ─── Tab: Articles (Fournitures, Manuels, Romans) ─────────
+function ArticlesTab({ categorie, label, icon: Icon }: { categorie: string; label: string; icon: any }) {
+  const qc = useQueryClient();
+  const { data: niveaux } = useNiveaux();
+  const { data: articles = [], isLoading } = useQuery({
+    queryKey: ['articles', categorie],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('articles' as any).select('*, niveaux:niveau_id(nom)').eq('categorie', categorie).order('nom');
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+  const [open, setOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [nom, setNom] = useState('');
+  const [prix, setPrix] = useState(0);
+  const [stock, setStock] = useState(0);
+  const [niveauId, setNiveauId] = useState('');
+
+  const reset = () => { setEditId(null); setNom(''); setPrix(0); setStock(0); setNiveauId(''); setOpen(false); };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!nom) throw new Error('Le nom est requis');
+      const payload = { nom, categorie, prix, stock, niveau_id: niveauId || null };
+      if (editId) {
+        const { error } = await supabase.from('articles' as any).update(payload).eq('id', editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('articles' as any).insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['articles', categorie] }); toast.success(`${label} enregistré`); reset(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('articles' as any).delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['articles', categorie] }); toast.success(`${label} supprimé`); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const openEdit = (a: any) => {
+    setEditId(a.id); setNom(a.nom); setPrix(Number(a.prix)); setStock(a.stock); setNiveauId(a.niveau_id ?? ''); setOpen(true);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2"><Icon className="h-5 w-5" /> {label}s</CardTitle>
+        <Button size="sm" onClick={() => { reset(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nom</TableHead>
+              <TableHead>Niveau</TableHead>
+              <TableHead>Prix</TableHead>
+              <TableHead>Stock</TableHead>
+              <TableHead className="w-24">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Chargement…</TableCell></TableRow>
+            ) : articles.length === 0 ? (
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Aucun article</TableCell></TableRow>
+            ) : articles.map((a: any) => (
+              <TableRow key={a.id}>
+                <TableCell className="font-medium">{a.nom}</TableCell>
+                <TableCell>{a.niveaux?.nom || <span className="text-muted-foreground text-xs">Tous</span>}</TableCell>
+                <TableCell>{Number(a.prix).toLocaleString()} GNF</TableCell>
+                <TableCell>
+                  <Badge variant={a.stock <= 0 ? 'destructive' : a.stock < 10 ? 'secondary' : 'default'}>{a.stock}</Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(a)}><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => remove.mutate(a.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editId ? 'Modifier' : 'Ajouter'} — {label}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Nom *</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder={`Ex: ${categorie === 'roman' ? 'Le Petit Prince' : categorie === 'manuel' ? 'Maths CM2' : 'Cahier 200 pages'}`} /></div>
+            <div><Label>Niveau (optionnel)</Label>
+              <Select value={niveauId || '__all__'} onValueChange={(v) => setNiveauId(v === '__all__' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="Tous les niveaux" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Tous les niveaux</SelectItem>
+                  {niveaux?.map((n: any) => <SelectItem key={n.id} value={n.id}>{n.nom} ({n.cycles?.nom})</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Prix (GNF)</Label><Input type="number" value={prix} onChange={e => setPrix(Number(e.target.value))} min={0} /></div>
+              <div><Label>Stock</Label><Input type="number" value={stock} onChange={e => setStock(Number(e.target.value))} min={0} /></div>
+            </div>
+          </div>
+          <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────
 export default function Configuration() {
   return (
@@ -1065,6 +1183,9 @@ export default function Configuration() {
           <TabsTrigger value="periodes">Périodes</TabsTrigger>
           <TabsTrigger value="tarifs">Tarifs</TabsTrigger>
           <TabsTrigger value="transport">Transport</TabsTrigger>
+          <TabsTrigger value="fournitures">📦 Fournitures</TabsTrigger>
+          <TabsTrigger value="manuels">📖 Manuels</TabsTrigger>
+          <TabsTrigger value="romans">📚 Romans</TabsTrigger>
           <TabsTrigger value="corbeille">🗑️ Corbeille</TabsTrigger>
         </TabsList>
         <TabsContent value="cycles"><CyclesTab /></TabsContent>
@@ -1074,6 +1195,9 @@ export default function Configuration() {
         <TabsContent value="periodes"><PeriodesTab /></TabsContent>
         <TabsContent value="tarifs"><TarifsTab /></TabsContent>
         <TabsContent value="transport"><ZonesTransportTab /></TabsContent>
+        <TabsContent value="fournitures"><ArticlesTab categorie="fourniture" label="Fourniture" icon={Tag} /></TabsContent>
+        <TabsContent value="manuels"><ArticlesTab categorie="manuel" label="Manuel" icon={BookOpen} /></TabsContent>
+        <TabsContent value="romans"><ArticlesTab categorie="roman" label="Roman" icon={BookOpen} /></TabsContent>
         <TabsContent value="corbeille"><CorbeilleTab /></TabsContent>
       </Tabs>
     </div>
