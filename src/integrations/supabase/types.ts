@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      articles: {
+        Row: {
+          categorie: string
+          created_at: string
+          id: string
+          niveau_id: string | null
+          nom: string
+          prix: number
+          stock: number
+          updated_at: string
+        }
+        Insert: {
+          categorie: string
+          created_at?: string
+          id?: string
+          niveau_id?: string | null
+          nom: string
+          prix?: number
+          stock?: number
+          updated_at?: string
+        }
+        Update: {
+          categorie?: string
+          created_at?: string
+          id?: string
+          niveau_id?: string | null
+          nom?: string
+          prix?: number
+          stock?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "articles_niveau_id_fkey"
+            columns: ["niveau_id"]
+            isOneToOne: false
+            referencedRelation: "niveaux"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           capacite: number | null
@@ -681,6 +722,48 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      ventes_articles: {
+        Row: {
+          article_id: string
+          created_at: string
+          eleve_id: string
+          id: string
+          prix_unitaire: number
+          quantite: number
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          eleve_id: string
+          id?: string
+          prix_unitaire: number
+          quantite?: number
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          eleve_id?: string
+          id?: string
+          prix_unitaire?: number
+          quantite?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ventes_articles_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ventes_articles_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       zones_transport: {
         Row: {
