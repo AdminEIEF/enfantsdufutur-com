@@ -16,7 +16,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, statut, option_cantine, solde_cantine, classe_id, created_at, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycles:cycle_id(nom)))')
+        .select('id, nom, prenom, statut, option_cantine, solde_cantine, classe_id, famille_id, created_at, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycles:cycle_id(nom)))')
         .is('deleted_at', null);
       if (error) throw error;
       return data;
@@ -56,6 +56,24 @@ export default function Dashboard() {
     },
   });
 
+  const { data: familles = [] } = useQuery({
+    queryKey: ['dashboard-familles'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('familles').select('id, nom_famille');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: ventesArticles = [] } = useQuery({
+    queryKey: ['dashboard-ventes'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('ventes_articles' as any).select('id, prix_unitaire, quantite');
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
   // ─── KPIs ──────────────────────────────────────────────
   const totalEleves = eleves.length;
   const now = new Date();
@@ -77,6 +95,37 @@ export default function Dashboard() {
   });
   const totalInscriptions = paiementsInscription.filter((p: any) => p.type_paiement === 'inscription').length;
   const totalReinscriptions = paiementsInscription.filter((p: any) => p.type_paiement === 'reinscription').length;
+
+  // Family KPIs
+  const totalFamilles = familles.length;
+  const enfantsEnFratrie = useMemo(() => {
+    const familleIds = new Set(eleves.filter((e: any) => e.famille_id).map((e: any) => e.famille_id));
+    let count = 0;
+    familleIds.forEach(fid => {
+      const kids = eleves.filter((e: any) => e.famille_id === fid);
+      if (kids.length > 1) count += kids.length;
+    });
+    return count;
+  }, [eleves]);
+
+  // CA Librairie
+  const caLibrairie = ventesArticles.reduce((s: number, v: any) => s + Number(v.prix_unitaire) * v.quantite, 0);
+  const caScolarite = paiements.filter((p: any) => p.type_paiement === 'scolarite').reduce((s: number, p: any) => s + Number(p.montant), 0);
+
+  // Impayés par famille
+  const impayesFamilles = useMemo(() => {
+    const familleIds = new Set(eleves.filter((e: any) => e.famille_id).map((e: any) => e.famille_id));
+    const result: { nom: string; reste: number }[] = [];
+    familleIds.forEach(fid => {
+      const kids = eleves.filter((e: any) => e.famille_id === fid);
+      const fam = familles.find((f: any) => f.id === fid);
+      const annuel = kids.reduce((s: number, e: any) => s + Number(e.classes?.niveaux?.frais_scolarite || 0) * 9, 0);
+      const paye = kids.reduce((s: number, e: any) => s + paiements.filter((p: any) => p.eleve_id === e.id && p.type_paiement === 'scolarite').reduce((ss: number, p: any) => ss + Number(p.montant), 0), 0);
+      const reste = annuel - paye;
+      if (reste > 0) result.push({ nom: fam?.nom_famille || 'Inconnue', reste });
+    });
+    return result.sort((a, b) => b.reste - a.reste);
+  }, [eleves, paiements, familles]);
 
   const paiementsMois = paiements.filter((p: any) => p.date_paiement?.startsWith(thisMonth));
   const totalRecettesMois = paiementsMois.reduce((s: number, p: any) => s + Number(p.montant), 0);
@@ -285,6 +334,74 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Family & Librairie KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Familles inscrites</CardTitle>
+            <Users className="h-5 w-5 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalFamilles}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Enfants en fratrie</CardTitle>
+            <Users className="h-5 w-5 text-accent" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{enfantsEnFratrie}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">CA Scolarité</CardTitle>
+            <CreditCard className="h-5 w-5 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{caScolarite.toLocaleString()} <span className="text-sm font-normal">GNF</span></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">CA Librairie</CardTitle>
+            <BookOpen className="h-5 w-5 text-accent" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{caLibrairie.toLocaleString()} <span className="text-sm font-normal">GNF</span></div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Impayés par famille */}
+      {impayesFamilles.length > 0 && (
+        <Card className="border-destructive/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-destructive" /> Impayés par famille ({impayesFamilles.length})</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Famille</TableHead>
+                  <TableHead className="text-right">Reste à payer</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {impayesFamilles.slice(0, 10).map((f, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="font-medium">{f.nom}</TableCell>
+                    <TableCell className="text-right"><Badge variant="destructive">{f.reste.toLocaleString()} GNF</Badge></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {impayesFamilles.length > 10 && <p className="text-xs text-muted-foreground text-center py-2">… et {impayesFamilles.length - 10} autre(s)</p>}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Financial balance */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

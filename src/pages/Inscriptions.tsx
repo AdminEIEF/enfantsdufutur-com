@@ -20,6 +20,24 @@ import { toast } from '@/hooks/use-toast';
 import { useZonesTransport } from './Configuration';
 import MandatairesForm, { Mandataire, createEmptyMandataires, uploadMandatairePhotos } from '@/components/MandatairesForm';
 
+function useArticlesForLevel(niveauId: string | null) {
+  return useQuery({
+    queryKey: ['articles-for-level', niveauId],
+    queryFn: async () => {
+      if (!niveauId) return [];
+      const { data, error } = await supabase
+        .from('articles' as any)
+        .select('*')
+        .or(`niveau_id.eq.${niveauId},niveau_id.is.null`)
+        .order('categorie')
+        .order('nom');
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!niveauId,
+  });
+}
+
 export default function Inscriptions() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -60,6 +78,8 @@ export default function Inscriptions() {
   const [uniformeKarate, setUniformeKarate] = useState(false);
   const [optionCantine, setOptionCantine] = useState(false);
   const [optionFournitures, setOptionFournitures] = useState(false);
+  const [optionAssurance, setOptionAssurance] = useState(false);
+  const [selectedArticles, setSelectedArticles] = useState<Record<string, boolean>>({});
   const [checkPhoto, setCheckPhoto] = useState(false);
   const [nomPrenomPere, setNomPrenomPere] = useState('');
   const [nomPrenomMere, setNomPrenomMere] = useState('');
@@ -111,6 +131,17 @@ export default function Inscriptions() {
   });
 
   const { data: zones = [] } = useZonesTransport();
+
+  // Articles suggested for the selected level
+  const selectedNiveauId = useMemo(() => {
+    if (!classeId || !classes.length) return null;
+    const cl = classes.find((c: any) => c.id === classeId);
+    return cl?.niveau_id || null;
+  }, [classeId, classes]);
+  const { data: articlesNiveau = [] } = useArticlesForLevel(selectedNiveauId);
+
+  // Assurance fee
+  const fraisAssurance = optionAssurance ? (tarifs.find((t: any) => t.categorie === 'assurance')?.montant || 50000) : 0;
 
   // Suggest zone based on address
   const suggestedZoneId = useMemo(() => {
@@ -333,7 +364,8 @@ export default function Inscriptions() {
     setFamilleId(''); setZoneTransportId(''); setAdresse('');
     setCheckLivret(false); setCheckRames(false); setCheckMarqueurs(false); setCheckPhoto(false);
     setUniformeScolaire(false); setUniformeSport(false); setUniformePolo(false); setUniformeKarate(false);
-    setOptionCantine(false); setOptionFournitures(false);
+    setOptionCantine(false); setOptionFournitures(false); setOptionAssurance(false);
+    setSelectedArticles({});
     setNomPrenomPere(''); setNomPrenomMere('');
     setMandataires(createEmptyMandataires());
     setPhotoEleve(null); setPhotoElevePreview(null);
@@ -349,12 +381,9 @@ export default function Inscriptions() {
   if (familleId) {
     nbEnfantsFamille = eleves.filter((e: any) => e.famille_id === familleId).length;
   }
-  const getReduction = (rang: number) => {
-    if (rang === 2) return 0.10;
-    if (rang >= 3) return 0.20;
-    return 0;
-  };
-  const reduction = getReduction(nbEnfantsFamille + 1);
+  // 10% reduction for families with 3+ children (including this new one)
+  const totalEnfantsFamille = nbEnfantsFamille + 1;
+  const reduction = totalEnfantsFamille >= 3 ? 0.10 : 0;
   const fraisApresReduction = fraisScolarite * (1 - reduction);
 
   // Transport fee from zone
@@ -383,7 +412,15 @@ export default function Inscriptions() {
   const fraisInscription = typeInscription === 'inscription' ? 100000 : 150000;
 
   const fraisFournitures = optionFournitures ? (tarifs.find((t: any) => t.categorie === 'fournitures')?.montant || 0) : 0;
-  const totalFrais = fraisInscription + fraisUniformes + fraisFournitures;
+
+  // Selected articles total
+  const fraisArticlesSelectionnes = useMemo(() => {
+    return articlesNiveau
+      .filter((a: any) => selectedArticles[a.id])
+      .reduce((s: number, a: any) => s + Number(a.prix), 0);
+  }, [articlesNiveau, selectedArticles]);
+
+  const totalFrais = fraisInscription + fraisUniformes + fraisFournitures + fraisAssurance + fraisArticlesSelectionnes;
 
   const filtered = eleves.filter((e: any) =>
     `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase())
@@ -607,10 +644,48 @@ export default function Inscriptions() {
                     <div className="flex items-center gap-2"><Checkbox checked={uniformePolo} onCheckedChange={(v) => setUniformePolo(!!v)} /><Label>Polo Lacoste {prixPoloLacoste > 0 && <span className="text-muted-foreground font-normal">— {prixPoloLacoste.toLocaleString()} GNF</span>}</Label></div>
                     <div className="flex items-center gap-2"><Checkbox checked={uniformeKarate} onCheckedChange={(v) => setUniformeKarate(!!v)} /><Label>Tenue de Karaté {prixKarate > 0 && <span className="text-muted-foreground font-normal">— {prixKarate.toLocaleString()} GNF</span>}</Label></div>
                   </div>
-                  <div className="flex items-center gap-2"><Checkbox checked={optionCantine} onCheckedChange={(v) => setOptionCantine(!!v)} /><Label>Cantine</Label></div>
-                  <div className="flex items-center gap-2"><Checkbox checked={optionFournitures} onCheckedChange={(v) => setOptionFournitures(!!v)} /><Label>Fournitures scolaires</Label></div>
-                </CardContent>
-              </Card>
+                   <div className="flex items-center gap-2"><Checkbox checked={optionCantine} onCheckedChange={(v) => setOptionCantine(!!v)} /><Label>🍽️ Cantine</Label></div>
+                   <div className="flex items-center gap-2"><Checkbox checked={optionAssurance} onCheckedChange={(v) => setOptionAssurance(!!v)} /><Label>🛡️ Assurance {fraisAssurance > 0 && optionAssurance && <span className="text-muted-foreground font-normal">— {fraisAssurance.toLocaleString()} GNF</span>}</Label></div>
+                   <div className="flex items-center gap-2"><Checkbox checked={optionFournitures} onCheckedChange={(v) => setOptionFournitures(!!v)} /><Label>📦 Fournitures scolaires</Label></div>
+                 </CardContent>
+               </Card>
+
+               {/* Kit Fournitures & Romans suggérés par niveau */}
+               {classeId && articlesNiveau.length > 0 && (
+                 <Card>
+                   <CardHeader className="pb-3"><CardTitle className="text-base">📚 Kit Fournitures & Romans — Niveau {selectedClass?.niveaux?.nom}</CardTitle></CardHeader>
+                   <CardContent className="space-y-2">
+                     <p className="text-xs text-muted-foreground mb-2">Articles suggérés automatiquement pour ce niveau. Cochez ceux à inclure :</p>
+                     {['fourniture', 'manuel', 'roman'].map(cat => {
+                       const items = articlesNiveau.filter((a: any) => a.categorie === cat);
+                       if (items.length === 0) return null;
+                       return (
+                         <div key={cat}>
+                           <p className="text-xs font-semibold capitalize mb-1">{cat === 'fourniture' ? '📦 Fournitures' : cat === 'manuel' ? '📖 Manuels' : '📚 Romans'}</p>
+                           <div className="space-y-1">
+                             {items.map((a: any) => (
+                               <div key={a.id} className={`flex items-center justify-between gap-2 px-2 py-1.5 rounded text-sm ${a.stock <= 0 ? 'opacity-50' : ''} ${selectedArticles[a.id] ? 'bg-primary/10 border border-primary/30' : 'bg-muted'}`}>
+                                 <div className="flex items-center gap-2">
+                                   <Checkbox checked={!!selectedArticles[a.id]} onCheckedChange={(v) => setSelectedArticles(prev => ({ ...prev, [a.id]: !!v }))} disabled={a.stock <= 0} />
+                                   <span>{a.nom}</span>
+                                   {a.stock <= 0 && <Badge variant="destructive" className="text-[10px] px-1">Épuisé</Badge>}
+                                   {a.stock > 0 && a.stock < 10 && <Badge variant="secondary" className="text-[10px] px-1">Stock: {a.stock}</Badge>}
+                                 </div>
+                                 <span className="font-medium text-muted-foreground">{Number(a.prix).toLocaleString()} GNF</span>
+                               </div>
+                             ))}
+                           </div>
+                         </div>
+                       );
+                     })}
+                     {fraisArticlesSelectionnes > 0 && (
+                       <div className="text-right pt-2 border-t">
+                         <span className="text-sm font-bold text-primary">Sous-total articles : {fraisArticlesSelectionnes.toLocaleString()} GNF</span>
+                       </div>
+                     )}
+                   </CardContent>
+                 </Card>
+               )}
 
               {/* Mandataires Crèche/Maternelle */}
               {isCrecheMaternelle && (
@@ -627,6 +702,8 @@ export default function Inscriptions() {
                   )}
                   {fraisUniformes > 0 && <div className="flex justify-between"><span>Uniformes</span><span>{fraisUniformes.toLocaleString()} GNF</span></div>}
                   {fraisFournitures > 0 && <div className="flex justify-between"><span>Fournitures</span><span>{fraisFournitures.toLocaleString()} GNF</span></div>}
+                  {fraisAssurance > 0 && <div className="flex justify-between"><span>Assurance</span><span>{fraisAssurance.toLocaleString()} GNF</span></div>}
+                  {fraisArticlesSelectionnes > 0 && <div className="flex justify-between"><span>Kit articles (niveau)</span><span>{fraisArticlesSelectionnes.toLocaleString()} GNF</span></div>}
                   <div className="flex justify-between font-bold text-base pt-2 border-t">
                     <span>TOTAL À PAYER MAINTENANT</span><span>{totalFrais.toLocaleString()} GNF</span>
                   </div>

@@ -55,6 +55,7 @@ const navSections = [
     items: [
       { title: 'Cantine & QR', url: '/cantine', icon: ScanLine },
       { title: 'Transport', url: '/transport', icon: Bus },
+      { title: 'Librairie', url: '/librairie', icon: BookOpen },
       { title: 'Bibliothèque', url: '/bibliotheque', icon: Library },
       { title: 'Notifications', url: '/notifications', icon: Bell },
     ],
