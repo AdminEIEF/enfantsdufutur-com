@@ -22,6 +22,7 @@ import Finances from "./pages/Finances";
 import Cantine from "./pages/Cantine";
 import Transport from "./pages/Transport";
 import Bibliotheque from "./pages/Bibliotheque";
+import Librairie from "./pages/Librairie";
 import Notifications from "./pages/Notifications";
 import Reinscription from "./pages/Reinscription";
 import Configuration from "./pages/Configuration";
@@ -81,6 +82,7 @@ const App = () => (
             <Route path="/finances" element={<ProtectedRoute><Finances /></ProtectedRoute>} />
             <Route path="/cantine" element={<ProtectedRoute><Cantine /></ProtectedRoute>} />
             <Route path="/transport" element={<ProtectedRoute><Transport /></ProtectedRoute>} />
+            <Route path="/librairie" element={<ProtectedRoute><Librairie /></ProtectedRoute>} />
             <Route path="/bibliotheque" element={<ProtectedRoute><Bibliotheque /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
