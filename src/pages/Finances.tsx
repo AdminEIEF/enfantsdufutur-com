@@ -145,7 +145,7 @@ export default function Finances() {
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-1"><TrendingUp className="h-4 w-4" /> Recettes</CardTitle></CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-success">{totalRecettes.toLocaleString()} F</p>
+            <p className="text-2xl font-bold text-success">{totalRecettes.toLocaleString()} GNF</p>
             {recChange !== 0 && (
               <p className={`text-xs flex items-center gap-1 ${recChange > 0 ? 'text-success' : 'text-destructive'}`}>
                 {recChange > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
@@ -157,7 +157,7 @@ export default function Finances() {
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-1"><TrendingDown className="h-4 w-4" /> Dépenses</CardTitle></CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-destructive">{totalDepenses.toLocaleString()} F</p>
+            <p className="text-2xl font-bold text-destructive">{totalDepenses.toLocaleString()} GNF</p>
             {depChange !== 0 && (
               <p className={`text-xs flex items-center gap-1 ${depChange < 0 ? 'text-success' : 'text-destructive'}`}>
                 {depChange > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
@@ -168,7 +168,7 @@ export default function Finances() {
         </Card>
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-1"><DollarSign className="h-4 w-4" /> Solde Net</CardTitle></CardHeader>
-          <CardContent><p className={`text-2xl font-bold ${soldeNet >= 0 ? 'text-success' : 'text-destructive'}`}>{soldeNet.toLocaleString()} F</p></CardContent>
+          <CardContent><p className={`text-2xl font-bold ${soldeNet >= 0 ? 'text-success' : 'text-destructive'}`}>{soldeNet.toLocaleString()} GNF</p></CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Indice de Rentabilité</CardTitle></CardHeader>
@@ -277,9 +277,9 @@ export default function Finances() {
                 <Card key={i}>
                   <CardHeader className="pb-2"><CardTitle className="text-sm">{p.mois}</CardTitle></CardHeader>
                   <CardContent className="space-y-1 text-sm">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Recettes prévues</span><span className="font-semibold text-success">{p.recettes_proj?.toLocaleString()} F</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Dépenses prévues</span><span className="font-semibold text-destructive">{p.depenses_proj?.toLocaleString()} F</span></div>
-                    <div className="flex justify-between border-t pt-1"><span className="font-medium">Solde projeté</span><span className="font-bold">{((p.recettes_proj || 0) - (p.depenses_proj || 0)).toLocaleString()} F</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Recettes prévues</span><span className="font-semibold text-success">{p.recettes_proj?.toLocaleString()} GNF</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Dépenses prévues</span><span className="font-semibold text-destructive">{p.depenses_proj?.toLocaleString()} GNF</span></div>
+                    <div className="flex justify-between border-t pt-1"><span className="font-medium">Solde projeté</span><span className="font-bold">{((p.recettes_proj || 0) - (p.depenses_proj || 0)).toLocaleString()} GNF</span></div>
                   </CardContent>
                 </Card>
               ))}
