@@ -672,38 +672,47 @@ export type Database = {
       }
       paiements: {
         Row: {
+          banque_nom: string | null
           canal: string
           created_at: string
           created_by: string | null
+          date_depot: string | null
           date_paiement: string
           eleve_id: string
           id: string
           mois_concerne: string | null
           montant: number
+          preuve_url: string | null
           reference: string | null
           type_paiement: string
         }
         Insert: {
+          banque_nom?: string | null
           canal?: string
           created_at?: string
           created_by?: string | null
+          date_depot?: string | null
           date_paiement?: string
           eleve_id: string
           id?: string
           mois_concerne?: string | null
           montant: number
+          preuve_url?: string | null
           reference?: string | null
           type_paiement: string
         }
         Update: {
+          banque_nom?: string | null
           canal?: string
           created_at?: string
           created_by?: string | null
+          date_depot?: string | null
           date_paiement?: string
           eleve_id?: string
           id?: string
           mois_concerne?: string | null
           montant?: number
+          preuve_url?: string | null
           reference?: string | null
           type_paiement?: string
         }
