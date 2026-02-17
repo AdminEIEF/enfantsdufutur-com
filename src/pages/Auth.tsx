@@ -5,8 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, Loader2 } from 'lucide-react';
+import { GraduationCap, Loader2, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { Link } from 'react-router-dom';
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
@@ -15,6 +17,7 @@ export default function Auth() {
   const [nom, setNom] = useState('');
   const [prenom, setPrenom] = useState('');
   const { toast } = useToast();
+  const { isInstallable, install } = usePWAInstall();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,6 +125,18 @@ export default function Auth() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <div className="flex flex-col items-center gap-3">
+          {isInstallable && (
+            <Button variant="outline" className="w-full" onClick={install}>
+              <Download className="mr-2 h-4 w-4" />
+              Installer l'Application
+            </Button>
+          )}
+          <Link to="/download" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            📱 Comment installer l'appli sur mon téléphone ?
+          </Link>
+        </div>
       </div>
     </div>
   );
