@@ -747,6 +747,7 @@ export type Database = {
       }
       repas_cantine: {
         Row: {
+          created_by: string | null
           date_repas: string
           eleve_id: string
           id: string
@@ -754,6 +755,7 @@ export type Database = {
           plat_nom: string | null
         }
         Insert: {
+          created_by?: string | null
           date_repas?: string
           eleve_id: string
           id?: string
@@ -761,6 +763,7 @@ export type Database = {
           plat_nom?: string | null
         }
         Update: {
+          created_by?: string | null
           date_repas?: string
           eleve_id?: string
           id?: string
@@ -843,6 +846,7 @@ export type Database = {
         Row: {
           article_id: string
           created_at: string
+          created_by: string | null
           eleve_id: string
           id: string
           prix_unitaire: number
@@ -851,6 +855,7 @@ export type Database = {
         Insert: {
           article_id: string
           created_at?: string
+          created_by?: string | null
           eleve_id: string
           id?: string
           prix_unitaire: number
@@ -859,6 +864,7 @@ export type Database = {
         Update: {
           article_id?: string
           created_at?: string
+          created_by?: string | null
           eleve_id?: string
           id?: string
           prix_unitaire?: number

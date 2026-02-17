@@ -50,14 +50,32 @@ const navSections = [
     ],
   },
   {
-    label: 'Services',
-    roles: ['admin', 'secretaire', 'comptable'] as const,
+    label: 'Cantine',
+    roles: ['admin', 'cantine', 'secretaire', 'comptable'] as const,
     items: [
       { title: 'Cantine & QR', url: '/cantine', icon: ScanLine },
+    ],
+  },
+  {
+    label: 'Services',
+    roles: ['admin', 'secretaire'] as const,
+    items: [
       { title: 'Transport', url: '/transport', icon: Bus },
-      { title: 'Librairie', url: '/librairie', icon: BookOpen },
-      { title: 'Bibliothèque', url: '/bibliotheque', icon: Library },
       { title: 'Notifications', url: '/notifications', icon: Bell },
+    ],
+  },
+  {
+    label: 'Librairie',
+    roles: ['admin', 'librairie', 'secretaire'] as const,
+    items: [
+      { title: 'Librairie', url: '/librairie', icon: BookOpen },
+    ],
+  },
+  {
+    label: 'Bibliothèque',
+    roles: ['admin', 'secretaire'] as const,
+    items: [
+      { title: 'Bibliothèque', url: '/bibliotheque', icon: Library },
     ],
   },
   {
@@ -95,7 +113,7 @@ export function AppSidebar() {
       <SidebarSeparator />
       <SidebarContent>
         {navSections.map((section) => {
-          if (!hasAnyRole(section.roles as unknown as ('admin' | 'secretaire' | 'service_info' | 'comptable' | 'boutique')[])) return null;
+          if (!hasAnyRole(section.roles as unknown as ('admin' | 'secretaire' | 'service_info' | 'comptable' | 'boutique' | 'cantine' | 'librairie')[])) return null;
           return (
             <SidebarGroup key={section.label}>
               <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
