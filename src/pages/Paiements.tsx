@@ -47,7 +47,7 @@ const TRANCHES = [
 ];
 
 // ─── Individual Student Payment Panel ─────────────────────
-function PaiementIndividuelPanel({ eleves, paiements, articles }: { eleves: any[]; paiements: any[]; articles: any[] }) {
+function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { eleves: any[]; paiements: any[]; articles: any[]; familles: any[] }) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -61,6 +61,10 @@ function PaiementIndividuelPanel({ eleves, paiements, articles }: { eleves: any[
   const [articleQuantite, setArticleQuantite] = useState(1);
 
   const selectedEleve = eleves.find((e: any) => e.id === eleveId);
+
+  // Anti-doublon: block scolarite/transport payment for family members
+  const isFamilyMember = !!selectedEleve?.famille_id;
+  const familyName = isFamilyMember ? familles.find((f: any) => f.id === selectedEleve.famille_id)?.nom_famille : null;
 
   const fraisMensuel = useMemo(() => {
     if (!selectedEleve) return 0;
@@ -112,7 +116,10 @@ function PaiementIndividuelPanel({ eleves, paiements, articles }: { eleves: any[
   const createPaiement = useMutation({
     mutationFn: async () => {
       if (!eleveId || !montant || parseFloat(montant) <= 0) throw new Error('Élève et montant valide requis');
-
+      // Anti-doublon: block scolarité/transport for family members
+      if (isFamilyMember && (typePaiement === 'scolarite' || typePaiement === 'transport')) {
+        throw new Error('Les paiements Scolarité/Transport pour cet élève doivent passer par le Compte Famille');
+      }
       if (typePaiement === 'article') {
         if (!selectedArticleId) throw new Error('Sélectionnez un article');
         if (selectedArticle && selectedArticle.stock < articleQuantite) throw new Error('Stock insuffisant');
@@ -210,10 +217,15 @@ function PaiementIndividuelPanel({ eleves, paiements, articles }: { eleves: any[
                   <SelectContent>
                     {TYPES.map(t => {
                       const disabled = t.value === 'transport' && selectedEleve && !selectedEleve.zone_transport_id;
-                      return <SelectItem key={t.value} value={t.value} disabled={disabled}>{t.label}{disabled ? ' (pas de zone)' : ''}</SelectItem>;
+                      // Anti-doublon: block scolarité/transport for family members
+                      const blockedByFamily = isFamilyMember && (t.value === 'scolarite' || t.value === 'transport');
+                      return <SelectItem key={t.value} value={t.value} disabled={disabled || blockedByFamily}>{t.label}{disabled ? ' (pas de zone)' : ''}{blockedByFamily ? ' (→ Compte Famille)' : ''}</SelectItem>;
                     })}
                   </SelectContent>
                 </Select>
+                {isFamilyMember && (typePaiement === 'scolarite' || typePaiement === 'transport') && (
+                  <p className="text-xs text-destructive mt-1">⚠️ Cet élève appartient à la famille <strong>{familyName}</strong>. Les paiements Scolarité/Transport doivent passer par l'onglet "Comptes Familles".</p>
+                )}
               </div>
 
               {/* Article selection */}
@@ -654,7 +666,7 @@ export default function Paiements() {
         </TabsList>
 
         <TabsContent value="individuel" className="mt-4">
-          <PaiementIndividuelPanel eleves={eleves} paiements={paiements} articles={articles} />
+          <PaiementIndividuelPanel eleves={eleves} paiements={paiements} articles={articles} familles={familles} />
         </TabsContent>
 
         <TabsContent value="famille" className="mt-4">

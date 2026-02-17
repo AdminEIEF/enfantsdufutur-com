@@ -375,6 +375,45 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      {/* CA Comparatif Bar Chart: Scolarité/Transport vs Librairie/Options */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">📊 Chiffre d'Affaires comparatif</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            const caTransport = paiements.filter((p: any) => p.type_paiement === 'transport').reduce((s: number, p: any) => s + Number(p.montant), 0);
+            const caOptions = paiements.filter((p: any) => ['article', 'boutique', 'fournitures', 'uniforme', 'cantine'].includes(p.type_paiement)).reduce((s: number, p: any) => s + Number(p.montant), 0);
+            const caInscription = paiements.filter((p: any) => ['inscription', 'reinscription'].includes(p.type_paiement)).reduce((s: number, p: any) => s + Number(p.montant), 0);
+            const chartData = [
+              { name: 'Scolarité', montant: caScolarite },
+              { name: 'Transport', montant: caTransport },
+              { name: 'Librairie', montant: caLibrairie },
+              { name: 'Options/Boutique', montant: caOptions },
+              { name: 'Inscriptions', montant: caInscription },
+            ];
+            const barColors = ['hsl(220, 70%, 45%)', 'hsl(38, 92%, 50%)', 'hsl(142, 71%, 45%)', 'hsl(280, 60%, 50%)', 'hsl(200, 80%, 50%)'];
+            return chartData.some(d => d.montant > 0) ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                  <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--popover-foreground))' }} formatter={(value: number) => [`${value.toLocaleString()} GNF`]} />
+                  <Bar dataKey="montant" name="Montant" radius={[4, 4, 0, 0]}>
+                    {chartData.map((_, i) => (
+                      <Cell key={i} fill={barColors[i % barColors.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">Aucune donnée financière</div>
+            );
+          })()}
+        </CardContent>
+      </Card>
+
       {/* Impayés par famille */}
       {impayesFamilles.length > 0 && (
         <Card className="border-destructive/20">
