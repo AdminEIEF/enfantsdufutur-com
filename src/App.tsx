@@ -30,6 +30,7 @@ import NotFound from "./pages/NotFound";
 import ElevePublic from "./pages/ElevePublic";
 import Boutique from "./pages/Boutique";
 import Tracabilite from "./pages/Tracabilite";
+import DownloadPage from "./pages/Download";
 
 const queryClient = new QueryClient();
 
@@ -94,6 +95,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
+            <Route path="/download" element={<DownloadPage />} />
             <Route path="/eleve/:matricule" element={<ElevePublic />} />
             <Route path="/" element={<RoleBasedRedirect />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

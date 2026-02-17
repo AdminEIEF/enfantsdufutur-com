@@ -1,10 +1,11 @@
 import {
   GraduationCap, Users, UserPlus, BookOpen, Calculator, AlertTriangle,
   Settings, Bell, ScanLine, Library, BarChart3, LogOut,
-  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag
+  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -97,6 +98,7 @@ const navSections = [
 
 export function AppSidebar() {
   const { hasAnyRole, signOut, user } = useAuth();
+  const { isInstallable, install } = usePWAInstall();
 
   return (
     <Sidebar>
@@ -141,6 +143,12 @@ export function AppSidebar() {
         <div className="text-xs text-sidebar-foreground/60 mb-2 truncate px-2">
           {user?.email}
         </div>
+        {isInstallable && (
+          <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground mb-1" onClick={install}>
+            <Download className="mr-2 h-4 w-4" />
+            Installer l'Appli
+          </Button>
+        )}
         <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground" onClick={signOut}>
           <LogOut className="mr-2 h-4 w-4" />
           Déconnexion
