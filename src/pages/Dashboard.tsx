@@ -579,9 +579,9 @@ export default function Dashboard() {
                   <TableRow key={i}>
                     <TableCell className="font-medium">{c.nom}</TableCell>
                     <TableCell className="text-center">{c.effectif}</TableCell>
-                    <TableCell className="text-right">{c.totalAttendu.toLocaleString()} F</TableCell>
-                    <TableCell className="text-right text-accent">{c.totalPaye.toLocaleString()} F</TableCell>
-                    <TableCell className="text-right text-destructive">{c.reste.toLocaleString()} F</TableCell>
+                    <TableCell className="text-right">{c.totalAttendu.toLocaleString()} GNF</TableCell>
+                    <TableCell className="text-right text-accent">{c.totalPaye.toLocaleString()} GNF</TableCell>
+                    <TableCell className="text-right text-destructive">{c.reste.toLocaleString()} GNF</TableCell>
                     <TableCell className="text-center">
                       <Badge variant={c.taux >= 75 ? 'default' : c.taux >= 50 ? 'secondary' : 'destructive'}>
                         {c.taux}%
