@@ -17,6 +17,7 @@ import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { generateRecuPDF } from '@/lib/generateRecuPDF';
+import { generateRecuGeneriquePDF } from '@/lib/generateRecuGeneriquePDF';
 import { generateRecuFamillePDF } from '@/lib/generateRecuFamillePDF';
 import { exportToExcel, readExcelFile } from '@/lib/excelUtils';
 
@@ -754,8 +755,8 @@ export default function Paiements() {
                       <TableCell><Badge variant={p.canal === 'especes' ? 'secondary' : 'default'}>{CANAUX.find(c => c.value === p.canal)?.label || p.canal}</Badge></TableCell>
                       <TableCell className="text-xs text-muted-foreground">{p.reference || '—'}</TableCell>
                       <TableCell>
-                        {(p.type_paiement === 'scolarite' || p.type_paiement === 'transport') && (
-                          <Button variant="ghost" size="icon" title="Imprimer reçu" onClick={() => {
+                        <Button variant="ghost" size="icon" title="Imprimer reçu" onClick={() => {
+                          if (p.type_paiement === 'scolarite' || p.type_paiement === 'transport') {
                             const isTransport = p.type_paiement === 'transport';
                             const transportZone = isTransport ? (p.eleves as any)?.zones_transport : null;
                             const prixMensuel = isTransport ? Number(transportZone?.prix_mensuel || 0) : Number(eleveForReceipt?.classes?.niveaux?.frais_scolarite || 0);
@@ -776,10 +777,23 @@ export default function Paiements() {
                               resteAPayer: Math.max(0, annuelCalc - totalPayeType),
                               zone: transportZone?.nom,
                             });
-                          }}>
-                            <Printer className="h-4 w-4" />
-                          </Button>
-                        )}
+                          } else {
+                            generateRecuGeneriquePDF({
+                              type: p.type_paiement,
+                              typeLabel: TYPES.find(t => t.value === p.type_paiement)?.label || p.type_paiement,
+                              eleve: `${p.eleves?.prenom} ${p.eleves?.nom}`,
+                              matricule: p.eleves?.matricule || '',
+                              classe: eleveForReceipt?.classes?.nom || '—',
+                              montant: Number(p.montant),
+                              mois: (p as any).mois_concerne || null,
+                              canal: CANAUX.find(c => c.value === p.canal)?.label || p.canal,
+                              reference: p.reference,
+                              date: format(new Date(p.date_paiement), 'dd MMMM yyyy', { locale: fr }),
+                            });
+                          }
+                        }}>
+                          <Printer className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );})}

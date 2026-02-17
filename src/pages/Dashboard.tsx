@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, UserPlus, CreditCard, BookOpen, GraduationCap, TrendingUp, Utensils, AlertTriangle, Wallet, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Users, UserPlus, CreditCard, BookOpen, GraduationCap, TrendingUp, Utensils, AlertTriangle, Wallet, ArrowUpRight, ArrowDownRight, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -249,6 +249,33 @@ export default function Dashboard() {
   const totalRecettes = paiements.reduce((s: number, p: any) => s + Number(p.montant), 0);
   const totalDepenses = depenses.reduce((s: number, d: any) => s + Number(d.montant), 0);
 
+  // ─── Indice de Rentabilité par service ──────────────────
+  const SERVICE_LABELS: Record<string, string> = {
+    scolarite: 'Scolarité', transport: 'Transport', cantine: 'Cantine',
+    uniforme: 'Boutique', fournitures: 'Fournitures', autre: 'Autre',
+  };
+  const DEP_TO_PAI: Record<string, string> = {
+    'Scolarité': 'scolarite', 'Transport': 'transport', 'Cantine': 'cantine',
+    'Boutique': 'uniforme', 'Librairie': 'fournitures', 'Fonctionnement': 'autre', 'Autre': 'autre',
+  };
+  const SERVICES_PAI = ['scolarite', 'transport', 'cantine', 'uniforme', 'fournitures', 'autre'];
+  const SERVICES_DEP = ['Transport', 'Cantine', 'Librairie', 'Boutique', 'Fonctionnement', 'Autre'];
+  const allServices = [...new Set([...SERVICES_PAI.map(s => SERVICE_LABELS[s]), ...SERVICES_DEP])];
+
+  const byService = useMemo(() => {
+    return allServices.filter((_, i, arr) => arr.indexOf(arr[i]) === i).map(label => {
+      const paiKey = Object.entries(SERVICE_LABELS).find(([, v]) => v === label)?.[0];
+      const recettes = paiKey ? paiements.filter((p: any) => p.type_paiement === paiKey).reduce((sum: number, p: any) => sum + Number(p.montant), 0) : 0;
+      const depKey = Object.entries(DEP_TO_PAI).find(([, v]) => v === paiKey)?.[0] || label;
+      const dep = depenses.filter((d: any) => d.service === depKey).reduce((sum: number, d: any) => sum + Number(d.montant), 0);
+      const ir = dep > 0 ? parseFloat((recettes / dep).toFixed(2)) : recettes > 0 ? 999 : 0;
+      return { service: label, recettes, depenses: dep, ir, marge: recettes - dep };
+    }).filter(s => s.recettes > 0 || s.depenses > 0);
+  }, [paiements, depenses]);
+
+  const soldeNet = totalRecettes - totalDepenses;
+  const indiceRentabilite = totalDepenses > 0 ? (totalRecettes / totalDepenses).toFixed(2) : '∞';
+
   return (
     <div className="space-y-6">
       <div>
@@ -450,7 +477,59 @@ export default function Dashboard() {
             <div>
               <p className="text-sm text-muted-foreground">Total recettes</p>
               <p className="text-xl font-bold">{totalRecettes.toLocaleString()} GNF</p>
+      </div>
+
+      {/* Indice de Rentabilité par Service */}
+      {byService.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" /> Indice de Rentabilité par Service
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">IR global : <span className="font-bold">{indiceRentabilite}</span> (Recettes ÷ Dépenses)</p>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Service</TableHead>
+                    <TableHead className="text-right">Recettes</TableHead>
+                    <TableHead className="text-right">Dépenses</TableHead>
+                    <TableHead className="text-right">Marge</TableHead>
+                    <TableHead className="text-right">IR</TableHead>
+                    <TableHead className="text-center">Statut</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {byService.map((s, i) => (
+                    <TableRow key={i}>
+                      <TableCell className="font-medium">{s.service}</TableCell>
+                      <TableCell className="text-right text-accent">{s.recettes.toLocaleString()} F</TableCell>
+                      <TableCell className="text-right text-destructive">{s.depenses.toLocaleString()} F</TableCell>
+                      <TableCell className={`text-right font-semibold ${s.marge >= 0 ? 'text-accent' : 'text-destructive'}`}>{s.marge.toLocaleString()} F</TableCell>
+                      <TableCell className="text-right font-bold">{s.ir === 999 ? '∞' : s.ir}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant={s.ir >= 1 ? 'default' : 'destructive'}>
+                          {s.ir >= 2 ? 'Excellent' : s.ir >= 1.5 ? 'Bon' : s.ir >= 1 ? 'Rentable' : s.ir > 0 ? 'Déficitaire' : 'N/A'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="bg-muted/30 font-bold">
+                    <TableCell>TOTAL</TableCell>
+                    <TableCell className="text-right text-accent">{totalRecettes.toLocaleString()} F</TableCell>
+                    <TableCell className="text-right text-destructive">{totalDepenses.toLocaleString()} F</TableCell>
+                    <TableCell className={`text-right ${soldeNet >= 0 ? 'text-accent' : 'text-destructive'}`}>{soldeNet.toLocaleString()} F</TableCell>
+                    <TableCell className="text-right">{indiceRentabilite}</TableCell>
+                    <TableCell className="text-center"><Badge variant={soldeNet >= 0 ? 'default' : 'destructive'}>{soldeNet >= 0 ? 'Positif' : 'Négatif'}</Badge></TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </div>
+          </CardContent>
+        </Card>
+      )}
           </CardContent>
         </Card>
         <Card className="border-destructive/30">
