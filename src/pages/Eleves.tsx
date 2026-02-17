@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,9 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useToast } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/excelUtils';
 import { generateBadgeRetrait } from '@/lib/generateBadgeRetrait';
+
+const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
+type TrancheConfig = { label: string; mois: string[]; montant: number };
 
 export default function Eleves() {
   const [search, setSearch] = useState('');
@@ -64,6 +67,27 @@ export default function Eleves() {
       const { data, error } = await supabase.from('mandataires').select('*').order('ordre');
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: paiementsAll = [] } = useQuery({
+    queryKey: ['paiements-all'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('paiements').select('*').eq('type_paiement', 'scolarite');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: tranchesConfig = {} } = useQuery({
+    queryKey: ['parametres-tranches-v2'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('parametres').select('*').eq('cle', 'tranches_paiement_v2').maybeSingle();
+      if (error) throw error;
+      if (data?.valeur && typeof data.valeur === 'object' && !Array.isArray(data.valeur)) {
+        return data.valeur as Record<string, TrancheConfig[]>;
+      }
+      return {} as Record<string, TrancheConfig[]>;
     },
   });
 
@@ -289,11 +313,27 @@ export default function Eleves() {
 
       {/* Detail dialog */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><User className="h-5 w-5" /> {selected?.prenom} {selected?.nom}</DialogTitle></DialogHeader>
-          {selected && (
+          {selected && (() => {
+            const niveauId = selected.classes?.niveau_id || null;
+            const eleveTranches: TrancheConfig[] = (niveauId && tranchesConfig[niveauId]) ? tranchesConfig[niveauId] : [];
+            const elevePaiements = paiementsAll.filter((p: any) => p.eleve_id === selected.id);
+            const moisPayes = elevePaiements.map((p: any) => p.mois_concerne).filter(Boolean) as string[];
+            const fraisAnnuels = Number(selected.classes?.niveaux?.frais_scolarite || 0);
+            const totalPaye = elevePaiements.reduce((s: number, p: any) => s + Number(p.montant), 0);
+            const resteAPayer = Math.max(0, fraisAnnuels * 9 - totalPaye);
+
+            // Build month -> tranche map
+            const moisToTranche: Record<string, TrancheConfig> = {};
+            eleveTranches.forEach(t => t.mois.forEach(m => { moisToTranche[m] = t; }));
+
+            // Check if a tranche is fully paid (all its months are paid)
+            const isTranchePaid = (t: TrancheConfig) => t.mois.every(m => moisPayes.includes(m));
+
+            return (
             <Tabs defaultValue="info" className="mt-2">
-              <TabsList className="grid w-full grid-cols-3"><TabsTrigger value="info">Informations</TabsTrigger><TabsTrigger value="options">Options</TabsTrigger><TabsTrigger value="famille">Famille</TabsTrigger></TabsList>
+              <TabsList className="grid w-full grid-cols-4"><TabsTrigger value="info">Infos</TabsTrigger><TabsTrigger value="scolarite">Scolarité</TabsTrigger><TabsTrigger value="options">Options</TabsTrigger><TabsTrigger value="famille">Famille</TabsTrigger></TabsList>
               <TabsContent value="info" className="space-y-3 text-sm mt-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div><strong>Matricule:</strong> {selected.matricule || '—'}</div>
@@ -308,6 +348,67 @@ export default function Eleves() {
                   {selected.famille_id ? <Badge className="gap-1"><Users className="h-3 w-3" />En famille — {selected.familles?.nom_famille}</Badge> : <Badge variant="outline" className="gap-1"><UserCheck className="h-3 w-3" />Individuel</Badge>}
                 </div>
               </TabsContent>
+
+              {/* Scolarité tab - month-by-month status */}
+              <TabsContent value="scolarite" className="space-y-3 text-sm mt-3">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-lg bg-muted p-2">
+                    <p className="text-xs text-muted-foreground">Total annuel</p>
+                    <p className="font-bold">{(fraisAnnuels * 9).toLocaleString()} GNF</p>
+                  </div>
+                  <div className="rounded-lg bg-muted p-2">
+                    <p className="text-xs text-muted-foreground">Payé</p>
+                    <p className="font-bold text-green-600">{totalPaye.toLocaleString()} GNF</p>
+                  </div>
+                  <div className={`rounded-lg p-2 ${resteAPayer === 0 ? 'bg-green-50 dark:bg-green-950' : 'bg-destructive/10'}`}>
+                    <p className="text-xs text-muted-foreground">Reste</p>
+                    <p className={`font-bold ${resteAPayer === 0 ? 'text-green-600' : 'text-destructive'}`}>{resteAPayer.toLocaleString()} GNF</p>
+                  </div>
+                </div>
+
+                {eleveTranches.length > 0 ? (
+                  <div className="space-y-3">
+                    {eleveTranches.map((t, idx) => {
+                      const tranchePaid = isTranchePaid(t);
+                      return (
+                        <div key={idx} className={`rounded-lg border p-3 ${tranchePaid ? 'border-green-300 bg-green-50 dark:bg-green-950' : 'border-destructive/30 bg-destructive/5'}`}>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="font-semibold text-sm">{t.label}</span>
+                            <span className="text-xs font-medium">{t.montant.toLocaleString()} GNF</span>
+                          </div>
+                          <div className="grid grid-cols-5 gap-1">
+                            {t.mois.map(m => {
+                              const paid = moisPayes.includes(m);
+                              return (
+                                <div key={m} className={`text-center text-xs rounded py-1 px-1 ${paid ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-destructive/10 text-destructive'}`}>
+                                  {m.slice(0, 3)}
+                                  <span className="block text-[10px]">{paid ? '✓' : '✗'}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Statut par mois :</p>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {MOIS_SCOLAIRES.map(m => {
+                        const paid = moisPayes.includes(m);
+                        return (
+                          <div key={m} className={`text-center text-xs rounded py-1.5 px-1 ${paid ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-destructive/10 text-destructive'}`}>
+                            {m.slice(0, 3)}
+                            <span className="block text-[10px]">{paid ? '✓ Payé' : '✗ Impayé'}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+
               <TabsContent value="options" className="space-y-3 text-sm mt-3">
                 <div>
                   <h4 className="font-semibold mb-1">Check-list</h4>
@@ -344,7 +445,8 @@ export default function Eleves() {
                 )}
               </TabsContent>
             </Tabs>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
 

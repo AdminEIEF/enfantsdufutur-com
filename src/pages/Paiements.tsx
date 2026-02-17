@@ -38,30 +38,39 @@ const TYPES = [
 ];
 
 const MOIS_SCOLAIRES = [
-  'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
 ];
 
 const DEFAULT_TRANCHES = [
-  { label: '1ère Tranche (Oct-Déc)', mois: ['Octobre', 'Novembre', 'Décembre'] },
-  { label: '2ème Tranche (Jan-Mar)', mois: ['Janvier', 'Février', 'Mars'] },
-  { label: '3ème Tranche (Avr-Juin)', mois: ['Avril', 'Mai', 'Juin'] },
+  { label: '1ère Tranche (Oct-Déc)', mois: ['Octobre', 'Novembre', 'Décembre'], montant: 0 },
+  { label: '2ème Tranche (Jan-Mar)', mois: ['Janvier', 'Février', 'Mars'], montant: 0 },
+  { label: '3ème Tranche (Avr-Juin)', mois: ['Avril', 'Mai', 'Juin'], montant: 0 },
 ];
 
-function useTranchesConfig() {
+type TrancheConfig = { label: string; mois: string[]; montant: number };
+
+function useTranchesConfigV2() {
   return useQuery({
-    queryKey: ['parametres-tranches'],
+    queryKey: ['parametres-tranches-v2'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('parametres').select('*').eq('cle', 'tranches_paiement').maybeSingle();
+      const { data, error } = await supabase.from('parametres').select('*').eq('cle', 'tranches_paiement_v2').maybeSingle();
       if (error) throw error;
-      if (data?.valeur && Array.isArray(data.valeur)) return data.valeur as { label: string; mois: string[] }[];
-      return DEFAULT_TRANCHES;
+      if (data?.valeur && typeof data.valeur === 'object' && !Array.isArray(data.valeur)) {
+        return data.valeur as Record<string, TrancheConfig[]>;
+      }
+      return {} as Record<string, TrancheConfig[]>;
     },
   });
 }
 
+function getTranchesForNiveau(allTranches: Record<string, TrancheConfig[]>, niveauId: string | null): TrancheConfig[] {
+  if (!niveauId || !allTranches[niveauId]) return DEFAULT_TRANCHES;
+  return allTranches[niveauId];
+}
+
 // ─── Individual Student Payment Panel ─────────────────────
 function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { eleves: any[]; paiements: any[]; articles: any[]; familles: any[] }) {
-  const { data: TRANCHES = DEFAULT_TRANCHES } = useTranchesConfig();
+  const { data: allTranchesConfig = {} } = useTranchesConfigV2();
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -75,6 +84,8 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
   const [articleQuantite, setArticleQuantite] = useState(1);
 
   const selectedEleve = eleves.find((e: any) => e.id === eleveId);
+  const niveauIdForTranches = selectedEleve?.classes?.niveau_id || null;
+  const TRANCHES = useMemo(() => getTranchesForNiveau(allTranchesConfig, niveauIdForTranches), [allTranchesConfig, niveauIdForTranches]);
 
   // Anti-doublon: block scolarite/transport payment for family members
   const isFamilyMember = !!selectedEleve?.famille_id;
@@ -291,13 +302,14 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
                       <div className="flex gap-2 flex-wrap">
                         {TRANCHES.map(t => {
                           const moisDispo = t.mois.filter(m => !moisPayes.includes(m));
+                          const trancheMontant = t.montant > 0 ? t.montant : moisDispo.length * fraisMensuel;
                           if (moisDispo.length === 0) return <Badge key={t.label} variant="outline" className="text-green-600 border-green-300 text-xs">✓ {t.label}</Badge>;
                           return (
                             <Button key={t.label} variant="outline" size="sm" className="text-xs h-7" onClick={() => {
                               setMoisCoches(moisDispo);
-                              setMontant(String(moisDispo.length * fraisMensuel));
+                              setMontant(String(trancheMontant));
                             }}>
-                              {t.label} ({(moisDispo.length * fraisMensuel).toLocaleString()} GNF)
+                              {t.label} ({trancheMontant.toLocaleString()} GNF)
                             </Button>
                           );
                         })}

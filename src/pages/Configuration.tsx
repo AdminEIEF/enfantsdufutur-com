@@ -1049,40 +1049,57 @@ function CorbeilleTab() {
   );
 }
 
-// ─── Tab: Tranches de Paiement ─────────────────────────────
+// ─── Tab: Tranches de Paiement (par niveau) ─────────────────
+const TOUS_LES_MOIS = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
+
+type TrancheConfig = { label: string; mois: string[]; montant: number };
+type TranchesParNiveau = Record<string, TrancheConfig[]>;
+
 function TranchesTab() {
   const qc = useQueryClient();
+  const { data: niveaux } = useNiveaux();
   const { data: parametres } = useQuery({
-    queryKey: ['parametres-tranches'],
+    queryKey: ['parametres-tranches-v2'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('parametres').select('*').eq('cle', 'tranches_paiement').maybeSingle();
+      const { data, error } = await supabase.from('parametres').select('*').eq('cle', 'tranches_paiement_v2').maybeSingle();
       if (error) throw error;
       return data;
     },
   });
 
-  const defaultTranches = [
-    { label: '1ère Tranche', mois: ['Octobre', 'Novembre', 'Décembre'] },
-    { label: '2ème Tranche', mois: ['Janvier', 'Février', 'Mars'] },
-    { label: '3ème Tranche', mois: ['Avril', 'Mai', 'Juin'] },
-  ];
-
-  const [tranches, setTranches] = useState<{ label: string; mois: string[] }[]>(defaultTranches);
+  const [selectedNiveauId, setSelectedNiveauId] = useState('');
+  const [tranches, setTranches] = useState<TrancheConfig[]>([]);
+  const [allTranches, setAllTranches] = useState<TranchesParNiveau>({});
   const [loaded, setLoaded] = useState(false);
-
-  const TOUS_LES_MOIS = ['Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 
   // Load from DB
   if (parametres && !loaded) {
     try {
       const val = parametres.valeur as any;
-      if (Array.isArray(val) && val.length > 0) setTranches(val);
+      if (val && typeof val === 'object' && !Array.isArray(val)) {
+        setAllTranches(val);
+      }
     } catch {}
     setLoaded(true);
   }
 
+  // When selecting a niveau, load its tranches
+  const handleSelectNiveau = (nId: string) => {
+    // Save current before switching
+    if (selectedNiveauId && tranches.length > 0) {
+      setAllTranches(prev => ({ ...prev, [selectedNiveauId]: tranches }));
+    }
+    setSelectedNiveauId(nId);
+    setTranches(allTranches[nId] || [{ label: 'Tranche 1', mois: [], montant: 0 }]);
+  };
+
+  const selectedNiveau = niveaux?.find((n: any) => n.id === selectedNiveauId);
+  const fraisAnnuels = selectedNiveau ? Number(selectedNiveau.frais_scolarite) : 0;
+  const totalTranches = tranches.reduce((s, t) => s + t.montant, 0);
+  const ecart = fraisAnnuels - totalTranches;
+
   const addTranche = () => {
-    setTranches([...tranches, { label: `Tranche ${tranches.length + 1}`, mois: [] }]);
+    setTranches([...tranches, { label: `Tranche ${tranches.length + 1}`, mois: [], montant: 0 }]);
   };
 
   const removeTranche = (idx: number) => {
@@ -1095,6 +1112,12 @@ function TranchesTab() {
     setTranches(next);
   };
 
+  const updateMontant = (idx: number, val: number) => {
+    const next = [...tranches];
+    next[idx] = { ...next[idx], montant: val };
+    setTranches(next);
+  };
+
   const toggleMois = (idx: number, mois: string) => {
     const next = [...tranches];
     const current = next[idx].mois;
@@ -1102,44 +1125,131 @@ function TranchesTab() {
     setTranches(next);
   };
 
-  const save = useMutation({
-    mutationFn: async () => {
-      // Validate: all months must be assigned to exactly one tranche
-      const allAssigned = tranches.flatMap(t => t.mois);
-      const missing = TOUS_LES_MOIS.filter(m => !allAssigned.includes(m));
-      if (missing.length > 0) throw new Error(`Mois non assignés: ${missing.join(', ')}`);
-      const duplicates = allAssigned.filter((m, i) => allAssigned.indexOf(m) !== i);
-      if (duplicates.length > 0) throw new Error(`Mois en doublon: ${[...new Set(duplicates)].join(', ')}`);
-
-      if (parametres?.id) {
-        const { error } = await supabase.from('parametres').update({ valeur: tranches as any, updated_at: new Date().toISOString() }).eq('id', parametres.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('parametres').insert({ cle: 'tranches_paiement', valeur: tranches as any });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['parametres-tranches'] }); toast.success('Tranches enregistrées'); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  // Mois already used in other tranches
   const moisUsedBy = (idx: number) => {
     return tranches.flatMap((t, i) => i === idx ? [] : t.mois);
   };
 
+  // Copy config from another niveau
+  const [copyFromId, setCopyFromId] = useState('');
+  const handleCopyFrom = () => {
+    if (copyFromId && allTranches[copyFromId]) {
+      setTranches(JSON.parse(JSON.stringify(allTranches[copyFromId])));
+      setCopyFromId('');
+      toast.success('Configuration copiée');
+    }
+  };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!selectedNiveauId) throw new Error('Sélectionnez un niveau');
+      // Validate months
+      const allAssigned = tranches.flatMap(t => t.mois);
+      const duplicates = allAssigned.filter((m, i) => allAssigned.indexOf(m) !== i);
+      if (duplicates.length > 0) throw new Error(`Mois en doublon: ${[...new Set(duplicates)].join(', ')}`);
+      if (tranches.some(t => t.mois.length === 0)) throw new Error('Chaque tranche doit avoir au moins un mois');
+      if (tranches.some(t => !t.label.trim())) throw new Error('Chaque tranche doit avoir un nom');
+
+      // Warn if total doesn't match (but don't block)
+      const finalData = { ...allTranches, [selectedNiveauId]: tranches };
+
+      if (parametres?.id) {
+        const { error } = await supabase.from('parametres').update({ valeur: finalData as any, updated_at: new Date().toISOString() }).eq('id', parametres.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('parametres').insert({ cle: 'tranches_paiement_v2', valeur: finalData as any });
+        if (error) throw error;
+      }
+      setAllTranches(finalData);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['parametres-tranches-v2'] });
+      if (ecart !== 0) {
+        toast.success('Tranches enregistrées', { description: `⚠️ Écart de ${Math.abs(ecart).toLocaleString()} GNF avec les frais annuels` });
+      } else {
+        toast.success('Tranches enregistrées — Total conforme ✓');
+      }
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Configured niveaux count
+  const configuredNiveaux = Object.keys(allTranches).filter(k => allTranches[k]?.length > 0);
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2"><Tag className="h-5 w-5" /> Tranches de Paiement</CardTitle>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={addTranche}><Plus className="h-4 w-4 mr-1" /> Ajouter une tranche</Button>
-          <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button>
-        </div>
+        <CardTitle className="flex items-center gap-2"><Tag className="h-5 w-5" /> Tranches de Paiement par Niveau</CardTitle>
+        {selectedNiveauId && (
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={addTranche}><Plus className="h-4 w-4 mr-1" /> Ajouter une tranche</Button>
+            <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">Définissez les tranches de versement pour la scolarité. Chaque mois doit être assigné à exactement une tranche.</p>
-        {tranches.map((t, idx) => {
+        <p className="text-sm text-muted-foreground">
+          Configurez les tranches de paiement pour chaque niveau. Assignez les mois et saisissez le montant de chaque tranche.
+        </p>
+
+        {/* Niveau selector */}
+        <div className="flex gap-3 items-end">
+          <div className="flex-1">
+            <Label>Sélectionnez un niveau</Label>
+            <Select value={selectedNiveauId || '__none__'} onValueChange={v => v !== '__none__' && handleSelectNiveau(v)}>
+              <SelectTrigger><SelectValue placeholder="Choisir un niveau" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__" disabled>Choisir un niveau</SelectItem>
+                {niveaux?.map((n: any) => (
+                  <SelectItem key={n.id} value={n.id}>
+                    {n.nom} ({n.cycles?.nom}) — {Number(n.frais_scolarite).toLocaleString()} GNF/an
+                    {allTranches[n.id]?.length ? ' ✓' : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {selectedNiveauId && configuredNiveaux.filter(id => id !== selectedNiveauId).length > 0 && (
+            <div className="flex gap-2 items-end">
+              <div>
+                <Label className="text-xs">Copier depuis</Label>
+                <Select value={copyFromId || '__none__'} onValueChange={v => setCopyFromId(v === '__none__' ? '' : v)}>
+                  <SelectTrigger className="w-[180px]"><SelectValue placeholder="Copier depuis..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">—</SelectItem>
+                    {configuredNiveaux.filter(id => id !== selectedNiveauId).map(id => {
+                      const n = niveaux?.find((nv: any) => nv.id === id);
+                      return <SelectItem key={id} value={id}>{n?.nom || id}</SelectItem>;
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleCopyFrom} disabled={!copyFromId}>Copier</Button>
+            </div>
+          )}
+        </div>
+
+        {/* Summary bar */}
+        {selectedNiveauId && (
+          <div className="grid grid-cols-3 gap-3 text-center text-sm">
+            <div className="rounded-lg bg-muted p-3">
+              <p className="text-xs text-muted-foreground">Frais annuels</p>
+              <p className="font-bold">{fraisAnnuels.toLocaleString()} GNF</p>
+            </div>
+            <div className="rounded-lg bg-muted p-3">
+              <p className="text-xs text-muted-foreground">Total tranches</p>
+              <p className="font-bold">{totalTranches.toLocaleString()} GNF</p>
+            </div>
+            <div className={`rounded-lg p-3 ${ecart === 0 ? 'bg-green-50 dark:bg-green-950' : 'bg-destructive/10'}`}>
+              <p className="text-xs text-muted-foreground">Écart</p>
+              <p className={`font-bold ${ecart === 0 ? 'text-green-600' : 'text-destructive'}`}>
+                {ecart === 0 ? '✓ Conforme' : `${ecart > 0 ? '+' : ''}${ecart.toLocaleString()} GNF`}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Tranches list */}
+        {selectedNiveauId && tranches.map((t, idx) => {
           const usedElsewhere = moisUsedBy(idx);
           return (
             <Card key={idx} className="border-primary/20">
@@ -1149,13 +1259,17 @@ function TranchesTab() {
                     <Label>Nom de la tranche</Label>
                     <Input value={t.label} onChange={e => updateLabel(idx, e.target.value)} />
                   </div>
+                  <div className="w-48">
+                    <Label>Montant (GNF)</Label>
+                    <Input type="number" value={t.montant} onChange={e => updateMontant(idx, Number(e.target.value))} min={0} />
+                  </div>
                   <Button variant="ghost" size="icon" onClick={() => removeTranche(idx)} className="mt-5">
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
                 <div>
                   <Label>Mois inclus</Label>
-                  <div className="grid grid-cols-3 gap-1.5 mt-1">
+                  <div className="grid grid-cols-5 gap-1.5 mt-1">
                     {TOUS_LES_MOIS.map(m => {
                       const isSelected = t.mois.includes(m);
                       const isUsed = usedElsewhere.includes(m);
@@ -1168,11 +1282,44 @@ function TranchesTab() {
                     })}
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground">{t.mois.length} mois sélectionné(s)</p>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{t.mois.length} mois sélectionné(s)</span>
+                  <span className="font-medium">{t.montant.toLocaleString()} GNF</span>
+                </div>
               </CardContent>
             </Card>
           );
         })}
+
+        {!selectedNiveauId && (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>Sélectionnez un niveau pour configurer ses tranches de paiement.</p>
+            {configuredNiveaux.length > 0 && (
+              <p className="mt-2 text-xs">{configuredNiveaux.length} niveau(x) déjà configuré(s)</p>
+            )}
+          </div>
+        )}
+
+        {/* Configured niveaux summary */}
+        {configuredNiveaux.length > 0 && (
+          <div className="mt-6">
+            <Label className="text-sm font-semibold">Niveaux configurés</Label>
+            <div className="flex gap-2 flex-wrap mt-2">
+              {configuredNiveaux.map(id => {
+                const n = niveaux?.find((nv: any) => nv.id === id);
+                const trCount = allTranches[id]?.length || 0;
+                const trTotal = (allTranches[id] || []).reduce((s: number, t: TrancheConfig) => s + t.montant, 0);
+                const annuel = n ? Number(n.frais_scolarite) : 0;
+                const ok = trTotal === annuel;
+                return (
+                  <Badge key={id} variant={ok ? 'default' : 'secondary'} className="cursor-pointer" onClick={() => handleSelectNiveau(id)}>
+                    {n?.nom || id} — {trCount} tranche(s) {ok ? '✓' : `(${trTotal.toLocaleString()}/${annuel.toLocaleString()})`}
+                  </Badge>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
