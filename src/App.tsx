@@ -29,6 +29,7 @@ import Configuration from "./pages/Configuration";
 import NotFound from "./pages/NotFound";
 import ElevePublic from "./pages/ElevePublic";
 import Boutique from "./pages/Boutique";
+import Tracabilite from "./pages/Tracabilite";
 
 const queryClient = new QueryClient();
 
@@ -113,6 +114,7 @@ const App = () => (
             <Route path="/bibliotheque" element={<ProtectedRoute><Bibliotheque /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/boutique" element={<ProtectedRoute><Boutique /></ProtectedRoute>} />
+            <Route path="/tracabilite" element={<ProtectedRoute><Tracabilite /></ProtectedRoute>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

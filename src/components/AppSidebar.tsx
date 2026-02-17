@@ -89,6 +89,7 @@ const navSections = [
     label: 'Administration',
     roles: ['admin'] as const,
     items: [
+      { title: 'Traçabilité', url: '/tracabilite', icon: ClipboardList },
       { title: 'Configuration', url: '/configuration', icon: Settings },
     ],
   },
