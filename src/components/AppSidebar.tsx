@@ -1,7 +1,7 @@
 import {
   GraduationCap, Users, UserPlus, BookOpen, Calculator, AlertTriangle,
   Settings, Bell, ScanLine, Library, BarChart3, LogOut,
-  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus
+  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -61,6 +61,13 @@ const navSections = [
     ],
   },
   {
+    label: 'Boutique',
+    roles: ['admin', 'boutique'] as const,
+    items: [
+      { title: 'Boutique', url: '/boutique', icon: ShoppingBag },
+    ],
+  },
+  {
     label: 'Administration',
     roles: ['admin'] as const,
     items: [
@@ -88,7 +95,7 @@ export function AppSidebar() {
       <SidebarSeparator />
       <SidebarContent>
         {navSections.map((section) => {
-          if (!hasAnyRole(section.roles as unknown as ('admin' | 'secretaire' | 'service_info' | 'comptable')[])) return null;
+          if (!hasAnyRole(section.roles as unknown as ('admin' | 'secretaire' | 'service_info' | 'comptable' | 'boutique')[])) return null;
           return (
             <SidebarGroup key={section.label}>
               <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
