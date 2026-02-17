@@ -60,7 +60,7 @@ export default function Finances() {
   const indiceRentabilite = totalDepenses > 0 ? (totalRecettes / totalDepenses).toFixed(2) : '∞';
 
 
-  // Recettes vs Dépenses par service (pour le graphique bilan)
+  // Recettes vs Dépenses par service (pour le graphique bilan + rentabilité)
   const byService = useMemo(() => {
     const services = Object.values(SERVICE_LABELS);
     return services.map(label => {
@@ -68,7 +68,9 @@ export default function Finances() {
       const recettes = paiKey ? filteredPaiements.filter((p: any) => p.type_paiement === paiKey).reduce((sum: number, p: any) => sum + Number(p.montant), 0) : 0;
       const depKey = Object.entries(DEP_SERVICE_MAP).find(([, v]) => v === paiKey)?.[0] || label;
       const dep = filteredDepenses.filter((d: any) => d.service === depKey).reduce((sum: number, d: any) => sum + Number(d.montant), 0);
-      return { service: label, recettes, depenses: dep };
+      const marge = recettes - dep;
+      const ir = dep > 0 ? parseFloat((recettes / dep).toFixed(2)) : recettes > 0 ? 999 : 0;
+      return { service: label, recettes, depenses: dep, marge, ir };
     }).filter(s => s.recettes > 0 || s.depenses > 0);
   }, [filteredPaiements, filteredDepenses]);
 
@@ -178,7 +180,7 @@ export default function Finances() {
       </div>
 
       <Tabs defaultValue="bilan">
-        <TabsList><TabsTrigger value="bilan">Bilan</TabsTrigger><TabsTrigger value="tendances">Tendances</TabsTrigger><TabsTrigger value="projection">Projection</TabsTrigger></TabsList>
+        <TabsList><TabsTrigger value="bilan">Bilan</TabsTrigger><TabsTrigger value="tendances">Tendances</TabsTrigger><TabsTrigger value="projection">Projection</TabsTrigger><TabsTrigger value="rentabilite">Rentabilité</TabsTrigger></TabsList>
 
         {/* Bilan */}
         <TabsContent value="bilan" className="mt-4 space-y-6">
@@ -283,6 +285,64 @@ export default function Finances() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        {/* Rentabilité */}
+        <TabsContent value="rentabilite" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Indice de Rentabilité par Service</CardTitle>
+              <p className="text-sm text-muted-foreground">IR = Recettes ÷ Dépenses • Filtré par mois sélectionné</p>
+            </CardHeader>
+            <CardContent>
+              {byService.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">Aucune donnée pour la période sélectionnée.</p>
+              ) : (
+                <div className="overflow-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 px-3 font-medium text-muted-foreground">Service</th>
+                        <th className="text-right py-2 px-3 font-medium text-muted-foreground">Recettes</th>
+                        <th className="text-right py-2 px-3 font-medium text-muted-foreground">Dépenses</th>
+                        <th className="text-right py-2 px-3 font-medium text-muted-foreground">Marge</th>
+                        <th className="text-right py-2 px-3 font-medium text-muted-foreground">IR</th>
+                        <th className="text-center py-2 px-3 font-medium text-muted-foreground">Statut</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {byService.map((s) => (
+                        <tr key={s.service} className="border-b hover:bg-muted/50">
+                          <td className="py-2 px-3 font-medium">{s.service}</td>
+                          <td className="py-2 px-3 text-right text-success">{s.recettes.toLocaleString()} GNF</td>
+                          <td className="py-2 px-3 text-right text-destructive">{s.depenses.toLocaleString()} GNF</td>
+                          <td className={`py-2 px-3 text-right font-semibold ${s.marge >= 0 ? 'text-success' : 'text-destructive'}`}>{s.marge.toLocaleString()} GNF</td>
+                          <td className="py-2 px-3 text-right font-bold">{s.ir >= 999 ? '∞' : s.ir.toFixed(2)}</td>
+                          <td className="py-2 px-3 text-center">
+                            <Badge variant={s.ir >= 1.5 ? 'default' : s.ir >= 1 ? 'secondary' : 'destructive'}>
+                              {s.ir >= 1.5 ? 'Rentable' : s.ir >= 1 ? 'Équilibre' : 'Déficitaire'}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="bg-muted/30 font-bold">
+                        <td className="py-2 px-3">TOTAL</td>
+                        <td className="py-2 px-3 text-right text-success">{totalRecettes.toLocaleString()} GNF</td>
+                        <td className="py-2 px-3 text-right text-destructive">{totalDepenses.toLocaleString()} GNF</td>
+                        <td className={`py-2 px-3 text-right ${soldeNet >= 0 ? 'text-success' : 'text-destructive'}`}>{soldeNet.toLocaleString()} GNF</td>
+                        <td className="py-2 px-3 text-right">{indiceRentabilite}</td>
+                        <td className="py-2 px-3 text-center">
+                          <Badge variant={parseFloat(indiceRentabilite) >= 1.5 ? 'default' : parseFloat(indiceRentabilite) >= 1 ? 'secondary' : 'destructive'}>
+                            {parseFloat(indiceRentabilite) >= 1.5 ? 'Rentable' : parseFloat(indiceRentabilite) >= 1 ? 'Équilibre' : 'Déficitaire'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
