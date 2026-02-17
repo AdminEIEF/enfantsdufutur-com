@@ -40,14 +40,27 @@ const MOIS_SCOLAIRES = [
   'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
 ];
 
-const TRANCHES = [
+const DEFAULT_TRANCHES = [
   { label: '1ère Tranche (Oct-Déc)', mois: ['Octobre', 'Novembre', 'Décembre'] },
   { label: '2ème Tranche (Jan-Mar)', mois: ['Janvier', 'Février', 'Mars'] },
   { label: '3ème Tranche (Avr-Juin)', mois: ['Avril', 'Mai', 'Juin'] },
 ];
 
+function useTranchesConfig() {
+  return useQuery({
+    queryKey: ['parametres-tranches'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('parametres').select('*').eq('cle', 'tranches_paiement').maybeSingle();
+      if (error) throw error;
+      if (data?.valeur && Array.isArray(data.valeur)) return data.valeur as { label: string; mois: string[] }[];
+      return DEFAULT_TRANCHES;
+    },
+  });
+}
+
 // ─── Individual Student Payment Panel ─────────────────────
 function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { eleves: any[]; paiements: any[]; articles: any[]; familles: any[] }) {
+  const { data: TRANCHES = DEFAULT_TRANCHES } = useTranchesConfig();
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 

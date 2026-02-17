@@ -638,18 +638,21 @@ export type Database = {
           eleve_id: string
           id: string
           montant_debite: number
+          plat_nom: string | null
         }
         Insert: {
           date_repas?: string
           eleve_id: string
           id?: string
           montant_debite: number
+          plat_nom?: string | null
         }
         Update: {
           date_repas?: string
           eleve_id?: string
           id?: string
           montant_debite?: number
+          plat_nom?: string | null
         }
         Relationships: [
           {
