@@ -55,6 +55,119 @@ export type Database = {
           },
         ]
       }
+      boutique_articles: {
+        Row: {
+          categorie: string
+          created_at: string
+          id: string
+          nom: string
+          prix: number
+          stock: number
+          taille: string
+          updated_at: string
+        }
+        Insert: {
+          categorie: string
+          created_at?: string
+          id?: string
+          nom: string
+          prix?: number
+          stock?: number
+          taille?: string
+          updated_at?: string
+        }
+        Update: {
+          categorie?: string
+          created_at?: string
+          id?: string
+          nom?: string
+          prix?: number
+          stock?: number
+          taille?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      boutique_vente_items: {
+        Row: {
+          article_id: string
+          created_at: string
+          id: string
+          prix_unitaire: number
+          quantite: number
+          vente_id: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          id?: string
+          prix_unitaire: number
+          quantite?: number
+          vente_id: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          id?: string
+          prix_unitaire?: number
+          quantite?: number
+          vente_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boutique_vente_items_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "boutique_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boutique_vente_items_vente_id_fkey"
+            columns: ["vente_id"]
+            isOneToOne: false
+            referencedRelation: "boutique_ventes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      boutique_ventes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          eleve_id: string
+          id: string
+          montant_final: number
+          montant_total: number
+          remise_pct: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          eleve_id: string
+          id?: string
+          montant_final?: number
+          montant_total?: number
+          remise_pct?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          eleve_id?: string
+          id?: string
+          montant_final?: number
+          montant_total?: number
+          remise_pct?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boutique_ventes_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           capacite: number | null
