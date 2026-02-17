@@ -14,13 +14,13 @@ import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 const SERVICES_PAI = ['scolarite', 'transport', 'cantine', 'uniforme', 'fournitures', 'autre'];
-const SERVICES_DEP = ['Scolarité', 'Transport', 'Boutique', 'Cantine', 'Autre'];
+const SERVICES_DEP = ['Transport', 'Cantine', 'Librairie', 'Boutique', 'Fonctionnement', 'Autre'];
 const SERVICE_LABELS: Record<string, string> = {
   scolarite: 'Scolarité', transport: 'Transport', cantine: 'Cantine',
   uniforme: 'Boutique', fournitures: 'Fournitures', autre: 'Autre',
 };
 const DEP_TO_PAI: Record<string, string> = {
-  'Scolarité': 'scolarite', 'Transport': 'transport', 'Cantine': 'cantine', 'Boutique': 'uniforme', 'Autre': 'autre',
+  'Scolarité': 'scolarite', 'Transport': 'transport', 'Cantine': 'cantine', 'Boutique': 'uniforme', 'Librairie': 'fournitures', 'Fonctionnement': 'autre', 'Autre': 'autre',
 };
 const COLORS = ['hsl(var(--primary))', '#f97316', '#22c55e', '#8b5cf6', '#06b6d4', '#6b7280'];
 
@@ -39,7 +39,7 @@ export default function Finances() {
   const { data: depenses = [] } = useQuery({
     queryKey: ['depenses-finance'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('depenses').select('montant, service, date_depense');
+      const { data, error } = await supabase.from('depenses').select('montant, service, date_depense, sous_categorie, statut').eq('statut', 'validee');
       if (error) throw error;
       return data;
     },
