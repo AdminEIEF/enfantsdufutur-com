@@ -709,6 +709,42 @@ export type Database = {
         }
         Relationships: []
       }
+      plats_cantine: {
+        Row: {
+          actif: boolean
+          created_at: string
+          date_stock: string
+          id: string
+          nom: string
+          prix: number
+          stock_journalier: number
+          stock_restant: number
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          date_stock?: string
+          id?: string
+          nom: string
+          prix?: number
+          stock_journalier?: number
+          stock_restant?: number
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          date_stock?: string
+          id?: string
+          nom?: string
+          prix?: number
+          stock_journalier?: number
+          stock_restant?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -752,6 +788,7 @@ export type Database = {
           eleve_id: string
           id: string
           montant_debite: number
+          plat_id: string | null
           plat_nom: string | null
         }
         Insert: {
@@ -760,6 +797,7 @@ export type Database = {
           eleve_id: string
           id?: string
           montant_debite: number
+          plat_id?: string | null
           plat_nom?: string | null
         }
         Update: {
@@ -768,6 +806,7 @@ export type Database = {
           eleve_id?: string
           id?: string
           montant_debite?: number
+          plat_id?: string | null
           plat_nom?: string | null
         }
         Relationships: [
@@ -776,6 +815,13 @@ export type Database = {
             columns: ["eleve_id"]
             isOneToOne: false
             referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repas_cantine_plat_id_fkey"
+            columns: ["plat_id"]
+            isOneToOne: false
+            referencedRelation: "plats_cantine"
             referencedColumns: ["id"]
           },
         ]
