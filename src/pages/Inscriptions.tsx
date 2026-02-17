@@ -19,6 +19,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { useZonesTransport } from './Configuration';
 import MandatairesForm, { Mandataire, createEmptyMandataires, uploadMandatairePhotos } from '@/components/MandatairesForm';
+import InscriptionFamilleForm from '@/components/InscriptionFamilleForm';
 
 function useArticlesForLevel(niveauId: string | null) {
   return useQuery({
@@ -40,6 +41,7 @@ function useArticlesForLevel(niveauId: string | null) {
 
 export default function Inscriptions() {
   const [open, setOpen] = useState(false);
+  const [familleOpen, setFamilleOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [editOpen, setEditOpen] = useState(false);
   const [editEleve, setEditEleve] = useState<any>(null);
@@ -765,6 +767,21 @@ export default function Inscriptions() {
             </div>
           </DialogContent>
         </Dialog>
+          <Dialog open={familleOpen} onOpenChange={setFamilleOpen}>
+            <DialogTrigger asChild>
+              <Button variant="secondary"><Users className="h-4 w-4 mr-2" /> Inscription Famille</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader><DialogTitle>Inscription Famille — Multi-enfants</DialogTitle></DialogHeader>
+              <InscriptionFamilleForm
+                classes={classes}
+                familles={familles}
+                tarifs={tarifs}
+                existingEleves={eleves}
+                onSuccess={() => setFamilleOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
