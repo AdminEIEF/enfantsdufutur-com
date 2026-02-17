@@ -477,6 +477,29 @@ export default function Dashboard() {
             <div>
               <p className="text-sm text-muted-foreground">Total recettes</p>
               <p className="text-xl font-bold">{totalRecettes.toLocaleString()} GNF</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-destructive/30">
+          <CardContent className="pt-6 flex items-center gap-4">
+            <ArrowDownRight className="h-10 w-10 text-destructive" />
+            <div>
+              <p className="text-sm text-muted-foreground">Total dépenses</p>
+              <p className="text-xl font-bold">{totalDepenses.toLocaleString()} GNF</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className={totalRecettes - totalDepenses >= 0 ? 'border-accent/30 bg-accent/5' : 'border-destructive/30 bg-destructive/5'}>
+          <CardContent className="pt-6 flex items-center gap-4">
+            <Wallet className={`h-10 w-10 ${totalRecettes - totalDepenses >= 0 ? 'text-accent' : 'text-destructive'}`} />
+            <div>
+              <p className="text-sm text-muted-foreground">Solde net</p>
+              <p className={`text-xl font-bold ${totalRecettes - totalDepenses >= 0 ? 'text-accent' : 'text-destructive'}`}>
+                {(totalRecettes - totalDepenses).toLocaleString()} GNF
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Indice de Rentabilité par Service */}
@@ -505,9 +528,9 @@ export default function Dashboard() {
                   {byService.map((s, i) => (
                     <TableRow key={i}>
                       <TableCell className="font-medium">{s.service}</TableCell>
-                      <TableCell className="text-right text-accent">{s.recettes.toLocaleString()} F</TableCell>
-                      <TableCell className="text-right text-destructive">{s.depenses.toLocaleString()} F</TableCell>
-                      <TableCell className={`text-right font-semibold ${s.marge >= 0 ? 'text-accent' : 'text-destructive'}`}>{s.marge.toLocaleString()} F</TableCell>
+                      <TableCell className="text-right text-accent">{s.recettes.toLocaleString()} GNF</TableCell>
+                      <TableCell className="text-right text-destructive">{s.depenses.toLocaleString()} GNF</TableCell>
+                      <TableCell className={`text-right font-semibold ${s.marge >= 0 ? 'text-accent' : 'text-destructive'}`}>{s.marge.toLocaleString()} GNF</TableCell>
                       <TableCell className="text-right font-bold">{s.ir === 999 ? '∞' : s.ir}</TableCell>
                       <TableCell className="text-center">
                         <Badge variant={s.ir >= 1 ? 'default' : 'destructive'}>
@@ -518,9 +541,9 @@ export default function Dashboard() {
                   ))}
                   <TableRow className="bg-muted/30 font-bold">
                     <TableCell>TOTAL</TableCell>
-                    <TableCell className="text-right text-accent">{totalRecettes.toLocaleString()} F</TableCell>
-                    <TableCell className="text-right text-destructive">{totalDepenses.toLocaleString()} F</TableCell>
-                    <TableCell className={`text-right ${soldeNet >= 0 ? 'text-accent' : 'text-destructive'}`}>{soldeNet.toLocaleString()} F</TableCell>
+                    <TableCell className="text-right text-accent">{totalRecettes.toLocaleString()} GNF</TableCell>
+                    <TableCell className="text-right text-destructive">{totalDepenses.toLocaleString()} GNF</TableCell>
+                    <TableCell className={`text-right ${soldeNet >= 0 ? 'text-accent' : 'text-destructive'}`}>{soldeNet.toLocaleString()} GNF</TableCell>
                     <TableCell className="text-right">{indiceRentabilite}</TableCell>
                     <TableCell className="text-center"><Badge variant={soldeNet >= 0 ? 'default' : 'destructive'}>{soldeNet >= 0 ? 'Positif' : 'Négatif'}</Badge></TableCell>
                   </TableRow>
@@ -530,29 +553,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
-          </CardContent>
-        </Card>
-        <Card className="border-destructive/30">
-          <CardContent className="pt-6 flex items-center gap-4">
-            <ArrowDownRight className="h-10 w-10 text-destructive" />
-            <div>
-              <p className="text-sm text-muted-foreground">Total dépenses</p>
-              <p className="text-xl font-bold">{totalDepenses.toLocaleString()} GNF</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className={totalRecettes - totalDepenses >= 0 ? 'border-accent/30 bg-accent/5' : 'border-destructive/30 bg-destructive/5'}>
-          <CardContent className="pt-6 flex items-center gap-4">
-            <Wallet className={`h-10 w-10 ${totalRecettes - totalDepenses >= 0 ? 'text-accent' : 'text-destructive'}`} />
-            <div>
-              <p className="text-sm text-muted-foreground">Solde net</p>
-              <p className={`text-xl font-bold ${totalRecettes - totalDepenses >= 0 ? 'text-accent' : 'text-destructive'}`}>
-                {(totalRecettes - totalDepenses).toLocaleString()} GNF
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Taux de recouvrement par classe */}
       {recouvrementParClasse.length > 0 && (
