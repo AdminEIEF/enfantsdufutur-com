@@ -13,14 +13,13 @@ import {
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-const SERVICES_PAI = ['scolarite', 'transport', 'cantine', 'uniforme', 'fournitures', 'autre'];
-const SERVICES_DEP = ['Transport', 'Cantine', 'Librairie', 'Boutique', 'Fonctionnement', 'Autre'];
 const SERVICE_LABELS: Record<string, string> = {
   scolarite: 'Scolarité', transport: 'Transport', cantine: 'Cantine',
   uniforme: 'Boutique', fournitures: 'Fournitures', autre: 'Autre',
 };
-const DEP_TO_PAI: Record<string, string> = {
-  'Scolarité': 'scolarite', 'Transport': 'transport', 'Cantine': 'cantine', 'Boutique': 'uniforme', 'Librairie': 'fournitures', 'Fonctionnement': 'autre', 'Autre': 'autre',
+const DEP_SERVICE_MAP: Record<string, string> = {
+  'Transport': 'transport', 'Cantine': 'cantine', 'Boutique': 'uniforme',
+  'Librairie': 'fournitures', 'Fonctionnement': 'autre', 'Autre': 'autre',
 };
 const COLORS = ['hsl(var(--primary))', '#f97316', '#22c55e', '#8b5cf6', '#06b6d4', '#6b7280'];
 
@@ -60,20 +59,19 @@ export default function Finances() {
   const soldeNet = totalRecettes - totalDepenses;
   const indiceRentabilite = totalDepenses > 0 ? (totalRecettes / totalDepenses).toFixed(2) : '∞';
 
-  // Merge services for IR table
-  const allServices = [...new Set([...SERVICES_PAI.map(s => SERVICE_LABELS[s]), ...SERVICES_DEP])];
+
+  // Recettes vs Dépenses par service (pour le graphique bilan)
   const byService = useMemo(() => {
-    return allServices.filter((_, i, arr) => arr.indexOf(arr[i]) === i).map(label => {
+    const services = Object.values(SERVICE_LABELS);
+    return services.map(label => {
       const paiKey = Object.entries(SERVICE_LABELS).find(([, v]) => v === label)?.[0];
       const recettes = paiKey ? filteredPaiements.filter((p: any) => p.type_paiement === paiKey).reduce((sum: number, p: any) => sum + Number(p.montant), 0) : 0;
-      const depKey = Object.entries(DEP_TO_PAI).find(([, v]) => v === paiKey)?.[0] || label;
+      const depKey = Object.entries(DEP_SERVICE_MAP).find(([, v]) => v === paiKey)?.[0] || label;
       const dep = filteredDepenses.filter((d: any) => d.service === depKey).reduce((sum: number, d: any) => sum + Number(d.montant), 0);
-      const ir = dep > 0 ? parseFloat((recettes / dep).toFixed(2)) : recettes > 0 ? 999 : 0;
-      return { service: label, recettes, depenses: dep, ir, marge: recettes - dep };
+      return { service: label, recettes, depenses: dep };
     }).filter(s => s.recettes > 0 || s.depenses > 0);
   }, [filteredPaiements, filteredDepenses]);
 
-  // By canal
   const byCanal = useMemo(() => {
     const map: Record<string, number> = {};
     filteredPaiements.forEach((p: any) => { map[p.canal] = (map[p.canal] || 0) + Number(p.montant); });
