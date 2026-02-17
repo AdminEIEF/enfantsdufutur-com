@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScanLine, Search, Utensils, Wallet, History, QrCode, Plus, AlertTriangle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScanLine, Search, Utensils, Wallet, History, QrCode, Plus, AlertTriangle, CreditCard, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -46,18 +46,35 @@ function useRepasHistory(eleveId: string | null) {
   });
 }
 
-function useTarifRepas() {
+function usePaiementsCantine(eleveId: string | null) {
   return useQuery({
-    queryKey: ['tarif-repas'],
+    queryKey: ['paiements-cantine', eleveId],
+    enabled: !!eleveId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('paiements')
+        .select('*')
+        .eq('eleve_id', eleveId!)
+        .eq('type_paiement', 'cantine')
+        .order('date_paiement', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+function usePlatsCantine() {
+  return useQuery({
+    queryKey: ['plats-cantine'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tarifs')
-        .select('montant')
+        .select('*')
         .eq('categorie', 'cantine')
-        .limit(1)
-        .maybeSingle();
+        .order('label');
       if (error) throw error;
-      return data?.montant ?? 1000;
+      return data;
     },
   });
 }
@@ -65,18 +82,20 @@ function useTarifRepas() {
 export default function Cantine() {
   const qc = useQueryClient();
   const { data: eleves = [], isLoading } = useElevesCantine();
-  const { data: tarifRepas } = useTarifRepas();
+  const { data: plats = [] } = usePlatsCantine();
   const [search, setSearch] = useState('');
   const [scanInput, setScanInput] = useState('');
   const [selectedEleve, setSelectedEleve] = useState<any>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyEleveId, setHistoryEleveId] = useState<string | null>(null);
-  const [rechargeOpen, setRechargeOpen] = useState(false);
-  const [rechargeAmount, setRechargeAmount] = useState(5000);
   const [badgeOpen, setBadgeOpen] = useState(false);
   const [badgeEleve, setBadgeEleve] = useState<any>(null);
+  const [selectedPlatId, setSelectedPlatId] = useState<string | null>(null);
 
   const { data: repasHistory = [] } = useRepasHistory(historyEleveId);
+  const { data: paiementsCantine = [] } = usePaiementsCantine(selectedEleve?.id || historyEleveId);
+
+  const selectedPlat = plats.find((p: any) => p.id === selectedPlatId);
 
   // Scan QR code or search by matricule
   const findEleve = (code: string) => {
@@ -85,6 +104,7 @@ export default function Cantine() {
     );
     if (found) {
       setSelectedEleve(found);
+      setSelectedPlatId(null);
     } else {
       toast.error('Élève introuvable');
     }
@@ -93,47 +113,31 @@ export default function Cantine() {
 
   // Débiter un repas
   const debitRepas = useMutation({
-    mutationFn: async (eleve: any) => {
-      const montant = Number(tarifRepas) || 1000;
-      const nouveauSolde = Number(eleve.solde_cantine || 0) - montant;
-      if (nouveauSolde < 0) throw new Error('Solde insuffisant');
+    mutationFn: async () => {
+      if (!selectedEleve || !selectedPlat) throw new Error('Sélectionnez un élève et un repas');
+      const montant = Number(selectedPlat.montant);
+      const solde = Number(selectedEleve.solde_cantine || 0);
+      if (solde < montant) throw new Error('Solde insuffisant');
 
       const { error: repasError } = await supabase.from('repas_cantine').insert({
-        eleve_id: eleve.id,
+        eleve_id: selectedEleve.id,
         montant_debite: montant,
-      });
+        plat_nom: selectedPlat.label,
+      } as any);
       if (repasError) throw repasError;
 
       const { error: updateError } = await supabase
         .from('eleves')
-        .update({ solde_cantine: nouveauSolde })
-        .eq('id', eleve.id);
+        .update({ solde_cantine: solde - montant })
+        .eq('id', selectedEleve.id);
       if (updateError) throw updateError;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['eleves-cantine'] });
-      toast.success(`Repas débité pour ${selectedEleve?.prenom} ${selectedEleve?.nom}`);
+      qc.invalidateQueries({ queryKey: ['repas-history'] });
+      toast.success(`${selectedPlat?.label} débité pour ${selectedEleve?.prenom} ${selectedEleve?.nom}`);
       setSelectedEleve(null);
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  // Recharger le solde
-  const rechargeSolde = useMutation({
-    mutationFn: async () => {
-      if (!selectedEleve) throw new Error('Aucun élève sélectionné');
-      const nouveauSolde = Number(selectedEleve.solde_cantine || 0) + rechargeAmount;
-      const { error } = await supabase
-        .from('eleves')
-        .update({ solde_cantine: nouveauSolde })
-        .eq('id', selectedEleve.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['eleves-cantine'] });
-      toast.success(`Solde rechargé de ${rechargeAmount.toLocaleString()} GNF`);
-      setRechargeOpen(false);
-      setSelectedEleve(null);
+      setSelectedPlatId(null);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -162,7 +166,8 @@ export default function Cantine() {
 
   // Stats
   const totalInscrits = eleves.length;
-  const soldeFaible = eleves.filter((e: any) => Number(e.solde_cantine || 0) < Number(tarifRepas || 1000)).length;
+  const defaultTarif = plats.length > 0 ? Math.min(...plats.map((p: any) => Number(p.montant))) : 1000;
+  const soldeFaible = eleves.filter((e: any) => Number(e.solde_cantine || 0) < defaultTarif).length;
   const totalSolde = eleves.reduce((s: number, e: any) => s + Number(e.solde_cantine || 0), 0);
 
   return (
@@ -198,10 +203,10 @@ export default function Cantine() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="h-8 w-8 text-warning" />
+              <AlertTriangle className="h-8 w-8 text-destructive" />
               <div>
                 <p className="text-sm text-muted-foreground">Solde insuffisant</p>
-                <p className="text-2xl font-bold text-warning">{soldeFaible}</p>
+                <p className="text-2xl font-bold text-destructive">{soldeFaible}</p>
               </div>
             </div>
           </CardContent>
@@ -226,7 +231,7 @@ export default function Cantine() {
           </div>
 
           {selectedEleve && (
-            <div className="mt-4 p-4 rounded-lg border bg-card">
+            <div className="mt-4 p-4 rounded-lg border bg-card space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-lg font-bold">{selectedEleve.prenom} {selectedEleve.nom}</p>
@@ -234,23 +239,58 @@ export default function Cantine() {
                     {selectedEleve.classes?.nom} • Matricule: {selectedEleve.matricule || '—'}
                   </p>
                   <p className="text-xl font-bold mt-2">
-                    Solde: <span className={Number(selectedEleve.solde_cantine || 0) < Number(tarifRepas || 1000) ? 'text-destructive' : 'text-accent'}>
+                    Crédit restant : <span className={Number(selectedEleve.solde_cantine || 0) < defaultTarif ? 'text-destructive' : 'text-accent'}>
                       {Number(selectedEleve.solde_cantine || 0).toLocaleString()} GNF
                     </span>
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setHistoryEleveId(selectedEleve.id); setHistoryOpen(true); }}>
+                  <History className="h-4 w-4 mr-1" /> Historique
+                </Button>
+              </div>
+
+              {/* Menu des repas */}
+              <div>
+                <Label className="text-sm font-medium">Choisir un repas :</Label>
+                {plats.length === 0 ? (
+                  <p className="text-sm text-muted-foreground mt-1">Aucun plat configuré. Ajoutez des plats dans Configuration &gt; Tarifs (catégorie Cantine).</p>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                    {plats.map((p: any) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setSelectedPlatId(p.id)}
+                        className={`p-3 rounded-lg border text-left transition-all ${selectedPlatId === p.id ? 'border-primary bg-primary/10 ring-2 ring-primary/30' : 'border-border hover:border-primary/50'}`}
+                      >
+                        <p className="font-medium text-sm">{p.label}</p>
+                        <p className="text-xs text-muted-foreground">{Number(p.montant).toLocaleString()} GNF</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Validation */}
+              {selectedPlat && (
+                <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
+                  <div>
+                    <p className="text-sm"><strong>{selectedPlat.label}</strong> — {Number(selectedPlat.montant).toLocaleString()} GNF</p>
+                    <p className="text-xs text-muted-foreground">
+                      Solde après débit : {(Number(selectedEleve.solde_cantine || 0) - Number(selectedPlat.montant)).toLocaleString()} GNF
+                    </p>
+                  </div>
                   <Button
-                    onClick={() => debitRepas.mutate(selectedEleve)}
-                    disabled={debitRepas.isPending || Number(selectedEleve.solde_cantine || 0) < Number(tarifRepas || 1000)}
+                    onClick={() => debitRepas.mutate()}
+                    disabled={debitRepas.isPending || Number(selectedEleve.solde_cantine || 0) < Number(selectedPlat.montant)}
                   >
-                    <Utensils className="h-4 w-4 mr-2" /> Débiter repas ({Number(tarifRepas || 1000).toLocaleString()} F)
-                  </Button>
-                  <Button variant="outline" onClick={() => { setRechargeOpen(true); }}>
-                    <Wallet className="h-4 w-4 mr-2" /> Recharger
+                    {Number(selectedEleve.solde_cantine || 0) < Number(selectedPlat.montant) ? (
+                      <><AlertTriangle className="h-4 w-4 mr-1" /> Solde insuffisant</>
+                    ) : (
+                      <><CheckCircle className="h-4 w-4 mr-1" /> Valider le repas</>
+                    )}
                   </Button>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </CardContent>
@@ -286,7 +326,7 @@ export default function Cantine() {
                   <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
                   <TableCell>{e.classes?.nom || '—'}</TableCell>
                   <TableCell>
-                    <Badge variant={Number(e.solde_cantine || 0) < Number(tarifRepas || 1000) ? 'destructive' : 'default'}>
+                    <Badge variant={Number(e.solde_cantine || 0) < defaultTarif ? 'destructive' : 'default'}>
                       {Number(e.solde_cantine || 0).toLocaleString()} GNF
                     </Badge>
                   </TableCell>
@@ -303,7 +343,7 @@ export default function Cantine() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => { setSelectedEleve(e); }}>
+                      <Button variant="ghost" size="sm" onClick={() => { setSelectedEleve(e); setSelectedPlatId(null); }}>
                         <Utensils className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => { setHistoryEleveId(e.id); setHistoryOpen(true); }}>
@@ -318,47 +358,69 @@ export default function Cantine() {
         </CardContent>
       </Card>
 
-      {/* Dialog recharge */}
-      <Dialog open={rechargeOpen} onOpenChange={setRechargeOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Recharger le solde cantine</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Élève: <strong>{selectedEleve?.prenom} {selectedEleve?.nom}</strong><br />
-              Solde actuel: <strong>{Number(selectedEleve?.solde_cantine || 0).toLocaleString()} GNF</strong>
-            </p>
-            <div><Label>Montant à créditer (GNF)</Label><Input type="number" value={rechargeAmount} onChange={e => setRechargeAmount(Number(e.target.value))} min={0} /></div>
-          </div>
-          <DialogFooter><Button onClick={() => rechargeSolde.mutate()} disabled={rechargeSolde.isPending}>Recharger</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog historique repas */}
+      {/* Dialog historique repas + paiements */}
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Historique des repas</DialogTitle></DialogHeader>
-          <div className="max-h-[400px] overflow-y-auto">
-            {repasHistory.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">Aucun repas enregistré</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Montant</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {repasHistory.map((r: any) => (
-                    <TableRow key={r.id}>
-                      <TableCell>{new Date(r.date_repas).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</TableCell>
-                      <TableCell>{Number(r.montant_debite).toLocaleString()} GNF</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </div>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Historique Cantine</DialogTitle></DialogHeader>
+          <Tabs defaultValue="consommation">
+            <TabsList className="w-full">
+              <TabsTrigger value="consommation" className="flex-1">🍽️ Consommation</TabsTrigger>
+              <TabsTrigger value="recharges" className="flex-1">💳 Paiements/Recharges</TabsTrigger>
+            </TabsList>
+            <TabsContent value="consommation">
+              <div className="max-h-[400px] overflow-y-auto">
+                {repasHistory.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">Aucun repas enregistré</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Repas</TableHead>
+                        <TableHead>Montant</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {repasHistory.map((r: any) => (
+                        <TableRow key={r.id}>
+                          <TableCell className="text-xs">{new Date(r.date_repas).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</TableCell>
+                          <TableCell>{(r as any).plat_nom || '—'}</TableCell>
+                          <TableCell className="font-mono">{Number(r.montant_debite).toLocaleString()} GNF</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+            </TabsContent>
+            <TabsContent value="recharges">
+              <div className="max-h-[400px] overflow-y-auto">
+                {paiementsCantine.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">Aucun paiement cantine enregistré</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Montant</TableHead>
+                        <TableHead>Canal</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paiementsCantine.map((p: any) => (
+                        <TableRow key={p.id}>
+                          <TableCell className="text-xs">{new Date(p.date_paiement).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}</TableCell>
+                          <TableCell className="font-mono text-green-600">+{Number(p.montant).toLocaleString()} GNF</TableCell>
+                          <TableCell><Badge variant="outline">{p.canal}</Badge></TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">💡 Les paiements « Cantine » effectués dans Paiements créditent automatiquement le solde cantine.</p>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 

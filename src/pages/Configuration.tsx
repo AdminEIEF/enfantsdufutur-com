@@ -1049,120 +1049,131 @@ function CorbeilleTab() {
   );
 }
 
-// ─── Tab: Articles (Fournitures, Manuels, Romans) ─────────
-function ArticlesTab({ categorie, label, icon: Icon }: { categorie: string; label: string; icon: any }) {
+// ─── Tab: Tranches de Paiement ─────────────────────────────
+function TranchesTab() {
   const qc = useQueryClient();
-  const { data: niveaux } = useNiveaux();
-  const { data: articles = [], isLoading } = useQuery({
-    queryKey: ['articles', categorie],
+  const { data: parametres } = useQuery({
+    queryKey: ['parametres-tranches'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('articles' as any).select('*, niveaux:niveau_id(nom)').eq('categorie', categorie).order('nom');
+      const { data, error } = await supabase.from('parametres').select('*').eq('cle', 'tranches_paiement').maybeSingle();
       if (error) throw error;
-      return data as any[];
+      return data;
     },
   });
-  const [open, setOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [nom, setNom] = useState('');
-  const [prix, setPrix] = useState(0);
-  const [stock, setStock] = useState(0);
-  const [niveauId, setNiveauId] = useState('');
 
-  const reset = () => { setEditId(null); setNom(''); setPrix(0); setStock(0); setNiveauId(''); setOpen(false); };
+  const defaultTranches = [
+    { label: '1ère Tranche', mois: ['Octobre', 'Novembre', 'Décembre'] },
+    { label: '2ème Tranche', mois: ['Janvier', 'Février', 'Mars'] },
+    { label: '3ème Tranche', mois: ['Avril', 'Mai', 'Juin'] },
+  ];
+
+  const [tranches, setTranches] = useState<{ label: string; mois: string[] }[]>(defaultTranches);
+  const [loaded, setLoaded] = useState(false);
+
+  const TOUS_LES_MOIS = ['Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
+
+  // Load from DB
+  if (parametres && !loaded) {
+    try {
+      const val = parametres.valeur as any;
+      if (Array.isArray(val) && val.length > 0) setTranches(val);
+    } catch {}
+    setLoaded(true);
+  }
+
+  const addTranche = () => {
+    setTranches([...tranches, { label: `Tranche ${tranches.length + 1}`, mois: [] }]);
+  };
+
+  const removeTranche = (idx: number) => {
+    setTranches(tranches.filter((_, i) => i !== idx));
+  };
+
+  const updateLabel = (idx: number, val: string) => {
+    const next = [...tranches];
+    next[idx] = { ...next[idx], label: val };
+    setTranches(next);
+  };
+
+  const toggleMois = (idx: number, mois: string) => {
+    const next = [...tranches];
+    const current = next[idx].mois;
+    next[idx] = { ...next[idx], mois: current.includes(mois) ? current.filter(m => m !== mois) : [...current, mois] };
+    setTranches(next);
+  };
 
   const save = useMutation({
     mutationFn: async () => {
-      if (!nom) throw new Error('Le nom est requis');
-      const payload = { nom, categorie, prix, stock, niveau_id: niveauId || null };
-      if (editId) {
-        const { error } = await supabase.from('articles' as any).update(payload).eq('id', editId);
+      // Validate: all months must be assigned to exactly one tranche
+      const allAssigned = tranches.flatMap(t => t.mois);
+      const missing = TOUS_LES_MOIS.filter(m => !allAssigned.includes(m));
+      if (missing.length > 0) throw new Error(`Mois non assignés: ${missing.join(', ')}`);
+      const duplicates = allAssigned.filter((m, i) => allAssigned.indexOf(m) !== i);
+      if (duplicates.length > 0) throw new Error(`Mois en doublon: ${[...new Set(duplicates)].join(', ')}`);
+
+      if (parametres?.id) {
+        const { error } = await supabase.from('parametres').update({ valeur: tranches as any, updated_at: new Date().toISOString() }).eq('id', parametres.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('articles' as any).insert(payload);
+        const { error } = await supabase.from('parametres').insert({ cle: 'tranches_paiement', valeur: tranches as any });
         if (error) throw error;
       }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['articles', categorie] }); toast.success(`${label} enregistré`); reset(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['parametres-tranches'] }); toast.success('Tranches enregistrées'); },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('articles' as any).delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['articles', categorie] }); toast.success(`${label} supprimé`); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const openEdit = (a: any) => {
-    setEditId(a.id); setNom(a.nom); setPrix(Number(a.prix)); setStock(a.stock); setNiveauId(a.niveau_id ?? ''); setOpen(true);
+  // Mois already used in other tranches
+  const moisUsedBy = (idx: number) => {
+    return tranches.flatMap((t, i) => i === idx ? [] : t.mois);
   };
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2"><Icon className="h-5 w-5" /> {label}s</CardTitle>
-        <Button size="sm" onClick={() => { reset(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
+        <CardTitle className="flex items-center gap-2"><Tag className="h-5 w-5" /> Tranches de Paiement</CardTitle>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={addTranche}><Plus className="h-4 w-4 mr-1" /> Ajouter une tranche</Button>
+          <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button>
+        </div>
       </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nom</TableHead>
-              <TableHead>Niveau</TableHead>
-              <TableHead>Prix</TableHead>
-              <TableHead>Stock</TableHead>
-              <TableHead className="w-24">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Chargement…</TableCell></TableRow>
-            ) : articles.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Aucun article</TableCell></TableRow>
-            ) : articles.map((a: any) => (
-              <TableRow key={a.id}>
-                <TableCell className="font-medium">{a.nom}</TableCell>
-                <TableCell>{a.niveaux?.nom || <span className="text-muted-foreground text-xs">Tous</span>}</TableCell>
-                <TableCell>{Number(a.prix).toLocaleString()} GNF</TableCell>
-                <TableCell>
-                  <Badge variant={a.stock <= 0 ? 'destructive' : a.stock < 10 ? 'secondary' : 'default'}>{a.stock}</Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(a)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove.mutate(a.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">Définissez les tranches de versement pour la scolarité. Chaque mois doit être assigné à exactement une tranche.</p>
+        {tranches.map((t, idx) => {
+          const usedElsewhere = moisUsedBy(idx);
+          return (
+            <Card key={idx} className="border-primary/20">
+              <CardContent className="pt-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <Label>Nom de la tranche</Label>
+                    <Input value={t.label} onChange={e => updateLabel(idx, e.target.value)} />
                   </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                  <Button variant="ghost" size="icon" onClick={() => removeTranche(idx)} className="mt-5">
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+                <div>
+                  <Label>Mois inclus</Label>
+                  <div className="grid grid-cols-3 gap-1.5 mt-1">
+                    {TOUS_LES_MOIS.map(m => {
+                      const isSelected = t.mois.includes(m);
+                      const isUsed = usedElsewhere.includes(m);
+                      return (
+                        <label key={m} className={`flex items-center gap-1.5 text-xs rounded px-2 py-1.5 cursor-pointer select-none ${isUsed ? 'bg-muted/50 text-muted-foreground/50 cursor-not-allowed' : isSelected ? 'bg-primary/10 text-primary border border-primary/30' : 'bg-muted text-muted-foreground'}`}>
+                          <Checkbox checked={isSelected} disabled={isUsed} onCheckedChange={() => !isUsed && toggleMois(idx, m)} className="h-3.5 w-3.5" />
+                          {m}{isUsed ? ' ✓' : ''}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">{t.mois.length} mois sélectionné(s)</p>
+              </CardContent>
+            </Card>
+          );
+        })}
       </CardContent>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{editId ? 'Modifier' : 'Ajouter'} — {label}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label>Nom *</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder={`Ex: ${categorie === 'roman' ? 'Le Petit Prince' : categorie === 'manuel' ? 'Maths CM2' : 'Cahier 200 pages'}`} /></div>
-            <div><Label>Niveau (optionnel)</Label>
-              <Select value={niveauId || '__all__'} onValueChange={(v) => setNiveauId(v === '__all__' ? '' : v)}>
-                <SelectTrigger><SelectValue placeholder="Tous les niveaux" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Tous les niveaux</SelectItem>
-                  {niveaux?.map((n: any) => <SelectItem key={n.id} value={n.id}>{n.nom} ({n.cycles?.nom})</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Prix (GNF)</Label><Input type="number" value={prix} onChange={e => setPrix(Number(e.target.value))} min={0} /></div>
-              <div><Label>Stock</Label><Input type="number" value={stock} onChange={e => setStock(Number(e.target.value))} min={0} /></div>
-            </div>
-          </div>
-          <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 }
@@ -1182,10 +1193,8 @@ export default function Configuration() {
           <TabsTrigger value="matieres">Matières</TabsTrigger>
           <TabsTrigger value="periodes">Périodes</TabsTrigger>
           <TabsTrigger value="tarifs">Tarifs</TabsTrigger>
+          <TabsTrigger value="tranches">💳 Tranches</TabsTrigger>
           <TabsTrigger value="transport">Transport</TabsTrigger>
-          <TabsTrigger value="fournitures">📦 Fournitures</TabsTrigger>
-          <TabsTrigger value="manuels">📖 Manuels</TabsTrigger>
-          <TabsTrigger value="romans">📚 Romans</TabsTrigger>
           <TabsTrigger value="corbeille">🗑️ Corbeille</TabsTrigger>
         </TabsList>
         <TabsContent value="cycles"><CyclesTab /></TabsContent>
@@ -1194,10 +1203,8 @@ export default function Configuration() {
         <TabsContent value="matieres"><MatieresTab /></TabsContent>
         <TabsContent value="periodes"><PeriodesTab /></TabsContent>
         <TabsContent value="tarifs"><TarifsTab /></TabsContent>
+        <TabsContent value="tranches"><TranchesTab /></TabsContent>
         <TabsContent value="transport"><ZonesTransportTab /></TabsContent>
-        <TabsContent value="fournitures"><ArticlesTab categorie="fourniture" label="Fourniture" icon={Tag} /></TabsContent>
-        <TabsContent value="manuels"><ArticlesTab categorie="manuel" label="Manuel" icon={BookOpen} /></TabsContent>
-        <TabsContent value="romans"><ArticlesTab categorie="roman" label="Roman" icon={BookOpen} /></TabsContent>
         <TabsContent value="corbeille"><CorbeilleTab /></TabsContent>
       </Tabs>
     </div>
