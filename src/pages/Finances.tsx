@@ -220,48 +220,6 @@ export default function Finances() {
             </Card>
           </div>
 
-          {/* IR table */}
-          <Card>
-            <CardHeader><CardTitle className="text-base">Indice de Rentabilité par Service</CardTitle></CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-auto">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b">
-                    <th className="text-left p-3 font-medium text-muted-foreground">Service</th>
-                    <th className="text-right p-3 font-medium text-muted-foreground">Recettes</th>
-                    <th className="text-right p-3 font-medium text-muted-foreground">Dépenses</th>
-                    <th className="text-right p-3 font-medium text-muted-foreground">Marge</th>
-                    <th className="text-right p-3 font-medium text-muted-foreground">IR</th>
-                    <th className="text-center p-3 font-medium text-muted-foreground">Statut</th>
-                  </tr></thead>
-                  <tbody>
-                    {byService.map((s, i) => (
-                      <tr key={i} className="border-b last:border-0">
-                        <td className="p-3 font-medium">{s.service}</td>
-                        <td className="p-3 text-right text-success">{s.recettes.toLocaleString()} F</td>
-                        <td className="p-3 text-right text-destructive">{s.depenses.toLocaleString()} F</td>
-                        <td className={`p-3 text-right font-semibold ${s.marge >= 0 ? 'text-success' : 'text-destructive'}`}>{s.marge.toLocaleString()} F</td>
-                        <td className="p-3 text-right font-bold">{s.ir === 999 ? '∞' : s.ir}</td>
-                        <td className="p-3 text-center">
-                          <Badge variant={s.ir >= 1 ? 'default' : 'destructive'}>
-                            {s.ir >= 2 ? 'Excellent' : s.ir >= 1.5 ? 'Bon' : s.ir >= 1 ? 'Rentable' : s.ir > 0 ? 'Déficitaire' : 'N/A'}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                    <tr className="bg-muted/30 font-bold">
-                      <td className="p-3">TOTAL</td>
-                      <td className="p-3 text-right text-success">{totalRecettes.toLocaleString()} F</td>
-                      <td className="p-3 text-right text-destructive">{totalDepenses.toLocaleString()} F</td>
-                      <td className={`p-3 text-right ${soldeNet >= 0 ? 'text-success' : 'text-destructive'}`}>{soldeNet.toLocaleString()} F</td>
-                      <td className="p-3 text-right">{indiceRentabilite}</td>
-                      <td className="p-3 text-center"><Badge variant={soldeNet >= 0 ? 'default' : 'destructive'}>{soldeNet >= 0 ? 'Positif' : 'Négatif'}</Badge></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* Tendances */}
