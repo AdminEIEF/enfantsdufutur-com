@@ -229,30 +229,53 @@ export type Database = {
           created_at: string
           created_by: string | null
           date_depense: string
+          fournisseur_id: string | null
           id: string
           libelle: string
           montant: number
           service: string
+          sous_categorie: string | null
+          statut: string
+          validated_at: string | null
+          validated_by: string | null
         }
         Insert: {
           created_at?: string
           created_by?: string | null
           date_depense?: string
+          fournisseur_id?: string | null
           id?: string
           libelle: string
           montant: number
           service: string
+          sous_categorie?: string | null
+          statut?: string
+          validated_at?: string | null
+          validated_by?: string | null
         }
         Update: {
           created_at?: string
           created_by?: string | null
           date_depense?: string
+          fournisseur_id?: string | null
           id?: string
           libelle?: string
           montant?: number
           service?: string
+          sous_categorie?: string | null
+          statut?: string
+          validated_at?: string | null
+          validated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "depenses_fournisseur_id_fkey"
+            columns: ["fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "fournisseurs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       eleves: {
         Row: {
@@ -401,6 +424,39 @@ export type Database = {
           nom_famille?: string
           telephone_mere?: string | null
           telephone_pere?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fournisseurs: {
+        Row: {
+          adresse: string | null
+          categorie: string
+          created_at: string
+          email: string | null
+          id: string
+          nom: string
+          telephone: string | null
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string | null
+          categorie: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom: string
+          telephone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string | null
+          categorie?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom?: string
+          telephone?: string | null
           updated_at?: string
         }
         Relationships: []
