@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
+import { AIChatBubble } from '@/components/AIChatBubble';
 
 export function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -17,6 +18,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </main>
       </div>
+      <AIChatBubble />
     </SidebarProvider>
   );
 }
