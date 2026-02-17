@@ -377,11 +377,11 @@ function VenteALaCartePanel() {
             </Card>
 
             {/* Articles by category */}
-            {['fourniture', 'manuel', 'roman'].map(cat => {
+            {['fourniture', 'manuel', 'roman', 'art_plastique'].map(cat => {
               const items = articlesNiveau.filter((a: any) => a.categorie === cat);
               if (items.length === 0) return null;
               const isExpanded = expandedCat === cat || expandedCat === null;
-              const catLabel = cat === 'fourniture' ? '📦 Fournitures' : cat === 'manuel' ? '📖 Manuels' : '📚 Romans';
+              const catLabel = cat === 'fourniture' ? '📦 Fournitures' : cat === 'manuel' ? '📖 Manuels' : cat === 'roman' ? '📚 Romans' : '🎨 Art Plastique';
 
               return (
                 <Card key={cat} className="border-emerald-200/50">
@@ -510,6 +510,7 @@ export default function Librairie() {
           <TabsTrigger value="fournitures">📦 Fournitures</TabsTrigger>
           <TabsTrigger value="manuels">📖 Manuels</TabsTrigger>
           <TabsTrigger value="romans">📚 Romans</TabsTrigger>
+          <TabsTrigger value="art_plastique">🎨 Art Plastique</TabsTrigger>
           <TabsTrigger value="ventes">🧾 Historique ventes</TabsTrigger>
         </TabsList>
 
@@ -519,6 +520,7 @@ export default function Librairie() {
         <TabsContent value="fournitures" className="mt-4"><ArticleManager categorie="fourniture" label="Fourniture" icon={Package} /></TabsContent>
         <TabsContent value="manuels" className="mt-4"><ArticleManager categorie="manuel" label="Manuel" icon={BookOpen} /></TabsContent>
         <TabsContent value="romans" className="mt-4"><ArticleManager categorie="roman" label="Roman" icon={BookOpen} /></TabsContent>
+        <TabsContent value="art_plastique" className="mt-4"><ArticleManager categorie="art_plastique" label="Art Plastique" icon={BookOpen} /></TabsContent>
 
         <TabsContent value="ventes" className="mt-4">
           <Card>

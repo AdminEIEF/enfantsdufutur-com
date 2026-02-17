@@ -155,7 +155,7 @@ export default function Cantine() {
   const [historyEleveId, setHistoryEleveId] = useState<string | null>(null);
   const [badgeOpen, setBadgeOpen] = useState(false);
   const [badgeEleve, setBadgeEleve] = useState<any>(null);
-  const [selectedPlatId, setSelectedPlatId] = useState<string | null>(null);
+  const [selectedPlatIds, setSelectedPlatIds] = useState<Record<string, number>>({});
   const [menuOpen, setMenuOpen] = useState(false);
   const [newPlat, setNewPlat] = useState({ nom: '', prix: '', stock: '' });
   const [activeTab, setActiveTab] = useState('vente');
@@ -163,7 +163,17 @@ export default function Cantine() {
   const { data: repasHistory = [] } = useRepasHistory(historyEleveId);
   const { data: paiementsCantine = [] } = usePaiementsCantine(selectedEleve?.id || historyEleveId);
 
-  const selectedPlat = plats.find(p => p.id === selectedPlatId);
+  const selectedPlatsItems = useMemo(() => {
+    return Object.entries(selectedPlatIds)
+      .filter(([, qty]) => qty > 0)
+      .map(([id, qty]) => {
+        const plat = plats.find(p => p.id === id);
+        return plat ? { ...plat, quantite: qty } : null;
+      })
+      .filter(Boolean) as (PlatCantine & { quantite: number })[];
+  }, [selectedPlatIds, plats]);
+
+  const totalPlats = selectedPlatsItems.reduce((s, p) => s + Number(p.prix) * p.quantite, 0);
 
   // ─── Scan ──────────────────────────────────────────
   const findEleve = (code: string) => {
@@ -172,7 +182,7 @@ export default function Cantine() {
     );
     if (found) {
       setSelectedEleve(found);
-      setSelectedPlatId(null);
+      setSelectedPlatIds({});
     } else {
       toast.error('Élève introuvable');
     }
@@ -233,47 +243,53 @@ export default function Cantine() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // ─── Débiter un repas ──────────────────────────────
+  // ─── Débiter les repas ──────────────────────────────
   const debitRepas = useMutation({
     mutationFn: async () => {
-      if (!selectedEleve || !selectedPlat) throw new Error('Sélectionnez un élève et un repas');
-      const montant = Number(selectedPlat.prix);
+      if (!selectedEleve || selectedPlatsItems.length === 0) throw new Error('Sélectionnez un élève et au moins un repas');
       const solde = Number(selectedEleve.solde_cantine || 0);
-      if (solde < montant) throw new Error('Solde Insuffisant - Merci de recharger');
+      if (solde < totalPlats) throw new Error('Solde Insuffisant - Merci de recharger');
 
-      if (selectedPlat.stock_restant <= 0) throw new Error('Stock épuisé pour ce plat');
+      for (const item of selectedPlatsItems) {
+        if (item.stock_restant < item.quantite) throw new Error(`Stock insuffisant pour ${item.nom}`);
+      }
 
-      // Insert repas
-      const { error: repasError } = await supabase.from('repas_cantine').insert({
-        eleve_id: selectedEleve.id,
-        montant_debite: montant,
-        plat_nom: selectedPlat.nom,
-        plat_id: selectedPlat.id,
-      } as any);
-      if (repasError) throw repasError;
+      // Insert each repas entry
+      for (const item of selectedPlatsItems) {
+        for (let i = 0; i < item.quantite; i++) {
+          const { error: repasError } = await supabase.from('repas_cantine').insert({
+            eleve_id: selectedEleve.id,
+            montant_debite: Number(item.prix),
+            plat_nom: item.nom,
+            plat_id: item.id,
+          } as any);
+          if (repasError) throw repasError;
+        }
+
+        // Decrement stock
+        const { error: stockError } = await supabase
+          .from('plats_cantine' as any)
+          .update({ stock_restant: item.stock_restant - item.quantite } as any)
+          .eq('id', item.id);
+        if (stockError) throw stockError;
+      }
 
       // Debit solde
       const { error: updateError } = await supabase
         .from('eleves')
-        .update({ solde_cantine: solde - montant })
+        .update({ solde_cantine: solde - totalPlats })
         .eq('id', selectedEleve.id);
       if (updateError) throw updateError;
-
-      // Decrement stock
-      const { error: stockError } = await supabase
-        .from('plats_cantine' as any)
-        .update({ stock_restant: selectedPlat.stock_restant - 1 } as any)
-        .eq('id', selectedPlat.id);
-      if (stockError) throw stockError;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['eleves-cantine'] });
       qc.invalidateQueries({ queryKey: ['repas-history'] });
       qc.invalidateQueries({ queryKey: ['repas-today'] });
       qc.invalidateQueries({ queryKey: ['plats-cantine'] });
-      toast.success(`${selectedPlat?.nom} débité pour ${selectedEleve?.prenom} ${selectedEleve?.nom}`);
+      const noms = selectedPlatsItems.map(p => `${p.nom}${p.quantite > 1 ? ` ×${p.quantite}` : ''}`).join(', ');
+      toast.success(`${noms} débité(s) pour ${selectedEleve?.prenom} ${selectedEleve?.nom}`);
       setSelectedEleve(null);
-      setSelectedPlatId(null);
+      setSelectedPlatIds({});
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -451,65 +467,62 @@ export default function Cantine() {
                     </Button>
                   </div>
 
-                  {/* Choix du repas */}
+                  {/* Choix des repas (multi-sélection) */}
                   <div>
-                    <Label className="text-sm font-medium">Choisir un repas :</Label>
+                    <Label className="text-sm font-medium">Choisir les repas :</Label>
                     {plats.length === 0 ? (
                       <p className="text-sm text-muted-foreground mt-1">Aucun plat configuré. Allez dans l'onglet "Gestion Menu" pour ajouter des plats.</p>
                     ) : (
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
                         {plats.map(p => {
                           const outOfStock = p.stock_restant <= 0;
+                          const qty = selectedPlatIds[p.id] || 0;
+                          const isSelected = qty > 0;
                           return (
-                            <button
-                              key={p.id}
-                              onClick={() => !outOfStock && setSelectedPlatId(p.id)}
-                              disabled={outOfStock}
-                              className={`p-3 rounded-lg border text-left transition-all ${
-                                outOfStock
-                                  ? 'border-destructive/30 bg-destructive/5 opacity-60 cursor-not-allowed'
-                                  : selectedPlatId === p.id
-                                    ? 'border-primary bg-primary/10 ring-2 ring-primary/30'
-                                    : 'border-border hover:border-primary/50'
-                              }`}
-                            >
+                            <div key={p.id} className={`p-3 rounded-lg border text-left transition-all ${outOfStock ? 'border-destructive/30 bg-destructive/5 opacity-60' : isSelected ? 'border-primary bg-primary/10 ring-2 ring-primary/30' : 'border-border hover:border-primary/50'}`}>
                               <p className="font-medium text-sm">{p.nom}</p>
                               <p className="text-xs text-muted-foreground">{Number(p.prix).toLocaleString()} GNF</p>
                               <div className="flex items-center gap-1 mt-1">
                                 <Package className="h-3 w-3" />
-                                <span className={`text-xs font-mono ${outOfStock ? 'text-destructive' : p.stock_restant < 10 ? 'text-orange-500' : 'text-muted-foreground'}`}>
-                                  {outOfStock ? 'Épuisé' : `${p.stock_restant} restants`}
-                                </span>
+                                <span className={`text-xs font-mono ${outOfStock ? 'text-destructive' : p.stock_restant < 10 ? 'text-orange-500' : 'text-muted-foreground'}`}>{outOfStock ? 'Épuisé' : `${p.stock_restant} restants`}</span>
                               </div>
-                            </button>
+                              {!outOfStock && (
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Button variant="outline" size="icon" className="h-6 w-6" disabled={qty <= 0} onClick={() => setSelectedPlatIds(prev => ({ ...prev, [p.id]: Math.max(0, (prev[p.id] || 0) - 1) }))}><Minus className="h-3 w-3" /></Button>
+                                  <span className="text-sm font-bold w-6 text-center">{qty}</span>
+                                  <Button variant="outline" size="icon" className="h-6 w-6" disabled={qty >= p.stock_restant} onClick={() => setSelectedPlatIds(prev => ({ ...prev, [p.id]: (prev[p.id] || 0) + 1 }))}><Plus className="h-3 w-3" /></Button>
+                                </div>
+                              )}
+                            </div>
                           );
                         })}
                       </div>
                     )}
                   </div>
 
-                  {/* Validation */}
-                  {selectedPlat && (
+                  {/* Validation multi-plats */}
+                  {selectedPlatsItems.length > 0 && (
                     <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                      {Number(selectedEleve.solde_cantine || 0) < Number(selectedPlat.prix) ? (
+                      {Number(selectedEleve.solde_cantine || 0) < totalPlats ? (
                         <div className="flex items-center gap-2 text-destructive">
                           <AlertTriangle className="h-5 w-5" />
                           <div>
                             <p className="font-bold">Solde Insuffisant - Merci de recharger</p>
-                            <p className="text-xs">Solde: {Number(selectedEleve.solde_cantine || 0).toLocaleString()} GNF — Requis: {Number(selectedPlat.prix).toLocaleString()} GNF</p>
+                            <p className="text-xs">Solde: {Number(selectedEleve.solde_cantine || 0).toLocaleString()} GNF — Requis: {totalPlats.toLocaleString()} GNF</p>
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm"><strong>{selectedPlat.nom}</strong> — {Number(selectedPlat.prix).toLocaleString()} GNF</p>
-                            <p className="text-xs text-muted-foreground">
-                              Solde après débit : {(Number(selectedEleve.solde_cantine || 0) - Number(selectedPlat.prix)).toLocaleString()} GNF
-                            </p>
+                        <div className="space-y-2">
+                          {selectedPlatsItems.map(p => (
+                            <div key={p.id} className="flex justify-between text-sm"><span>{p.nom} × {p.quantite}</span><span className="font-bold">{(Number(p.prix) * p.quantite).toLocaleString()} GNF</span></div>
+                          ))}
+                          <div className="flex items-center justify-between pt-2 border-t">
+                            <div>
+                              <p className="text-sm font-bold">Total : {totalPlats.toLocaleString()} GNF</p>
+                              <p className="text-xs text-muted-foreground">Solde après débit : {(Number(selectedEleve.solde_cantine || 0) - totalPlats).toLocaleString()} GNF</p>
+                            </div>
+                            <Button onClick={() => debitRepas.mutate()} disabled={debitRepas.isPending}><CheckCircle className="h-4 w-4 mr-1" /> Valider les repas</Button>
                           </div>
-                          <Button onClick={() => debitRepas.mutate()} disabled={debitRepas.isPending}>
-                            <CheckCircle className="h-4 w-4 mr-1" /> Valider le repas
-                          </Button>
                         </div>
                       )}
                     </div>
@@ -566,7 +579,7 @@ export default function Cantine() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => { setSelectedEleve(e); setSelectedPlatId(null); }}>
+                          <Button variant="ghost" size="sm" onClick={() => { setSelectedEleve(e); setSelectedPlatIds({}); }}>
                             <Utensils className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="sm" onClick={() => { setHistoryEleveId(e.id); setHistoryOpen(true); }}>
