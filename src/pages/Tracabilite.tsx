@@ -145,7 +145,7 @@ export default function Tracabilite() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{cfg.label}</p>
-                  <p className="text-lg font-bold">{totals[key].toLocaleString()} FCFA</p>
+                  <p className="text-lg font-bold">{totals[key].toLocaleString()} GNF</p>
                   <p className="text-xs text-muted-foreground">{operations.filter(o => o.type === key).length} opérations</p>
                 </div>
               </CardContent>
@@ -159,7 +159,7 @@ export default function Tracabilite() {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Total Jour</p>
-              <p className="text-lg font-bold">{totals.total.toLocaleString()} FCFA</p>
+              <p className="text-lg font-bold">{totals.total.toLocaleString()} GNF</p>
               <p className="text-xs text-muted-foreground">{operations.length} opérations</p>
             </div>
           </CardContent>
