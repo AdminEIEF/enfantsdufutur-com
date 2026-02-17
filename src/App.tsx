@@ -45,8 +45,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <AppLayout>{children}</AppLayout>;
 }
 
-function AuthRoute() {
-  const { user, loading } = useAuth();
+function RoleBasedRedirect() {
+  const { user, roles, loading } = useAuth();
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -54,7 +54,33 @@ function AuthRoute() {
       </div>
     );
   }
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (!user) return <Navigate to="/auth" replace />;
+  // Redirect to role-specific page for single-purpose roles
+  if (roles.length === 1) {
+    if (roles[0] === 'cantine') return <Navigate to="/cantine" replace />;
+    if (roles[0] === 'boutique') return <Navigate to="/boutique" replace />;
+    if (roles[0] === 'librairie') return <Navigate to="/librairie" replace />;
+  }
+  return <Navigate to="/dashboard" replace />;
+}
+
+function AuthRoute() {
+  const { user, roles, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  if (user) {
+    if (roles.length === 1) {
+      if (roles[0] === 'cantine') return <Navigate to="/cantine" replace />;
+      if (roles[0] === 'boutique') return <Navigate to="/boutique" replace />;
+      if (roles[0] === 'librairie') return <Navigate to="/librairie" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
+  }
   return <Auth />;
 }
 
@@ -68,7 +94,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/eleve/:matricule" element={<ElevePublic />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<RoleBasedRedirect />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/inscriptions" element={<ProtectedRoute><Inscriptions /></ProtectedRoute>} />
             <Route path="/familles" element={<ProtectedRoute><Familles /></ProtectedRoute>} />
