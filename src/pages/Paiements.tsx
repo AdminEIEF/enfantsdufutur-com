@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Printer, Download, Upload, Users } from 'lucide-react';
+import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Printer, Download, Upload, Users, Landmark, Calendar, FileImage } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -25,7 +25,24 @@ const CANAUX = [
   { value: 'especes', label: 'Espèces', icon: Wallet },
   { value: 'orange_money', label: 'Orange Money', icon: Smartphone },
   { value: 'mtn_momo', label: 'MTN MoMo', icon: Smartphone },
+  { value: 'banque', label: 'Banque', icon: Landmark },
 ];
+
+const DEFAULT_BANQUES = [
+  'Ecobank', 'Société Générale (SGBG)', 'Vistabank', 'UBA', 'Orabank', 'FBNBank', 'Coris Bank',
+];
+
+function useBanquesPartenaires() {
+  return useQuery({
+    queryKey: ['banques-partenaires'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('parametres').select('*').eq('cle', 'banques_partenaires').maybeSingle();
+      if (error) throw error;
+      if (data?.valeur && Array.isArray(data.valeur)) return data.valeur as string[];
+      return DEFAULT_BANQUES;
+    },
+  });
+}
 
 const TYPES = [
   { value: 'scolarite', label: 'Scolarité' },
@@ -82,6 +99,12 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
   const [moisCoches, setMoisCoches] = useState<string[]>([]);
   const [selectedArticleId, setSelectedArticleId] = useState('');
   const [articleQuantite, setArticleQuantite] = useState(1);
+  const [banqueNom, setBanqueNom] = useState('');
+  const [dateDepot, setDateDepot] = useState('');
+  const [preuveFile, setPreuveFile] = useState<File | null>(null);
+  const [uploadingPreuve, setUploadingPreuve] = useState(false);
+
+  const { data: banques = DEFAULT_BANQUES } = useBanquesPartenaires();
 
   const selectedEleve = eleves.find((e: any) => e.id === eleveId);
   const niveauIdForTranches = selectedEleve?.classes?.niveau_id || null;
@@ -138,29 +161,48 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
 
   const selectedArticle = articles.find((a: any) => a.id === selectedArticleId);
 
+  const uploadPreuve = async (): Promise<string | null> => {
+    if (!preuveFile) return null;
+    setUploadingPreuve(true);
+    const ext = preuveFile.name.split('.').pop();
+    const path = `${Date.now()}_${eleveId}.${ext}`;
+    const { error } = await supabase.storage.from('preuves-paiement').upload(path, preuveFile);
+    setUploadingPreuve(false);
+    if (error) throw new Error('Erreur upload preuve: ' + error.message);
+    const { data: urlData } = supabase.storage.from('preuves-paiement').getPublicUrl(path);
+    return urlData.publicUrl;
+  };
+
+  const buildPaiementBase = async () => {
+    const preuveUrl = await uploadPreuve();
+    return {
+      canal,
+      reference: (canal !== 'especes' && reference) ? reference : null,
+      banque_nom: canal === 'banque' ? banqueNom : null,
+      date_depot: canal === 'banque' && dateDepot ? dateDepot : null,
+      preuve_url: preuveUrl,
+    };
+  };
+
   const createPaiement = useMutation({
     mutationFn: async () => {
       if (!eleveId || !montant || parseFloat(montant) <= 0) throw new Error('Élève et montant valide requis');
-      // Anti-doublon: block scolarité/transport for family members
+      if (canal === 'banque' && !banqueNom) throw new Error('Veuillez sélectionner une banque');
+      if (canal === 'banque' && !reference) throw new Error('La référence de transaction est obligatoire pour un paiement bancaire');
+      if (canal === 'banque' && !dateDepot) throw new Error('La date de dépôt est obligatoire');
       if (isFamilyMember && (typePaiement === 'scolarite' || typePaiement === 'transport')) {
         throw new Error('Les paiements Scolarité/Transport pour cet élève doivent passer par le Compte Famille');
       }
+      const base = await buildPaiementBase();
       if (typePaiement === 'article') {
         if (!selectedArticleId) throw new Error('Sélectionnez un article');
         if (selectedArticle && selectedArticle.stock < articleQuantite) throw new Error('Stock insuffisant');
-        // Create sale record (triggers stock decrement)
         const { error: saleErr } = await supabase.from('ventes_articles' as any).insert({
-          eleve_id: eleveId,
-          article_id: selectedArticleId,
-          quantite: articleQuantite,
-          prix_unitaire: Number(selectedArticle?.prix || 0),
+          eleve_id: eleveId, article_id: selectedArticleId, quantite: articleQuantite, prix_unitaire: Number(selectedArticle?.prix || 0),
         });
         if (saleErr) throw saleErr;
-        // Record payment
         const { error } = await supabase.from('paiements').insert({
-          eleve_id: eleveId, montant: parseFloat(montant), canal, type_paiement: 'article',
-          reference: (canal !== 'especes' && reference) ? reference : null,
-          mois_concerne: null,
+          eleve_id: eleveId, montant: parseFloat(montant), type_paiement: 'article', mois_concerne: null, ...base,
         } as any);
         if (error) throw error;
       } else if (typePaiement === 'scolarite' || typePaiement === 'transport') {
@@ -168,17 +210,13 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
         const montantParMois = typePaiement === 'scolarite' ? fraisMensuel : prixTransportMensuel;
         for (const mois of moisCoches) {
           const { error } = await supabase.from('paiements').insert({
-            eleve_id: eleveId, montant: montantParMois, canal, type_paiement: typePaiement,
-            reference: (canal !== 'especes' && reference) ? reference : null,
-            mois_concerne: mois,
+            eleve_id: eleveId, montant: montantParMois, type_paiement: typePaiement, mois_concerne: mois, ...base,
           } as any);
           if (error) throw error;
         }
       } else {
         const { error } = await supabase.from('paiements').insert({
-          eleve_id: eleveId, montant: parseFloat(montant), canal, type_paiement: typePaiement,
-          reference: (canal !== 'especes' && reference) ? reference : null,
-          mois_concerne: null,
+          eleve_id: eleveId, montant: parseFloat(montant), type_paiement: typePaiement, mois_concerne: null, ...base,
         } as any);
         if (error) throw error;
       }
@@ -210,7 +248,7 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
       }
 
       setEleveId(''); setMontant(''); setCanal('especes'); setTypePaiement('scolarite'); setReference(''); setMoisCoches([]);
-      setSelectedArticleId(''); setArticleQuantite(1);
+      setSelectedArticleId(''); setArticleQuantite(1); setBanqueNom(''); setDateDepot(''); setPreuveFile(null);
       setOpen(false);
     },
     onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
@@ -391,7 +429,37 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
               {(canal === 'orange_money' || canal === 'mtn_momo') && (
                 <div><Label>Référence *</Label><Input value={reference} onChange={e => setReference(e.target.value)} placeholder="N° transaction" /></div>
               )}
-              <Button onClick={() => createPaiement.mutate()} disabled={createPaiement.isPending} className="w-full">Enregistrer</Button>
+              {canal === 'banque' && (
+                <Card className="border-border bg-muted/30">
+                  <CardContent className="pt-4 space-y-3">
+                    <div>
+                      <Label>Banque *</Label>
+                      <Select value={banqueNom} onValueChange={setBanqueNom}>
+                        <SelectTrigger><SelectValue placeholder="Sélectionner la banque" /></SelectTrigger>
+                        <SelectContent>
+                          {banques.map((b: string) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Référence de transaction *</Label>
+                      <Input value={reference} onChange={e => setReference(e.target.value)} placeholder="N° bordereau / chèque / virement" />
+                    </div>
+                    <div>
+                      <Label>Date du dépôt *</Label>
+                      <Input type="date" value={dateDepot} onChange={e => setDateDepot(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2"><FileImage className="h-4 w-4" /> Preuve de paiement (photo du bordereau)</Label>
+                      <Input type="file" accept="image/*,.pdf" onChange={e => setPreuveFile(e.target.files?.[0] || null)} className="mt-1" />
+                      {preuveFile && <p className="text-xs text-muted-foreground mt-1">📎 {preuveFile.name}</p>}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              <Button onClick={() => createPaiement.mutate()} disabled={createPaiement.isPending || uploadingPreuve} className="w-full">
+                {uploadingPreuve ? 'Upload en cours...' : 'Enregistrer'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -409,6 +477,12 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
   const [montant, setMontant] = useState('');
   const [canal, setCanal] = useState('especes');
   const [reference, setReference] = useState('');
+  const [banqueNom, setBanqueNom] = useState('');
+  const [dateDepot, setDateDepot] = useState('');
+  const [preuveFile, setPreuveFile] = useState<File | null>(null);
+  const [uploadingPreuve, setUploadingPreuve] = useState(false);
+
+  const { data: banques = DEFAULT_BANQUES } = useBanquesPartenaires();
 
   const familleEleves = useMemo(() => {
     if (!familleId) return [];
@@ -439,6 +513,31 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
       if (!familleId || !montant || parseFloat(montant) <= 0) throw new Error('Famille et montant requis');
       if (familleEleves.length === 0) throw new Error('Aucun élève dans cette famille');
 
+      if (canal === 'banque' && !banqueNom) throw new Error('Veuillez sélectionner une banque');
+      if (canal === 'banque' && !reference) throw new Error('La référence de transaction est obligatoire');
+      if (canal === 'banque' && !dateDepot) throw new Error('La date de dépôt est obligatoire');
+
+      // Upload proof if provided
+      let preuveUrl: string | null = null;
+      if (preuveFile) {
+        setUploadingPreuve(true);
+        const ext = preuveFile.name.split('.').pop();
+        const path = `famille_${familleId}_${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from('preuves-paiement').upload(path, preuveFile);
+        setUploadingPreuve(false);
+        if (upErr) throw new Error('Erreur upload: ' + upErr.message);
+        const { data: urlData } = supabase.storage.from('preuves-paiement').getPublicUrl(path);
+        preuveUrl = urlData.publicUrl;
+      }
+
+      const baseFields = {
+        canal,
+        reference: (canal !== 'especes' && reference) ? reference : null,
+        banque_nom: canal === 'banque' ? banqueNom : null,
+        date_depot: canal === 'banque' && dateDepot ? dateDepot : null,
+        preuve_url: preuveUrl,
+      };
+
       // Distribute payment across children proportionally
       const totalM = parseFloat(montant);
       let remaining = totalM;
@@ -453,9 +552,9 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
         remaining -= montantEleve;
 
         const { error } = await supabase.from('paiements').insert({
-          eleve_id: e.id, montant: montantEleve, canal, type_paiement: 'scolarite',
-          reference: (canal !== 'especes' && reference) ? reference : null,
+          eleve_id: e.id, montant: montantEleve, type_paiement: 'scolarite',
           mois_concerne: `Famille ${selectedFamille?.nom_famille}`,
+          ...baseFields,
         } as any);
         if (error) throw error;
       }
@@ -479,7 +578,7 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
         resteAPayer: Math.max(0, resteFamille - parseFloat(montant)),
       });
 
-      setFamilleId(''); setMontant(''); setCanal('especes'); setReference('');
+      setFamilleId(''); setMontant(''); setCanal('especes'); setReference(''); setBanqueNom(''); setDateDepot(''); setPreuveFile(null);
       setOpen(false);
     },
     onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
@@ -546,7 +645,37 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
               {(canal === 'orange_money' || canal === 'mtn_momo') && (
                 <div><Label>Référence *</Label><Input value={reference} onChange={e => setReference(e.target.value)} placeholder="N° transaction" /></div>
               )}
-              <Button onClick={() => createPaiementFamille.mutate()} disabled={createPaiementFamille.isPending} className="w-full">Enregistrer</Button>
+              {canal === 'banque' && (
+                <Card className="border-border bg-muted/30">
+                  <CardContent className="pt-4 space-y-3">
+                    <div>
+                      <Label>Banque *</Label>
+                      <Select value={banqueNom} onValueChange={setBanqueNom}>
+                        <SelectTrigger><SelectValue placeholder="Sélectionner la banque" /></SelectTrigger>
+                        <SelectContent>
+                          {banques.map((b: string) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Référence de transaction *</Label>
+                      <Input value={reference} onChange={e => setReference(e.target.value)} placeholder="N° bordereau / chèque / virement" />
+                    </div>
+                    <div>
+                      <Label>Date du dépôt *</Label>
+                      <Input type="date" value={dateDepot} onChange={e => setDateDepot(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2"><FileImage className="h-4 w-4" /> Preuve de paiement</Label>
+                      <Input type="file" accept="image/*,.pdf" onChange={e => setPreuveFile(e.target.files?.[0] || null)} className="mt-1" />
+                      {preuveFile && <p className="text-xs text-muted-foreground mt-1">📎 {preuveFile.name}</p>}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              <Button onClick={() => createPaiementFamille.mutate()} disabled={createPaiementFamille.isPending || uploadingPreuve} className="w-full">
+                {uploadingPreuve ? 'Upload en cours...' : 'Enregistrer'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -733,6 +862,8 @@ export default function Paiements() {
                 'Montant (GNF)': Number(p.montant),
                 Canal: CANAUX.find(c => c.value === p.canal)?.label || p.canal,
                 Référence: p.reference || '',
+                Banque: (p as any).banque_nom || '',
+                'Date Dépôt': (p as any).date_depot || '',
               }));
               exportToExcel(rows, `paiements_${format(new Date(), 'yyyy-MM-dd')}`);
             }}>
@@ -744,28 +875,29 @@ export default function Paiements() {
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead><TableHead>Élève</TableHead><TableHead>Matricule</TableHead>
-                    <TableHead>Type</TableHead><TableHead>Mois</TableHead><TableHead>Montant</TableHead><TableHead>Canal</TableHead><TableHead>Réf</TableHead><TableHead className="w-10"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
-                  ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Aucun paiement</TableCell></TableRow>
-                  ) : filtered.map((p: any) => {
-                    const eleveForReceipt = eleves.find((e: any) => e.id === p.eleve_id);
-                    return (
-                    <TableRow key={p.id}>
-                      <TableCell className="text-xs">{format(new Date(p.date_paiement), 'dd MMM yyyy', { locale: fr })}</TableCell>
-                      <TableCell className="font-medium">{p.eleves?.prenom} {p.eleves?.nom}</TableCell>
-                      <TableCell className="font-mono text-xs">{p.eleves?.matricule || '—'}</TableCell>
-                      <TableCell><Badge variant="outline">{TYPES.find(t => t.value === p.type_paiement)?.label || p.type_paiement}</Badge></TableCell>
-                      <TableCell className="text-xs">{(p as any).mois_concerne || '—'}</TableCell>
-                      <TableCell className="font-mono font-bold">{Number(p.montant).toLocaleString()} F</TableCell>
-                      <TableCell><Badge variant={p.canal === 'especes' ? 'secondary' : 'default'}>{CANAUX.find(c => c.value === p.canal)?.label || p.canal}</Badge></TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{p.reference || '—'}</TableCell>
+                   <TableRow>
+                     <TableHead>Date</TableHead><TableHead>Élève</TableHead><TableHead>Matricule</TableHead>
+                     <TableHead>Type</TableHead><TableHead>Mois</TableHead><TableHead>Montant</TableHead><TableHead>Canal</TableHead><TableHead>Réf</TableHead><TableHead>Banque</TableHead><TableHead className="w-10"></TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {isLoading ? (
+                     <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
+                   ) : filtered.length === 0 ? (
+                     <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Aucun paiement</TableCell></TableRow>
+                   ) : filtered.map((p: any) => {
+                     const eleveForReceipt = eleves.find((e: any) => e.id === p.eleve_id);
+                     return (
+                     <TableRow key={p.id}>
+                       <TableCell className="text-xs">{format(new Date(p.date_paiement), 'dd MMM yyyy', { locale: fr })}</TableCell>
+                       <TableCell className="font-medium">{p.eleves?.prenom} {p.eleves?.nom}</TableCell>
+                       <TableCell className="font-mono text-xs">{p.eleves?.matricule || '—'}</TableCell>
+                       <TableCell><Badge variant="outline">{TYPES.find(t => t.value === p.type_paiement)?.label || p.type_paiement}</Badge></TableCell>
+                       <TableCell className="text-xs">{(p as any).mois_concerne || '—'}</TableCell>
+                       <TableCell className="font-mono font-bold">{Number(p.montant).toLocaleString()} GNF</TableCell>
+                       <TableCell><Badge variant={p.canal === 'especes' ? 'secondary' : p.canal === 'banque' ? 'outline' : 'default'}>{CANAUX.find(c => c.value === p.canal)?.label || p.canal}</Badge></TableCell>
+                       <TableCell className="text-xs text-muted-foreground">{p.reference || '—'}</TableCell>
+                       <TableCell className="text-xs">{(p as any).banque_nom || '—'}</TableCell>
                       <TableCell>
                         <Button variant="ghost" size="icon" title="Imprimer reçu" onClick={() => {
                           if (p.type_paiement === 'scolarite' || p.type_paiement === 'transport') {
