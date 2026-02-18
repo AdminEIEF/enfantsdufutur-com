@@ -64,7 +64,7 @@ export default function Impayes() {
 
   const impayes = useMemo(() => {
     return eleves.map((e: any) => {
-      const fraisMensuel = Number(e.classes?.niveaux?.frais_scolarite || 0);
+      const fraisAnnuel = Number(e.classes?.niveaux?.frais_scolarite || 0);
       const prixTransport = Number((e.zones_transport as any)?.prix_mensuel || 0);
 
       // Family flat rate: from 3+ kids, transport is flat (1 price for all)
@@ -78,8 +78,8 @@ export default function Impayes() {
       const totalPayeScolarite = paiementsScolarite.reduce((s: number, p: any) => s + Number(p.montant), 0);
       const totalPayeTransport = paiementsTransport.reduce((s: number, p: any) => s + Number(p.montant), 0);
 
-      const totalAnnuelScolarite = fraisMensuel * 9;
-      const totalAnnuelTransport = prixTransport * 9;
+      const totalAnnuelScolarite = fraisAnnuel;
+      const totalAnnuelTransport = prixTransport * 10;
       const resteScolarite = Math.max(0, totalAnnuelScolarite - totalPayeScolarite);
       const resteTransport = Math.max(0, totalAnnuelTransport - totalPayeTransport);
 
@@ -102,7 +102,7 @@ export default function Impayes() {
         totalReste: resteScolarite + resteTransport,
         moisImpayesScolarite,
         moisImpayesTransport,
-        fraisMensuel,
+        fraisMensuel: fraisAnnuel > 0 ? Math.ceil(fraisAnnuel / 10) : 0,
         prixTransport,
       };
     }).filter(e => {
