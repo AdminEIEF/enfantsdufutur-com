@@ -8,9 +8,84 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck } from 'lucide-react';
+import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+function PasswordSection({ eleve, onUpdate }: { eleve: any; onUpdate: () => void }) {
+  const [showPwd, setShowPwd] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [newPwd, setNewPwd] = useState('');
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let pwd = '';
+    for (let i = 0; i < 6; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+    return pwd;
+  };
+
+  const save = async (pwd: string) => {
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('eleves').update({ mot_de_passe_eleve: pwd } as any).eq('id', eleve.id);
+      if (error) throw error;
+      toast({ title: 'Mot de passe mis à jour' });
+      setEditing(false);
+      setNewPwd('');
+      onUpdate();
+    } catch (err: any) {
+      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const currentPwd = eleve.mot_de_passe_eleve;
+
+  return (
+    <div className="border rounded-lg p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <KeyRound className="h-4 w-4 text-muted-foreground" />
+        <strong className="text-sm">Accès Espace Élève</strong>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm">Mot de passe :</span>
+        <code className="bg-muted px-2 py-0.5 rounded text-sm font-mono">
+          {showPwd ? (currentPwd || 'Non défini') : (currentPwd ? '••••••' : 'Non défini')}
+        </code>
+        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setShowPwd(!showPwd)}>
+          {showPwd ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+        </Button>
+      </div>
+      {editing ? (
+        <div className="flex gap-2 items-center">
+          <Input value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="Nouveau mot de passe" className="h-8 text-sm w-40" />
+          <Button size="sm" variant="outline" className="h-8" onClick={() => setNewPwd(generatePassword())}>
+            <RefreshCw className="h-3 w-3 mr-1" /> Générer
+          </Button>
+          <Button size="sm" className="h-8" disabled={!newPwd.trim() || saving} onClick={() => save(newPwd.trim())}>
+            {saving ? 'Enregistrement...' : 'Enregistrer'}
+          </Button>
+          <Button size="sm" variant="ghost" className="h-8" onClick={() => { setEditing(false); setNewPwd(''); }}>Annuler</Button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditing(true)}>
+            <Edit className="h-3 w-3 mr-1" /> Modifier
+          </Button>
+          {!currentPwd && (
+            <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => save(generatePassword())}>
+              <KeyRound className="h-3 w-3 mr-1" /> Générer un mot de passe
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 import { QRCodeSVG } from 'qrcode.react';
 import { useToast } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/excelUtils';
@@ -322,7 +397,7 @@ export default function Eleves() {
             const moisPayes = elevePaiements.map((p: any) => p.mois_concerne).filter(Boolean) as string[];
             const fraisAnnuels = Number(selected.classes?.niveaux?.frais_scolarite || 0);
             const totalPaye = elevePaiements.reduce((s: number, p: any) => s + Number(p.montant), 0);
-            const resteAPayer = Math.max(0, fraisAnnuels * 9 - totalPaye);
+            const resteAPayer = Math.max(0, fraisAnnuels - totalPaye);
 
             // Build month -> tranche map
             const moisToTranche: Record<string, TrancheConfig> = {};
@@ -347,6 +422,8 @@ export default function Eleves() {
                   <strong>Type:</strong>
                   {selected.famille_id ? <Badge className="gap-1"><Users className="h-3 w-3" />En famille — {selected.familles?.nom_famille}</Badge> : <Badge variant="outline" className="gap-1"><UserCheck className="h-3 w-3" />Individuel</Badge>}
                 </div>
+                {/* Mot de passe élève */}
+                <PasswordSection eleve={selected} onUpdate={() => { qc.invalidateQueries({ queryKey: ['eleves-full'] }); setSelected({ ...selected }); }} />
               </TabsContent>
 
               {/* Scolarité tab - month-by-month status */}
@@ -354,7 +431,7 @@ export default function Eleves() {
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="rounded-lg bg-muted p-2">
                     <p className="text-xs text-muted-foreground">Total annuel</p>
-                    <p className="font-bold">{(fraisAnnuels * 9).toLocaleString()} GNF</p>
+                    <p className="font-bold">{fraisAnnuels.toLocaleString()} GNF</p>
                   </div>
                   <div className="rounded-lg bg-muted p-2">
                     <p className="text-xs text-muted-foreground">Payé</p>

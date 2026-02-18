@@ -52,11 +52,12 @@ serve(async (req) => {
     const cycleId = (eleve as any).classes?.niveaux?.cycle_id;
 
     if (action === "cours") {
-      // Get courses for this student's class
+      // Get courses for this student's class (only visible ones)
       const { data: cours } = await supabaseAdmin
         .from("cours")
         .select("*, matieres:matiere_id(nom, pole, coefficient)")
         .eq("classe_id", classeId)
+        .eq("visible", true)
         .order("created_at", { ascending: false });
 
       return new Response(JSON.stringify({ cours: cours || [] }), {
