@@ -173,7 +173,7 @@ export default function ParentDashboard() {
               <h2 className="font-semibold flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" /> Mes enfants
               </h2>
-              {session.eleves.map((enfant) => (
+              {eleves.map((enfant: any) => (
                 <Card
                   key={enfant.id}
                   className="cursor-pointer hover:shadow-md transition-shadow"
