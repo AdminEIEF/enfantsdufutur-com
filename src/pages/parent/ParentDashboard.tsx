@@ -15,7 +15,7 @@ import { AIChatBubble } from '@/components/AIChatBubble';
 import ParentPaymentDialog from '@/components/ParentPaymentDialog';
 import ParentDevisInscription from '@/components/ParentDevisInscription';
 
-const MOIS_SCOLAIRES = ['Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
+const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 
 export default function ParentDashboard() {
   const { session, logout } = useParentAuth();
@@ -77,10 +77,10 @@ export default function ParentDashboard() {
   eleves.forEach((e: any) => {
     const frais = e.classes?.niveaux?.frais_scolarite || 0;
     totalScolariteAnnuel += frais;
-    // Transport: 9 mois
+    // Transport: 10 mois
     if (e.zones_transport || e.zone_transport_id) {
       const zt = e.zones_transport;
-      if (zt) totalTransportAnnuel += (zt.prix_mensuel || 0) * 9;
+      if (zt) totalTransportAnnuel += (zt.prix_mensuel || 0) * 10;
     }
     totalSoldeCantine += e.solde_cantine || 0;
   });
@@ -98,9 +98,9 @@ export default function ParentDashboard() {
 
   // Current month installment
   const currentMonth = new Date().getMonth(); // 0=Jan
-  const moisIndex = currentMonth >= 9 ? currentMonth - 9 : currentMonth + 3; // Oct=0, Nov=1...
-  const moisActuel = MOIS_SCOLAIRES[Math.min(moisIndex, 8)] || MOIS_SCOLAIRES[0];
-  const mensualiteScolarite = totalScolariteAnnuel > 0 ? Math.ceil(totalScolariteAnnuel / 9) : 0;
+  const moisIndex = currentMonth >= 8 ? currentMonth - 8 : currentMonth + 4; // Sep=0, Oct=1...
+  const moisActuel = MOIS_SCOLAIRES[Math.min(moisIndex, 9)] || MOIS_SCOLAIRES[0];
+  const mensualiteScolarite = totalScolariteAnnuel > 0 ? Math.ceil(totalScolariteAnnuel / 10) : 0;
 
   const handleLogout = () => { logout(); navigate('/parent', { replace: true }); };
 
