@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BookOpen, Save, CheckCircle, Circle, ChevronRight, AlertTriangle } from 'lucide-react';
+import { BookOpen, Save, CheckCircle, Circle, ChevronRight, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -172,6 +173,41 @@ export default function Notes() {
 
   const canShowList = classeId && periodeId && eleves.length > 0 && matieres.length > 0;
 
+  // Bulletin publication toggle
+  const { data: bulletinPub } = useQuery({
+    queryKey: ['bulletin-publication', classeId, periodeId],
+    queryFn: async () => {
+      if (!classeId || !periodeId) return null;
+      const { data } = await supabase
+        .from('bulletin_publications')
+        .select('*')
+        .eq('classe_id', classeId)
+        .eq('periode_id', periodeId)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!classeId && !!periodeId,
+  });
+
+  const toggleVisibility = useMutation({
+    mutationFn: async (visible: boolean) => {
+      const { error } = await supabase
+        .from('bulletin_publications')
+        .upsert({
+          classe_id: classeId,
+          periode_id: periodeId,
+          visible_parent: visible,
+          published_at: visible ? new Date().toISOString() : null,
+        }, { onConflict: 'classe_id,periode_id' });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bulletin-publication'] });
+      toast({ title: bulletinPub?.visible_parent ? 'Bulletins masqués' : 'Bulletins publiés', description: 'Visibilité mise à jour pour les parents.' });
+    },
+    onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
+  });
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
@@ -204,6 +240,32 @@ export default function Notes() {
               </Select>
             </div>
           </div>
+
+          {/* Publication toggle */}
+          {canShowList && (
+            <div className="mt-4 pt-4 border-t flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {bulletinPub?.visible_parent ? (
+                  <Eye className="h-4 w-4 text-green-600" />
+                ) : (
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                )}
+                <div>
+                  <p className="text-sm font-medium">Rendre visible par les parents</p>
+                  <p className="text-xs text-muted-foreground">
+                    {bulletinPub?.visible_parent
+                      ? `Publié le ${new Date(bulletinPub.published_at!).toLocaleDateString('fr-FR')}`
+                      : 'Les parents ne peuvent pas encore voir les bulletins'}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={bulletinPub?.visible_parent ?? false}
+                onCheckedChange={(checked) => toggleVisibility.mutate(checked)}
+                disabled={toggleVisibility.isPending}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

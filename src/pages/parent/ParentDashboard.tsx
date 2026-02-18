@@ -244,13 +244,20 @@ export default function ParentDashboard() {
                         <Card key={p.id}>
                           <CardContent className="py-3 flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-medium">
-                                {p.type_paiement === 'scolarite' ? '🎓' : p.type_paiement === 'transport' ? '🚌' : p.type_paiement === 'cantine' ? '🍽️' : '📦'}
-                                {' '}{p.type_paiement}
-                                {p.mois_concerne && ` — ${p.mois_concerne}`}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium">
+                                  {p.type_paiement === 'scolarite' ? '🎓' : p.type_paiement === 'transport' ? '🚌' : p.type_paiement === 'cantine' ? '🍽️' : p.type_paiement === 'librairie' ? '📚' : p.type_paiement === 'boutique' ? '👕' : '📦'}
+                                  {' '}{p.type_paiement}
+                                  {p.mois_concerne && ` — ${p.mois_concerne}`}
+                                </p>
+                                {enfant && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {enfant.prenom}
+                                  </Badge>
+                                )}
+                              </div>
                               <p className="text-xs text-muted-foreground">
-                                {enfant ? `${enfant.prenom} ${enfant.nom}` : ''} • {new Date(p.date_paiement).toLocaleDateString('fr-FR')} • {p.canal}
+                                {new Date(p.date_paiement).toLocaleDateString('fr-FR')} • {p.canal}
                               </p>
                             </div>
                             <p className="font-bold text-green-600">{p.montant.toLocaleString()} GNF</p>

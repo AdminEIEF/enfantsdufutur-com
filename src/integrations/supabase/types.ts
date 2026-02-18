@@ -168,6 +168,51 @@ export type Database = {
           },
         ]
       }
+      bulletin_publications: {
+        Row: {
+          classe_id: string
+          created_at: string
+          id: string
+          periode_id: string
+          published_at: string | null
+          published_by: string | null
+          visible_parent: boolean
+        }
+        Insert: {
+          classe_id: string
+          created_at?: string
+          id?: string
+          periode_id: string
+          published_at?: string | null
+          published_by?: string | null
+          visible_parent?: boolean
+        }
+        Update: {
+          classe_id?: string
+          created_at?: string
+          id?: string
+          periode_id?: string
+          published_at?: string | null
+          published_by?: string | null
+          visible_parent?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulletin_publications_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bulletin_publications_periode_id_fkey"
+            columns: ["periode_id"]
+            isOneToOne: false
+            referencedRelation: "periodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           capacite: number | null
