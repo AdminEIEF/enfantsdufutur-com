@@ -8,11 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Award, Printer, User, Trophy, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import BulletinScolaire from '@/components/BulletinScolaire';
 
 export default function Bulletins() {
   const [classeId, setClasseId] = useState('');
   const [periodeId, setPeriodeId] = useState('');
   const [selectedEleve, setSelectedEleve] = useState('');
+  const [showPrintView, setShowPrintView] = useState(false);
 
   const { data: classes = [] } = useQuery({
     queryKey: ['classes-bulletin'],
@@ -277,151 +279,217 @@ export default function Bulletins() {
 
       {/* Bulletin */}
       {selectedEleve && periodeId ? (
-        <div id="bulletin-print">
-          {/* Header card */}
-          <Card className="print:shadow-none print:border-2 print:border-foreground">
-            <CardHeader className="border-b">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Bulletin Scolaire</p>
-                  <CardTitle className="text-xl mt-1">
-                    {eleve?.prenom} {eleve?.nom}
-                  </CardTitle>
-                  <div className="flex gap-4 text-sm text-muted-foreground mt-1">
-                    <span>Matricule : {eleve?.matricule || '—'}</span>
-                    <span>Sexe : {eleve?.sexe || '—'}</span>
-                    {eleve?.date_naissance && <span>Né(e) le : {new Date(eleve.date_naissance).toLocaleDateString('fr-FR')}</span>}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium">{selectedCl?.niveaux?.cycles?.nom} — {selectedCl?.niveaux?.nom}</p>
-                  <p className="text-sm text-muted-foreground">Classe : {selectedCl?.nom}</p>
-                  <p className="text-sm text-muted-foreground">{periode?.nom} — {periode?.annee_scolaire}</p>
-                  <p className="text-sm">Effectif : {totalClasseEleves} élèves</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead>Matière</TableHead>
-                    <TableHead className="text-center w-20">Note /{bareme}</TableHead>
-                    <TableHead className="text-center w-16">Coef</TableHead>
-                    <TableHead className="text-center w-20">Total</TableHead>
-                    <TableHead className="text-center w-16">Min</TableHead>
-                    <TableHead className="text-center w-16">Max</TableHead>
-                    <TableHead className="text-center w-16">Moy. Cl.</TableHead>
-                    <TableHead className="text-center w-28">Appréciation</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {Object.entries(poleGroups).map(([pole, items]) => (
-                    <>
-                      <TableRow key={`pole-${pole}`} className="bg-primary/5">
-                        <TableCell colSpan={8} className="font-bold text-primary text-xs uppercase tracking-wider py-1.5">
-                          {pole}
-                        </TableCell>
-                      </TableRow>
-                      {items.map((b, i) => {
-                        const appreciation = getAppreciation(b.note);
-                        return (
-                          <TableRow key={`${pole}-${i}`}>
-                            <TableCell className="font-medium">{b.matiere}</TableCell>
-                            <TableCell className="text-center font-mono">
-                              {b.note !== null ? b.note.toFixed(2) : '—'}
-                            </TableCell>
-                            <TableCell className="text-center">{b.coefficient}</TableCell>
-                            <TableCell className="text-center font-mono font-bold">
-                              {b.total !== null ? b.total.toFixed(2) : '—'}
-                            </TableCell>
-                            <TableCell className="text-center text-xs text-muted-foreground">
-                              {b.classeMin !== null ? b.classeMin.toFixed(1) : '—'}
-                            </TableCell>
-                            <TableCell className="text-center text-xs text-muted-foreground">
-                              {b.classeMax !== null ? b.classeMax.toFixed(1) : '—'}
-                            </TableCell>
-                            <TableCell className="text-center text-xs text-muted-foreground">
-                              {b.classeAvg !== null ? b.classeAvg.toFixed(1) : '—'}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {appreciation ? (
-                                <Badge variant={appreciation.variant} className="text-xs">{appreciation.text}</Badge>
-                              ) : '—'}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          {/* Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-            <Card className="border-primary/40">
-              <CardContent className="pt-4 pb-4 text-center">
-                <p className="text-xs text-muted-foreground">Moyenne période</p>
-                <p className={`text-2xl font-bold ${moyennePeriode !== null && moyennePeriode >= seuil ? 'text-accent' : 'text-destructive'}`}>
-                  {moyennePeriode !== null ? `${moyennePeriode.toFixed(2)}/${bareme}` : '—'}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-4 text-center">
-                <p className="text-xs text-muted-foreground">Rang</p>
-                <p className="text-2xl font-bold flex items-center justify-center gap-1">
-                  {currentRanking?.rang !== null ? (
-                    <>
-                      {currentRanking?.rang === 1 && <Trophy className="h-5 w-5 text-secondary" />}
-                      {currentRanking?.rang}<sup>e</sup> / {totalClasseEleves}
-                    </>
-                  ) : '—'}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-4 text-center">
-                <p className="text-xs text-muted-foreground">Moy. annuelle</p>
-                <p className={`text-2xl font-bold ${moyenneAnnuelle !== null && moyenneAnnuelle >= seuil ? 'text-accent' : 'text-destructive'}`}>
-                  {moyenneAnnuelle !== null ? `${moyenneAnnuelle.toFixed(2)}/${bareme}` : '—'}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-4 text-center">
-                <p className="text-xs text-muted-foreground">Décision</p>
-                {moyennePeriode !== null ? (
-                  <Badge variant={moyennePeriode >= seuil ? 'default' : 'destructive'} className="text-sm mt-1">
-                    {moyennePeriode >= seuil * 1.5 ? '🏆 Tableau d\'honneur' : moyennePeriode >= seuil ? '✅ Admis(e)' : '⚠️ Rattrapage'}
-                  </Badge>
-                ) : <span className="text-muted-foreground">—</span>}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Major info */}
-          {major && (
-            <Card className="mt-4 border-secondary/30 bg-secondary/5">
-              <CardContent className="pt-4 pb-4 flex items-center gap-3">
-                <Trophy className="h-6 w-6 text-secondary" />
-                <div>
-                  <p className="text-sm font-medium">Major de la classe : <strong>{major.nom}</strong></p>
-                  <p className="text-xs text-muted-foreground">Moyenne : {major.moyenne?.toFixed(2)}/{bareme}</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Print button */}
-          <div className="flex gap-3 mt-4 print:hidden">
-            <Button onClick={handlePrint}>
-              <Printer className="h-4 w-4 mr-2" /> Imprimer le bulletin
+        <>
+          {/* Toggle between card view and print view */}
+          <div className="flex gap-3 print:hidden">
+            <Button
+              variant={!showPrintView ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowPrintView(false)}
+            >
+              Vue détaillée
+            </Button>
+            <Button
+              variant={showPrintView ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowPrintView(true)}
+            >
+              <Printer className="h-4 w-4 mr-2" /> Vue impression A4
             </Button>
           </div>
-        </div>
+
+          {showPrintView ? (
+            <div id="bulletin-print">
+              <div className="no-print flex gap-3 mb-4">
+                <Button onClick={handlePrint}>
+                  <Printer className="h-4 w-4 mr-2" /> Imprimer le bulletin
+                </Button>
+              </div>
+              <BulletinScolaire
+                eleve={{
+                  nom: eleve?.nom || '',
+                  prenom: eleve?.prenom || '',
+                  matricule: eleve?.matricule || null,
+                  sexe: eleve?.sexe || null,
+                  date_naissance: eleve?.date_naissance || null,
+                }}
+                classe={`${selectedCl?.niveaux?.nom || ''} — ${selectedCl?.nom || ''}`}
+                effectif={totalClasseEleves}
+                periodes={periodes.filter((p: any) => !p.est_rattrapage).map((p: any) => ({ nom: p.nom, id: p.id }))}
+                bulletinData={bulletinData.map(b => ({
+                  matiere: b.matiere,
+                  pole: b.pole,
+                  coefficient: b.coefficient,
+                  notes: periodes.filter((p: any) => !p.est_rattrapage).map((p: any) => {
+                    const n = allAnnualNotes.find((note: any) => note.matiere_id === matieres.find((m: any) => m.nom === b.matiere)?.id && note.periode_id === p.id && note.eleve_id === selectedEleve);
+                    return n?.note != null ? Number(n.note) : null;
+                  }),
+                  noteFinale: b.note,
+                  rang: null,
+                  appreciation: b.note !== null ? getAppreciation(b.note)?.text || null : null,
+                }))}
+                moyenneFinale={moyennePeriode}
+                rang={currentRanking?.rang ?? null}
+                plusForte={rankings.length > 0 && rankings[0].moyenne !== null ? rankings[0].moyenne : null}
+                plusFaible={rankings.length > 0 && rankings[rankings.length - 1].moyenne !== null ? rankings[rankings.length - 1].moyenne : null}
+                bareme={bareme}
+                seuil={seuil}
+                chartData={periodes.filter((p: any) => !p.est_rattrapage).map((p: any) => {
+                  const avg = computeAverage(selectedEleve, allAnnualNotes.filter((n: any) => n.periode_id === p.id));
+                  return { name: p.nom, note: avg ?? 0 };
+                })}
+                cycleName={selectedCl?.niveaux?.cycles?.nom}
+                anneeScolaire={periode?.annee_scolaire}
+              />
+            </div>
+          ) : (
+            <div id="bulletin-print">
+              {/* Header card */}
+              <Card className="print:shadow-none print:border-2 print:border-foreground">
+                <CardHeader className="border-b">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider">Bulletin Scolaire</p>
+                      <CardTitle className="text-xl mt-1">
+                        {eleve?.prenom} {eleve?.nom}
+                      </CardTitle>
+                      <div className="flex gap-4 text-sm text-muted-foreground mt-1">
+                        <span>Matricule : {eleve?.matricule || '—'}</span>
+                        <span>Sexe : {eleve?.sexe || '—'}</span>
+                        {eleve?.date_naissance && <span>Né(e) le : {new Date(eleve.date_naissance).toLocaleDateString('fr-FR')}</span>}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{selectedCl?.niveaux?.cycles?.nom} — {selectedCl?.niveaux?.nom}</p>
+                      <p className="text-sm text-muted-foreground">Classe : {selectedCl?.nom}</p>
+                      <p className="text-sm text-muted-foreground">{periode?.nom} — {periode?.annee_scolaire}</p>
+                      <p className="text-sm">Effectif : {totalClasseEleves} élèves</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead>Matière</TableHead>
+                        <TableHead className="text-center w-20">Note /{bareme}</TableHead>
+                        <TableHead className="text-center w-16">Coef</TableHead>
+                        <TableHead className="text-center w-20">Total</TableHead>
+                        <TableHead className="text-center w-16">Min</TableHead>
+                        <TableHead className="text-center w-16">Max</TableHead>
+                        <TableHead className="text-center w-16">Moy. Cl.</TableHead>
+                        <TableHead className="text-center w-28">Appréciation</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {Object.entries(poleGroups).map(([pole, items]) => (
+                        <>
+                          <TableRow key={`pole-${pole}`} className="bg-primary/5">
+                            <TableCell colSpan={8} className="font-bold text-primary text-xs uppercase tracking-wider py-1.5">
+                              {pole}
+                            </TableCell>
+                          </TableRow>
+                          {items.map((b, i) => {
+                            const appreciation = getAppreciation(b.note);
+                            return (
+                              <TableRow key={`${pole}-${i}`}>
+                                <TableCell className="font-medium">{b.matiere}</TableCell>
+                                <TableCell className="text-center font-mono">
+                                  {b.note !== null ? b.note.toFixed(2) : '—'}
+                                </TableCell>
+                                <TableCell className="text-center">{b.coefficient}</TableCell>
+                                <TableCell className="text-center font-mono font-bold">
+                                  {b.total !== null ? b.total.toFixed(2) : '—'}
+                                </TableCell>
+                                <TableCell className="text-center text-xs text-muted-foreground">
+                                  {b.classeMin !== null ? b.classeMin.toFixed(1) : '—'}
+                                </TableCell>
+                                <TableCell className="text-center text-xs text-muted-foreground">
+                                  {b.classeMax !== null ? b.classeMax.toFixed(1) : '—'}
+                                </TableCell>
+                                <TableCell className="text-center text-xs text-muted-foreground">
+                                  {b.classeAvg !== null ? b.classeAvg.toFixed(1) : '—'}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {appreciation ? (
+                                    <Badge variant={appreciation.variant} className="text-xs">{appreciation.text}</Badge>
+                                  ) : '—'}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              {/* Summary */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                <Card className="border-primary/40">
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <p className="text-xs text-muted-foreground">Moyenne période</p>
+                    <p className={`text-2xl font-bold ${moyennePeriode !== null && moyennePeriode >= seuil ? 'text-accent' : 'text-destructive'}`}>
+                      {moyennePeriode !== null ? `${moyennePeriode.toFixed(2)}/${bareme}` : '—'}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <p className="text-xs text-muted-foreground">Rang</p>
+                    <p className="text-2xl font-bold flex items-center justify-center gap-1">
+                      {currentRanking?.rang !== null ? (
+                        <>
+                          {currentRanking?.rang === 1 && <Trophy className="h-5 w-5 text-secondary" />}
+                          {currentRanking?.rang}<sup>e</sup> / {totalClasseEleves}
+                        </>
+                      ) : '—'}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <p className="text-xs text-muted-foreground">Moy. annuelle</p>
+                    <p className={`text-2xl font-bold ${moyenneAnnuelle !== null && moyenneAnnuelle >= seuil ? 'text-accent' : 'text-destructive'}`}>
+                      {moyenneAnnuelle !== null ? `${moyenneAnnuelle.toFixed(2)}/${bareme}` : '—'}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <p className="text-xs text-muted-foreground">Décision</p>
+                    {moyennePeriode !== null ? (
+                      <Badge variant={moyennePeriode >= seuil ? 'default' : 'destructive'} className="text-sm mt-1">
+                        {moyennePeriode >= seuil * 1.5 ? '🏆 Tableau d\'honneur' : moyennePeriode >= seuil ? '✅ Admis(e)' : '⚠️ Rattrapage'}
+                      </Badge>
+                    ) : <span className="text-muted-foreground">—</span>}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Major info */}
+              {major && (
+                <Card className="mt-4 border-secondary/30 bg-secondary/5">
+                  <CardContent className="pt-4 pb-4 flex items-center gap-3">
+                    <Trophy className="h-6 w-6 text-secondary" />
+                    <div>
+                      <p className="text-sm font-medium">Major de la classe : <strong>{major.nom}</strong></p>
+                      <p className="text-xs text-muted-foreground">Moyenne : {major.moyenne?.toFixed(2)}/{bareme}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Print button */}
+              <div className="flex gap-3 mt-4 print:hidden">
+                <Button onClick={handlePrint}>
+                  <Printer className="h-4 w-4 mr-2" /> Imprimer le bulletin
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       ) : (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
