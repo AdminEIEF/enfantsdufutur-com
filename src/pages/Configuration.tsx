@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, Plus, Trash2, Pencil, GraduationCap, BookOpen, School, Tag, Calendar, Bus, Ruler, RotateCcw, Archive } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -1343,14 +1343,16 @@ function EcoleTab() {
     },
   });
 
-  if (config && !loaded) {
-    const val = config.valeur as Record<string, string>;
-    if (val.nom) setNom(val.nom);
-    if (val.soustitre) setSoustitre(val.soustitre);
-    if (val.ville) setVille(val.ville);
-    if (val.logo_url) setLogoUrl(val.logo_url);
-    setLoaded(true);
-  }
+  useEffect(() => {
+    if (config && !loaded) {
+      const val = config.valeur as Record<string, string>;
+      if (val.nom) setNom(val.nom);
+      if (val.soustitre) setSoustitre(val.soustitre);
+      if (val.ville) setVille(val.ville);
+      if (val.logo_url) setLogoUrl(val.logo_url);
+      setLoaded(true);
+    }
+  }, [config, loaded]);
 
   const save = useMutation({
     mutationFn: async () => {
