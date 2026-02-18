@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, UserPlus, ChevronRight } from 'lucide-react';
+import { Users, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, UserPlus, ChevronRight, KeyRound, Copy, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -179,6 +179,24 @@ export default function Familles() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const generateCode = useMutation({
+    mutationFn: async (familleId: string) => {
+      const code = 'FAM-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+      const { error } = await supabase.from('familles').update({ code_acces: code } as any).eq('id', familleId);
+      if (error) throw error;
+      return code;
+    },
+    onSuccess: (code) => {
+      qc.invalidateQueries({ queryKey: ['familles-with-children'] });
+      toast.success(`Code généré : ${code}`);
+      // Update selected famille in place
+      if (selectedFamille) {
+        setSelectedFamille({ ...selectedFamille, code_acces: code });
+      }
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   // Stats
   const totalFamilles = familles.length;
   const totalEnfants = familles.reduce((s: number, f: any) => s + (f.eleves?.length || 0), 0);
@@ -338,6 +356,34 @@ export default function Familles() {
                   <div className="space-y-1 col-span-2">
                     <p className="text-sm text-muted-foreground">Adresse</p>
                     <p className="font-medium">{selectedFamille.adresse || '—'}</p>
+                  </div>
+                  {/* Code d'accès parent */}
+                  <div className="space-y-2 col-span-2 border-t pt-4 mt-2">
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <KeyRound className="h-3.5 w-3.5" /> Code d'accès Espace Parent
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {selectedFamille.code_acces ? (
+                        <>
+                          <code className="bg-muted px-3 py-1.5 rounded font-mono text-lg tracking-widest font-bold">
+                            {selectedFamille.code_acces}
+                          </code>
+                          <Button variant="outline" size="sm" onClick={() => {
+                            navigator.clipboard.writeText(selectedFamille.code_acces);
+                            toast.success('Code copié !');
+                          }}>
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => generateCode.mutate(selectedFamille.id)}>
+                            <RefreshCw className="h-3 w-3" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button size="sm" onClick={() => generateCode.mutate(selectedFamille.id)}>
+                          <KeyRound className="h-4 w-4 mr-1" /> Générer un code
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </TabsContent>

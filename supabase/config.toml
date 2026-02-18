@@ -2,3 +2,9 @@ project_id = "xlrlelzqasgqaiylldcj"
 
 [functions.ai-chat]
 verify_jwt = false
+
+[functions.parent-auth]
+verify_jwt = false
+
+[functions.parent-data]
+verify_jwt = false

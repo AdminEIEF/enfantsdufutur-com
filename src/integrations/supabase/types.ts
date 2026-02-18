@@ -398,6 +398,7 @@ export type Database = {
       familles: {
         Row: {
           adresse: string | null
+          code_acces: string | null
           created_at: string
           email_parent: string | null
           id: string
@@ -408,6 +409,7 @@ export type Database = {
         }
         Insert: {
           adresse?: string | null
+          code_acces?: string | null
           created_at?: string
           email_parent?: string | null
           id?: string
@@ -418,6 +420,7 @@ export type Database = {
         }
         Update: {
           adresse?: string | null
+          code_acces?: string | null
           created_at?: string
           email_parent?: string | null
           id?: string
