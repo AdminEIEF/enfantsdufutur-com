@@ -19,16 +19,26 @@ const TYPE_OPTIONS = [
   { value: 'scolarite', label: '🎓 Scolarité', description: 'Paiement tranche mensuelle' },
   { value: 'cantine', label: '🍽️ Recharge Cantine', description: 'Crédit repas' },
   { value: 'transport', label: '🚌 Transport', description: 'Frais de transport' },
+  { value: 'inscription', label: '📋 Inscription', description: 'Frais d\'inscription' },
+  { value: 'librairie', label: '📚 Librairie', description: 'Fournitures scolaires' },
+  { value: 'boutique', label: '👕 Boutique', description: 'Uniformes et accessoires' },
+  { value: 'autre', label: '📦 Autre', description: 'Autre type de paiement' },
 ];
 
 const MOIS_SCOLAIRES = ['Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 
 export default function ParentPaymentDialog({ open, onOpenChange, enfants, code, onSuccess }: PaymentDialogProps) {
-  const [eleveId, setEleveId] = useState('');
+  const isSingle = enfants.length === 1;
+  const [eleveId, setEleveId] = useState(isSingle ? enfants[0]?.id || '' : '');
   const [typePaiement, setTypePaiement] = useState('');
   const [montant, setMontant] = useState('');
   const [moisConcerne, setMoisConcerne] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Auto-select when single child
+  useState(() => {
+    if (isSingle && enfants[0]) setEleveId(enfants[0].id);
+  });
 
   const handlePay = async () => {
     if (!eleveId || !typePaiement || !montant || Number(montant) <= 0) {
@@ -91,22 +101,32 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Enfant selection */}
-          <div className="space-y-2">
-            <Label>Enfant concerné</Label>
-            <Select value={eleveId} onValueChange={setEleveId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un enfant" />
-              </SelectTrigger>
-              <SelectContent>
-                {enfants.map(e => (
-                  <SelectItem key={e.id} value={e.id}>
-                    {e.prenom} {e.nom}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Enfant selection - hidden if single child */}
+          {isSingle ? (
+            <div className="bg-muted/50 rounded-lg p-3 text-sm">
+              <p className="text-xs text-muted-foreground">Élève</p>
+              <p className="font-semibold">{enfants[0]?.prenom} {enfants[0]?.nom}</p>
+              {enfants[0]?.classes?.niveaux?.nom && (
+                <p className="text-xs text-muted-foreground">{enfants[0]?.classes?.niveaux?.nom}</p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Enfant concerné</Label>
+              <Select value={eleveId} onValueChange={setEleveId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un enfant" />
+                </SelectTrigger>
+                <SelectContent>
+                  {enfants.map(e => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.prenom} {e.nom} {e.classes?.niveaux?.nom ? `— ${e.classes.niveaux.nom}` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Type de paiement */}
           <div className="space-y-2">

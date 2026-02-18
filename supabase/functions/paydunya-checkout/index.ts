@@ -72,7 +72,11 @@ serve(async (req) => {
     };
 
     const projectUrl = Deno.env.get("SUPABASE_URL")!;
-    const desc = description || `${type_paiement === 'scolarite' ? 'Scolarité' : type_paiement === 'cantine' ? 'Recharge Cantine' : type_paiement === 'transport' ? 'Transport' : 'Paiement'} — ${eleve.prenom} ${eleve.nom}${mois_concerne ? ` (${mois_concerne})` : ''}`;
+    const typeLabels: Record<string, string> = {
+      scolarite: 'Scolarité', cantine: 'Recharge Cantine', transport: 'Transport',
+      inscription: 'Inscription', librairie: 'Librairie', boutique: 'Boutique', autre: 'Paiement',
+    };
+    const desc = description || `${typeLabels[type_paiement] || 'Paiement'} — ${eleve.prenom} ${eleve.nom}${mois_concerne ? ` (${mois_concerne})` : ''}`;
 
     // Create PayDunya invoice
     const invoicePayload = {
