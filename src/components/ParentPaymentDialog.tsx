@@ -25,7 +25,7 @@ const TYPE_OPTIONS = [
   { value: 'autre', label: '📦 Autre', description: 'Autre type de paiement' },
 ];
 
-const MOIS_SCOLAIRES = ['Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
+const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 
 export default function ParentPaymentDialog({ open, onOpenChange, enfants, code, onSuccess }: PaymentDialogProps) {
   const isSingle = enfants.length === 1;

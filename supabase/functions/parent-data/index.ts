@@ -120,6 +120,7 @@ serve(async (req) => {
         .maybeSingle();
 
       const niveauId = (eleveData as any)?.classes?.niveau_id;
+      const classeId = eleveData?.classe_id;
       let articlesNiveau: any[] = [];
       if (niveauId) {
         const { data: arts } = await supabaseAdmin
@@ -129,6 +130,18 @@ serve(async (req) => {
         articlesNiveau = arts || [];
       }
 
+      // Fetch bulletin publications visible to parents for this child's class
+      let bulletinPublications: any[] = [];
+      if (classeId) {
+        const { data: pubs } = await supabaseAdmin
+          .from("bulletin_publications")
+          .select("*, periodes:periode_id(nom, ordre)")
+          .eq("classe_id", classeId)
+          .eq("visible_parent", true)
+          .order("created_at", { ascending: false });
+        bulletinPublications = pubs || [];
+      }
+
       return new Response(
         JSON.stringify({
           paiements: paiements || [],
@@ -136,6 +149,7 @@ serve(async (req) => {
           ventesArticles: ventesArticles || [],
           boutiqueVentes: boutiqueVentes || [],
           articlesNiveau,
+          bulletinPublications,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useParentAuth } from '@/hooks/useParentAuth';
 import {
   ArrowLeft, UtensilsCrossed, BookOpen, ShoppingBag, FileText,
-  Loader2, CheckCircle2, Clock, Package
+  Loader2, CheckCircle2, Clock, Package, Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -61,6 +61,7 @@ export default function ParentEnfant() {
   const ventesArticles = data?.ventesArticles || [];
   const boutiqueVentes = data?.boutiqueVentes || [];
   const articlesNiveau = data?.articlesNiveau || [];
+  const bulletinPublications = data?.bulletinPublications || [];
 
   // Determine librairie status per article
   const articlesAchetes = new Set(ventesArticles.map((v: any) => v.article_id));
@@ -116,6 +117,9 @@ export default function ParentEnfant() {
               </TabsTrigger>
               <TabsTrigger value="bulletins">
                 <FileText className="h-4 w-4 mr-1" /> Bulletins
+                {bulletinPublications.length > 0 && (
+                  <Badge variant="default" className="ml-1 text-xs h-5 px-1.5">{bulletinPublications.length}</Badge>
+                )}
               </TabsTrigger>
             </TabsList>
 
@@ -219,17 +223,42 @@ export default function ParentEnfant() {
 
             {/* Bulletins */}
             <TabsContent value="bulletins" className="mt-4 space-y-4">
-              <Card>
-                <CardContent className="pt-6 text-center">
-                  <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-muted-foreground">
-                    Les bulletins seront disponibles après la publication des résultats par l'administration.
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Consultez cette section régulièrement après chaque période d'examen.
-                  </p>
-                </CardContent>
-              </Card>
+              {bulletinPublications.length === 0 ? (
+                <Card>
+                  <CardContent className="pt-6 text-center">
+                    <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-muted-foreground">
+                      Les bulletins seront disponibles après la publication des résultats par l'administration.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Consultez cette section régulièrement après chaque période d'examen.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {bulletinPublications.map((pub: any) => (
+                    <Card key={pub.id} className="border-primary/20">
+                      <CardContent className="py-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <FileText className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm">Bulletin — {pub.periodes?.nom}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Publié le {new Date(pub.published_at).toLocaleDateString('fr-FR')}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant="default" className="bg-green-600 text-xs">
+                          <CheckCircle2 className="h-3 w-3 mr-1" /> Disponible
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         )}
