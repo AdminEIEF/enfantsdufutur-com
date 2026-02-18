@@ -129,7 +129,7 @@ export default function ParentEnfant() {
                 <CardContent className="pt-4 flex items-center justify-between">
                   <div>
                     <p className="text-xs text-muted-foreground uppercase">Solde cantine</p>
-                    <p className="text-2xl font-bold text-green-700">{(enfant.solde_cantine || 0).toLocaleString()} GNF</p>
+                    <p className="text-2xl font-bold text-green-700">{(data?.solde_cantine ?? enfant.solde_cantine ?? 0).toLocaleString()} GNF</p>
                   </div>
                   <UtensilsCrossed className="h-8 w-8 text-green-300" />
                 </CardContent>

@@ -284,7 +284,7 @@ function VenteALaCartePanel() {
         eleve_id: selectedEleve.id,
         montant: totalPanier,
         canal,
-        type_paiement: 'article',
+        type_paiement: 'fournitures',
         reference: (canal !== 'especes' && reference) ? reference : null,
         mois_concerne: null,
       } as any);

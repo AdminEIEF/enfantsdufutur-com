@@ -203,7 +203,7 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
         });
         if (saleErr) throw saleErr;
         const { error } = await supabase.from('paiements').insert({
-          eleve_id: eleveId, montant: parseFloat(montant), type_paiement: 'article', mois_concerne: null, ...base,
+          eleve_id: eleveId, montant: parseFloat(montant), type_paiement: 'fournitures', mois_concerne: null, ...base,
         } as any);
         if (error) throw error;
       } else if (typePaiement === 'scolarite' || typePaiement === 'transport') {

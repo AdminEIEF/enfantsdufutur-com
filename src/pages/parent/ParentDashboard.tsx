@@ -254,7 +254,7 @@ export default function ParentDashboard() {
                             <div>
                               <div className="flex items-center gap-2">
                                 <p className="text-sm font-medium">
-                                  {p.type_paiement === 'scolarite' ? '🎓' : p.type_paiement === 'transport' ? '🚌' : p.type_paiement === 'cantine' ? '🍽️' : p.type_paiement === 'librairie' ? '📚' : p.type_paiement === 'boutique' ? '👕' : '📦'}
+                                  {p.type_paiement === 'scolarite' ? '🎓' : p.type_paiement === 'transport' ? '🚌' : p.type_paiement === 'cantine' ? '🍽️' : p.type_paiement === 'fournitures' ? '📚' : p.type_paiement === 'librairie' ? '📚' : p.type_paiement === 'boutique' ? '👕' : p.type_paiement === 'inscription' ? '📝' : p.type_paiement === 'reinscription' ? '🔄' : '📦'}
                                   {' '}{p.type_paiement}
                                   {p.type_paiement === 'cantine' && p.mois_concerne === 'Recharge directe' && ' (directe)'}
                                   {p.type_paiement === 'cantine' && p.mois_concerne === 'Recharge ordonnée' && ' (ordonnée ✓)'}
