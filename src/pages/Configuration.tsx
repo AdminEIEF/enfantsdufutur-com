@@ -1366,11 +1366,11 @@ function EcoleTab() {
 
   useEffect(() => {
     if (config && !loaded) {
-      const val = config.valeur as Record<string, string>;
-      if (val.nom) setNom(val.nom);
-      if (val.soustitre) setSoustitre(val.soustitre);
-      if (val.ville) setVille(val.ville);
-      if (val.logo_url) setLogoUrl(val.logo_url);
+      const val = (config.valeur || {}) as Record<string, string>;
+      if (val?.nom) setNom(val.nom);
+      if (val?.soustitre) setSoustitre(val.soustitre);
+      if (val?.ville) setVille(val.ville);
+      if (val?.logo_url) setLogoUrl(val.logo_url);
       setLoaded(true);
     }
   }, [config, loaded]);
