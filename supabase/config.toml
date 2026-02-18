@@ -17,3 +17,12 @@ verify_jwt = false
 
 [functions.cantine-ordre]
 verify_jwt = false
+
+[functions.student-auth]
+verify_jwt = false
+
+[functions.student-data]
+verify_jwt = false
+
+[functions.student-submit]
+verify_jwt = false

@@ -245,6 +245,63 @@ export type Database = {
           },
         ]
       }
+      cours: {
+        Row: {
+          classe_id: string
+          contenu_url: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          fichier_nom: string | null
+          id: string
+          matiere_id: string
+          titre: string
+          type_contenu: string
+          updated_at: string
+        }
+        Insert: {
+          classe_id: string
+          contenu_url: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fichier_nom?: string | null
+          id?: string
+          matiere_id: string
+          titre: string
+          type_contenu?: string
+          updated_at?: string
+        }
+        Update: {
+          classe_id?: string
+          contenu_url?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fichier_nom?: string | null
+          id?: string
+          matiere_id?: string
+          titre?: string
+          type_contenu?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cours_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cours_matiere_id_fkey"
+            columns: ["matiere_id"]
+            isOneToOne: false
+            referencedRelation: "matieres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cycles: {
         Row: {
           bareme: number
@@ -322,6 +379,60 @@ export type Database = {
           },
         ]
       }
+      devoirs: {
+        Row: {
+          classe_id: string
+          created_at: string
+          created_by: string | null
+          date_limite: string
+          description: string | null
+          id: string
+          matiere_id: string
+          note_max: number
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          classe_id: string
+          created_at?: string
+          created_by?: string | null
+          date_limite: string
+          description?: string | null
+          id?: string
+          matiere_id: string
+          note_max?: number
+          titre: string
+          updated_at?: string
+        }
+        Update: {
+          classe_id?: string
+          created_at?: string
+          created_by?: string | null
+          date_limite?: string
+          description?: string | null
+          id?: string
+          matiere_id?: string
+          note_max?: number
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devoirs_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devoirs_matiere_id_fkey"
+            columns: ["matiere_id"]
+            isOneToOne: false
+            referencedRelation: "matieres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       eleves: {
         Row: {
           checklist_livret: boolean | null
@@ -335,6 +446,7 @@ export type Database = {
           famille_id: string | null
           id: string
           matricule: string | null
+          mot_de_passe_eleve: string | null
           nom: string
           nom_prenom_mere: string | null
           nom_prenom_pere: string | null
@@ -366,6 +478,7 @@ export type Database = {
           famille_id?: string | null
           id?: string
           matricule?: string | null
+          mot_de_passe_eleve?: string | null
           nom: string
           nom_prenom_mere?: string | null
           nom_prenom_pere?: string | null
@@ -397,6 +510,7 @@ export type Database = {
           famille_id?: string | null
           id?: string
           matricule?: string | null
+          mot_de_passe_eleve?: string | null
           nom?: string
           nom_prenom_mere?: string | null
           nom_prenom_pere?: string | null
@@ -1099,6 +1213,60 @@ export type Database = {
             columns: ["plat_id"]
             isOneToOne: false
             referencedRelation: "plats_cantine"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      soumissions_devoirs: {
+        Row: {
+          commentaire: string | null
+          corrige_at: string | null
+          corrige_par: string | null
+          devoir_id: string
+          eleve_id: string
+          fichier_nom: string
+          fichier_url: string
+          id: string
+          note: number | null
+          soumis_at: string
+        }
+        Insert: {
+          commentaire?: string | null
+          corrige_at?: string | null
+          corrige_par?: string | null
+          devoir_id: string
+          eleve_id: string
+          fichier_nom: string
+          fichier_url: string
+          id?: string
+          note?: number | null
+          soumis_at?: string
+        }
+        Update: {
+          commentaire?: string | null
+          corrige_at?: string | null
+          corrige_par?: string | null
+          devoir_id?: string
+          eleve_id?: string
+          fichier_nom?: string
+          fichier_url?: string
+          id?: string
+          note?: number | null
+          soumis_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soumissions_devoirs_devoir_id_fkey"
+            columns: ["devoir_id"]
+            isOneToOne: false
+            referencedRelation: "devoirs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soumissions_devoirs_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
             referencedColumns: ["id"]
           },
         ]
