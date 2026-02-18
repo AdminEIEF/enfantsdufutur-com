@@ -14,6 +14,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { generateRecuGeneriquePDF } from '@/lib/generateRecuGeneriquePDF';
 
 interface Props {
   eleves: any[];
@@ -107,6 +108,25 @@ export default function CantineDirectePanel({ eleves, familles = [] }: Props) {
       queryClient.invalidateQueries({ queryKey: ['ordres-cantine-en-attente'] });
       queryClient.invalidateQueries({ queryKey: ['ordres-cantine-recents'] });
       toast({ title: '✅ Recharge effectuée', description: `${Number(montant).toLocaleString()} GNF crédités sur le compte cantine` });
+
+      // Generate receipt
+      const famille = familles.find((f: any) => f.id === familleId);
+      if (selectedEleve) {
+        generateRecuGeneriquePDF({
+          type: 'cantine',
+          typeLabel: 'Recharge Cantine (Directe)',
+          eleve: `${selectedEleve.prenom} ${selectedEleve.nom}`,
+          matricule: selectedEleve.matricule || '',
+          classe: selectedEleve.classes?.nom || '',
+          montant: Number(montant),
+          mois: 'Recharge directe',
+          canal: 'Espèces',
+          reference: null,
+          date: new Date().toLocaleDateString('fr-FR'),
+          details: `Famille: ${famille?.nom_famille || '—'} • Nouveau solde: ${((selectedEleve.solde_cantine || 0) + Number(montant)).toLocaleString()} GNF`,
+        });
+      }
+
       setFamilleId('');
       setEleveId('');
       setMontant('');
@@ -117,7 +137,7 @@ export default function CantineDirectePanel({ eleves, familles = [] }: Props) {
 
   // Validate pending order
   const validerOrdre = useMutation({
-    mutationFn: async (ordreId: string) => {
+    mutationFn: async (ordre: any) => {
       const resp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cantine-ordre`,
         {
@@ -126,19 +146,35 @@ export default function CantineDirectePanel({ eleves, familles = [] }: Props) {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ action: 'validate_ordre', ordre_id: ordreId }),
+          body: JSON.stringify({ action: 'validate_ordre', ordre_id: ordre.id }),
         }
       );
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error);
-      return data;
+      return { ...data, ordre };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['ordres-cantine-en-attente'] });
       queryClient.invalidateQueries({ queryKey: ['ordres-cantine-recents'] });
       queryClient.invalidateQueries({ queryKey: ['paiements'] });
       queryClient.invalidateQueries({ queryKey: ['eleves'] });
       toast({ title: '✅ Ordre validé', description: 'Le solde cantine a été crédité et le parent notifié' });
+
+      // Generate receipt
+      const o = result.ordre;
+      generateRecuGeneriquePDF({
+        type: 'cantine',
+        typeLabel: 'Recharge Cantine (Ordonnée)',
+        eleve: `${o.eleves?.prenom || ''} ${o.eleves?.nom || ''}`,
+        matricule: o.eleves?.matricule || '',
+        classe: '',
+        montant: Number(o.montant),
+        mois: 'Recharge ordonnée',
+        canal: 'Espèces',
+        reference: o.code_transaction,
+        date: new Date().toLocaleDateString('fr-FR'),
+        details: `Famille: ${o.familles?.nom_famille || '—'} • Code: ${o.code_transaction}`,
+      });
     },
     onError: (e: Error) => toast({ title: 'Erreur', description: e.message, variant: 'destructive' }),
   });
@@ -289,7 +325,7 @@ export default function CantineDirectePanel({ eleves, familles = [] }: Props) {
                         <p className="font-bold text-lg">{Number(o.montant).toLocaleString()} GNF</p>
                         <Button
                           size="sm"
-                          onClick={() => validerOrdre.mutate(o.id)}
+                          onClick={() => validerOrdre.mutate(o)}
                           disabled={validerOrdre.isPending}
                         >
                           <CheckCircle className="h-4 w-4 mr-1" /> Valider
