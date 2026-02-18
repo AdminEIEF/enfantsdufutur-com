@@ -115,18 +115,19 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
   const isFamilyMember = !!selectedEleve?.famille_id;
   const familyName = isFamilyMember ? familles.find((f: any) => f.id === selectedEleve.famille_id)?.nom_famille : null;
 
-  const fraisMensuel = useMemo(() => {
+  const fraisAnnuel = useMemo(() => {
     if (!selectedEleve) return 0;
     return Number(selectedEleve.classes?.niveaux?.frais_scolarite || 0);
   }, [selectedEleve]);
 
-  const totalAnnuel = fraisMensuel * 9;
+  const fraisMensuel = fraisAnnuel > 0 ? Math.ceil(fraisAnnuel / 10) : 0;
+  const totalAnnuel = fraisAnnuel;
 
   const prixTransportMensuel = useMemo(() => {
     if (!selectedEleve) return 0;
     return Number((selectedEleve.zones_transport as any)?.prix_mensuel || 0);
   }, [selectedEleve]);
-  const totalAnnuelTransport = prixTransportMensuel * 9;
+  const totalAnnuelTransport = prixTransportMensuel * 10;
 
   const paiementsScolariteEleve = useMemo(() => {
     if (!eleveId) return [];
@@ -496,7 +497,7 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
   const totalAnnuelFamille = useMemo(() => {
     return familleEleves.reduce((sum: number, e: any) => {
       const frais = Number(e.classes?.niveaux?.frais_scolarite || 0);
-      return sum + frais * 9;
+      return sum + frais;
     }, 0);
   }, [familleEleves]);
 
@@ -544,8 +545,8 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
       let remaining = totalM;
       for (let i = 0; i < familleEleves.length; i++) {
         const e = familleEleves[i];
-        const fraisMensuel = Number(e.classes?.niveaux?.frais_scolarite || 0);
-        const annuel = fraisMensuel * 9;
+        const fraisAnnuelEleve = Number(e.classes?.niveaux?.frais_scolarite || 0);
+        const annuel = fraisAnnuelEleve;
         const dejaPaye = paiements.filter((p: any) => p.eleve_id === e.id && p.type_paiement === 'scolarite').reduce((s: number, p: any) => s + Number(p.montant), 0);
         const resteEleve = Math.max(0, annuel - dejaPaye);
         if (resteEleve <= 0 || remaining <= 0) continue;
@@ -589,7 +590,7 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
   const famillesAvecEnfants = useMemo(() => {
     return familles.filter((f: any) => eleves.some((e: any) => e.famille_id === f.id)).map((f: any) => {
       const kids = eleves.filter((e: any) => e.famille_id === f.id);
-      const annuel = kids.reduce((s: number, e: any) => s + Number(e.classes?.niveaux?.frais_scolarite || 0) * 9, 0);
+      const annuel = kids.reduce((s: number, e: any) => s + Number(e.classes?.niveaux?.frais_scolarite || 0), 0);
       const paye = kids.reduce((s: number, e: any) => {
         return s + paiements.filter((p: any) => p.eleve_id === e.id && p.type_paiement === 'scolarite').reduce((ss: number, p: any) => ss + Number(p.montant), 0);
       }, 0);
@@ -624,7 +625,7 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
                     {familleEleves.map((e: any) => (
                       <div key={e.id} className="flex justify-between text-sm">
                         <span>{e.prenom} {e.nom} — {e.classes?.nom || '—'}</span>
-                        <span className="text-muted-foreground">{(Number(e.classes?.niveaux?.frais_scolarite || 0) * 9).toLocaleString()} GNF/an</span>
+                        <span className="text-muted-foreground">{Number(e.classes?.niveaux?.frais_scolarite || 0).toLocaleString()} GNF/an</span>
                       </div>
                     ))}
                     <div className="grid grid-cols-3 gap-2 text-center text-sm pt-2 border-t">
