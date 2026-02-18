@@ -1325,6 +1325,90 @@ function TranchesTab() {
   );
 }
 
+// ─── Tab: École (Config) ─────────────────────────────────
+function EcoleTab() {
+  const qc = useQueryClient();
+  const [nom, setNom] = useState('Groupe Scolaire EI Enfant du Futur');
+  const [soustitre, setSoustitre] = useState('Enseignement Général et Technique');
+  const [ville, setVille] = useState('Conakry, Guinée');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [loaded, setLoaded] = useState(false);
+
+  const { data: config } = useQuery({
+    queryKey: ['school-config'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('parametres').select('*').eq('cle', 'school_config').maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  if (config && !loaded) {
+    const val = config.valeur as Record<string, string>;
+    if (val.nom) setNom(val.nom);
+    if (val.soustitre) setSoustitre(val.soustitre);
+    if (val.ville) setVille(val.ville);
+    if (val.logo_url) setLogoUrl(val.logo_url);
+    setLoaded(true);
+  }
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const valeur = { nom, soustitre, ville, logo_url: logoUrl || null };
+      // Upsert
+      if (config?.id) {
+        const { error } = await supabase.from('parametres').update({ valeur: valeur as any }).eq('id', config.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('parametres').insert({ cle: 'school_config', valeur: valeur as any });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['school-config'] });
+      toast.success('Configuration de l\'école enregistrée');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><School className="h-5 w-5" /> Informations de l'établissement</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">Ces informations apparaissent sur les bulletins, reçus et documents officiels.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label>Nom de l'établissement</Label>
+            <Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Groupe Scolaire EI Enfant du Futur" />
+          </div>
+          <div>
+            <Label>Sous-titre</Label>
+            <Input value={soustitre} onChange={e => setSoustitre(e.target.value)} placeholder="Ex: Enseignement Général et Technique" />
+          </div>
+          <div>
+            <Label>Ville / Pays</Label>
+            <Input value={ville} onChange={e => setVille(e.target.value)} placeholder="Ex: Conakry, Guinée" />
+          </div>
+          <div>
+            <Label>URL du logo (optionnel)</Label>
+            <Input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." />
+            {logoUrl && (
+              <div className="mt-2">
+                <img src={logoUrl} alt="Aperçu logo" className="h-14 w-14 rounded-full object-cover border" />
+              </div>
+            )}
+          </div>
+        </div>
+        <Button onClick={() => save.mutate()} disabled={save.isPending}>
+          {save.isPending ? 'Enregistrement…' : 'Enregistrer'}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────
 export default function Configuration() {
   return (
@@ -1332,8 +1416,9 @@ export default function Configuration() {
       <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
         <Settings className="h-7 w-7 text-primary" /> Configuration
       </h1>
-      <Tabs defaultValue="cycles">
+      <Tabs defaultValue="ecole">
         <TabsList className="flex-wrap">
+          <TabsTrigger value="ecole">🏫 École</TabsTrigger>
           <TabsTrigger value="cycles">Cycles & Barèmes</TabsTrigger>
           <TabsTrigger value="niveaux">Niveaux</TabsTrigger>
           <TabsTrigger value="classes">Classes</TabsTrigger>
@@ -1344,6 +1429,7 @@ export default function Configuration() {
           <TabsTrigger value="transport">Transport</TabsTrigger>
           <TabsTrigger value="corbeille">🗑️ Corbeille</TabsTrigger>
         </TabsList>
+        <TabsContent value="ecole"><EcoleTab /></TabsContent>
         <TabsContent value="cycles"><CyclesTab /></TabsContent>
         <TabsContent value="niveaux"><NiveauxTab /></TabsContent>
         <TabsContent value="classes"><ClassesTab /></TabsContent>

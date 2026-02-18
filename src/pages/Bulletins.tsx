@@ -5,16 +5,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Award, Printer, User, Trophy, FileText } from 'lucide-react';
+import { Award, Printer, User, Trophy, FileText, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import BulletinScolaire from '@/components/BulletinScolaire';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
+import { generateBulletinPDF } from '@/lib/generateBulletinPDF';
+import { toast } from 'sonner';
 
 export default function Bulletins() {
   const [classeId, setClasseId] = useState('');
   const [periodeId, setPeriodeId] = useState('');
   const [selectedEleve, setSelectedEleve] = useState('');
   const [showPrintView, setShowPrintView] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const { data: schoolConfig } = useSchoolConfig();
 
   const { data: classes = [] } = useQuery({
     queryKey: ['classes-bulletin'],
@@ -304,6 +309,24 @@ export default function Bulletins() {
                 <Button onClick={handlePrint}>
                   <Printer className="h-4 w-4 mr-2" /> Imprimer le bulletin
                 </Button>
+                <Button
+                  variant="outline"
+                  disabled={pdfLoading}
+                  onClick={async () => {
+                    setPdfLoading(true);
+                    try {
+                      const filename = `bulletin_${eleve?.prenom}_${eleve?.nom}_${periode?.nom || ''}.pdf`.replace(/\s+/g, '_');
+                      await generateBulletinPDF('bulletin-print', filename);
+                      toast.success('PDF téléchargé avec succès');
+                    } catch (e: any) {
+                      toast.error(e.message || 'Erreur lors de la génération du PDF');
+                    } finally {
+                      setPdfLoading(false);
+                    }
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" /> {pdfLoading ? 'Génération…' : 'Télécharger PDF'}
+                </Button>
               </div>
               <BulletinScolaire
                 eleve={{
@@ -340,6 +363,10 @@ export default function Bulletins() {
                 })}
                 cycleName={selectedCl?.niveaux?.cycles?.nom}
                 anneeScolaire={periode?.annee_scolaire}
+                schoolName={schoolConfig?.nom}
+                schoolSubtitle={schoolConfig?.soustitre}
+                schoolCity={schoolConfig?.ville}
+                schoolLogoUrl={schoolConfig?.logo_url}
               />
             </div>
           ) : (

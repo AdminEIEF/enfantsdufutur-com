@@ -35,6 +35,7 @@ interface BulletinScolaireProps {
   schoolName?: string;
   schoolSubtitle?: string;
   schoolCity?: string;
+  schoolLogoUrl?: string | null;
 }
 
 export default function BulletinScolaire({
@@ -55,6 +56,7 @@ export default function BulletinScolaire({
   schoolName = 'Groupe Scolaire EI Enfant du Futur',
   schoolSubtitle = 'Enseignement Général et Technique',
   schoolCity = 'Conakry, Guinée',
+  schoolLogoUrl,
 }: BulletinScolaireProps) {
   const isAdmis = moyenneFinale !== null && moyenneFinale >= seuil;
   const isRedouble = moyenneFinale !== null && !isAdmis;
@@ -63,7 +65,7 @@ export default function BulletinScolaire({
   const totalCoef = bulletinData.reduce((s, b) => s + b.coefficient, 0);
 
   return (
-    <div className="bg-white text-gray-900 font-sans" style={{ width: '210mm', minHeight: '297mm', margin: '0 auto', padding: '10mm', boxSizing: 'border-box' }}>
+    <div data-bulletin-a4 className="bg-white text-gray-900 font-sans" style={{ width: '210mm', minHeight: '297mm', margin: '0 auto', padding: '10mm', boxSizing: 'border-box' }}>
       <style>{`
         @media print {
           @page { margin: 0; size: A4; }
@@ -75,9 +77,13 @@ export default function BulletinScolaire({
       {/* En-tête */}
       <div className="flex items-center justify-between border-b-2 border-emerald-600 pb-3 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-14 h-14 bg-emerald-600 rounded-full flex items-center justify-center">
-            <University className="h-7 w-7 text-white" />
-          </div>
+          {schoolLogoUrl ? (
+            <img src={schoolLogoUrl} alt="Logo" className="w-14 h-14 rounded-full object-cover" crossOrigin="anonymous" />
+          ) : (
+            <div className="w-14 h-14 bg-emerald-600 rounded-full flex items-center justify-center">
+              <University className="h-7 w-7 text-white" />
+            </div>
+          )}
           <div>
             <h1 className="text-lg font-bold text-emerald-800">{schoolName}</h1>
             <p className="text-xs text-gray-500">{schoolSubtitle}</p>
