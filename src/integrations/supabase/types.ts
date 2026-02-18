@@ -464,6 +464,63 @@ export type Database = {
         }
         Relationships: []
       }
+      justificatifs: {
+        Row: {
+          created_at: string
+          description: string | null
+          eleve_id: string | null
+          famille_id: string
+          fichier_nom: string
+          fichier_url: string
+          id: string
+          statut: string
+          traite_at: string | null
+          traite_par: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          eleve_id?: string | null
+          famille_id: string
+          fichier_nom: string
+          fichier_url: string
+          id?: string
+          statut?: string
+          traite_at?: string | null
+          traite_par?: string | null
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          eleve_id?: string | null
+          famille_id?: string
+          fichier_nom?: string
+          fichier_url?: string
+          id?: string
+          statut?: string
+          traite_at?: string | null
+          traite_par?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "justificatifs_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "justificatifs_famille_id_fkey"
+            columns: ["famille_id"]
+            isOneToOne: false
+            referencedRelation: "familles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mandataires: {
         Row: {
           created_at: string
@@ -749,6 +806,44 @@ export type Database = {
           valeur?: Json
         }
         Relationships: []
+      }
+      parent_notifications: {
+        Row: {
+          created_at: string
+          famille_id: string
+          id: string
+          lu: boolean
+          message: string
+          titre: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          famille_id: string
+          id?: string
+          lu?: boolean
+          message: string
+          titre: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          famille_id?: string
+          id?: string
+          lu?: boolean
+          message?: string
+          titre?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_notifications_famille_id_fkey"
+            columns: ["famille_id"]
+            isOneToOne: false
+            referencedRelation: "familles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       periodes: {
         Row: {
