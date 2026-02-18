@@ -17,16 +17,32 @@ import { fr } from 'date-fns/locale';
 
 interface Props {
   eleves: any[];
+  familles?: any[];
 }
 
-export default function CantineDirectePanel({ eleves }: Props) {
+export default function CantineDirectePanel({ eleves, familles = [] }: Props) {
   const queryClient = useQueryClient();
   const [openDirect, setOpenDirect] = useState(false);
+  const [familleId, setFamilleId] = useState('');
   const [eleveId, setEleveId] = useState('');
   const [montant, setMontant] = useState('');
   const [searchOrdre, setSearchOrdre] = useState('');
 
   const selectedEleve = eleves.find((e: any) => e.id === eleveId);
+
+  // Élèves de la famille sélectionnée avec option cantine
+  const elevesFamille = useMemo(() => {
+    if (!familleId) return [];
+    return eleves.filter((e: any) => e.famille_id === familleId && e.option_cantine);
+  }, [eleves, familleId]);
+
+  // Familles qui ont au moins un enfant avec option cantine
+  const famillesAvecCantine = useMemo(() => {
+    const familleIds = new Set(
+      eleves.filter((e: any) => e.option_cantine && e.famille_id).map((e: any) => e.famille_id)
+    );
+    return familles.filter((f: any) => familleIds.has(f.id));
+  }, [eleves, familles]);
 
   // Fetch pending cantine orders
   const { data: ordresEnAttente = [], isLoading: loadingOrdres } = useQuery({
@@ -91,6 +107,7 @@ export default function CantineDirectePanel({ eleves }: Props) {
       queryClient.invalidateQueries({ queryKey: ['ordres-cantine-en-attente'] });
       queryClient.invalidateQueries({ queryKey: ['ordres-cantine-recents'] });
       toast({ title: '✅ Recharge effectuée', description: `${Number(montant).toLocaleString()} GNF crédités sur le compte cantine` });
+      setFamilleId('');
       setEleveId('');
       setMontant('');
       setOpenDirect(false);
@@ -164,11 +181,25 @@ export default function CantineDirectePanel({ eleves }: Props) {
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
+                  <Label>Famille *</Label>
+                  <Select value={familleId} onValueChange={(v) => { setFamilleId(v); setEleveId(''); }}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner la famille" /></SelectTrigger>
+                    <SelectContent>
+                      {famillesAvecCantine.map((f: any) => (
+                        <SelectItem key={f.id} value={f.id}>
+                          {f.nom_famille}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {familleId && (
+                <div className="space-y-2">
                   <Label>Élève *</Label>
                   <Select value={eleveId} onValueChange={setEleveId}>
                     <SelectTrigger><SelectValue placeholder="Sélectionner l'élève" /></SelectTrigger>
                     <SelectContent>
-                      {eleves.filter((e: any) => e.option_cantine).map((e: any) => (
+                      {elevesFamille.map((e: any) => (
                         <SelectItem key={e.id} value={e.id}>
                           {e.prenom} {e.nom} {e.matricule ? `(${e.matricule})` : ''} — Solde: {(e.solde_cantine || 0).toLocaleString()} GNF
                         </SelectItem>
@@ -176,6 +207,7 @@ export default function CantineDirectePanel({ eleves }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
+                )}
                 {selectedEleve && (
                   <div className="bg-muted/50 rounded-lg p-3 text-sm">
                     <p className="text-xs text-muted-foreground">Solde actuel</p>
