@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.paydunya-webhook]
 verify_jwt = false
+
+[functions.cantine-ordre]
+verify_jwt = false
