@@ -16,7 +16,7 @@ import { exportToExcel } from '@/lib/excelUtils';
 import { useToast } from '@/hooks/use-toast';
 
 const MOIS_SCOLAIRES = [
-  'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
 ];
 
 const COLORS = [
@@ -422,8 +422,8 @@ export default function Transport() {
                             );
                           })}
                           <TableCell className="text-center">
-                            <Badge variant={e.nbMoisPayes >= 7 ? 'default' : e.nbMoisPayes >= 4 ? 'secondary' : 'destructive'}>
-                              {e.nbMoisPayes}/9
+                             <Badge variant={e.nbMoisPayes >= 8 ? 'default' : e.nbMoisPayes >= 5 ? 'secondary' : 'destructive'}>
+                              {e.nbMoisPayes}/10
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right font-mono">{e.totalPaye.toLocaleString()} F</TableCell>

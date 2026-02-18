@@ -195,7 +195,7 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
       fraisInscription,
       fraisDossier,
       fraisScolariteMensuel: fraisApresReduction,
-      fraisScolariteAnnuel: fraisApresReduction * 9,
+      fraisScolariteAnnuel: fraisApresReduction,
       fraisTransport,
       fraisUniformes,
       fraisFournitures,
@@ -526,7 +526,7 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
                   {fees.fraisAssurance > 0 && <div className="flex justify-between"><span>Assurance</span><span>{fees.fraisAssurance.toLocaleString()} GNF</span></div>}
                   <div className="flex justify-between font-bold border-t pt-1"><span>Total immédiat</span><span>{fees.totalImmediat.toLocaleString()} GNF</span></div>
                   {fees.fraisScolariteMensuel > 0 && (
-                    <div className="flex justify-between text-muted-foreground"><span>Scolarité (9 mois, via Paiements)</span><span>{fees.fraisScolariteAnnuel.toLocaleString()} GNF</span></div>
+                    <div className="flex justify-between text-muted-foreground"><span>Scolarité annuelle (10 mois, via Paiements)</span><span>{fees.fraisScolariteAnnuel.toLocaleString()} GNF</span></div>
                   )}
                   {fees.fraisTransport > 0 && (
                     <div className="flex justify-between text-muted-foreground"><span>Transport (mensuel, via Paiements)</span><span>{fees.fraisTransport.toLocaleString()} GNF/mois</span></div>

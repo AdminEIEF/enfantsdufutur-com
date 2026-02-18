@@ -71,8 +71,8 @@ export default function ParentDevisInscription({ eleves, paiements, tarifs = [],
           .reduce((s: number, p: any) => s + p.montant, 0);
 
         const totalImmediatInitial = fraisInscription + fraisDossier + fraisAssurance + fraisUniformes + fraisFournitures;
-        const scolariteAnnuelle = fraisApresReduction * 9;
-        const transportAnnuel = transportMensuel * 9;
+        const scolariteAnnuelle = fraisApresReduction;
+        const transportAnnuel = transportMensuel * 10;
         const totalGlobal = totalImmediatInitial + scolariteAnnuelle + transportAnnuel;
         const totalPaye = payeInscription + payeScolarite + payeTransport;
         const resteAPayer = totalGlobal - totalPaye;
@@ -87,9 +87,9 @@ export default function ParentDevisInscription({ eleves, paiements, tarifs = [],
         if (fraisFournitures > 0) lignesDevis.push({ label: '📦 Fournitures', montant: fraisFournitures, type: 'immediat' });
 
         // Tuition schedule
-        lignesDevis.push({ label: `🎓 Scolarité annuelle (${fraisApresReduction.toLocaleString()} × 9 mois)`, montant: scolariteAnnuelle, type: 'echeancier' });
+        lignesDevis.push({ label: `🎓 Scolarité annuelle`, montant: scolariteAnnuelle, type: 'echeancier' });
         if (transportAnnuel > 0) {
-          lignesDevis.push({ label: `🚌 Transport annuel (${transportMensuel.toLocaleString()} × 9 mois)`, montant: transportAnnuel, type: 'echeancier' });
+          lignesDevis.push({ label: `🚌 Transport annuel (${transportMensuel.toLocaleString()} × 10 mois)`, montant: transportAnnuel, type: 'echeancier' });
         }
 
         return (

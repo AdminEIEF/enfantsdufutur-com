@@ -244,7 +244,7 @@ function NiveauxTab() {
               <TableHead>Nom</TableHead>
               <TableHead>Cycle</TableHead>
               <TableHead>Ordre</TableHead>
-              <TableHead>Frais scolarité</TableHead>
+              <TableHead>Scolarité annuelle</TableHead>
               <TableHead>Inscription</TableHead>
               <TableHead>Dossier</TableHead>
               <TableHead>Assurance</TableHead>
@@ -261,7 +261,7 @@ function NiveauxTab() {
                 <TableCell className="font-medium">{n.nom}</TableCell>
                 <TableCell>{n.cycles?.nom}</TableCell>
                 <TableCell>{n.ordre}</TableCell>
-                <TableCell>{Number(n.frais_scolarite).toLocaleString()} GNF</TableCell>
+                <TableCell>{Number(n.frais_scolarite).toLocaleString()} GNF/an</TableCell>
                 <TableCell>{Number(n.frais_inscription ?? 100000).toLocaleString()} GNF</TableCell>
                 <TableCell>{Number(n.frais_dossier ?? 0).toLocaleString()} GNF</TableCell>
                 <TableCell>{Number(n.frais_assurance ?? 0).toLocaleString()} GNF</TableCell>
@@ -290,7 +290,7 @@ function NiveauxTab() {
             <div><Label>Nom</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: CP1" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Ordre</Label><Input type="number" value={ordre} onChange={e => setOrdre(Number(e.target.value))} /></div>
-              <div><Label>Frais scolarité mensuel (GNF)</Label><Input type="number" value={frais} onChange={e => setFrais(Number(e.target.value))} /></div>
+              <div><Label>Scolarité annuelle (GNF)</Label><Input type="number" value={frais} onChange={e => setFrais(Number(e.target.value))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Frais inscription (GNF)</Label><Input type="number" value={fraisInscription} onChange={e => setFraisInscription(Number(e.target.value))} /></div>
