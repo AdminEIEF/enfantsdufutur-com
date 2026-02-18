@@ -831,7 +831,7 @@ export default function Paiements() {
         </TabsContent>
 
         <TabsContent value="cantine" className="mt-4">
-          <CantineDirectePanel eleves={eleves} />
+          <CantineDirectePanel eleves={eleves} familles={familles} />
         </TabsContent>
 
         <TabsContent value="historique" className="space-y-4 mt-4">
