@@ -72,6 +72,11 @@ export default function Landing() {
                   Installer
                 </Button>
               )}
+              <Link to="/parent">
+                <Button variant="outline" size="sm">
+                  Espace Parent
+                </Button>
+              </Link>
               <Link to="/auth">
                 <Button size="sm">
                   Espace Personnel

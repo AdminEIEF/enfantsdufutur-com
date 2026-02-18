@@ -32,6 +32,10 @@ import Boutique from "./pages/Boutique";
 import Tracabilite from "./pages/Tracabilite";
 import DownloadPage from "./pages/Download";
 import Landing from "./pages/Landing";
+import ParentLogin from "./pages/parent/ParentLogin";
+import ParentDashboard from "./pages/parent/ParentDashboard";
+import ParentEnfant from "./pages/parent/ParentEnfant";
+import { ParentAuthProvider } from "@/hooks/useParentAuth";
 
 const queryClient = new QueryClient();
 
@@ -99,6 +103,9 @@ const App = () => (
             <Route path="/download" element={<DownloadPage />} />
             <Route path="/eleve/:matricule" element={<ElevePublic />} />
             <Route path="/" element={<Landing />} />
+            <Route path="/parent" element={<ParentAuthProvider><ParentLogin /></ParentAuthProvider>} />
+            <Route path="/parent/dashboard" element={<ParentAuthProvider><ParentDashboard /></ParentAuthProvider>} />
+            <Route path="/parent/enfant/:id" element={<ParentAuthProvider><ParentEnfant /></ParentAuthProvider>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/inscriptions" element={<ProtectedRoute><Inscriptions /></ProtectedRoute>} />
             <Route path="/familles" element={<ProtectedRoute><Familles /></ProtectedRoute>} />

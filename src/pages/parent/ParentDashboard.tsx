@@ -1,0 +1,293 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useParentAuth } from '@/hooks/useParentAuth';
+import {
+  GraduationCap, LogOut, Wallet, TrendingDown, CreditCard, Users,
+  ChevronRight, UtensilsCrossed, BookOpen, Download, Loader2, MessageCircle
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { AIChatBubble } from '@/components/AIChatBubble';
+
+const MOIS_SCOLAIRES = ['Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
+
+export default function ParentDashboard() {
+  const { session, logout } = useParentAuth();
+  const navigate = useNavigate();
+  const [dashData, setDashData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!session) return;
+    fetchDashboard();
+  }, [session]);
+
+  const fetchDashboard = async () => {
+    try {
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parent-data`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ code: session!.code, action: 'dashboard' }),
+        }
+      );
+      const data = await resp.json();
+      if (!resp.ok) {
+        if (resp.status === 401) { logout(); navigate('/parent', { replace: true }); return; }
+        throw new Error(data.error);
+      }
+      setDashData(data);
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur de chargement');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!session) { navigate('/parent', { replace: true }); return null; }
+
+  // Calculate financial summary
+  const famille = session.famille;
+  const eleves = dashData?.eleves || session.eleves;
+  const paiements = dashData?.paiements || [];
+
+  let totalScolariteAnnuel = 0;
+  let totalTransportAnnuel = 0;
+  let totalPayeScolarite = 0;
+  let totalPayeTransport = 0;
+  let totalPayeCantine = 0;
+  let totalSoldeCantine = 0;
+
+  eleves.forEach((e: any) => {
+    const frais = e.classes?.niveaux?.frais_scolarite || 0;
+    totalScolariteAnnuel += frais;
+    // Transport: 9 mois
+    if (e.zones_transport || e.zone_transport_id) {
+      const zt = e.zones_transport;
+      if (zt) totalTransportAnnuel += (zt.prix_mensuel || 0) * 9;
+    }
+    totalSoldeCantine += e.solde_cantine || 0;
+  });
+
+  paiements.forEach((p: any) => {
+    if (p.type_paiement === 'scolarite') totalPayeScolarite += p.montant;
+    else if (p.type_paiement === 'transport') totalPayeTransport += p.montant;
+    else if (p.type_paiement === 'cantine') totalPayeCantine += p.montant;
+  });
+
+  const resteScolarite = totalScolariteAnnuel - totalPayeScolarite;
+  const resteTransport = totalTransportAnnuel - totalPayeTransport;
+  const resteTotal = resteScolarite + resteTransport;
+  const totalPaye = totalPayeScolarite + totalPayeTransport + totalPayeCantine;
+
+  // Current month installment
+  const currentMonth = new Date().getMonth(); // 0=Jan
+  const moisIndex = currentMonth >= 9 ? currentMonth - 9 : currentMonth + 3; // Oct=0, Nov=1...
+  const moisActuel = MOIS_SCOLAIRES[Math.min(moisIndex, 8)] || MOIS_SCOLAIRES[0];
+  const mensualiteScolarite = totalScolariteAnnuel > 0 ? Math.ceil(totalScolariteAnnuel / 9) : 0;
+
+  const handleLogout = () => { logout(); navigate('/parent', { replace: true }); };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+      {/* Header */}
+      <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="h-6 w-6 text-primary" />
+            <div>
+              <h1 className="font-bold text-sm leading-tight">Espace Parent</h1>
+              <p className="text-xs text-muted-foreground">Famille {famille.nom_famille}</p>
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <LogOut className="h-4 w-4 mr-1" /> Déconnexion
+          </Button>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto px-4 py-6 space-y-6 pb-24">
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            {/* Financial Summary Cards */}
+            <div className="grid grid-cols-2 gap-3">
+              <Card className="col-span-2 border-primary/20 bg-primary/5">
+                <CardContent className="pt-4 pb-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Reste à payer</p>
+                      <p className="text-2xl font-bold text-primary">{resteTotal.toLocaleString()} GNF</p>
+                    </div>
+                    <Wallet className="h-10 w-10 text-primary/30" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Mensualité {moisActuel} : <span className="font-semibold text-foreground">{mensualiteScolarite.toLocaleString()} GNF</span>
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-4 pb-3">
+                  <p className="text-xs text-muted-foreground">Scolarité payée</p>
+                  <p className="text-lg font-bold text-green-600">{totalPayeScolarite.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">/ {totalScolariteAnnuel.toLocaleString()} GNF</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-4 pb-3">
+                  <p className="text-xs text-muted-foreground">Transport payé</p>
+                  <p className="text-lg font-bold text-orange-600">{totalPayeTransport.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">/ {totalTransportAnnuel.toLocaleString()} GNF</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Children Cards */}
+            <div className="space-y-3">
+              <h2 className="font-semibold flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" /> Mes enfants
+              </h2>
+              {session.eleves.map((enfant) => (
+                <Card
+                  key={enfant.id}
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => navigate(`/parent/enfant/${enfant.id}`)}
+                >
+                  <CardContent className="pt-4 pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {enfant.photo_url ? (
+                          <img src={enfant.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                            {enfant.prenom[0]}{enfant.nom[0]}
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-semibold">{enfant.prenom} {enfant.nom}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {enfant.classes?.niveaux?.cycles?.nom} — {enfant.classes?.niveaux?.nom} — {enfant.classes?.nom}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {enfant.option_cantine && (
+                          <Badge variant="outline" className="text-xs">
+                            <UtensilsCrossed className="h-3 w-3 mr-1" />
+                            {(enfant.solde_cantine || 0).toLocaleString()}
+                          </Badge>
+                        )}
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Payment History */}
+            <Tabs defaultValue="historique">
+              <TabsList className="w-full grid grid-cols-2">
+                <TabsTrigger value="historique">
+                  <CreditCard className="h-4 w-4 mr-1" /> Historique
+                </TabsTrigger>
+                <TabsTrigger value="echeancier">
+                  <TrendingDown className="h-4 w-4 mr-1" /> Échéancier
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="historique" className="mt-4">
+                {paiements.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">Aucun paiement enregistré</p>
+                ) : (
+                  <div className="space-y-2">
+                    {paiements.slice(0, 20).map((p: any) => {
+                      const enfant = eleves.find((e: any) => e.id === p.eleve_id);
+                      return (
+                        <Card key={p.id}>
+                          <CardContent className="py-3 flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium">
+                                {p.type_paiement === 'scolarite' ? '🎓' : p.type_paiement === 'transport' ? '🚌' : p.type_paiement === 'cantine' ? '🍽️' : '📦'}
+                                {' '}{p.type_paiement}
+                                {p.mois_concerne && ` — ${p.mois_concerne}`}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {enfant ? `${enfant.prenom} ${enfant.nom}` : ''} • {new Date(p.date_paiement).toLocaleDateString('fr-FR')} • {p.canal}
+                              </p>
+                            </div>
+                            <p className="font-bold text-green-600">{p.montant.toLocaleString()} GNF</p>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="echeancier" className="mt-4">
+                <Card>
+                  <CardContent className="pt-4">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Mois</TableHead>
+                          <TableHead className="text-right">Scolarité</TableHead>
+                          <TableHead className="text-right">Statut</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {MOIS_SCOLAIRES.map((mois, idx) => {
+                          const paiementsMois = paiements.filter(
+                            (p: any) => p.type_paiement === 'scolarite' && p.mois_concerne?.includes(mois)
+                          );
+                          const payeMois = paiementsMois.reduce((s: number, p: any) => s + p.montant, 0);
+                          const isPaid = payeMois >= mensualiteScolarite;
+                          const isCurrentMonth = idx === moisIndex;
+                          return (
+                            <TableRow key={mois} className={isCurrentMonth ? 'bg-primary/5' : ''}>
+                              <TableCell className="font-medium">
+                                {mois} {isCurrentMonth && <Badge variant="outline" className="ml-1 text-xs">Actuel</Badge>}
+                              </TableCell>
+                              <TableCell className="text-right">{mensualiteScolarite.toLocaleString()} GNF</TableCell>
+                              <TableCell className="text-right">
+                                {payeMois > 0 ? (
+                                  <Badge variant={isPaid ? 'default' : 'secondary'} className={isPaid ? 'bg-green-600' : ''}>
+                                    {isPaid ? '✓ Payé' : `${payeMois.toLocaleString()} / ${mensualiteScolarite.toLocaleString()}`}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-destructive border-destructive/30">
+                                    Non payé
+                                  </Badge>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </>
+        )}
+      </main>
+
+      <AIChatBubble />
+    </div>
+  );
+}
