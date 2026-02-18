@@ -85,6 +85,9 @@ export default function Inscriptions() {
   const [checkPhoto, setCheckPhoto] = useState(false);
   const [nomPrenomPere, setNomPrenomPere] = useState('');
   const [nomPrenomMere, setNomPrenomMere] = useState('');
+  const [telephonePere, setTelephonePere] = useState('');
+  const [telephoneMere, setTelephoneMere] = useState('');
+  const [emailParent, setEmailParent] = useState('');
   const [mandataires, setMandataires] = useState<Mandataire[]>(createEmptyMandataires());
   const [photoEleve, setPhotoEleve] = useState<File | null>(null);
   const [photoElevePreview, setPhotoElevePreview] = useState<string | null>(null);
@@ -183,6 +186,17 @@ export default function Inscriptions() {
       if (!nom.trim() || !prenom.trim() || !classeId) {
         throw new Error('Nom, prénom et classe sont obligatoires');
       }
+
+      // For individual students (no family selected), parent info is mandatory
+      if (!familleId) {
+        if (!nomPrenomPere.trim() && !nomPrenomMere.trim()) {
+          throw new Error('Le nom du père ou de la mère est obligatoire pour un élève individuel');
+        }
+        if (!telephonePere.trim() && !telephoneMere.trim()) {
+          throw new Error('Au moins un numéro de téléphone parent est obligatoire');
+        }
+      }
+
       const matricule = await generateMatricule();
       const qrCode = matricule;
 
@@ -198,9 +212,30 @@ export default function Inscriptions() {
         }
       }
 
+      // Auto-create family for individual students
+      let effectiveFamilleId = familleId || null;
+      let generatedCode: string | null = null;
+
+      if (!familleId) {
+        // Generate access code
+        generatedCode = 'FAM-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        const nomFamille = nom.trim().toUpperCase();
+        
+        const { data: newFamille, error: famErr } = await supabase.from('familles').insert({
+          nom_famille: nomFamille,
+          telephone_pere: telephonePere.trim() || null,
+          telephone_mere: telephoneMere.trim() || null,
+          email_parent: emailParent.trim() || null,
+          adresse: adresse.trim() || null,
+          code_acces: generatedCode,
+        } as any).select('id').single();
+        if (famErr) throw famErr;
+        effectiveFamilleId = newFamille.id;
+      }
+
       const { data: insertedEleve, error } = await supabase.from('eleves').insert({
         nom: nom.trim(), prenom: prenom.trim(), sexe: sexe || null, date_naissance: dateNaissance || null,
-        classe_id: classeId, famille_id: familleId || null,
+        classe_id: classeId, famille_id: effectiveFamilleId,
         matricule, qr_code: qrCode,
         transport_zone: selectedZone?.nom || null,
         zone_transport_id: zoneTransportId || null,
@@ -274,11 +309,33 @@ export default function Inscriptions() {
           if (pErr) console.error('Paiements error:', pErr);
         }
       }
+
+      // Create parent notification for auto-created family
+      if (!familleId && effectiveFamilleId && generatedCode) {
+        await supabase.from('parent_notifications').insert({
+          famille_id: effectiveFamilleId,
+          titre: '🎉 Bienvenue sur l\'Espace Parent',
+          message: `L'espace parent pour le suivi de ${prenom} ${nom} est actif.\n\nVotre identifiant : ${telephonePere.trim() || telephoneMere.trim()}\nVotre code d'accès : ${generatedCode}\n\nConnectez-vous sur l'espace parent pour suivre la scolarité de votre enfant.`,
+          type: 'info',
+        } as any);
+      }
+
+      return { generatedCode, effectiveFamilleId, telephonePere: telephonePere.trim(), telephoneMere: telephoneMere.trim() };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['eleves'] });
       queryClient.invalidateQueries({ queryKey: ['eleves-full'] });
-      toast({ title: 'Inscription réussie', description: `${prenom} ${nom} a été inscrit(e) avec succès.` });
+      queryClient.invalidateQueries({ queryKey: ['familles'] });
+      queryClient.invalidateQueries({ queryKey: ['familles-with-children'] });
+
+      if (result?.generatedCode) {
+        toast({
+          title: 'Inscription réussie — Espace Parent créé',
+          description: `${prenom} ${nom} inscrit(e). Code parent : ${result.generatedCode} (Tél: ${result.telephonePere || result.telephoneMere})`,
+        });
+      } else {
+        toast({ title: 'Inscription réussie', description: `${prenom} ${nom} a été inscrit(e) avec succès.` });
+      }
       resetForm();
       setOpen(false);
     },
@@ -368,6 +425,7 @@ export default function Inscriptions() {
     setOptionCantine(false); setOptionFournitures(false); setOptionAssurance(false);
     setSelectedArticles({});
     setNomPrenomPere(''); setNomPrenomMere('');
+    setTelephonePere(''); setTelephoneMere(''); setEmailParent('');
     setMandataires(createEmptyMandataires());
     setPhotoEleve(null); setPhotoElevePreview(null);
     setTypeInscription('inscription');
@@ -579,13 +637,34 @@ export default function Inscriptions() {
                     </Select>
                   </div>
                   <div>
-                    <Label>Nom & Prénom du père</Label>
+                    <Label>Nom & Prénom du père {!familleId && '*'}</Label>
                     <Input value={nomPrenomPere} onChange={e => setNomPrenomPere(e.target.value)} placeholder="Ex: Kouamé Jean-Pierre" />
                   </div>
                   <div>
-                    <Label>Nom & Prénom de la mère</Label>
+                    <Label>Nom & Prénom de la mère {!familleId && '*'}</Label>
                     <Input value={nomPrenomMere} onChange={e => setNomPrenomMere(e.target.value)} placeholder="Ex: Bamba Fatou" />
                   </div>
+
+                  {/* Phone fields for individual students (no family) */}
+                  {!familleId && (
+                    <>
+                      <div>
+                        <Label className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> Téléphone père *</Label>
+                        <Input value={telephonePere} onChange={e => setTelephonePere(e.target.value)} placeholder="Ex: +224 620 00 00 00" />
+                      </div>
+                      <div>
+                        <Label className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> Téléphone mère *</Label>
+                        <Input value={telephoneMere} onChange={e => setTelephoneMere(e.target.value)} placeholder="Ex: +224 620 00 00 00" />
+                      </div>
+                      <div className="col-span-2">
+                        <Label>Email parent (optionnel)</Label>
+                        <Input type="email" value={emailParent} onChange={e => setEmailParent(e.target.value)} placeholder="Ex: parent@email.com" />
+                      </div>
+                      <div className="col-span-2 p-2 rounded bg-accent/10 border border-accent/30 text-xs text-accent-foreground">
+                        ℹ️ Un <strong>Espace Parent</strong> sera automatiquement créé pour cet élève. Le code d'accès sera généré et affiché après validation.
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
