@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, ShieldCheck, Users, Download, Trash2, Pencil, Phone } from 'lucide-react';
+import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, ShieldCheck, Users, Download, Trash2, Pencil, Phone, Upload } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -20,6 +20,7 @@ import { toast } from '@/hooks/use-toast';
 import { useZonesTransport } from './Configuration';
 import MandatairesForm, { Mandataire, createEmptyMandataires, uploadMandatairePhotos } from '@/components/MandatairesForm';
 import InscriptionFamilleForm from '@/components/InscriptionFamilleForm';
+import ImportElevesExcel from '@/components/ImportElevesExcel';
 
 function useArticlesForLevel(niveauId: string | null) {
   return useQuery({
@@ -233,6 +234,14 @@ export default function Inscriptions() {
         effectiveFamilleId = newFamille.id;
       }
 
+      // Generate default student password
+      const studentPassword = (() => {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let pwd = '';
+        for (let i = 0; i < 6; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+        return pwd;
+      })();
+
       const { data: insertedEleve, error } = await supabase.from('eleves').insert({
         nom: nom.trim(), prenom: prenom.trim(), sexe: sexe || null, date_naissance: dateNaissance || null,
         classe_id: classeId, famille_id: effectiveFamilleId,
@@ -248,6 +257,7 @@ export default function Inscriptions() {
         nom_prenom_mere: nomPrenomMere || null,
         statut: 'inscrit',
         photo_url: photoUrl,
+        mot_de_passe_eleve: studentPassword,
       } as any).select('id').single();
       if (error) throw error;
 
@@ -548,6 +558,7 @@ export default function Inscriptions() {
           <UserPlus className="h-7 w-7 text-primary" /> Inscriptions
         </h1>
         <div className="flex gap-2">
+          <ImportElevesExcel classes={classes} />
           <Button variant="outline" onClick={handleExportExcel}><Download className="h-4 w-4 mr-2" /> Export Excel</Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>

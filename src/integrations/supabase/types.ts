@@ -258,6 +258,7 @@ export type Database = {
           titre: string
           type_contenu: string
           updated_at: string
+          visible: boolean
         }
         Insert: {
           classe_id: string
@@ -271,6 +272,7 @@ export type Database = {
           titre: string
           type_contenu?: string
           updated_at?: string
+          visible?: boolean
         }
         Update: {
           classe_id?: string
@@ -284,6 +286,7 @@ export type Database = {
           titre?: string
           type_contenu?: string
           updated_at?: string
+          visible?: boolean
         }
         Relationships: [
           {
