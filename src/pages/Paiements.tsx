@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Printer, Download, Upload, Users, Landmark, Calendar, FileImage } from 'lucide-react';
+import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Printer, Download, Upload, Users, Landmark, Calendar, FileImage, UtensilsCrossed } from 'lucide-react';
+import CantineDirectePanel from '@/components/CantineDirectePanel';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -816,6 +817,7 @@ export default function Paiements() {
         <TabsList>
           <TabsTrigger value="individuel">🎓 Élèves Individuels</TabsTrigger>
           <TabsTrigger value="famille">👨‍👩‍👧‍👦 Comptes Familles</TabsTrigger>
+          <TabsTrigger value="cantine">🍽️ Cantine</TabsTrigger>
           <TabsTrigger value="historique">📋 Historique</TabsTrigger>
           <TabsTrigger value="tendances">📊 Tendances</TabsTrigger>
         </TabsList>
@@ -826,6 +828,10 @@ export default function Paiements() {
 
         <TabsContent value="famille" className="mt-4">
           <PaiementFamillePanel eleves={eleves} paiements={paiements} familles={familles} />
+        </TabsContent>
+
+        <TabsContent value="cantine" className="mt-4">
+          <CantineDirectePanel eleves={eleves} />
         </TabsContent>
 
         <TabsContent value="historique" className="space-y-4 mt-4">

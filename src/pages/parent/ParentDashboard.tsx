@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { AIChatBubble } from '@/components/AIChatBubble';
 import ParentPaymentDialog from '@/components/ParentPaymentDialog';
 import ParentDevisInscription from '@/components/ParentDevisInscription';
+import ParentCantineOrdre from '@/components/ParentCantineOrdre';
 
 const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 
@@ -210,6 +211,13 @@ export default function ParentDashboard() {
               ))}
             </div>
 
+            {/* Cantine Recharge */}
+            <ParentCantineOrdre
+              enfants={eleves}
+              code={session.code}
+              onSuccess={fetchDashboard}
+            />
+
             {/* Payment History */}
             <Tabs defaultValue="devis">
               <TabsList className="w-full grid grid-cols-3">
@@ -248,7 +256,9 @@ export default function ParentDashboard() {
                                 <p className="text-sm font-medium">
                                   {p.type_paiement === 'scolarite' ? '🎓' : p.type_paiement === 'transport' ? '🚌' : p.type_paiement === 'cantine' ? '🍽️' : p.type_paiement === 'librairie' ? '📚' : p.type_paiement === 'boutique' ? '👕' : '📦'}
                                   {' '}{p.type_paiement}
-                                  {p.mois_concerne && ` — ${p.mois_concerne}`}
+                                  {p.type_paiement === 'cantine' && p.mois_concerne === 'Recharge directe' && ' (directe)'}
+                                  {p.type_paiement === 'cantine' && p.mois_concerne === 'Recharge ordonnée' && ' (ordonnée ✓)'}
+                                  {p.mois_concerne && !p.mois_concerne.startsWith('Recharge') && ` — ${p.mois_concerne}`}
                                 </p>
                                 {enfant && (
                                   <Badge variant="outline" className="text-xs">
