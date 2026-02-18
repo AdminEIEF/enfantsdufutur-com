@@ -614,6 +614,10 @@ export type Database = {
         Row: {
           created_at: string
           cycle_id: string
+          frais_assurance: number
+          frais_dossier: number
+          frais_inscription: number
+          frais_reinscription: number
           frais_scolarite: number
           id: string
           nom: string
@@ -622,6 +626,10 @@ export type Database = {
         Insert: {
           created_at?: string
           cycle_id: string
+          frais_assurance?: number
+          frais_dossier?: number
+          frais_inscription?: number
+          frais_reinscription?: number
           frais_scolarite?: number
           id?: string
           nom: string
@@ -630,6 +638,10 @@ export type Database = {
         Update: {
           created_at?: string
           cycle_id?: string
+          frais_assurance?: number
+          frais_dossier?: number
+          frais_inscription?: number
+          frais_reinscription?: number
           frais_scolarite?: number
           id?: string
           nom?: string
