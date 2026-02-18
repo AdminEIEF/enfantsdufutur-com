@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.parent-data]
 verify_jwt = false
+
+[functions.paydunya-checkout]
+verify_jwt = false
+
+[functions.paydunya-webhook]
+verify_jwt = false

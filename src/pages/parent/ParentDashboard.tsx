@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,22 +8,29 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useParentAuth } from '@/hooks/useParentAuth';
 import {
   GraduationCap, LogOut, Wallet, TrendingDown, CreditCard, Users,
-  ChevronRight, UtensilsCrossed, BookOpen, Download, Loader2, MessageCircle
+  ChevronRight, UtensilsCrossed, BookOpen, Download, Loader2, MessageCircle, Smartphone
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AIChatBubble } from '@/components/AIChatBubble';
+import ParentPaymentDialog from '@/components/ParentPaymentDialog';
 
 const MOIS_SCOLAIRES = ['Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 
 export default function ParentDashboard() {
   const { session, logout } = useParentAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [dashData, setDashData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [paymentOpen, setPaymentOpen] = useState(false);
 
   useEffect(() => {
     if (!session) return;
     fetchDashboard();
+    // Check payment return
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'success') toast.success('Paiement initié avec succès ! Vous recevrez une confirmation.');
+    if (paymentStatus === 'cancelled') toast.error('Paiement annulé.');
   }, [session]);
 
   const fetchDashboard = async () => {
@@ -108,12 +115,16 @@ export default function ParentDashboard() {
               <p className="text-xs text-muted-foreground">Famille {famille.nom_famille}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-1" /> Déconnexion
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" onClick={() => setPaymentOpen(true)}>
+              <Smartphone className="h-4 w-4 mr-1" /> Payer
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-1" /> Déconnexion
+            </Button>
+          </div>
         </div>
       </header>
-
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6 pb-24">
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -288,6 +299,14 @@ export default function ParentDashboard() {
       </main>
 
       <AIChatBubble />
+
+      <ParentPaymentDialog
+        open={paymentOpen}
+        onOpenChange={setPaymentOpen}
+        enfants={session.eleves}
+        code={session.code}
+        onSuccess={fetchDashboard}
+      />
     </div>
   );
 }
