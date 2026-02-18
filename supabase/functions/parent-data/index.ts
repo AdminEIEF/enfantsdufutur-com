@@ -115,9 +115,11 @@ serve(async (req) => {
       // Fetch available articles for the child's level
       const { data: eleveData } = await supabaseAdmin
         .from("eleves")
-        .select("classe_id, classes(niveau_id)")
+        .select("classe_id, solde_cantine, classes(niveau_id)")
         .eq("id", eleve_id)
         .maybeSingle();
+
+      const solde_cantine = (eleveData as any)?.solde_cantine || 0;
 
       const niveauId = (eleveData as any)?.classes?.niveau_id;
       const classeId = eleveData?.classe_id;
@@ -144,6 +146,7 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({
+          solde_cantine,
           paiements: paiements || [],
           repas: repas || [],
           ventesArticles: ventesArticles || [],
