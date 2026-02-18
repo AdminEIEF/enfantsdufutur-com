@@ -732,7 +732,7 @@ export default function Paiements() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, famille_id, zone_transport_id, zones_transport:zone_transport_id(nom, prix_mensuel, chauffeur_bus, telephone_chauffeur), classes(nom, niveaux:niveau_id(frais_scolarite))')
+        .select('id, nom, prenom, matricule, famille_id, option_cantine, solde_cantine, zone_transport_id, zones_transport:zone_transport_id(nom, prix_mensuel, chauffeur_bus, telephone_chauffeur), classes(nom, niveaux:niveau_id(frais_scolarite))')
         .eq('statut', 'inscrit')
         .order('nom');
       if (error) throw error;
