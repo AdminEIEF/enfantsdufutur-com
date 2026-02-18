@@ -36,6 +36,12 @@ import ParentLogin from "./pages/parent/ParentLogin";
 import ParentDashboard from "./pages/parent/ParentDashboard";
 import ParentEnfant from "./pages/parent/ParentEnfant";
 import { ParentAuthProvider } from "@/hooks/useParentAuth";
+import { StudentAuthProvider } from "@/hooks/useStudentAuth";
+import StudentLogin from "./pages/student/StudentLogin";
+import StudentDashboard from "./pages/student/StudentDashboard";
+import StudentCours from "./pages/student/StudentCours";
+import StudentDevoirs from "./pages/student/StudentDevoirs";
+import StudentResultats from "./pages/student/StudentResultats";
 
 const queryClient = new QueryClient();
 
@@ -101,11 +107,16 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/download" element={<DownloadPage />} />
-            <Route path="/eleve/:matricule" element={<ElevePublic />} />
+            <Route path="/fiche-eleve/:matricule" element={<ElevePublic />} />
             <Route path="/" element={<Landing />} />
             <Route path="/parent" element={<ParentAuthProvider><ParentLogin /></ParentAuthProvider>} />
             <Route path="/parent/dashboard" element={<ParentAuthProvider><ParentDashboard /></ParentAuthProvider>} />
             <Route path="/parent/enfant/:id" element={<ParentAuthProvider><ParentEnfant /></ParentAuthProvider>} />
+            <Route path="/eleve" element={<StudentAuthProvider><StudentLogin /></StudentAuthProvider>} />
+            <Route path="/eleve/dashboard" element={<StudentAuthProvider><StudentDashboard /></StudentAuthProvider>} />
+            <Route path="/eleve/cours" element={<StudentAuthProvider><StudentCours /></StudentAuthProvider>} />
+            <Route path="/eleve/devoirs" element={<StudentAuthProvider><StudentDevoirs /></StudentAuthProvider>} />
+            <Route path="/eleve/resultats" element={<StudentAuthProvider><StudentResultats /></StudentAuthProvider>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/inscriptions" element={<ProtectedRoute><Inscriptions /></ProtectedRoute>} />
             <Route path="/familles" element={<ProtectedRoute><Familles /></ProtectedRoute>} />

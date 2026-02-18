@@ -72,6 +72,11 @@ export default function Landing() {
                   Installer
                 </Button>
               )}
+              <Link to="/eleve">
+                <Button variant="outline" size="sm">
+                  Espace Élève
+                </Button>
+              </Link>
               <Link to="/parent">
                 <Button variant="outline" size="sm">
                   Espace Parent
