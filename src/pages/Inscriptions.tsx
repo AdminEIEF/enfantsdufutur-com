@@ -108,7 +108,7 @@ export default function Inscriptions() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('classes')
-        .select('*, niveaux:niveau_id(nom, frais_scolarite, cycles:cycle_id(nom))');
+        .select('*, niveaux:niveau_id(nom, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, cycles:cycle_id(nom))');
       if (error) throw error;
       return data;
     },
@@ -142,8 +142,7 @@ export default function Inscriptions() {
   }, [classeId, classes]);
   const { data: articlesNiveau = [] } = useArticlesForLevel(selectedNiveauId);
 
-  // Assurance fee
-  const fraisAssurance = optionAssurance ? (tarifs.find((t: any) => t.categorie === 'assurance')?.montant || 50000) : 0;
+  // Assurance fee (moved after selectedClass declaration below)
 
   // Suggest zone based on address
   const suggestedZoneId = useMemo(() => {
@@ -242,7 +241,7 @@ export default function Inscriptions() {
         // Frais d'inscription/réinscription
         paiements.push({
           eleve_id: insertedEleve.id,
-          montant: typeInscription === 'inscription' ? 100000 : 150000,
+          montant: fraisInscription + fraisDossier,
           type_paiement: typeInscription,
           canal: 'especes',
           mois_concerne: null,
@@ -411,7 +410,11 @@ export default function Inscriptions() {
     (uniformeKarate ? prixKarate : 0);
 
   // Inscription / Réinscription fee
-  const fraisInscription = typeInscription === 'inscription' ? 100000 : 150000;
+  const fraisInscription = typeInscription === 'inscription' 
+    ? (selectedClass?.niveaux?.frais_inscription ?? 100000) 
+    : (selectedClass?.niveaux?.frais_reinscription ?? 150000);
+  const fraisDossier = selectedClass?.niveaux?.frais_dossier ?? 0;
+  const fraisAssurance = optionAssurance ? (selectedClass?.niveaux?.frais_assurance || tarifs.find((t: any) => t.categorie === 'assurance')?.montant || 50000) : 0;
 
   const fraisFournitures = optionFournitures ? (tarifs.find((t: any) => t.categorie === 'fournitures')?.montant || 0) : 0;
 
@@ -422,7 +425,7 @@ export default function Inscriptions() {
       .reduce((s: number, a: any) => s + Number(a.prix), 0);
   }, [articlesNiveau, selectedArticles]);
 
-  const totalFrais = fraisInscription + fraisUniformes + fraisFournitures + fraisAssurance + fraisArticlesSelectionnes;
+  const totalFrais = fraisInscription + fraisDossier + fraisUniformes + fraisFournitures + fraisAssurance + fraisArticlesSelectionnes;
 
   const filtered = eleves.filter((e: any) =>
     `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase())
@@ -538,8 +541,8 @@ export default function Inscriptions() {
                     <Select value={typeInscription} onValueChange={(v: 'inscription' | 'reinscription') => setTypeInscription(v)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="inscription">Inscription — 100 000 GNF</SelectItem>
-                        <SelectItem value="reinscription">Réinscription — 150 000 GNF</SelectItem>
+                        <SelectItem value="inscription">Inscription — {(selectedClass?.niveaux?.frais_inscription ?? 100000).toLocaleString()} GNF</SelectItem>
+                        <SelectItem value="reinscription">Réinscription — {(selectedClass?.niveaux?.frais_reinscription ?? 150000).toLocaleString()} GNF</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -694,19 +697,61 @@ export default function Inscriptions() {
                 <MandatairesForm mandataires={mandataires} onChange={setMandataires} />
               )}
 
-              {/* Résumé frais — facture avec 3 tranches */}
+              {/* Résumé frais — Devis d'inscription */}
               <Card className="border-primary/30 bg-primary/5">
-                <CardHeader className="pb-3"><CardTitle className="text-base">Facture — Résumé des frais</CardTitle></CardHeader>
-                <CardContent className="space-y-1 text-sm">
-                  <div className="flex justify-between font-medium"><span>{typeInscription === 'inscription' ? "Frais d'inscription" : 'Frais de réinscription'}</span><span>{fraisInscription.toLocaleString()} GNF</span></div>
-                  {reduction > 0 && (
-                    <div className="flex justify-between text-accent"><span>Réduction fratrie (-{reduction * 100}%)</span><span>applicable sur la scolarité</span></div>
-                  )}
-                  {fraisUniformes > 0 && <div className="flex justify-between"><span>Uniformes</span><span>{fraisUniformes.toLocaleString()} GNF</span></div>}
-                  {fraisFournitures > 0 && <div className="flex justify-between"><span>Fournitures</span><span>{fraisFournitures.toLocaleString()} GNF</span></div>}
-                  {fraisAssurance > 0 && <div className="flex justify-between"><span>Assurance</span><span>{fraisAssurance.toLocaleString()} GNF</span></div>}
-                  {fraisArticlesSelectionnes > 0 && <div className="flex justify-between"><span>Kit articles (niveau)</span><span>{fraisArticlesSelectionnes.toLocaleString()} GNF</span></div>}
-                  <div className="flex justify-between font-bold text-base pt-2 border-t">
+                <CardHeader className="pb-3"><CardTitle className="text-base">📋 Devis d'Inscription</CardTitle></CardHeader>
+                <CardContent className="space-y-0 text-sm">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Désignation</TableHead>
+                        <TableHead className="text-right">Montant</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-medium">{typeInscription === 'inscription' ? "Frais d'inscription" : 'Frais de réinscription'}</TableCell>
+                        <TableCell className="text-right">{fraisInscription.toLocaleString()} GNF</TableCell>
+                      </TableRow>
+                      {fraisDossier > 0 && (
+                        <TableRow>
+                          <TableCell>Frais de dossier</TableCell>
+                          <TableCell className="text-right">{fraisDossier.toLocaleString()} GNF</TableCell>
+                        </TableRow>
+                      )}
+                      {fraisAssurance > 0 && (
+                        <TableRow>
+                          <TableCell>🛡️ Assurance scolaire</TableCell>
+                          <TableCell className="text-right">{fraisAssurance.toLocaleString()} GNF</TableCell>
+                        </TableRow>
+                      )}
+                      {fraisUniformes > 0 && (
+                        <TableRow>
+                          <TableCell>👕 Uniformes</TableCell>
+                          <TableCell className="text-right">{fraisUniformes.toLocaleString()} GNF</TableCell>
+                        </TableRow>
+                      )}
+                      {fraisFournitures > 0 && (
+                        <TableRow>
+                          <TableCell>📦 Fournitures</TableCell>
+                          <TableCell className="text-right">{fraisFournitures.toLocaleString()} GNF</TableCell>
+                        </TableRow>
+                      )}
+                      {fraisArticlesSelectionnes > 0 && (
+                        <TableRow>
+                          <TableCell>📚 Kit articles (niveau)</TableCell>
+                          <TableCell className="text-right">{fraisArticlesSelectionnes.toLocaleString()} GNF</TableCell>
+                        </TableRow>
+                      )}
+                      {reduction > 0 && (
+                        <TableRow className="text-accent">
+                          <TableCell>🎉 Réduction fratrie (-{reduction * 100}%)</TableCell>
+                          <TableCell className="text-right">sur scolarité</TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                  <div className="flex justify-between font-bold text-base pt-2 border-t mt-2">
                     <span>TOTAL À PAYER MAINTENANT</span><span>{totalFrais.toLocaleString()} GNF</span>
                   </div>
 

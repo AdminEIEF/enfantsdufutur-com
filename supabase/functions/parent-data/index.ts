@@ -57,15 +57,14 @@ serve(async (req) => {
       // Fetch niveaux for fee calculation
       const { data: eleves } = await supabaseAdmin
         .from("eleves")
-        .select("id, nom, prenom, matricule, solde_cantine, classe_id, classes(nom, niveaux:niveau_id(nom, frais_scolarite))")
+        .select("id, nom, prenom, matricule, solde_cantine, classe_id, option_cantine, option_fournitures, uniforme_scolaire, uniforme_sport, uniforme_polo_lacoste, uniforme_karate, zone_transport_id, classes(nom, niveaux:niveau_id(nom, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, cycles:cycle_id(nom))), zones_transport:zone_transport_id(nom, prix_mensuel)")
         .eq("famille_id", familleId)
         .is("deleted_at", null);
 
-      // Fetch tarifs transport
+      // Fetch all tarifs (uniforms, assurance, etc.)
       const { data: tarifs } = await supabaseAdmin
         .from("tarifs")
-        .select("*")
-        .eq("categorie", "transport");
+        .select("*");
 
       return new Response(
         JSON.stringify({ paiements: paiements || [], eleves: eleves || [], tarifs: tarifs || [] }),

@@ -8,11 +8,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useParentAuth } from '@/hooks/useParentAuth';
 import {
   GraduationCap, LogOut, Wallet, TrendingDown, CreditCard, Users,
-  ChevronRight, UtensilsCrossed, BookOpen, Download, Loader2, MessageCircle, Smartphone
+  ChevronRight, UtensilsCrossed, BookOpen, Download, Loader2, MessageCircle, Smartphone, FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AIChatBubble } from '@/components/AIChatBubble';
 import ParentPaymentDialog from '@/components/ParentPaymentDialog';
+import ParentDevisInscription from '@/components/ParentDevisInscription';
 
 const MOIS_SCOLAIRES = ['Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 
@@ -210,8 +211,11 @@ export default function ParentDashboard() {
             </div>
 
             {/* Payment History */}
-            <Tabs defaultValue="historique">
-              <TabsList className="w-full grid grid-cols-2">
+            <Tabs defaultValue="devis">
+              <TabsList className="w-full grid grid-cols-3">
+                <TabsTrigger value="devis">
+                  <FileText className="h-4 w-4 mr-1" /> Devis
+                </TabsTrigger>
                 <TabsTrigger value="historique">
                   <CreditCard className="h-4 w-4 mr-1" /> Historique
                 </TabsTrigger>
@@ -219,6 +223,15 @@ export default function ParentDashboard() {
                   <TrendingDown className="h-4 w-4 mr-1" /> Échéancier
                 </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="devis" className="mt-4">
+                <ParentDevisInscription
+                  eleves={eleves}
+                  paiements={paiements}
+                  tarifs={dashData?.tarifs || []}
+                  nbEnfantsFamille={eleves.length}
+                />
+              </TabsContent>
 
               <TabsContent value="historique" className="mt-4">
                 {paiements.length === 0 ? (

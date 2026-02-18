@@ -185,18 +185,22 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
       (child.uniformePolo ? getUniformFee('uniforme_polo_lacoste') : 0) +
       (child.uniformeKarate ? getUniformFee('uniforme_karate') : 0);
     const fraisFournitures = child.optionFournitures ? (tarifs.find((t: any) => t.categorie === 'fournitures')?.montant || 0) : 0;
-    const fraisAssurance = child.optionAssurance ? (tarifs.find((t: any) => t.categorie === 'assurance')?.montant || 0) : 0;
-    const fraisInscription = child.typeInscription === 'inscription' ? 100000 : 150000;
+    const fraisAssurance = child.optionAssurance ? (cl?.niveaux?.frais_assurance || tarifs.find((t: any) => t.categorie === 'assurance')?.montant || 0) : 0;
+    const fraisInscription = child.typeInscription === 'inscription' 
+      ? (cl?.niveaux?.frais_inscription ?? 100000) 
+      : (cl?.niveaux?.frais_reinscription ?? 150000);
+    const fraisDossier = cl?.niveaux?.frais_dossier ?? 0;
 
     return {
       fraisInscription,
+      fraisDossier,
       fraisScolariteMensuel: fraisApresReduction,
       fraisScolariteAnnuel: fraisApresReduction * 9,
       fraisTransport,
       fraisUniformes,
       fraisFournitures,
       fraisAssurance,
-      totalImmediat: fraisInscription + fraisUniformes + fraisFournitures + fraisAssurance,
+      totalImmediat: fraisInscription + fraisDossier + fraisUniformes + fraisFournitures + fraisAssurance,
     };
   };
 
@@ -271,7 +275,7 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
         if (insertedEleve) {
           const fees = childrenFees[i];
           const paiements: any[] = [
-            { eleve_id: insertedEleve.id, montant: fees.fraisInscription, type_paiement: child.typeInscription, canal: 'especes' },
+            { eleve_id: insertedEleve.id, montant: fees.fraisInscription + fees.fraisDossier, type_paiement: child.typeInscription, canal: 'especes' },
           ];
           if (fees.fraisUniformes > 0) {
             paiements.push({ eleve_id: insertedEleve.id, montant: fees.fraisUniformes, type_paiement: 'boutique', canal: 'especes' });
@@ -417,8 +421,8 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
                     <Select value={child.typeInscription} onValueChange={(v: 'inscription' | 'reinscription') => updateChild(idx, { typeInscription: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="inscription">Inscription — 100 000 GNF</SelectItem>
-                        <SelectItem value="reinscription">Réinscription — 150 000 GNF</SelectItem>
+                        <SelectItem value="inscription">Inscription — {(cl?.niveaux?.frais_inscription ?? 100000).toLocaleString()} GNF</SelectItem>
+                        <SelectItem value="reinscription">Réinscription — {(cl?.niveaux?.frais_reinscription ?? 150000).toLocaleString()} GNF</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -514,8 +518,9 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
 
                 {/* Per-child summary */}
                 <div className="bg-muted rounded-lg p-3 text-xs space-y-1">
-                  <p className="font-semibold text-sm">Résumé — {child.prenom || `Enfant ${idx + 1}`}</p>
+                   <p className="font-semibold text-sm">Résumé — {child.prenom || `Enfant ${idx + 1}`}</p>
                   <div className="flex justify-between"><span>{child.typeInscription === 'inscription' ? 'Inscription' : 'Réinscription'}</span><span>{fees.fraisInscription.toLocaleString()} GNF</span></div>
+                  {fees.fraisDossier > 0 && <div className="flex justify-between"><span>Frais de dossier</span><span>{fees.fraisDossier.toLocaleString()} GNF</span></div>}
                   {fees.fraisUniformes > 0 && <div className="flex justify-between"><span>Uniformes</span><span>{fees.fraisUniformes.toLocaleString()} GNF</span></div>}
                   {fees.fraisFournitures > 0 && <div className="flex justify-between"><span>Fournitures</span><span>{fees.fraisFournitures.toLocaleString()} GNF</span></div>}
                   {fees.fraisAssurance > 0 && <div className="flex justify-between"><span>Assurance</span><span>{fees.fraisAssurance.toLocaleString()} GNF</span></div>}
