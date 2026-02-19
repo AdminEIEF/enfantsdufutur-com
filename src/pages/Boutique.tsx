@@ -10,10 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Shirt, ShoppingBag, User, Search, Plus, Minus, Trash2, Package, History, BarChart3, ClipboardCheck, CheckCircle2, Clock } from 'lucide-react';
+import { Shirt, ShoppingBag, User, Search, Plus, Minus, Trash2, Package, History, BarChart3, ClipboardCheck, CheckCircle2, Clock, Settings, Pencil, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateTicketBoutique } from '@/lib/generateTicketBoutique';
 import { generateBonRecuperation } from '@/lib/generateBonRecuperation';
+import { useAuth } from '@/hooks/useAuth';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 type BoutiqueArticle = {
   id: string; nom: string; categorie: string; taille: string; prix: number; stock: number;
@@ -229,6 +231,283 @@ function RetraitsPanel() {
   );
 }
 
+// ─── Gestion Admin Commandes ─────────────────────
+function GestionCommandesPanel() {
+  const queryClient = useQueryClient();
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole('admin');
+  const [searchEleve, setSearchEleve] = useState('');
+  const [selectedEleve, setSelectedEleve] = useState<any>(null);
+  const [editCmd, setEditCmd] = useState<any>(null);
+  const [editQte, setEditQte] = useState(1);
+  const [editPrix, setEditPrix] = useState(0);
+  const [editNom, setEditNom] = useState('');
+  const [editTaille, setEditTaille] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  const { data: eleves = [] } = useQuery({
+    queryKey: ['eleves_gestion_cmd'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('eleves').select('id, nom, prenom, matricule, classe_id, famille_id, classes(nom)').is('deleted_at', null);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: commandes = [], isLoading } = useQuery({
+    queryKey: ['commandes_gestion', selectedEleve?.id],
+    queryFn: async () => {
+      if (!selectedEleve) return [];
+      const { data, error } = await supabase
+        .from('commandes_articles' as any)
+        .select('*')
+        .eq('eleve_id', selectedEleve.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!selectedEleve,
+  });
+
+  const filteredEleves = useMemo(() => {
+    if (!searchEleve.trim()) return [];
+    const q = searchEleve.toLowerCase();
+    return eleves.filter((e: any) =>
+      e.nom?.toLowerCase().includes(q) || e.prenom?.toLowerCase().includes(q) || e.matricule?.toLowerCase().includes(q)
+    ).slice(0, 10);
+  }, [searchEleve, eleves]);
+
+  const updateCommandeMut = useMutation({
+    mutationFn: async () => {
+      if (!editCmd) return;
+      const oldTotal = Number(editCmd.prix_unitaire) * editCmd.quantite;
+      const newTotal = editPrix * editQte;
+      const diff = newTotal - oldTotal;
+
+      // Update the commande
+      const { error } = await supabase
+        .from('commandes_articles' as any)
+        .update({
+          article_nom: editNom,
+          article_taille: editTaille || null,
+          quantite: editQte,
+          prix_unitaire: editPrix,
+        } as any)
+        .eq('id', editCmd.id);
+      if (error) throw error;
+
+      // If amount changed and item is still 'paye', create adjustment payment
+      if (diff !== 0 && editCmd.statut === 'paye') {
+        const type = editCmd.article_type === 'librairie' ? 'librairie' : 'boutique';
+        if (diff > 0) {
+          // Additional charge - insert positive payment
+          await supabase.from('paiements').insert({
+            eleve_id: selectedEleve.id,
+            montant: diff,
+            type_paiement: type,
+            canal: 'ajustement',
+            reference: `Ajustement commande: ${editNom}`,
+          } as any);
+        } else {
+          // Refund - insert negative payment (credit)
+          await supabase.from('paiements').insert({
+            eleve_id: selectedEleve.id,
+            montant: diff,
+            type_paiement: type,
+            canal: 'ajustement',
+            reference: `Remboursement partiel: ${editNom}`,
+          } as any);
+        }
+      }
+    },
+    onSuccess: () => {
+      toast.success('Commande mise à jour et solde ajusté');
+      setEditCmd(null);
+      queryClient.invalidateQueries({ queryKey: ['commandes_gestion', selectedEleve?.id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteCommandeMut = useMutation({
+    mutationFn: async (cmdId: string) => {
+      const cmd = commandes.find((c: any) => c.id === cmdId);
+      if (!cmd) return;
+
+      // Delete the commande
+      const { error } = await supabase
+        .from('commandes_articles' as any)
+        .delete()
+        .eq('id', cmdId);
+      if (error) throw error;
+
+      // If item was 'paye', create refund payment
+      if (cmd.statut === 'paye') {
+        const refundAmount = -(Number(cmd.prix_unitaire) * cmd.quantite);
+        const type = cmd.article_type === 'librairie' ? 'librairie' : 'boutique';
+        await supabase.from('paiements').insert({
+          eleve_id: selectedEleve.id,
+          montant: refundAmount,
+          type_paiement: type,
+          canal: 'ajustement',
+          reference: `Annulation commande: ${cmd.article_nom}`,
+        } as any);
+      }
+    },
+    onSuccess: () => {
+      toast.success('Commande supprimée et solde remboursé');
+      setDeleteConfirm(null);
+      queryClient.invalidateQueries({ queryKey: ['commandes_gestion', selectedEleve?.id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const openEdit = (cmd: any) => {
+    setEditCmd(cmd);
+    setEditNom(cmd.article_nom);
+    setEditTaille(cmd.article_taille || '');
+    setEditQte(cmd.quantite);
+    setEditPrix(Number(cmd.prix_unitaire));
+  };
+
+  if (!isAdmin) {
+    return (
+      <Card><CardContent className="py-8 text-center text-muted-foreground">
+        <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-orange-500" />
+        <p>Seul l'administrateur peut gérer les commandes après inscription.</p>
+      </CardContent></Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Search */}
+      <Card>
+        <CardContent className="pt-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Rechercher un élève..." value={searchEleve} onChange={e => setSearchEleve(e.target.value)} className="pl-10" />
+          </div>
+          <AnimatePresence>
+            {filteredEleves.length > 0 && !selectedEleve && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-2 border rounded-md divide-y max-h-48 overflow-y-auto">
+                {filteredEleves.map((e: any) => (
+                  <button key={e.id} className="w-full text-left px-3 py-2 hover:bg-accent/50 flex justify-between items-center" onClick={() => { setSelectedEleve(e); setSearchEleve(`${e.prenom} ${e.nom}`); }}>
+                    <span className="font-medium">{e.prenom} {e.nom}</span>
+                    <span className="text-xs text-muted-foreground">{e.matricule} — {(e as any).classes?.nom}</span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {selectedEleve && (
+            <div className="mt-2 flex items-center gap-2">
+              <Badge variant="secondary"><User className="h-3 w-3 mr-1" />{selectedEleve.prenom} {selectedEleve.nom}</Badge>
+              <Badge variant="outline" className="text-xs">{selectedEleve.matricule}</Badge>
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedEleve(null); setSearchEleve(''); }}>Changer</Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {selectedEleve && !isLoading && commandes.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Settings className="h-4 w-4" /> Commandes de {selectedEleve.prenom} ({commandes.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {commandes.map((c: any) => (
+                <div key={c.id} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{c.article_nom}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                      {c.article_taille && <Badge variant="outline" className="text-[10px]">{c.article_taille}</Badge>}
+                      <span>Qté: {c.quantite}</span>
+                      <span>{Number(c.prix_unitaire).toLocaleString()} GNF/unité</span>
+                      <Badge variant="outline" className="text-[10px] capitalize">{c.article_type}</Badge>
+                      <Badge variant={c.statut === 'livre' ? 'default' : 'secondary'} className={`text-[10px] ${c.statut === 'livre' ? 'bg-green-600' : 'bg-orange-100 text-orange-800 border-orange-300'}`}>
+                        {c.statut === 'livre' ? 'Livré' : 'Payé'}
+                      </Badge>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Total: {(Number(c.prix_unitaire) * c.quantite).toLocaleString()} GNF — Source: {c.source}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {c.statut === 'paye' && (
+                      <>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteConfirm(c.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedEleve && !isLoading && commandes.length === 0 && (
+        <Card><CardContent className="py-8 text-center text-muted-foreground">Aucune commande pour cet élève</CardContent></Card>
+      )}
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editCmd} onOpenChange={v => !v && setEditCmd(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Modifier la commande</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Article</Label><Input value={editNom} onChange={e => setEditNom(e.target.value)} /></div>
+            <div><Label>Taille</Label><Input value={editTaille} onChange={e => setEditTaille(e.target.value)} placeholder="Ex: M, L, XL..." /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Quantité</Label><Input type="number" min={1} value={editQte} onChange={e => setEditQte(Number(e.target.value))} /></div>
+              <div><Label>Prix unitaire (GNF)</Label><Input type="number" min={0} value={editPrix} onChange={e => setEditPrix(Number(e.target.value))} /></div>
+            </div>
+            {editCmd && (
+              <div className="p-3 rounded-lg bg-muted text-sm space-y-1">
+                <p>Ancien total : <strong>{(Number(editCmd.prix_unitaire) * editCmd.quantite).toLocaleString()} GNF</strong></p>
+                <p>Nouveau total : <strong>{(editPrix * editQte).toLocaleString()} GNF</strong></p>
+                {(editPrix * editQte) !== (Number(editCmd.prix_unitaire) * editCmd.quantite) && (
+                  <p className={`font-semibold ${(editPrix * editQte - Number(editCmd.prix_unitaire) * editCmd.quantite) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    Ajustement : {((editPrix * editQte) - (Number(editCmd.prix_unitaire) * editCmd.quantite) > 0 ? '+' : '')}{((editPrix * editQte) - (Number(editCmd.prix_unitaire) * editCmd.quantite)).toLocaleString()} GNF
+                  </p>
+                )}
+              </div>
+            )}
+            <Button className="w-full" onClick={() => updateCommandeMut.mutate()} disabled={updateCommandeMut.isPending}>
+              {updateCommandeMut.isPending ? 'Mise à jour...' : 'Enregistrer & Ajuster le solde'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteConfirm} onOpenChange={v => !v && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette commande ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              L'article sera retiré de la commande et le montant correspondant sera remboursé automatiquement dans le solde financier de la famille.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteConfirm && deleteCommandeMut.mutate(deleteConfirm)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Supprimer & Rembourser
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
 export default function Boutique() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState('retraits');
@@ -400,6 +679,7 @@ export default function Boutique() {
           <TabsTrigger value="vente" className="gap-1"><ShoppingBag className="h-4 w-4" /> Vente directe</TabsTrigger>
           <TabsTrigger value="inventaire" className="gap-1"><Package className="h-4 w-4" /> Inventaire</TabsTrigger>
           <TabsTrigger value="historique" className="gap-1"><History className="h-4 w-4" /> Historique</TabsTrigger>
+          <TabsTrigger value="gestion" className="gap-1"><Settings className="h-4 w-4" /> Gestion</TabsTrigger>
         </TabsList>
 
         {/* ===== RETRAITS TAB ===== */}
@@ -614,6 +894,11 @@ export default function Boutique() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        {/* ===== GESTION COMMANDES TAB ===== */}
+        <TabsContent value="gestion" className="space-y-4">
+          <GestionCommandesPanel />
         </TabsContent>
       </Tabs>
 
