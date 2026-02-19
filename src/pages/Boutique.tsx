@@ -10,9 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Shirt, ShoppingBag, User, Search, Plus, Minus, Trash2, Package, History, BarChart3 } from 'lucide-react';
+import { Shirt, ShoppingBag, User, Search, Plus, Minus, Trash2, Package, History, BarChart3, ClipboardCheck, CheckCircle2, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateTicketBoutique } from '@/lib/generateTicketBoutique';
+import { generateBonRecuperation } from '@/lib/generateBonRecuperation';
 
 type BoutiqueArticle = {
   id: string; nom: string; categorie: string; taille: string; prix: number; stock: number;
@@ -32,9 +33,205 @@ const CATEGORIES = [
 
 const TAILLES = ['S', 'M', 'L', 'XL', 'Enfant', 'Adulte'];
 
+// ─── Retraits Tab ─────────────────────────────────
+function RetraitsPanel() {
+  const queryClient = useQueryClient();
+  const [searchEleve, setSearchEleve] = useState('');
+  const [selectedEleve, setSelectedEleve] = useState<any>(null);
+
+  const { data: eleves = [] } = useQuery({
+    queryKey: ['eleves_retraits'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('eleves').select('id, nom, prenom, matricule, classe_id, classes(nom)').is('deleted_at', null);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch pending orders for selected student
+  const { data: commandes = [], isLoading: loadingCommandes } = useQuery({
+    queryKey: ['commandes_eleve', selectedEleve?.id],
+    queryFn: async () => {
+      if (!selectedEleve) return [];
+      const { data, error } = await supabase
+        .from('commandes_articles' as any)
+        .select('*')
+        .eq('eleve_id', selectedEleve.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!selectedEleve,
+  });
+
+  const commandesPaye = commandes.filter((c: any) => c.statut === 'paye');
+  const commandesLivrees = commandes.filter((c: any) => c.statut === 'livre');
+
+  const filteredEleves = useMemo(() => {
+    if (!searchEleve.trim()) return [];
+    const q = searchEleve.toLowerCase();
+    return eleves.filter((e: any) =>
+      e.nom?.toLowerCase().includes(q) || e.prenom?.toLowerCase().includes(q) || e.matricule?.toLowerCase().includes(q)
+    ).slice(0, 10);
+  }, [searchEleve, eleves]);
+
+  const validerLivraison = useMutation({
+    mutationFn: async (commandeIds: string[]) => {
+      const { error } = await supabase
+        .from('commandes_articles' as any)
+        .update({ statut: 'livre', livre_at: new Date().toISOString() } as any)
+        .in('id', commandeIds);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      // Generate Bon de Récupération
+      const articlesLivres = commandesPaye.map((c: any) => ({
+        nom: c.article_nom,
+        taille: c.article_taille,
+        quantite: c.quantite,
+        prixUnitaire: Number(c.prix_unitaire),
+      }));
+      const totalMontant = articlesLivres.reduce((s, a) => s + a.prixUnitaire * a.quantite, 0);
+      const now = new Date();
+
+      generateBonRecuperation({
+        eleve: `${selectedEleve.prenom} ${selectedEleve.nom}`,
+        matricule: selectedEleve.matricule || '',
+        classe: (selectedEleve as any).classes?.nom || '—',
+        articles: articlesLivres,
+        totalMontant,
+        date: now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
+        heure: now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+      });
+
+      toast.success('Livraison validée ! Bon de récupération généré.');
+      queryClient.invalidateQueries({ queryKey: ['commandes_eleve', selectedEleve?.id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-4">
+      {/* Search */}
+      <Card>
+        <CardContent className="pt-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Rechercher un élève (nom, prénom, matricule)..." value={searchEleve} onChange={e => setSearchEleve(e.target.value)} className="pl-10" />
+          </div>
+          <AnimatePresence>
+            {filteredEleves.length > 0 && !selectedEleve && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-2 border rounded-md divide-y max-h-48 overflow-y-auto">
+                {filteredEleves.map((e: any) => (
+                  <button key={e.id} className="w-full text-left px-3 py-2 hover:bg-accent/50 flex justify-between items-center" onClick={() => { setSelectedEleve(e); setSearchEleve(`${e.prenom} ${e.nom}`); }}>
+                    <span className="font-medium">{e.prenom} {e.nom}</span>
+                    <span className="text-xs text-muted-foreground">{e.matricule} — {(e as any).classes?.nom}</span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {selectedEleve && (
+            <div className="mt-2 flex items-center gap-2">
+              <Badge variant="secondary"><User className="h-3 w-3 mr-1" />{selectedEleve.prenom} {selectedEleve.nom}</Badge>
+              <Badge variant="outline" className="text-xs">{selectedEleve.matricule}</Badge>
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedEleve(null); setSearchEleve(''); }}>Changer</Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {selectedEleve && (
+        <>
+          {/* Pending items */}
+          {loadingCommandes ? (
+            <p className="text-sm text-muted-foreground text-center py-8">Chargement...</p>
+          ) : commandesPaye.length === 0 && commandesLivrees.length === 0 ? (
+            <Card><CardContent className="py-8 text-center text-muted-foreground">Aucune commande trouvée pour cet élève</CardContent></Card>
+          ) : (
+            <div className="space-y-4">
+              {/* En attente de retrait */}
+              {commandesPaye.length > 0 && (
+                <Card className="border-orange-300/50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2 text-orange-700">
+                      <Clock className="h-4 w-4" /> En attente de retrait ({commandesPaye.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {commandesPaye.map((c: any) => (
+                      <div key={c.id} className="flex items-center justify-between p-2 rounded border bg-orange-50/50 dark:bg-orange-950/20">
+                        <div>
+                          <p className="text-sm font-medium">{c.article_nom}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            {c.article_taille && <Badge variant="outline" className="text-[10px]">{c.article_taille}</Badge>}
+                            <span>Qté: {c.quantite}</span>
+                            <span>{Number(c.prix_unitaire).toLocaleString()} GNF</span>
+                            <Badge variant="outline" className="text-[10px] capitalize">{c.article_type}</Badge>
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-300">
+                          <Clock className="h-3 w-3 mr-1" /> Payé
+                        </Badge>
+                      </div>
+                    ))}
+
+                    <Button
+                      className="w-full bg-purple-600 hover:bg-purple-700 mt-2"
+                      onClick={() => validerLivraison.mutate(commandesPaye.map((c: any) => c.id))}
+                      disabled={validerLivraison.isPending}
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      {validerLivraison.isPending ? 'Validation...' : `Valider la livraison (${commandesPaye.length} articles) & Imprimer Bon`}
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Déjà livrés */}
+              {commandesLivrees.length > 0 && (
+                <Card className="border-green-300/50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2 text-green-700">
+                      <CheckCircle2 className="h-4 w-4" /> Déjà livrés ({commandesLivrees.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1">
+                    {commandesLivrees.map((c: any) => (
+                      <div key={c.id} className="flex items-center justify-between p-2 rounded border bg-green-50/50 dark:bg-green-950/20">
+                        <div>
+                          <p className="text-sm font-medium">{c.article_nom}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            {c.article_taille && <Badge variant="outline" className="text-[10px]">{c.article_taille}</Badge>}
+                            <span>Qté: {c.quantite}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant="default" className="bg-green-600 text-xs">
+                            <CheckCircle2 className="h-3 w-3 mr-1" /> Livré
+                          </Badge>
+                          {c.livre_at && (
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              {new Date(c.livre_at).toLocaleDateString('fr-FR')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Boutique() {
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState('vente');
+  const [tab, setTab] = useState('retraits');
   const [searchEleve, setSearchEleve] = useState('');
   const [selectedEleve, setSelectedEleve] = useState<any>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -193,16 +390,22 @@ export default function Boutique() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2"><ShoppingBag className="h-8 w-8 text-purple-600" /> Boutique</h1>
-          <p className="text-muted-foreground">Vente d'uniformes et équipements</p>
+          <p className="text-muted-foreground">Vente d'uniformes, équipements et gestion des retraits</p>
         </div>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="vente" className="gap-1"><ShoppingBag className="h-4 w-4" /> Vente</TabsTrigger>
+          <TabsTrigger value="retraits" className="gap-1"><ClipboardCheck className="h-4 w-4" /> Retraits</TabsTrigger>
+          <TabsTrigger value="vente" className="gap-1"><ShoppingBag className="h-4 w-4" /> Vente directe</TabsTrigger>
           <TabsTrigger value="inventaire" className="gap-1"><Package className="h-4 w-4" /> Inventaire</TabsTrigger>
           <TabsTrigger value="historique" className="gap-1"><History className="h-4 w-4" /> Historique</TabsTrigger>
         </TabsList>
+
+        {/* ===== RETRAITS TAB ===== */}
+        <TabsContent value="retraits" className="space-y-4">
+          <RetraitsPanel />
+        </TabsContent>
 
         {/* ===== VENTE TAB ===== */}
         <TabsContent value="vente" className="space-y-4">
