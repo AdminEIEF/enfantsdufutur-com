@@ -9,12 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { BookOpen, Package, Search, Plus, Pencil, Trash2, AlertTriangle, Tag, ShoppingCart, Printer, FileText } from 'lucide-react';
+import { BookOpen, Package, Search, Plus, Pencil, Trash2, AlertTriangle, Tag, ShoppingCart, Printer, FileText, Settings, User, CheckCircle2, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateRecuLibrairiePDF, generateBonSortiePDF } from '@/lib/generateRecuLibrairiePDF';
+import { useAuth } from '@/hooks/useAuth';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 // ─── Hooks ────────────────────────────────────────────
 function useNiveaux() {
@@ -481,6 +483,249 @@ function VenteALaCartePanel() {
   );
 }
 
+// ─── Gestion Admin Commandes Librairie ─────────────────
+function GestionCommandesLibrairiePanel() {
+  const queryClient = useQueryClient();
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole('admin');
+  const [searchEleve, setSearchEleve] = useState('');
+  const [selectedEleve, setSelectedEleve] = useState<any>(null);
+  const [editCmd, setEditCmd] = useState<any>(null);
+  const [editQte, setEditQte] = useState(1);
+  const [editPrix, setEditPrix] = useState(0);
+  const [editNom, setEditNom] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  const { data: eleves = [] } = useQuery({
+    queryKey: ['eleves_gestion_lib'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('eleves').select('id, nom, prenom, matricule, classe_id, famille_id, classes(nom)').is('deleted_at', null);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: commandes = [], isLoading } = useQuery({
+    queryKey: ['commandes_gestion_lib', selectedEleve?.id],
+    queryFn: async () => {
+      if (!selectedEleve) return [];
+      const { data, error } = await supabase
+        .from('commandes_articles' as any)
+        .select('*')
+        .eq('eleve_id', selectedEleve.id)
+        .eq('article_type', 'librairie')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!selectedEleve,
+  });
+
+  const filteredEleves = useMemo(() => {
+    if (!searchEleve.trim()) return [];
+    const q = searchEleve.toLowerCase();
+    return eleves.filter((e: any) =>
+      e.nom?.toLowerCase().includes(q) || e.prenom?.toLowerCase().includes(q) || e.matricule?.toLowerCase().includes(q)
+    ).slice(0, 10);
+  }, [searchEleve, eleves]);
+
+  const updateCommandeMut = useMutation({
+    mutationFn: async () => {
+      if (!editCmd) return;
+      const oldTotal = Number(editCmd.prix_unitaire) * editCmd.quantite;
+      const newTotal = editPrix * editQte;
+      const diff = newTotal - oldTotal;
+
+      const { error } = await supabase
+        .from('commandes_articles' as any)
+        .update({ article_nom: editNom, quantite: editQte, prix_unitaire: editPrix } as any)
+        .eq('id', editCmd.id);
+      if (error) throw error;
+
+      if (diff !== 0 && editCmd.statut === 'paye') {
+        await supabase.from('paiements').insert({
+          eleve_id: selectedEleve.id,
+          montant: diff,
+          type_paiement: 'librairie',
+          canal: 'ajustement',
+          reference: `${diff > 0 ? 'Ajustement' : 'Remboursement'} commande: ${editNom}`,
+        } as any);
+      }
+    },
+    onSuccess: () => {
+      toast.success('Commande mise à jour et solde ajusté');
+      setEditCmd(null);
+      queryClient.invalidateQueries({ queryKey: ['commandes_gestion_lib', selectedEleve?.id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteCommandeMut = useMutation({
+    mutationFn: async (cmdId: string) => {
+      const cmd = commandes.find((c: any) => c.id === cmdId);
+      if (!cmd) return;
+      const { error } = await supabase.from('commandes_articles' as any).delete().eq('id', cmdId);
+      if (error) throw error;
+      if (cmd.statut === 'paye') {
+        await supabase.from('paiements').insert({
+          eleve_id: selectedEleve.id,
+          montant: -(Number(cmd.prix_unitaire) * cmd.quantite),
+          type_paiement: 'librairie',
+          canal: 'ajustement',
+          reference: `Annulation commande: ${cmd.article_nom}`,
+        } as any);
+      }
+    },
+    onSuccess: () => {
+      toast.success('Commande supprimée et solde remboursé');
+      setDeleteConfirm(null);
+      queryClient.invalidateQueries({ queryKey: ['commandes_gestion_lib', selectedEleve?.id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const openEdit = (cmd: any) => {
+    setEditCmd(cmd);
+    setEditNom(cmd.article_nom);
+    setEditQte(cmd.quantite);
+    setEditPrix(Number(cmd.prix_unitaire));
+  };
+
+  if (!isAdmin) {
+    return (
+      <Card><CardContent className="py-8 text-center text-muted-foreground">
+        <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-orange-500" />
+        <p>Seul l'administrateur peut gérer les commandes après inscription.</p>
+      </CardContent></Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="pt-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Rechercher un élève..." value={searchEleve} onChange={e => setSearchEleve(e.target.value)} className="pl-10" />
+          </div>
+          <AnimatePresence>
+            {filteredEleves.length > 0 && !selectedEleve && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-2 border rounded-md divide-y max-h-48 overflow-y-auto">
+                {filteredEleves.map((e: any) => (
+                  <button key={e.id} className="w-full text-left px-3 py-2 hover:bg-accent/50 flex justify-between items-center" onClick={() => { setSelectedEleve(e); setSearchEleve(`${e.prenom} ${e.nom}`); }}>
+                    <span className="font-medium">{e.prenom} {e.nom}</span>
+                    <span className="text-xs text-muted-foreground">{e.matricule} — {(e as any).classes?.nom}</span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {selectedEleve && (
+            <div className="mt-2 flex items-center gap-2">
+              <Badge variant="secondary"><User className="h-3 w-3 mr-1" />{selectedEleve.prenom} {selectedEleve.nom}</Badge>
+              <Badge variant="outline" className="text-xs">{selectedEleve.matricule}</Badge>
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedEleve(null); setSearchEleve(''); }}>Changer</Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {selectedEleve && !isLoading && commandes.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Settings className="h-4 w-4" /> Commandes Librairie de {selectedEleve.prenom} ({commandes.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {commandes.map((c: any) => (
+                <div key={c.id} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{c.article_nom}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                      <span>Qté: {c.quantite}</span>
+                      <span>{Number(c.prix_unitaire).toLocaleString()} GNF/unité</span>
+                      <Badge variant={c.statut === 'livre' ? 'default' : 'secondary'} className={`text-[10px] ${c.statut === 'livre' ? 'bg-green-600' : 'bg-orange-100 text-orange-800 border-orange-300'}`}>
+                        {c.statut === 'livre' ? 'Livré' : 'Payé'}
+                      </Badge>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Total: {(Number(c.prix_unitaire) * c.quantite).toLocaleString()} GNF — Source: {c.source}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {c.statut === 'paye' && (
+                      <>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteConfirm(c.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedEleve && !isLoading && commandes.length === 0 && (
+        <Card><CardContent className="py-8 text-center text-muted-foreground">Aucune commande librairie pour cet élève</CardContent></Card>
+      )}
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editCmd} onOpenChange={v => !v && setEditCmd(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Modifier la commande</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Article</Label><Input value={editNom} onChange={e => setEditNom(e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Quantité</Label><Input type="number" min={1} value={editQte} onChange={e => setEditQte(Number(e.target.value))} /></div>
+              <div><Label>Prix unitaire (GNF)</Label><Input type="number" min={0} value={editPrix} onChange={e => setEditPrix(Number(e.target.value))} /></div>
+            </div>
+            {editCmd && (
+              <div className="p-3 rounded-lg bg-muted text-sm space-y-1">
+                <p>Ancien total : <strong>{(Number(editCmd.prix_unitaire) * editCmd.quantite).toLocaleString()} GNF</strong></p>
+                <p>Nouveau total : <strong>{(editPrix * editQte).toLocaleString()} GNF</strong></p>
+                {(editPrix * editQte) !== (Number(editCmd.prix_unitaire) * editCmd.quantite) && (
+                  <p className={`font-semibold ${(editPrix * editQte - Number(editCmd.prix_unitaire) * editCmd.quantite) > 0 ? 'text-destructive' : 'text-green-600'}`}>
+                    Ajustement : {((editPrix * editQte) - (Number(editCmd.prix_unitaire) * editCmd.quantite) > 0 ? '+' : '')}{((editPrix * editQte) - (Number(editCmd.prix_unitaire) * editCmd.quantite)).toLocaleString()} GNF
+                  </p>
+                )}
+              </div>
+            )}
+            <Button className="w-full" onClick={() => updateCommandeMut.mutate()} disabled={updateCommandeMut.isPending}>
+              {updateCommandeMut.isPending ? 'Mise à jour...' : 'Enregistrer & Ajuster le solde'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteConfirm} onOpenChange={v => !v && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette commande ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              L'article sera retiré et le montant remboursé automatiquement dans le solde financier.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteConfirm && deleteCommandeMut.mutate(deleteConfirm)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Supprimer & Rembourser
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────
 export default function Librairie() {
   const { data: ventes = [] } = useVentes();
@@ -505,13 +750,14 @@ export default function Librairie() {
       </div>
 
       <Tabs defaultValue="vente">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="vente">🛒 Vente à la carte</TabsTrigger>
           <TabsTrigger value="fournitures">📦 Fournitures</TabsTrigger>
           <TabsTrigger value="manuels">📖 Manuels</TabsTrigger>
           <TabsTrigger value="romans">📚 Romans</TabsTrigger>
           <TabsTrigger value="art_plastique">🎨 Art Plastique</TabsTrigger>
-          <TabsTrigger value="ventes">🧾 Historique ventes</TabsTrigger>
+          <TabsTrigger value="ventes">🧾 Historique</TabsTrigger>
+          <TabsTrigger value="gestion" className="gap-1"><Settings className="h-4 w-4" /> Gestion</TabsTrigger>
         </TabsList>
 
         <TabsContent value="vente" className="mt-4">
@@ -547,6 +793,10 @@ export default function Librairie() {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="gestion" className="mt-4">
+          <GestionCommandesLibrairiePanel />
         </TabsContent>
       </Tabs>
     </div>
