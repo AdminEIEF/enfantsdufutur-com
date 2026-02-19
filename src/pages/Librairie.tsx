@@ -9,12 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { BookOpen, Package, Search, Plus, Pencil, Trash2, AlertTriangle, Tag, ShoppingCart, Printer, FileText, Settings, User, CheckCircle2, Clock } from 'lucide-react';
+import { BookOpen, Package, Search, Plus, Pencil, Trash2, AlertTriangle, Tag, ShoppingCart, Printer, FileText, Settings, User, CheckCircle2, Clock, ClipboardCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateRecuLibrairiePDF, generateBonSortiePDF } from '@/lib/generateRecuLibrairiePDF';
+import { generateBonRecuperation } from '@/lib/generateBonRecuperation';
 import { useAuth } from '@/hooks/useAuth';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -483,6 +484,193 @@ function VenteALaCartePanel() {
   );
 }
 
+// ─── Retraits Librairie ───────────────────────────────
+function RetraitsLibrairiePanel() {
+  const queryClient = useQueryClient();
+  const [searchEleve, setSearchEleve] = useState('');
+  const [selectedEleve, setSelectedEleve] = useState<any>(null);
+
+  const { data: eleves = [] } = useQuery({
+    queryKey: ['eleves_retraits_lib'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('eleves').select('id, nom, prenom, matricule, classe_id, classes(nom)').is('deleted_at', null);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: commandes = [], isLoading: loadingCommandes } = useQuery({
+    queryKey: ['commandes_retraits_lib', selectedEleve?.id],
+    queryFn: async () => {
+      if (!selectedEleve) return [];
+      const { data, error } = await supabase
+        .from('commandes_articles' as any)
+        .select('*')
+        .eq('eleve_id', selectedEleve.id)
+        .eq('article_type', 'librairie')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!selectedEleve,
+  });
+
+  const commandesPaye = commandes.filter((c: any) => c.statut === 'paye');
+  const commandesLivrees = commandes.filter((c: any) => c.statut === 'livre');
+
+  const filteredEleves = useMemo(() => {
+    if (!searchEleve.trim()) return [];
+    const q = searchEleve.toLowerCase();
+    return eleves.filter((e: any) =>
+      e.nom?.toLowerCase().includes(q) || e.prenom?.toLowerCase().includes(q) || e.matricule?.toLowerCase().includes(q)
+    ).slice(0, 10);
+  }, [searchEleve, eleves]);
+
+  const validerLivraison = useMutation({
+    mutationFn: async (commandeIds: string[]) => {
+      const { error } = await supabase
+        .from('commandes_articles' as any)
+        .update({ statut: 'livre', livre_at: new Date().toISOString() } as any)
+        .in('id', commandeIds);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      const articlesLivres = commandesPaye.map((c: any) => ({
+        nom: c.article_nom,
+        taille: c.article_taille,
+        quantite: c.quantite,
+        prixUnitaire: Number(c.prix_unitaire),
+      }));
+      const totalMontant = articlesLivres.reduce((s, a) => s + a.prixUnitaire * a.quantite, 0);
+      const now = new Date();
+
+      generateBonRecuperation({
+        eleve: `${selectedEleve.prenom} ${selectedEleve.nom}`,
+        matricule: selectedEleve.matricule || '',
+        classe: (selectedEleve as any).classes?.nom || '—',
+        articles: articlesLivres,
+        totalMontant,
+        date: now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
+        heure: now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+      });
+
+      toast.success('Livraison validée ! Bon de récupération généré.');
+      queryClient.invalidateQueries({ queryKey: ['commandes_retraits_lib', selectedEleve?.id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="pt-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Rechercher un élève (nom, prénom, matricule)..." value={searchEleve} onChange={e => setSearchEleve(e.target.value)} className="pl-10" />
+          </div>
+          <AnimatePresence>
+            {filteredEleves.length > 0 && !selectedEleve && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-2 border rounded-md divide-y max-h-48 overflow-y-auto">
+                {filteredEleves.map((e: any) => (
+                  <button key={e.id} className="w-full text-left px-3 py-2 hover:bg-accent/50 flex justify-between items-center" onClick={() => { setSelectedEleve(e); setSearchEleve(`${e.prenom} ${e.nom}`); }}>
+                    <span className="font-medium">{e.prenom} {e.nom}</span>
+                    <span className="text-xs text-muted-foreground">{e.matricule} — {(e as any).classes?.nom}</span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {selectedEleve && (
+            <div className="mt-2 flex items-center gap-2">
+              <Badge variant="secondary"><User className="h-3 w-3 mr-1" />{selectedEleve.prenom} {selectedEleve.nom}</Badge>
+              <Badge variant="outline" className="text-xs">{selectedEleve.matricule}</Badge>
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedEleve(null); setSearchEleve(''); }}>Changer</Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {selectedEleve && (
+        <>
+          {loadingCommandes ? (
+            <p className="text-sm text-muted-foreground text-center py-8">Chargement...</p>
+          ) : commandesPaye.length === 0 && commandesLivrees.length === 0 ? (
+            <Card><CardContent className="py-8 text-center text-muted-foreground">Aucune commande librairie trouvée pour cet élève</CardContent></Card>
+          ) : (
+            <div className="space-y-4">
+              {commandesPaye.length > 0 && (
+                <Card className="border-orange-300/50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2 text-orange-700">
+                      <Clock className="h-4 w-4" /> En attente de retrait ({commandesPaye.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {commandesPaye.map((c: any) => (
+                      <div key={c.id} className="flex items-center justify-between p-2 rounded border bg-orange-50/50 dark:bg-orange-950/20">
+                        <div>
+                          <p className="text-sm font-medium">{c.article_nom}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>Qté: {c.quantite}</span>
+                            <span>{Number(c.prix_unitaire).toLocaleString()} GNF</span>
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-300">
+                          <Clock className="h-3 w-3 mr-1" /> Payé
+                        </Badge>
+                      </div>
+                    ))}
+                    <Button
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 mt-2"
+                      onClick={() => validerLivraison.mutate(commandesPaye.map((c: any) => c.id))}
+                      disabled={validerLivraison.isPending}
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      {validerLivraison.isPending ? 'Validation...' : `Valider la livraison (${commandesPaye.length} articles) & Imprimer Bon`}
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {commandesLivrees.length > 0 && (
+                <Card className="border-green-300/50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2 text-green-700">
+                      <CheckCircle2 className="h-4 w-4" /> Déjà livrés ({commandesLivrees.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1">
+                    {commandesLivrees.map((c: any) => (
+                      <div key={c.id} className="flex items-center justify-between p-2 rounded border bg-green-50/50 dark:bg-green-950/20">
+                        <div>
+                          <p className="text-sm font-medium">{c.article_nom}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>Qté: {c.quantite}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant="default" className="bg-green-600 text-xs">
+                            <CheckCircle2 className="h-3 w-3 mr-1" /> Livré
+                          </Badge>
+                          {c.livre_at && (
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              {new Date(c.livre_at).toLocaleDateString('fr-FR')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Gestion Admin Commandes Librairie ─────────────────
 function GestionCommandesLibrairiePanel() {
   const queryClient = useQueryClient();
@@ -752,6 +940,7 @@ export default function Librairie() {
       <Tabs defaultValue="vente">
         <TabsList className="flex-wrap">
           <TabsTrigger value="vente">🛒 Vente à la carte</TabsTrigger>
+          <TabsTrigger value="retraits" className="gap-1"><ClipboardCheck className="h-4 w-4" /> Retraits</TabsTrigger>
           <TabsTrigger value="fournitures">📦 Fournitures</TabsTrigger>
           <TabsTrigger value="manuels">📖 Manuels</TabsTrigger>
           <TabsTrigger value="romans">📚 Romans</TabsTrigger>
@@ -762,6 +951,9 @@ export default function Librairie() {
 
         <TabsContent value="vente" className="mt-4">
           <VenteALaCartePanel />
+        </TabsContent>
+        <TabsContent value="retraits" className="mt-4">
+          <RetraitsLibrairiePanel />
         </TabsContent>
         <TabsContent value="fournitures" className="mt-4"><ArticleManager categorie="fourniture" label="Fourniture" icon={Package} /></TabsContent>
         <TabsContent value="manuels" className="mt-4"><ArticleManager categorie="manuel" label="Manuel" icon={BookOpen} /></TabsContent>
