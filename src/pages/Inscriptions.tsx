@@ -140,6 +140,19 @@ export default function Inscriptions() {
 
   const { data: zones = [] } = useZonesTransport();
 
+  // Fetch tranches config
+  const { data: allTranchesConfig = {} } = useQuery({
+    queryKey: ['parametres-tranches-v2'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('parametres').select('*').eq('cle', 'tranches_paiement_v2').maybeSingle();
+      if (error) throw error;
+      if (data?.valeur && typeof data.valeur === 'object' && !Array.isArray(data.valeur)) {
+        return data.valeur as Record<string, Array<{ label: string; mois: string[]; montant: number }>>;
+      }
+      return {} as Record<string, Array<{ label: string; mois: string[]; montant: number }>>;
+    },
+  });
+
   // Articles suggested for the selected level
   const selectedNiveauId = useMemo(() => {
     if (!classeId || !classes.length) return null;
@@ -929,35 +942,36 @@ export default function Inscriptions() {
                     <span>TOTAL À PAYER MAINTENANT</span><span>{totalFrais.toLocaleString()} GNF</span>
                   </div>
 
-                  {/* Scolarité en 3 tranches */}
+                  {/* Scolarité par tranches configurées */}
                   {fraisScolarite > 0 && (() => {
-                    const totalAnnuel = fraisApresReduction * 10;
-                    const tranche1 = Math.ceil(totalAnnuel / 3);
-                    const tranche2 = Math.ceil(totalAnnuel / 3);
-                    const tranche3 = totalAnnuel - tranche1 - tranche2;
+                    const totalAnnuel = fraisScolarite * 10 * (1 - reduction);
+                    const niveauId = selectedNiveauId;
+                    const tranchesConfig = niveauId && allTranchesConfig[niveauId] ? allTranchesConfig[niveauId] as Array<{ label: string; mois: string[]; montant: number }> : null;
+                    const nbTranches = tranchesConfig ? tranchesConfig.length : 3;
+                    const tranches = tranchesConfig
+                      ? tranchesConfig.map(t => ({ label: t.label, mois: t.mois.join(', '), montant: t.montant }))
+                      : [
+                          { label: '1ère Tranche', mois: 'Oct-Déc', montant: Math.ceil(totalAnnuel / 3) },
+                          { label: '2ème Tranche', mois: 'Jan-Mar', montant: Math.ceil(totalAnnuel / 3) },
+                          { label: '3ème Tranche', mois: 'Avr-Juin', montant: totalAnnuel - Math.ceil(totalAnnuel / 3) * 2 },
+                        ];
+                    const totalTranches = tranches.reduce((s, t) => s + t.montant, 0);
+                    const prixMois = Math.ceil(totalAnnuel / 10);
                     return (
                     <div className="mt-3 pt-3 border-t space-y-2">
-                      <p className="text-xs font-semibold text-primary">📋 FACTURE SCOLARITÉ — 3 Tranches</p>
-                      <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                      <p className="text-xs font-semibold text-primary">📋 FACTURE SCOLARITÉ — {nbTranches} Tranche{nbTranches > 1 ? 's' : ''}</p>
+                      <div className={`grid gap-2 text-center text-xs`} style={{ gridTemplateColumns: `repeat(${nbTranches + 1}, 1fr)` }}>
                         <div className="bg-background rounded p-2">
                           <p className="text-muted-foreground">Total Annuel</p>
                           <p className="font-bold">{totalAnnuel.toLocaleString()} GNF</p>
                         </div>
-                        <div className="bg-background rounded p-2">
-                          <p className="text-muted-foreground">1ère Tranche</p>
-                          <p className="font-bold">{tranche1.toLocaleString()} GNF</p>
-                          <p className="text-muted-foreground" style={{ fontSize: '10px' }}>Oct-Déc</p>
-                        </div>
-                        <div className="bg-background rounded p-2">
-                          <p className="text-muted-foreground">2ème Tranche</p>
-                          <p className="font-bold">{tranche2.toLocaleString()} GNF</p>
-                          <p className="text-muted-foreground" style={{ fontSize: '10px' }}>Jan-Mar</p>
-                        </div>
-                        <div className="bg-background rounded p-2">
-                          <p className="text-muted-foreground">3ème Tranche</p>
-                          <p className="font-bold">{tranche3.toLocaleString()} GNF</p>
-                          <p className="text-muted-foreground" style={{ fontSize: '10px' }}>Avr-Juin</p>
-                        </div>
+                        {tranches.map((t, i) => (
+                          <div key={i} className="bg-background rounded p-2">
+                            <p className="text-muted-foreground">{t.label}</p>
+                            <p className="font-bold">{t.montant.toLocaleString()} GNF</p>
+                            <p className="text-muted-foreground" style={{ fontSize: '10px' }}>{t.mois}</p>
+                          </div>
+                        ))}
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-center text-xs bg-background rounded p-2">
                         <div>
@@ -970,7 +984,7 @@ export default function Inscriptions() {
                         </div>
                         <div>
                           <p className="text-muted-foreground">Prix/mois</p>
-                          <p className="font-bold">{fraisApresReduction.toLocaleString()} GNF</p>
+                          <p className="font-bold">{prixMois.toLocaleString()} GNF</p>
                         </div>
                       </div>
                     </div>
@@ -981,7 +995,7 @@ export default function Inscriptions() {
                     <div className="flex justify-between text-muted-foreground pt-1"><span>Transport (mensuel, via Paiements)</span><span>{fraisTransport.toLocaleString()} GNF/mois</span></div>
                   )}
                   <p className="text-xs text-muted-foreground pt-1">
-                    ℹ️ La scolarité se paie en <strong>3 tranches</strong> dans l'onglet <strong>Paiements</strong>.
+                    ℹ️ La scolarité se paie par <strong>tranches</strong> dans l'onglet <strong>Paiements</strong>.
                   </p>
                 </CardContent>
               </Card>

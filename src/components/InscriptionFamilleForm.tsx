@@ -195,7 +195,7 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
       fraisInscription,
       fraisDossier,
       fraisScolariteMensuel: fraisApresReduction,
-      fraisScolariteAnnuel: fraisApresReduction,
+      fraisScolariteAnnuel: fraisApresReduction * 10,
       fraisTransport,
       fraisUniformes,
       fraisFournitures,
