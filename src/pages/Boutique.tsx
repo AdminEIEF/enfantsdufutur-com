@@ -684,6 +684,30 @@ export default function Boutique() {
 
   const totalVentesJour = ventes.reduce((s: number, v: any) => s + Number(v.montant_final), 0);
 
+  // Cancel sale mutation - restores stock
+  const cancelSale = useMutation({
+    mutationFn: async (vente: any) => {
+      // Restore stock for each item
+      for (const item of (vente.boutique_vente_items || [])) {
+        const { error: stockErr } = await supabase
+          .from('boutique_articles')
+          .update({ stock: (item.boutique_articles?.stock || 0) + item.quantite } as any)
+          .eq('id', item.article_id);
+        if (stockErr) throw stockErr;
+      }
+      // Delete vente items then vente
+      await supabase.from('boutique_vente_items').delete().eq('vente_id', vente.id);
+      const { error } = await supabase.from('boutique_ventes').delete().eq('id', vente.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Vente annulée — stock restauré');
+      queryClient.invalidateQueries({ queryKey: ['boutique_articles'] });
+      queryClient.invalidateQueries({ queryKey: ['boutique_ventes'] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -904,9 +928,21 @@ export default function Boutique() {
                         <span className="font-medium">{v.eleves?.prenom} {v.eleves?.nom}</span>
                         <span className="text-xs text-muted-foreground ml-2">{v.eleves?.matricule}</span>
                       </div>
-                      <div className="text-right">
-                        <div className="font-bold text-purple-700">{Number(v.montant_final).toLocaleString()} GNF</div>
-                        {Number(v.remise_pct) > 0 && <Badge variant="outline" className="text-xs text-red-600">-{v.remise_pct}%</Badge>}
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <div className="font-bold text-purple-700">{Number(v.montant_final).toLocaleString()} GNF</div>
+                          {Number(v.remise_pct) > 0 && <Badge variant="outline" className="text-xs text-red-600">-{v.remise_pct}%</Badge>}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          title="Annuler cette vente (remise en stock)"
+                          onClick={() => cancelSale.mutate(v)}
+                          disabled={cancelSale.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1">
