@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, ShieldCheck, Users, Download, Trash2, Pencil, Phone, Upload } from 'lucide-react';
+import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, ShieldCheck, Users, Download, Trash2, Pencil, Phone, Upload, Camera } from 'lucide-react';
+import QRScannerDialog from '@/components/QRScannerDialog';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -44,6 +45,7 @@ export default function Inscriptions() {
   const [open, setOpen] = useState(false);
   const [familleOpen, setFamilleOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editEleve, setEditEleve] = useState<any>(null);
   const [editNom, setEditNom] = useState('');
@@ -1018,8 +1020,12 @@ export default function Inscriptions() {
       {/* Search */}
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Rechercher un élève..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+        <Input placeholder="Rechercher un élève..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 pr-10" />
+        <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setScannerOpen(true)} title="Scanner par caméra">
+          <Camera className="h-4 w-4 text-primary" />
+        </Button>
       </div>
+      <QRScannerDialog open={scannerOpen} onOpenChange={setScannerOpen} onScan={(matricule) => setSearch(matricule)} />
 
       <Card>
         <CardContent className="p-0">
