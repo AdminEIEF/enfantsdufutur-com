@@ -911,7 +911,7 @@ export default function Paiements() {
                             const isTransport = p.type_paiement === 'transport';
                             const transportZone = isTransport ? (p.eleves as any)?.zones_transport : null;
                             const prixMensuel = isTransport ? Number(transportZone?.prix_mensuel || 0) : Number(eleveForReceipt?.classes?.niveaux?.frais_scolarite || 0);
-                            const annuelCalc = prixMensuel * 9;
+                            const annuelCalc = prixMensuel * 10;
                             const totalPayeType = paiements.filter((pp: any) => pp.eleve_id === p.eleve_id && pp.type_paiement === p.type_paiement).reduce((s: number, pp: any) => s + Number(pp.montant), 0);
                             generateRecuPDF({
                               type: p.type_paiement,

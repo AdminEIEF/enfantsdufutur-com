@@ -90,7 +90,7 @@ export default function Transport() {
       const paiementsZone = paiements.filter((p: any) =>
         elevesZone.some((e: any) => e.id === p.eleve_id)
       );
-      const totalAttendu = elevesZone.length * Number(z.prix_mensuel) * 9;
+      const totalAttendu = elevesZone.length * Number(z.prix_mensuel) * 10;
       const totalPaye = paiementsZone.reduce((s: number, p: any) => s + Number(p.montant), 0);
       const taux = totalAttendu > 0 ? Math.round((totalPaye / totalAttendu) * 100) : 0;
 

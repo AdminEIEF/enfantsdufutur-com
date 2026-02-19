@@ -934,7 +934,7 @@ export default function Inscriptions() {
                       <div className="grid grid-cols-4 gap-2 text-center text-xs">
                         <div className="bg-background rounded p-2">
                           <p className="text-muted-foreground">Total Annuel</p>
-                          <p className="font-bold">{(fraisApresReduction * 9).toLocaleString()} GNF</p>
+                          <p className="font-bold">{(fraisApresReduction * 10).toLocaleString()} GNF</p>
                         </div>
                         <div className="bg-background rounded p-2">
                           <p className="text-muted-foreground">1ère Tranche</p>
@@ -959,7 +959,7 @@ export default function Inscriptions() {
                         </div>
                         <div>
                           <p className="text-muted-foreground">Reste à payer</p>
-                          <p className="font-bold text-destructive">{(fraisApresReduction * 9).toLocaleString()} GNF</p>
+                          <p className="font-bold text-destructive">{(fraisApresReduction * 10).toLocaleString()} GNF</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Prix/mois</p>
