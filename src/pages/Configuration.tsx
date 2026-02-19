@@ -1447,7 +1447,6 @@ export default function Configuration() {
           <TabsTrigger value="classes">Classes</TabsTrigger>
           <TabsTrigger value="matieres">Matières</TabsTrigger>
           <TabsTrigger value="periodes">Périodes</TabsTrigger>
-          <TabsTrigger value="tarifs">Tarifs</TabsTrigger>
           <TabsTrigger value="tranches">💳 Tranches</TabsTrigger>
           <TabsTrigger value="transport">Transport</TabsTrigger>
           <TabsTrigger value="corbeille">🗑️ Corbeille</TabsTrigger>
@@ -1458,7 +1457,6 @@ export default function Configuration() {
         <TabsContent value="classes"><ClassesTab /></TabsContent>
         <TabsContent value="matieres"><MatieresTab /></TabsContent>
         <TabsContent value="periodes"><PeriodesTab /></TabsContent>
-        <TabsContent value="tarifs"><TarifsTab /></TabsContent>
         <TabsContent value="tranches"><TranchesTab /></TabsContent>
         <TabsContent value="transport"><ZonesTransportTab /></TabsContent>
         <TabsContent value="corbeille"><CorbeilleTab /></TabsContent>

@@ -944,7 +944,7 @@ export default function Inscriptions() {
 
                   {/* Scolarité par tranches configurées */}
                   {fraisScolarite > 0 && (() => {
-                    const totalAnnuel = fraisScolarite * 10 * (1 - reduction);
+                    const totalAnnuel = fraisScolarite * (1 - reduction);
                     const niveauId = selectedNiveauId;
                     const tranchesConfig = niveauId && allTranchesConfig[niveauId] ? allTranchesConfig[niveauId] as Array<{ label: string; mois: string[]; montant: number }> : null;
                     const nbTranches = tranchesConfig ? tranchesConfig.length : 3;
@@ -956,7 +956,6 @@ export default function Inscriptions() {
                           { label: '3ème Tranche', mois: 'Avr-Juin', montant: totalAnnuel - Math.ceil(totalAnnuel / 3) * 2 },
                         ];
                     const totalTranches = tranches.reduce((s, t) => s + t.montant, 0);
-                    const prixMois = Math.ceil(totalAnnuel / 10);
                     return (
                     <div className="mt-3 pt-3 border-t space-y-2">
                       <p className="text-xs font-semibold text-primary">📋 FACTURE SCOLARITÉ — {nbTranches} Tranche{nbTranches > 1 ? 's' : ''}</p>
@@ -975,16 +974,16 @@ export default function Inscriptions() {
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-center text-xs bg-background rounded p-2">
                         <div>
+                          <p className="text-muted-foreground">Prix Annuel</p>
+                          <p className="font-bold">{totalAnnuel.toLocaleString()} GNF</p>
+                        </div>
+                        <div>
                           <p className="text-muted-foreground">Déjà payé</p>
                           <p className="font-bold text-green-600">0 GNF</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Reste à payer</p>
                           <p className="font-bold text-destructive">{totalAnnuel.toLocaleString()} GNF</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Prix/mois</p>
-                          <p className="font-bold">{prixMois.toLocaleString()} GNF</p>
                         </div>
                       </div>
                     </div>

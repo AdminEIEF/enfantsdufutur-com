@@ -71,7 +71,7 @@ export default function ParentDevisInscription({ eleves, paiements, tarifs = [],
           .reduce((s: number, p: any) => s + p.montant, 0);
 
         const totalImmediatInitial = fraisInscription + fraisDossier + fraisAssurance + fraisUniformes + fraisFournitures;
-        const scolariteAnnuelle = fraisApresReduction;
+        const scolariteAnnuelle = fraisApresReduction; // frais_scolarite is already annual
         const transportAnnuel = transportMensuel * 10;
         const totalGlobal = totalImmediatInitial + scolariteAnnuelle + transportAnnuel;
         const totalPaye = payeInscription + payeScolarite + payeTransport;
