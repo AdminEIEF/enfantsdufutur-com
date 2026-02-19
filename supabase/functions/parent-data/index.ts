@@ -66,8 +66,20 @@ serve(async (req) => {
         .from("tarifs")
         .select("*");
 
+      // Fetch famille solde
+      const { data: familleData } = await supabaseAdmin
+        .from("familles")
+        .select("solde_famille")
+        .eq("id", familleId)
+        .maybeSingle();
+
       return new Response(
-        JSON.stringify({ paiements: paiements || [], eleves: eleves || [], tarifs: tarifs || [] }),
+        JSON.stringify({
+          paiements: paiements || [],
+          eleves: eleves || [],
+          tarifs: tarifs || [],
+          solde_famille: Number(familleData?.solde_famille || 0),
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

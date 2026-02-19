@@ -49,6 +49,7 @@ const TYPES = [
   { value: 'scolarite', label: 'Scolarité' },
   { value: 'transport', label: 'Transport' },
   { value: 'cantine', label: 'Cantine' },
+  { value: 'wallet', label: 'Recharge Portefeuille' },
   { value: 'uniforme', label: 'Uniforme/Boutique' },
   { value: 'fournitures', label: 'Fournitures' },
   { value: 'article', label: 'Article (Boutique)' },
@@ -594,7 +595,7 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
       const paye = kids.reduce((s: number, e: any) => {
         return s + paiements.filter((p: any) => p.eleve_id === e.id && p.type_paiement === 'scolarite').reduce((ss: number, p: any) => ss + Number(p.montant), 0);
       }, 0);
-      return { ...f, enfants: kids, annuel, paye, reste: Math.max(0, annuel - paye) };
+      return { ...f, enfants: kids, annuel, paye, reste: Math.max(0, annuel - paye), solde_famille: f.solde_famille || 0 };
     });
   }, [familles, eleves, paiements]);
 
@@ -694,6 +695,11 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
+              {/* Solde portefeuille */}
+              <div className="flex items-center justify-between p-2 rounded bg-primary/5 border border-primary/20">
+                <span className="text-xs font-medium flex items-center gap-1"><Wallet className="h-3 w-3" /> Portefeuille</span>
+                <span className="font-bold text-sm text-primary">{Number(f.solde_famille || 0).toLocaleString()} GNF</span>
+              </div>
               {f.enfants.map((e: any) => (
                 <p key={e.id} className="text-xs text-muted-foreground">{e.prenom} {e.nom} — {e.classes?.nom || '—'}</p>
               ))}
@@ -744,7 +750,7 @@ export default function Paiements() {
   const { data: familles = [] } = useQuery({
     queryKey: ['familles'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('familles').select('*').order('nom_famille');
+      const { data, error } = await supabase.from('familles').select('*, solde_famille').order('nom_famille');
       if (error) throw error;
       return data;
     },

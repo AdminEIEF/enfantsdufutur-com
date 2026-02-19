@@ -22,6 +22,7 @@ export type Database = {
           niveau_id: string | null
           nom: string
           prix: number
+          seuil_alerte_stock: number
           stock: number
           updated_at: string
         }
@@ -32,6 +33,7 @@ export type Database = {
           niveau_id?: string | null
           nom: string
           prix?: number
+          seuil_alerte_stock?: number
           stock?: number
           updated_at?: string
         }
@@ -42,6 +44,7 @@ export type Database = {
           niveau_id?: string | null
           nom?: string
           prix?: number
+          seuil_alerte_stock?: number
           stock?: number
           updated_at?: string
         }
@@ -62,6 +65,7 @@ export type Database = {
           id: string
           nom: string
           prix: number
+          seuil_alerte_stock: number
           stock: number
           taille: string
           updated_at: string
@@ -72,6 +76,7 @@ export type Database = {
           id?: string
           nom: string
           prix?: number
+          seuil_alerte_stock?: number
           stock?: number
           taille?: string
           updated_at?: string
@@ -82,6 +87,7 @@ export type Database = {
           id?: string
           nom?: string
           prix?: number
+          seuil_alerte_stock?: number
           stock?: number
           taille?: string
           updated_at?: string
@@ -621,6 +627,7 @@ export type Database = {
           email_parent: string | null
           id: string
           nom_famille: string
+          solde_famille: number
           telephone_mere: string | null
           telephone_pere: string | null
           updated_at: string
@@ -632,6 +639,7 @@ export type Database = {
           email_parent?: string | null
           id?: string
           nom_famille: string
+          solde_famille?: number
           telephone_mere?: string | null
           telephone_pere?: string | null
           updated_at?: string
@@ -643,6 +651,7 @@ export type Database = {
           email_parent?: string | null
           id?: string
           nom_famille?: string
+          solde_famille?: number
           telephone_mere?: string | null
           telephone_pere?: string | null
           updated_at?: string
@@ -1475,6 +1484,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      debit_famille_wallet: {
+        Args: {
+          _description?: string
+          _eleve_id: string
+          _famille_id: string
+          _montant: number
+          _type_paiement: string
+        }
+        Returns: Json
+      }
       get_my_roles: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"][]

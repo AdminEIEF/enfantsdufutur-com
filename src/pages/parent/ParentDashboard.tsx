@@ -151,6 +151,22 @@ export default function ParentDashboard() {
                 </CardContent>
               </Card>
 
+              {/* Portefeuille famille */}
+              <Card className="col-span-2 border-green-200 bg-green-50/50">
+                <CardContent className="pt-4 pb-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">💰 Portefeuille Famille</p>
+                      <p className="text-2xl font-bold text-green-700">{(dashData?.solde_famille || 0).toLocaleString()} GNF</p>
+                    </div>
+                    <Wallet className="h-10 w-10 text-green-300" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Solde rechargeable pour achats boutique, librairie, cantine
+                  </p>
+                </CardContent>
+              </Card>
+
               <Card>
                 <CardContent className="pt-4 pb-3">
                   <p className="text-xs text-muted-foreground">Scolarité payée</p>

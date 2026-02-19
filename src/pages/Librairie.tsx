@@ -96,7 +96,7 @@ function ArticleManager({ categorie, label, icon: Icon }: { categorie: string; l
     `${a.nom} ${a.niveaux?.nom || ''}`.toLowerCase().includes(search.toLowerCase())
   );
 
-  const stockBas = articles.filter((a: any) => a.stock < 10).length;
+  const stockBas = articles.filter((a: any) => a.stock < (a.seuil_alerte_stock || 10)).length;
   const stockEpuise = articles.filter((a: any) => a.stock <= 0).length;
   const valeurStock = articles.reduce((s: number, a: any) => s + Number(a.prix) * a.stock, 0);
 
