@@ -119,7 +119,7 @@ export default function Dashboard() {
     familleIds.forEach(fid => {
       const kids = eleves.filter((e: any) => e.famille_id === fid);
       const fam = familles.find((f: any) => f.id === fid);
-      const annuel = kids.reduce((s: number, e: any) => s + Number(e.classes?.niveaux?.frais_scolarite || 0) * 9, 0);
+      const annuel = kids.reduce((s: number, e: any) => s + Number(e.classes?.niveaux?.frais_scolarite || 0), 0);
       const paye = kids.reduce((s: number, e: any) => s + paiements.filter((p: any) => p.eleve_id === e.id && p.type_paiement === 'scolarite').reduce((ss: number, p: any) => ss + Number(p.montant), 0), 0);
       const reste = annuel - paye;
       if (reste > 0) result.push({ nom: fam?.nom_famille || 'Inconnue', reste });
@@ -143,8 +143,7 @@ export default function Dashboard() {
     eleves.forEach((e: any) => {
       if (!e.classe_id || !e.classes) return;
       const classeNom = e.classes.nom;
-      const fraisMensuel = Number(e.classes.niveaux?.frais_scolarite || 0);
-      const totalAnnuel = fraisMensuel * 9;
+      const totalAnnuel = Number(e.classes.niveaux?.frais_scolarite || 0);
 
       if (!classeMap[e.classe_id]) {
         classeMap[e.classe_id] = { nom: classeNom, totalAttendu: 0, totalPaye: 0, effectif: 0 };

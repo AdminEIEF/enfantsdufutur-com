@@ -3,12 +3,32 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   GraduationCap, Users, BookOpen, Shield, Bus, Utensils,
-  ArrowRight, Phone, Mail, MapPin, Download, Star, Clock, Award
+  ArrowRight, Phone, Mail, MapPin, Download, Star, Clock, Award, Image
 } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import heroImage from '@/assets/hero-school.jpg';
 
 export default function Landing() {
+  const { data: schoolConfig } = useSchoolConfig();
+
+  const handleDownloadLogo = async () => {
+    if (!schoolConfig?.logo_url) return;
+    try {
+      const response = await fetch(schoolConfig.logo_url);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'logo-ei-enfant-du-futur.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(schoolConfig.logo_url, '_blank');
+    }
+  };
   const { isInstallable, install } = usePWAInstall();
 
   const stats = [
@@ -58,11 +78,15 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-primary-foreground">
-                <GraduationCap className="h-5 w-5" />
-              </div>
+              {schoolConfig?.logo_url ? (
+                <img src={schoolConfig.logo_url} alt="Logo" className="w-10 h-10 rounded-xl object-contain" />
+              ) : (
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-primary-foreground">
+                  <GraduationCap className="h-5 w-5" />
+                </div>
+              )}
               <span className="font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                EI Enfant du Futur
+                {schoolConfig?.nom || 'EI Enfant du Futur'}
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -231,6 +255,13 @@ export default function Landing() {
               <ul className="space-y-2 text-sm text-background/60">
                 <li><Link to="/auth" className="hover:text-background transition-colors">Espace Personnel</Link></li>
                 <li><Link to="/download" className="hover:text-background transition-colors">Télécharger l'Appli</Link></li>
+                {schoolConfig?.logo_url && (
+                  <li>
+                    <button onClick={handleDownloadLogo} className="hover:text-background transition-colors flex items-center gap-2">
+                      <Image className="h-3 w-3" /> Télécharger le Logo (PNG)
+                    </button>
+                  </li>
+                )}
               </ul>
             </div>
             <div>
