@@ -9,8 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ScanLine, Search, Utensils, Wallet, History, QrCode, Plus, AlertTriangle,
-  CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus
+  CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera
 } from 'lucide-react';
+import QRScannerDialog from '@/components/QRScannerDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -38,8 +39,8 @@ function useElevesCantine() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, solde_cantine, option_cantine, qr_code, classes(nom)')
-        .eq('option_cantine', true)
+        .select('id, nom, prenom, matricule, solde_cantine, option_cantine, qr_code, statut, classes(nom)')
+        .is('deleted_at', null)
         .order('nom');
       if (error) throw error;
       return data;
@@ -159,6 +160,7 @@ export default function Cantine() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [newPlat, setNewPlat] = useState({ nom: '', prix: '', stock: '' });
   const [activeTab, setActiveTab] = useState('vente');
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const { data: repasHistory = [] } = useRepasHistory(historyEleveId);
   const { data: paiementsCantine = [] } = usePaiementsCantine(selectedEleve?.id || historyEleveId);
@@ -181,12 +183,23 @@ export default function Cantine() {
       (e: any) => e.qr_code === code || e.matricule === code || e.id === code
     );
     if (found) {
+      if (found.statut === 'suspendu') {
+        toast.error(`⚠️ ${found.prenom} ${found.nom} est suspendu(e). Régularisation requise.`);
+        return;
+      }
+      if (!found.option_cantine) {
+        toast.warning(`${found.prenom} ${found.nom} n'a pas l'option cantine activée.`);
+      }
       setSelectedEleve(found);
       setSelectedPlatIds({});
     } else {
       toast.error('Élève introuvable');
     }
     setScanInput('');
+  };
+
+  const handleQRScan = (matricule: string) => {
+    findEleve(matricule);
   };
 
   // ─── Ajouter un plat ──────────────────────────────
@@ -438,15 +451,22 @@ export default function Cantine() {
             </CardHeader>
             <CardContent>
               <div className="flex gap-3 max-w-md">
-                <Input
-                  placeholder="Scanner QR Code ou saisir matricule…"
-                  value={scanInput}
-                  onChange={e => setScanInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && scanInput) findEleve(scanInput); }}
-                  autoFocus
-                />
+                <div className="relative flex-1">
+                  <Input
+                    placeholder="Scanner QR Code ou saisir matricule…"
+                    value={scanInput}
+                    onChange={e => setScanInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && scanInput) findEleve(scanInput); }}
+                    autoFocus
+                    className="pr-10"
+                  />
+                  <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setScannerOpen(true)} title="Scanner par caméra">
+                    <Camera className="h-4 w-4 text-primary" />
+                  </Button>
+                </div>
                 <Button onClick={() => scanInput && findEleve(scanInput)}>Rechercher</Button>
               </div>
+              <QRScannerDialog open={scannerOpen} onOpenChange={setScannerOpen} onScan={handleQRScan} title="Scanner Badge Cantine" />
 
               {selectedEleve && (
                 <div className="mt-4 p-4 rounded-lg border bg-card space-y-4">

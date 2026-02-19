@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { BookOpen, Package, Search, Plus, Pencil, Trash2, AlertTriangle, Tag, ShoppingCart, Printer, FileText, Settings, User, CheckCircle2, Clock, ClipboardCheck } from 'lucide-react';
+import { BookOpen, Package, Search, Plus, Pencil, Trash2, AlertTriangle, Tag, ShoppingCart, Printer, FileText, Settings, User, CheckCircle2, Clock, ClipboardCheck, Camera } from 'lucide-react';
+import QRScannerDialog from '@/components/QRScannerDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -489,6 +490,7 @@ function RetraitsLibrairiePanel() {
   const queryClient = useQueryClient();
   const [searchEleve, setSearchEleve] = useState('');
   const [selectedEleve, setSelectedEleve] = useState<any>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const { data: eleves = [] } = useQuery({
     queryKey: ['eleves_retraits_lib'],
@@ -566,8 +568,16 @@ function RetraitsLibrairiePanel() {
         <CardContent className="pt-4">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher un élève (nom, prénom, matricule)..." value={searchEleve} onChange={e => setSearchEleve(e.target.value)} className="pl-10" />
+            <Input placeholder="Rechercher un élève (nom, prénom, matricule)..." value={searchEleve} onChange={e => setSearchEleve(e.target.value)} className="pl-10 pr-10" />
+            <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setScannerOpen(true)} title="Scanner par caméra">
+              <Camera className="h-4 w-4 text-primary" />
+            </Button>
           </div>
+          <QRScannerDialog open={scannerOpen} onOpenChange={setScannerOpen} onScan={(m) => {
+            const found = eleves.find((e: any) => e.matricule === m || e.id === m);
+            if (found) { setSelectedEleve(found); setSearchEleve(`${found.prenom} ${found.nom}`); }
+            else toast.error('Élève introuvable');
+          }} />
           <AnimatePresence>
             {filteredEleves.length > 0 && !selectedEleve && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-2 border rounded-md divide-y max-h-48 overflow-y-auto">
@@ -678,6 +688,7 @@ function GestionCommandesLibrairiePanel() {
   const isAdmin = hasRole('admin');
   const [searchEleve, setSearchEleve] = useState('');
   const [selectedEleve, setSelectedEleve] = useState<any>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [editCmd, setEditCmd] = useState<any>(null);
   const [editQte, setEditQte] = useState(1);
   const [editPrix, setEditPrix] = useState(0);
@@ -794,8 +805,16 @@ function GestionCommandesLibrairiePanel() {
         <CardContent className="pt-4">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher un élève..." value={searchEleve} onChange={e => setSearchEleve(e.target.value)} className="pl-10" />
+            <Input placeholder="Rechercher un élève..." value={searchEleve} onChange={e => setSearchEleve(e.target.value)} className="pl-10 pr-10" />
+            <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setScannerOpen(true)} title="Scanner par caméra">
+              <Camera className="h-4 w-4 text-primary" />
+            </Button>
           </div>
+          <QRScannerDialog open={scannerOpen} onOpenChange={setScannerOpen} onScan={(m) => {
+            const found = eleves.find((e: any) => e.matricule === m || e.id === m);
+            if (found) { setSelectedEleve(found); setSearchEleve(`${found.prenom} ${found.nom}`); }
+            else toast.error('Élève introuvable');
+          }} />
           <AnimatePresence>
             {filteredEleves.length > 0 && !selectedEleve && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-2 border rounded-md divide-y max-h-48 overflow-y-auto">
