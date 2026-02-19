@@ -55,7 +55,7 @@ export function generateRecuPDF(paiement: {
         <span class="montant">${paiement.montant.toLocaleString()} GNF</span>
       </div>
       <table class="summary">
-        <tr><td>Total annuel (9 mois)</td><td class="right">${paiement.totalAnnuel.toLocaleString()} GNF</td></tr>
+        <tr><td>Total annuel (10 mois)</td><td class="right">${paiement.totalAnnuel.toLocaleString()} GNF</td></tr>
         <tr><td>Total déjà payé</td><td class="right" style="color:${accentText}">${paiement.totalPaye.toLocaleString()} GNF</td></tr>
         <tr class="total-row"><td>Reste à payer</td><td class="right" style="color:#c62828">${paiement.resteAPayer.toLocaleString()} GNF</td></tr>
       </table>

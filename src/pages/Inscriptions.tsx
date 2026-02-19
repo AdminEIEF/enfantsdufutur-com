@@ -930,27 +930,32 @@ export default function Inscriptions() {
                   </div>
 
                   {/* Scolarité en 3 tranches */}
-                  {fraisScolarite > 0 && (
+                  {fraisScolarite > 0 && (() => {
+                    const totalAnnuel = fraisApresReduction * 10;
+                    const tranche1 = Math.ceil(totalAnnuel / 3);
+                    const tranche2 = Math.ceil(totalAnnuel / 3);
+                    const tranche3 = totalAnnuel - tranche1 - tranche2;
+                    return (
                     <div className="mt-3 pt-3 border-t space-y-2">
                       <p className="text-xs font-semibold text-primary">📋 FACTURE SCOLARITÉ — 3 Tranches</p>
                       <div className="grid grid-cols-4 gap-2 text-center text-xs">
                         <div className="bg-background rounded p-2">
                           <p className="text-muted-foreground">Total Annuel</p>
-                          <p className="font-bold">{(fraisApresReduction * 10).toLocaleString()} GNF</p>
+                          <p className="font-bold">{totalAnnuel.toLocaleString()} GNF</p>
                         </div>
                         <div className="bg-background rounded p-2">
                           <p className="text-muted-foreground">1ère Tranche</p>
-                          <p className="font-bold">{(fraisApresReduction * 3).toLocaleString()} GNF</p>
+                          <p className="font-bold">{tranche1.toLocaleString()} GNF</p>
                           <p className="text-muted-foreground" style={{ fontSize: '10px' }}>Oct-Déc</p>
                         </div>
                         <div className="bg-background rounded p-2">
                           <p className="text-muted-foreground">2ème Tranche</p>
-                          <p className="font-bold">{(fraisApresReduction * 3).toLocaleString()} GNF</p>
+                          <p className="font-bold">{tranche2.toLocaleString()} GNF</p>
                           <p className="text-muted-foreground" style={{ fontSize: '10px' }}>Jan-Mar</p>
                         </div>
                         <div className="bg-background rounded p-2">
                           <p className="text-muted-foreground">3ème Tranche</p>
-                          <p className="font-bold">{(fraisApresReduction * 3).toLocaleString()} GNF</p>
+                          <p className="font-bold">{tranche3.toLocaleString()} GNF</p>
                           <p className="text-muted-foreground" style={{ fontSize: '10px' }}>Avr-Juin</p>
                         </div>
                       </div>
@@ -961,7 +966,7 @@ export default function Inscriptions() {
                         </div>
                         <div>
                           <p className="text-muted-foreground">Reste à payer</p>
-                          <p className="font-bold text-destructive">{(fraisApresReduction * 10).toLocaleString()} GNF</p>
+                          <p className="font-bold text-destructive">{totalAnnuel.toLocaleString()} GNF</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Prix/mois</p>
@@ -969,7 +974,8 @@ export default function Inscriptions() {
                         </div>
                       </div>
                     </div>
-                  )}
+                    );
+                  })()}
 
                   {fraisTransport > 0 && (
                     <div className="flex justify-between text-muted-foreground pt-1"><span>Transport (mensuel, via Paiements)</span><span>{fraisTransport.toLocaleString()} GNF/mois</span></div>
