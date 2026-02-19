@@ -112,6 +112,13 @@ serve(async (req) => {
         .eq("eleve_id", eleve_id)
         .order("created_at", { ascending: false });
 
+      // Fetch commandes_articles (order tracking)
+      const { data: commandesArticles } = await supabaseAdmin
+        .from("commandes_articles")
+        .select("*")
+        .eq("eleve_id", eleve_id)
+        .order("created_at", { ascending: false });
+
       // Fetch available articles for the child's level
       const { data: eleveData } = await supabaseAdmin
         .from("eleves")
@@ -151,6 +158,7 @@ serve(async (req) => {
           repas: repas || [],
           ventesArticles: ventesArticles || [],
           boutiqueVentes: boutiqueVentes || [],
+          commandesArticles: commandesArticles || [],
           articlesNiveau,
           bulletinPublications,
         }),

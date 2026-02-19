@@ -318,6 +318,88 @@ export default function Inscriptions() {
           const { error: pErr } = await supabase.from('paiements').insert(paiements as any);
           if (pErr) console.error('Paiements error:', pErr);
         }
+
+        // Create commandes_articles for tracking (uniforms + articles selected)
+        const commandesArticles: any[] = [];
+
+        // Uniform orders
+        if (uniformeScolaire) {
+          commandesArticles.push({
+            eleve_id: insertedEleve.id,
+            article_type: 'boutique',
+            article_nom: `Tenue scolaire (${isPrimaire ? 'Primaire' : 'Collège/Lycée'})`,
+            quantite: 1,
+            prix_unitaire: prixTenueScolaire,
+            statut: 'paye',
+            source: 'inscription',
+          });
+        }
+        if (uniformeSport) {
+          commandesArticles.push({
+            eleve_id: insertedEleve.id,
+            article_type: 'boutique',
+            article_nom: 'Tenue de Sport',
+            quantite: 1,
+            prix_unitaire: prixTenueSport,
+            statut: 'paye',
+            source: 'inscription',
+          });
+        }
+        if (uniformePolo) {
+          commandesArticles.push({
+            eleve_id: insertedEleve.id,
+            article_type: 'boutique',
+            article_nom: 'Polo Lacoste',
+            quantite: 1,
+            prix_unitaire: prixPoloLacoste,
+            statut: 'paye',
+            source: 'inscription',
+          });
+        }
+        if (uniformeKarate) {
+          commandesArticles.push({
+            eleve_id: insertedEleve.id,
+            article_type: 'boutique',
+            article_nom: 'Tenue de Karaté',
+            quantite: 1,
+            prix_unitaire: prixKarate,
+            statut: 'paye',
+            source: 'inscription',
+          });
+        }
+
+        // Selected articles (fournitures/manuels/romans)
+        articlesNiveau
+          .filter((a: any) => selectedArticles[a.id])
+          .forEach((a: any) => {
+            commandesArticles.push({
+              eleve_id: insertedEleve.id,
+              article_type: 'librairie',
+              article_nom: a.nom,
+              quantite: 1,
+              prix_unitaire: Number(a.prix),
+              statut: 'paye',
+              source: 'inscription',
+            });
+          });
+
+        // Fournitures option (generic)
+        if (optionFournitures && fraisFournitures > 0 && commandesArticles.filter(c => c.article_type === 'librairie').length === 0) {
+          commandesArticles.push({
+            eleve_id: insertedEleve.id,
+            article_type: 'librairie',
+            article_nom: 'Kit Fournitures scolaires',
+            quantite: 1,
+            prix_unitaire: fraisFournitures,
+            statut: 'paye',
+            source: 'inscription',
+          });
+        }
+
+        if (commandesArticles.length > 0) {
+          const { error: cmdErr } = await supabase.from('commandes_articles' as any).insert(commandesArticles);
+          if (cmdErr) console.error('Commandes articles error:', cmdErr);
+        }
       }
 
       // Create parent notification for auto-created family

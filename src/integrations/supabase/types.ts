@@ -245,6 +245,62 @@ export type Database = {
           },
         ]
       }
+      commandes_articles: {
+        Row: {
+          article_nom: string
+          article_taille: string | null
+          article_type: string
+          created_at: string
+          eleve_id: string
+          id: string
+          livre_at: string | null
+          livre_par: string | null
+          prix_unitaire: number
+          quantite: number
+          source: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          article_nom: string
+          article_taille?: string | null
+          article_type?: string
+          created_at?: string
+          eleve_id: string
+          id?: string
+          livre_at?: string | null
+          livre_par?: string | null
+          prix_unitaire?: number
+          quantite?: number
+          source?: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          article_nom?: string
+          article_taille?: string | null
+          article_type?: string
+          created_at?: string
+          eleve_id?: string
+          id?: string
+          livre_at?: string | null
+          livre_par?: string | null
+          prix_unitaire?: number
+          quantite?: number
+          source?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commandes_articles_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cours: {
         Row: {
           classe_id: string
