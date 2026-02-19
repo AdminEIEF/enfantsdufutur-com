@@ -90,6 +90,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useToast } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/excelUtils';
 import { generateBadgeRetrait } from '@/lib/generateBadgeRetrait';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
 const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 type TrancheConfig = { label: string; mois: string[]; montant: number };
@@ -104,6 +105,7 @@ export default function Eleves() {
   const [badgeEleve, setBadgeEleve] = useState<any>(null);
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { data: schoolConfig } = useSchoolConfig();
 
   const { data: eleves = [], isLoading } = useQuery({
     queryKey: ['eleves-full'],
@@ -222,37 +224,134 @@ export default function Eleves() {
   };
 
   const printBadge = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow || !badgeEleve) return;
+    const w = window.open('', '_blank', 'width=600,height=500');
+    if (!w || !badgeEleve) return;
     const qrValue = buildQrData(badgeEleve);
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>Badge ${badgeEleve.prenom} ${badgeEleve.nom}</title>
+    const sName = schoolConfig?.nom || 'Groupe Scolaire';
+    const anneeScolaire = '2025-2026';
+    const cycleName = badgeEleve.classes?.niveaux?.cycles?.nom || '';
+    const className = badgeEleve.classes?.nom || '';
+    const statutLabel = badgeEleve.statut === 'actif' ? 'Élève Actif' : badgeEleve.statut === 'suspendu' ? 'Suspendu' : badgeEleve.statut;
+    const statutColor = badgeEleve.statut === 'actif' ? 'background:#dcfce7;color:#166534;' : 'background:#fee2e2;color:#991b1b;';
+
+    w.document.write(`<!DOCTYPE html><html lang="fr"><head>
+      <meta charset="UTF-8" />
+      <title>Badge ${badgeEleve.prenom} ${badgeEleve.nom}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
       <style>
-        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .badge { border: 2px solid #333; border-radius: 12px; padding: 24px; width: 320px; text-align: center; }
-        .badge h2 { margin: 0 0 4px; font-size: 18px; }
-        .badge .school { color: #666; font-size: 12px; margin-bottom: 16px; }
-        .badge .name { font-size: 22px; font-weight: bold; margin: 12px 0 4px; }
-        .badge .info { color: #555; font-size: 13px; }
-        .badge .matricule { font-family: monospace; font-size: 14px; margin-top: 8px; color: #333; }
-        .qr { margin: 16px auto; }
-      </style></head><body>
-      <div class="badge">
-        <h2>Carte Scolaire</h2>
-        <p class="school">${badgeEleve.classes?.niveaux?.cycles?.nom || ''} — ${badgeEleve.classes?.nom || ''}</p>
-        <div class="qr"><svg id="qr"></svg></div>
-        <p class="name">${badgeEleve.prenom} ${badgeEleve.nom}</p>
-        <p class="info">${badgeEleve.sexe || ''} • ${badgeEleve.date_naissance || ''}</p>
-        <p class="matricule">${badgeEleve.matricule || '—'}</p>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f3f4f6; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 20px; }
+        .id-card {
+          width: 450px; height: 280px; background: white; border-radius: 14px; position: relative;
+          overflow: hidden; display: flex; flex-direction: column; border: 1px solid #e5e7eb;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .header-accent {
+          position: absolute; top: 0; left: 0; right: 0; height: 85px;
+          background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+          clip-path: polygon(0 0, 100% 0, 100% 80%, 0% 100%);
+        }
+        .card-body { display: flex; position: relative; z-index: 1; flex: 1; }
+        .left-col { display: flex; flex-direction: column; align-items: center; padding-top: 30px; padding-left: 25px; }
+        .photo-container {
+          width: 105px; height: 125px; background: #f9fafb; border: 3px solid white;
+          border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;
+        }
+        .photo-container img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #ccc; }
+        .right-col { flex: 1; display: flex; flex-direction: column; padding: 14px 20px 0 20px; }
+        .school-header { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+        .school-logo { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .school-name { color: white; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+        .school-year { color: rgba(255,255,255,0.85); font-size: 9px; font-weight: 600; margin-left: auto; }
+        .status-badge {
+          position: absolute; top: 95px; right: 25px; padding: 2px 10px; border-radius: 9999px;
+          font-size: 10px; font-weight: 700; text-transform: uppercase; ${statutColor}
+        }
+        .info-section { margin-top: 30px; }
+        .info-label { font-size: 8px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
+        .info-value { font-size: 13px; font-weight: 700; color: #1f2937; margin-bottom: 6px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px; }
+        .qr-code-container {
+          position: absolute; bottom: 20px; right: 25px; background: white; padding: 4px;
+          border-radius: 4px; border: 1px solid #e5e7eb;
+        }
+        .card-footer {
+          position: absolute; bottom: 0; left: 0; right: 0; padding: 4px 25px;
+          background: #f9fafb; border-top: 1px solid #f3f4f6; display: flex; align-items: center;
+        }
+        .footer-text { font-size: 7px; color: #9ca3af; }
+        .actions { display: flex; gap: 12px; margin-top: 10px; }
+        .btn { padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-secondary { background: white; color: #374151; border: 1px solid #d1d5db; }
+        @media print {
+          body { background: white; padding: 0; }
+          .actions, .hint { display: none !important; }
+          .id-card { box-shadow: none !important; border: 1px solid #ddd !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+      </style>
+    </head><body>
+      <div class="id-card" id="badge-card">
+        <div class="header-accent"></div>
+        <div class="card-body">
+          <div class="left-col">
+            <div class="photo-container">
+              ${badgeEleve.photo_url
+                ? `<img src="${badgeEleve.photo_url}" alt="${badgeEleve.prenom}" />`
+                : '<div class="photo-placeholder">👤</div>'}
+            </div>
+          </div>
+          <div class="right-col">
+            <div class="school-header">
+              <div class="school-logo">🎓</div>
+              <span class="school-name">${sName}</span>
+              <span class="school-year">${anneeScolaire}</span>
+            </div>
+            <div class="status-badge">${statutLabel}</div>
+            <div class="info-section">
+              <p class="info-label">Nom & Prénoms</p>
+              <p class="info-value">${badgeEleve.nom.toUpperCase()} ${badgeEleve.prenom}</p>
+              <div class="info-grid">
+                <div>
+                  <p class="info-label">Classe</p>
+                  <p class="info-value">${cycleName} — ${className}</p>
+                </div>
+                <div>
+                  <p class="info-label">Matricule</p>
+                  <p class="info-value" style="font-family:monospace;">${badgeEleve.matricule || '—'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="qr-code-container"><canvas id="qr"></canvas></div>
+        <div class="card-footer">
+          <span class="footer-text">Carte obligatoire pour l'accès aux services scolaires.</span>
+        </div>
       </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" onclick="downloadPNG()">📥 Télécharger Image (PNG)</button>
+        <button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimer / Export PDF</button>
+      </div>
+      <p class="hint" style="font-size:11px;color:#9ca3af;">Astuce : Pour le PDF, choisissez "Enregistrer au format PDF" dans la fenêtre d'impression.</p>
+
       <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
       <script>
-        QRCode.toCanvas(document.createElement('canvas'), ${JSON.stringify(qrValue)}, { width: 150 }, function(err, canvas) {
-          document.querySelector('.qr').appendChild(canvas);
-          setTimeout(() => window.print(), 300);
-        });
+        QRCode.toCanvas(document.getElementById('qr'), ${JSON.stringify(qrValue)}, { width: 80, margin: 0 }, function(){});
+        function downloadPNG() {
+          html2canvas(document.getElementById('badge-card'), { scale: 3, useCORS: true, backgroundColor: '#ffffff' }).then(function(canvas) {
+            var a = document.createElement('a');
+            a.download = '${badgeEleve.matricule || 'badge'}_${badgeEleve.nom}.png';
+            a.href = canvas.toDataURL('image/png');
+            a.click();
+          });
+        }
       <\/script>
-      </body></html>`);
-    printWindow.document.close();
+    </body></html>`);
+    w.document.close();
   };
 
   return (
