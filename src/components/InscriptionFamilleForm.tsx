@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, CheckCircle2, Users, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, CheckCircle2, Users, MapPin, ChevronDown, ChevronUp, Phone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -24,6 +24,7 @@ interface ChildForm {
   photoEleve: File | null;
   photoElevePreview: string | null;
   zoneTransportId: string;
+  adresse: string;
   uniformeScolaire: boolean;
   uniformeSport: boolean;
   uniformePolo: boolean;
@@ -45,7 +46,8 @@ function createEmptyChild(): ChildForm {
   return {
     nom: '', prenom: '', sexe: '', dateNaissance: '', classeId: '',
     photoEleve: null, photoElevePreview: null,
-    zoneTransportId: '', uniformeScolaire: false, uniformeSport: false,
+    zoneTransportId: '', adresse: '',
+    uniformeScolaire: false, uniformeSport: false,
     uniformePolo: false, uniformeKarate: false, optionCantine: false,
     optionFournitures: false, optionAssurance: false, selectedArticles: {},
     checkLivret: false, checkRames: false, checkMarqueurs: false, checkPhoto: false,
@@ -132,15 +134,36 @@ interface Props {
   tarifs: any[];
   existingEleves: any[];
   onSuccess: () => void;
+  /** If true, start with 1 child and show parent fields for auto-family creation */
+  mode?: 'individuel' | 'famille';
 }
 
-export default function InscriptionFamilleForm({ classes, familles, tarifs, existingEleves, onSuccess }: Props) {
+export default function InscriptionFamilleForm({ classes, familles, tarifs, existingEleves, onSuccess, mode = 'famille' }: Props) {
   const [familleId, setFamilleId] = useState('');
   const [nomPrenomPere, setNomPrenomPere] = useState('');
   const [nomPrenomMere, setNomPrenomMere] = useState('');
+  const [telephonePere, setTelephonePere] = useState('');
+  const [telephoneMere, setTelephoneMere] = useState('');
+  const [emailParent, setEmailParent] = useState('');
+  const [adresseParent, setAdresseParent] = useState('');
   const [children, setChildren] = useState<ChildForm[]>([createEmptyChild()]);
   const queryClient = useQueryClient();
   const { data: zones = [] } = useZonesTransport();
+
+  // Fetch tranches config
+  const { data: allTranchesConfig = {} } = useQuery({
+    queryKey: ['parametres-tranches-v2'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('parametres').select('*').eq('cle', 'tranches_paiement_v2').maybeSingle();
+      if (error) throw error;
+      if (data?.valeur && typeof data.valeur === 'object' && !Array.isArray(data.valeur)) {
+        return data.valeur as Record<string, Array<{ label: string; mois: string[]; montant: number }>>;
+      }
+      return {} as Record<string, Array<{ label: string; mois: string[]; montant: number }>>;
+    },
+  });
+
+  const needsNewFamily = !familleId;
 
   const addChild = () => setChildren(prev => [...prev, createEmptyChild()]);
   const removeChild = (idx: number) => {
@@ -160,6 +183,19 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
 
   const totalEnfantsFamille = existingSiblings.length + children.length;
   const reduction = totalEnfantsFamille >= 3 ? 0.10 : 0;
+
+  // Suggest zone based on address
+  const suggestZone = (adresse: string) => {
+    if (!adresse || !zones?.length) return null;
+    const adresseLower = adresse.toLowerCase();
+    for (const z of zones) {
+      const quartiers = (z.quartiers ?? []) as string[];
+      if (quartiers.some((q: string) => adresseLower.includes(q.toLowerCase()))) {
+        return z.id;
+      }
+    }
+    return null;
+  };
 
   // Helper: get fees for a single child
   const getChildFees = (child: ChildForm) => {
@@ -191,6 +227,11 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
       : (cl?.niveaux?.frais_reinscription ?? 150000);
     const fraisDossier = cl?.niveaux?.frais_dossier ?? 0;
 
+    // Selected articles total
+    const fraisArticles = Object.keys(child.selectedArticles).filter(k => child.selectedArticles[k]).length > 0
+      ? 0 // Will be computed per-child via ChildArticles
+      : 0;
+
     return {
       fraisInscription,
       fraisDossier,
@@ -217,17 +258,62 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
 
   const inscription = useMutation({
     mutationFn: async () => {
+      // Validate children
       for (const child of children) {
         if (!child.nom.trim() || !child.prenom.trim() || !child.classeId) {
           throw new Error(`Nom, prénom et classe sont obligatoires pour chaque enfant`);
         }
       }
 
+      // Validate parent info if no family selected
+      if (needsNewFamily) {
+        if (!nomPrenomPere.trim() && !nomPrenomMere.trim()) {
+          throw new Error('Le nom du père ou de la mère est obligatoire');
+        }
+        if (!telephonePere.trim() && !telephoneMere.trim()) {
+          throw new Error('Au moins un numéro de téléphone parent est obligatoire');
+        }
+      }
+
+      // Auto-create family if needed
+      let effectiveFamilleId = familleId || null;
+      let generatedCode: string | null = null;
+
+      if (needsNewFamily) {
+        generatedCode = 'FAM-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        const nomFamille = children[0].nom.trim().toUpperCase();
+        
+        const { data: newFamille, error: famErr } = await supabase.from('familles').insert({
+          nom_famille: nomFamille,
+          telephone_pere: telephonePere.trim() || null,
+          telephone_mere: telephoneMere.trim() || null,
+          email_parent: emailParent.trim() || null,
+          adresse: adresseParent.trim() || null,
+          code_acces: generatedCode,
+        } as any).select('id').single();
+        if (famErr) throw famErr;
+        effectiveFamilleId = newFamille.id;
+      }
+
+      // Generate default student password helper
+      const genPassword = () => {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let pwd = '';
+        for (let i = 0; i < 6; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+        return pwd;
+      };
+
+      // Insert each child
       for (let i = 0; i < children.length; i++) {
         const child = children[i];
         const matricule = await generateMatricule();
         const zone = zones.find((z: any) => z.id === child.zoneTransportId);
+        const cl = classes.find((c: any) => c.id === child.classeId);
+        const cycleName = cl?.niveaux?.cycles?.nom?.toLowerCase() || '';
+        const isCrecheMaternelle = cycleName.includes('crèche') || cycleName.includes('creche') || cycleName.includes('maternelle');
+        const isPrimaire = ['crèche', 'maternelle', 'primaire'].includes(cycleName.toLowerCase());
 
+        // Upload photo
         let photoUrl: string | null = null;
         if (child.photoEleve) {
           const ext = child.photoEleve.name.split('.').pop() || 'jpg';
@@ -242,7 +328,7 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
         const { data: insertedEleve, error } = await supabase.from('eleves').insert({
           nom: child.nom.trim(), prenom: child.prenom.trim(),
           sexe: child.sexe || null, date_naissance: child.dateNaissance || null,
-          classe_id: child.classeId, famille_id: familleId || null,
+          classe_id: child.classeId, famille_id: effectiveFamilleId,
           matricule, qr_code: matricule,
           transport_zone: zone?.nom || null,
           zone_transport_id: child.zoneTransportId || null,
@@ -253,13 +339,11 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
           option_cantine: child.optionCantine, option_fournitures: child.optionFournitures,
           nom_prenom_pere: nomPrenomPere || null, nom_prenom_mere: nomPrenomMere || null,
           statut: 'inscrit', photo_url: photoUrl,
+          mot_de_passe_eleve: genPassword(),
         } as any).select('id').single();
         if (error) throw error;
 
-        // Mandataires
-        const cl = classes.find((c: any) => c.id === child.classeId);
-        const cycleName = cl?.niveaux?.cycles?.nom?.toLowerCase() || '';
-        const isCrecheMaternelle = cycleName.includes('crèche') || cycleName.includes('creche') || cycleName.includes('maternelle');
+        // Mandataires for crèche/maternelle
         if (isCrecheMaternelle && insertedEleve) {
           const uploaded = await uploadMandatairePhotos(child.mandataires, insertedEleve.id);
           const valid = uploaded.filter(m => m.nom.trim() && m.prenom.trim()).map((m, idx) => ({
@@ -283,16 +367,85 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
           if (fees.fraisFournitures > 0) {
             paiements.push({ eleve_id: insertedEleve.id, montant: fees.fraisFournitures, type_paiement: 'boutique', canal: 'especes' });
           }
+          if (fees.fraisAssurance > 0) {
+            paiements.push({ eleve_id: insertedEleve.id, montant: fees.fraisAssurance, type_paiement: 'inscription', canal: 'especes', mois_concerne: 'Assurance scolaire' });
+          }
           if (paiements.length > 0) {
             await supabase.from('paiements').insert(paiements as any);
           }
+
+          // Commandes articles (uniforms + selected articles)
+          const commandesArticles: any[] = [];
+          const getUniformFee = (cat: string) => tarifs.find((t: any) => t.categorie === cat)?.montant || 0;
+          const tenueScolaireEntries = tarifs.filter((t: any) => t.categorie === 'uniforme_scolaire');
+          const prixTenueScolaire = tenueScolaireEntries.length > 1
+            ? (tenueScolaireEntries.find((t: any) =>
+                isPrimaire ? t.label.toLowerCase().includes('primaire') : (t.label.toLowerCase().includes('collège') || t.label.toLowerCase().includes('lycée'))
+              )?.montant || tenueScolaireEntries[0]?.montant || 0)
+            : (tenueScolaireEntries[0]?.montant || 0);
+
+          if (child.uniformeScolaire) {
+            commandesArticles.push({
+              eleve_id: insertedEleve.id, article_type: 'boutique',
+              article_nom: `Tenue scolaire (${isPrimaire ? 'Primaire' : 'Collège/Lycée'})`,
+              quantite: 1, prix_unitaire: prixTenueScolaire, statut: 'paye', source: 'inscription',
+            });
+          }
+          if (child.uniformeSport) {
+            commandesArticles.push({
+              eleve_id: insertedEleve.id, article_type: 'boutique',
+              article_nom: 'Tenue de Sport', quantite: 1, prix_unitaire: getUniformFee('uniforme_sport'),
+              statut: 'paye', source: 'inscription',
+            });
+          }
+          if (child.uniformePolo) {
+            commandesArticles.push({
+              eleve_id: insertedEleve.id, article_type: 'boutique',
+              article_nom: 'Polo Lacoste', quantite: 1, prix_unitaire: getUniformFee('uniforme_polo_lacoste'),
+              statut: 'paye', source: 'inscription',
+            });
+          }
+          if (child.uniformeKarate) {
+            commandesArticles.push({
+              eleve_id: insertedEleve.id, article_type: 'boutique',
+              article_nom: 'Tenue de Karaté', quantite: 1, prix_unitaire: getUniformFee('uniforme_karate'),
+              statut: 'paye', source: 'inscription',
+            });
+          }
+
+          if (commandesArticles.length > 0) {
+            await supabase.from('commandes_articles' as any).insert(commandesArticles);
+          }
         }
       }
+
+      // Parent notification for auto-created family
+      if (needsNewFamily && effectiveFamilleId && generatedCode) {
+        const firstChild = children[0];
+        await supabase.from('parent_notifications').insert({
+          famille_id: effectiveFamilleId,
+          titre: '🎉 Bienvenue sur l\'Espace Parent',
+          message: `L'espace parent pour le suivi de ${children.map(c => c.prenom).join(', ')} est actif.\n\nVotre identifiant : ${telephonePere.trim() || telephoneMere.trim()}\nVotre code d'accès : ${generatedCode}\n\nConnectez-vous sur l'espace parent pour suivre la scolarité de vos enfants.`,
+          type: 'info',
+        } as any);
+      }
+
+      return { generatedCode, effectiveFamilleId };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['eleves'] });
       queryClient.invalidateQueries({ queryKey: ['eleves-full'] });
-      toast({ title: 'Inscription famille réussie', description: `${children.length} enfant(s) inscrit(s) avec succès.` });
+      queryClient.invalidateQueries({ queryKey: ['familles'] });
+      queryClient.invalidateQueries({ queryKey: ['familles-with-children'] });
+
+      if (result?.generatedCode) {
+        toast({
+          title: `Inscription réussie — ${children.length} enfant(s)`,
+          description: `Code parent : ${result.generatedCode} (Tél: ${telephonePere.trim() || telephoneMere.trim()})`,
+        });
+      } else {
+        toast({ title: 'Inscription réussie', description: `${children.length} enfant(s) inscrit(s) avec succès.` });
+      }
       onSuccess();
     },
     onError: (err: Error) => {
@@ -302,49 +455,97 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
 
   return (
     <div className="grid gap-4">
-      {/* Famille */}
+      {/* ─── Famille / Parent ─── */}
       <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4" /> Famille</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-2 gap-3">
-          <div className="col-span-2">
-            <Label>Famille (fratrie) *</Label>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Users className="h-4 w-4" /> Famille & Parents
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div>
+            <Label>Famille existante (fratrie)</Label>
             <Select value={familleId || '__none__'} onValueChange={(v) => setFamilleId(v === '__none__' ? '' : v)}>
               <SelectTrigger><SelectValue placeholder="Sélectionner une famille" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none__">Aucune (individuel)</SelectItem>
+                <SelectItem value="__none__">➕ Nouvelle famille (auto-créée)</SelectItem>
                 {familles.map((f: any) => (
-                  <SelectItem key={f.id} value={f.id}>{f.nom_famille}</SelectItem>
+                  <SelectItem key={f.id} value={f.id}>{f.nom_famille} {f.telephone_pere || f.telephone_mere ? `— ${f.telephone_pere || f.telephone_mere}` : ''}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {familleId && existingSiblings.length > 0 && (
-              <div className="mt-2 p-2 rounded bg-muted text-xs">
-                <p className="font-medium mb-1">Enfants déjà inscrits dans cette famille :</p>
-                {existingSiblings.map((e: any) => (
-                  <span key={e.id} className="inline-flex items-center mr-2">
-                    <Badge variant="outline" className="text-xs">{e.prenom} {e.nom} — {e.classes?.nom || '?'}</Badge>
-                  </span>
-                ))}
+          </div>
+
+          {familleId && existingSiblings.length > 0 && (
+            <div className="p-2 rounded bg-muted text-xs">
+              <p className="font-medium mb-1">Enfants déjà inscrits :</p>
+              {existingSiblings.map((e: any) => (
+                <Badge key={e.id} variant="outline" className="text-xs mr-1 mb-1">{e.prenom} {e.nom} — {e.classes?.nom || '?'}</Badge>
+              ))}
+            </div>
+          )}
+
+          {/* Parent info — always visible when no family, collapsed when family selected */}
+          {needsNewFamily && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Nom & Prénom du père *</Label>
+                  <Input value={nomPrenomPere} onChange={e => setNomPrenomPere(e.target.value)} placeholder="Ex: Kouamé Jean-Pierre" />
+                </div>
+                <div>
+                  <Label>Nom & Prénom de la mère *</Label>
+                  <Input value={nomPrenomMere} onChange={e => setNomPrenomMere(e.target.value)} placeholder="Ex: Bamba Fatou" />
+                </div>
               </div>
-            )}
-          </div>
-          <div>
-            <Label>Nom & Prénom du père</Label>
-            <Input value={nomPrenomPere} onChange={e => setNomPrenomPere(e.target.value)} />
-          </div>
-          <div>
-            <Label>Nom & Prénom de la mère</Label>
-            <Input value={nomPrenomMere} onChange={e => setNomPrenomMere(e.target.value)} />
-          </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> Téléphone père *</Label>
+                  <Input value={telephonePere} onChange={e => setTelephonePere(e.target.value)} placeholder="Ex: +224 620 00 00 00" />
+                </div>
+                <div>
+                  <Label className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> Téléphone mère</Label>
+                  <Input value={telephoneMere} onChange={e => setTelephoneMere(e.target.value)} placeholder="Ex: +224 620 00 00 00" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Email parent (optionnel)</Label>
+                  <Input type="email" value={emailParent} onChange={e => setEmailParent(e.target.value)} placeholder="parent@email.com" />
+                </div>
+                <div>
+                  <Label className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> Adresse</Label>
+                  <Input value={adresseParent} onChange={e => setAdresseParent(e.target.value)} placeholder="Ex: Quartier Riviera" />
+                </div>
+              </div>
+              <div className="p-2 rounded bg-accent/10 border border-accent/30 text-xs text-accent-foreground">
+                ℹ️ Un <strong>Espace Parent</strong> sera automatiquement créé avec un code d'accès unique (FAM-XXXX).
+              </div>
+            </>
+          )}
+
+          {!needsNewFamily && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Nom père</Label>
+                <Input value={nomPrenomPere} onChange={e => setNomPrenomPere(e.target.value)} placeholder="Optionnel si déjà dans la famille" />
+              </div>
+              <div>
+                <Label>Nom mère</Label>
+                <Input value={nomPrenomMere} onChange={e => setNomPrenomMere(e.target.value)} placeholder="Optionnel si déjà dans la famille" />
+              </div>
+            </div>
+          )}
+
           {reduction > 0 && (
-            <div className="col-span-2 p-2 rounded bg-accent/10 border border-accent/30 text-xs text-accent font-medium">
+            <div className="p-2 rounded bg-accent/10 border border-accent/30 text-xs text-accent font-medium">
               🎉 Réduction fratrie de {reduction * 100}% appliquée sur la scolarité ({totalEnfantsFamille} enfants)
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Children */}
+      {/* ─── Children ─── */}
       {children.map((child, idx) => {
         const cl = classes.find((c: any) => c.id === child.classeId);
         const niveauId = cl?.niveau_id || null;
@@ -353,6 +554,7 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
         const isCrecheMaternelle = cycleName.toLowerCase().includes('crèche') || cycleName.toLowerCase().includes('creche') || cycleName.toLowerCase().includes('maternelle');
         const fees = childrenFees[idx];
         const zone = zones.find((z: any) => z.id === child.zoneTransportId);
+        const suggestedZoneId = suggestZone(child.adresse || adresseParent);
 
         const getUniformFee = (cat: string) => tarifs.find((t: any) => t.categorie === cat)?.montant || 0;
         const tenueScolaireEntries = tarifs.filter((t: any) => t.categorie === 'uniforme_scolaire');
@@ -361,6 +563,11 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
               isPrimaire ? t.label.toLowerCase().includes('primaire') : (t.label.toLowerCase().includes('collège') || t.label.toLowerCase().includes('lycée'))
             )?.montant || tenueScolaireEntries[0]?.montant || 0)
           : (tenueScolaireEntries[0]?.montant || 0);
+
+        // Scolarite tranches
+        const fraisScolarite = cl?.niveaux?.frais_scolarite || 0;
+        const totalAnnuel = fraisScolarite * (1 - reduction);
+        const tranchesConfig = niveauId && allTranchesConfig[niveauId] ? allTranchesConfig[niveauId] as Array<{ label: string; mois: string[]; montant: number }> : null;
 
         return (
           <Card key={idx} className="border-l-4 border-l-primary/50">
@@ -469,6 +676,15 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
                       </SelectContent>
                     </Select>
                     {zone && <p className="text-[10px] text-accent mt-0.5">💰 {Number(zone.prix_mensuel).toLocaleString()} GNF/mois</p>}
+                    {suggestedZoneId && suggestedZoneId !== child.zoneTransportId && (
+                      <button
+                        type="button"
+                        className="mt-1 text-xs text-primary underline cursor-pointer"
+                        onClick={() => updateChild(idx, { zoneTransportId: suggestedZoneId })}
+                      >
+                        💡 Zone suggérée : {zones.find((z: any) => z.id === suggestedZoneId)?.nom} — Cliquer pour appliquer
+                      </button>
+                    )}
                   </div>
 
                   {/* Uniformes */}
@@ -518,18 +734,28 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
 
                 {/* Per-child summary */}
                 <div className="bg-muted rounded-lg p-3 text-xs space-y-1">
-                   <p className="font-semibold text-sm">Résumé — {child.prenom || `Enfant ${idx + 1}`}</p>
+                  <p className="font-semibold text-sm">📋 Résumé — {child.prenom || `Enfant ${idx + 1}`}</p>
                   <div className="flex justify-between"><span>{child.typeInscription === 'inscription' ? 'Inscription' : 'Réinscription'}</span><span>{fees.fraisInscription.toLocaleString()} GNF</span></div>
                   {fees.fraisDossier > 0 && <div className="flex justify-between"><span>Frais de dossier</span><span>{fees.fraisDossier.toLocaleString()} GNF</span></div>}
                   {fees.fraisUniformes > 0 && <div className="flex justify-between"><span>Uniformes</span><span>{fees.fraisUniformes.toLocaleString()} GNF</span></div>}
                   {fees.fraisFournitures > 0 && <div className="flex justify-between"><span>Fournitures</span><span>{fees.fraisFournitures.toLocaleString()} GNF</span></div>}
                   {fees.fraisAssurance > 0 && <div className="flex justify-between"><span>Assurance</span><span>{fees.fraisAssurance.toLocaleString()} GNF</span></div>}
                   <div className="flex justify-between font-bold border-t pt-1"><span>Total immédiat</span><span>{fees.totalImmediat.toLocaleString()} GNF</span></div>
-                  {fees.fraisScolariteMensuel > 0 && (
-                    <div className="flex justify-between text-muted-foreground"><span>Scolarité annuelle (via Paiements)</span><span>{fees.fraisScolariteAnnuel.toLocaleString()} GNF</span></div>
+                  
+                  {/* Tranches scolarité */}
+                  {totalAnnuel > 0 && (
+                    <div className="pt-2 border-t mt-1 space-y-1">
+                      <p className="text-[10px] font-semibold text-primary">SCOLARITÉ ANNUELLE</p>
+                      <div className="flex justify-between text-muted-foreground"><span>Total annuel</span><span>{totalAnnuel.toLocaleString()} GNF</span></div>
+                      {tranchesConfig && tranchesConfig.map((t, ti) => (
+                        <div key={ti} className="flex justify-between text-muted-foreground">
+                          <span>{t.label}</span><span>{t.montant.toLocaleString()} GNF</span>
+                        </div>
+                      ))}
+                    </div>
                   )}
                   {fees.fraisTransport > 0 && (
-                    <div className="flex justify-between text-muted-foreground"><span>Transport (mensuel, via Paiements)</span><span>{fees.fraisTransport.toLocaleString()} GNF/mois</span></div>
+                    <div className="flex justify-between text-muted-foreground"><span>Transport (mensuel)</span><span>{fees.fraisTransport.toLocaleString()} GNF/mois</span></div>
                   )}
                 </div>
               </CardContent>
@@ -546,7 +772,7 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
       {/* ─── Grand Total Famille ─── */}
       <Card className="border-primary/30 bg-primary/5">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">🧾 Récapitulatif Famille</CardTitle>
+          <CardTitle className="text-base">🧾 Récapitulatif {children.length > 1 ? 'Famille' : ''}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           {children.map((child, idx) => (
@@ -567,10 +793,10 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
             </div>
           )}
           {reduction > 0 && (
-            <p className="text-xs text-accent">✨ Réduction fratrie de {reduction * 100}% appliquée sur la scolarité mensuelle</p>
+            <p className="text-xs text-accent">✨ Réduction fratrie de {reduction * 100}% appliquée sur la scolarité</p>
           )}
           <p className="text-[10px] text-muted-foreground">
-            ℹ️ La scolarité et le transport se paient via <strong>Paiements</strong>. Le compte cantine de chaque enfant se recharge individuellement.
+            ℹ️ La scolarité et le transport se paient via <strong>Paiements</strong>. Le compte cantine se recharge individuellement.
           </p>
         </CardContent>
       </Card>
