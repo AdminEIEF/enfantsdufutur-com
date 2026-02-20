@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -100,6 +101,7 @@ export default function Eleves() {
   const [filterCycle, setFilterCycle] = useState('all');
   const [filterClasse, setFilterClasse] = useState('all');
   const [filterType, setFilterType] = useState<'all' | 'famille' | 'individuel'>('all');
+  const [showComplete, setShowComplete] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [editing, setEditing] = useState<any>(null);
   const [badgeEleve, setBadgeEleve] = useState<any>(null);
@@ -185,13 +187,41 @@ export default function Eleves() {
     ? classes
     : classes.filter((c: any) => c.niveaux?.cycle_id === filterCycle);
 
+  // Helper: check if dossier is complete
+  const isDossierComplete = (e: any) => !!e.checklist_livret && !!e.checklist_rames && !!e.checklist_marqueurs && !!e.checklist_photo;
+
+  // Normalize phone for search
+  const normalizePhone = (phone: string) => phone.replace(/[\s\-\+\(\)]/g, '').replace(/^(224|00224)/, '');
+
+  const isSearchActive = search.trim().length > 0;
+  const searchLower = search.toLowerCase();
+  const searchNorm = normalizePhone(search);
+
+  const completeDossiers = eleves.filter(isDossierComplete).length;
+
   const filtered = eleves.filter((e: any) => {
-    const matchSearch = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase());
+    // Search: name, matricule, phone
+    const basicMatch = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(searchLower);
+    const telPere = e.familles?.telephone_pere || '';
+    const telMere = e.familles?.telephone_mere || '';
+    const phoneMatch = searchNorm.length >= 3 && (
+      normalizePhone(telPere).includes(searchNorm) ||
+      normalizePhone(telMere).includes(searchNorm)
+    );
+    const matchSearch = isSearchActive ? (basicMatch || phoneMatch) : true;
+
     const matchCycle = filterCycle === 'all' || e.classes?.niveaux?.cycles?.id === filterCycle;
     const matchClasse = filterClasse === 'all' || e.classe_id === filterClasse;
     const isFamille = !!e.famille_id;
     const matchType = filterType === 'all' || (filterType === 'famille' ? isFamille : !isFamille);
-    return matchSearch && matchCycle && matchClasse && matchType;
+
+    // When searching, always show all results regardless of toggle
+    if (isSearchActive) return matchSearch && matchCycle && matchClasse && matchType;
+
+    // When not searching, apply complete filter
+    if (!showComplete && isDossierComplete(e)) return false;
+
+    return matchCycle && matchClasse && matchType;
   });
 
   const totalFamille = eleves.filter((e: any) => !!e.famille_id).length;
@@ -380,7 +410,7 @@ export default function Eleves() {
       <div className="flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Rechercher nom, prénom, matricule..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Rechercher nom, téléphone, matricule..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={filterCycle} onValueChange={v => { setFilterCycle(v); setFilterClasse('all'); }}>
           <SelectTrigger className="w-[160px]"><SelectValue placeholder="Cycle" /></SelectTrigger>
@@ -404,6 +434,16 @@ export default function Eleves() {
             <SelectItem value="individuel">Individuel</SelectItem>
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2">
+          <Switch checked={showComplete} onCheckedChange={setShowComplete} id="toggle-complete-eleves" />
+          <Label htmlFor="toggle-complete-eleves" className="text-sm cursor-pointer flex items-center gap-1.5">
+            {showComplete ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            {showComplete ? 'Tous' : 'En cours'}
+          </Label>
+          {!showComplete && completeDossiers > 0 && (
+            <Badge variant="secondary" className="text-xs">{completeDossiers} masqué{completeDossiers > 1 ? 's' : ''}</Badge>
+          )}
+        </div>
         <Button variant="outline" size="sm" className="ml-auto" onClick={() => {
           const rows = filtered.map((e: any) => ({
             Matricule: e.matricule || '',

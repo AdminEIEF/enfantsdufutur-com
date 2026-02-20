@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, ShieldCheck, Users, Download, Trash2, Pencil, Phone, Upload, Camera } from 'lucide-react';
+import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, ShieldCheck, Users, Download, Trash2, Pencil, Phone, Upload, Camera, EyeOff, Eye } from 'lucide-react';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -46,6 +46,7 @@ export default function Inscriptions() {
   const [familleOpen, setFamilleOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [showComplete, setShowComplete] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editEleve, setEditEleve] = useState<any>(null);
   const [editNom, setEditNom] = useState('');
@@ -592,9 +593,38 @@ export default function Inscriptions() {
 
   const totalFrais = fraisInscription + fraisDossier + fraisUniformes + fraisFournitures + fraisAssurance + fraisArticlesSelectionnes;
 
-  const filtered = eleves.filter((e: any) =>
-    `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase())
-  );
+  // Helper: check if dossier is complete (all 4 docs provided)
+  const isDossierComplete = (e: any) => !!e.checklist_livret && !!e.checklist_rames && !!e.checklist_marqueurs && !!e.checklist_photo;
+
+  // Normalize phone for search: strip spaces, dashes, +, country codes
+  const normalizePhone = (phone: string) => phone.replace(/[\s\-\+\(\)]/g, '').replace(/^(224|00224)/, '');
+
+  const isSearchActive = search.trim().length > 0;
+  const searchLower = search.toLowerCase();
+  const searchNorm = normalizePhone(search);
+
+  // Count complete dossiers (hidden by default)
+  const completeDossiers = eleves.filter(isDossierComplete).length;
+
+  const filtered = eleves.filter((e: any) => {
+    // Search matches: name, matricule, AND phone numbers
+    const basicMatch = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(searchLower);
+    const telPere = e.familles?.telephone_pere || '';
+    const telMere = e.familles?.telephone_mere || '';
+    const phoneMatch = searchNorm.length >= 3 && (
+      normalizePhone(telPere).includes(searchNorm) ||
+      normalizePhone(telMere).includes(searchNorm)
+    );
+    const matchSearch = basicMatch || phoneMatch;
+
+    // When searching, always search ALL students regardless of toggle
+    if (isSearchActive) return matchSearch;
+
+    // When not searching, apply the complete/incomplete filter
+    if (!showComplete && isDossierComplete(e)) return false;
+
+    return true;
+  });
 
   const openEditDialog = (e: any) => {
     setEditEleve(e);
@@ -1036,13 +1066,25 @@ export default function Inscriptions() {
         </Badge>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Rechercher un élève..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 pr-10" />
-        <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setScannerOpen(true)} title="Scanner par caméra">
-          <Camera className="h-4 w-4 text-primary" />
-        </Button>
+      {/* Search + Toggle */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Rechercher nom, téléphone, matricule..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 pr-10" />
+          <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setScannerOpen(true)} title="Scanner par caméra">
+            <Camera className="h-4 w-4 text-primary" />
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch checked={showComplete} onCheckedChange={setShowComplete} id="toggle-complete" />
+          <Label htmlFor="toggle-complete" className="text-sm cursor-pointer flex items-center gap-1.5">
+            {showComplete ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            {showComplete ? 'Afficher tous' : 'Dossiers en cours'}
+          </Label>
+          {!showComplete && completeDossiers > 0 && (
+            <Badge variant="secondary" className="text-xs">{completeDossiers} dossier{completeDossiers > 1 ? 's' : ''} complet{completeDossiers > 1 ? 's' : ''} masqué{completeDossiers > 1 ? 's' : ''}</Badge>
+          )}
+        </div>
       </div>
       <QRScannerDialog open={scannerOpen} onOpenChange={setScannerOpen} onScan={(matricule) => setSearch(matricule)} />
 
