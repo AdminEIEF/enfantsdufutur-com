@@ -352,6 +352,7 @@ export default function ParentDashboard() {
         enfants={session.eleves}
         code={session.code}
         onSuccess={fetchDashboard}
+        soldeFamille={dashData?.solde_famille || 0}
       />
     </div>
   );
