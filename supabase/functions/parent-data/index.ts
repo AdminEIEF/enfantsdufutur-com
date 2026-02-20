@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { code, action, eleve_id } = await req.json();
+    const { code, action, eleve_id, montant, type_paiement, description } = await req.json();
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -23,7 +23,7 @@ serve(async (req) => {
     // Validate code
     const { data: famille, error: famErr } = await supabaseAdmin
       .from("familles")
-      .select("id")
+      .select("id, solde_famille")
       .eq("code_acces", code?.trim()?.toUpperCase())
       .maybeSingle();
 
@@ -46,6 +46,66 @@ serve(async (req) => {
 
     const childIds = (enfantsIds || []).map((e: any) => e.id);
 
+    // ─── DEBIT WALLET ACTION ───
+    if (action === "debit_wallet") {
+      if (!eleve_id || !montant || !type_paiement) {
+        return new Response(JSON.stringify({ error: "Paramètres manquants (eleve_id, montant, type_paiement)" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Verify child belongs to family
+      if (!childIds.includes(eleve_id)) {
+        return new Response(JSON.stringify({ error: "Accès non autorisé à cet élève" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Validate amount
+      const numMontant = Number(montant);
+      if (isNaN(numMontant) || numMontant <= 0 || numMontant > 100000000) {
+        return new Response(JSON.stringify({ error: "Montant invalide" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Validate type_paiement
+      const allowedTypes = ["scolarite", "transport", "cantine", "boutique", "librairie", "fournitures", "inscription", "reinscription", "autre"];
+      if (!allowedTypes.includes(type_paiement)) {
+        return new Response(JSON.stringify({ error: "Type de paiement non autorisé" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Call the RPC function
+      const { data: result, error: rpcErr } = await supabaseAdmin.rpc("debit_famille_wallet", {
+        _famille_id: familleId,
+        _montant: numMontant,
+        _eleve_id: eleve_id,
+        _type_paiement: type_paiement,
+        _description: description || null,
+      });
+
+      if (rpcErr) throw rpcErr;
+
+      const rpcResult = result as any;
+      if (!rpcResult?.success) {
+        return new Response(JSON.stringify({ error: rpcResult?.error || "Échec du débit" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, paiement_id: rpcResult.paiement_id }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (action === "dashboard") {
       // Fetch all payments for the family's children
       const { data: paiements } = await supabaseAdmin
@@ -66,7 +126,7 @@ serve(async (req) => {
         .from("tarifs")
         .select("*");
 
-      // Fetch famille solde
+      // Fetch famille solde (fresh)
       const { data: familleData } = await supabaseAdmin
         .from("familles")
         .select("solde_famille")

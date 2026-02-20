@@ -278,9 +278,14 @@ export default function Familles() {
               {f.telephone_mere && <div className="flex items-center gap-2 text-muted-foreground"><Phone className="h-3 w-3" /> Mère: {f.telephone_mere}</div>}
               {f.email_parent && <div className="flex items-center gap-2 text-muted-foreground"><Mail className="h-3 w-3" /> {f.email_parent}</div>}
               {f.adresse && <div className="flex items-center gap-2 text-muted-foreground"><MapPin className="h-3 w-3" /> {f.adresse}</div>}
-              <div className="flex gap-2 pt-1">
+              <div className="flex gap-2 pt-1 flex-wrap">
                 <Badge variant="outline">{f.eleves?.length || 0} enfant(s)</Badge>
                 {(f.eleves?.length || 0) > 1 && <Badge variant="secondary">Fratrie</Badge>}
+                {Number(f.solde_famille || 0) > 0 && (
+                  <Badge className="bg-green-100 text-green-700 border-green-300">
+                    💰 {Number(f.solde_famille).toLocaleString()} GNF
+                  </Badge>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -357,6 +362,20 @@ export default function Familles() {
                     <p className="text-sm text-muted-foreground">Adresse</p>
                     <p className="font-medium">{selectedFamille.adresse || '—'}</p>
                   </div>
+
+                  {/* Solde Portefeuille */}
+                  <div className="space-y-1 col-span-2 border-t pt-4 mt-2">
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      💰 Portefeuille Famille
+                    </p>
+                    <p className="text-2xl font-bold text-green-700">
+                      {Number(selectedFamille.solde_famille || 0).toLocaleString()} GNF
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Solde rechargeable pour achats boutique, librairie, cantine. Rechargez via l'onglet Paiements → type "Recharge Portefeuille".
+                    </p>
+                  </div>
+
                   {/* Code d'accès parent */}
                   <div className="space-y-2 col-span-2 border-t pt-4 mt-2">
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
