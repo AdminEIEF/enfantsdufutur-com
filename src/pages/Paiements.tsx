@@ -270,8 +270,8 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
                 <Select value={eleveId} onValueChange={setEleveId}>
                   <SelectTrigger><SelectValue placeholder="Sélectionner l'élève" /></SelectTrigger>
                   <SelectContent>
-                    {eleves.filter((e: any) => !e.famille_id).map((e: any) => (
-                      <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom} {e.matricule ? `(${e.matricule})` : ''}</SelectItem>
+                    {eleves.map((e: any) => (
+                      <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom} {e.matricule ? `(${e.matricule})` : ''}{e.famille_id ? ' 👨‍👩‍👧' : ''}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
