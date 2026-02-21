@@ -952,7 +952,7 @@ export default function Boutique() {
                       <CardTitle className="text-sm flex items-center gap-2"><Icon className="h-4 w-4" /> {cat.label}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                         {catArticles.map(article => (
                           <motion.button key={article.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className={`p-3 rounded-lg border text-left transition-colors ${article.stock <= 0 ? 'opacity-40 cursor-not-allowed' : 'hover:border-purple-400 hover:bg-purple-50/50'}`} onClick={() => article.stock > 0 && addToCart(article)} disabled={article.stock <= 0}>
                             <div className="font-medium text-sm">{article.nom}</div>
