@@ -34,6 +34,7 @@ const CATEGORIES = [
   { key: 'polo_lacoste', label: 'Polo Lacoste', icon: Shirt, color: 'bg-purple-100 text-purple-800' },
   { key: 'tenue_scout', label: 'Tenue de Scout', icon: User, color: 'bg-amber-100 text-amber-800' },
   { key: 'tenue_karate', label: 'Tenue de Karaté', icon: User, color: 'bg-red-100 text-red-800' },
+  { key: 'ordinateur', label: 'Ordinateurs', icon: Package, color: 'bg-indigo-100 text-indigo-800' },
 ];
 
 const TAILLES = ['S', 'M', 'L', 'XL', 'Enfant', 'Adulte'];
