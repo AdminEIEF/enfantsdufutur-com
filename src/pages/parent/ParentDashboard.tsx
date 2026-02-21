@@ -16,6 +16,7 @@ import ParentPaymentDialog from '@/components/ParentPaymentDialog';
 import ParentDevisInscription from '@/components/ParentDevisInscription';
 import ParentCantineOrdre from '@/components/ParentCantineOrdre';
 import ParentServiceOrdre from '@/components/ParentServiceOrdre';
+import ParentCatalogueCommande from '@/components/ParentCatalogueCommande';
 
 const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 
@@ -232,6 +233,14 @@ export default function ParentDashboard() {
             <ParentCantineOrdre
               enfants={eleves}
               code={session.code}
+              onSuccess={fetchDashboard}
+            />
+
+            {/* Catalogue & Commande d'articles */}
+            <ParentCatalogueCommande
+              enfants={eleves}
+              code={session.code}
+              soldeFamille={dashData?.solde_famille || 0}
               onSuccess={fetchDashboard}
             />
 

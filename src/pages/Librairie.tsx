@@ -532,9 +532,26 @@ function RetraitsLibrairiePanel() {
     mutationFn: async (commandeIds: string[]) => {
       const { error } = await supabase
         .from('commandes_articles' as any)
-        .update({ statut: 'livre', livre_at: new Date().toISOString() } as any)
+        .update({ statut: 'livre', livre_at: new Date().toISOString(), livre_par: (await supabase.auth.getUser()).data.user?.id } as any)
         .in('id', commandeIds);
       if (error) throw error;
+
+      // Deduct stock for each article at pickup time
+      for (const cmd of commandesPaye.filter((c: any) => commandeIds.includes(c.id))) {
+        if (cmd.article_type === 'librairie') {
+          const { data: matchArticles } = await supabase
+            .from('articles')
+            .select('id, stock')
+            .eq('nom', cmd.article_nom)
+            .limit(1);
+          if (matchArticles && matchArticles.length > 0) {
+            await supabase
+              .from('articles')
+              .update({ stock: Math.max(0, matchArticles[0].stock - cmd.quantite), updated_at: new Date().toISOString() } as any)
+              .eq('id', matchArticles[0].id);
+          }
+        }
+      }
     },
     onSuccess: () => {
       const articlesLivres = commandesPaye.map((c: any) => ({

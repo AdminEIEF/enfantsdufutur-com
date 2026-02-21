@@ -81,11 +81,31 @@ function RetraitsPanel() {
 
   const validerLivraison = useMutation({
     mutationFn: async (commandeIds: string[]) => {
+      // Update status to livre
       const { error } = await supabase
         .from('commandes_articles' as any)
-        .update({ statut: 'livre', livre_at: new Date().toISOString() } as any)
+        .update({ statut: 'livre', livre_at: new Date().toISOString(), livre_par: (await supabase.auth.getUser()).data.user?.id } as any)
         .in('id', commandeIds);
       if (error) throw error;
+
+      // Deduct stock for each article at pickup time
+      for (const cmd of commandesPaye.filter((c: any) => commandeIds.includes(c.id))) {
+        if (cmd.article_type === 'boutique') {
+          // Find matching boutique article by name+taille and deduct stock
+          const { data: matchArticles } = await supabase
+            .from('boutique_articles')
+            .select('id, stock')
+            .eq('nom', cmd.article_nom)
+            .eq('taille', cmd.article_taille || 'unique')
+            .limit(1);
+          if (matchArticles && matchArticles.length > 0) {
+            await supabase
+              .from('boutique_articles')
+              .update({ stock: Math.max(0, matchArticles[0].stock - cmd.quantite), updated_at: new Date().toISOString() } as any)
+              .eq('id', matchArticles[0].id);
+          }
+        }
+      }
     },
     onSuccess: () => {
       // Generate Bon de Récupération
