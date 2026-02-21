@@ -130,8 +130,8 @@ export default function Landing() {
               Inscriptions 2025-2026 ouvertes
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Bâtir l'avenir,<br />
-              <span className="text-secondary">un enfant</span> à la fois.
+              Investir maintenant<br />
+              <span className="text-secondary">pour Sourire</span> demain !
             </h1>
             <p className="text-lg sm:text-xl text-white/80 mb-8 max-w-lg">
               L'École Internationale Enfant du Futur offre un enseignement d'excellence 
@@ -208,7 +208,7 @@ export default function Landing() {
       <section className="bg-primary text-primary-foreground">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Offrez le meilleur à votre enfant
+            Investir maintenant pour Sourire demain !
           </h2>
           <p className="text-primary-foreground/80 text-lg max-w-xl mx-auto mb-8">
             Rejoignez la communauté EI Enfant du Futur et donnez à votre enfant les outils pour réussir.
