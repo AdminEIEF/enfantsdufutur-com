@@ -1354,6 +1354,7 @@ function EcoleTab() {
   const [ville, setVille] = useState('Conakry, Guinée');
   const [logoUrl, setLogoUrl] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const { data: config } = useQuery({
     queryKey: ['school-config'],
@@ -1375,10 +1376,28 @@ function EcoleTab() {
     }
   }, [config, loaded]);
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `school-logo.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('photos').upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
+      setLogoUrl(urlData.publicUrl + '?t=' + Date.now());
+      toast.success('Logo téléversé avec succès');
+    } catch (err: any) {
+      toast.error('Erreur upload: ' + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const save = useMutation({
     mutationFn: async () => {
       const valeur = { nom, soustitre, ville, logo_url: logoUrl || null };
-      // Upsert
       if (config?.id) {
         const { error } = await supabase.from('parametres').update({ valeur: valeur as any }).eq('id', config.id);
         if (error) throw error;
@@ -1401,6 +1420,37 @@ function EcoleTab() {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">Ces informations apparaissent sur les bulletins, reçus et documents officiels.</p>
+        
+        {/* Logo section */}
+        <div className="flex items-center gap-6 p-4 rounded-lg border bg-muted/30">
+          <div className="flex-shrink-0">
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo école" className="h-20 w-20 rounded-full object-cover border-2 border-primary/30 shadow" />
+            ) : (
+              <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/30">
+                <School className="h-8 w-8 text-muted-foreground/50" />
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">Logo de l'établissement</Label>
+            <p className="text-xs text-muted-foreground">Ce logo apparaîtra sur tous les reçus et documents imprimés.</p>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" asChild disabled={uploading}>
+                <label className="cursor-pointer">
+                  {uploading ? 'Téléversement…' : '📷 Téléverser un logo'}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                </label>
+              </Button>
+              {logoUrl && (
+                <Button variant="ghost" size="sm" onClick={() => setLogoUrl('')} className="text-destructive">
+                  Supprimer
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Nom de l'établissement</Label>
@@ -1415,15 +1465,22 @@ function EcoleTab() {
             <Input value={ville} onChange={e => setVille(e.target.value)} placeholder="Ex: Conakry, Guinée" />
           </div>
           <div>
-            <Label>URL du logo (optionnel)</Label>
-            <Input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." />
-            {logoUrl && (
-              <div className="mt-2">
-                <img src={logoUrl} alt="Aperçu logo" className="h-14 w-14 rounded-full object-cover border" />
-              </div>
-            )}
+            <Label>URL du logo (alternative)</Label>
+            <Input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." className="text-xs" />
           </div>
         </div>
+
+        {/* Preview */}
+        {nom && (
+          <div className="p-4 rounded-lg border bg-background text-center space-y-1">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Aperçu en-tête reçu</p>
+            {logoUrl && <img src={logoUrl} alt="Logo" className="h-10 mx-auto object-contain" />}
+            <p className="font-bold text-primary">{nom}</p>
+            {soustitre && <p className="text-xs text-muted-foreground italic">{soustitre}</p>}
+            {ville && <p className="text-xs text-muted-foreground">{ville}</p>}
+          </div>
+        )}
+
         <Button onClick={() => save.mutate()} disabled={save.isPending}>
           {save.isPending ? 'Enregistrement…' : 'Enregistrer'}
         </Button>
