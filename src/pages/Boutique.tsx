@@ -704,6 +704,15 @@ function VenteCreditPanel() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [showNewCredit, setShowNewCredit] = useState(false);
   const [creditForm, setCreditForm] = useState({ article_nom: '', description: '', prix_total: 0, acompte: 0 });
+
+  const { data: boutiqueArticles = [] } = useQuery({
+    queryKey: ['boutique_articles_credit'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('boutique_articles').select('*').order('categorie').order('nom');
+      if (error) throw error;
+      return data;
+    },
+  });
   const [showVersement, setShowVersement] = useState<any>(null);
   const [versementMontant, setVersementMontant] = useState(0);
   const [versementCanal, setVersementCanal] = useState('especes');
@@ -1043,7 +1052,24 @@ function VenteCreditPanel() {
               <div className="p-2 rounded-lg bg-muted text-sm">
                 <strong>{selectedEleve.prenom} {selectedEleve.nom}</strong> — {selectedEleve.matricule}
               </div>
-              <div><Label>Article / Produit</Label><Input placeholder="Ex: Ordinateur HP..." value={creditForm.article_nom} onChange={e => setCreditForm(p => ({ ...p, article_nom: e.target.value }))} /></div>
+              <div>
+                <Label>Article / Produit</Label>
+                <Select value={creditForm.article_nom || '__none__'} onValueChange={v => {
+                  if (v === '__none__') {
+                    setCreditForm(p => ({ ...p, article_nom: '', prix_total: 0 }));
+                  } else {
+                    const art = boutiqueArticles.find((a: any) => a.nom === v);
+                    setCreditForm(p => ({ ...p, article_nom: v, prix_total: art ? Number(art.prix) : p.prix_total }));
+                  }
+                }}>
+                  <SelectTrigger><SelectValue placeholder="Choisir un article..." /></SelectTrigger>
+                  <SelectContent>
+                    {boutiqueArticles.map((a: any) => (
+                      <SelectItem key={a.id} value={a.nom}>{a.nom} — {Number(a.prix).toLocaleString()} GNF</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div><Label>Description (optionnel)</Label><Input placeholder="Détails supplémentaires..." value={creditForm.description} onChange={e => setCreditForm(p => ({ ...p, description: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Prix total (GNF)</Label><Input type="number" min={0} value={creditForm.prix_total} onChange={e => setCreditForm(p => ({ ...p, prix_total: Number(e.target.value) }))} /></div>
