@@ -291,6 +291,123 @@ function RetraitsPanel() {
   );
 }
 
+// ─── Historique Retraits Tab ─────────────────────
+function HistoriqueRetraitsPanel() {
+  const [dateDebut, setDateDebut] = useState(() => {
+    const d = new Date(); d.setMonth(d.getMonth() - 1);
+    return d.toISOString().split('T')[0];
+  });
+  const [dateFin, setDateFin] = useState(new Date().toISOString().split('T')[0]);
+  const [searchText, setSearchText] = useState('');
+
+  const { data: retraits = [], isLoading } = useQuery({
+    queryKey: ['historique_retraits', dateDebut, dateFin],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('commandes_articles')
+        .select('*, eleves(nom, prenom, matricule, classes(nom))')
+        .eq('statut', 'livre')
+        .eq('article_type', 'boutique')
+        .gte('livre_at', `${dateDebut}T00:00:00`)
+        .lte('livre_at', `${dateFin}T23:59:59`)
+        .order('livre_at', { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const filtered = useMemo(() => {
+    if (!searchText.trim()) return retraits;
+    const q = searchText.toLowerCase();
+    return retraits.filter((r: any) =>
+      r.eleves?.nom?.toLowerCase().includes(q) ||
+      r.eleves?.prenom?.toLowerCase().includes(q) ||
+      r.eleves?.matricule?.toLowerCase().includes(q) ||
+      r.article_nom?.toLowerCase().includes(q)
+    );
+  }, [retraits, searchText]);
+
+  const totalMontant = filtered.reduce((s: number, r: any) => s + Number(r.prix_unitaire) * r.quantite, 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end gap-4">
+        <div>
+          <Label className="text-xs">Date début</Label>
+          <Input type="date" value={dateDebut} onChange={e => setDateDebut(e.target.value)} className="w-44" />
+        </div>
+        <div>
+          <Label className="text-xs">Date fin</Label>
+          <Input type="date" value={dateFin} onChange={e => setDateFin(e.target.value)} className="w-44" />
+        </div>
+        <div className="flex-1 min-w-[200px]">
+          <Label className="text-xs">Rechercher</Label>
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Élève, matricule, article..." value={searchText} onChange={e => setSearchText(e.target.value)} className="pl-10" />
+          </div>
+        </div>
+        <Card className="px-4 py-2">
+          <div className="text-xs text-muted-foreground">Total retraits</div>
+          <div className="text-lg font-bold">{filtered.length}</div>
+        </Card>
+        <Card className="px-4 py-2">
+          <div className="text-xs text-muted-foreground">Montant total</div>
+          <div className="text-lg font-bold text-primary">{totalMontant.toLocaleString()} GNF</div>
+        </Card>
+      </div>
+
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground text-center py-8">Chargement...</p>
+      ) : filtered.length === 0 ? (
+        <Card><CardContent className="py-8 text-center text-muted-foreground">Aucun retrait trouvé pour cette période</CardContent></Card>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="text-left py-2 px-3">Date & Heure</th>
+                <th className="text-left py-2 px-3">Élève</th>
+                <th className="text-left py-2 px-3">Classe</th>
+                <th className="text-left py-2 px-3">Article</th>
+                <th className="text-center py-2 px-3">Taille</th>
+                <th className="text-center py-2 px-3">Qté</th>
+                <th className="text-right py-2 px-3">Prix unit.</th>
+                <th className="text-right py-2 px-3">Total</th>
+                <th className="text-left py-2 px-3">Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r: any) => (
+                <tr key={r.id} className="border-b last:border-0 hover:bg-muted/30">
+                  <td className="py-2 px-3 text-xs whitespace-nowrap">
+                    {r.livre_at ? new Date(r.livre_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                    <span className="text-muted-foreground ml-1">
+                      {r.livre_at ? new Date(r.livre_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </span>
+                  </td>
+                  <td className="py-2 px-3 font-medium">{r.eleves?.prenom} {r.eleves?.nom}</td>
+                  <td className="py-2 px-3 text-xs">{(r.eleves as any)?.classes?.nom || '—'}</td>
+                  <td className="py-2 px-3">{r.article_nom}</td>
+                  <td className="py-2 px-3 text-center">
+                    {r.article_taille ? <Badge variant="outline" className="text-[10px]">{r.article_taille}</Badge> : '—'}
+                  </td>
+                  <td className="py-2 px-3 text-center">{r.quantite}</td>
+                  <td className="py-2 px-3 text-right">{Number(r.prix_unitaire).toLocaleString()} GNF</td>
+                  <td className="py-2 px-3 text-right font-medium">{(Number(r.prix_unitaire) * r.quantite).toLocaleString()} GNF</td>
+                  <td className="py-2 px-3">
+                    <Badge variant="secondary" className="text-[10px]">{r.source === 'inscription' ? 'Inscription' : r.source === 'parent' ? 'Parent' : r.source}</Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Gestion Admin Commandes ─────────────────────
 function GestionCommandesPanel() {
   const queryClient = useQueryClient();
@@ -772,7 +889,8 @@ export default function Boutique() {
           <TabsTrigger value="retraits" className="gap-1"><ClipboardCheck className="h-4 w-4" /> Retraits</TabsTrigger>
           <TabsTrigger value="vente" className="gap-1"><ShoppingBag className="h-4 w-4" /> Vente directe</TabsTrigger>
           <TabsTrigger value="inventaire" className="gap-1"><Package className="h-4 w-4" /> Inventaire</TabsTrigger>
-          <TabsTrigger value="historique" className="gap-1"><History className="h-4 w-4" /> Historique</TabsTrigger>
+          <TabsTrigger value="historique" className="gap-1"><History className="h-4 w-4" /> Historique Ventes</TabsTrigger>
+          <TabsTrigger value="historique_retraits" className="gap-1"><ClipboardCheck className="h-4 w-4" /> Historique Retraits</TabsTrigger>
           <TabsTrigger value="gestion" className="gap-1"><Settings className="h-4 w-4" /> Gestion</TabsTrigger>
         </TabsList>
 
@@ -1008,6 +1126,11 @@ export default function Boutique() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        {/* ===== HISTORIQUE RETRAITS TAB ===== */}
+        <TabsContent value="historique_retraits" className="space-y-4">
+          <HistoriqueRetraitsPanel />
         </TabsContent>
 
         {/* ===== GESTION COMMANDES TAB ===== */}
