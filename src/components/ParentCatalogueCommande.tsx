@@ -40,7 +40,8 @@ export default function ParentCatalogueCommande({ enfants, code, soldeFamille, o
   const [submitting, setSubmitting] = useState(false);
 
   const fetchCatalogue = async () => {
-    if (!eleveId && typeService === 'librairie') return;
+    if (!eleveId && typeService === 'librairie' && enfants.length > 1) return;
+    if (!eleveId && typeService === 'boutique') return;
     setLoadingCatalogue(true);
     try {
       const resp = await fetch(
@@ -205,7 +206,7 @@ export default function ParentCatalogueCommande({ enfants, code, soldeFamille, o
                 <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
               ) : catalogue.length === 0 ? (
                 <p className="text-center text-sm text-muted-foreground py-6">
-                  {!eleveId && typeService === 'librairie' ? 'Sélectionnez un enfant pour voir le catalogue' : 'Aucun article disponible'}
+                  {!eleveId && enfants.length > 1 ? 'Sélectionnez un enfant pour continuer' : 'Aucun article disponible'}
                 </p>
               ) : (
                 <div className="space-y-2 max-h-60 overflow-y-auto">

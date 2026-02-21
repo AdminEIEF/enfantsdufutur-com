@@ -107,26 +107,14 @@ serve(async (req) => {
       let articles: any[] = [];
 
       if (type_service === "librairie") {
-        // Fetch articles for the child's level
-        if (!eleve_id || !childIds.includes(eleve_id)) {
-          return new Response(JSON.stringify({ articles: [] }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        const { data: eleveData } = await supabaseAdmin
-          .from("eleves")
-          .select("classes(niveau_id)")
-          .eq("id", eleve_id)
-          .maybeSingle();
-        const niveauId = (eleveData as any)?.classes?.niveau_id;
-        if (niveauId) {
-          const { data: arts } = await supabaseAdmin
-            .from("articles")
-            .select("id, nom, categorie, prix, stock, niveau_id")
-            .eq("niveau_id", niveauId)
-            .gt("stock", 0);
-          articles = arts || [];
-        }
+        // Fetch ALL librairie articles (no level filter)
+        const { data: arts } = await supabaseAdmin
+          .from("articles")
+          .select("id, nom, categorie, prix, stock, niveau_id")
+          .gt("stock", 0)
+          .order("categorie")
+          .order("nom");
+        articles = arts || [];
       } else if (type_service === "boutique") {
         const { data: arts } = await supabaseAdmin
           .from("boutique_articles")
