@@ -20,6 +20,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } fro
 import { generateRecuPDF } from '@/lib/generateRecuPDF';
 import { generateRecuGeneriquePDF } from '@/lib/generateRecuGeneriquePDF';
 import { generateRecuFamillePDF } from '@/lib/generateRecuFamillePDF';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { exportToExcel, readExcelFile } from '@/lib/excelUtils';
 
 const CANAUX = [
@@ -92,6 +93,7 @@ function getTranchesForNiveau(allTranches: Record<string, TrancheConfig[]>, nive
 // ─── Individual Student Payment Panel ─────────────────────
 function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { eleves: any[]; paiements: any[]; articles: any[]; familles: any[] }) {
   const { data: allTranchesConfig = {} } = useTranchesConfigV2();
+  const { data: schoolConfig } = useSchoolConfig();
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -251,6 +253,7 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
           totalPaye: newTotalPaye,
           resteAPayer: Math.max(0, annuelCalc - newTotalPaye),
           zone: (selectedEleve.zones_transport as any)?.nom,
+          schoolConfig: schoolConfig ? { nom: schoolConfig.nom, soustitre: schoolConfig.soustitre, logo_url: schoolConfig.logo_url } : undefined,
         });
       }
 
@@ -479,6 +482,7 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
 function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; paiements: any[]; familles: any[] }) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { data: schoolConfig } = useSchoolConfig();
 
   const [familleId, setFamilleId] = useState('');
   const [montant, setMontant] = useState('');
@@ -583,6 +587,7 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
         totalAnnuel: totalAnnuelFamille,
         totalPaye: totalPayeFamille + parseFloat(montant),
         resteAPayer: Math.max(0, resteFamille - parseFloat(montant)),
+        schoolConfig: schoolConfig ? { nom: schoolConfig.nom, soustitre: schoolConfig.soustitre, logo_url: schoolConfig.logo_url } : undefined,
       });
 
       setFamilleId(''); setMontant(''); setCanal('especes'); setReference(''); setBanqueNom(''); setDateDepot(''); setPreuveFile(null);
@@ -724,6 +729,7 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
 function RechargePortefeuillePanel({ eleves, familles }: { eleves: any[]; familles: any[] }) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { data: schoolConfig } = useSchoolConfig();
 
   const [mode, setMode] = useState<'famille' | 'eleve'>('famille');
   const [familleId, setFamilleId] = useState('');
@@ -823,6 +829,7 @@ function RechargePortefeuillePanel({ eleves, familles }: { eleves: any[]; famill
         totalAnnuel: 0,
         totalPaye: currentSolde + parseFloat(montant),
         resteAPayer: 0,
+        schoolConfig: schoolConfig ? { nom: schoolConfig.nom, soustitre: schoolConfig.soustitre, logo_url: schoolConfig.logo_url } : undefined,
       });
 
       setFamilleId(''); setEleveId(''); setMontant(''); setCanal('especes'); setReference('');
@@ -1091,6 +1098,7 @@ export default function Paiements() {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterCanal, setFilterCanal] = useState('all');
+  const { data: schoolConfig } = useSchoolConfig();
 
   const { data: paiements = [], isLoading } = useQuery({
     queryKey: ['paiements'],
@@ -1319,6 +1327,7 @@ export default function Paiements() {
                               totalPaye: totalPayeType,
                               resteAPayer: Math.max(0, annuelCalc - totalPayeType),
                               zone: transportZone?.nom,
+                              schoolConfig: schoolConfig ? { nom: schoolConfig.nom, soustitre: schoolConfig.soustitre, logo_url: schoolConfig.logo_url } : undefined,
                             });
                           } else {
                             generateRecuGeneriquePDF({
@@ -1332,6 +1341,7 @@ export default function Paiements() {
                               canal: CANAUX.find(c => c.value === p.canal)?.label || p.canal,
                               reference: p.reference,
                               date: format(new Date(p.date_paiement), 'dd MMMM yyyy', { locale: fr }),
+                              schoolConfig: schoolConfig ? { nom: schoolConfig.nom, soustitre: schoolConfig.soustitre, logo_url: schoolConfig.logo_url } : undefined,
                             });
                           }
                         }}>

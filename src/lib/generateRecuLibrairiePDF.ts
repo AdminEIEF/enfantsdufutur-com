@@ -10,6 +10,7 @@ export function generateRecuLibrairiePDF(data: {
   canal: string;
   reference: string | null;
   date: string;
+  schoolConfig?: { nom: string; soustitre?: string; logo_url?: string | null };
 }) {
   const w = window.open('', '_blank', 'width=800,height=1000');
   if (!w) return;
@@ -30,11 +31,17 @@ export function generateRecuLibrairiePDF(data: {
     </tr>`
   ).join('');
 
+  const schoolName = data.schoolConfig?.nom || 'EduGestion Pro';
+  const schoolLogo = data.schoolConfig?.logo_url || null;
+  const schoolSoustitre = data.schoolConfig?.soustitre || '';
+
   const buildHalf = (partieLabel: string) => `
     <div class="half">
       <div class="partie-label">${partieLabel}</div>
       <div class="header">
-        <h1>📚 EduGestion Pro — Librairie</h1>
+        ${schoolLogo ? `<img src="${schoolLogo}" alt="Logo" class="school-logo" />` : ''}
+        <h1>📚 ${schoolName} — Librairie</h1>
+        ${schoolSoustitre ? `<p class="sub-school">${schoolSoustitre}</p>` : ''}
         <p class="sub">Reçu d'achat — Articles scolaires</p>
         <div class="badge">REÇU N° ${recuNum}</div>
       </div>
@@ -74,9 +81,11 @@ export function generateRecuLibrairiePDF(data: {
   .half:last-child { border-bottom: none; }
   .partie-label { position: absolute; top: 4mm; right: 10mm; font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: white; background: ${accentColor}; padding: 2px 10px; border-radius: 0 0 4px 4px; }
   .header { text-align: center; border-bottom: 2px solid ${accentColor}; padding-bottom: 6px; margin-bottom: 8px; }
-  .header h1 { font-size: 15px; color: ${accentColor}; }
-  .header .sub { color: #666; font-size: 10px; margin-top: 1px; }
-  .badge { display: inline-block; background: ${accentColor}; color: white; padding: 2px 10px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-top: 4px; }
+   .header h1 { font-size: 15px; color: ${accentColor}; }
+   .header .sub-school { color: #444; font-size: 9px; margin-top: 1px; font-style: italic; }
+   .header .sub { color: #666; font-size: 10px; margin-top: 1px; }
+   .school-logo { height: 36px; margin: 0 auto 4px; display: block; object-fit: contain; }
+   .badge { display: inline-block; background: ${accentColor}; color: white; padding: 2px 10px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-top: 4px; }
   table.info { width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 10px; }
   table.info td { padding: 3px 6px; }
   table.info .lbl { color: #888; font-size: 9px; text-transform: uppercase; width: 18%; font-weight: 500; }
@@ -113,6 +122,7 @@ export function generateBonSortiePDF(data: {
   classe: string;
   articles: { nom: string; categorie: string; quantite: number }[];
   date: string;
+  schoolConfig?: { nom: string; soustitre?: string; logo_url?: string | null };
 }) {
   const w = window.open('', '_blank', 'width=800,height=600');
   if (!w) return;
@@ -148,8 +158,9 @@ export function generateBonSortiePDF(data: {
   @media print { body { width: auto; } }
 </style></head><body>
   <div class="header">
+    ${data.schoolConfig?.logo_url ? `<img src="${data.schoolConfig.logo_url}" alt="Logo" style="height:36px;margin:0 auto 4px;display:block;object-fit:contain;" />` : ''}
     <h1>📦 Bon de Sortie Magasin</h1>
-    <p class="sub">EduGestion Pro — Articles à remettre</p>
+    <p class="sub">${data.schoolConfig?.nom || 'EduGestion Pro'} — Articles à remettre</p>
     <div class="badge">BON N° ${recuNum}</div>
   </div>
   <table class="info">

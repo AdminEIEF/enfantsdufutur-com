@@ -11,6 +11,7 @@ export function generateRecuFamillePDF(data: {
   totalAnnuel: number;
   totalPaye: number;
   resteAPayer: number;
+  schoolConfig?: { nom: string; soustitre?: string; logo_url?: string | null };
 }) {
   const w = window.open('', '_blank', 'width=800,height=1000');
   if (!w) return;
@@ -25,11 +26,17 @@ export function generateRecuFamillePDF(data: {
     `<tr><td>${e.prenom} ${e.nom}</td><td>${e.matricule || '—'}</td><td>${e.classe}</td></tr>`
   ).join('');
 
+  const schoolName = data.schoolConfig?.nom || 'EduGestion Pro';
+  const schoolLogo = data.schoolConfig?.logo_url || null;
+  const schoolSoustitre = data.schoolConfig?.soustitre || '';
+
   const buildHalf = (partieLabel: string) => `
     <div class="half">
       <div class="partie-label">${partieLabel}</div>
       <div class="header">
-        <h1>👨‍👩‍👧‍👦 EduGestion Pro</h1>
+        ${schoolLogo ? `<img src="${schoolLogo}" alt="Logo" class="school-logo" />` : ''}
+        <h1>👨‍👩‍👧‍👦 ${schoolName}</h1>
+        ${schoolSoustitre ? `<p class="sub-school">${schoolSoustitre}</p>` : ''}
         <p class="sub">Reçu de paiement — Compte Famille</p>
         <div class="badge">REÇU N° ${recuNum}</div>
       </div>
@@ -79,7 +86,9 @@ export function generateRecuFamillePDF(data: {
     .partie-label { position: absolute; top: 4mm; right: 10mm; font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: white; background: ${accentColor}; padding: 2px 10px; border-radius: 0 0 4px 4px; }
     .header { text-align: center; border-bottom: 2px solid ${accentColor}; padding-bottom: 6px; margin-bottom: 8px; }
     .header h1 { font-size: 16px; color: ${accentColor}; }
+    .header .sub-school { color: #444; font-size: 9px; margin-top: 1px; font-style: italic; }
     .header .sub { color: #666; font-size: 10px; margin-top: 1px; }
+    .school-logo { height: 36px; margin: 0 auto 4px; display: block; object-fit: contain; }
     .badge { display: inline-block; background: ${accentColor}; color: white; padding: 2px 10px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-top: 4px; }
     table.info { width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 10px; }
     table.info td { padding: 3px 6px; }

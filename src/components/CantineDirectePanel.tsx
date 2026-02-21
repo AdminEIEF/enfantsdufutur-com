@@ -15,6 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { generateRecuGeneriquePDF } from '@/lib/generateRecuGeneriquePDF';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
 interface Props {
   eleves: any[];
@@ -23,6 +24,7 @@ interface Props {
 
 export default function CantineDirectePanel({ eleves, familles = [] }: Props) {
   const queryClient = useQueryClient();
+  const { data: schoolConfig } = useSchoolConfig();
   const [openDirect, setOpenDirect] = useState(false);
   const [familleId, setFamilleId] = useState('');
   const [eleveId, setEleveId] = useState('');
@@ -124,6 +126,7 @@ export default function CantineDirectePanel({ eleves, familles = [] }: Props) {
           reference: null,
           date: new Date().toLocaleDateString('fr-FR'),
           details: `Famille: ${famille?.nom_famille || '—'} • Nouveau solde: ${((selectedEleve.solde_cantine || 0) + Number(montant)).toLocaleString()} GNF`,
+          schoolConfig: schoolConfig ? { nom: schoolConfig.nom, soustitre: schoolConfig.soustitre, logo_url: schoolConfig.logo_url } : undefined,
         });
       }
 
@@ -174,6 +177,7 @@ export default function CantineDirectePanel({ eleves, familles = [] }: Props) {
         reference: o.code_transaction,
         date: new Date().toLocaleDateString('fr-FR'),
         details: `Famille: ${o.familles?.nom_famille || '—'} • Code: ${o.code_transaction}`,
+        schoolConfig: schoolConfig ? { nom: schoolConfig.nom, soustitre: schoolConfig.soustitre, logo_url: schoolConfig.logo_url } : undefined,
       });
     },
     onError: (e: Error) => toast({ title: 'Erreur', description: e.message, variant: 'destructive' }),
