@@ -960,138 +960,6 @@ function RechargePortefeuillePanel({ eleves, familles }: { eleves: any[]; famill
     </div>
   );
 }
-
-// ─── Ordres de Paiement Panel (Wallet, Librairie, Boutique) ──────
-function OrdresPaiementPanel() {
-  const queryClient = useQueryClient();
-
-  const { data: ordres = [], isLoading } = useQuery({
-    queryKey: ['ordres-paiement'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('ordres_paiement' as any)
-        .select('*, familles:famille_id(nom_famille), eleves:eleve_id(prenom, nom)')
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data as any[];
-    },
-  });
-
-  const validateOrdre = useMutation({
-    mutationFn: async (ordreId: string) => {
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/service-ordre`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ action: 'validate_ordre', ordre_id: ordreId }),
-        }
-      );
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ordres-paiement'] });
-      queryClient.invalidateQueries({ queryKey: ['paiements'] });
-      queryClient.invalidateQueries({ queryKey: ['familles'] });
-      toast({ title: 'Ordre validé et crédité' });
-    },
-    onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
-  });
-
-  const cancelOrdre = useMutation({
-    mutationFn: async (ordreId: string) => {
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/service-ordre`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ action: 'cancel_ordre', ordre_id: ordreId }),
-        }
-      );
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ordres-paiement'] });
-      toast({ title: 'Ordre annulé' });
-    },
-    onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
-  });
-
-  const typeLabels: Record<string, string> = { wallet: '💰 Portefeuille', librairie: '📚 Librairie', boutique: '👕 Boutique', cantine: '🍽️ Cantine' };
-  const enAttente = (ordres as any[]).filter((o: any) => o.statut === 'en_attente');
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{enAttente.length} ordre(s) en attente de validation</p>
-      </div>
-
-      {isLoading ? (
-        <p className="text-center py-8 text-muted-foreground">Chargement...</p>
-      ) : (ordres as any[]).length === 0 ? (
-        <p className="text-center py-8 text-muted-foreground">Aucun ordre de paiement</p>
-      ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Famille</TableHead>
-                  <TableHead>Élève</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Montant</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(ordres as any[]).map((o: any) => (
-                  <TableRow key={o.id} className={o.statut === 'en_attente' ? 'bg-amber-50/50' : ''}>
-                    <TableCell className="text-xs">{format(new Date(o.created_at), 'dd MMM yyyy HH:mm', { locale: fr })}</TableCell>
-                    <TableCell className="font-medium">{o.familles?.nom_famille || '—'}</TableCell>
-                    <TableCell>{o.eleves ? `${o.eleves.prenom} ${o.eleves.nom}` : '—'}</TableCell>
-                    <TableCell><Badge variant="outline">{typeLabels[o.type_service] || o.type_service}</Badge></TableCell>
-                    <TableCell className="font-mono text-xs font-bold">{o.code_transaction}</TableCell>
-                    <TableCell className="font-mono font-bold">{Number(o.montant).toLocaleString()} GNF</TableCell>
-                    <TableCell>
-                      <Badge variant={o.statut === 'valide' ? 'default' : o.statut === 'annule' ? 'destructive' : 'secondary'}>
-                        {o.statut === 'en_attente' ? '⏳ En attente' : o.statut === 'valide' ? '✅ Validé' : '❌ Annulé'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {o.statut === 'en_attente' && (
-                        <div className="flex gap-1">
-                          <Button size="sm" variant="default" onClick={() => validateOrdre.mutate(o.id)} disabled={validateOrdre.isPending}>
-                            <CheckCircle className="h-4 w-4 mr-1" /> Valider
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => cancelOrdre.mutate(o.id)} disabled={cancelOrdre.isPending}>
-                            <XCircle className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
 // ─── Main Page ──────────────────────────────────────────────
 export default function Paiements() {
   const [search, setSearch] = useState('');
@@ -1202,7 +1070,6 @@ export default function Paiements() {
           <TabsTrigger value="famille">👨‍👩‍👧‍👦 Comptes Familles</TabsTrigger>
           <TabsTrigger value="portefeuille">💰 Portefeuille</TabsTrigger>
           <TabsTrigger value="cantine">🍽️ Cantine</TabsTrigger>
-          
           <TabsTrigger value="historique">📋 Historique</TabsTrigger>
           <TabsTrigger value="tendances">📊 Tendances</TabsTrigger>
         </TabsList>
@@ -1222,7 +1089,6 @@ export default function Paiements() {
         <TabsContent value="cantine" className="mt-4">
           <CantineDirectePanel eleves={eleves} familles={familles} />
         </TabsContent>
-
 
         <TabsContent value="historique" className="space-y-4 mt-4">
           <div className="flex gap-3 flex-wrap">
