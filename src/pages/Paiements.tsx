@@ -805,6 +805,26 @@ function RechargePortefeuillePanel({ eleves, familles }: { eleves: any[]; famill
       queryClient.invalidateQueries({ queryKey: ['paiements'] });
       queryClient.invalidateQueries({ queryKey: ['familles'] });
       toast({ title: 'Portefeuille rechargé', description: `${parseInt(montant).toLocaleString()} GNF crédités` });
+
+      // Generate receipt for wallet recharge
+      const famName = (selectedFamille || familleFromEleve)?.nom_famille || '';
+      const kids = mode === 'famille' && selectedFamille?.enfants
+        ? selectedFamille.enfants
+        : selectedEleve ? [selectedEleve] : [];
+      generateRecuFamillePDF({
+        nomFamille: famName,
+        enfants: kids.map((e: any) => ({
+          nom: e.nom, prenom: e.prenom, matricule: e.matricule || '', classe: e.classes?.nom || '—',
+        })),
+        montant: parseFloat(montant),
+        canal: CANAUX.find(c => c.value === canal)?.label || canal,
+        reference: (canal !== 'especes' && reference) ? reference : null,
+        date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
+        totalAnnuel: 0,
+        totalPaye: currentSolde + parseFloat(montant),
+        resteAPayer: 0,
+      });
+
       setFamilleId(''); setEleveId(''); setMontant(''); setCanal('especes'); setReference('');
       setBanqueNom(''); setDateDepot(''); setPreuveFile(null);
       setOpen(false);
@@ -937,33 +957,6 @@ function RechargePortefeuillePanel({ eleves, familles }: { eleves: any[]; famill
         </Dialog>
       </div>
 
-      {/* Family wallet overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {familles.filter((f: any) => eleves.some((e: any) => e.famille_id === f.id)).map((f: any) => {
-          const kids = eleves.filter((e: any) => e.famille_id === f.id);
-          return (
-            <Card key={f.id}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Users className="h-4 w-4" /> {f.nom_famille}
-                  <Badge variant="outline" className="ml-auto">{kids.length} enfant(s)</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between p-2 rounded bg-primary/5 border border-primary/20">
-                  <span className="text-xs font-medium flex items-center gap-1"><Wallet className="h-3 w-3" /> Portefeuille</span>
-                  <span className="font-bold text-sm text-primary">{Number(f.solde_famille || 0).toLocaleString()} GNF</span>
-                </div>
-                <div className="mt-2 space-y-1">
-                  {kids.map((e: any) => (
-                    <p key={e.id} className="text-xs text-muted-foreground">{e.prenom} {e.nom} — {e.classes?.nom || '—'}</p>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
     </div>
   );
 }
@@ -1209,7 +1202,7 @@ export default function Paiements() {
           <TabsTrigger value="famille">👨‍👩‍👧‍👦 Comptes Familles</TabsTrigger>
           <TabsTrigger value="portefeuille">💰 Portefeuille</TabsTrigger>
           <TabsTrigger value="cantine">🍽️ Cantine</TabsTrigger>
-          <TabsTrigger value="ordres">📋 Ordres de Paiement</TabsTrigger>
+          
           <TabsTrigger value="historique">📋 Historique</TabsTrigger>
           <TabsTrigger value="tendances">📊 Tendances</TabsTrigger>
         </TabsList>
@@ -1230,9 +1223,6 @@ export default function Paiements() {
           <CantineDirectePanel eleves={eleves} familles={familles} />
         </TabsContent>
 
-        <TabsContent value="ordres" className="mt-4">
-          <OrdresPaiementPanel />
-        </TabsContent>
 
         <TabsContent value="historique" className="space-y-4 mt-4">
           <div className="flex gap-3 flex-wrap">
