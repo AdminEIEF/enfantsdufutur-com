@@ -1,0 +1,2 @@
+ALTER TABLE public.paiements DROP CONSTRAINT paiements_canal_check;
+ALTER TABLE public.paiements ADD CONSTRAINT paiements_canal_check CHECK (canal = ANY (ARRAY['especes','orange_money','mtn_momo','portefeuille','ajustement']::text[]));
