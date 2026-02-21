@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Shirt, ShoppingBag, User, Search, Plus, Minus, Trash2, Package, History, BarChart3, ClipboardCheck, CheckCircle2, Clock, Settings, Pencil, AlertTriangle, Camera } from 'lucide-react';
 import QRScannerDialog from '@/components/QRScannerDialog';
@@ -42,6 +43,7 @@ function RetraitsPanel() {
   const [searchEleve, setSearchEleve] = useState('');
   const [selectedEleve, setSelectedEleve] = useState<any>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
   const { data: eleves = [] } = useQuery({
     queryKey: ['eleves_retraits'],
@@ -80,19 +82,34 @@ function RetraitsPanel() {
     ).slice(0, 10);
   }, [searchEleve, eleves]);
 
+  const toggleItem = (id: string) => {
+    setSelectedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllItems = () => {
+    if (selectedItems.size === commandesPaye.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(commandesPaye.map((c: any) => c.id)));
+    }
+  };
+
   const validerLivraison = useMutation({
     mutationFn: async (commandeIds: string[]) => {
-      // Update status to livre
       const { error } = await supabase
         .from('commandes_articles' as any)
         .update({ statut: 'livre', livre_at: new Date().toISOString(), livre_par: (await supabase.auth.getUser()).data.user?.id } as any)
         .in('id', commandeIds);
       if (error) throw error;
 
-      // Deduct stock for each article at pickup time
-      for (const cmd of commandesPaye.filter((c: any) => commandeIds.includes(c.id))) {
+      // Deduct stock for each delivered article
+      const itemsToDeliver = commandesPaye.filter((c: any) => commandeIds.includes(c.id));
+      for (const cmd of itemsToDeliver) {
         if (cmd.article_type === 'boutique') {
-          // Find matching boutique article by name+taille and deduct stock
           const { data: matchArticles } = await supabase
             .from('boutique_articles')
             .select('id, stock')
@@ -108,14 +125,15 @@ function RetraitsPanel() {
         }
       }
     },
-    onSuccess: () => {
-      // Generate Bon de Récupération
-      const articlesLivres = commandesPaye.map((c: any) => ({
-        nom: c.article_nom,
-        taille: c.article_taille,
-        quantite: c.quantite,
-        prixUnitaire: Number(c.prix_unitaire),
-      }));
+    onSuccess: (_, commandeIds) => {
+      const articlesLivres = commandesPaye
+        .filter((c: any) => commandeIds.includes(c.id))
+        .map((c: any) => ({
+          nom: c.article_nom,
+          taille: c.article_taille,
+          quantite: c.quantite,
+          prixUnitaire: Number(c.prix_unitaire),
+        }));
       const totalMontant = articlesLivres.reduce((s, a) => s + a.prixUnitaire * a.quantite, 0);
       const now = new Date();
 
@@ -129,7 +147,8 @@ function RetraitsPanel() {
         heure: now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
       });
 
-      toast.success('Livraison validée ! Bon de récupération généré.');
+      toast.success(`${commandeIds.length} article(s) livré(s) ! Bon de récupération généré.`);
+      setSelectedItems(new Set());
       queryClient.invalidateQueries({ queryKey: ['commandes_eleve', selectedEleve?.id] });
     },
     onError: (e: any) => toast.error(e.message),
@@ -187,20 +206,30 @@ function RetraitsPanel() {
               {commandesPaye.length > 0 && (
                 <Card className="border-orange-300/50">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2 text-orange-700">
-                      <Clock className="h-4 w-4" /> En attente de retrait ({commandesPaye.length})
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm flex items-center gap-2 text-orange-700">
+                        <Clock className="h-4 w-4" /> En attente de retrait ({commandesPaye.length})
+                      </CardTitle>
+                      <Button variant="ghost" size="sm" className="text-xs" onClick={selectAllItems}>
+                        {selectedItems.size === commandesPaye.length ? 'Tout désélectionner' : 'Tout sélectionner'}
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-2">
+                    <p className="text-xs text-muted-foreground">Cochez les articles disponibles pour une livraison partielle ou totale :</p>
                     {commandesPaye.map((c: any) => (
-                      <div key={c.id} className="flex items-center justify-between p-2 rounded border bg-orange-50/50 dark:bg-orange-950/20">
-                        <div>
+                      <div
+                        key={c.id}
+                        className={`flex items-center gap-3 p-2 rounded border cursor-pointer transition-colors ${selectedItems.has(c.id) ? 'bg-primary/10 border-primary/40' : 'bg-orange-50/50 dark:bg-orange-950/20'}`}
+                        onClick={() => toggleItem(c.id)}
+                      >
+                        <Checkbox checked={selectedItems.has(c.id)} onCheckedChange={() => toggleItem(c.id)} />
+                        <div className="flex-1">
                           <p className="text-sm font-medium">{c.article_nom}</p>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             {c.article_taille && <Badge variant="outline" className="text-[10px]">{c.article_taille}</Badge>}
                             <span>Qté: {c.quantite}</span>
                             <span>{Number(c.prix_unitaire).toLocaleString()} GNF</span>
-                            <Badge variant="outline" className="text-[10px] capitalize">{c.article_type}</Badge>
                           </div>
                         </div>
                         <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-300">
@@ -210,12 +239,12 @@ function RetraitsPanel() {
                     ))}
 
                     <Button
-                      className="w-full bg-purple-600 hover:bg-purple-700 mt-2"
-                      onClick={() => validerLivraison.mutate(commandesPaye.map((c: any) => c.id))}
-                      disabled={validerLivraison.isPending}
+                      className="w-full mt-2"
+                      onClick={() => validerLivraison.mutate(Array.from(selectedItems))}
+                      disabled={validerLivraison.isPending || selectedItems.size === 0}
                     >
                       <CheckCircle2 className="h-4 w-4 mr-2" />
-                      {validerLivraison.isPending ? 'Validation...' : `Valider la livraison (${commandesPaye.length} articles) & Imprimer Bon`}
+                      {validerLivraison.isPending ? 'Validation...' : `Valider la livraison (${selectedItems.size}/${commandesPaye.length} articles) & Imprimer Bon`}
                     </Button>
                   </CardContent>
                 </Card>

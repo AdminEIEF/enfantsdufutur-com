@@ -527,6 +527,7 @@ export type Database = {
           uniforme_karate: boolean | null
           uniforme_polo_lacoste: boolean | null
           uniforme_scolaire: boolean | null
+          uniforme_scout: boolean | null
           uniforme_sport: boolean | null
           updated_at: string
           zone_transport_id: string | null
@@ -559,6 +560,7 @@ export type Database = {
           uniforme_karate?: boolean | null
           uniforme_polo_lacoste?: boolean | null
           uniforme_scolaire?: boolean | null
+          uniforme_scout?: boolean | null
           uniforme_sport?: boolean | null
           updated_at?: string
           zone_transport_id?: string | null
@@ -591,6 +593,7 @@ export type Database = {
           uniforme_karate?: boolean | null
           uniforme_polo_lacoste?: boolean | null
           uniforme_scolaire?: boolean | null
+          uniforme_scout?: boolean | null
           uniforme_sport?: boolean | null
           updated_at?: string
           zone_transport_id?: string | null
