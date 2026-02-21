@@ -54,6 +54,7 @@ export function generateRecuFamillePDF(data: {
       <div class="footer">
         <p>Généré le ${new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
         <p>Ce reçu fait foi de paiement — EduGestion Pro</p>
+        <p style="margin-top:3px;font-weight:600;color:#c62828;font-size:7.5px;">NB : Une fois versé tous frais sont non remboursable et non transférables.</p>
       </div>
       <div class="signatures">
         <div class="sig-block"><div class="sig-line"></div><p>Signature Parent</p></div>
