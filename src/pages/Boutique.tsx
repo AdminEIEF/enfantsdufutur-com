@@ -58,9 +58,10 @@ function RetraitsPanel() {
     queryFn: async () => {
       if (!selectedEleve) return [];
       const { data, error } = await supabase
-        .from('commandes_articles' as any)
+        .from('commandes_articles')
         .select('*')
         .eq('eleve_id', selectedEleve.id)
+        .eq('article_type', 'boutique')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as any[];
