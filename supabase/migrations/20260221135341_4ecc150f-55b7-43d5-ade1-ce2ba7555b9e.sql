@@ -1,0 +1,2 @@
+ALTER TABLE public.paiements DROP CONSTRAINT paiements_type_paiement_check;
+ALTER TABLE public.paiements ADD CONSTRAINT paiements_type_paiement_check CHECK (type_paiement = ANY (ARRAY['scolarite','transport','cantine','boutique','fournitures','uniforme','inscription','reinscription','librairie','autre','wallet']::text[]));
