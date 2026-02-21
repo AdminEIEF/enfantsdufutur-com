@@ -15,6 +15,7 @@ import { AIChatBubble } from '@/components/AIChatBubble';
 import ParentPaymentDialog from '@/components/ParentPaymentDialog';
 import ParentDevisInscription from '@/components/ParentDevisInscription';
 import ParentCantineOrdre from '@/components/ParentCantineOrdre';
+import ParentServiceOrdre from '@/components/ParentServiceOrdre';
 
 const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 
@@ -231,6 +232,14 @@ export default function ParentDashboard() {
             <ParentCantineOrdre
               enfants={eleves}
               code={session.code}
+              onSuccess={fetchDashboard}
+            />
+
+            {/* Ordres de paiement (Wallet, Librairie, Boutique) */}
+            <ParentServiceOrdre
+              enfants={eleves}
+              code={session.code}
+              soldeFamille={dashData?.solde_famille || 0}
               onSuccess={fetchDashboard}
             />
 

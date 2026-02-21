@@ -1026,6 +1026,69 @@ export type Database = {
           },
         ]
       }
+      ordres_paiement: {
+        Row: {
+          canal: string
+          code_transaction: string
+          created_at: string
+          description: string | null
+          eleve_id: string | null
+          famille_id: string
+          id: string
+          montant: number
+          statut: string
+          type_service: string
+          updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          canal?: string
+          code_transaction?: string
+          created_at?: string
+          description?: string | null
+          eleve_id?: string | null
+          famille_id: string
+          id?: string
+          montant: number
+          statut?: string
+          type_service?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          canal?: string
+          code_transaction?: string
+          created_at?: string
+          description?: string | null
+          eleve_id?: string | null
+          famille_id?: string
+          id?: string
+          montant?: number
+          statut?: string
+          type_service?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordres_paiement_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordres_paiement_famille_id_fkey"
+            columns: ["famille_id"]
+            isOneToOne: false
+            referencedRelation: "familles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       paiements: {
         Row: {
           banque_nom: string | null
