@@ -1512,6 +1512,107 @@ export type Database = {
           },
         ]
       }
+      ventes_credit: {
+        Row: {
+          article_nom: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          eleve_id: string
+          famille_id: string | null
+          id: string
+          montant_verse: number
+          prix_total: number
+          solde_restant: number
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          article_nom: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          eleve_id: string
+          famille_id?: string | null
+          id?: string
+          montant_verse?: number
+          prix_total: number
+          solde_restant: number
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          article_nom?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          eleve_id?: string
+          famille_id?: string | null
+          id?: string
+          montant_verse?: number
+          prix_total?: number
+          solde_restant?: number
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ventes_credit_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ventes_credit_famille_id_fkey"
+            columns: ["famille_id"]
+            isOneToOne: false
+            referencedRelation: "familles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      versements_credit: {
+        Row: {
+          canal: string
+          created_at: string
+          created_by: string | null
+          date_versement: string
+          id: string
+          montant: number
+          reference: string | null
+          vente_credit_id: string
+        }
+        Insert: {
+          canal?: string
+          created_at?: string
+          created_by?: string | null
+          date_versement?: string
+          id?: string
+          montant: number
+          reference?: string | null
+          vente_credit_id: string
+        }
+        Update: {
+          canal?: string
+          created_at?: string
+          created_by?: string | null
+          date_versement?: string
+          id?: string
+          montant?: number
+          reference?: string | null
+          vente_credit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "versements_credit_vente_credit_id_fkey"
+            columns: ["vente_credit_id"]
+            isOneToOne: false
+            referencedRelation: "ventes_credit"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zones_transport: {
         Row: {
           chauffeur_bus: string | null
