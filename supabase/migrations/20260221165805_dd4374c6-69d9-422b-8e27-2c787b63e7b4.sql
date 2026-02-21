@@ -1,0 +1,1 @@
+ALTER TABLE public.eleves ADD COLUMN IF NOT EXISTS uniforme_scout boolean DEFAULT false;

@@ -29,6 +29,7 @@ interface ChildForm {
   uniformeSport: boolean;
   uniformePolo: boolean;
   uniformeKarate: boolean;
+  uniformeScout: boolean;
   optionCantine: boolean;
   optionFournitures: boolean;
   optionAssurance: boolean;
@@ -48,12 +49,31 @@ function createEmptyChild(): ChildForm {
     photoEleve: null, photoElevePreview: null,
     zoneTransportId: '', adresse: '',
     uniformeScolaire: false, uniformeSport: false,
-    uniformePolo: false, uniformeKarate: false, optionCantine: false,
+    uniformePolo: false, uniformeKarate: false, uniformeScout: false, optionCantine: false,
     optionFournitures: false, optionAssurance: false, selectedArticles: {},
     checkLivret: false, checkRames: false, checkMarqueurs: false, checkPhoto: false,
     mandataires: createEmptyMandataires(),
     typeInscription: 'inscription', expanded: true,
   };
+}
+
+function useBoutiquePrices() {
+  return useQuery({
+    queryKey: ['boutique-uniform-prices'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('boutique_articles')
+        .select('id, nom, categorie, prix, taille, stock')
+        .order('categorie');
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+}
+
+function getBoutiquePrice(articles: any[], categorie: string) {
+  const match = articles.find((a: any) => a.categorie === categorie);
+  return match ? Number(match.prix) : 0;
 }
 
 function useArticlesForLevel(niveauId: string | null) {
@@ -149,6 +169,7 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
   const [children, setChildren] = useState<ChildForm[]>([createEmptyChild()]);
   const queryClient = useQueryClient();
   const { data: zones = [] } = useZonesTransport();
+  const { data: boutiqueArticles = [] } = useBoutiquePrices();
 
   // Fetch tranches config
   const { data: allTranchesConfig = {} } = useQuery({
@@ -205,32 +226,25 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
     const zone = zones.find((z: any) => z.id === child.zoneTransportId);
     const fraisTransport = zone ? Number(zone.prix_mensuel) : 0;
 
-    const cycleName = cl?.niveaux?.cycles?.nom || '';
-    const isPrimaire = ['Crèche', 'Maternelle', 'Primaire'].includes(cycleName);
-    const getUniformFee = (cat: string) => tarifs.find((t: any) => t.categorie === cat)?.montant || 0;
-    const tenueScolaireEntries = tarifs.filter((t: any) => t.categorie === 'uniforme_scolaire');
-    const prixTenueScolaire = tenueScolaireEntries.length > 1
-      ? (tenueScolaireEntries.find((t: any) =>
-          isPrimaire ? t.label.toLowerCase().includes('primaire') : (t.label.toLowerCase().includes('collège') || t.label.toLowerCase().includes('lycée'))
-        )?.montant || tenueScolaireEntries[0]?.montant || 0)
-      : (tenueScolaireEntries[0]?.montant || 0);
+    // Prices from boutique_articles
+    const prixTenueScolaire = getBoutiquePrice(boutiqueArticles, 'tenue_scolaire');
+    const prixTenueSport = getBoutiquePrice(boutiqueArticles, 'tenue_sport');
+    const prixPoloLacoste = getBoutiquePrice(boutiqueArticles, 'polo_lacoste');
+    const prixKarate = getBoutiquePrice(boutiqueArticles, 'tenue_karate');
+    const prixScout = getBoutiquePrice(boutiqueArticles, 'tenue_scout');
 
     const fraisUniformes =
       (child.uniformeScolaire ? prixTenueScolaire : 0) +
-      (child.uniformeSport ? getUniformFee('uniforme_sport') : 0) +
-      (child.uniformePolo ? getUniformFee('uniforme_polo_lacoste') : 0) +
-      (child.uniformeKarate ? getUniformFee('uniforme_karate') : 0);
+      (child.uniformeSport ? prixTenueSport : 0) +
+      (child.uniformePolo ? prixPoloLacoste : 0) +
+      (child.uniformeKarate ? prixKarate : 0) +
+      (child.uniformeScout ? prixScout : 0);
     const fraisFournitures = child.optionFournitures ? (tarifs.find((t: any) => t.categorie === 'fournitures')?.montant || 0) : 0;
-    const fraisAssurance = child.optionAssurance ? (cl?.niveaux?.frais_assurance || tarifs.find((t: any) => t.categorie === 'assurance')?.montant || 0) : 0;
+    const fraisAssurance = child.optionAssurance ? (cl?.niveaux?.frais_assurance || 0) : 0;
     const fraisInscription = child.typeInscription === 'inscription' 
       ? (cl?.niveaux?.frais_inscription ?? 100000) 
       : (cl?.niveaux?.frais_reinscription ?? 150000);
     const fraisDossier = cl?.niveaux?.frais_dossier ?? 0;
-
-    // Selected articles total
-    const fraisArticles = Object.keys(child.selectedArticles).filter(k => child.selectedArticles[k]).length > 0
-      ? 0 // Will be computed per-child via ChildArticles
-      : 0;
 
     return {
       fraisInscription,
@@ -336,6 +350,7 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
           checklist_marqueurs: child.checkMarqueurs, checklist_photo: child.checkPhoto,
           uniforme_scolaire: child.uniformeScolaire, uniforme_sport: child.uniformeSport,
           uniforme_polo_lacoste: child.uniformePolo, uniforme_karate: child.uniformeKarate,
+          uniforme_scout: child.uniformeScout,
           option_cantine: child.optionCantine, option_fournitures: child.optionFournitures,
           nom_prenom_pere: nomPrenomPere || null, nom_prenom_mere: nomPrenomMere || null,
           statut: 'inscrit', photo_url: photoUrl,
@@ -374,41 +389,46 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
             await supabase.from('paiements').insert(paiements as any);
           }
 
-          // Commandes articles (uniforms + selected articles)
+          // Commandes articles (uniforms from boutique_articles + selected articles)
           const commandesArticles: any[] = [];
-          const getUniformFee = (cat: string) => tarifs.find((t: any) => t.categorie === cat)?.montant || 0;
-          const tenueScolaireEntries = tarifs.filter((t: any) => t.categorie === 'uniforme_scolaire');
-          const prixTenueScolaire = tenueScolaireEntries.length > 1
-            ? (tenueScolaireEntries.find((t: any) =>
-                isPrimaire ? t.label.toLowerCase().includes('primaire') : (t.label.toLowerCase().includes('collège') || t.label.toLowerCase().includes('lycée'))
-              )?.montant || tenueScolaireEntries[0]?.montant || 0)
-            : (tenueScolaireEntries[0]?.montant || 0);
+          const prixTenueScolaire = getBoutiquePrice(boutiqueArticles, 'tenue_scolaire');
+          const prixTenueSport = getBoutiquePrice(boutiqueArticles, 'tenue_sport');
+          const prixPoloLacoste = getBoutiquePrice(boutiqueArticles, 'polo_lacoste');
+          const prixKarate = getBoutiquePrice(boutiqueArticles, 'tenue_karate');
+          const prixScout = getBoutiquePrice(boutiqueArticles, 'tenue_scout');
 
           if (child.uniformeScolaire) {
             commandesArticles.push({
               eleve_id: insertedEleve.id, article_type: 'boutique',
-              article_nom: `Tenue scolaire (${isPrimaire ? 'Primaire' : 'Collège/Lycée'})`,
+              article_nom: 'Tenue Scolaire',
               quantite: 1, prix_unitaire: prixTenueScolaire, statut: 'paye', source: 'inscription',
             });
           }
           if (child.uniformeSport) {
             commandesArticles.push({
               eleve_id: insertedEleve.id, article_type: 'boutique',
-              article_nom: 'Tenue de Sport', quantite: 1, prix_unitaire: getUniformFee('uniforme_sport'),
+              article_nom: 'Tenue de Sport', quantite: 1, prix_unitaire: prixTenueSport,
               statut: 'paye', source: 'inscription',
             });
           }
           if (child.uniformePolo) {
             commandesArticles.push({
               eleve_id: insertedEleve.id, article_type: 'boutique',
-              article_nom: 'Polo Lacoste', quantite: 1, prix_unitaire: getUniformFee('uniforme_polo_lacoste'),
+              article_nom: 'Polo Lacoste', quantite: 1, prix_unitaire: prixPoloLacoste,
               statut: 'paye', source: 'inscription',
             });
           }
           if (child.uniformeKarate) {
             commandesArticles.push({
               eleve_id: insertedEleve.id, article_type: 'boutique',
-              article_nom: 'Tenue de Karaté', quantite: 1, prix_unitaire: getUniformFee('uniforme_karate'),
+              article_nom: 'Tenue de Karaté', quantite: 1, prix_unitaire: prixKarate,
+              statut: 'paye', source: 'inscription',
+            });
+          }
+          if (child.uniformeScout) {
+            commandesArticles.push({
+              eleve_id: insertedEleve.id, article_type: 'boutique',
+              article_nom: 'Tenue de Scout', quantite: 1, prix_unitaire: prixScout,
               statut: 'paye', source: 'inscription',
             });
           }
@@ -556,13 +576,11 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
         const zone = zones.find((z: any) => z.id === child.zoneTransportId);
         const suggestedZoneId = suggestZone(child.adresse || adresseParent);
 
-        const getUniformFee = (cat: string) => tarifs.find((t: any) => t.categorie === cat)?.montant || 0;
-        const tenueScolaireEntries = tarifs.filter((t: any) => t.categorie === 'uniforme_scolaire');
-        const prixTenueScolaire = tenueScolaireEntries.length > 1
-          ? (tenueScolaireEntries.find((t: any) =>
-              isPrimaire ? t.label.toLowerCase().includes('primaire') : (t.label.toLowerCase().includes('collège') || t.label.toLowerCase().includes('lycée'))
-            )?.montant || tenueScolaireEntries[0]?.montant || 0)
-          : (tenueScolaireEntries[0]?.montant || 0);
+        const prixTenueScolaire = getBoutiquePrice(boutiqueArticles, 'tenue_scolaire');
+        const prixTenueSport = getBoutiquePrice(boutiqueArticles, 'tenue_sport');
+        const prixPoloLacoste = getBoutiquePrice(boutiqueArticles, 'polo_lacoste');
+        const prixKarate = getBoutiquePrice(boutiqueArticles, 'tenue_karate');
+        const prixScout = getBoutiquePrice(boutiqueArticles, 'tenue_scout');
 
         // Scolarite tranches
         const fraisScolarite = cl?.niveaux?.frais_scolarite || 0;
@@ -687,7 +705,7 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
                     )}
                   </div>
 
-                  {/* Uniformes */}
+                  {/* Uniformes (prix depuis la boutique) */}
                   <div className="grid grid-cols-2 gap-1.5 mb-2">
                     <div className="flex items-center gap-2">
                       <Checkbox checked={child.uniformeScolaire} onCheckedChange={(v) => updateChild(idx, { uniformeScolaire: !!v })} />
@@ -695,15 +713,19 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
                     </div>
                     <div className="flex items-center gap-2">
                       <Checkbox checked={child.uniformeSport} onCheckedChange={(v) => updateChild(idx, { uniformeSport: !!v })} />
-                      <Label className="text-xs">Tenue sport {getUniformFee('uniforme_sport') > 0 && <span className="text-muted-foreground">— {getUniformFee('uniforme_sport').toLocaleString()}</span>}</Label>
+                      <Label className="text-xs">Tenue sport {prixTenueSport > 0 && <span className="text-muted-foreground">— {prixTenueSport.toLocaleString()}</span>}</Label>
                     </div>
                     <div className="flex items-center gap-2">
                       <Checkbox checked={child.uniformePolo} onCheckedChange={(v) => updateChild(idx, { uniformePolo: !!v })} />
-                      <Label className="text-xs">Polo Lacoste {getUniformFee('uniforme_polo_lacoste') > 0 && <span className="text-muted-foreground">— {getUniformFee('uniforme_polo_lacoste').toLocaleString()}</span>}</Label>
+                      <Label className="text-xs">Polo Lacoste {prixPoloLacoste > 0 && <span className="text-muted-foreground">— {prixPoloLacoste.toLocaleString()}</span>}</Label>
                     </div>
                     <div className="flex items-center gap-2">
                       <Checkbox checked={child.uniformeKarate} onCheckedChange={(v) => updateChild(idx, { uniformeKarate: !!v })} />
-                      <Label className="text-xs">Karaté {getUniformFee('uniforme_karate') > 0 && <span className="text-muted-foreground">— {getUniformFee('uniforme_karate').toLocaleString()}</span>}</Label>
+                      <Label className="text-xs">Karaté {prixKarate > 0 && <span className="text-muted-foreground">— {prixKarate.toLocaleString()}</span>}</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox checked={child.uniformeScout} onCheckedChange={(v) => updateChild(idx, { uniformeScout: !!v })} />
+                      <Label className="text-xs">Tenue Scout {prixScout > 0 && <span className="text-muted-foreground">— {prixScout.toLocaleString()}</span>}</Label>
                     </div>
                   </div>
 

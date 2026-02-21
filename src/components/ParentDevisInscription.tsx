@@ -18,6 +18,7 @@ interface DevisProps {
     uniforme_sport?: boolean;
     uniforme_polo_lacoste?: boolean;
     uniforme_karate?: boolean;
+    uniforme_scout?: boolean;
     option_fournitures?: boolean;
   }>;
   paiements: any[];
