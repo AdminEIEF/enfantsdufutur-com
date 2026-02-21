@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { code, action, eleve_id, montant, type_paiement, description } = await req.json();
+    const { code, action, eleve_id, montant, type_paiement, description, type_service, items, total } = await req.json();
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -55,7 +55,6 @@ serve(async (req) => {
         });
       }
 
-      // Verify child belongs to family
       if (!childIds.includes(eleve_id)) {
         return new Response(JSON.stringify({ error: "Accès non autorisé à cet élève" }), {
           status: 403,
@@ -63,7 +62,6 @@ serve(async (req) => {
         });
       }
 
-      // Validate amount
       const numMontant = Number(montant);
       if (isNaN(numMontant) || numMontant <= 0 || numMontant > 100000000) {
         return new Response(JSON.stringify({ error: "Montant invalide" }), {
@@ -72,7 +70,6 @@ serve(async (req) => {
         });
       }
 
-      // Validate type_paiement
       const allowedTypes = ["scolarite", "transport", "cantine", "boutique", "librairie", "fournitures", "inscription", "reinscription", "autre"];
       if (!allowedTypes.includes(type_paiement)) {
         return new Response(JSON.stringify({ error: "Type de paiement non autorisé" }), {
@@ -81,7 +78,6 @@ serve(async (req) => {
         });
       }
 
-      // Call the RPC function
       const { data: result, error: rpcErr } = await supabaseAdmin.rpc("debit_famille_wallet", {
         _famille_id: familleId,
         _montant: numMontant,
@@ -106,27 +102,165 @@ serve(async (req) => {
       );
     }
 
+    // ─── CATALOGUE (fetch articles for parent ordering) ───
+    if (action === "catalogue") {
+      let articles: any[] = [];
+
+      if (type_service === "librairie") {
+        // Fetch articles for the child's level
+        if (!eleve_id || !childIds.includes(eleve_id)) {
+          return new Response(JSON.stringify({ articles: [] }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const { data: eleveData } = await supabaseAdmin
+          .from("eleves")
+          .select("classes(niveau_id)")
+          .eq("id", eleve_id)
+          .maybeSingle();
+        const niveauId = (eleveData as any)?.classes?.niveau_id;
+        if (niveauId) {
+          const { data: arts } = await supabaseAdmin
+            .from("articles")
+            .select("id, nom, categorie, prix, stock, niveau_id")
+            .eq("niveau_id", niveauId)
+            .gt("stock", 0);
+          articles = arts || [];
+        }
+      } else if (type_service === "boutique") {
+        const { data: arts } = await supabaseAdmin
+          .from("boutique_articles")
+          .select("id, nom, categorie, prix, stock, taille")
+          .gt("stock", 0)
+          .order("categorie")
+          .order("nom");
+        articles = arts || [];
+      }
+
+      return new Response(
+        JSON.stringify({ articles }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ─── COMMANDER ARTICLES (parent places order, debits wallet) ───
+    if (action === "commander_articles") {
+      if (!eleve_id || !items || !Array.isArray(items) || items.length === 0 || !type_service || !total) {
+        return new Response(JSON.stringify({ error: "Paramètres manquants" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!childIds.includes(eleve_id)) {
+        return new Response(JSON.stringify({ error: "Accès non autorisé" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const numTotal = Number(total);
+      if (isNaN(numTotal) || numTotal <= 0) {
+        return new Response(JSON.stringify({ error: "Total invalide" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Verify server-side total
+      let serverTotal = 0;
+      for (const item of items) {
+        serverTotal += Number(item.prix_unitaire) * Number(item.quantite);
+      }
+      if (Math.abs(serverTotal - numTotal) > 1) {
+        return new Response(JSON.stringify({ error: "Incohérence du montant total" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Check wallet balance
+      const { data: freshFamille } = await supabaseAdmin
+        .from("familles")
+        .select("solde_famille")
+        .eq("id", familleId)
+        .single();
+      
+      if (!freshFamille || Number(freshFamille.solde_famille) < numTotal) {
+        return new Response(JSON.stringify({ error: `Solde insuffisant. Solde actuel: ${Number(freshFamille?.solde_famille || 0).toLocaleString()} GNF` }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Debit wallet
+      const { data: debitResult, error: debitErr } = await supabaseAdmin.rpc("debit_famille_wallet", {
+        _famille_id: familleId,
+        _montant: numTotal,
+        _eleve_id: eleve_id,
+        _type_paiement: type_service === "boutique" ? "boutique" : "librairie",
+        _description: `Commande ${type_service} (${items.length} article${items.length > 1 ? 's' : ''})`,
+      });
+
+      if (debitErr) throw debitErr;
+      const debitRes = debitResult as any;
+      if (!debitRes?.success) {
+        return new Response(JSON.stringify({ error: debitRes?.error || "Échec du débit" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Create commandes_articles entries (status: paye - stock NOT deducted yet)
+      const commandeRows = items.map((item: any) => ({
+        eleve_id,
+        article_nom: item.article_nom,
+        article_taille: item.article_taille || null,
+        article_type: type_service,
+        quantite: Number(item.quantite),
+        prix_unitaire: Number(item.prix_unitaire),
+        source: "commande_parent",
+        statut: "paye",
+      }));
+
+      const { error: insertErr } = await supabaseAdmin
+        .from("commandes_articles")
+        .insert(commandeRows);
+
+      if (insertErr) throw insertErr;
+
+      // Notify parent
+      await supabaseAdmin.from("parent_notifications").insert({
+        famille_id: familleId,
+        titre: `🛒 Commande ${type_service} validée`,
+        message: `Votre commande de ${numTotal.toLocaleString()} GNF (${items.length} article${items.length > 1 ? 's' : ''}) a été payée. Présentez-vous à l'école pour récupérer les articles.`,
+        type: "commande",
+      });
+
+      return new Response(
+        JSON.stringify({ success: true, message: "Commande validée" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ─── DASHBOARD ───
     if (action === "dashboard") {
-      // Fetch all payments for the family's children
       const { data: paiements } = await supabaseAdmin
         .from("paiements")
         .select("*")
         .in("eleve_id", childIds)
         .order("date_paiement", { ascending: false });
 
-      // Fetch niveaux for fee calculation
       const { data: eleves } = await supabaseAdmin
         .from("eleves")
         .select("id, nom, prenom, matricule, solde_cantine, classe_id, option_cantine, option_fournitures, uniforme_scolaire, uniforme_sport, uniforme_polo_lacoste, uniforme_karate, zone_transport_id, classes(nom, niveaux:niveau_id(nom, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, cycles:cycle_id(nom))), zones_transport:zone_transport_id(nom, prix_mensuel)")
         .eq("famille_id", familleId)
         .is("deleted_at", null);
 
-      // Fetch all tarifs (uniforms, assurance, etc.)
       const { data: tarifs } = await supabaseAdmin
         .from("tarifs")
         .select("*");
 
-      // Fetch famille solde (fresh)
       const { data: familleData } = await supabaseAdmin
         .from("familles")
         .select("solde_famille")
@@ -144,8 +278,8 @@ serve(async (req) => {
       );
     }
 
+    // ─── ENFANT DETAIL ───
     if (action === "enfant" && eleve_id) {
-      // Verify this child belongs to the family
       if (!childIds.includes(eleve_id)) {
         return new Response(JSON.stringify({ error: "Accès non autorisé" }), {
           status: 403,
@@ -153,14 +287,12 @@ serve(async (req) => {
         });
       }
 
-      // Fetch child payments
       const { data: paiements } = await supabaseAdmin
         .from("paiements")
         .select("*")
         .eq("eleve_id", eleve_id)
         .order("date_paiement", { ascending: false });
 
-      // Fetch cantine meals (last 30 days)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const { data: repas } = await supabaseAdmin
@@ -170,28 +302,24 @@ serve(async (req) => {
         .gte("date_repas", thirtyDaysAgo.toISOString())
         .order("date_repas", { ascending: false });
 
-      // Fetch librairie purchases
       const { data: ventesArticles } = await supabaseAdmin
         .from("ventes_articles")
         .select("*, articles:article_id(nom, categorie)")
         .eq("eleve_id", eleve_id)
         .order("created_at", { ascending: false });
 
-      // Fetch boutique purchases
       const { data: boutiqueVentes } = await supabaseAdmin
         .from("boutique_ventes")
         .select("*, boutique_vente_items(*, boutique_articles:article_id(nom, categorie, taille))")
         .eq("eleve_id", eleve_id)
         .order("created_at", { ascending: false });
 
-      // Fetch commandes_articles (order tracking)
       const { data: commandesArticles } = await supabaseAdmin
         .from("commandes_articles")
         .select("*")
         .eq("eleve_id", eleve_id)
         .order("created_at", { ascending: false });
 
-      // Fetch available articles for the child's level
       const { data: eleveData } = await supabaseAdmin
         .from("eleves")
         .select("classe_id, solde_cantine, classes(niveau_id)")
@@ -211,7 +339,6 @@ serve(async (req) => {
         articlesNiveau = arts || [];
       }
 
-      // Fetch bulletin publications visible to parents for this child's class
       let bulletinPublications: any[] = [];
       if (classeId) {
         const { data: pubs } = await supabaseAdmin

@@ -220,11 +220,12 @@ export default function ParentEnfant() {
                             </div>
                             <div className="text-right">
                               <Badge variant="default" className="bg-green-600 text-xs">
-                                <CheckCircle2 className="h-3 w-3 mr-1" /> Livré
+                                <CheckCircle2 className="h-3 w-3 mr-1" /> Récupéré
                               </Badge>
                               {c.livre_at && (
                                 <p className="text-[10px] text-muted-foreground mt-1">
-                                  {new Date(c.livre_at).toLocaleDateString('fr-FR')}
+                                  📅 {new Date(c.livre_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                  {' à '}{new Date(c.livre_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                                 </p>
                               )}
                             </div>
