@@ -224,10 +224,21 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
         if (error) throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['paiements'] });
       queryClient.invalidateQueries({ queryKey: ['articles'] });
+      queryClient.invalidateQueries({ queryKey: ['familles'] });
       toast({ title: 'Paiement enregistré', description: `${parseInt(montant).toLocaleString()} GNF` });
+
+      // Send notification to parent when wallet is recharged
+      if (typePaiement === 'wallet' && selectedEleve?.famille_id) {
+        await supabase.from('parent_notifications').insert({
+          famille_id: selectedEleve.famille_id,
+          titre: '💰 Portefeuille rechargé',
+          message: `Votre portefeuille famille a été rechargé de ${parseFloat(montant).toLocaleString()} GNF via ${CANAUX.find(c => c.value === canal)?.label || canal}. Le solde est mis à jour.`,
+          type: 'paiement',
+        } as any);
+      }
 
       if ((typePaiement === 'scolarite' || typePaiement === 'transport') && selectedEleve) {
         const isTransport = typePaiement === 'transport';
