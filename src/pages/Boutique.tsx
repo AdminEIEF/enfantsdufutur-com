@@ -713,7 +713,7 @@ function VenteCreditPanel() {
   const { data: eleves = [] } = useQuery({
     queryKey: ['eleves_credit'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('eleves').select('id, nom, prenom, matricule, classe_id, famille_id, classes(nom)').is('deleted_at', null);
+      const { data, error } = await supabase.from('eleves').select('id, nom, prenom, matricule, classe_id, famille_id, classes(nom), familles(nom_famille, telephone_pere, telephone_mere)').is('deleted_at', null);
       if (error) throw error;
       return data;
     },
@@ -745,7 +745,7 @@ function VenteCreditPanel() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ventes_credit' as any)
-        .select('*, eleves(nom, prenom, matricule, classes(nom))')
+        .select('*, eleves(nom, prenom, matricule, classes(nom), familles(nom_famille, telephone_pere, telephone_mere))')
         .order('created_at', { ascending: false })
         .limit(200);
       if (error) throw error;
@@ -984,10 +984,19 @@ function VenteCreditPanel() {
                       <p className="font-semibold">{v.article_nom}</p>
                       {v.description && <p className="text-xs text-muted-foreground">{v.description}</p>}
                       {eleveInfo && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {eleveInfo.prenom} {eleveInfo.nom} {eleveInfo.matricule ? `(${eleveInfo.matricule})` : ''} 
-                          {(eleveInfo as any).classes?.nom ? ` — ${(eleveInfo as any).classes.nom}` : ''}
-                        </p>
+                        <div className="mt-1">
+                          <p className="text-sm text-muted-foreground">
+                            {eleveInfo.prenom} {eleveInfo.nom} {eleveInfo.matricule ? `(${eleveInfo.matricule})` : ''} 
+                            {(eleveInfo as any).classes?.nom ? ` — ${(eleveInfo as any).classes.nom}` : ''}
+                          </p>
+                          {(eleveInfo as any).familles && (
+                            <p className="text-xs font-bold text-foreground/70 mt-0.5">
+                              🏠 {(eleveInfo as any).familles.nom_famille}
+                              {(eleveInfo as any).familles.telephone_pere ? ` · Père: ${(eleveInfo as any).familles.telephone_pere}` : ''}
+                              {(eleveInfo as any).familles.telephone_mere ? ` · Mère: ${(eleveInfo as any).familles.telephone_mere}` : ''}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
                     <Badge variant={v.statut === 'solde' ? 'default' : 'secondary'} className={v.statut === 'solde' ? 'bg-green-600' : 'bg-orange-100 text-orange-800 border-orange-300'}>
