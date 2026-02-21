@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Printer, Download, Upload, Users, Landmark, Calendar, FileImage, UtensilsCrossed, XCircle } from 'lucide-react';
+import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Printer, Download, Upload, Users, Landmark, Calendar, FileImage, UtensilsCrossed, XCircle, ShoppingCart, Package } from 'lucide-react';
 import CantineDirectePanel from '@/components/CantineDirectePanel';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -960,7 +960,133 @@ function RechargePortefeuillePanel({ eleves, familles }: { eleves: any[]; famill
     </div>
   );
 }
-// ─── Main Page ──────────────────────────────────────────────
+// ─── Commandes Validées par les Parents ───────────────────
+function CommandesParentPanel({ eleves, familles }: { eleves: any[]; familles: any[] }) {
+  const [searchCmd, setSearchCmd] = useState('');
+  const [filterStatut, setFilterStatut] = useState('all');
+  const [filterType, setFilterType] = useState('all');
+
+  const { data: commandes = [], isLoading } = useQuery({
+    queryKey: ['commandes-parent'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('commandes_articles')
+        .select('*, eleves:eleve_id(nom, prenom, matricule, famille_id)')
+        .eq('source', 'commande_parent')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const filtered = commandes.filter((c: any) => {
+    const eleveName = `${c.eleves?.prenom || ''} ${c.eleves?.nom || ''} ${c.eleves?.matricule || ''}`.toLowerCase();
+    const familleNom = c.eleves?.famille_id ? familles.find((f: any) => f.id === c.eleves.famille_id)?.nom_famille || '' : '';
+    const matchSearch = `${eleveName} ${familleNom} ${c.article_nom}`.toLowerCase().includes(searchCmd.toLowerCase());
+    const matchStatut = filterStatut === 'all' || c.statut === filterStatut;
+    const matchType = filterType === 'all' || c.article_type === filterType;
+    return matchSearch && matchStatut && matchType;
+  });
+
+  const totalMontant = filtered.reduce((s: number, c: any) => s + (Number(c.prix_unitaire) * Number(c.quantite)), 0);
+  const nbPaye = commandes.filter((c: any) => c.statut === 'paye').length;
+  const nbLivre = commandes.filter((c: any) => c.statut === 'livré' || c.statut === 'livre').length;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card>
+          <CardHeader className="pb-1 pt-3 px-3"><CardTitle className="text-xs text-muted-foreground">Total commandes</CardTitle></CardHeader>
+          <CardContent className="px-3 pb-3"><p className="text-lg font-bold">{commandes.length}</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-1 pt-3 px-3"><CardTitle className="text-xs text-muted-foreground">En attente retrait</CardTitle></CardHeader>
+          <CardContent className="px-3 pb-3"><p className="text-lg font-bold text-orange-600">{nbPaye}</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-1 pt-3 px-3"><CardTitle className="text-xs text-muted-foreground">Livrées</CardTitle></CardHeader>
+          <CardContent className="px-3 pb-3"><p className="text-lg font-bold text-green-600">{nbLivre}</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-1 pt-3 px-3"><CardTitle className="text-xs text-muted-foreground">Montant total</CardTitle></CardHeader>
+          <CardContent className="px-3 pb-3"><p className="text-lg font-bold">{totalMontant.toLocaleString()} GNF</p></CardContent>
+        </Card>
+      </div>
+
+      <div className="flex gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Rechercher élève, famille, article..." value={searchCmd} onChange={e => setSearchCmd(e.target.value)} className="pl-9" />
+        </div>
+        <Select value={filterStatut} onValueChange={setFilterStatut}>
+          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les statuts</SelectItem>
+            <SelectItem value="paye">Payé (en attente)</SelectItem>
+            <SelectItem value="livré">Livré</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterType} onValueChange={setFilterType}>
+          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les types</SelectItem>
+            <SelectItem value="librairie">📚 Librairie</SelectItem>
+            <SelectItem value="boutique">👔 Boutique</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground text-center py-8">Chargement...</p>
+      ) : filtered.length === 0 ? (
+        <Card><CardContent className="py-8 text-center text-muted-foreground"><ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-30" /><p>Aucune commande parent trouvée</p></CardContent></Card>
+      ) : (
+        <div className="border rounded-lg overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Élève</TableHead>
+                <TableHead>Famille</TableHead>
+                <TableHead>Article</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead className="text-center">Qté</TableHead>
+                <TableHead className="text-right">Montant</TableHead>
+                <TableHead className="text-center">Statut</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((c: any) => {
+                const familleNom = c.eleves?.famille_id ? familles.find((f: any) => f.id === c.eleves.famille_id)?.nom_famille : null;
+                const isLivre = c.statut === 'livré' || c.statut === 'livre';
+                return (
+                  <TableRow key={c.id}>
+                    <TableCell className="text-xs">{format(new Date(c.created_at), 'dd/MM/yyyy HH:mm', { locale: fr })}</TableCell>
+                    <TableCell className="text-sm font-medium">{c.eleves?.prenom} {c.eleves?.nom}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{familleNom || '—'}</TableCell>
+                    <TableCell className="text-sm">{c.article_nom}{c.article_taille ? ` (${c.article_taille})` : ''}</TableCell>
+                    <TableCell><Badge variant="outline" className="text-xs">{c.article_type === 'librairie' ? '📚 Librairie' : '👔 Boutique'}</Badge></TableCell>
+                    <TableCell className="text-center">{c.quantite}</TableCell>
+                    <TableCell className="text-right font-medium">{(Number(c.prix_unitaire) * Number(c.quantite)).toLocaleString()} GNF</TableCell>
+                    <TableCell className="text-center">
+                      {isLivre ? (
+                        <Badge className="bg-green-100 text-green-800 border-green-300"><CheckCircle className="h-3 w-3 mr-1" /> Livré</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-300"><Package className="h-3 w-3 mr-1" /> En attente</Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 export default function Paiements() {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -1083,7 +1209,18 @@ export default function Paiements() {
         </TabsContent>
 
         <TabsContent value="portefeuille" className="mt-4">
-          <RechargePortefeuillePanel eleves={eleves} familles={familles} />
+          <Tabs defaultValue="recharge">
+            <TabsList>
+              <TabsTrigger value="recharge">💰 Recharge Portefeuille</TabsTrigger>
+              <TabsTrigger value="commandes">🛒 Commandes Validées</TabsTrigger>
+            </TabsList>
+            <TabsContent value="recharge" className="mt-4">
+              <RechargePortefeuillePanel eleves={eleves} familles={familles} />
+            </TabsContent>
+            <TabsContent value="commandes" className="mt-4">
+              <CommandesParentPanel eleves={eleves} familles={familles} />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         <TabsContent value="cantine" className="mt-4">
