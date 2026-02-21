@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Shirt, ShoppingBag, User, Search, Plus, Minus, Trash2, Package, History, BarChart3, ClipboardCheck, CheckCircle2, Clock, Settings, Pencil, AlertTriangle, Camera } from 'lucide-react';
+import { Shirt, ShoppingBag, User, Search, Plus, Minus, Trash2, Package, History, BarChart3, ClipboardCheck, CheckCircle2, Clock, Settings, Pencil, AlertTriangle, Camera, CreditCard, Banknote, Receipt } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateTicketBoutique } from '@/lib/generateTicketBoutique';
@@ -694,6 +695,451 @@ function GestionCommandesPanel() {
   );
 }
 
+// ─── Ventes à Crédit Tab ─────────────────────────
+function VenteCreditPanel() {
+  const queryClient = useQueryClient();
+  const [searchEleve, setSearchEleve] = useState('');
+  const [selectedEleve, setSelectedEleve] = useState<any>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [showNewCredit, setShowNewCredit] = useState(false);
+  const [creditForm, setCreditForm] = useState({ article_nom: '', description: '', prix_total: 0, acompte: 0 });
+  const [showVersement, setShowVersement] = useState<any>(null);
+  const [versementMontant, setVersementMontant] = useState(0);
+  const [versementCanal, setVersementCanal] = useState('especes');
+  const [versementRef, setVersementRef] = useState('');
+  const [filterStatut, setFilterStatut] = useState<string>('tous');
+
+  const { data: eleves = [] } = useQuery({
+    queryKey: ['eleves_credit'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('eleves').select('id, nom, prenom, matricule, classe_id, famille_id, classes(nom)').is('deleted_at', null);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: ventesCredit = [], isLoading } = useQuery({
+    queryKey: ['ventes_credit', selectedEleve?.id, filterStatut],
+    queryFn: async () => {
+      let query = supabase
+        .from('ventes_credit' as any)
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (selectedEleve) {
+        query = query.eq('eleve_id', selectedEleve.id);
+      }
+      if (filterStatut !== 'tous') {
+        query = query.eq('statut', filterStatut);
+      }
+      
+      const { data, error } = await query.limit(100);
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const { data: allVentesCredit = [] } = useQuery({
+    queryKey: ['all_ventes_credit_with_eleves'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ventes_credit' as any)
+        .select('*, eleves(nom, prenom, matricule, classes(nom))')
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const { data: versements = [] } = useQuery({
+    queryKey: ['versements_credit', showVersement?.id],
+    queryFn: async () => {
+      if (!showVersement) return [];
+      const { data, error } = await supabase
+        .from('versements_credit' as any)
+        .select('*')
+        .eq('vente_credit_id', showVersement.id)
+        .order('date_versement', { ascending: true });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!showVersement,
+  });
+
+  const filteredEleves = useMemo(() => {
+    if (!searchEleve.trim()) return [];
+    const q = searchEleve.toLowerCase();
+    return eleves.filter((e: any) =>
+      e.nom?.toLowerCase().includes(q) || e.prenom?.toLowerCase().includes(q) || e.matricule?.toLowerCase().includes(q)
+    ).slice(0, 10);
+  }, [searchEleve, eleves]);
+
+  // Create credit sale
+  const createCreditMut = useMutation({
+    mutationFn: async () => {
+      if (!selectedEleve) throw new Error('Sélectionnez un élève');
+      if (!creditForm.article_nom || creditForm.prix_total <= 0) throw new Error('Remplissez tous les champs');
+
+      const soldeRestant = creditForm.prix_total - creditForm.acompte;
+
+      // Insert vente_credit
+      const { data: vente, error } = await supabase
+        .from('ventes_credit' as any)
+        .insert({
+          eleve_id: selectedEleve.id,
+          famille_id: selectedEleve.famille_id || null,
+          article_nom: creditForm.article_nom,
+          description: creditForm.description || null,
+          prix_total: creditForm.prix_total,
+          montant_verse: creditForm.acompte,
+          solde_restant: soldeRestant,
+          statut: soldeRestant <= 0 ? 'solde' : 'en_cours',
+        } as any)
+        .select()
+        .single();
+      if (error) throw error;
+
+      // If acompte > 0, insert first versement
+      if (creditForm.acompte > 0) {
+        const { error: vErr } = await supabase
+          .from('versements_credit' as any)
+          .insert({
+            vente_credit_id: (vente as any).id,
+            montant: creditForm.acompte,
+            canal: 'especes',
+            reference: 'Acompte initial',
+          } as any);
+        if (vErr) throw vErr;
+      }
+
+      // Create payment record
+      await supabase.from('paiements').insert({
+        eleve_id: selectedEleve.id,
+        montant: creditForm.acompte > 0 ? creditForm.acompte : 0,
+        type_paiement: 'boutique',
+        canal: 'especes',
+        reference: `Crédit: ${creditForm.article_nom} (acompte)`,
+      } as any);
+    },
+    onSuccess: () => {
+      toast.success('Vente à crédit créée avec succès !');
+      setShowNewCredit(false);
+      setCreditForm({ article_nom: '', description: '', prix_total: 0, acompte: 0 });
+      queryClient.invalidateQueries({ queryKey: ['ventes_credit'] });
+      queryClient.invalidateQueries({ queryKey: ['all_ventes_credit_with_eleves'] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Add versement
+  const addVersementMut = useMutation({
+    mutationFn: async () => {
+      if (!showVersement || versementMontant <= 0) throw new Error('Montant invalide');
+      if (versementMontant > Number(showVersement.solde_restant)) throw new Error('Le montant dépasse le solde restant');
+
+      const { error } = await supabase
+        .from('versements_credit' as any)
+        .insert({
+          vente_credit_id: showVersement.id,
+          montant: versementMontant,
+          canal: versementCanal,
+          reference: versementRef || null,
+        } as any);
+      if (error) throw error;
+
+      // Also record as paiement for accounting
+      // Find eleve_id from the vente
+      await supabase.from('paiements').insert({
+        eleve_id: showVersement.eleve_id,
+        montant: versementMontant,
+        type_paiement: 'boutique',
+        canal: versementCanal,
+        reference: `Versement crédit: ${showVersement.article_nom}`,
+      } as any);
+    },
+    onSuccess: () => {
+      toast.success('Versement enregistré !');
+      setVersementMontant(0);
+      setVersementRef('');
+      queryClient.invalidateQueries({ queryKey: ['versements_credit'] });
+      queryClient.invalidateQueries({ queryKey: ['ventes_credit'] });
+      queryClient.invalidateQueries({ queryKey: ['all_ventes_credit_with_eleves'] });
+      // Refresh the showVersement data
+      const updatedSolde = Number(showVersement.solde_restant) - versementMontant;
+      setShowVersement((prev: any) => prev ? { ...prev, solde_restant: updatedSolde, montant_verse: Number(prev.montant_verse) + versementMontant, statut: updatedSolde <= 0 ? 'solde' : 'en_cours' } : null);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // KPIs
+  const totalEnCours = allVentesCredit.filter((v: any) => v.statut === 'en_cours').length;
+  const totalSoldeRestant = allVentesCredit.filter((v: any) => v.statut === 'en_cours').reduce((s: number, v: any) => s + Number(v.solde_restant), 0);
+  const totalSoldes = allVentesCredit.filter((v: any) => v.statut === 'solde').length;
+
+  const displayList = selectedEleve ? ventesCredit : allVentesCredit.filter((v: any) => filterStatut === 'tous' || v.statut === filterStatut);
+
+  return (
+    <div className="space-y-4">
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Card className="border-orange-300/50">
+          <CardContent className="py-3 flex items-center gap-3">
+            <div className="p-2 rounded-full bg-orange-100"><CreditCard className="h-5 w-5 text-orange-600" /></div>
+            <div>
+              <p className="text-xs text-muted-foreground">Crédits en cours</p>
+              <p className="text-xl font-bold">{totalEnCours}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-red-300/50">
+          <CardContent className="py-3 flex items-center gap-3">
+            <div className="p-2 rounded-full bg-red-100"><Banknote className="h-5 w-5 text-red-600" /></div>
+            <div>
+              <p className="text-xs text-muted-foreground">Solde restant global</p>
+              <p className="text-xl font-bold text-red-600">{totalSoldeRestant.toLocaleString()} GNF</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-green-300/50">
+          <CardContent className="py-3 flex items-center gap-3">
+            <div className="p-2 rounded-full bg-green-100"><CheckCircle2 className="h-5 w-5 text-green-600" /></div>
+            <div>
+              <p className="text-xs text-muted-foreground">Crédits soldés</p>
+              <p className="text-xl font-bold text-green-600">{totalSoldes}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search + Actions */}
+      <Card>
+        <CardContent className="pt-4 space-y-3">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Rechercher un élève pour filtrer..." value={searchEleve} onChange={e => { setSearchEleve(e.target.value); if (!e.target.value) setSelectedEleve(null); }} className="pl-10 pr-10" />
+              <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setScannerOpen(true)}>
+                <Camera className="h-4 w-4 text-primary" />
+              </Button>
+            </div>
+            <Select value={filterStatut} onValueChange={setFilterStatut}>
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tous">Tous</SelectItem>
+                <SelectItem value="en_cours">En cours</SelectItem>
+                <SelectItem value="solde">Soldés</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={() => setShowNewCredit(true)} className="gap-1 bg-purple-600 hover:bg-purple-700">
+              <Plus className="h-4 w-4" /> Nouveau crédit
+            </Button>
+          </div>
+
+          <QRScannerDialog open={scannerOpen} onOpenChange={setScannerOpen} onScan={(m) => {
+            const found = eleves.find((e: any) => e.matricule === m || e.id === m);
+            if (found) { setSelectedEleve(found); setSearchEleve(`${found.prenom} ${found.nom}`); }
+            else toast.error('Élève introuvable');
+          }} />
+
+          <AnimatePresence>
+            {filteredEleves.length > 0 && !selectedEleve && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="border rounded-md divide-y max-h-48 overflow-y-auto">
+                {filteredEleves.map((e: any) => (
+                  <button key={e.id} className="w-full text-left px-3 py-2 hover:bg-accent/50 flex justify-between items-center" onClick={() => { setSelectedEleve(e); setSearchEleve(`${e.prenom} ${e.nom}`); }}>
+                    <span className="font-medium">{e.prenom} {e.nom}</span>
+                    <span className="text-xs text-muted-foreground">{e.matricule} — {(e as any).classes?.nom}</span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {selectedEleve && (
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary"><User className="h-3 w-3 mr-1" />{selectedEleve.prenom} {selectedEleve.nom}</Badge>
+              <Badge variant="outline" className="text-xs">{selectedEleve.matricule}</Badge>
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedEleve(null); setSearchEleve(''); }}>Voir tout</Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Credits List */}
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground text-center py-8">Chargement...</p>
+      ) : displayList.length === 0 ? (
+        <Card><CardContent className="py-8 text-center text-muted-foreground">Aucune vente à crédit trouvée</CardContent></Card>
+      ) : (
+        <div className="space-y-3">
+          {displayList.map((v: any) => {
+            const pct = Number(v.prix_total) > 0 ? Math.round((Number(v.montant_verse) / Number(v.prix_total)) * 100) : 0;
+            const eleveInfo = v.eleves || selectedEleve;
+            return (
+              <Card key={v.id} className={`transition-all ${v.statut === 'solde' ? 'border-green-300/50 bg-green-50/30 dark:bg-green-950/10' : 'border-orange-300/50'}`}>
+                <CardContent className="py-3">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-semibold">{v.article_nom}</p>
+                      {v.description && <p className="text-xs text-muted-foreground">{v.description}</p>}
+                      {eleveInfo && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {eleveInfo.prenom} {eleveInfo.nom} {eleveInfo.matricule ? `(${eleveInfo.matricule})` : ''} 
+                          {(eleveInfo as any).classes?.nom ? ` — ${(eleveInfo as any).classes.nom}` : ''}
+                        </p>
+                      )}
+                    </div>
+                    <Badge variant={v.statut === 'solde' ? 'default' : 'secondary'} className={v.statut === 'solde' ? 'bg-green-600' : 'bg-orange-100 text-orange-800 border-orange-300'}>
+                      {v.statut === 'solde' ? '✓ Soldé' : 'En cours'}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 text-sm mb-2">
+                    <div><span className="text-xs text-muted-foreground">Prix total</span><p className="font-bold">{Number(v.prix_total).toLocaleString()} GNF</p></div>
+                    <div><span className="text-xs text-muted-foreground">Versé</span><p className="font-bold text-green-600">{Number(v.montant_verse).toLocaleString()} GNF</p></div>
+                    <div><span className="text-xs text-muted-foreground">Reste</span><p className="font-bold text-red-600">{Number(v.solde_restant).toLocaleString()} GNF</p></div>
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-2">
+                    <Progress value={pct} className="flex-1 h-2" />
+                    <span className="text-xs font-medium">{pct}%</span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] text-muted-foreground">
+                      Créé le {new Date(v.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                    </p>
+                    <div className="flex gap-1">
+                      <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => { setShowVersement(v); setVersementMontant(0); setVersementRef(''); }}>
+                        <Receipt className="h-3 w-3" /> Détails / Payer
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* New Credit Dialog */}
+      <Dialog open={showNewCredit} onOpenChange={setShowNewCredit}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> Nouvelle vente à crédit</DialogTitle></DialogHeader>
+          {!selectedEleve ? (
+            <p className="text-sm text-muted-foreground text-center py-4">Veuillez d'abord sélectionner un élève dans la barre de recherche.</p>
+          ) : (
+            <div className="space-y-3">
+              <div className="p-2 rounded-lg bg-muted text-sm">
+                <strong>{selectedEleve.prenom} {selectedEleve.nom}</strong> — {selectedEleve.matricule}
+              </div>
+              <div><Label>Article / Produit</Label><Input placeholder="Ex: Ordinateur HP..." value={creditForm.article_nom} onChange={e => setCreditForm(p => ({ ...p, article_nom: e.target.value }))} /></div>
+              <div><Label>Description (optionnel)</Label><Input placeholder="Détails supplémentaires..." value={creditForm.description} onChange={e => setCreditForm(p => ({ ...p, description: e.target.value }))} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Prix total (GNF)</Label><Input type="number" min={0} value={creditForm.prix_total} onChange={e => setCreditForm(p => ({ ...p, prix_total: Number(e.target.value) }))} /></div>
+                <div><Label>Acompte initial (GNF)</Label><Input type="number" min={0} max={creditForm.prix_total} value={creditForm.acompte} onChange={e => setCreditForm(p => ({ ...p, acompte: Math.min(Number(e.target.value), p.prix_total) }))} /></div>
+              </div>
+              {creditForm.prix_total > 0 && (
+                <div className="p-3 rounded-lg bg-muted text-sm space-y-1">
+                  <div className="flex justify-between"><span>Prix total</span><strong>{creditForm.prix_total.toLocaleString()} GNF</strong></div>
+                  <div className="flex justify-between"><span>Acompte</span><strong className="text-green-600">{creditForm.acompte.toLocaleString()} GNF</strong></div>
+                  <div className="flex justify-between border-t pt-1"><span>Solde restant</span><strong className="text-red-600">{(creditForm.prix_total - creditForm.acompte).toLocaleString()} GNF</strong></div>
+                </div>
+              )}
+              <Button className="w-full bg-purple-600 hover:bg-purple-700" onClick={() => createCreditMut.mutate()} disabled={createCreditMut.isPending}>
+                {createCreditMut.isPending ? 'Création...' : 'Créer la vente à crédit'}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Versement / Details Dialog */}
+      <Dialog open={!!showVersement} onOpenChange={v => !v && setShowVersement(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Receipt className="h-5 w-5" /> {showVersement?.article_nom}</DialogTitle></DialogHeader>
+          {showVersement && (
+            <div className="space-y-4">
+              {/* Summary */}
+              <div className="grid grid-cols-3 gap-3 text-sm">
+                <div className="p-2 rounded bg-muted text-center"><span className="text-xs text-muted-foreground block">Prix total</span><strong>{Number(showVersement.prix_total).toLocaleString()} GNF</strong></div>
+                <div className="p-2 rounded bg-green-50 dark:bg-green-950/20 text-center"><span className="text-xs text-muted-foreground block">Versé</span><strong className="text-green-600">{Number(showVersement.montant_verse).toLocaleString()} GNF</strong></div>
+                <div className="p-2 rounded bg-red-50 dark:bg-red-950/20 text-center"><span className="text-xs text-muted-foreground block">Reste</span><strong className="text-red-600">{Number(showVersement.solde_restant).toLocaleString()} GNF</strong></div>
+              </div>
+
+              <Progress value={Number(showVersement.prix_total) > 0 ? Math.round((Number(showVersement.montant_verse) / Number(showVersement.prix_total)) * 100) : 0} className="h-3" />
+
+              {/* Versements history */}
+              <div>
+                <h4 className="text-sm font-semibold mb-2">Historique des versements</h4>
+                {versements.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Aucun versement enregistré</p>
+                ) : (
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {versements.map((vs: any, i: number) => (
+                      <div key={vs.id} className="flex items-center justify-between p-2 rounded border text-sm">
+                        <div>
+                          <span className="font-medium">#{i + 1}</span>
+                          <span className="text-xs text-muted-foreground ml-2">
+                            {new Date(vs.date_versement).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </span>
+                          {vs.reference && <span className="text-xs text-muted-foreground ml-2">({vs.reference})</span>}
+                        </div>
+                        <div className="text-right">
+                          <span className="font-bold text-green-600">{Number(vs.montant).toLocaleString()} GNF</span>
+                          <Badge variant="outline" className="text-[10px] ml-1">{vs.canal}</Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* New versement form */}
+              {showVersement.statut !== 'solde' && (
+                <div className="border-t pt-3 space-y-2">
+                  <h4 className="text-sm font-semibold">Nouveau versement</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Montant (GNF)</Label>
+                      <Input type="number" min={0} max={Number(showVersement.solde_restant)} value={versementMontant} onChange={e => setVersementMontant(Math.min(Number(e.target.value), Number(showVersement.solde_restant)))} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Canal</Label>
+                      <Select value={versementCanal} onValueChange={setVersementCanal}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="especes">Espèces</SelectItem>
+                          <SelectItem value="orange_money">Orange Money</SelectItem>
+                          <SelectItem value="mtn_momo">MTN MoMo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Référence (optionnel)</Label>
+                    <Input placeholder="N° transaction..." value={versementRef} onChange={e => setVersementRef(e.target.value)} />
+                  </div>
+                  <Button className="w-full" onClick={() => addVersementMut.mutate()} disabled={addVersementMut.isPending || versementMontant <= 0}>
+                    {addVersementMut.isPending ? 'Enregistrement...' : `Enregistrer le versement de ${versementMontant.toLocaleString()} GNF`}
+                  </Button>
+                </div>
+              )}
+
+              {showVersement.statut === 'solde' && (
+                <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/20 text-center text-green-700 font-semibold">
+                  <CheckCircle2 className="h-5 w-5 inline mr-2" />
+                  Ce crédit est entièrement soldé !
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 export default function Boutique() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState('retraits');
@@ -889,6 +1335,7 @@ export default function Boutique() {
           <TabsTrigger value="retraits" className="gap-1"><ClipboardCheck className="h-4 w-4" /> Retraits</TabsTrigger>
           <TabsTrigger value="vente" className="gap-1"><ShoppingBag className="h-4 w-4" /> Vente directe</TabsTrigger>
           <TabsTrigger value="inventaire" className="gap-1"><Package className="h-4 w-4" /> Inventaire</TabsTrigger>
+          <TabsTrigger value="credit" className="gap-1"><CreditCard className="h-4 w-4" /> Crédit</TabsTrigger>
           <TabsTrigger value="historique" className="gap-1"><History className="h-4 w-4" /> Historique Ventes</TabsTrigger>
           <TabsTrigger value="historique_retraits" className="gap-1"><ClipboardCheck className="h-4 w-4" /> Historique Retraits</TabsTrigger>
           <TabsTrigger value="gestion" className="gap-1"><Settings className="h-4 w-4" /> Gestion</TabsTrigger>
@@ -1131,6 +1578,11 @@ export default function Boutique() {
         {/* ===== HISTORIQUE RETRAITS TAB ===== */}
         <TabsContent value="historique_retraits" className="space-y-4">
           <HistoriqueRetraitsPanel />
+        </TabsContent>
+
+        {/* ===== CRÉDIT TAB ===== */}
+        <TabsContent value="credit" className="space-y-4">
+          <VenteCreditPanel />
         </TabsContent>
 
         {/* ===== GESTION COMMANDES TAB ===== */}
