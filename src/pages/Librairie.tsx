@@ -16,6 +16,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateRecuLibrairiePDF, generateBonSortiePDF } from '@/lib/generateRecuLibrairiePDF';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { generateBonRecuperation } from '@/lib/generateBonRecuperation';
 import { useAuth } from '@/hooks/useAuth';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -210,6 +211,7 @@ function ArticleManager({ categorie, label, icon: Icon }: { categorie: string; l
 // ─── Vente "À la Carte" Panel ─────────────────────────
 function VenteALaCartePanel() {
   const qc = useQueryClient();
+  const { data: schoolConfig } = useSchoolConfig();
   const { data: elevesLib = [], isLoading: loadingEleves } = useElevesLibrairie();
   const { data: allArticles = [] } = useArticles();
   const { data: ventesAll = [] } = useVentes();
@@ -310,6 +312,7 @@ function VenteALaCartePanel() {
         canal: canal === 'especes' ? 'Espèces' : canal === 'orange_money' ? 'Orange Money' : 'MTN MoMo',
         reference: (canal !== 'especes' && reference) ? reference : null,
         date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
+        schoolConfig: schoolConfig ? { nom: schoolConfig.nom, soustitre: schoolConfig.soustitre, logo_url: schoolConfig.logo_url } : undefined,
       });
 
       // Print bon de sortie
@@ -319,6 +322,7 @@ function VenteALaCartePanel() {
         classe: selectedEleve.classes?.nom || '—',
         articles: panierItems.map(i => ({ nom: i.nom, categorie: i.categorie, quantite: i.quantite })),
         date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
+        schoolConfig: schoolConfig ? { nom: schoolConfig.nom, soustitre: schoolConfig.soustitre, logo_url: schoolConfig.logo_url } : undefined,
       });
 
       setPanier({});
