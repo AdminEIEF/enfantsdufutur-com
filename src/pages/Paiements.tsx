@@ -56,6 +56,8 @@ const TYPES = [
   { value: 'autre', label: 'Autre' },
 ];
 
+const TYPES_INDIVIDUEL = TYPES.filter(t => t.value !== 'wallet');
+
 const MOIS_SCOLAIRES = [
   'Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
 ];
@@ -230,15 +232,6 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
       queryClient.invalidateQueries({ queryKey: ['familles'] });
       toast({ title: 'Paiement enregistré', description: `${parseInt(montant).toLocaleString()} GNF` });
 
-      // Send notification to parent when wallet is recharged
-      if (typePaiement === 'wallet' && selectedEleve?.famille_id) {
-        await supabase.from('parent_notifications').insert({
-          famille_id: selectedEleve.famille_id,
-          titre: '💰 Portefeuille rechargé',
-          message: `Votre portefeuille famille a été rechargé de ${parseFloat(montant).toLocaleString()} GNF via ${CANAUX.find(c => c.value === canal)?.label || canal}. Le solde est mis à jour.`,
-          type: 'paiement',
-        } as any);
-      }
 
       if ((typePaiement === 'scolarite' || typePaiement === 'transport') && selectedEleve) {
         const isTransport = typePaiement === 'transport';
@@ -292,7 +285,7 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
                 <Select value={typePaiement} onValueChange={(v) => { setTypePaiement(v); setMoisCoches([]); setMontant(''); setSelectedArticleId(''); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {TYPES.map(t => {
+                    {TYPES_INDIVIDUEL.map(t => {
                       const disabled = t.value === 'transport' && selectedEleve && !selectedEleve.zone_transport_id;
                       // Anti-doublon: block scolarité/transport for family members
                       const blockedByFamily = isFamilyMember && (t.value === 'scolarite' || t.value === 'transport');
@@ -727,6 +720,254 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
   );
 }
 
+// ─── Recharge Portefeuille Panel ──────────────────────────
+function RechargePortefeuillePanel({ eleves, familles }: { eleves: any[]; familles: any[] }) {
+  const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  const [mode, setMode] = useState<'famille' | 'eleve'>('famille');
+  const [familleId, setFamilleId] = useState('');
+  const [eleveId, setEleveId] = useState('');
+  const [montant, setMontant] = useState('');
+  const [canal, setCanal] = useState('especes');
+  const [reference, setReference] = useState('');
+  const [banqueNom, setBanqueNom] = useState('');
+  const [dateDepot, setDateDepot] = useState('');
+  const [preuveFile, setPreuveFile] = useState<File | null>(null);
+  const [uploadingPreuve, setUploadingPreuve] = useState(false);
+
+  const { data: banques = DEFAULT_BANQUES } = useBanquesPartenaires();
+
+  const famillesAvecEnfants = useMemo(() => {
+    return familles.filter((f: any) => eleves.some((e: any) => e.famille_id === f.id)).map((f: any) => {
+      const kids = eleves.filter((e: any) => e.famille_id === f.id);
+      return { ...f, enfants: kids };
+    });
+  }, [familles, eleves]);
+
+  const selectedFamille = famillesAvecEnfants.find((f: any) => f.id === familleId);
+  const selectedEleve = eleves.find((e: any) => e.id === eleveId);
+  const familleFromEleve = selectedEleve?.famille_id ? familles.find((f: any) => f.id === selectedEleve.famille_id) : null;
+
+  const effectiveEleveId = mode === 'famille'
+    ? (selectedFamille?.enfants?.[0]?.id || '')
+    : eleveId;
+
+  const effectiveFamilleId = mode === 'famille' ? familleId : selectedEleve?.famille_id;
+  const currentSolde = mode === 'famille'
+    ? Number(selectedFamille?.solde_famille || 0)
+    : Number(familleFromEleve?.solde_famille || 0);
+
+  const createRecharge = useMutation({
+    mutationFn: async () => {
+      if (!montant || parseFloat(montant) <= 0) throw new Error('Montant valide requis');
+      if (!effectiveEleveId) throw new Error('Veuillez sélectionner une famille ou un élève');
+      if (mode === 'eleve' && !selectedEleve?.famille_id) throw new Error('Cet élève n\'appartient à aucune famille');
+      if (canal === 'banque' && !banqueNom) throw new Error('Veuillez sélectionner une banque');
+      if (canal === 'banque' && !reference) throw new Error('La référence est obligatoire');
+      if (canal === 'banque' && !dateDepot) throw new Error('La date de dépôt est obligatoire');
+
+      let preuveUrl: string | null = null;
+      if (preuveFile) {
+        setUploadingPreuve(true);
+        const ext = preuveFile.name.split('.').pop();
+        const path = `wallet_${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from('preuves-paiement').upload(path, preuveFile);
+        setUploadingPreuve(false);
+        if (upErr) throw new Error('Erreur upload: ' + upErr.message);
+        const { data: urlData } = supabase.storage.from('preuves-paiement').getPublicUrl(path);
+        preuveUrl = urlData.publicUrl;
+      }
+
+      const { error } = await supabase.from('paiements').insert({
+        eleve_id: effectiveEleveId,
+        montant: parseFloat(montant),
+        type_paiement: 'wallet',
+        canal,
+        reference: (canal !== 'especes' && reference) ? reference : null,
+        banque_nom: canal === 'banque' ? banqueNom : null,
+        date_depot: canal === 'banque' && dateDepot ? dateDepot : null,
+        preuve_url: preuveUrl,
+        mois_concerne: null,
+      } as any);
+      if (error) throw error;
+
+      if (effectiveFamilleId) {
+        await supabase.from('parent_notifications').insert({
+          famille_id: effectiveFamilleId,
+          titre: '💰 Portefeuille rechargé',
+          message: `Votre portefeuille famille a été rechargé de ${parseFloat(montant).toLocaleString()} GNF via ${CANAUX.find(c => c.value === canal)?.label || canal}. Le solde est mis à jour.`,
+          type: 'paiement',
+        } as any);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['paiements'] });
+      queryClient.invalidateQueries({ queryKey: ['familles'] });
+      toast({ title: 'Portefeuille rechargé', description: `${parseInt(montant).toLocaleString()} GNF crédités` });
+      setFamilleId(''); setEleveId(''); setMontant(''); setCanal('especes'); setReference('');
+      setBanqueNom(''); setDateDepot(''); setPreuveFile(null);
+      setOpen(false);
+    },
+    onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-muted-foreground">Recharger le portefeuille d'une famille via un élève ou directement</p>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button><Plus className="h-4 w-4 mr-2" /> Recharge Portefeuille</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle className="flex items-center gap-2"><Wallet className="h-5 w-5 text-primary" /> Recharge Portefeuille Famille</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <Tabs value={mode} onValueChange={(v) => { setMode(v as any); setFamilleId(''); setEleveId(''); }}>
+                <TabsList className="w-full grid grid-cols-2">
+                  <TabsTrigger value="famille"><Users className="h-4 w-4 mr-1" /> Par Famille</TabsTrigger>
+                  <TabsTrigger value="eleve">🎓 Par Élève</TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              {mode === 'famille' ? (
+                <div>
+                  <Label>Famille *</Label>
+                  <Select value={familleId} onValueChange={setFamilleId}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner une famille" /></SelectTrigger>
+                    <SelectContent>
+                      {famillesAvecEnfants.map((f: any) => (
+                        <SelectItem key={f.id} value={f.id}>👨‍👩‍👧‍👦 {f.nom_famille} ({f.enfants.length} enfant{f.enfants.length > 1 ? 's' : ''})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div>
+                  <Label>Élève *</Label>
+                  <Select value={eleveId} onValueChange={setEleveId}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner un élève" /></SelectTrigger>
+                    <SelectContent>
+                      {eleves.filter((e: any) => e.famille_id).map((e: any) => (
+                        <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom} {e.matricule ? `(${e.matricule})` : ''} 👨‍👩‍👧</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedEleve && !selectedEleve.famille_id && (
+                    <p className="text-xs text-destructive mt-1">⚠️ Cet élève n'est associé à aucune famille.</p>
+                  )}
+                </div>
+              )}
+
+              {(selectedFamille || familleFromEleve) && (
+                <Card className="border-primary/20 bg-primary/5">
+                  <CardContent className="pt-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Famille: <strong>{(selectedFamille || familleFromEleve)?.nom_famille}</strong></p>
+                        <p className="text-xs text-muted-foreground">Solde actuel</p>
+                        <p className="text-xl font-bold text-primary">{currentSolde.toLocaleString()} GNF</p>
+                      </div>
+                      <Wallet className="h-8 w-8 text-primary/30" />
+                    </div>
+                    {mode === 'famille' && selectedFamille?.enfants && (
+                      <div className="mt-2 pt-2 border-t space-y-1">
+                        {selectedFamille.enfants.map((e: any) => (
+                          <p key={e.id} className="text-xs text-muted-foreground">{e.prenom} {e.nom} — {e.classes?.nom || '—'}</p>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              <div>
+                <Label>Montant (GNF) *</Label>
+                <Input type="number" value={montant} onChange={e => setMontant(e.target.value)} placeholder="0" />
+              </div>
+              <div>
+                <Label>Canal *</Label>
+                <Select value={canal} onValueChange={setCanal}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{CANAUX.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              {(canal === 'orange_money' || canal === 'mtn_momo') && (
+                <div><Label>Référence *</Label><Input value={reference} onChange={e => setReference(e.target.value)} placeholder="N° transaction" /></div>
+              )}
+              {canal === 'banque' && (
+                <Card className="border-border bg-muted/30">
+                  <CardContent className="pt-4 space-y-3">
+                    <div>
+                      <Label>Banque *</Label>
+                      <Select value={banqueNom} onValueChange={setBanqueNom}>
+                        <SelectTrigger><SelectValue placeholder="Sélectionner la banque" /></SelectTrigger>
+                        <SelectContent>
+                          {banques.map((b: string) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Référence de transaction *</Label>
+                      <Input value={reference} onChange={e => setReference(e.target.value)} placeholder="N° bordereau / chèque / virement" />
+                    </div>
+                    <div>
+                      <Label>Date du dépôt *</Label>
+                      <Input type="date" value={dateDepot} onChange={e => setDateDepot(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2"><FileImage className="h-4 w-4" /> Preuve de paiement</Label>
+                      <Input type="file" accept="image/*,.pdf" onChange={e => setPreuveFile(e.target.files?.[0] || null)} className="mt-1" />
+                      {preuveFile && <p className="text-xs text-muted-foreground mt-1">📎 {preuveFile.name}</p>}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              {montant && parseFloat(montant) > 0 && (selectedFamille || familleFromEleve) && (
+                <div className="text-center p-3 rounded-lg bg-primary/5 border border-primary/20">
+                  <p className="text-xs text-muted-foreground">Nouveau solde après recharge</p>
+                  <p className="text-xl font-bold text-primary">{(currentSolde + parseFloat(montant || '0')).toLocaleString()} GNF</p>
+                </div>
+              )}
+              <Button onClick={() => createRecharge.mutate()} disabled={createRecharge.isPending || uploadingPreuve} className="w-full">
+                {uploadingPreuve ? 'Upload en cours...' : createRecharge.isPending ? 'Enregistrement...' : `Recharger ${montant ? parseInt(montant).toLocaleString() + ' GNF' : ''}`}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Family wallet overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {familles.filter((f: any) => eleves.some((e: any) => e.famille_id === f.id)).map((f: any) => {
+          const kids = eleves.filter((e: any) => e.famille_id === f.id);
+          return (
+            <Card key={f.id}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Users className="h-4 w-4" /> {f.nom_famille}
+                  <Badge variant="outline" className="ml-auto">{kids.length} enfant(s)</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between p-2 rounded bg-primary/5 border border-primary/20">
+                  <span className="text-xs font-medium flex items-center gap-1"><Wallet className="h-3 w-3" /> Portefeuille</span>
+                  <span className="font-bold text-sm text-primary">{Number(f.solde_famille || 0).toLocaleString()} GNF</span>
+                </div>
+                <div className="mt-2 space-y-1">
+                  {kids.map((e: any) => (
+                    <p key={e.id} className="text-xs text-muted-foreground">{e.prenom} {e.nom} — {e.classes?.nom || '—'}</p>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Ordres de Paiement Panel (Wallet, Librairie, Boutique) ──────
 function OrdresPaiementPanel() {
   const queryClient = useQueryClient();
@@ -966,6 +1207,7 @@ export default function Paiements() {
         <TabsList className="flex flex-wrap">
           <TabsTrigger value="individuel">🎓 Élèves Individuels</TabsTrigger>
           <TabsTrigger value="famille">👨‍👩‍👧‍👦 Comptes Familles</TabsTrigger>
+          <TabsTrigger value="portefeuille">💰 Portefeuille</TabsTrigger>
           <TabsTrigger value="cantine">🍽️ Cantine</TabsTrigger>
           <TabsTrigger value="ordres">📋 Ordres de Paiement</TabsTrigger>
           <TabsTrigger value="historique">📋 Historique</TabsTrigger>
@@ -978,6 +1220,10 @@ export default function Paiements() {
 
         <TabsContent value="famille" className="mt-4">
           <PaiementFamillePanel eleves={eleves} paiements={paiements} familles={familles} />
+        </TabsContent>
+
+        <TabsContent value="portefeuille" className="mt-4">
+          <RechargePortefeuillePanel eleves={eleves} familles={familles} />
         </TabsContent>
 
         <TabsContent value="cantine" className="mt-4">
