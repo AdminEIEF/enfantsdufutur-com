@@ -1716,6 +1716,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      notify_credit_reminders: { Args: never; Returns: undefined }
       verify_password: {
         Args: { _hash: string; _password: string }
         Returns: boolean
