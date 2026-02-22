@@ -1054,8 +1054,10 @@ function VenteCreditPanel() {
               </div>
               <div>
                 <Label>Article / Produit</Label>
-                <Select value={creditForm.article_nom || '__none__'} onValueChange={v => {
+                <Select value={boutiqueArticles.some((a: any) => a.nom === creditForm.article_nom) ? creditForm.article_nom : creditForm.article_nom ? '__custom__' : '__none__'} onValueChange={v => {
                   if (v === '__none__') {
+                    setCreditForm(p => ({ ...p, article_nom: '', prix_total: 0 }));
+                  } else if (v === '__custom__') {
                     setCreditForm(p => ({ ...p, article_nom: '', prix_total: 0 }));
                   } else {
                     const art = boutiqueArticles.find((a: any) => a.nom === v);
@@ -1067,8 +1069,12 @@ function VenteCreditPanel() {
                     {boutiqueArticles.map((a: any) => (
                       <SelectItem key={a.id} value={a.nom}>{a.nom} — {Number(a.prix).toLocaleString()} GNF</SelectItem>
                     ))}
+                    <SelectItem value="__custom__">✏️ Autre (saisir manuellement)</SelectItem>
                   </SelectContent>
                 </Select>
+                {!boutiqueArticles.some((a: any) => a.nom === creditForm.article_nom) && (
+                  <Input className="mt-2" placeholder="Nom de l'article personnalisé..." value={creditForm.article_nom} onChange={e => setCreditForm(p => ({ ...p, article_nom: e.target.value }))} />
+                )}
               </div>
               <div><Label>Description (optionnel)</Label><Input placeholder="Détails supplémentaires..." value={creditForm.description} onChange={e => setCreditForm(p => ({ ...p, description: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-3">
