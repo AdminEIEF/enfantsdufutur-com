@@ -134,10 +134,19 @@ export default function Landing() {
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-40">
           <div className="w-full mb-6 sm:mb-10">
+            <motion.p
+              initial={{ opacity: 0, y: -50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="text-sm sm:text-lg lg:text-2xl font-bold text-white uppercase tracking-widest text-center mb-1 sm:mb-2"
+              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+            >
+              (Ecole Internationale)
+            </motion.p>
             <motion.h1
               initial={{ opacity: 0, y: -40 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: 'easeOut' }}
+              transition={{ duration: 0.7, delay: 0.15, ease: 'easeOut' }}
               className="text-2xl sm:text-4xl lg:text-[3.5rem] font-extrabold leading-none mb-1 sm:mb-2 text-center whitespace-nowrap"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
