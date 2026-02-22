@@ -552,8 +552,8 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
                   <Input value={adresseParent} onChange={e => setAdresseParent(e.target.value)} placeholder="Ex: Quartier Riviera" />
                 </div>
               </div>
-              <div className="p-2 rounded bg-accent/10 border border-accent/30 text-xs text-accent-foreground">
-                ℹ️ Un <strong>Espace Parent</strong> sera automatiquement créé avec un code d'accès unique (FAM-XXXX).
+              <div className="p-2 rounded bg-accent/10 border border-accent/30 text-sm text-foreground font-bold">
+                ℹ️ Un Espace Parent sera automatiquement créé avec un code d'accès unique (FAM-XXXX).
               </div>
             </>
           )}
