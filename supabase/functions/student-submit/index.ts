@@ -13,23 +13,54 @@ serve(async (req) => {
   }
 
   try {
-    const { matricule, password, devoir_id, fichier_url, fichier_nom } = await req.json();
+    const { token, devoir_id, fichier_url, fichier_nom } = await req.json();
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Validate student
+    // Validate HMAC token
+    let eleveIdFromToken: string;
+    try {
+      const decoded = atob(token);
+      const parts = decoded.split(":");
+      if (parts.length < 3) throw new Error("Invalid token");
+      eleveIdFromToken = parts[0];
+      const tokenTimestamp = parseInt(parts[1]);
+      const tokenSignature = parts.slice(2).join(":");
+
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+      );
+      const tokenData = `${eleveIdFromToken}:${tokenTimestamp}`;
+      const expectedSig = await crypto.subtle.sign("HMAC", key, encoder.encode(tokenData));
+      const expectedHex = Array.from(new Uint8Array(expectedSig)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      if (tokenSignature !== expectedHex) throw new Error("Bad signature");
+      if (Date.now() - tokenTimestamp > 24 * 60 * 60 * 1000) throw new Error("Token expired");
+    } catch {
+      return new Response(JSON.stringify({ error: "Non autorisé" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Fetch student
     const { data: eleve, error } = await supabaseAdmin
       .from("eleves")
-      .select("id, mot_de_passe_eleve, statut")
-      .eq("matricule", matricule?.trim()?.toUpperCase())
+      .select("id, statut")
+      .eq("id", eleveIdFromToken)
       .is("deleted_at", null)
       .maybeSingle();
 
     if (error) throw error;
-    if (!eleve || eleve.mot_de_passe_eleve !== password?.trim()) {
+    if (!eleve) {
       return new Response(JSON.stringify({ error: "Non autorisé" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

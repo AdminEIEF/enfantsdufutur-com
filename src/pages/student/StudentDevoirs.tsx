@@ -83,8 +83,7 @@ export default function StudentDevoirs() {
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
           body: JSON.stringify({
-            matricule: session.matricule,
-            password: session.token,
+            token: session.token,
             devoir_id: devoirId,
             fichier_url: publicUrl,
             fichier_nom: file.name,

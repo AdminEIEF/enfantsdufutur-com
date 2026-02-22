@@ -20,14 +20,49 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Validate code
-    const { data: famille, error: famErr } = await supabaseAdmin
+    // Validate HMAC token
+    let familleId: string;
+    try {
+      const decoded = atob(code);
+      const parts = decoded.split(":");
+      if (parts.length < 3) throw new Error("Invalid token");
+      const tokenFamilleId = parts[0];
+      const tokenTimestamp = parseInt(parts[1]);
+      const tokenSignature = parts.slice(2).join(":");
+
+      // Verify HMAC
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+      );
+      const tokenData = `${tokenFamilleId}:${tokenTimestamp}`;
+      const expectedSig = await crypto.subtle.sign("HMAC", key, encoder.encode(tokenData));
+      const expectedHex = Array.from(new Uint8Array(expectedSig)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      if (tokenSignature !== expectedHex) throw new Error("Bad signature");
+
+      // Check token age (24h max)
+      if (Date.now() - tokenTimestamp > 24 * 60 * 60 * 1000) throw new Error("Token expired");
+
+      familleId = tokenFamilleId;
+    } catch {
+      return new Response(JSON.stringify({ error: "Session expirée" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Verify family exists
+    const { data: famille } = await supabaseAdmin
       .from("familles")
       .select("id, solde_famille")
-      .eq("code_acces", code?.trim()?.toUpperCase())
+      .eq("id", familleId)
       .maybeSingle();
 
-    if (famErr) throw famErr;
     if (!famille) {
       return new Response(JSON.stringify({ error: "Session expirée" }), {
         status: 401,
@@ -35,7 +70,7 @@ serve(async (req) => {
       });
     }
 
-    const familleId = famille.id;
+    // familleId already set from token
 
     // Get all children IDs for this family
     const { data: enfantsIds } = await supabaseAdmin
