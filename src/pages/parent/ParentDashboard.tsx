@@ -229,18 +229,18 @@ export default function ParentDashboard() {
               ))}
             </div>
 
-            {/* Cantine Recharge */}
-            <ParentCantineOrdre
-              enfants={eleves}
-              code={session.token}
-              onSuccess={fetchDashboard}
-            />
-
             {/* Catalogue & Commande d'articles */}
             <ParentCatalogueCommande
               enfants={eleves}
               code={session.token}
               soldeFamille={dashData?.solde_famille || 0}
+              onSuccess={fetchDashboard}
+            />
+
+            {/* Cantine Recharge */}
+            <ParentCantineOrdre
+              enfants={eleves}
+              code={session.token}
               onSuccess={fetchDashboard}
             />
 
