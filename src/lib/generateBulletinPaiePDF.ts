@@ -20,21 +20,32 @@ interface BulletinPaieData {
   schoolName?: string;
   schoolSubtitle?: string;
   schoolCity?: string;
+  logoUrl?: string | null;
 }
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
-export function generateBulletinPaiePDF(data: BulletinPaieData) {
+function loadImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+export async function generateBulletinPaiePDF(data: BulletinPaieData) {
   const pdf = new jsPDF('p', 'mm', 'a4');
   const w = 210;
   const margin = 15;
   const contentW = w - margin * 2;
   let y = margin;
 
-  const primaryColor: [number, number, number] = [15, 23, 42]; // slate-900
-  const accentColor: [number, number, number] = [16, 185, 129]; // emerald-500
-  const lightBg: [number, number, number] = [248, 250, 252]; // slate-50
-  const borderColor: [number, number, number] = [226, 232, 240]; // slate-200
+  const primaryColor: [number, number, number] = [15, 23, 42];
+  const accentColor: [number, number, number] = [16, 185, 129];
+  const lightBg: [number, number, number] = [248, 250, 252];
+  const borderColor: [number, number, number] = [226, 232, 240];
 
   const schoolName = data.schoolName || 'ECOLE INTERNATIONALE LES ENFANTS DU FUTUR';
   const schoolCity = data.schoolCity || 'Conakry, Guinée';
@@ -45,15 +56,29 @@ export function generateBulletinPaiePDF(data: BulletinPaieData) {
   pdf.setFillColor(...primaryColor);
   pdf.rect(0, 0, w, 38, 'F');
 
+  // Logo
+  let textStartX = margin;
+  if (data.logoUrl) {
+    try {
+      const img = await loadImage(data.logoUrl);
+      const logoH = 16;
+      const logoW = (img.width / img.height) * logoH;
+      pdf.addImage(img, 'PNG', margin, 4, logoW, logoH);
+      textStartX = margin + logoW + 4;
+    } catch {
+      // Logo failed to load, continue without it
+    }
+  }
+
   // School name
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(16);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(schoolName, margin, 14);
+  pdf.text(schoolName, textStartX, 14);
 
   pdf.setFontSize(9);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(schoolCity, margin, 20);
+  pdf.text(schoolCity, textStartX, 20);
 
   // Right side: Bulletin title
   pdf.setFontSize(11);

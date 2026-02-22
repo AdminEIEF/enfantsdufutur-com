@@ -32,7 +32,7 @@ export default function EmployeePaie() {
 
   if (!session) return null;
 
-  const handleDownload = (b: any) => {
+  const handleDownload = async (b: any) => {
     generateBulletinPaiePDF({
       employe: {
         nom: session.employe.nom,

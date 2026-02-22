@@ -529,7 +529,7 @@ export default function Personnel() {
       salaire_brut: Number(b.salaire_brut), primes: Number(b.primes),
       retenues: Number(b.retenues), avances_deduites: Number(b.avances_deduites),
       salaire_net: Number(b.salaire_net), commentaire: b.commentaire,
-      schoolName: schoolConfig?.nom, schoolSubtitle: schoolConfig?.soustitre, schoolCity: schoolConfig?.ville,
+      schoolName: schoolConfig?.nom, schoolSubtitle: schoolConfig?.soustitre, schoolCity: schoolConfig?.ville, logoUrl: schoolConfig?.logo_url,
     });
   };
 
