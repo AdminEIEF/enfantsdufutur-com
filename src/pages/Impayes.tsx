@@ -62,31 +62,74 @@ export default function Impayes() {
     return map;
   }, [eleves]);
 
+  // Pre-compute family transport: for forfait families (3+), group transport as single charge
+  const familyTransportData = useMemo(() => {
+    const map: Record<string, { totalAnnuel: number; totalPaye: number; moisPayes: string[]; firstEleveId: string }> = {};
+    eleves.forEach((e: any) => {
+      if (!e.famille_id) return;
+      const siblingCount = familySizes[e.famille_id] || 1;
+      if (siblingCount < 3) return; // Only forfait for 3+
+      
+      const prixTransport = Number((e.zones_transport as any)?.prix_mensuel || 0);
+      const paiementsTransport = paiements.filter((p: any) => p.eleve_id === e.id && p.type_paiement === 'transport');
+      const payeTransport = paiementsTransport.reduce((s: number, p: any) => s + Number(p.montant), 0);
+      const moisPayes = paiementsTransport.map((p: any) => p.mois_concerne).filter(Boolean);
+
+      if (!map[e.famille_id]) {
+        map[e.famille_id] = { totalAnnuel: prixTransport * 10, totalPaye: payeTransport, moisPayes, firstEleveId: e.id };
+      } else {
+        // Use highest transport price as the flat rate
+        const annuel = prixTransport * 10;
+        if (annuel > map[e.famille_id].totalAnnuel) map[e.famille_id].totalAnnuel = annuel;
+        map[e.famille_id].totalPaye += payeTransport;
+        moisPayes.forEach(m => { if (!map[e.famille_id].moisPayes.includes(m)) map[e.famille_id].moisPayes.push(m); });
+      }
+    });
+    return map;
+  }, [eleves, paiements, familySizes]);
+
   const impayes = useMemo(() => {
     return eleves.map((e: any) => {
       const fraisAnnuel = Number(e.classes?.niveaux?.frais_scolarite || 0);
       const prixTransport = Number((e.zones_transport as any)?.prix_mensuel || 0);
 
-      // Family flat rate: from 3+ kids, transport is flat (1 price for all)
       const siblingCount = e.famille_id ? (familySizes[e.famille_id] || 1) : 1;
       const transportForfaitaire = siblingCount >= 3;
 
       const paiementsEleve = paiements.filter((p: any) => p.eleve_id === e.id);
       const paiementsScolarite = paiementsEleve.filter((p: any) => p.type_paiement === 'scolarite');
-      const paiementsTransport = paiementsEleve.filter((p: any) => p.type_paiement === 'transport');
 
       const totalPayeScolarite = paiementsScolarite.reduce((s: number, p: any) => s + Number(p.montant), 0);
-      const totalPayeTransport = paiementsTransport.reduce((s: number, p: any) => s + Number(p.montant), 0);
 
       const totalAnnuelScolarite = fraisAnnuel;
-      const totalAnnuelTransport = prixTransport * 10;
       const resteScolarite = Math.max(0, totalAnnuelScolarite - totalPayeScolarite);
-      const resteTransport = Math.max(0, totalAnnuelTransport - totalPayeTransport);
 
       const moisPayesScolarite = paiementsScolarite.map((p: any) => p.mois_concerne).filter(Boolean);
-      const moisPayesTransport = paiementsTransport.map((p: any) => p.mois_concerne).filter(Boolean);
       const moisImpayesScolarite = MOIS_SCOLAIRES.filter(m => !moisPayesScolarite.includes(m));
-      const moisImpayesTransport = e.zone_transport_id ? MOIS_SCOLAIRES.filter(m => !moisPayesTransport.includes(m)) : [];
+
+      // Transport: if forfait famille, only show on first student of the family
+      let resteTransport = 0;
+      let moisImpayesTransport: string[] = [];
+      let transportLabel = '';
+
+      if (transportForfaitaire && e.famille_id) {
+        const ftd = familyTransportData[e.famille_id];
+        if (ftd && ftd.firstEleveId === e.id) {
+          // This is the first student: show grouped family transport
+          resteTransport = Math.max(0, ftd.totalAnnuel - ftd.totalPaye);
+          moisImpayesTransport = MOIS_SCOLAIRES.filter(m => !ftd.moisPayes.includes(m));
+          transportLabel = `Forfait famille (${siblingCount})`;
+        }
+        // Other students in forfait family: resteTransport = 0, no months
+      } else {
+        // Individual transport
+        const paiementsTransport = paiementsEleve.filter((p: any) => p.type_paiement === 'transport');
+        const totalPayeTransport = paiementsTransport.reduce((s: number, p: any) => s + Number(p.montant), 0);
+        const totalAnnuelTransport = prixTransport * 10;
+        resteTransport = Math.max(0, totalAnnuelTransport - totalPayeTransport);
+        const moisPayesTransport = paiementsTransport.map((p: any) => p.mois_concerne).filter(Boolean);
+        moisImpayesTransport = e.zone_transport_id ? MOIS_SCOLAIRES.filter(m => !moisPayesTransport.includes(m)) : [];
+      }
 
       return {
         id: e.id,
@@ -96,6 +139,7 @@ export default function Impayes() {
         classeId: e.classe_id,
         zone: (e.zones_transport as any)?.nom || null,
         transportForfaitaire,
+        transportLabel,
         siblingCount,
         resteScolarite,
         resteTransport,
@@ -110,7 +154,7 @@ export default function Impayes() {
       if (filterType === 'transport') return e.resteTransport > 0;
       return e.totalReste > 0;
     });
-  }, [eleves, paiements, familySizes, filterType]);
+  }, [eleves, paiements, familySizes, familyTransportData, filterType]);
 
   const filtered = impayes.filter(e => {
     const matchSearch = `${e.nom} ${e.matricule}`.toLowerCase().includes(search.toLowerCase());
@@ -211,8 +255,8 @@ export default function Impayes() {
                   <TableCell className="font-mono text-xs">{e.matricule}</TableCell>
                   <TableCell className="font-medium">
                     {e.nom}
-                    {e.transportForfaitaire && (
-                      <Badge variant="outline" className="ml-1 text-[10px]">Forfait famille ({e.siblingCount})</Badge>
+                    {e.transportLabel && (
+                      <Badge variant="outline" className="ml-1 text-[10px]">{e.transportLabel}</Badge>
                     )}
                   </TableCell>
                   <TableCell>{e.classe}</TableCell>
