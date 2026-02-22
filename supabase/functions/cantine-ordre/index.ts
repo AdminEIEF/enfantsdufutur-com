@@ -7,6 +7,36 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function verifyParentToken(code: string): Promise<string | null> {
+  try {
+    const decoded = atob(code);
+    const parts = decoded.split(":");
+    if (parts.length < 3) return null;
+    const familleId = parts[0];
+    const tokenTimestamp = parseInt(parts[1]);
+    const tokenSignature = parts.slice(2).join(":");
+
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    const tokenData = `${familleId}:${tokenTimestamp}`;
+    const expectedSig = await crypto.subtle.sign("HMAC", key, encoder.encode(tokenData));
+    const expectedHex = Array.from(new Uint8Array(expectedSig)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+    if (tokenSignature !== expectedHex) return null;
+    if (Date.now() - tokenTimestamp > 24 * 60 * 60 * 1000) return null;
+
+    return familleId;
+  } catch {
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -29,14 +59,8 @@ serve(async (req) => {
         });
       }
 
-      // Validate parent code
-      const { data: famille } = await supabaseAdmin
-        .from("familles")
-        .select("id")
-        .eq("code_acces", code?.trim()?.toUpperCase())
-        .maybeSingle();
-
-      if (!famille) {
+      const familleId = await verifyParentToken(code);
+      if (!familleId) {
         return new Response(JSON.stringify({ error: "Session expirée" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -48,7 +72,7 @@ serve(async (req) => {
         .from("eleves")
         .select("id, prenom, nom, famille_id")
         .eq("id", eleve_id)
-        .eq("famille_id", famille.id)
+        .eq("famille_id", familleId)
         .maybeSingle();
 
       if (!eleve) {
@@ -64,7 +88,7 @@ serve(async (req) => {
       const { data: ordre, error } = await supabaseAdmin
         .from("ordres_cantine")
         .insert({
-          famille_id: famille.id,
+          famille_id: familleId,
           eleve_id,
           montant,
           code_transaction: codeTransaction,
@@ -91,13 +115,8 @@ serve(async (req) => {
         });
       }
 
-      const { data: famille } = await supabaseAdmin
-        .from("familles")
-        .select("id")
-        .eq("code_acces", code?.trim()?.toUpperCase())
-        .maybeSingle();
-
-      if (!famille) {
+      const familleId = await verifyParentToken(code);
+      if (!familleId) {
         return new Response(JSON.stringify({ error: "Session expirée" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -107,7 +126,7 @@ serve(async (req) => {
       const { data: ordres } = await supabaseAdmin
         .from("ordres_cantine")
         .select("*, eleves:eleve_id(prenom, nom)")
-        .eq("famille_id", famille.id)
+        .eq("famille_id", familleId)
         .order("created_at", { ascending: false })
         .limit(20);
 
