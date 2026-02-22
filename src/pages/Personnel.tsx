@@ -24,7 +24,7 @@ import QRScannerDialog from '@/components/QRScannerDialog';
 import { QRCodeCanvas } from 'qrcode.react';
 import { generateBadgeEmployePDF } from '@/lib/generateBadgeEmploye';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
-import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
+
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -521,16 +521,9 @@ export default function Personnel() {
     });
   };
 
-  // Print bulletin paie
+  // Print bulletin paie - placeholder
   const handlePrintBulletin = (b: any) => {
-    generateBulletinPaiePDF({
-      employe: { nom: b.employes?.nom || '', prenom: b.employes?.prenom || '', matricule: b.employes?.matricule || '', poste: b.employes?.poste || '', categorie: b.employes?.categorie || '', date_embauche: b.employes?.date_embauche || '' },
-      mois: b.mois, annee: b.annee,
-      salaire_brut: Number(b.salaire_brut), primes: Number(b.primes),
-      retenues: Number(b.retenues), avances_deduites: Number(b.avances_deduites),
-      salaire_net: Number(b.salaire_net), commentaire: b.commentaire,
-      schoolName: schoolConfig?.nom, schoolSubtitle: schoolConfig?.soustitre, schoolCity: schoolConfig?.ville, logoUrl: schoolConfig?.logo_url,
-    });
+    // PDF generation removed
   };
 
   const filtered = employes.filter((e: any) => {
