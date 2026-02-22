@@ -132,13 +132,13 @@ export default function Landing() {
           <img src={heroImage} alt="Campus de l'école" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/30" />
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-40">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 lg:py-32">
           <div className="w-full mb-6 sm:mb-10">
             <motion.p
               initial={{ opacity: 0, y: -50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
-              className="text-2xl sm:text-4xl lg:text-[3.5rem] font-extrabold text-white uppercase tracking-widest text-center mb-1 sm:mb-2"
+              className="text-2xl sm:text-4xl lg:text-[3.5rem] font-extrabold text-[hsl(var(--destructive))] uppercase tracking-widest text-center mb-1 sm:mb-2"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
               Ecole Internationale
