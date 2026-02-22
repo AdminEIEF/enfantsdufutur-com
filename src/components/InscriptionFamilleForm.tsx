@@ -202,7 +202,14 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
   };
 
   const updateChild = (idx: number, patch: Partial<ChildForm>) => {
-    setChildren(prev => prev.map((c, i) => i === idx ? { ...c, ...patch } : c));
+    setChildren(prev => {
+      const updated = prev.map((c, i) => i === idx ? { ...c, ...patch } : c);
+      // Propagate transport zone to all siblings when changed
+      if ('zoneTransportId' in patch && patch.zoneTransportId) {
+        return updated.map(c => ({ ...c, zoneTransportId: patch.zoneTransportId! }));
+      }
+      return updated;
+    });
   };
 
   // Existing siblings in the selected family
