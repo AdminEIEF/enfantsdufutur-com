@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { BookOpen, Package, Search, Plus, Pencil, Trash2, AlertTriangle, Tag, ShoppingCart, Printer, FileText, Settings, User, CheckCircle2, Clock, ClipboardCheck, Camera } from 'lucide-react';
+import { BookOpen, Package, Search, Plus, Minus, Pencil, Trash2, AlertTriangle, Tag, ShoppingCart, Printer, FileText, Settings, User, CheckCircle2, Clock, ClipboardCheck, Camera } from 'lucide-react';
 import RapportJournalierPanel from '@/components/RapportJournalierPanel';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -334,8 +334,14 @@ function VenteALaCartePanel() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const togglePanier = (articleId: string, checked: boolean) => {
-    setPanier(prev => ({ ...prev, [articleId]: checked ? 1 : 0 }));
+  const updateQte = (articleId: string, delta: number) => {
+    setPanier(prev => {
+      const current = prev[articleId] || 0;
+      const art = allArticles.find((a: any) => a.id === articleId);
+      const maxStock = art?.stock || 0;
+      const next = Math.max(0, Math.min(current + delta, maxStock));
+      return { ...prev, [articleId]: next };
+    });
   };
 
   return (
@@ -405,7 +411,8 @@ function VenteALaCartePanel() {
                     >
                       <CardContent className="pt-0 space-y-1">
                         {items.map((a: any) => {
-                          const enPanier = (panier[a.id] || 0) > 0;
+                          const qte = panier[a.id] || 0;
+                          const enPanier = qte > 0;
                           return (
                             <motion.div
                               key={a.id}
@@ -413,13 +420,23 @@ function VenteALaCartePanel() {
                               animate={{ opacity: 1, y: 0 }}
                               className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors ${enPanier ? 'bg-emerald-50 border border-emerald-300 dark:bg-emerald-950/30' : 'bg-muted/50'} ${a.stock <= 0 ? 'opacity-40' : ''}`}
                             >
-                              <div className="flex items-center gap-2">
-                                <Checkbox checked={enPanier} onCheckedChange={(v) => togglePanier(a.id, !!v)} disabled={a.stock <= 0} />
-                                <span>{a.nom}</span>
-                                {a.stock <= 0 && <Badge variant="destructive" className="text-[10px] px-1">Épuisé</Badge>}
-                                {a.stock > 0 && a.stock < 10 && <Badge variant="secondary" className="text-[10px] px-1">Stock: {a.stock}</Badge>}
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <span className="truncate">{a.nom}</span>
+                                {a.stock <= 0 && <Badge variant="destructive" className="text-[10px] px-1 shrink-0">Épuisé</Badge>}
+                                {a.stock > 0 && a.stock < 10 && <Badge variant="secondary" className="text-[10px] px-1 shrink-0">Stock: {a.stock}</Badge>}
                               </div>
-                              <span className="font-medium text-emerald-700">{Number(a.prix).toLocaleString()} GNF</span>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="font-medium text-emerald-700 text-xs">{Number(a.prix).toLocaleString()} GNF</span>
+                                <div className="flex items-center gap-1 border rounded-md bg-background">
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" disabled={a.stock <= 0 || qte <= 0} onClick={() => updateQte(a.id, -1)}>
+                                    <Minus className="h-3 w-3" />
+                                  </Button>
+                                  <span className={`w-6 text-center text-sm font-bold ${qte > 0 ? 'text-emerald-700' : 'text-muted-foreground'}`}>{qte}</span>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" disabled={a.stock <= 0 || qte >= a.stock} onClick={() => updateQte(a.id, 1)}>
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
                             </motion.div>
                           );
                         })}
@@ -438,9 +455,14 @@ function VenteALaCartePanel() {
                 <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><ShoppingCart className="h-4 w-4" /> Panier ({panierItems.length} article{panierItems.length > 1 ? 's' : ''})</CardTitle></CardHeader>
                 <CardContent className="space-y-2">
                   {panierItems.map(i => (
-                    <div key={i.id} className="flex justify-between text-sm">
-                      <span>{i.nom} × {i.quantite}</span>
-                      <span className="font-bold">{(i.prix * i.quantite).toLocaleString()} GNF</span>
+                    <div key={i.id} className="flex items-center justify-between text-sm">
+                      <span className="flex-1">{i.nom}</span>
+                      <div className="flex items-center gap-1 mx-2">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQte(i.id, -1)}><Minus className="h-3 w-3" /></Button>
+                        <span className="w-5 text-center font-bold">{i.quantite}</span>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQte(i.id, 1)} disabled={i.quantite >= i.stock}><Plus className="h-3 w-3" /></Button>
+                      </div>
+                      <span className="font-bold w-28 text-right">{(i.prix * i.quantite).toLocaleString()} GNF</span>
                     </div>
                   ))}
                   <div className="flex justify-between font-bold text-base pt-2 border-t border-emerald-300">
