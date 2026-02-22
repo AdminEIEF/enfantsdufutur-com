@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   Briefcase, Plus, Search, Loader2, Clock, Calendar, DollarSign, FileText,
-  Check, X, Eye, Trash2, Upload, UserPlus, Users, ScanLine, CreditCard, Printer
+  Check, X, Eye, Trash2, Upload, UserPlus, Users, ScanLine, CreditCard, Printer,
+  Camera, Download, Key
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,6 +24,7 @@ import QRScannerDialog from '@/components/QRScannerDialog';
 import { QRCodeCanvas } from 'qrcode.react';
 import { generateBadgeEmployePDF } from '@/lib/generateBadgeEmploye';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
+import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -128,6 +130,12 @@ export default function Personnel() {
   const [paieOpen, setPaieOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
+  const cameraRef = useRef<HTMLVideoElement>(null);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraTarget, setCameraTarget] = useState<'add' | 'detail'>('add');
+  const [passwordGenOpen, setPasswordGenOpen] = useState(false);
 
   // Form state for new employee
   const [form, setForm] = useState({
@@ -217,31 +225,27 @@ export default function Personnel() {
   const addEmployee = useMutation({
     mutationFn: async () => {
       if (!form.nom || !form.prenom) throw new Error('Nom et prénom obligatoires');
-      // Auto-generate matricule
       const prefixMap: Record<string, string> = { enseignant: 'ENS', administration: 'ADM', service: 'SRV', direction: 'DIR' };
       const prefix = prefixMap[form.categorie] || 'EMP';
       const { count } = await supabase.from('employes').select('id', { count: 'exact', head: true });
       const num = String((count || 0) + 1).padStart(4, '0');
       const matricule = `${prefix}-${num}`;
-
-      // Auto-generate password: first 3 letters of prenom + last 4 digits of matricule + random 2 digits
       const autoPassword = form.prenom.slice(0, 3).toLowerCase() + num + String(Math.floor(Math.random() * 100)).padStart(2, '0');
 
-      const { error } = await supabase.from('employes').insert({
-        matricule,
-        nom: form.nom,
-        prenom: form.prenom,
-        sexe: form.sexe,
-        telephone: form.telephone || null,
-        email: form.email || null,
-        adresse: form.adresse || null,
-        categorie: form.categorie as any,
-        poste: form.poste,
-        salaire_base: Number(form.salaire_base) || 0,
-        date_embauche: form.date_embauche,
-        mot_de_passe: autoPassword,
-      });
+      const { data: inserted, error } = await supabase.from('employes').insert({
+        matricule, nom: form.nom, prenom: form.prenom, sexe: form.sexe,
+        telephone: form.telephone || null, email: form.email || null,
+        adresse: form.adresse || null, categorie: form.categorie as any,
+        poste: form.poste, salaire_base: Number(form.salaire_base) || 0,
+        date_embauche: form.date_embauche, mot_de_passe: autoPassword,
+      }).select('id').single();
       if (error) throw error;
+
+      // Upload camera photo if captured
+      if (capturedPhoto && cameraTarget === 'add' && inserted) {
+        const photoUrl = await uploadPhoto(inserted.id, capturedPhoto);
+        if (photoUrl) await supabase.from('employes').update({ photo_url: photoUrl }).eq('id', inserted.id);
+      }
       return { matricule, autoPassword };
     },
     onSuccess: (result) => {
@@ -351,6 +355,72 @@ export default function Personnel() {
     setPaieOpen(false);
   };
 
+  // Camera functions
+  const startCamera = async (target: 'add' | 'detail') => {
+    setCameraTarget(target);
+    setCameraOpen(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
+      setCameraStream(stream);
+      setTimeout(() => { if (cameraRef.current) cameraRef.current.srcObject = stream; }, 100);
+    } catch { toast({ title: 'Impossible d\'accéder à la caméra', variant: 'destructive' }); setCameraOpen(false); }
+  };
+
+  const capturePhoto = () => {
+    if (!cameraRef.current) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = cameraRef.current.videoWidth;
+    canvas.height = cameraRef.current.videoHeight;
+    canvas.getContext('2d')?.drawImage(cameraRef.current, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    setCapturedPhoto(dataUrl);
+    stopCamera();
+  };
+
+  const stopCamera = () => {
+    cameraStream?.getTracks().forEach(t => t.stop());
+    setCameraStream(null);
+    setCameraOpen(false);
+  };
+
+  const uploadPhoto = async (employeId: string, dataUrl: string) => {
+    const blob = await (await fetch(dataUrl)).blob();
+    const path = `${employeId}/photo_${Date.now()}.jpg`;
+    const { error: upErr } = await supabase.storage.from('photos').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+    if (upErr) { toast({ title: 'Erreur upload photo', variant: 'destructive' }); return null; }
+    const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
+    return urlData?.publicUrl || null;
+  };
+
+  // Generate password for existing employee
+  const generatePassword = async () => {
+    if (!selectedEmp) return;
+    const newPw = selectedEmp.prenom.slice(0, 3).toLowerCase() + selectedEmp.matricule.slice(-4) + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+    const { error } = await supabase.from('employes').update({ mot_de_passe: newPw }).eq('id', selectedEmp.id);
+    if (error) { toast({ title: 'Erreur', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: '🔐 Mot de passe généré', description: `Nouveau mot de passe : ${newPw}` });
+    // Notify employee
+    await supabase.from('employee_notifications').insert({
+      employe_id: selectedEmp.id,
+      titre: '🔐 Nouveau mot de passe',
+      message: 'Un nouveau mot de passe a été généré pour votre compte. Contactez l\'administration pour le recevoir.',
+      type: 'alerte',
+    });
+    setPasswordGenOpen(false);
+  };
+
+  // Print bulletin paie
+  const handlePrintBulletin = (b: any) => {
+    generateBulletinPaiePDF({
+      employe: { nom: b.employes?.nom || '', prenom: b.employes?.prenom || '', matricule: b.employes?.matricule || '', poste: '' },
+      mois: b.mois, annee: b.annee,
+      salaire_brut: Number(b.salaire_brut), primes: Number(b.primes),
+      retenues: Number(b.retenues), avances_deduites: Number(b.avances_deduites),
+      salaire_net: Number(b.salaire_net), commentaire: b.commentaire,
+      schoolName: schoolConfig?.nom,
+    });
+  };
+
   const filtered = employes.filter((e: any) => {
     const q = search.toLowerCase();
     return !q || e.nom.toLowerCase().includes(q) || e.prenom.toLowerCase().includes(q) || e.matricule.toLowerCase().includes(q);
@@ -418,6 +488,20 @@ export default function Personnel() {
                 </div>
                 <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5">🔐 Le mot de passe sera généré automatiquement et affiché après création.</p>
                 <div className="space-y-1"><Label>Adresse</Label><Input value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))} /></div>
+                {/* Photo by camera */}
+                <div className="space-y-1">
+                  <Label>Photo (caméra)</Label>
+                  {capturedPhoto && cameraTarget === 'add' ? (
+                    <div className="flex items-center gap-2">
+                      <img src={capturedPhoto} alt="Photo" className="w-16 h-16 rounded-full object-cover border" />
+                      <Button size="sm" variant="outline" onClick={() => setCapturedPhoto(null)}>Reprendre</Button>
+                    </div>
+                  ) : (
+                    <Button size="sm" variant="outline" className="w-full" onClick={() => startCamera('add')}>
+                      <Camera className="h-4 w-4 mr-1" /> Prendre une photo
+                    </Button>
+                  )}
+                </div>
                 <Button className="w-full" onClick={() => addEmployee.mutate()} disabled={addEmployee.isPending}>
                   {addEmployee.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                   Créer l'employé
@@ -659,11 +743,12 @@ export default function Personnel() {
                     <TableHead>Brut</TableHead>
                     <TableHead>Net</TableHead>
                     <TableHead>Date</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {bulletins.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucun bulletin</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun bulletin</TableCell></TableRow>
                   ) : bulletins.map((b: any) => (
                     <TableRow key={b.id}>
                       <TableCell className="font-medium">{b.employes?.prenom} {b.employes?.nom}</TableCell>
@@ -671,6 +756,11 @@ export default function Personnel() {
                       <TableCell>{Number(b.salaire_brut).toLocaleString()}</TableCell>
                       <TableCell className="font-bold">{Number(b.salaire_net).toLocaleString()} GNF</TableCell>
                       <TableCell className="text-sm">{format(new Date(b.created_at), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handlePrintBulletin(b)} title="Télécharger PDF">
+                          <Download className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -689,6 +779,20 @@ export default function Personnel() {
                 <DialogTitle>{selectedEmp.prenom} {selectedEmp.nom}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 text-sm">
+                {/* Photo */}
+                <div className="flex items-center gap-3">
+                  {selectedEmp.photo_url ? (
+                    <img src={selectedEmp.photo_url} alt="Photo" className="w-16 h-16 rounded-full object-cover border" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-lg font-bold text-muted-foreground">
+                      {selectedEmp.prenom?.[0]}{selectedEmp.nom?.[0]}
+                    </div>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => startCamera('detail')}>
+                    <Camera className="h-4 w-4 mr-1" /> {selectedEmp.photo_url ? 'Changer photo' : 'Prendre photo'}
+                  </Button>
+                </div>
+
                 <div className="grid grid-cols-2 gap-2">
                   <div><span className="text-muted-foreground">Matricule:</span> <span className="font-mono">{selectedEmp.matricule}</span></div>
                   <div><span className="text-muted-foreground">Catégorie:</span> {categorieLabel[selectedEmp.categorie]}</div>
@@ -700,6 +804,13 @@ export default function Personnel() {
                   <div><span className="text-muted-foreground">Embauche:</span> {selectedEmp.date_embauche ? format(new Date(selectedEmp.date_embauche), 'dd/MM/yyyy') : '—'}</div>
                   <div><span className="text-muted-foreground">Salaire:</span> <span className="font-bold">{Number(selectedEmp.salaire_base).toLocaleString()} GNF</span></div>
                   <div><span className="text-muted-foreground">Statut:</span> <Badge variant={selectedEmp.statut === 'actif' ? 'default' : 'destructive'}>{selectedEmp.statut}</Badge></div>
+                </div>
+
+                {/* Generate password */}
+                <div className="border-t pt-3">
+                  <Button size="sm" variant="outline" className="w-full" onClick={() => setPasswordGenOpen(true)}>
+                    <Key className="h-4 w-4 mr-1" /> Générer un mot de passe portail
+                  </Button>
                 </div>
 
                 {/* Badge PVC */}
@@ -735,6 +846,60 @@ export default function Personnel() {
         onScan={handleScanPointage}
         title="Scanner badge employé"
       />
+
+      {/* Camera Dialog */}
+      <Dialog open={cameraOpen} onOpenChange={v => { if (!v) stopCamera(); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Prendre une photo</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <video ref={cameraRef} autoPlay playsInline muted className="w-full rounded-lg bg-black aspect-[4/3]" />
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={capturePhoto}><Camera className="h-4 w-4 mr-1" /> Capturer</Button>
+              <Button variant="outline" onClick={stopCamera}>Annuler</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Camera capture result for detail target */}
+      <Dialog open={!!capturedPhoto && cameraTarget === 'detail'} onOpenChange={v => { if (!v) setCapturedPhoto(null); }}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader><DialogTitle>Confirmer la photo</DialogTitle></DialogHeader>
+          {capturedPhoto && (
+            <div className="space-y-3">
+              <img src={capturedPhoto} alt="Captured" className="w-32 h-32 rounded-full object-cover mx-auto border" />
+              <div className="flex gap-2">
+                <Button className="flex-1" onClick={async () => {
+                  if (!selectedEmp || !capturedPhoto) return;
+                  const photoUrl = await uploadPhoto(selectedEmp.id, capturedPhoto);
+                  if (photoUrl) {
+                    await supabase.from('employes').update({ photo_url: photoUrl }).eq('id', selectedEmp.id);
+                    setSelectedEmp({ ...selectedEmp, photo_url: photoUrl });
+                    qc.invalidateQueries({ queryKey: ['employes'] });
+                    toast({ title: '✅ Photo mise à jour' });
+                  }
+                  setCapturedPhoto(null);
+                }}>Enregistrer</Button>
+                <Button variant="outline" onClick={() => { setCapturedPhoto(null); startCamera('detail'); }}>Reprendre</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Password generation confirmation */}
+      <Dialog open={passwordGenOpen} onOpenChange={setPasswordGenOpen}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader><DialogTitle>Générer un mot de passe</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Un nouveau mot de passe sera généré pour <strong>{selectedEmp?.prenom} {selectedEmp?.nom}</strong> pour accéder au portail employé.
+          </p>
+          <div className="flex gap-2">
+            <Button className="flex-1" onClick={generatePassword}><Key className="h-4 w-4 mr-1" /> Confirmer</Button>
+            <Button variant="outline" onClick={() => setPasswordGenOpen(false)}>Annuler</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

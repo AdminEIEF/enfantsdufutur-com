@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { EmployeeLayout } from '@/components/EmployeeLayout';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
-import { Loader2, FileText, DollarSign } from 'lucide-react';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { Loader2, FileText, DollarSign, Download } from 'lucide-react';
+import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -31,6 +31,26 @@ export default function EmployeePaie() {
   }, [session]);
 
   if (!session) return null;
+
+  const handleDownload = (b: any) => {
+    generateBulletinPaiePDF({
+      employe: {
+        nom: session.employe.nom,
+        prenom: session.employe.prenom,
+        matricule: session.employe.matricule,
+        poste: session.employe.poste,
+        categorie: session.employe.categorie,
+      },
+      mois: b.mois,
+      annee: b.annee,
+      salaire_brut: Number(b.salaire_brut),
+      primes: Number(b.primes),
+      retenues: Number(b.retenues),
+      avances_deduites: Number(b.avances_deduites),
+      salaire_net: Number(b.salaire_net),
+      commentaire: b.commentaire,
+    });
+  };
 
   return (
     <EmployeeLayout>
@@ -66,7 +86,12 @@ export default function EmployeePaie() {
                   <CardContent className="pt-4">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold">{MOIS_NOMS[b.mois]} {b.annee}</h3>
-                      <Badge className="bg-emerald-500">{Number(b.salaire_net).toLocaleString()} GNF</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-emerald-500">{Number(b.salaire_net).toLocaleString()} GNF</Badge>
+                        <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => handleDownload(b)} title="Télécharger PDF">
+                          <Download className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div className="flex justify-between">
