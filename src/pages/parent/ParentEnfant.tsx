@@ -37,7 +37,7 @@ export default function ParentEnfant() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ code: session!.code, action: 'enfant', eleve_id: id }),
+          body: JSON.stringify({ code: session!.token, action: 'enfant', eleve_id: id }),
         }
       );
       const result = await resp.json();

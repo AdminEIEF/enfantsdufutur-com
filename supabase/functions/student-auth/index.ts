@@ -61,11 +61,24 @@ serve(async (req) => {
       });
     }
 
+    // Generate a session token (HMAC of eleve_id + timestamp)
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    const tokenData = `${eleve.id}:${Date.now()}`;
+    const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(tokenData));
+    const token = btoa(tokenData + ":" + Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join(''));
+
     // Remove password from response
     const { mot_de_passe_eleve, ...eleveData } = eleve;
 
     return new Response(
-      JSON.stringify({ eleve: eleveData }),
+      JSON.stringify({ eleve: eleveData, token }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {

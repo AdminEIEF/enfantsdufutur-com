@@ -47,7 +47,7 @@ export default function ParentDashboard() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ code: session!.code, action: 'dashboard' }),
+          body: JSON.stringify({ code: session!.token, action: 'dashboard' }),
         }
       );
       const data = await resp.json();
@@ -232,14 +232,14 @@ export default function ParentDashboard() {
             {/* Cantine Recharge */}
             <ParentCantineOrdre
               enfants={eleves}
-              code={session.code}
+              code={session.token}
               onSuccess={fetchDashboard}
             />
 
             {/* Catalogue & Commande d'articles */}
             <ParentCatalogueCommande
               enfants={eleves}
-              code={session.code}
+              code={session.token}
               soldeFamille={dashData?.solde_famille || 0}
               onSuccess={fetchDashboard}
             />
@@ -361,7 +361,7 @@ export default function ParentDashboard() {
         open={paymentOpen}
         onOpenChange={setPaymentOpen}
         enfants={session.eleves}
-        code={session.code}
+        code={session.token}
         onSuccess={fetchDashboard}
         soldeFamille={dashData?.solde_famille || 0}
       />

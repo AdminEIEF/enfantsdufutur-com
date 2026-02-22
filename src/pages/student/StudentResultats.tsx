@@ -29,7 +29,7 @@ export default function StudentResultats() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ matricule: session!.matricule, password: session!.password, action: 'resultats' }),
+          body: JSON.stringify({ matricule: session!.matricule, password: session!.token, action: 'resultats' }),
         }
       );
       const result = await resp.json();

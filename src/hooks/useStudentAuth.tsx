@@ -19,7 +19,7 @@ interface StudentEleve {
 interface StudentSession {
   eleve: StudentEleve;
   matricule: string;
-  password: string;
+  token: string;
 }
 
 interface StudentAuthContextType {
@@ -68,7 +68,7 @@ export function StudentAuthProvider({ children }: { children: ReactNode }) {
     const newSession: StudentSession = {
       eleve: data.eleve,
       matricule: matricule.trim().toUpperCase(),
-      password: password.trim(),
+      token: data.token || matricule.trim().toUpperCase(),
     };
     setSession(newSession);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newSession));
