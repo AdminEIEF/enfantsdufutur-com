@@ -107,14 +107,37 @@ serve(async (req) => {
         .order("mois", { ascending: false })
         .limit(12);
 
-      // Classes (for teachers)
+      // Classes, cours & devoirs (for teachers)
       let classes: any[] = [];
-      if (employe.categorie === "enseignant") {
+      let cours_enseignant: any[] = [];
+      let devoirs_enseignant: any[] = [];
+      if (employe.categorie === 'enseignant') {
         const { data: ec } = await supabaseAdmin
           .from("enseignant_classes")
           .select("id, classe_id, matiere_id, classes(id, nom), matieres:matiere_id(id, nom)")
           .eq("employe_id", employeId);
         classes = ec || [];
+
+        const classeIds = classes.map(c => c.classe_id);
+        if (classeIds.length > 0) {
+          const { data: coursData } = await supabaseAdmin
+            .from("cours")
+            .select("id, titre, type_contenu, classe_id, matiere_id, classes(nom), matieres:matiere_id(nom)")
+            .in("classe_id", classeIds)
+            .eq("visible", true)
+            .order("created_at", { ascending: false })
+            .limit(10);
+          cours_enseignant = coursData || [];
+
+          const { data: devoirsData } = await supabaseAdmin
+            .from("devoirs")
+            .select("id, titre, date_limite, classe_id, matiere_id, classes(nom), matieres:matiere_id(nom)")
+            .in("classe_id", classeIds)
+            .gte("date_limite", new Date().toISOString())
+            .order("date_limite", { ascending: true })
+            .limit(10);
+          devoirs_enseignant = devoirsData || [];
+        }
       }
 
       return new Response(JSON.stringify({
@@ -124,6 +147,8 @@ serve(async (req) => {
         avances: avances || [],
         bulletins: bulletins || [],
         classes,
+        cours_enseignant,
+        devoirs_enseignant,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

@@ -23,6 +23,96 @@ import QRScannerDialog from '@/components/QRScannerDialog';
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
+const DOC_TYPES = [
+  { key: 'contrat', label: 'Contrat de travail' },
+  { key: 'piece_identite', label: "Pièce d'identité" },
+  { key: 'cv', label: 'CV' },
+  { key: 'diplome', label: 'Diplôme' },
+  { key: 'autre', label: 'Autre' },
+];
+
+function EmployeeDocuments({ employeId }: { employeId: string }) {
+  const { toast } = useToast();
+  const [uploading, setUploading] = useState(false);
+  const [docType, setDocType] = useState('contrat');
+
+  const { data: docs = [], refetch } = useQuery({
+    queryKey: ['emp-docs', employeId],
+    queryFn: async () => {
+      const { data, error } = await supabase.storage.from('documents-employes').list(employeId);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const ext = file.name.split('.').pop();
+    const path = `${employeId}/${docType}_${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('documents-employes').upload(path, file);
+    setUploading(false);
+    if (error) { toast({ title: 'Erreur upload', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: '✅ Document uploadé' });
+    refetch();
+    e.target.value = '';
+  };
+
+  const handleDelete = async (name: string) => {
+    await supabase.storage.from('documents-employes').remove([`${employeId}/${name}`]);
+    toast({ title: '🗑️ Document supprimé' });
+    refetch();
+  };
+
+  const handleDownload = async (name: string) => {
+    const { data } = await supabase.storage.from('documents-employes').createSignedUrl(`${employeId}/${name}`, 300);
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+  };
+
+  const getDocLabel = (name: string) => {
+    const match = DOC_TYPES.find(d => name.startsWith(d.key));
+    return match?.label || 'Document';
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2 items-end">
+        <div className="flex-1">
+          <Select value={docType} onValueChange={setDocType}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {DOC_TYPES.map(d => <SelectItem key={d.key} value={d.key}>{d.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <label className="cursor-pointer">
+          <input type="file" className="hidden" onChange={handleUpload} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+          <Button size="sm" variant="outline" className="h-8 text-xs" asChild disabled={uploading}>
+            <span>{uploading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Upload className="h-3 w-3 mr-1" />}Uploader</span>
+          </Button>
+        </label>
+      </div>
+      {docs.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Aucun document</p>
+      ) : (
+        <div className="space-y-1">
+          {docs.map((doc: any) => (
+            <div key={doc.name} className="flex items-center justify-between text-xs border rounded px-2 py-1.5">
+              <span className="truncate flex-1 cursor-pointer hover:underline" onClick={() => handleDownload(doc.name)}>
+                📄 {getDocLabel(doc.name)} <span className="text-muted-foreground">({(doc.metadata?.size / 1024)?.toFixed(0) || '?'} KB)</span>
+              </span>
+              <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive" onClick={() => handleDelete(doc.name)}>
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Personnel() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -582,7 +672,7 @@ export default function Personnel() {
               <DialogHeader>
                 <DialogTitle>{selectedEmp.prenom} {selectedEmp.nom}</DialogTitle>
               </DialogHeader>
-              <div className="space-y-3 text-sm">
+              <div className="space-y-4 text-sm">
                 <div className="grid grid-cols-2 gap-2">
                   <div><span className="text-muted-foreground">Matricule:</span> <span className="font-mono">{selectedEmp.matricule}</span></div>
                   <div><span className="text-muted-foreground">Catégorie:</span> {categorieLabel[selectedEmp.categorie]}</div>
@@ -594,6 +684,12 @@ export default function Personnel() {
                   <div><span className="text-muted-foreground">Embauche:</span> {selectedEmp.date_embauche ? format(new Date(selectedEmp.date_embauche), 'dd/MM/yyyy') : '—'}</div>
                   <div><span className="text-muted-foreground">Salaire:</span> <span className="font-bold">{Number(selectedEmp.salaire_base).toLocaleString()} GNF</span></div>
                   <div><span className="text-muted-foreground">Statut:</span> <Badge variant={selectedEmp.statut === 'actif' ? 'default' : 'destructive'}>{selectedEmp.statut}</Badge></div>
+                </div>
+
+                {/* Documents */}
+                <div className="border-t pt-3">
+                  <h4 className="font-semibold mb-2 flex items-center gap-1"><Upload className="h-4 w-4" /> Documents</h4>
+                  <EmployeeDocuments employeId={selectedEmp.id} />
                 </div>
               </div>
             </>

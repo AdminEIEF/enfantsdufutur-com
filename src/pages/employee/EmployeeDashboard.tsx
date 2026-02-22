@@ -92,15 +92,15 @@ export default function EmployeeDashboard() {
             </Card>
           </div>
 
-          {/* Enseignant - classes */}
+          {/* Enseignant - classes & emploi du temps */}
           {emp.categorie === 'enseignant' && data?.classes?.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" /> Mes classes
+                  <BookOpen className="h-4 w-4" /> Mes classes & emploi du temps
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 <div className="flex flex-wrap gap-2">
                   {data.classes.map((ec: any) => (
                     <Badge key={ec.id} variant="secondary" className="text-xs">
@@ -108,6 +108,36 @@ export default function EmployeeDashboard() {
                     </Badge>
                   ))}
                 </div>
+                {/* Cours à venir */}
+                {data?.cours_enseignant?.length > 0 && (
+                  <div className="border-t pt-3 space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground">📚 Contenus de cours publiés</p>
+                    {data.cours_enseignant.map((c: any) => (
+                      <div key={c.id} className="flex items-center justify-between text-xs border rounded px-2 py-1.5">
+                        <div className="flex-1">
+                          <span className="font-medium">{c.titre}</span>
+                          <span className="text-muted-foreground ml-2">{c.classes?.nom} — {c.matieres?.nom}</span>
+                        </div>
+                        <Badge variant="outline" className="text-[10px]">{c.type_contenu}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* Devoirs */}
+                {data?.devoirs_enseignant?.length > 0 && (
+                  <div className="border-t pt-3 space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground">📝 Devoirs en cours</p>
+                    {data.devoirs_enseignant.map((d: any) => (
+                      <div key={d.id} className="flex items-center justify-between text-xs border rounded px-2 py-1.5">
+                        <div className="flex-1">
+                          <span className="font-medium">{d.titre}</span>
+                          <span className="text-muted-foreground ml-2">{d.classes?.nom} — {d.matieres?.nom}</span>
+                        </div>
+                        <span className="text-muted-foreground">{format(new Date(d.date_limite), 'dd/MM/yyyy')}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
