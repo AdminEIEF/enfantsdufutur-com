@@ -90,63 +90,64 @@ export default function ParentCantineOrdre({ enfants, code, onSuccess }: Props) 
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold flex items-center gap-2">
-          <UtensilsCrossed className="h-5 w-5 text-primary" /> Recharge Cantine
+    <div className="space-y-3 sm:space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-semibold flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base">
+          <UtensilsCrossed className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" /> Recharge Cantine
         </h3>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline">
-              <UtensilsCrossed className="h-4 w-4 mr-1" /> Ordonner un rechargement
+            <Button size="sm" variant="outline" className="text-xs sm:text-sm px-2 sm:px-3 h-8 whitespace-nowrap">
+              <UtensilsCrossed className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" /> Recharger
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md w-[95vw] sm:w-full p-3 sm:p-6">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <UtensilsCrossed className="h-5 w-5 text-primary" />
-                Ordonner un rechargement Cantine
+              <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <UtensilsCrossed className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                Rechargement Cantine
               </DialogTitle>
-              <DialogDescription>
-                Créez un ordre de rechargement. Présentez-vous ensuite à la caisse avec le code pour valider le versement.
+              <DialogDescription className="text-xs sm:text-sm">
+                Créez un ordre de rechargement. Présentez-vous ensuite à la caisse avec le code.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {enfants.length > 1 ? (
-                <div className="space-y-2">
-                  <Label>Enfant concerné</Label>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label className="text-xs sm:text-sm">Enfant concerné</Label>
                   <Select value={eleveId} onValueChange={setEleveId}>
-                    <SelectTrigger>
+                    <SelectTrigger className="text-xs sm:text-sm h-9 sm:h-10">
                       <SelectValue placeholder="Sélectionner un enfant" />
                     </SelectTrigger>
                     <SelectContent>
                       {enfants.filter(e => e.option_cantine).map(e => (
-                        <SelectItem key={e.id} value={e.id}>
-                          {e.prenom} {e.nom} — Solde: {(e.solde_cantine || 0).toLocaleString()} GNF
+                        <SelectItem key={e.id} value={e.id} className="text-xs sm:text-sm">
+                          {e.prenom} {e.nom} — {(e.solde_cantine || 0).toLocaleString()} GNF
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               ) : (
-                <div className="bg-muted/50 rounded-lg p-3 text-sm">
-                  <p className="text-xs text-muted-foreground">Élève</p>
-                  <p className="font-semibold">{enfants[0]?.prenom} {enfants[0]?.nom}</p>
-                  <p className="text-xs text-muted-foreground">Solde actuel: {(enfants[0]?.solde_cantine || 0).toLocaleString()} GNF</p>
+                <div className="bg-muted/50 rounded-lg p-2.5 sm:p-3">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Élève</p>
+                  <p className="font-semibold text-sm">{enfants[0]?.prenom} {enfants[0]?.nom}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Solde: {(enfants[0]?.solde_cantine || 0).toLocaleString()} GNF</p>
                 </div>
               )}
-              <div className="space-y-2">
-                <Label>Montant à recharger (GNF)</Label>
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label className="text-xs sm:text-sm">Montant à recharger (GNF)</Label>
                 <Input
                   type="number"
                   placeholder="Ex: 100000"
                   value={montant}
                   onChange={e => setMontant(e.target.value)}
                   min={1000}
+                  className="h-9 sm:h-10 text-sm"
                 />
               </div>
-              <Button onClick={handleCreate} disabled={loading} className="w-full">
-                {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <QrCode className="h-4 w-4 mr-2" />}
+              <Button onClick={handleCreate} disabled={loading} className="w-full h-9 sm:h-10 text-xs sm:text-sm">
+                {loading ? <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 animate-spin" /> : <QrCode className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />}
                 Créer l'ordre de rechargement
               </Button>
             </div>
@@ -158,9 +159,9 @@ export default function ParentCantineOrdre({ enfants, code, onSuccess }: Props) 
       <div className="grid grid-cols-2 gap-2">
         {enfants.filter(e => e.option_cantine).map(e => (
           <Card key={e.id} className="border-primary/20">
-            <CardContent className="pt-3 pb-2">
-              <p className="text-xs text-muted-foreground">{e.prenom} {e.nom}</p>
-              <p className="text-lg font-bold text-primary">{(e.solde_cantine || 0).toLocaleString()} GNF</p>
+            <CardContent className="pt-2.5 sm:pt-3 pb-2 px-3 sm:px-6">
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{e.prenom} {e.nom}</p>
+              <p className="text-base sm:text-lg font-bold text-primary truncate">{(e.solde_cantine || 0).toLocaleString()} GNF</p>
             </CardContent>
           </Card>
         ))}
@@ -170,38 +171,39 @@ export default function ParentCantineOrdre({ enfants, code, onSuccess }: Props) 
       {loadingOrdres ? (
         <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
       ) : ordres.length > 0 ? (
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">Historique des ordres</p>
+        <div className="space-y-1.5 sm:space-y-2">
+          <p className="text-xs sm:text-sm font-medium text-muted-foreground">Historique des ordres</p>
           {ordres.map((o: any) => {
             const cfg = statusConfig[o.statut as keyof typeof statusConfig] || statusConfig.en_attente;
             const Icon = cfg.icon;
             return (
               <Card key={o.id}>
-                <CardContent className="py-3">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={cfg.className}>
-                          <Icon className="h-3 w-3 mr-1" />
+                <CardContent className="py-2 sm:py-3 px-3 sm:px-6">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                        <Badge variant="outline" className={`${cfg.className} text-[10px] sm:text-xs px-1.5 sm:px-2`}>
+                          <Icon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
                           {cfg.label}
                         </Badge>
-                        <span className="text-sm font-medium">{o.eleves?.prenom} {o.eleves?.nom}</span>
+                        <span className="text-xs sm:text-sm font-medium truncate">{o.eleves?.prenom} {o.eleves?.nom}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
                         {new Date(o.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </p>
                       {o.statut === 'en_attente' && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <QRCodeSVG value={o.code_transaction} size={64} />
-                          <div>
-                            <p className="text-xs text-muted-foreground">Code transaction</p>
-                            <p className="font-mono font-bold text-lg tracking-wider">{o.code_transaction}</p>
-                            <p className="text-xs text-muted-foreground">Présentez ce code à la caisse</p>
+                        <div className="flex items-center gap-2 mt-1.5 sm:mt-2">
+                          <QRCodeSVG value={o.code_transaction} size={48} className="sm:hidden shrink-0" />
+                          <QRCodeSVG value={o.code_transaction} size={64} className="hidden sm:block shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">Code transaction</p>
+                            <p className="font-mono font-bold text-sm sm:text-lg tracking-wider truncate">{o.code_transaction}</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">Présentez ce code à la caisse</p>
                           </div>
                         </div>
                       )}
                     </div>
-                    <p className="font-bold text-primary text-lg">{Number(o.montant).toLocaleString()} GNF</p>
+                    <p className="font-bold text-primary text-sm sm:text-lg whitespace-nowrap shrink-0">{Number(o.montant).toLocaleString()} GNF</p>
                   </div>
                 </CardContent>
               </Card>
@@ -209,7 +211,7 @@ export default function ParentCantineOrdre({ enfants, code, onSuccess }: Props) 
           })}
         </div>
       ) : (
-        <p className="text-center text-sm text-muted-foreground py-4">Aucun ordre de rechargement</p>
+        <p className="text-center text-xs sm:text-sm text-muted-foreground py-3 sm:py-4">Aucun ordre de rechargement</p>
       )}
     </div>
   );
