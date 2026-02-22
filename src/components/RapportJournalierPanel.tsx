@@ -46,7 +46,7 @@ export default function RapportJournalierPanel({ service }: Props) {
   const { data: cantinePlats = [] } = useQuery({
     queryKey: ['rapport-cantine-plats'],
     queryFn: async () => {
-      const { data } = await supabase.from('plats_cantine' as any).select('*').order('nom');
+      const { data } = await supabase.from('plats_cantine').select('*').order('nom');
       return (data || []) as any[];
     },
     enabled: service === 'Cantine',
@@ -78,7 +78,7 @@ export default function RapportJournalierPanel({ service }: Props) {
     queryKey: ['rapport-librairie-ventes', date],
     queryFn: async () => {
       const { data } = await supabase
-        .from('ventes_articles' as any)
+        .from('ventes_articles')
         .select('*')
         .gte('created_at', `${date}T00:00:00`)
         .lte('created_at', `${date}T23:59:59`);
