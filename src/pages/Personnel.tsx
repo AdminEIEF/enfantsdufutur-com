@@ -183,7 +183,12 @@ export default function Personnel() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraTarget, setCameraTarget] = useState<'add' | 'detail'>('add');
   const [passwordGenOpen, setPasswordGenOpen] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const [editPasswordOpen, setEditPasswordOpen] = useState(false);
+  const [customPassword, setCustomPassword] = useState('');
   const [viewCourrierAdmin, setViewCourrierAdmin] = useState<any>(null);
+  const [refuseMotif, setRefuseMotif] = useState('');
+  const [refuseTarget, setRefuseTarget] = useState<{ type: 'conge' | 'avance'; id: string } | null>(null);
 
   // Form state for new employee
   const [form, setForm] = useState({
@@ -325,7 +330,8 @@ export default function Personnel() {
       return { matricule, autoPassword };
     },
     onSuccess: (result) => {
-      toast({ title: '✅ Employé ajouté', description: `Matricule: ${result?.matricule} — Mot de passe: ${result?.autoPassword}` });
+      toast({ title: '✅ Employé ajouté', description: `Matricule: ${result?.matricule}` });
+      setGeneratedPassword(result?.autoPassword || null);
       qc.invalidateQueries({ queryKey: ['employes'] });
       setAddOpen(false);
       setForm({ nom: '', prenom: '', sexe: 'M', telephone: '', email: '', adresse: '', categorie: 'service', poste: '', salaire_base: '', date_embauche: new Date().toISOString().slice(0, 10) });
@@ -375,9 +381,10 @@ export default function Personnel() {
   };
 
   // Approve/reject congé
-  const handleConge = async (id: string, statut: 'approuve' | 'refuse') => {
+  const handleConge = async (id: string, statut: 'approuve' | 'refuse', motif?: string) => {
     await supabase.from('conges').update({
       statut,
+      motif: statut === 'refuse' && motif ? motif : undefined,
       traite_par: user?.id,
       traite_at: new Date().toISOString(),
     }).eq('id', id);
@@ -386,14 +393,28 @@ export default function Personnel() {
   };
 
   // Approve/reject avance
-  const handleAvance = async (id: string, statut: 'approuve' | 'refuse') => {
+  const handleAvance = async (id: string, statut: 'approuve' | 'refuse', motif?: string) => {
     await supabase.from('avances_salaire').update({
       statut,
+      motif: statut === 'refuse' && motif ? motif : undefined,
       traite_par: user?.id,
       traite_at: new Date().toISOString(),
     }).eq('id', id);
     toast({ title: statut === 'approuve' ? '✅ Avance approuvée' : '❌ Avance refusée' });
     qc.invalidateQueries({ queryKey: ['avances-attente'] });
+  };
+
+  // Refuse with motif
+  const confirmRefuse = async () => {
+    if (!refuseTarget) return;
+    if (!refuseMotif.trim()) { toast({ title: 'Motif obligatoire', variant: 'destructive' }); return; }
+    if (refuseTarget.type === 'conge') {
+      await handleConge(refuseTarget.id, 'refuse', refuseMotif);
+    } else {
+      await handleAvance(refuseTarget.id, 'refuse', refuseMotif);
+    }
+    setRefuseTarget(null);
+    setRefuseMotif('');
   };
 
   // Generate bulletin de paie
@@ -469,20 +490,35 @@ export default function Personnel() {
   };
 
   // Generate password for existing employee
-  const generatePassword = async () => {
+  const handleGeneratePassword = async () => {
     if (!selectedEmp) return;
     const newPw = selectedEmp.prenom.slice(0, 3).toLowerCase() + selectedEmp.matricule.slice(-4) + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
     const { error } = await supabase.from('employes').update({ mot_de_passe: newPw }).eq('id', selectedEmp.id);
     if (error) { toast({ title: 'Erreur', description: error.message, variant: 'destructive' }); return; }
-    toast({ title: '🔐 Mot de passe généré', description: `Nouveau mot de passe : ${newPw}` });
-    // Notify employee
+    setGeneratedPassword(newPw);
+    setPasswordGenOpen(false);
     await supabase.from('employee_notifications').insert({
       employe_id: selectedEmp.id,
       titre: '🔐 Nouveau mot de passe',
       message: 'Un nouveau mot de passe a été généré pour votre compte. Contactez l\'administration pour le recevoir.',
       type: 'alerte',
     });
-    setPasswordGenOpen(false);
+  };
+
+  // Admin set custom password
+  const handleSetCustomPassword = async () => {
+    if (!selectedEmp || !customPassword.trim()) { toast({ title: 'Mot de passe requis', variant: 'destructive' }); return; }
+    const { error } = await supabase.from('employes').update({ mot_de_passe: customPassword }).eq('id', selectedEmp.id);
+    if (error) { toast({ title: 'Erreur', description: error.message, variant: 'destructive' }); return; }
+    setGeneratedPassword(customPassword);
+    setEditPasswordOpen(false);
+    setCustomPassword('');
+    await supabase.from('employee_notifications').insert({
+      employe_id: selectedEmp.id,
+      titre: '🔐 Mot de passe modifié',
+      message: 'Votre mot de passe portail a été modifié par l\'administration.',
+      type: 'alerte',
+    });
   };
 
   // Print bulletin paie
@@ -710,7 +746,7 @@ export default function Personnel() {
                       <TableCell>
                         <div className="flex gap-1">
                           <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => handleConge(c.id, 'approuve')}><Check className="h-3.5 w-3.5 text-green-600" /></Button>
-                          <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => handleConge(c.id, 'refuse')}><X className="h-3.5 w-3.5 text-red-600" /></Button>
+                          <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => { setRefuseTarget({ type: 'conge', id: c.id }); setRefuseMotif(''); }}><X className="h-3.5 w-3.5 text-red-600" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -748,7 +784,7 @@ export default function Personnel() {
                       <TableCell>
                         <div className="flex gap-1">
                           <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => handleAvance(a.id, 'approuve')}><Check className="h-3.5 w-3.5 text-green-600" /></Button>
-                          <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => handleAvance(a.id, 'refuse')}><X className="h-3.5 w-3.5 text-red-600" /></Button>
+                          <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => { setRefuseTarget({ type: 'avance', id: a.id }); setRefuseMotif(''); }}><X className="h-3.5 w-3.5 text-red-600" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1015,10 +1051,13 @@ export default function Personnel() {
                   <div><span className="text-muted-foreground">Statut:</span> <Badge variant={selectedEmp.statut === 'actif' ? 'default' : 'destructive'}>{selectedEmp.statut}</Badge></div>
                 </div>
 
-                {/* Generate password */}
-                <div className="border-t pt-3">
+                {/* Generate / Modify password */}
+                <div className="border-t pt-3 space-y-2">
                   <Button size="sm" variant="outline" className="w-full" onClick={() => setPasswordGenOpen(true)}>
                     <Key className="h-4 w-4 mr-1" /> Générer un mot de passe portail
+                  </Button>
+                  <Button size="sm" variant="outline" className="w-full" onClick={() => { setEditPasswordOpen(true); setCustomPassword(''); }}>
+                    <Key className="h-4 w-4 mr-1" /> Modifier le mot de passe
                   </Button>
                 </div>
 
@@ -1104,8 +1143,58 @@ export default function Personnel() {
             Un nouveau mot de passe sera généré pour <strong>{selectedEmp?.prenom} {selectedEmp?.nom}</strong> pour accéder au portail employé.
           </p>
           <div className="flex gap-2">
-            <Button className="flex-1" onClick={generatePassword}><Key className="h-4 w-4 mr-1" /> Confirmer</Button>
+            <Button className="flex-1" onClick={handleGeneratePassword}><Key className="h-4 w-4 mr-1" /> Confirmer</Button>
             <Button variant="outline" onClick={() => setPasswordGenOpen(false)}>Annuler</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Generated password display */}
+      <Dialog open={!!generatedPassword} onOpenChange={v => { if (!v) setGeneratedPassword(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>🔐 Mot de passe généré</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Mot de passe pour <strong>{selectedEmp?.prenom} {selectedEmp?.nom}</strong> :</p>
+            <div className="bg-muted rounded-lg p-4 text-center">
+              <p className="text-2xl font-mono font-bold tracking-widest select-all">{generatedPassword}</p>
+            </div>
+            <p className="text-xs text-destructive">⚠️ Notez ce mot de passe, il ne sera plus affiché après fermeture.</p>
+            <Button className="w-full" variant="outline" onClick={() => {
+              navigator.clipboard.writeText(generatedPassword || '');
+              toast({ title: '📋 Copié dans le presse-papier' });
+            }}>
+              Copier le mot de passe
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit password dialog */}
+      <Dialog open={editPasswordOpen} onOpenChange={setEditPasswordOpen}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader><DialogTitle>Modifier le mot de passe</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Définir un nouveau mot de passe pour <strong>{selectedEmp?.prenom} {selectedEmp?.nom}</strong></p>
+            <Input value={customPassword} onChange={e => setCustomPassword(e.target.value)} placeholder="Nouveau mot de passe" />
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={handleSetCustomPassword}><Key className="h-4 w-4 mr-1" /> Enregistrer</Button>
+              <Button variant="outline" onClick={() => setEditPasswordOpen(false)}>Annuler</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Refuse with motif dialog */}
+      <Dialog open={!!refuseTarget} onOpenChange={v => { if (!v) setRefuseTarget(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Motif du refus</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Veuillez indiquer le motif du refus :</p>
+            <Textarea value={refuseMotif} onChange={e => setRefuseMotif(e.target.value)} placeholder="Motif du refus..." />
+            <div className="flex gap-2">
+              <Button className="flex-1" variant="destructive" onClick={confirmRefuse}><X className="h-4 w-4 mr-1" /> Refuser</Button>
+              <Button variant="outline" onClick={() => setRefuseTarget(null)}>Annuler</Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
