@@ -9,7 +9,7 @@ export interface SchoolConfig {
 }
 
 const DEFAULT_CONFIG: SchoolConfig = {
-  nom: 'Groupe Scolaire EI Enfant du Futur',
+  nom: 'Ecole Internationale Les Enfants du Futur',
   soustitre: 'Enseignement Général et Technique',
   ville: 'Conakry, Guinée',
   logo_url: null,

@@ -1349,7 +1349,7 @@ function TranchesTab() {
 // ─── Tab: École (Config) ─────────────────────────────────
 function EcoleTab() {
   const qc = useQueryClient();
-  const [nom, setNom] = useState('Groupe Scolaire EI Enfant du Futur');
+  const [nom, setNom] = useState('Ecole Internationale Les Enfants du Futur');
   const [soustitre, setSoustitre] = useState('Enseignement Général et Technique');
   const [ville, setVille] = useState('Conakry, Guinée');
   const [logoUrl, setLogoUrl] = useState('');
@@ -1454,7 +1454,7 @@ function EcoleTab() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Nom de l'établissement</Label>
-            <Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Groupe Scolaire EI Enfant du Futur" />
+            <Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Ecole Internationale Les Enfants du Futur" />
           </div>
           <div>
             <Label>Sous-titre</Label>
