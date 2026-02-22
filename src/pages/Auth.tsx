@@ -187,7 +187,7 @@ export default function Auth() {
             variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
           >
             {/* Globe watermark behind content */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-36 h-36 opacity-[0.12] pointer-events-none z-0">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/4 w-36 h-36 opacity-[0.12] pointer-events-none z-0">
               <svg viewBox="0 0 100 100" className="w-full h-full">
                 <circle cx="50" cy="50" r="26" fill="hsl(var(--muted))" />
                 <circle cx="50" cy="50" r="26" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2.5" />
