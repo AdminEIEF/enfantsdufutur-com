@@ -58,7 +58,8 @@ export default function RapportJournalierPanel({ service }: Props) {
       const { data } = await supabase
         .from('repas_cantine')
         .select('*')
-        .eq('date_repas', date);
+        .gte('date_repas', `${date}T00:00:00`)
+        .lte('date_repas', `${date}T23:59:59`);
       return (data || []) as any[];
     },
     enabled: service === 'Cantine',
@@ -228,7 +229,7 @@ export default function RapportJournalierPanel({ service }: Props) {
       {/* Sales table */}
       {soldItems.length > 0 && (
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm">📊 Ventes du {new Date(date).toLocaleDateString('fr-FR')}</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">📊 Ventes du {new Date(date + 'T12:00:00').toLocaleDateString('fr-FR')}</CardTitle></CardHeader>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
@@ -260,7 +261,7 @@ export default function RapportJournalierPanel({ service }: Props) {
       {soldItems.length === 0 && (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Aucune vente enregistrée pour le {new Date(date).toLocaleDateString('fr-FR')}
+            Aucune vente enregistrée pour le {new Date(date + 'T12:00:00').toLocaleDateString('fr-FR')}
           </CardContent>
         </Card>
       )}
