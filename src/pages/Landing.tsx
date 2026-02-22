@@ -139,12 +139,12 @@ export default function Landing() {
               initial={{ opacity: 0, y: -40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: 'easeOut' }}
-              className="text-2xl sm:text-4xl lg:text-[3.5rem] font-extrabold leading-tight mb-1 sm:mb-2 text-center"
+              className="text-2xl sm:text-4xl lg:text-[3.5rem] font-extrabold leading-none mb-1 sm:mb-2 text-center whitespace-nowrap"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
-              <span className="text-[hsl(var(--warning))]">LES ECOLES </span>
-              <span className="text-[hsl(var(--success))]">LES ENFANTS </span>
-              <span className="text-[hsl(var(--destructive))]">DU FUTUR</span>
+              <span className="text-[hsl(var(--destructive))]">LES ECOLES </span>
+              <span className="text-[hsl(var(--warning))]">LES ENFANTS </span>
+              <span className="text-[hsl(var(--success))]">DU FUTUR</span>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, scale: 0.8 }}
