@@ -9,6 +9,7 @@ import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
+import { motion } from 'framer-motion';
 import heroImage from '@/assets/hero-school.jpg';
 import schoolAnglais from '@/assets/school-anglais.jpg';
 import schoolBepc from '@/assets/school-bepc.jpg';
@@ -135,20 +136,66 @@ export default function Landing() {
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/30" />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-40">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 sm:gap-2 bg-secondary/20 text-secondary rounded-full px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm font-medium mb-4 sm:mb-6 backdrop-blur-sm">
+          <div className="max-w-3xl">
+            {/* Big colorful title */}
+            <motion.h1
+              initial={{ opacity: 0, y: -40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: 'easeOut' }}
+              className="text-2xl sm:text-4xl lg:text-[3.5rem] font-extrabold leading-tight mb-1 sm:mb-2"
+              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+            >
+              <span className="text-[hsl(var(--warning))]">LES ECOLES </span>
+              <span className="text-[hsl(var(--success))]">LES ENFANTS </span>
+              <span className="text-[hsl(var(--destructive))]">DU FUTUR</span>
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="text-xl sm:text-3xl lg:text-4xl font-bold text-white italic mb-4 sm:mb-6"
+              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+            >
+              Faisons plus!
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="inline-flex items-center gap-1.5 sm:gap-2 bg-secondary/20 text-secondary rounded-full px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm font-medium mb-4 sm:mb-6 backdrop-blur-sm"
+            >
               <Star className="h-3 w-3 sm:h-4 sm:w-4" />
               Inscriptions 2025-2026 ouvertes
-            </div>
-            <h1 className="text-2xl sm:text-4xl lg:text-6xl font-bold text-white leading-tight mb-4 sm:mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            </motion.div>
+
+            <motion.h2
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
+              className="text-xl sm:text-3xl lg:text-5xl font-bold text-white leading-tight mb-4 sm:mb-6"
+              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+            >
               Investir maintenant<br />
               <span className="text-secondary">pour Sourire</span> demain !
-            </h1>
-            <p className="text-sm sm:text-lg lg:text-xl text-white/80 mb-6 sm:mb-8 max-w-lg">
+            </motion.h2>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.9 }}
+              className="text-sm sm:text-lg lg:text-xl text-white/80 mb-6 sm:mb-8 max-w-lg"
+            >
               L'École Internationale Enfant du Futur offre un enseignement d'excellence 
               dans un environnement moderne et bienveillant, du Primaire au Collège.
-            </p>
-            <div className="flex flex-wrap gap-2 sm:gap-4">
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 1.1 }}
+              className="flex flex-wrap gap-2 sm:gap-4"
+            >
               <Link to="/auth">
                 <Button size="sm" className="sm:text-base sm:px-8 sm:h-11 text-xs px-4 h-9">
                   <GraduationCap className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
@@ -160,7 +207,7 @@ export default function Landing() {
                   Découvrir l'école
                 </Button>
               </a>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
