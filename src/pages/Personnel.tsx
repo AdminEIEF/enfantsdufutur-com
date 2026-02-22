@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   Briefcase, Plus, Search, Loader2, Clock, Calendar, DollarSign, FileText,
-  Check, X, Eye, Trash2, Upload, UserPlus, Users, ScanLine
+  Check, X, Eye, Trash2, Upload, UserPlus, Users, ScanLine, CreditCard, Printer
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,6 +20,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import QRScannerDialog from '@/components/QRScannerDialog';
+import { QRCodeCanvas } from 'qrcode.react';
+import { generateBadgeEmployePDF } from '@/lib/generateBadgeEmploye';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -117,18 +120,20 @@ export default function Personnel() {
   const { toast } = useToast();
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { data: schoolConfig } = useSchoolConfig();
   const [search, setSearch] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState<any>(null);
   const [pointageOpen, setPointageOpen] = useState(false);
   const [paieOpen, setPaieOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const qrRef = useRef<HTMLDivElement>(null);
 
   // Form state for new employee
   const [form, setForm] = useState({
     nom: '', prenom: '', sexe: 'M', telephone: '', email: '',
     adresse: '', categorie: 'service' as string, poste: '', salaire_base: '',
-    date_embauche: new Date().toISOString().slice(0, 10), mot_de_passe: '',
+    date_embauche: new Date().toISOString().slice(0, 10),
   });
 
   // Paie form
@@ -212,12 +217,15 @@ export default function Personnel() {
   const addEmployee = useMutation({
     mutationFn: async () => {
       if (!form.nom || !form.prenom) throw new Error('Nom et prénom obligatoires');
-      // Auto-generate matricule: PREFIX-XXXX
+      // Auto-generate matricule
       const prefixMap: Record<string, string> = { enseignant: 'ENS', administration: 'ADM', service: 'SRV', direction: 'DIR' };
       const prefix = prefixMap[form.categorie] || 'EMP';
       const { count } = await supabase.from('employes').select('id', { count: 'exact', head: true });
       const num = String((count || 0) + 1).padStart(4, '0');
       const matricule = `${prefix}-${num}`;
+
+      // Auto-generate password: first 3 letters of prenom + last 4 digits of matricule + random 2 digits
+      const autoPassword = form.prenom.slice(0, 3).toLowerCase() + num + String(Math.floor(Math.random() * 100)).padStart(2, '0');
 
       const { error } = await supabase.from('employes').insert({
         matricule,
@@ -231,15 +239,16 @@ export default function Personnel() {
         poste: form.poste,
         salaire_base: Number(form.salaire_base) || 0,
         date_embauche: form.date_embauche,
-        mot_de_passe: form.mot_de_passe || null,
+        mot_de_passe: autoPassword,
       });
       if (error) throw error;
+      return { matricule, autoPassword };
     },
-    onSuccess: () => {
-      toast({ title: '✅ Employé ajouté' });
+    onSuccess: (result) => {
+      toast({ title: '✅ Employé ajouté', description: `Matricule: ${result?.matricule} — Mot de passe: ${result?.autoPassword}` });
       qc.invalidateQueries({ queryKey: ['employes'] });
       setAddOpen(false);
-      setForm({ nom: '', prenom: '', sexe: 'M', telephone: '', email: '', adresse: '', categorie: 'service', poste: '', salaire_base: '', date_embauche: new Date().toISOString().slice(0, 10), mot_de_passe: '' });
+      setForm({ nom: '', prenom: '', sexe: 'M', telephone: '', email: '', adresse: '', categorie: 'service', poste: '', salaire_base: '', date_embauche: new Date().toISOString().slice(0, 10) });
     },
     onError: (err: any) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
   });
@@ -407,7 +416,7 @@ export default function Personnel() {
                   <div className="space-y-1"><Label>Salaire (GNF)</Label><Input type="number" value={form.salaire_base} onChange={e => setForm(f => ({ ...f, salaire_base: e.target.value }))} /></div>
                   <div className="space-y-1"><Label>Date d'embauche</Label><Input type="date" value={form.date_embauche} onChange={e => setForm(f => ({ ...f, date_embauche: e.target.value }))} /></div>
                 </div>
-                <div className="space-y-1"><Label>Mot de passe portail</Label><Input value={form.mot_de_passe} onChange={e => setForm(f => ({ ...f, mot_de_passe: e.target.value }))} placeholder="Pour l'accès employé" /></div>
+                <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5">🔐 Le mot de passe sera généré automatiquement et affiché après création.</p>
                 <div className="space-y-1"><Label>Adresse</Label><Input value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))} /></div>
                 <Button className="w-full" onClick={() => addEmployee.mutate()} disabled={addEmployee.isPending}>
                   {addEmployee.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
@@ -691,6 +700,21 @@ export default function Personnel() {
                   <div><span className="text-muted-foreground">Embauche:</span> {selectedEmp.date_embauche ? format(new Date(selectedEmp.date_embauche), 'dd/MM/yyyy') : '—'}</div>
                   <div><span className="text-muted-foreground">Salaire:</span> <span className="font-bold">{Number(selectedEmp.salaire_base).toLocaleString()} GNF</span></div>
                   <div><span className="text-muted-foreground">Statut:</span> <Badge variant={selectedEmp.statut === 'actif' ? 'default' : 'destructive'}>{selectedEmp.statut}</Badge></div>
+                </div>
+
+                {/* Badge PVC */}
+                <div className="border-t pt-3">
+                  <Button size="sm" variant="outline" className="w-full" onClick={() => {
+                    const canvas = qrRef.current?.querySelector('canvas');
+                    if (!canvas) return;
+                    const qrDataUrl = (canvas as HTMLCanvasElement).toDataURL('image/png');
+                    generateBadgeEmployePDF(selectedEmp, qrDataUrl, schoolConfig?.nom);
+                  }}>
+                    <Printer className="h-4 w-4 mr-1" /> Imprimer Badge PVC
+                  </Button>
+                  <div ref={qrRef} className="hidden">
+                    <QRCodeCanvas value={selectedEmp.matricule} size={200} />
+                  </div>
                 </div>
 
                 {/* Documents */}
