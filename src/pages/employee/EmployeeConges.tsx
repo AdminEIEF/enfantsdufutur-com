@@ -113,6 +113,7 @@ export default function EmployeeConges() {
 
   const statutBadge = (s: string, motif?: string) => {
     if (s === 'approuve') return <Badge className="bg-green-500">Approuvé</Badge>;
+    if (s === 'rembourse') return <Badge className="bg-blue-500">Remboursé</Badge>;
     if (s === 'refuse') return (
       <div className="text-right">
         <Badge variant="destructive">Refusé</Badge>
@@ -232,16 +233,28 @@ export default function EmployeeConges() {
                 <p className="text-sm text-muted-foreground text-center py-4">Aucune demande d'avance</p>
               ) : (
                 <div className="space-y-3">
-                  {data.avances.map((a: any) => (
-                    <div key={a.id} className="flex items-center justify-between border-b pb-2 last:border-0">
-                      <div>
-                        <p className="text-sm font-medium">{Number(a.montant).toLocaleString()} GNF</p>
-                        {a.motif && <p className="text-xs text-muted-foreground">{a.motif}</p>}
-                        <p className="text-xs text-muted-foreground">{format(new Date(a.created_at), 'dd MMM yyyy', { locale: fr })}</p>
+                  {data.avances.map((a: any) => {
+                    const restant = Number(a.montant) - Number(a.montant_rembourse || 0);
+                    return (
+                      <div key={a.id} className="flex items-center justify-between border-b pb-2 last:border-0">
+                        <div>
+                          <p className="text-sm font-medium">{Number(a.montant).toLocaleString()} GNF</p>
+                          {a.statut === 'approuve' && restant > 0 && (
+                            <p className="text-xs text-orange-600">Restant: {restant.toLocaleString()} GNF</p>
+                          )}
+                          {a.statut === 'approuve' && Number(a.montant_rembourse || 0) > 0 && (
+                            <p className="text-xs text-emerald-600">Remboursé: {Number(a.montant_rembourse).toLocaleString()} GNF</p>
+                          )}
+                          {a.mois_remboursement && (
+                            <p className="text-xs text-muted-foreground">Déduit: {a.mois_remboursement}</p>
+                          )}
+                          {a.motif && <p className="text-xs text-muted-foreground">{a.motif}</p>}
+                          <p className="text-xs text-muted-foreground">{format(new Date(a.created_at), 'dd MMM yyyy', { locale: fr })}</p>
+                        </div>
+                        {statutBadge(a.statut, a.motif)}
                       </div>
-                      {statutBadge(a.statut, a.motif)}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
