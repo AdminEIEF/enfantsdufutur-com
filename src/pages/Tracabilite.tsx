@@ -28,16 +28,26 @@ function useTracabilite(date: string) {
       const dayEnd = `${date}T23:59:59`;
 
       // Fetch all sources in parallel
-      const [repasRes, boutiqueRes, librairieOldRes, librairieNewRes, profilesRes] = await Promise.all([
+      const [repasRes, boutiqueRes, boutiqueNewRes, librairieOldRes, librairieNewRes, cantineOrdresRes, profilesRes] = await Promise.all([
         supabase
           .from('repas_cantine')
           .select('id, date_repas, montant_debite, plat_nom, created_by, eleves(nom, prenom)')
           .gte('date_repas', dayStart)
           .lte('date_repas', dayEnd)
           .order('date_repas', { ascending: false }),
+        // Boutique direct sales
         supabase
           .from('boutique_ventes')
           .select('id, created_at, montant_final, created_by, eleves(nom, prenom)')
+          .gte('created_at', dayStart)
+          .lte('created_at', dayEnd)
+          .order('created_at', { ascending: false }),
+        // Boutique via commandes_articles (inscription + vente_directe)
+        supabase
+          .from('commandes_articles')
+          .select('id, created_at, prix_unitaire, quantite, article_nom, eleves(nom, prenom)')
+          .eq('article_type', 'boutique')
+          .eq('source', 'vente_directe')
           .gte('created_at', dayStart)
           .lte('created_at', dayEnd)
           .order('created_at', { ascending: false }),
@@ -51,9 +61,17 @@ function useTracabilite(date: string) {
         // New librairie direct sales (commandes_articles)
         supabase
           .from('commandes_articles')
-          .select('id, created_at, prix_unitaire, quantite, article_nom, eleve_id, eleves(nom, prenom)')
+          .select('id, created_at, prix_unitaire, quantite, article_nom, eleves(nom, prenom)')
           .eq('source', 'vente_directe')
           .eq('article_type', 'librairie')
+          .gte('created_at', dayStart)
+          .lte('created_at', dayEnd)
+          .order('created_at', { ascending: false }),
+        // Cantine recharges (ordres validés)
+        supabase
+          .from('ordres_cantine')
+          .select('id, created_at, montant, statut, validated_by, eleves(nom, prenom)')
+          .eq('statut', 'valide')
           .gte('created_at', dayStart)
           .lte('created_at', dayEnd)
           .order('created_at', { ascending: false }),
@@ -78,6 +96,18 @@ function useTracabilite(date: string) {
         });
       });
 
+      // Cantine recharges validées
+      (cantineOrdresRes.data || []).forEach((o: any) => {
+        ops.push({
+          id: o.id,
+          type: 'cantine',
+          heure: format(new Date(o.created_at), 'HH:mm', { locale: fr }),
+          montant: o.montant,
+          detail: `Recharge cantine — ${o.eleves?.prenom} ${o.eleves?.nom}`,
+          operateur_email: o.validated_by ? profiles[o.validated_by] || o.validated_by : null,
+        });
+      });
+
       (boutiqueRes.data || []).forEach((b: any) => {
         ops.push({
           id: b.id,
@@ -86,6 +116,18 @@ function useTracabilite(date: string) {
           montant: b.montant_final,
           detail: `Vente à ${b.eleves?.prenom} ${b.eleves?.nom}`,
           operateur_email: b.created_by ? profiles[b.created_by] || b.created_by : null,
+        });
+      });
+
+      // Boutique via commandes_articles
+      (boutiqueNewRes.data || []).forEach((b: any) => {
+        ops.push({
+          id: b.id,
+          type: 'boutique',
+          heure: format(new Date(b.created_at), 'HH:mm', { locale: fr }),
+          montant: b.prix_unitaire * b.quantite,
+          detail: `${b.article_nom} x${b.quantite} — ${b.eleves?.prenom} ${b.eleves?.nom}`,
+          operateur_email: null,
         });
       });
 
