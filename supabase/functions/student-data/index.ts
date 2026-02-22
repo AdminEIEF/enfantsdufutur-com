@@ -13,23 +13,54 @@ serve(async (req) => {
   }
 
   try {
-    const { matricule, password, action } = await req.json();
+    const { token, action } = await req.json();
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Validate credentials
+    // Validate HMAC token
+    let eleveIdFromToken: string;
+    try {
+      const decoded = atob(token);
+      const parts = decoded.split(":");
+      if (parts.length < 3) throw new Error("Invalid token");
+      eleveIdFromToken = parts[0];
+      const tokenTimestamp = parseInt(parts[1]);
+      const tokenSignature = parts.slice(2).join(":");
+
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+      );
+      const tokenData = `${eleveIdFromToken}:${tokenTimestamp}`;
+      const expectedSig = await crypto.subtle.sign("HMAC", key, encoder.encode(tokenData));
+      const expectedHex = Array.from(new Uint8Array(expectedSig)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      if (tokenSignature !== expectedHex) throw new Error("Bad signature");
+      if (Date.now() - tokenTimestamp > 24 * 60 * 60 * 1000) throw new Error("Token expired");
+    } catch {
+      return new Response(JSON.stringify({ error: "Session expirée" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Fetch student data
     const { data: eleve, error: eleveErr } = await supabaseAdmin
       .from("eleves")
-      .select("id, nom, prenom, matricule, statut, mot_de_passe_eleve, classe_id, solde_cantine, classes(id, nom, niveau_id, niveaux:niveau_id(id, nom, cycle_id, cycles:cycle_id(id, nom, bareme)))")
-      .eq("matricule", matricule?.trim()?.toUpperCase())
+      .select("id, nom, prenom, matricule, statut, classe_id, solde_cantine, classes(id, nom, niveau_id, niveaux:niveau_id(id, nom, cycle_id, cycles:cycle_id(id, nom, bareme)))")
+      .eq("id", eleveIdFromToken)
       .is("deleted_at", null)
       .maybeSingle();
 
     if (eleveErr) throw eleveErr;
-    if (!eleve || eleve.mot_de_passe_eleve !== password?.trim()) {
+    if (!eleve) {
       return new Response(JSON.stringify({ error: "Session expirée" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
