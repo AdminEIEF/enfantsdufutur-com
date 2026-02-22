@@ -27,8 +27,8 @@ function useTracabilite(date: string) {
       const dayStart = `${date}T00:00:00`;
       const dayEnd = `${date}T23:59:59`;
 
-      // Fetch all 3 sources in parallel
-      const [repasRes, boutiqueRes, librairieRes, profilesRes] = await Promise.all([
+      // Fetch all sources in parallel
+      const [repasRes, boutiqueRes, librairieOldRes, librairieNewRes, profilesRes] = await Promise.all([
         supabase
           .from('repas_cantine')
           .select('id, date_repas, montant_debite, plat_nom, created_by, eleves(nom, prenom)')
@@ -41,9 +41,19 @@ function useTracabilite(date: string) {
           .gte('created_at', dayStart)
           .lte('created_at', dayEnd)
           .order('created_at', { ascending: false }),
+        // Legacy librairie sales (ventes_articles)
         supabase
           .from('ventes_articles')
           .select('id, created_at, prix_unitaire, quantite, created_by, articles(nom), eleves(nom, prenom)')
+          .gte('created_at', dayStart)
+          .lte('created_at', dayEnd)
+          .order('created_at', { ascending: false }),
+        // New librairie direct sales (commandes_articles)
+        supabase
+          .from('commandes_articles')
+          .select('id, created_at, prix_unitaire, quantite, article_nom, eleve_id, eleves(nom, prenom)')
+          .eq('source', 'vente_directe')
+          .eq('article_type', 'librairie')
           .gte('created_at', dayStart)
           .lte('created_at', dayEnd)
           .order('created_at', { ascending: false }),
@@ -79,7 +89,8 @@ function useTracabilite(date: string) {
         });
       });
 
-      (librairieRes.data || []).forEach((l: any) => {
+      // Legacy librairie sales
+      (librairieOldRes.data || []).forEach((l: any) => {
         ops.push({
           id: l.id,
           type: 'librairie',
@@ -87,6 +98,18 @@ function useTracabilite(date: string) {
           montant: l.prix_unitaire * l.quantite,
           detail: `${l.articles?.nom} x${l.quantite} — ${l.eleves?.prenom} ${l.eleves?.nom}`,
           operateur_email: l.created_by ? profiles[l.created_by] || l.created_by : null,
+        });
+      });
+
+      // New librairie direct sales (commandes_articles)
+      (librairieNewRes.data || []).forEach((l: any) => {
+        ops.push({
+          id: l.id,
+          type: 'librairie',
+          heure: format(new Date(l.created_at), 'HH:mm', { locale: fr }),
+          montant: l.prix_unitaire * l.quantite,
+          detail: `${l.article_nom} x${l.quantite} — ${l.eleves?.prenom} ${l.eleves?.nom}`,
+          operateur_email: null,
         });
       });
 
