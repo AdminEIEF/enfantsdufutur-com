@@ -79,11 +79,12 @@ function useElevesLibrairie() {
   });
 }
 
-// ─── Article Manager (Inventaire) ─────────────────────
-function ArticleManager({ categorie, label, icon: Icon }: { categorie: string; label: string; icon: any }) {
+// ─── Article Manager (Inventaire unifié) ──────────────
+function InventairePanel() {
   const qc = useQueryClient();
   const { data: niveaux } = useNiveaux();
-  const { data: articles = [], isLoading } = useArticles(categorie);
+  const [selectedCat, setSelectedCat] = useState<string>('all');
+  const { data: articles = [], isLoading } = useArticles(selectedCat === 'all' ? undefined : selectedCat);
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -91,8 +92,16 @@ function ArticleManager({ categorie, label, icon: Icon }: { categorie: string; l
   const [prix, setPrix] = useState(0);
   const [stock, setStock] = useState(0);
   const [niveauId, setNiveauId] = useState('');
+  const [categorie, setCategorie] = useState('fourniture');
 
-  const reset = () => { setEditId(null); setNom(''); setPrix(0); setStock(0); setNiveauId(''); setOpen(false); };
+  const categories = [
+    { value: 'fourniture', label: '📦 Fournitures', icon: Package },
+    { value: 'manuel', label: '📖 Manuels', icon: BookOpen },
+    { value: 'roman', label: '📚 Romans', icon: BookOpen },
+    { value: 'art_plastique', label: '🎨 Art Plastique', icon: BookOpen },
+  ];
+
+  const reset = () => { setEditId(null); setNom(''); setPrix(0); setStock(0); setNiveauId(''); setCategorie('fourniture'); setOpen(false); };
 
   const filtered = articles.filter((a: any) =>
     `${a.nom} ${a.niveaux?.nom || ''}`.toLowerCase().includes(search.toLowerCase())
@@ -105,16 +114,17 @@ function ArticleManager({ categorie, label, icon: Icon }: { categorie: string; l
   const save = useMutation({
     mutationFn: async () => {
       if (!nom) throw new Error('Le nom est requis');
-      const payload = { nom, categorie, prix, stock, niveau_id: niveauId || null };
+      const payload = { nom, categorie: editId ? undefined : categorie, prix, stock, niveau_id: niveauId || null };
       if (editId) {
-        const { error } = await supabase.from('articles' as any).update(payload).eq('id', editId);
+        const { categorie: _, ...updatePayload } = payload as any;
+        const { error } = await supabase.from('articles' as any).update(updatePayload).eq('id', editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('articles' as any).insert(payload);
+        const { error } = await supabase.from('articles' as any).insert({ ...payload, categorie });
         if (error) throw error;
       }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['articles-librairie', categorie] }); toast.success(`${label} enregistré`); reset(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['articles-librairie'] }); toast.success('Article enregistré'); reset(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -123,27 +133,36 @@ function ArticleManager({ categorie, label, icon: Icon }: { categorie: string; l
       const { error } = await supabase.from('articles' as any).delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['articles-librairie', categorie] }); toast.success(`${label} supprimé`); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['articles-librairie'] }); toast.success('Article supprimé'); },
     onError: (e: any) => toast.error(e.message),
   });
 
   const openEdit = (a: any) => {
-    setEditId(a.id); setNom(a.nom); setPrix(Number(a.prix)); setStock(a.stock); setNiveauId(a.niveau_id ?? ''); setOpen(true);
+    setEditId(a.id); setNom(a.nom); setPrix(Number(a.prix)); setStock(a.stock); setNiveauId(a.niveau_id ?? ''); setCategorie(a.categorie); setOpen(true);
   };
+
+  const catLabel = (cat: string) => categories.find(c => c.value === cat)?.label || cat;
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-        <Card><CardContent className="pt-4 flex items-center gap-3"><Icon className="h-8 w-8 text-emerald-600" /><div><p className="text-sm text-muted-foreground">Total articles</p><p className="text-xl font-bold">{articles.length}</p></div></CardContent></Card>
+        <Card><CardContent className="pt-4 flex items-center gap-3"><Package className="h-8 w-8 text-emerald-600" /><div><p className="text-sm text-muted-foreground">Total articles</p><p className="text-xl font-bold">{articles.length}</p></div></CardContent></Card>
         <Card><CardContent className="pt-4 flex items-center gap-3"><Package className="h-8 w-8 text-emerald-500" /><div><p className="text-sm text-muted-foreground">Valeur du stock</p><p className="text-xl font-bold">{valeurStock.toLocaleString()} <span className="text-sm font-normal">GNF</span></p></div></CardContent></Card>
-        <Card className={stockBas > 0 ? 'border-warning/40' : ''}><CardContent className="pt-4 flex items-center gap-3"><AlertTriangle className={`h-8 w-8 ${stockBas > 0 ? 'text-warning' : 'text-muted-foreground'}`} /><div><p className="text-sm text-muted-foreground">Stock bas (&lt;10)</p><p className="text-xl font-bold text-warning">{stockBas}</p></div></CardContent></Card>
+        <Card className={stockBas > 0 ? 'border-warning/40' : ''}><CardContent className="pt-4 flex items-center gap-3"><AlertTriangle className={`h-8 w-8 ${stockBas > 0 ? 'text-warning' : 'text-muted-foreground'}`} /><div><p className="text-sm text-muted-foreground">Stock bas</p><p className="text-xl font-bold text-warning">{stockBas}</p></div></CardContent></Card>
         <Card className={stockEpuise > 0 ? 'border-destructive/40' : ''}><CardContent className="pt-4 flex items-center gap-3"><AlertTriangle className={`h-8 w-8 ${stockEpuise > 0 ? 'text-destructive' : 'text-muted-foreground'}`} /><div><p className="text-sm text-muted-foreground">Épuisé</p><p className="text-xl font-bold text-destructive">{stockEpuise}</p></div></CardContent></Card>
       </div>
 
-      <div className="flex gap-3 items-center">
+      <div className="flex gap-3 items-center flex-wrap">
+        <Select value={selectedCat} onValueChange={setSelectedCat}>
+          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Toutes catégories" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">📋 Toutes catégories</SelectItem>
+            {categories.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder={`Rechercher un ${label.toLowerCase()}…`} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Rechercher un article…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Button onClick={() => { reset(); setOpen(true); }} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="h-4 w-4 mr-2" /> Ajouter</Button>
       </div>
@@ -152,16 +171,17 @@ function ArticleManager({ categorie, label, icon: Icon }: { categorie: string; l
         <CardContent className="p-0">
           <Table>
             <TableHeader><TableRow>
-              <TableHead>Nom</TableHead><TableHead>Niveau</TableHead><TableHead>Prix unitaire</TableHead><TableHead>Stock</TableHead><TableHead>Valeur</TableHead><TableHead className="w-24">Actions</TableHead>
+              <TableHead>Nom</TableHead><TableHead>Catégorie</TableHead><TableHead>Niveau</TableHead><TableHead>Prix unitaire</TableHead><TableHead>Stock</TableHead><TableHead>Valeur</TableHead><TableHead className="w-24">Actions</TableHead>
             </TableRow></TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Aucun article</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Aucun article</TableCell></TableRow>
               ) : filtered.map((a: any) => (
                 <TableRow key={a.id} className={a.stock < 10 ? 'bg-destructive/5' : ''}>
                   <TableCell className="font-medium">{a.nom}</TableCell>
+                  <TableCell><Badge variant="outline" className="capitalize text-xs">{catLabel(a.categorie)}</Badge></TableCell>
                   <TableCell>{a.niveaux?.nom ? `${a.niveaux.cycles?.nom} — ${a.niveaux.nom}` : <span className="text-muted-foreground text-xs">Tous</span>}</TableCell>
                   <TableCell>{Number(a.prix).toLocaleString()} GNF</TableCell>
                   <TableCell>
@@ -185,9 +205,19 @@ function ArticleManager({ categorie, label, icon: Icon }: { categorie: string; l
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editId ? 'Modifier' : 'Ajouter'} — {label}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editId ? 'Modifier' : 'Ajouter'} un article</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Nom *</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Nom de l'article" /></div>
+            {!editId && (
+              <div><Label>Catégorie *</Label>
+                <Select value={categorie} onValueChange={setCategorie}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {categories.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div><Label>Niveau scolaire (optionnel)</Label>
               <Select value={niveauId || '__all__'} onValueChange={(v) => setNiveauId(v === '__all__' ? '' : v)}>
                 <SelectTrigger><SelectValue placeholder="Tous les niveaux" /></SelectTrigger>
@@ -1078,10 +1108,7 @@ export default function Librairie() {
         <TabsList className="flex-wrap">
           <TabsTrigger value="vente">🛒 Vente à la carte</TabsTrigger>
           <TabsTrigger value="retraits" className="gap-1"><ClipboardCheck className="h-4 w-4" /> Retraits</TabsTrigger>
-          <TabsTrigger value="fournitures">📦 Fournitures</TabsTrigger>
-          <TabsTrigger value="manuels">📖 Manuels</TabsTrigger>
-          <TabsTrigger value="romans">📚 Romans</TabsTrigger>
-          <TabsTrigger value="art_plastique">🎨 Art Plastique</TabsTrigger>
+          <TabsTrigger value="inventaire">📦 Inventaire</TabsTrigger>
           <TabsTrigger value="ventes">🧾 Historique</TabsTrigger>
           <TabsTrigger value="gestion" className="gap-1"><Settings className="h-4 w-4" /> Gestion</TabsTrigger>
           <TabsTrigger value="rapport" className="gap-1"><FileText className="h-4 w-4" /> Rapport Journalier</TabsTrigger>
@@ -1093,10 +1120,9 @@ export default function Librairie() {
         <TabsContent value="retraits" className="mt-4">
           <RetraitsLibrairiePanel />
         </TabsContent>
-        <TabsContent value="fournitures" className="mt-4"><ArticleManager categorie="fourniture" label="Fourniture" icon={Package} /></TabsContent>
-        <TabsContent value="manuels" className="mt-4"><ArticleManager categorie="manuel" label="Manuel" icon={BookOpen} /></TabsContent>
-        <TabsContent value="romans" className="mt-4"><ArticleManager categorie="roman" label="Roman" icon={BookOpen} /></TabsContent>
-        <TabsContent value="art_plastique" className="mt-4"><ArticleManager categorie="art_plastique" label="Art Plastique" icon={BookOpen} /></TabsContent>
+        <TabsContent value="inventaire" className="mt-4">
+          <InventairePanel />
+        </TabsContent>
 
         <TabsContent value="ventes" className="mt-4">
           <Card>
