@@ -492,9 +492,11 @@ function VenteALaCartePanel() {
 // ─── Retraits Librairie ───────────────────────────────
 function RetraitsLibrairiePanel() {
   const queryClient = useQueryClient();
+  const { data: schoolConfig } = useSchoolConfig();
   const [searchEleve, setSearchEleve] = useState('');
   const [selectedEleve, setSelectedEleve] = useState<any>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const { data: eleves = [] } = useQuery({
     queryKey: ['eleves_retraits_lib'],
@@ -504,6 +506,33 @@ function RetraitsLibrairiePanel() {
       return data;
     },
   });
+
+  // All pending commands for overview
+  const { data: allPending = [], isLoading: loadingAll } = useQuery({
+    queryKey: ['commandes_retraits_lib_all_pending'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('commandes_articles' as any)
+        .select('*, eleves:eleve_id(nom, prenom, matricule, classes(nom))')
+        .eq('article_type', 'librairie')
+        .eq('statut', 'paye')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  // Group pending by student
+  const pendingByStudent = useMemo(() => {
+    const map = new Map<string, { eleve: any; commandes: any[] }>();
+    allPending.forEach((c: any) => {
+      if (!map.has(c.eleve_id)) {
+        map.set(c.eleve_id, { eleve: c.eleves, commandes: [] });
+      }
+      map.get(c.eleve_id)!.commandes.push(c);
+    });
+    return Array.from(map.entries()).map(([id, v]) => ({ eleve_id: id, ...v }));
+  }, [allPending]);
 
   const { data: commandes = [], isLoading: loadingCommandes } = useQuery({
     queryKey: ['commandes_retraits_lib', selectedEleve?.id],
@@ -557,8 +586,9 @@ function RetraitsLibrairiePanel() {
         }
       }
     },
-    onSuccess: () => {
-      const articlesLivres = commandesPaye.map((c: any) => ({
+    onSuccess: (_, commandeIds) => {
+      const livres = commandesPaye.filter((c: any) => commandeIds.includes(c.id));
+      const articlesLivres = livres.map((c: any) => ({
         nom: c.article_nom,
         taille: c.article_taille,
         quantite: c.quantite,
@@ -579,12 +609,62 @@ function RetraitsLibrairiePanel() {
 
       toast.success('Livraison validée ! Bon de récupération généré.');
       queryClient.invalidateQueries({ queryKey: ['commandes_retraits_lib', selectedEleve?.id] });
+      queryClient.invalidateQueries({ queryKey: ['commandes_retraits_lib_all_pending'] });
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   return (
     <div className="space-y-4">
+      {/* Pending overview - all students */}
+      {!selectedEleve && (
+        <Card className="border-orange-300/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 text-orange-700">
+              <Clock className="h-4 w-4" /> Tous les retraits en attente ({allPending.length} articles — {pendingByStudent.length} élève{pendingByStudent.length > 1 ? 's' : ''})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingAll ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Chargement...</p>
+            ) : pendingByStudent.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Aucun retrait en attente</p>
+            ) : (
+              <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                {pendingByStudent.map((group) => (
+                  <motion.div
+                    key={group.eleve_id}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 rounded-lg border bg-orange-50/50 dark:bg-orange-950/20 cursor-pointer hover:bg-orange-100/50 transition-colors"
+                    onClick={() => {
+                      const el = eleves.find((e: any) => e.id === group.eleve_id);
+                      if (el) { setSelectedEleve(el); setSearchEleve(`${el.prenom} ${el.nom}`); }
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">{group.eleve?.prenom} {group.eleve?.nom}</p>
+                        <p className="text-xs text-muted-foreground">{group.eleve?.matricule} — {group.eleve?.classes?.nom || '—'}</p>
+                      </div>
+                      <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-300">
+                        {group.commandes.length} article{group.commandes.length > 1 ? 's' : ''}
+                      </Badge>
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {group.commandes.slice(0, 3).map((c: any) => (
+                        <span key={c.id} className="text-[10px] bg-orange-200/50 px-1.5 py-0.5 rounded">{c.article_nom}</span>
+                      ))}
+                      {group.commandes.length > 3 && <span className="text-[10px] text-muted-foreground">+{group.commandes.length - 3} autres</span>}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardContent className="pt-4">
           <div className="relative">
@@ -615,7 +695,7 @@ function RetraitsLibrairiePanel() {
             <div className="mt-2 flex items-center gap-2">
               <Badge variant="secondary"><User className="h-3 w-3 mr-1" />{selectedEleve.prenom} {selectedEleve.nom}</Badge>
               <Badge variant="outline" className="text-xs">{selectedEleve.matricule}</Badge>
-              <Button variant="ghost" size="sm" onClick={() => { setSelectedEleve(null); setSearchEleve(''); }}>Changer</Button>
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedEleve(null); setSearchEleve(''); setSelectedIds([]); }}>Changer</Button>
             </div>
           )}
         </CardContent>
@@ -637,27 +717,46 @@ function RetraitsLibrairiePanel() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {commandesPaye.map((c: any) => (
-                      <div key={c.id} className="flex items-center justify-between p-2 rounded border bg-orange-50/50 dark:bg-orange-950/20">
-                        <div>
-                          <p className="text-sm font-medium">{c.article_nom}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>Qté: {c.quantite}</span>
-                            <span>{Number(c.prix_unitaire).toLocaleString()} GNF</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => {
+                        if (selectedIds.length === commandesPaye.length) setSelectedIds([]);
+                        else setSelectedIds(commandesPaye.map((c: any) => c.id));
+                      }}>
+                        {selectedIds.length === commandesPaye.length ? 'Tout désélectionner' : 'Tout sélectionner'}
+                      </Button>
+                      <span className="text-xs text-muted-foreground">{selectedIds.length} sélectionné{selectedIds.length > 1 ? 's' : ''}</span>
+                    </div>
+                    {commandesPaye.map((c: any) => {
+                      const isChecked = selectedIds.includes(c.id);
+                      return (
+                        <div key={c.id} className={`flex items-center gap-2 p-2 rounded border transition-colors ${isChecked ? 'bg-emerald-50/50 border-emerald-300 dark:bg-emerald-950/20' : 'bg-orange-50/50 dark:bg-orange-950/20'}`}>
+                          <Checkbox checked={isChecked} onCheckedChange={(v) => {
+                            setSelectedIds(prev => v ? [...prev, c.id] : prev.filter(id => id !== c.id));
+                          }} />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{c.article_nom}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>Qté: {c.quantite}</span>
+                              <span>{Number(c.prix_unitaire).toLocaleString()} GNF</span>
+                            </div>
                           </div>
+                          <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-300">
+                            <Clock className="h-3 w-3 mr-1" /> Payé
+                          </Badge>
                         </div>
-                        <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-300">
-                          <Clock className="h-3 w-3 mr-1" /> Payé
-                        </Badge>
-                      </div>
-                    ))}
+                      );
+                    })}
                     <Button
                       className="w-full bg-emerald-600 hover:bg-emerald-700 mt-2"
-                      onClick={() => validerLivraison.mutate(commandesPaye.map((c: any) => c.id))}
+                      onClick={() => {
+                        const ids = selectedIds.length > 0 ? selectedIds : commandesPaye.map((c: any) => c.id);
+                        validerLivraison.mutate(ids);
+                        setSelectedIds([]);
+                      }}
                       disabled={validerLivraison.isPending}
                     >
                       <CheckCircle2 className="h-4 w-4 mr-2" />
-                      {validerLivraison.isPending ? 'Validation...' : `Valider la livraison (${commandesPaye.length} articles) & Imprimer Bon`}
+                      {validerLivraison.isPending ? 'Validation...' : `Valider ${selectedIds.length > 0 ? selectedIds.length : commandesPaye.length} article(s) & Imprimer Bon`}
                     </Button>
                   </CardContent>
                 </Card>
