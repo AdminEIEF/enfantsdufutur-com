@@ -1672,6 +1672,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      verify_password: {
+        Args: { _hash: string; _password: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role:
