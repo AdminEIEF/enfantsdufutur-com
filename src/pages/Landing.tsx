@@ -271,21 +271,21 @@ export default function Landing() {
               <ul className="space-y-3 text-sm text-background/60">
                 <li className="flex items-center gap-3">
                   <Phone className="h-4 w-4 flex-shrink-0" />
-                  <span>+224 XXX XXX XXX</span>
+                  <span>+224 625 549 579 / 628 848 437</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Mail className="h-4 w-4 flex-shrink-0" />
-                  <span>contact@eienfantdufutur.com</span>
+                  <span>eiefinfos@enfantsdufutur.com</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <MapPin className="h-4 w-4 flex-shrink-0" />
-                  <span>Conakry, Guinée</span>
+                  <span>C/Sanoyah - Sanoyah Rails, Guinée</span>
                 </li>
               </ul>
             </div>
           </div>
           <div className="border-t border-background/10 mt-12 pt-8 text-center text-xs text-background/40">
-            © {new Date().getFullYear()} EI Enfant du Futur — Tous droits réservés. Propulsé par EduGestion Pro.
+            © {new Date().getFullYear()} EI Enfant du Futur — Tous droits réservés. Propulsé par Reve Jeune Prestation Sarlu (RJP SARLU).
           </div>
         </div>
       </footer>
