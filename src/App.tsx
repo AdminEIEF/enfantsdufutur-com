@@ -52,6 +52,10 @@ import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
 import EmployeeConges from "./pages/employee/EmployeeConges";
 import EmployeePaie from "./pages/employee/EmployeePaie";
 import EmployeeNotifications from "./pages/employee/EmployeeNotifications";
+import EmployeeCourriers from "./pages/employee/EmployeeCourriers";
+import EmployeePointage from "./pages/employee/EmployeePointage";
+import EmployeeEvaluation from "./pages/employee/EmployeeEvaluation";
+import EmployeePlanning from "./pages/employee/EmployeePlanning";
 
 const queryClient = new QueryClient();
 
@@ -134,6 +138,10 @@ const App = () => (
             <Route path="/employe/conges" element={<EmployeeAuthProvider><EmployeeConges /></EmployeeAuthProvider>} />
             <Route path="/employe/paie" element={<EmployeeAuthProvider><EmployeePaie /></EmployeeAuthProvider>} />
             <Route path="/employe/notifications" element={<EmployeeAuthProvider><EmployeeNotifications /></EmployeeAuthProvider>} />
+            <Route path="/employe/courriers" element={<EmployeeAuthProvider><EmployeeCourriers /></EmployeeAuthProvider>} />
+            <Route path="/employe/pointage" element={<EmployeeAuthProvider><EmployeePointage /></EmployeeAuthProvider>} />
+            <Route path="/employe/evaluation" element={<EmployeeAuthProvider><EmployeeEvaluation /></EmployeeAuthProvider>} />
+            <Route path="/employe/planning" element={<EmployeeAuthProvider><EmployeePlanning /></EmployeeAuthProvider>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/inscriptions" element={<ProtectedRoute><Inscriptions /></ProtectedRoute>} />
             <Route path="/familles" element={<ProtectedRoute><Familles /></ProtectedRoute>} />

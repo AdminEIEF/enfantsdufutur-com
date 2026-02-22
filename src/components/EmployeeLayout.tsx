@@ -2,13 +2,17 @@ import { ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Button } from '@/components/ui/button';
-import { Home, Calendar, FileText, BellRing, LogOut, Briefcase } from 'lucide-react';
+import { Home, Calendar, FileText, BellRing, LogOut, Briefcase, Clock, Mail, CalendarDays, BarChart3 } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 
 const NAV_ITEMS = [
   { path: '/employe/dashboard', icon: Home, label: 'Accueil' },
+  { path: '/employe/planning', icon: CalendarDays, label: 'Planning' },
   { path: '/employe/conges', icon: Calendar, label: 'Congés' },
   { path: '/employe/paie', icon: FileText, label: 'Paie' },
+  { path: '/employe/pointage', icon: Clock, label: 'Pointage' },
+  { path: '/employe/courriers', icon: Mail, label: 'Courriers' },
+  { path: '/employe/evaluation', icon: BarChart3, label: 'Évaluation' },
 ];
 
 export function EmployeeLayout({ children }: { children: ReactNode }) {

@@ -73,6 +73,37 @@ export default function EmployeePaie() {
             </CardContent>
           </Card>
 
+          {/* Widget Avance en cours */}
+          {data?.avances?.filter((a: any) => a.statut === 'approuve' || a.statut === 'en_cours').length > 0 && (
+            <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-orange-500" /> Mon crédit / Avance en cours
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {data.avances.filter((a: any) => a.statut === 'approuve' || a.statut === 'en_cours').map((a: any) => {
+                    const restant = Number(a.montant) - Number(a.montant_rembourse || 0);
+                    return (
+                      <div key={a.id} className="flex items-center justify-between text-sm border rounded px-3 py-2">
+                        <div>
+                          <p className="font-medium">{Number(a.montant).toLocaleString()} GNF</p>
+                          {a.motif && <p className="text-xs text-muted-foreground">{a.motif}</p>}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">Restant dû</p>
+                          <p className="font-bold text-orange-600">{restant.toLocaleString()} GNF</p>
+                          <p className="text-[10px] text-muted-foreground">Prélevé auto. sur salaire</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {(data?.bulletins || []).length === 0 ? (
             <Card>
               <CardContent className="pt-6">
