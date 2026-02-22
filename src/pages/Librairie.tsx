@@ -69,7 +69,6 @@ function useElevesLibrairie() {
       const { data, error } = await supabase
         .from('eleves')
         .select('id, nom, prenom, matricule, option_fournitures, classe_id, classes(nom, niveau_id, niveaux:niveau_id(id, nom, cycles:cycle_id(nom)))')
-        .eq('option_fournitures', true)
         .eq('statut', 'inscrit')
         .is('deleted_at', null)
         .order('nom');
@@ -239,30 +238,19 @@ function InventairePanel() {
   );
 }
 
-// ─── Vente "À la Carte" Panel ─────────────────────────
+// ─── Vente "À la Carte" Panel (achat direct à la librairie) ───
 function VenteALaCartePanel() {
   const qc = useQueryClient();
   const { data: schoolConfig } = useSchoolConfig();
-  const { data: elevesLib = [], isLoading: loadingEleves } = useElevesLibrairie();
+  const { data: allEleves = [], isLoading: loadingEleves } = useElevesLibrairie();
   const { data: allArticles = [] } = useArticles();
-  const { data: ventesAll = [] } = useVentes();
+  const [searchEleve, setSearchEleve] = useState('');
   const [selectedEleve, setSelectedEleve] = useState<any>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [panier, setPanier] = useState<Record<string, number>>({});
   const [canal, setCanal] = useState('especes');
   const [reference, setReference] = useState('');
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
-
-  // Determine which articles this student has already purchased
-  const ventesEleve = useMemo(() => {
-    if (!selectedEleve) return [];
-    return ventesAll.filter((v: any) => v.eleve_id === selectedEleve.id);
-  }, [ventesAll, selectedEleve]);
-
-  const articlesAchetes = useMemo(() => {
-    const map: Record<string, number> = {};
-    ventesEleve.forEach((v: any) => { map[v.article_id] = (map[v.article_id] || 0) + v.quantite; });
-    return map;
-  }, [ventesEleve]);
 
   // Articles for this student's level
   const niveauId = selectedEleve?.classes?.niveau_id || selectedEleve?.classes?.niveaux?.id;
@@ -271,24 +259,13 @@ function VenteALaCartePanel() {
     return allArticles.filter((a: any) => !a.niveau_id || a.niveau_id === niveauId);
   }, [allArticles, niveauId]);
 
-  // Check if student has all articles for their level
-  const articlesPrevus = articlesNiveau.length;
-  const articlesPayes = articlesNiveau.filter((a: any) => (articlesAchetes[a.id] || 0) > 0).length;
-  const isComplet = articlesPrevus > 0 && articlesPayes >= articlesPrevus;
-
-  // Build status for each student in the list
-  const elevesAvecStatut = useMemo(() => {
-    return (elevesLib || []).map((e: any) => {
-      const nId = e.classes?.niveau_id || e.classes?.niveaux?.id;
-      const artNiv = nId ? allArticles.filter((a: any) => !a.niveau_id || a.niveau_id === nId) : allArticles;
-      const achats: Record<string, number> = {};
-      ventesAll.filter((v: any) => v.eleve_id === e.id).forEach((v: any) => { achats[v.article_id] = (achats[v.article_id] || 0) + v.quantite; });
-      const total = artNiv.length;
-      const done = artNiv.filter((a: any) => (achats[a.id] || 0) > 0).length;
-      const complet = total > 0 && done >= total;
-      return { ...e, artTotal: total, artDone: done, complet };
-    }).filter((e: any) => !e.complet); // Only show non-complete students
-  }, [elevesLib, allArticles, ventesAll]);
+  const filteredEleves = useMemo(() => {
+    if (!searchEleve.trim()) return [];
+    const q = searchEleve.toLowerCase();
+    return allEleves.filter((e: any) =>
+      e.nom?.toLowerCase().includes(q) || e.prenom?.toLowerCase().includes(q) || e.matricule?.toLowerCase().includes(q)
+    ).slice(0, 10);
+  }, [searchEleve, allEleves]);
 
   const panierItems = useMemo(() => {
     return Object.entries(panier).filter(([, q]) => q > 0).map(([id, q]) => {
@@ -302,17 +279,19 @@ function VenteALaCartePanel() {
   const validerVente = useMutation({
     mutationFn: async () => {
       if (!selectedEleve || panierItems.length === 0) throw new Error('Sélectionnez un élève et des articles');
-      // Verify stock
       for (const item of panierItems) {
         if (item.quantite > item.stock) throw new Error(`Stock insuffisant pour ${item.nom}`);
       }
-      // Insert sales (triggers stock decrement)
+      // Insert into commandes_articles (will appear in Retraits)
       for (const item of panierItems) {
-        const { error } = await supabase.from('ventes_articles' as any).insert({
+        const { error } = await supabase.from('commandes_articles' as any).insert({
           eleve_id: selectedEleve.id,
-          article_id: item.id,
-          quantite: item.quantite,
+          article_nom: item.nom,
+          article_type: 'librairie',
           prix_unitaire: item.prix,
+          quantite: item.quantite,
+          source: 'vente_directe',
+          statut: 'paye',
         });
         if (error) throw error;
       }
@@ -329,11 +308,10 @@ function VenteALaCartePanel() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['articles-librairie'] });
-      qc.invalidateQueries({ queryKey: ['ventes-librairie'] });
+      qc.invalidateQueries({ queryKey: ['commandes_retraits_lib_all_pending'] });
       qc.invalidateQueries({ queryKey: ['eleves-librairie'] });
-      toast.success(`Vente de ${totalPanier.toLocaleString()} GNF enregistrée`);
+      toast.success(`Vente de ${totalPanier.toLocaleString()} GNF enregistrée — Articles en attente de retrait`);
 
-      // Print receipt
       generateRecuLibrairiePDF({
         eleve: `${selectedEleve.prenom} ${selectedEleve.nom}`,
         matricule: selectedEleve.matricule || '',
@@ -346,18 +324,9 @@ function VenteALaCartePanel() {
         schoolConfig: schoolConfig ? { nom: schoolConfig.nom, soustitre: schoolConfig.soustitre, logo_url: schoolConfig.logo_url } : undefined,
       });
 
-      // Print bon de sortie
-      generateBonSortiePDF({
-        eleve: `${selectedEleve.prenom} ${selectedEleve.nom}`,
-        matricule: selectedEleve.matricule || '',
-        classe: selectedEleve.classes?.nom || '—',
-        articles: panierItems.map(i => ({ nom: i.nom, categorie: i.categorie, quantite: i.quantite })),
-        date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
-        schoolConfig: schoolConfig ? { nom: schoolConfig.nom, soustitre: schoolConfig.soustitre, logo_url: schoolConfig.logo_url } : undefined,
-      });
-
       setPanier({});
       setSelectedEleve(null);
+      setSearchEleve('');
       setCanal('especes');
       setReference('');
       setExpandedCat(null);
@@ -370,149 +339,141 @@ function VenteALaCartePanel() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      {/* Student list */}
-      <div className="lg:col-span-1 space-y-3">
-        <h3 className="text-sm font-semibold flex items-center gap-2"><ShoppingCart className="h-4 w-4 text-emerald-600" /> Attente Librairie ({elevesAvecStatut.length})</h3>
-        <div className="space-y-1 max-h-[600px] overflow-y-auto">
-          {loadingEleves ? <p className="text-sm text-muted-foreground">Chargement…</p> :
-          elevesAvecStatut.length === 0 ? <p className="text-sm text-muted-foreground">Aucun élève en attente</p> :
-          elevesAvecStatut.map((e: any) => (
-            <motion.div
-              key={e.id}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedEleve?.id === e.id ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : 'hover:bg-muted/50'}`}
-              onClick={() => { setSelectedEleve(e); setPanier({}); setExpandedCat(null); }}
-            >
-              <p className="font-medium text-sm">{e.prenom} {e.nom}</p>
-              <p className="text-xs text-muted-foreground">{e.classes?.nom || '—'} • {e.matricule || ''}</p>
-              <div className="flex items-center gap-2 mt-1">
-                {e.artDone > 0 && e.artDone < e.artTotal ? (
-                  <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-800 border-amber-300">Partiel ({e.artDone}/{e.artTotal})</Badge>
-                ) : (
-                  <Badge variant="outline" className="text-[10px]">0/{e.artTotal} articles</Badge>
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* Article selection */}
-      <div className="lg:col-span-2">
-        {!selectedEleve ? (
-          <Card className="border-dashed"><CardContent className="py-12 text-center text-muted-foreground">
-            <ShoppingCart className="h-10 w-10 mx-auto mb-3 opacity-40" />
-            <p>Sélectionnez un élève dans la liste pour commencer la vente</p>
-          </CardContent></Card>
-        ) : (
-          <div className="space-y-4">
-            <Card className="border-emerald-300/50 bg-emerald-50/30 dark:bg-emerald-950/20">
-              <CardContent className="pt-4">
-                <p className="font-semibold">{selectedEleve.prenom} {selectedEleve.nom} — {selectedEleve.classes?.nom || '—'}</p>
-                <p className="text-xs text-muted-foreground">Niveau : {selectedEleve.classes?.niveaux?.nom || '—'} • {articlesPayes}/{articlesPrevus} articles déjà achetés</p>
-              </CardContent>
-            </Card>
-
-            {/* Articles by category */}
-            {['fourniture', 'manuel', 'roman', 'art_plastique'].map(cat => {
-              const items = articlesNiveau.filter((a: any) => a.categorie === cat);
-              if (items.length === 0) return null;
-              const isExpanded = expandedCat === cat || expandedCat === null;
-              const catLabel = cat === 'fourniture' ? '📦 Fournitures' : cat === 'manuel' ? '📖 Manuels' : cat === 'roman' ? '📚 Romans' : '🎨 Art Plastique';
-
-              return (
-                <Card key={cat} className="border-emerald-200/50">
-                  <CardHeader className="pb-2 cursor-pointer" onClick={() => setExpandedCat(expandedCat === cat ? null : cat)}>
-                    <CardTitle className="text-sm flex items-center justify-between">
-                      <span>{catLabel} ({items.length})</span>
-                      <span className="text-xs text-muted-foreground">{isExpanded ? '▾' : '▸'}</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        style={{ overflow: 'hidden' }}
-                      >
-                        <CardContent className="pt-0 space-y-1">
-                          {items.map((a: any) => {
-                            const nbAchete = articlesAchetes[a.id] || 0;
-                            const enPanier = (panier[a.id] || 0) > 0;
-                            return (
-                              <motion.div
-                                key={a.id}
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors ${enPanier ? 'bg-emerald-50 border border-emerald-300 dark:bg-emerald-950/30' : nbAchete > 0 ? 'bg-emerald-100/50 dark:bg-emerald-900/20' : 'bg-muted/50'} ${a.stock <= 0 ? 'opacity-40' : ''}`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Checkbox checked={enPanier} onCheckedChange={(v) => togglePanier(a.id, !!v)} disabled={a.stock <= 0} />
-                                  <span>{a.nom}</span>
-                                  {nbAchete > 0 && <Badge variant="outline" className="text-[10px] px-1 text-emerald-600 border-emerald-300">×{nbAchete} acheté</Badge>}
-                                  {a.stock <= 0 && <Badge variant="destructive" className="text-[10px] px-1">Épuisé</Badge>}
-                                  {a.stock > 0 && a.stock < 10 && <Badge variant="secondary" className="text-[10px] px-1">Stock: {a.stock}</Badge>}
-                                </div>
-                                <span className="font-medium text-emerald-700">{Number(a.prix).toLocaleString()} GNF</span>
-                              </motion.div>
-                            );
-                          })}
-                        </CardContent>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </Card>
-              );
-            })}
-
-            {/* Cart summary */}
-            {panierItems.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                <Card className="border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30">
-                  <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><ShoppingCart className="h-4 w-4" /> Panier ({panierItems.length} article{panierItems.length > 1 ? 's' : ''})</CardTitle></CardHeader>
-                  <CardContent className="space-y-2">
-                    {panierItems.map(i => (
-                      <div key={i.id} className="flex justify-between text-sm">
-                        <span>{i.nom} × {i.quantite}</span>
-                        <span className="font-bold">{(i.prix * i.quantite).toLocaleString()} GNF</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between font-bold text-base pt-2 border-t border-emerald-300">
-                      <span>TOTAL</span>
-                      <span className="text-emerald-700">{totalPanier.toLocaleString()} GNF</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 pt-2">
-                      <div>
-                        <Label className="text-xs">Canal</Label>
-                        <Select value={canal} onValueChange={setCanal}>
-                          <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="especes">Espèces</SelectItem>
-                            <SelectItem value="orange_money">Orange Money</SelectItem>
-                            <SelectItem value="mtn_momo">MTN MoMo</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {(canal === 'orange_money' || canal === 'mtn_momo') && (
-                        <div><Label className="text-xs">Référence</Label><Input className="h-8" value={reference} onChange={e => setReference(e.target.value)} placeholder="N° transaction" /></div>
-                      )}
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => validerVente.mutate()} disabled={validerVente.isPending}>
-                        <Printer className="h-4 w-4 mr-2" /> {validerVente.isPending ? 'Validation…' : 'Valider & Imprimer'}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+    <div className="space-y-4">
+      <Card className="border-emerald-300/50 bg-emerald-50/30 dark:bg-emerald-950/20">
+        <CardContent className="pt-4 space-y-2">
+          <p className="text-sm text-muted-foreground">💡 Vente directe à la librairie — les articles achetés seront mis en attente dans <strong>Retraits</strong> pour la remise physique.</p>
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Rechercher un élève (nom, prénom, matricule)..." value={searchEleve} onChange={e => setSearchEleve(e.target.value)} className="pl-10 pr-10" />
+            <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setScannerOpen(true)} title="Scanner QR">
+              <Camera className="h-4 w-4 text-primary" />
+            </Button>
+          </div>
+          <QRScannerDialog open={scannerOpen} onOpenChange={setScannerOpen} onScan={(m) => {
+            const found = allEleves.find((e: any) => e.matricule === m || e.id === m);
+            if (found) { setSelectedEleve(found); setSearchEleve(`${found.prenom} ${found.nom}`); }
+            else toast.error('Élève introuvable');
+          }} />
+          <AnimatePresence>
+            {filteredEleves.length > 0 && !selectedEleve && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="border rounded-md divide-y max-h-48 overflow-y-auto">
+                {filteredEleves.map((e: any) => (
+                  <button key={e.id} className="w-full text-left px-3 py-2 hover:bg-accent/50 flex justify-between items-center" onClick={() => { setSelectedEleve(e); setSearchEleve(`${e.prenom} ${e.nom}`); setPanier({}); setExpandedCat(null); }}>
+                    <span className="font-medium">{e.prenom} {e.nom}</span>
+                    <span className="text-xs text-muted-foreground">{e.matricule} — {(e as any).classes?.nom}</span>
+                  </button>
+                ))}
               </motion.div>
             )}
-          </div>
-        )}
-      </div>
+          </AnimatePresence>
+          {selectedEleve && (
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary"><User className="h-3 w-3 mr-1" />{selectedEleve.prenom} {selectedEleve.nom}</Badge>
+              <Badge variant="outline" className="text-xs">{selectedEleve.matricule} — {selectedEleve.classes?.nom || '—'}</Badge>
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedEleve(null); setSearchEleve(''); setPanier({}); }}>Changer</Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {selectedEleve && (
+        <div className="space-y-4">
+          {/* Articles by category */}
+          {['fourniture', 'manuel', 'roman', 'art_plastique'].map(cat => {
+            const items = articlesNiveau.filter((a: any) => a.categorie === cat);
+            if (items.length === 0) return null;
+            const isExpanded = expandedCat === cat || expandedCat === null;
+            const catLabel = cat === 'fourniture' ? '📦 Fournitures' : cat === 'manuel' ? '📖 Manuels' : cat === 'roman' ? '📚 Romans' : '🎨 Art Plastique';
+
+            return (
+              <Card key={cat} className="border-emerald-200/50">
+                <CardHeader className="pb-2 cursor-pointer" onClick={() => setExpandedCat(expandedCat === cat ? null : cat)}>
+                  <CardTitle className="text-sm flex items-center justify-between">
+                    <span>{catLabel} ({items.length})</span>
+                    <span className="text-xs text-muted-foreground">{isExpanded ? '▾' : '▸'}</span>
+                  </CardTitle>
+                </CardHeader>
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <CardContent className="pt-0 space-y-1">
+                        {items.map((a: any) => {
+                          const enPanier = (panier[a.id] || 0) > 0;
+                          return (
+                            <motion.div
+                              key={a.id}
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors ${enPanier ? 'bg-emerald-50 border border-emerald-300 dark:bg-emerald-950/30' : 'bg-muted/50'} ${a.stock <= 0 ? 'opacity-40' : ''}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Checkbox checked={enPanier} onCheckedChange={(v) => togglePanier(a.id, !!v)} disabled={a.stock <= 0} />
+                                <span>{a.nom}</span>
+                                {a.stock <= 0 && <Badge variant="destructive" className="text-[10px] px-1">Épuisé</Badge>}
+                                {a.stock > 0 && a.stock < 10 && <Badge variant="secondary" className="text-[10px] px-1">Stock: {a.stock}</Badge>}
+                              </div>
+                              <span className="font-medium text-emerald-700">{Number(a.prix).toLocaleString()} GNF</span>
+                            </motion.div>
+                          );
+                        })}
+                      </CardContent>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Card>
+            );
+          })}
+
+          {/* Cart summary */}
+          {panierItems.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <Card className="border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30">
+                <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><ShoppingCart className="h-4 w-4" /> Panier ({panierItems.length} article{panierItems.length > 1 ? 's' : ''})</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                  {panierItems.map(i => (
+                    <div key={i.id} className="flex justify-between text-sm">
+                      <span>{i.nom} × {i.quantite}</span>
+                      <span className="font-bold">{(i.prix * i.quantite).toLocaleString()} GNF</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between font-bold text-base pt-2 border-t border-emerald-300">
+                    <span>TOTAL</span>
+                    <span className="text-emerald-700">{totalPanier.toLocaleString()} GNF</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 pt-2">
+                    <div>
+                      <Label className="text-xs">Canal</Label>
+                      <Select value={canal} onValueChange={setCanal}>
+                        <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="especes">Espèces</SelectItem>
+                          <SelectItem value="orange_money">Orange Money</SelectItem>
+                          <SelectItem value="mtn_momo">MTN MoMo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {(canal === 'orange_money' || canal === 'mtn_momo') && (
+                      <div><Label className="text-xs">Référence</Label><Input className="h-8" value={reference} onChange={e => setReference(e.target.value)} placeholder="N° transaction" /></div>
+                    )}
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => validerVente.mutate()} disabled={validerVente.isPending}>
+                      <Printer className="h-4 w-4 mr-2" /> {validerVente.isPending ? 'Validation…' : 'Valider & Imprimer Reçu'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
