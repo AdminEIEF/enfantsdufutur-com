@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   GraduationCap, Users, BookOpen, Shield, Bus, Utensils,
-  ArrowRight, Phone, Mail, MapPin, Download, Star, Clock, Award, Image
+  ArrowRight, Phone, Mail, MapPin, Download, Star, Clock, Award, Image, Briefcase
 } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
@@ -112,9 +112,14 @@ export default function Landing() {
                   <span className="hidden sm:inline">Espace </span>Parent
                 </Button>
               </Link>
+              <Link to="/employe">
+                <Button variant="outline" size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9">
+                  <span className="hidden sm:inline">Portail </span>Employé
+                </Button>
+              </Link>
               <Link to="/auth">
                 <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9">
-                  <span className="hidden sm:inline">Espace </span>Personnel
+                  <span className="hidden sm:inline">Espace </span>Admin
                   <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </Link>
@@ -262,6 +267,12 @@ export default function Landing() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
+            <Link to="/employe">
+              <Button size="lg" variant="outline" className="text-base px-8 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+                <Briefcase className="mr-2 h-5 w-5" />
+                Portail Employé
+              </Button>
+            </Link>
             <Link to="/download">
               <Button size="lg" variant="outline" className="text-base px-8 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
                 <Download className="mr-2 h-5 w-5" />
@@ -295,7 +306,8 @@ export default function Landing() {
                 Liens rapides
               </h3>
               <ul className="space-y-2 text-sm text-background/60">
-                <li><Link to="/auth" className="hover:text-background transition-colors">Espace Personnel</Link></li>
+                <li><Link to="/auth" className="hover:text-background transition-colors">Espace Admin</Link></li>
+                <li><Link to="/employe" className="hover:text-background transition-colors">Portail Employé</Link></li>
                 <li><Link to="/download" className="hover:text-background transition-colors">Télécharger l'Appli</Link></li>
                 {schoolConfig?.logo_url && (
                   <li>
