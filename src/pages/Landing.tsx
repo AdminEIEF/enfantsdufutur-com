@@ -133,13 +133,13 @@ export default function Landing() {
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/30" />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-40">
-          <div className="max-w-3xl mx-auto text-center">
-            {/* Big colorful title */}
+          <div className="max-w-3xl">
+            {/* Big colorful title - centered */}
             <motion.h1
               initial={{ opacity: 0, y: -40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: 'easeOut' }}
-              className="text-2xl sm:text-4xl lg:text-[3.5rem] font-extrabold leading-tight mb-1 sm:mb-2"
+              className="text-2xl sm:text-4xl lg:text-[3.5rem] font-extrabold leading-tight mb-1 sm:mb-2 text-center"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
               <span className="text-[hsl(var(--warning))]">LES ECOLES </span>
@@ -150,12 +150,13 @@ export default function Landing() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-xl sm:text-3xl lg:text-4xl font-bold text-white italic mb-4 sm:mb-6"
+              className="text-xl sm:text-3xl lg:text-4xl font-bold text-white italic mb-4 sm:mb-6 text-center"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
               Faisons plus!
             </motion.p>
 
+            {/* Rest aligned left */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -170,7 +171,7 @@ export default function Landing() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.7 }}
-              className="text-xl sm:text-3xl lg:text-5xl font-bold text-white leading-tight mb-4 sm:mb-6"
+              className="text-xl sm:text-3xl lg:text-5xl font-bold text-white leading-tight mb-4 sm:mb-6 text-left"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
               Investir maintenant<br />
@@ -181,7 +182,7 @@ export default function Landing() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.9 }}
-              className="text-sm sm:text-lg lg:text-xl text-white/80 mb-6 sm:mb-8 max-w-lg mx-auto"
+              className="text-sm sm:text-lg lg:text-xl text-white/80 mb-6 sm:mb-8 max-w-lg"
             >
               L'École Internationale Enfant du Futur offre un enseignement d'excellence 
               dans un environnement moderne et bienveillant, du Primaire au Collège.
@@ -191,7 +192,7 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 1.1 }}
-              className="flex flex-wrap justify-center gap-2 sm:gap-4"
+              className="flex flex-wrap gap-2 sm:gap-4"
             >
               <Link to="/auth">
                 <Button size="sm" className="sm:text-base sm:px-8 sm:h-11 text-xs px-4 h-9">
