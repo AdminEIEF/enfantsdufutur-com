@@ -77,7 +77,7 @@ export default function Landing() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
+            <Link to="/" onClick={() => window.scrollTo(0, 0)} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               {schoolConfig?.logo_url ? (
                 <img src={schoolConfig.logo_url} alt="Logo" className="w-10 h-10 rounded-xl object-contain" />
               ) : (
@@ -88,7 +88,7 @@ export default function Landing() {
               <span className="font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 {schoolConfig?.nom || 'EI Enfant du Futur'}
               </span>
-            </div>
+            </Link>
             <div className="flex items-center gap-3">
               {isInstallable && (
                 <Button variant="ghost" size="sm" onClick={install} className="hidden sm:flex">
