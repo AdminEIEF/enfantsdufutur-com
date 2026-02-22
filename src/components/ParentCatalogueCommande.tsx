@@ -149,53 +149,53 @@ export default function ParentCatalogueCommande({ enfants, code, soldeFamille, o
   const cartCount = cart.reduce((s, c) => s + c.quantite, 0);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold flex items-center gap-2">
-          <Package className="h-5 w-5 text-primary" /> Commander des articles
+    <div className="space-y-3 sm:space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-semibold flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base">
+          <Package className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" /> Commander des articles
         </h3>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline">
-              <ShoppingCart className="h-4 w-4 mr-1" /> Catalogue
+            <Button size="sm" variant="outline" className="text-xs sm:text-sm px-2 sm:px-3 h-8">
+              <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" /> Catalogue
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full p-3 sm:p-6">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5 text-primary" />
+              <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 Commander des articles
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-xs sm:text-sm">
                 Choisissez les articles, le montant sera débité de votre portefeuille famille.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {/* Wallet info */}
-              <div className="bg-green-50 rounded-lg p-3">
-                <div className="flex items-center gap-2">
-                  <Wallet className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-muted-foreground">Solde portefeuille</span>
+              <div className="bg-green-50 rounded-lg p-2.5 sm:p-3">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600" />
+                  <span className="text-xs sm:text-sm text-muted-foreground">Solde portefeuille</span>
                 </div>
-                <p className="font-bold text-green-700 text-lg">{soldeFamille.toLocaleString()} GNF</p>
+                <p className="font-bold text-green-700 text-base sm:text-lg">{soldeFamille.toLocaleString()} GNF</p>
               </div>
 
               {/* Type selector */}
               <Tabs value={typeService} onValueChange={(v) => setTypeService(v as any)}>
-                <TabsList className="w-full grid grid-cols-2">
-                  <TabsTrigger value="librairie"><BookOpen className="h-4 w-4 mr-1" /> Librairie</TabsTrigger>
-                  <TabsTrigger value="boutique"><ShoppingBag className="h-4 w-4 mr-1" /> Boutique</TabsTrigger>
+                <TabsList className="w-full grid grid-cols-2 h-9 sm:h-10">
+                  <TabsTrigger value="librairie" className="text-xs sm:text-sm px-1 sm:px-3"><BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" /> Librairie</TabsTrigger>
+                  <TabsTrigger value="boutique" className="text-xs sm:text-sm px-1 sm:px-3"><ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" /> Boutique</TabsTrigger>
                 </TabsList>
               </Tabs>
 
               {/* Child selector */}
               {enfants.length > 1 && (
                 <Select value={eleveId} onValueChange={setEleveId}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner un enfant" /></SelectTrigger>
+                  <SelectTrigger className="text-xs sm:text-sm h-9 sm:h-10"><SelectValue placeholder="Sélectionner un enfant" /></SelectTrigger>
                   <SelectContent>
                     {enfants.map(e => (
-                      <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>
+                      <SelectItem key={e.id} value={e.id} className="text-xs sm:text-sm">{e.prenom} {e.nom}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -203,39 +203,39 @@ export default function ParentCatalogueCommande({ enfants, code, soldeFamille, o
 
               {/* Catalogue */}
               {loadingCatalogue ? (
-                <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+                <div className="flex justify-center py-6 sm:py-8"><Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-primary" /></div>
               ) : catalogue.length === 0 ? (
-                <p className="text-center text-sm text-muted-foreground py-6">
+                <p className="text-center text-xs sm:text-sm text-muted-foreground py-4 sm:py-6">
                   {!eleveId && enfants.length > 1 ? 'Sélectionnez un enfant pour continuer' : 'Aucun article disponible'}
                 </p>
               ) : (
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+                <div className="space-y-1.5 sm:space-y-2 max-h-52 sm:max-h-60 overflow-y-auto">
                   {catalogue.map(article => {
                     const inCart = cart.find(c => c.article.id === article.id);
                     return (
-                      <div key={article.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                      <div key={article.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{article.nom}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Badge variant="outline" className="text-xs">{article.categorie}</Badge>
+                          <p className="text-xs sm:text-sm font-medium truncate">{article.nom}</p>
+                          <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground flex-wrap">
+                            <Badge variant="outline" className="text-[10px] sm:text-xs px-1 sm:px-1.5">{article.categorie}</Badge>
                             {(article as any).taille && (article as any).taille !== 'unique' && (
-                              <span>Taille: {(article as any).taille}</span>
+                              <span>T: {(article as any).taille}</span>
                             )}
                           </div>
                         </div>
-                        <p className="text-sm font-bold text-primary whitespace-nowrap">{article.prix.toLocaleString()} GNF</p>
+                        <p className="text-xs sm:text-sm font-bold text-primary whitespace-nowrap">{article.prix.toLocaleString()}</p>
                         {inCart ? (
-                          <div className="flex items-center gap-1">
-                            <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQuantite(article.id, -1)}>
-                              <Minus className="h-3 w-3" />
+                          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+                            <Button size="icon" variant="outline" className="h-6 w-6 sm:h-7 sm:w-7" onClick={() => updateQuantite(article.id, -1)}>
+                              <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                             </Button>
-                            <span className="w-6 text-center text-sm font-bold">{inCart.quantite}</span>
-                            <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQuantite(article.id, 1)}>
-                              <Plus className="h-3 w-3" />
+                            <span className="w-5 sm:w-6 text-center text-xs sm:text-sm font-bold">{inCart.quantite}</span>
+                            <Button size="icon" variant="outline" className="h-6 w-6 sm:h-7 sm:w-7" onClick={() => updateQuantite(article.id, 1)}>
+                              <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                             </Button>
                           </div>
                         ) : (
-                          <Button size="sm" variant="secondary" className="h-7 px-2" onClick={() => addToCart(article)} disabled={article.stock <= 0}>
+                          <Button size="sm" variant="secondary" className="h-6 w-6 sm:h-7 sm:w-auto sm:px-2 p-0" onClick={() => addToCart(article)} disabled={article.stock <= 0}>
                             <Plus className="h-3 w-3" />
                           </Button>
                         )}
@@ -247,31 +247,31 @@ export default function ParentCatalogueCommande({ enfants, code, soldeFamille, o
 
               {/* Cart summary */}
               {cart.length > 0 && (
-                <div className="border-t pt-3 space-y-2">
-                  <h4 className="text-sm font-semibold flex items-center gap-2">
-                    <ShoppingCart className="h-4 w-4" /> Panier ({cartCount} article{cartCount > 1 ? 's' : ''})
+                <div className="border-t pt-2 sm:pt-3 space-y-1.5 sm:space-y-2">
+                  <h4 className="text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2">
+                    <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Panier ({cartCount} article{cartCount > 1 ? 's' : ''})
                   </h4>
                   {cart.map(c => (
-                    <div key={c.article.id} className="flex items-center justify-between text-sm">
+                    <div key={c.article.id} className="flex items-center justify-between text-xs sm:text-sm gap-1">
                       <span className="truncate flex-1">{c.article.nom} × {c.quantite}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">{(c.article.prix * c.quantite).toLocaleString()} GNF</span>
-                        <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => removeFromCart(c.article.id)}>×</Button>
+                      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                        <span className="font-semibold whitespace-nowrap">{(c.article.prix * c.quantite).toLocaleString()}</span>
+                        <Button size="icon" variant="ghost" className="h-5 w-5 sm:h-6 sm:w-6 text-destructive" onClick={() => removeFromCart(c.article.id)}>×</Button>
                       </div>
                     </div>
                   ))}
-                  <div className="flex items-center justify-between pt-2 border-t font-bold">
+                  <div className="flex items-center justify-between pt-1.5 sm:pt-2 border-t font-bold text-xs sm:text-sm">
                     <span>Total</span>
                     <span className={totalPanier > soldeFamille ? 'text-destructive' : 'text-primary'}>
                       {totalPanier.toLocaleString()} GNF
                     </span>
                   </div>
                   {totalPanier > soldeFamille && (
-                    <p className="text-xs text-destructive">Solde insuffisant. Rechargez votre portefeuille.</p>
+                    <p className="text-[10px] sm:text-xs text-destructive">Solde insuffisant. Rechargez votre portefeuille.</p>
                   )}
-                  <Button onClick={handleCommander} disabled={submitting || totalPanier > soldeFamille} className="w-full">
-                    {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ShoppingCart className="h-4 w-4 mr-2" />}
-                    Valider la commande ({totalPanier.toLocaleString()} GNF)
+                  <Button onClick={handleCommander} disabled={submitting || totalPanier > soldeFamille} className="w-full h-9 sm:h-10 text-xs sm:text-sm">
+                    {submitting ? <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 animate-spin" /> : <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />}
+                    Valider ({totalPanier.toLocaleString()} GNF)
                   </Button>
                 </div>
               )}
