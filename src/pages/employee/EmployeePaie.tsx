@@ -40,6 +40,7 @@ export default function EmployeePaie() {
         matricule: session.employe.matricule,
         poste: session.employe.poste,
         categorie: session.employe.categorie,
+        date_embauche: session.employe.date_embauche,
       },
       mois: b.mois,
       annee: b.annee,

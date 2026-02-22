@@ -524,12 +524,12 @@ export default function Personnel() {
   // Print bulletin paie
   const handlePrintBulletin = (b: any) => {
     generateBulletinPaiePDF({
-      employe: { nom: b.employes?.nom || '', prenom: b.employes?.prenom || '', matricule: b.employes?.matricule || '', poste: '' },
+      employe: { nom: b.employes?.nom || '', prenom: b.employes?.prenom || '', matricule: b.employes?.matricule || '', poste: b.employes?.poste || '', categorie: b.employes?.categorie || '', date_embauche: b.employes?.date_embauche || '' },
       mois: b.mois, annee: b.annee,
       salaire_brut: Number(b.salaire_brut), primes: Number(b.primes),
       retenues: Number(b.retenues), avances_deduites: Number(b.avances_deduites),
       salaire_net: Number(b.salaire_net), commentaire: b.commentaire,
-      schoolName: schoolConfig?.nom,
+      schoolName: schoolConfig?.nom, schoolSubtitle: schoolConfig?.soustitre, schoolCity: schoolConfig?.ville,
     });
   };
 
