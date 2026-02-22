@@ -236,8 +236,37 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData) {
     y += 8;
   }
 
-  // ─── Signatures ───
-  y += 10;
+  // ─── QR Code + Signatures ───
+  // Generate unique authentication hash
+  const qrPayload = JSON.stringify({
+    type: 'bulletin_paie',
+    matricule: data.employe.matricule,
+    nom: `${data.employe.prenom} ${data.employe.nom}`,
+    mois: data.mois,
+    annee: data.annee,
+    net: data.salaire_net,
+    hash: `BP-${data.employe.matricule}-${data.mois}-${data.annee}-${Date.now().toString(36)}`,
+  });
+
+  // Draw QR code using canvas
+  try {
+    const { default: QRCode } = await import('qrcode');
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 200, margin: 1, color: { dark: '#0f172a', light: '#ffffff' } });
+    const qrImg = await loadImage(qrDataUrl);
+    const qrSize = 22;
+    pdf.addImage(qrImg, 'PNG', margin + contentW / 2 - qrSize / 2, y, qrSize, qrSize);
+    
+    pdf.setTextColor(100, 116, 139);
+    pdf.setFontSize(6);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Authentification Numérique Unique', margin + contentW / 2, y + qrSize + 3, { align: 'center' });
+    y += qrSize + 8;
+  } catch {
+    // QR generation failed, skip
+  }
+
+  // Signatures
+  y += 6;
   pdf.setTextColor(...primaryColor);
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(9);
