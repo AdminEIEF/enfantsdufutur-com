@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import {
   Briefcase, Plus, Search, Loader2, Clock, Calendar, DollarSign, FileText,
   Check, X, Eye, Trash2, Upload, UserPlus, Users, ScanLine, CreditCard, Printer,
-  Camera, Download, Key, Mail, Paperclip, BarChart3, MessageSquare
+  Camera, Download, Key, Mail, Paperclip, BarChart3, MessageSquare, Wallet, TrendingUp, TrendingDown, AlertTriangle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -25,6 +25,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { generateBadgeEmployePDF } from '@/lib/generateBadgeEmploye';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
+import { TresorerieTab } from '@/components/TresorerieTab';
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -302,7 +303,27 @@ export default function Personnel() {
     },
   });
 
-  // Add employee mutation
+  // Treasury data: tuition income
+  const { data: tresorPaiements = [] } = useQuery({
+    queryKey: ['tresor-paiements'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('paiements').select('montant, type_paiement, date_paiement');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Treasury: all approved avances
+  const { data: allAvances = [] } = useQuery({
+    queryKey: ['all-avances'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('avances_salaire').select('*, employes(nom, prenom, matricule)').order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+
   const addEmployee = useMutation({
     mutationFn: async () => {
       if (!form.nom || !form.prenom) throw new Error('Nom et prénom obligatoires');
@@ -382,24 +403,48 @@ export default function Personnel() {
 
   // Approve/reject congé
   const handleConge = async (id: string, statut: 'approuve' | 'refuse', motif?: string) => {
+    const conge = congesEnAttente.find((c: any) => c.id === id);
     await supabase.from('conges').update({
       statut,
       motif: statut === 'refuse' && motif ? motif : undefined,
       traite_par: user?.id,
       traite_at: new Date().toISOString(),
     }).eq('id', id);
+    // Notify employee
+    if (conge?.employe_id) {
+      await supabase.from('employee_notifications').insert({
+        employe_id: conge.employe_id,
+        titre: statut === 'approuve' ? '✅ Congé approuvé' : '❌ Congé refusé',
+        message: statut === 'approuve'
+          ? `Votre demande de congé du ${format(new Date(conge.date_debut), 'dd/MM/yyyy')} au ${format(new Date(conge.date_fin), 'dd/MM/yyyy')} a été approuvée.`
+          : `Votre demande de congé a été refusée.${motif ? ' Motif: ' + motif : ''}`,
+        type: statut === 'approuve' ? 'info' : 'alerte',
+      });
+    }
     toast({ title: statut === 'approuve' ? '✅ Congé approuvé' : '❌ Congé refusé' });
     qc.invalidateQueries({ queryKey: ['conges-attente'] });
   };
 
   // Approve/reject avance
   const handleAvance = async (id: string, statut: 'approuve' | 'refuse', motif?: string) => {
+    const avance = avancesEnAttente.find((a: any) => a.id === id);
     await supabase.from('avances_salaire').update({
       statut,
       motif: statut === 'refuse' && motif ? motif : undefined,
       traite_par: user?.id,
       traite_at: new Date().toISOString(),
     }).eq('id', id);
+    // Notify employee
+    if (avance?.employe_id) {
+      await supabase.from('employee_notifications').insert({
+        employe_id: avance.employe_id,
+        titre: statut === 'approuve' ? '✅ Avance approuvée' : '❌ Avance refusée',
+        message: statut === 'approuve'
+          ? `Votre demande d'avance de ${Number(avance.montant).toLocaleString()} GNF a été approuvée. Elle sera déduite de votre prochain bulletin de paie.`
+          : `Votre demande d'avance de ${Number(avance.montant).toLocaleString()} GNF a été refusée.${motif ? ' Motif: ' + motif : ''}`,
+        type: statut === 'approuve' ? 'info' : 'alerte',
+      });
+    }
     toast({ title: statut === 'approuve' ? '✅ Avance approuvée' : '❌ Avance refusée' });
     qc.invalidateQueries({ queryKey: ['avances-attente'] });
   };
@@ -417,12 +462,35 @@ export default function Personnel() {
     setRefuseMotif('');
   };
 
-  // Generate bulletin de paie
+  // Generate bulletin de paie with auto-deduction of approved advances
   const generateBulletin = async () => {
     if (!paieForm.employe_id) { toast({ title: 'Sélectionnez un employé', variant: 'destructive' }); return; }
     const emp = employes.find((e: any) => e.id === paieForm.employe_id);
     const brut = paieForm.salaire_brut || Number(emp?.salaire_base || 0);
-    const net = brut + paieForm.primes - paieForm.retenues - paieForm.avances_deduites;
+
+    // Auto-calculate avances to deduct: approved advances not yet fully reimbursed
+    const { data: pendingAvances } = await supabase
+      .from('avances_salaire')
+      .select('id, montant, montant_rembourse')
+      .eq('employe_id', paieForm.employe_id)
+      .eq('statut', 'approuve')
+      .gt('montant', 0);
+
+    let totalAvancesDeduites = paieForm.avances_deduites;
+    const avancesToUpdate: { id: string; deduction: number }[] = [];
+
+    if (pendingAvances && pendingAvances.length > 0 && paieForm.avances_deduites === 0) {
+      // Auto-calculate: deduct all remaining approved advances
+      for (const av of pendingAvances) {
+        const restant = Number(av.montant) - Number(av.montant_rembourse);
+        if (restant > 0) {
+          totalAvancesDeduites += restant;
+          avancesToUpdate.push({ id: av.id, deduction: restant });
+        }
+      }
+    }
+
+    const net = brut + paieForm.primes - paieForm.retenues - totalAvancesDeduites;
 
     const { error } = await supabase.from('bulletins_paie').upsert({
       employe_id: paieForm.employe_id,
@@ -430,7 +498,7 @@ export default function Personnel() {
       annee: paieForm.annee,
       salaire_brut: brut,
       retenues: paieForm.retenues,
-      avances_deduites: paieForm.avances_deduites,
+      avances_deduites: totalAvancesDeduites,
       primes: paieForm.primes,
       salaire_net: net,
       commentaire: paieForm.commentaire || null,
@@ -439,16 +507,28 @@ export default function Personnel() {
 
     if (error) { toast({ title: 'Erreur', description: error.message, variant: 'destructive' }); return; }
 
+    // Update avances repayment tracking
+    for (const av of avancesToUpdate) {
+      const avData = pendingAvances?.find(a => a.id === av.id);
+      const newRembourse = Number(avData?.montant_rembourse || 0) + av.deduction;
+      await supabase.from('avances_salaire').update({
+        montant_rembourse: newRembourse,
+        mois_remboursement: `${MOIS_NOMS[paieForm.mois]} ${paieForm.annee}`,
+        statut: newRembourse >= Number(avData?.montant || 0) ? 'rembourse' : 'approuve',
+      }).eq('id', av.id);
+    }
+
     // Notify employee
     await supabase.from('employee_notifications').insert({
       employe_id: paieForm.employe_id,
       titre: '💰 Bulletin de paie disponible',
-      message: `Votre bulletin de paie de ${MOIS_NOMS[paieForm.mois]} ${paieForm.annee} est disponible. Salaire net: ${net.toLocaleString()} GNF.`,
+      message: `Votre bulletin de paie de ${MOIS_NOMS[paieForm.mois]} ${paieForm.annee} est disponible. Salaire net: ${net.toLocaleString()} GNF.${totalAvancesDeduites > 0 ? ` (Avances déduites: ${totalAvancesDeduites.toLocaleString()} GNF)` : ''}`,
       type: 'info',
     });
 
-    toast({ title: '✅ Bulletin généré' });
+    toast({ title: '✅ Bulletin généré', description: totalAvancesDeduites > 0 ? `${totalAvancesDeduites.toLocaleString()} GNF d'avances déduites automatiquement` : undefined });
     qc.invalidateQueries({ queryKey: ['bulletins-paie'] });
+    qc.invalidateQueries({ queryKey: ['avances-attente'] });
     setPaieOpen(false);
   };
 
@@ -639,6 +719,7 @@ export default function Personnel() {
           <TabsTrigger value="conges"><Calendar className="h-3.5 w-3.5 mr-1" />Congés ({congesEnAttente.length})</TabsTrigger>
           <TabsTrigger value="avances"><DollarSign className="h-3.5 w-3.5 mr-1" />Avances ({avancesEnAttente.length})</TabsTrigger>
           <TabsTrigger value="paie"><FileText className="h-3.5 w-3.5 mr-1" />Paie</TabsTrigger>
+          <TabsTrigger value="tresorerie"><Wallet className="h-3.5 w-3.5 mr-1" />Trésorerie</TabsTrigger>
           <TabsTrigger value="courriers"><Mail className="h-3.5 w-3.5 mr-1" />Courriers ({courriers.filter((c: any) => c.statut === 'non_lu').length})</TabsTrigger>
           <TabsTrigger value="evaluations"><BarChart3 className="h-3.5 w-3.5 mr-1" />Évaluations</TabsTrigger>
         </TabsList>
@@ -758,7 +839,8 @@ export default function Personnel() {
         </TabsContent>
 
         {/* Avances */}
-        <TabsContent value="avances" className="mt-4">
+        <TabsContent value="avances" className="mt-4 space-y-4">
+          {/* En attente */}
           <Card>
             <CardHeader><CardTitle className="text-sm">Demandes d'avance en attente</CardTitle></CardHeader>
             <div className="overflow-auto">
@@ -793,6 +875,46 @@ export default function Personnel() {
               </Table>
             </div>
           </Card>
+
+          {/* Historique & suivi remboursement */}
+          <Card>
+            <CardHeader><CardTitle className="text-sm">Suivi des avances approuvées</CardTitle></CardHeader>
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employé</TableHead>
+                    <TableHead>Montant</TableHead>
+                    <TableHead>Remboursé</TableHead>
+                    <TableHead>Restant</TableHead>
+                    <TableHead>Mois déduction</TableHead>
+                    <TableHead>Statut</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allAvances.filter((a: any) => a.statut === 'approuve' || a.statut === 'rembourse').length === 0 ? (
+                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucune avance approuvée</TableCell></TableRow>
+                  ) : allAvances.filter((a: any) => a.statut === 'approuve' || a.statut === 'rembourse').map((a: any) => {
+                    const restant = Number(a.montant) - Number(a.montant_rembourse);
+                    return (
+                      <TableRow key={a.id}>
+                        <TableCell className="font-medium">{a.employes?.prenom} {a.employes?.nom}</TableCell>
+                        <TableCell>{Number(a.montant).toLocaleString()} GNF</TableCell>
+                        <TableCell className="text-emerald-600">{Number(a.montant_rembourse).toLocaleString()} GNF</TableCell>
+                        <TableCell className={`font-bold ${restant > 0 ? 'text-destructive' : 'text-emerald-600'}`}>{restant.toLocaleString()} GNF</TableCell>
+                        <TableCell className="text-sm">{a.mois_remboursement || '—'}</TableCell>
+                        <TableCell>
+                          <Badge variant={a.statut === 'rembourse' ? 'default' : 'secondary'}>
+                            {a.statut === 'rembourse' ? 'Remboursé' : 'En cours'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
         </TabsContent>
 
         {/* Paie */}
@@ -806,9 +928,13 @@ export default function Personnel() {
                 <DialogHeader><DialogTitle>Générer un bulletin de paie</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div className="space-y-1"><Label>Employé *</Label>
-                    <Select value={paieForm.employe_id} onValueChange={v => {
+                    <Select value={paieForm.employe_id} onValueChange={async (v) => {
                       const emp = employes.find((e: any) => e.id === v);
-                      setPaieForm(f => ({ ...f, employe_id: v, salaire_brut: Number(emp?.salaire_base || 0) }));
+                      // Auto-calculate pending avances for this employee
+                      const pendingAv = allAvances
+                        .filter((a: any) => a.employe_id === v && a.statut === 'approuve')
+                        .reduce((s: number, a: any) => s + (Number(a.montant) - Number(a.montant_rembourse)), 0);
+                      setPaieForm(f => ({ ...f, employe_id: v, salaire_brut: Number(emp?.salaire_base || 0), avances_deduites: Math.max(0, pendingAv) }));
                     }}>
                       <SelectTrigger><SelectValue placeholder="Sélectionner..." /></SelectTrigger>
                       <SelectContent>
@@ -883,7 +1009,12 @@ export default function Personnel() {
           </Card>
         </TabsContent>
 
-        {/* Courriers */}
+        {/* Trésorerie */}
+        <TabsContent value="tresorerie" className="mt-4 space-y-4">
+          <TresorerieTab paiements={tresorPaiements} bulletins={bulletins} avances={allAvances} employes={employes} />
+        </TabsContent>
+
+
         <TabsContent value="courriers" className="mt-4">
           <Card>
             <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Mail className="h-4 w-4" /> Courriers reçus des employés</CardTitle></CardHeader>
