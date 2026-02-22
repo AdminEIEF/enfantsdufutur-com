@@ -170,7 +170,7 @@ export default function Auth() {
         <div className="flex-1 flex items-center justify-center px-6 py-8">
           <div className="relative w-full max-w-sm">
             {/* Animated border */}
-            <div className="absolute -inset-[4px] rounded-2xl overflow-hidden">
+            <div className="absolute -inset-[6px] rounded-2xl overflow-hidden">
               <div
                 className="absolute inset-0"
                 style={{
@@ -179,7 +179,7 @@ export default function Auth() {
                 }}
               />
             </div>
-            <div className="absolute inset-0 rounded-2xl border-[3px] border-primary/30" />
+            <div className="absolute inset-0 rounded-2xl border-[4px] border-primary/30" />
           <motion.div
             className="relative w-full space-y-8 bg-background rounded-2xl p-6"
             initial="hidden"
@@ -293,6 +293,61 @@ export default function Auth() {
             </motion.div>
           </motion.div>
           </div>
+
+          {/* Globe illustration with orbiting colored dots */}
+          <motion.div
+            className="mt-8 flex justify-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.6 }}
+          >
+            <div className="relative w-32 h-32">
+              {/* Globe */}
+              <svg viewBox="0 0 100 100" className="w-full h-full">
+                <circle cx="50" cy="50" r="28" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" opacity="0.3" />
+                <ellipse cx="50" cy="50" rx="28" ry="10" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.2" />
+                <ellipse cx="50" cy="50" rx="10" ry="28" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.2" />
+                <line x1="22" y1="50" x2="78" y2="50" stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.15" />
+                <line x1="50" y1="22" x2="50" y2="78" stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.15" />
+              </svg>
+              {/* Orbit ring */}
+              <div className="absolute inset-[-12px]">
+                <svg viewBox="0 0 124 124" className="w-full h-full">
+                  <ellipse cx="62" cy="62" rx="58" ry="20" fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" opacity="0.3" transform="rotate(-20 62 62)" />
+                </svg>
+              </div>
+              {/* Red dot - orbiting */}
+              <motion.div
+                className="absolute w-3.5 h-3.5 rounded-full bg-[#dc2626] shadow-[0_0_8px_#dc2626]"
+                animate={{
+                  x: [0, 50, 60, 20, -30, -55, -40, 0],
+                  y: [-20, -8, 15, 25, 15, -5, -18, -20],
+                }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                style={{ top: '10%', left: '45%' }}
+              />
+              {/* Yellow dot - orbiting with delay */}
+              <motion.div
+                className="absolute w-3.5 h-3.5 rounded-full bg-[#eab308] shadow-[0_0_8px_#eab308]"
+                animate={{
+                  x: [60, 20, -30, -55, -40, 0, 50, 60],
+                  y: [15, 25, 15, -5, -18, -20, -8, 15],
+                }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                style={{ top: '10%', left: '45%' }}
+              />
+              {/* Green dot - orbiting with more delay */}
+              <motion.div
+                className="absolute w-3 h-3 rounded-full bg-[#16a34a] shadow-[0_0_8px_#16a34a]"
+                animate={{
+                  x: [-30, -55, -40, 0, 50, 60, 20, -30],
+                  y: [15, -5, -18, -20, -8, 15, 25, 15],
+                }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                style={{ top: '10%', left: '45%' }}
+              />
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>
