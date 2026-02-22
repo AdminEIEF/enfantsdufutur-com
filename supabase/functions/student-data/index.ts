@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { token, action } = await req.json();
+    const { token, action, notification_id } = await req.json();
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -153,6 +153,57 @@ serve(async (req) => {
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // ─── NOTIFICATIONS (last 5) ───
+    if (action === "notifications") {
+      const { data: notifs } = await supabaseAdmin
+        .from("student_notifications")
+        .select("id, titre, message, type, action_url, lu, created_at")
+        .eq("eleve_id", eleveId)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      const { count: unreadCount } = await supabaseAdmin
+        .from("student_notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("eleve_id", eleveId)
+        .eq("lu", false);
+
+      return new Response(
+        JSON.stringify({ notifications: notifs || [], unread_count: unreadCount || 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ─── ALL NOTIFICATIONS (archive) ───
+    if (action === "all_notifications") {
+      const { data: notifs } = await supabaseAdmin
+        .from("student_notifications")
+        .select("id, titre, message, type, action_url, lu, created_at")
+        .eq("eleve_id", eleveId)
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      return new Response(
+        JSON.stringify({ notifications: notifs || [] }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ─── MARK NOTIFICATION READ ───
+    if (action === "mark_notification_read") {
+      if (notification_id) {
+        await supabaseAdmin
+          .from("student_notifications")
+          .update({ lu: true })
+          .eq("id", notification_id)
+          .eq("eleve_id", eleveId);
+      }
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     if (action === "dashboard") {

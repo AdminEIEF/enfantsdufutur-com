@@ -43,6 +43,8 @@ import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentCours from "./pages/student/StudentCours";
 import StudentDevoirs from "./pages/student/StudentDevoirs";
 import StudentResultats from "./pages/student/StudentResultats";
+import ParentNotifications from "./pages/parent/ParentNotifications";
+import StudentNotifications from "./pages/student/StudentNotifications";
 
 const queryClient = new QueryClient();
 
@@ -113,11 +115,13 @@ const App = () => (
             <Route path="/parent" element={<ParentAuthProvider><ParentLogin /></ParentAuthProvider>} />
             <Route path="/parent/dashboard" element={<ParentAuthProvider><ParentDashboard /></ParentAuthProvider>} />
             <Route path="/parent/enfant/:id" element={<ParentAuthProvider><ParentEnfant /></ParentAuthProvider>} />
+            <Route path="/parent/notifications" element={<ParentAuthProvider><ParentNotifications /></ParentAuthProvider>} />
             <Route path="/eleve" element={<StudentAuthProvider><StudentLogin /></StudentAuthProvider>} />
             <Route path="/eleve/dashboard" element={<StudentAuthProvider><StudentDashboard /></StudentAuthProvider>} />
             <Route path="/eleve/cours" element={<StudentAuthProvider><StudentCours /></StudentAuthProvider>} />
             <Route path="/eleve/devoirs" element={<StudentAuthProvider><StudentDevoirs /></StudentAuthProvider>} />
             <Route path="/eleve/resultats" element={<StudentAuthProvider><StudentResultats /></StudentAuthProvider>} />
+            <Route path="/eleve/notifications" element={<StudentAuthProvider><StudentNotifications /></StudentAuthProvider>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/inscriptions" element={<ProtectedRoute><Inscriptions /></ProtectedRoute>} />
             <Route path="/familles" element={<ProtectedRoute><Familles /></ProtectedRoute>} />

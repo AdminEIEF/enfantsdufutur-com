@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { NotificationBell } from '@/components/NotificationBell';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -120,6 +121,12 @@ export default function ParentDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <NotificationBell
+              mode="parent"
+              targetId={famille.id}
+              token={session.token}
+              onViewAll={() => navigate('/parent/notifications')}
+            />
             <Button size="sm" className="text-xs px-2 sm:px-3 h-8" onClick={() => setPaymentOpen(true)}>
               <Smartphone className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" /> Payer
             </Button>
