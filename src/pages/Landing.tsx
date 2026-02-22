@@ -138,10 +138,10 @@ export default function Landing() {
               initial={{ opacity: 0, y: -50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
-              className="text-sm sm:text-lg lg:text-2xl font-bold text-white uppercase tracking-widest text-center mb-1 sm:mb-2"
+              className="text-2xl sm:text-4xl lg:text-[3.5rem] font-extrabold text-white uppercase tracking-widest text-center mb-1 sm:mb-2"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
-              (Ecole Internationale)
+              Ecole Internationale
             </motion.p>
             <motion.h1
               initial={{ opacity: 0, y: -40 }}
@@ -150,7 +150,6 @@ export default function Landing() {
               className="text-2xl sm:text-4xl lg:text-[3.5rem] font-extrabold leading-none mb-1 sm:mb-2 text-center whitespace-nowrap"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
-              <span className="text-[hsl(var(--destructive))]">LES ECOLES </span>
               <span className="text-[hsl(var(--warning))]">LES ENFANTS </span>
               <span className="text-[hsl(var(--success))]">DU FUTUR</span>
             </motion.h1>
