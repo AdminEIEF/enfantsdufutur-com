@@ -3,14 +3,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GraduationCap, Loader2, Download, ArrowLeft, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import heroImage from '@/assets/hero-school.jpg';
+
+const ease = [0.25, 0.4, 0.25, 1] as [number, number, number, number];
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.5, ease } }),
+};
+
+const slideIn = {
+  hidden: { opacity: 0, x: -30 },
+  visible: (i: number) => ({ opacity: 1, x: 0, transition: { delay: i * 0.15, duration: 0.6, ease } }),
+};
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
@@ -19,6 +31,7 @@ export default function Auth() {
   const [nom, setNom] = useState('');
   const [prenom, setPrenom] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState('login');
   const { toast } = useToast();
   const { isInstallable, install } = usePWAInstall();
   const { data: schoolConfig } = useSchoolConfig();
@@ -55,53 +68,74 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Hero Image */}
-      <div className="hidden lg:flex lg:w-1/2 relative">
-        <img src={heroImage} alt="Campus" className="absolute inset-0 w-full h-full object-cover" />
+      <motion.div
+        className="hidden lg:flex lg:w-1/2 relative overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+      >
+        <motion.img
+          src={heroImage}
+          alt="Campus"
+          className="absolute inset-0 w-full h-full object-cover"
+          initial={{ scale: 1.1 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 1.4, ease: [0.25, 0.4, 0.25, 1] }}
+        />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/70 to-primary/50" />
         <div className="relative z-10 flex flex-col justify-between p-10 text-primary-foreground w-full">
-          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity w-fit">
-            {schoolConfig?.logo_url ? (
-              <img src={schoolConfig.logo_url} alt="Logo" className="w-12 h-12 rounded-xl object-contain bg-white/20 backdrop-blur-sm p-1" />
-            ) : (
-              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm">
-                <GraduationCap className="h-6 w-6" />
-              </div>
-            )}
-            <span className="font-bold text-xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {schoolConfig?.nom || 'EI Enfant du Futur'}
-            </span>
-          </Link>
+          <motion.div initial="hidden" animate="visible" custom={0} variants={slideIn}>
+            <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity w-fit">
+              {schoolConfig?.logo_url ? (
+                <img src={schoolConfig.logo_url} alt="Logo" className="w-12 h-12 rounded-xl object-contain bg-white/20 backdrop-blur-sm p-1" />
+              ) : (
+                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm">
+                  <GraduationCap className="h-6 w-6" />
+                </div>
+              )}
+              <span className="font-bold text-xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                {schoolConfig?.nom || 'EI Enfant du Futur'}
+              </span>
+            </Link>
+          </motion.div>
 
           <div className="space-y-6">
-            <h1 className="text-4xl xl:text-5xl font-bold leading-tight" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <motion.h1
+              className="text-4xl xl:text-5xl font-bold leading-tight"
+              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+              initial="hidden" animate="visible" custom={1} variants={slideIn}
+            >
               Bâtir l'avenir,<br />
               <span className="text-secondary">un enfant</span> à la fois
-            </h1>
-            <p className="text-primary-foreground/80 text-lg max-w-md leading-relaxed">
+            </motion.h1>
+            <motion.p
+              className="text-primary-foreground/80 text-lg max-w-md leading-relaxed"
+              initial="hidden" animate="visible" custom={2} variants={slideIn}
+            >
               Accédez à votre espace de gestion scolaire pour suivre les notes, paiements, 
               inscriptions et bien plus encore.
-            </p>
-            <div className="flex items-center gap-6 text-sm text-primary-foreground/60">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-secondary" />
-                Notes & Bulletins
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-secondary" />
-                Paiements
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-secondary" />
-                Inscriptions
-              </div>
-            </div>
+            </motion.p>
+            <motion.div
+              className="flex items-center gap-6 text-sm text-primary-foreground/60"
+              initial="hidden" animate="visible" custom={3} variants={slideIn}
+            >
+              {['Notes & Bulletins', 'Paiements', 'Inscriptions'].map((item) => (
+                <div key={item} className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-secondary" />
+                  {item}
+                </div>
+              ))}
+            </motion.div>
           </div>
 
-          <p className="text-xs text-primary-foreground/40">
+          <motion.p
+            className="text-xs text-primary-foreground/40"
+            initial="hidden" animate="visible" custom={4} variants={slideIn}
+          >
             © {new Date().getFullYear()} IdrissdevTech — Propulsé par RJP SARLU
-          </p>
+          </motion.p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Right Panel - Form */}
       <div className="w-full lg:w-1/2 flex flex-col bg-background">
@@ -121,127 +155,120 @@ export default function Auth() {
         </div>
 
         {/* Desktop back link */}
-        <div className="hidden lg:block p-6">
+        <motion.div
+          className="hidden lg:block p-6"
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+        >
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-4 w-4" />
             Retour à l'accueil
           </Link>
-        </div>
+        </motion.div>
 
         <div className="flex-1 flex items-center justify-center px-6 py-8">
-          <div className="w-full max-w-sm space-y-8">
+          <motion.div
+            className="w-full max-w-sm space-y-8"
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+          >
             {/* Header */}
-            <div className="space-y-2">
+            <motion.div className="space-y-2" variants={fadeUp} custom={0}>
               <h2 className="text-2xl font-bold tracking-tight" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 Espace Personnel
               </h2>
               <p className="text-muted-foreground text-sm">
                 Connectez-vous pour accéder à votre tableau de bord
               </p>
-            </div>
+            </motion.div>
 
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 h-11">
-                <TabsTrigger value="login" className="gap-2 text-sm">
-                  <LogIn className="h-4 w-4" />
-                  Connexion
-                </TabsTrigger>
-                <TabsTrigger value="signup" className="gap-2 text-sm">
-                  <UserPlus className="h-4 w-4" />
-                  Inscription
-                </TabsTrigger>
-              </TabsList>
+            <motion.div variants={fadeUp} custom={1}>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 h-11">
+                  <TabsTrigger value="login" className="gap-2 text-sm">
+                    <LogIn className="h-4 w-4" />
+                    Connexion
+                  </TabsTrigger>
+                  <TabsTrigger value="signup" className="gap-2 text-sm">
+                    <UserPlus className="h-4 w-4" />
+                    Inscription
+                  </TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="login" className="mt-6">
-                <form onSubmit={handleLogin} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email" className="text-sm font-medium">Adresse email</Label>
-                    <Input
-                      id="login-email"
-                      type="email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      required
-                      placeholder="admin@edugestion.com"
-                      className="h-11"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password" className="text-sm font-medium">Mot de passe</Label>
-                    <div className="relative">
-                      <Input
-                        id="login-password"
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        required
-                        placeholder="••••••••"
-                        className="h-11 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full h-11 text-sm font-medium" disabled={loading}>
-                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
-                    Se connecter
-                  </Button>
-                </form>
-              </TabsContent>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: 0.25, ease: [0.25, 0.4, 0.25, 1] }}
+                  >
+                    <TabsContent value="login" className="mt-6" forceMount={activeTab === 'login' ? true : undefined}>
+                      <form onSubmit={handleLogin} className="space-y-5">
+                        <div className="space-y-2">
+                          <Label htmlFor="login-email" className="text-sm font-medium">Adresse email</Label>
+                          <Input id="login-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="admin@edugestion.com" className="h-11" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="login-password" className="text-sm font-medium">Mot de passe</Label>
+                          <div className="relative">
+                            <Input id="login-password" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" className="h-11 pr-10" />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </div>
+                        <motion.div whileTap={{ scale: 0.98 }}>
+                          <Button type="submit" className="w-full h-11 text-sm font-medium" disabled={loading}>
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
+                            Se connecter
+                          </Button>
+                        </motion.div>
+                      </form>
+                    </TabsContent>
 
-              <TabsContent value="signup" className="mt-6">
-                <form onSubmit={handleSignup} className="space-y-5">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-nom" className="text-sm font-medium">Nom</Label>
-                      <Input id="signup-nom" value={nom} onChange={e => setNom(e.target.value)} required className="h-11" placeholder="Diallo" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-prenom" className="text-sm font-medium">Prénom</Label>
-                      <Input id="signup-prenom" value={prenom} onChange={e => setPrenom(e.target.value)} required className="h-11" placeholder="Mamadou" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="text-sm font-medium">Adresse email</Label>
-                    <Input id="signup-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required className="h-11" placeholder="votre@email.com" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="text-sm font-medium">Mot de passe</Label>
-                    <div className="relative">
-                      <Input
-                        id="signup-password"
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        required
-                        minLength={6}
-                        className="h-11 pr-10"
-                        placeholder="6 caractères minimum"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full h-11 text-sm font-medium" disabled={loading}>
-                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                    Créer mon compte
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+                    <TabsContent value="signup" className="mt-6" forceMount={activeTab === 'signup' ? true : undefined}>
+                      <form onSubmit={handleSignup} className="space-y-5">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="signup-nom" className="text-sm font-medium">Nom</Label>
+                            <Input id="signup-nom" value={nom} onChange={e => setNom(e.target.value)} required className="h-11" placeholder="Diallo" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="signup-prenom" className="text-sm font-medium">Prénom</Label>
+                            <Input id="signup-prenom" value={prenom} onChange={e => setPrenom(e.target.value)} required className="h-11" placeholder="Mamadou" />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-email" className="text-sm font-medium">Adresse email</Label>
+                          <Input id="signup-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required className="h-11" placeholder="votre@email.com" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-password" className="text-sm font-medium">Mot de passe</Label>
+                          <div className="relative">
+                            <Input id="signup-password" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required minLength={6} className="h-11 pr-10" placeholder="6 caractères minimum" />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </div>
+                        <motion.div whileTap={{ scale: 0.98 }}>
+                          <Button type="submit" className="w-full h-11 text-sm font-medium" disabled={loading}>
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                            Créer mon compte
+                          </Button>
+                        </motion.div>
+                      </form>
+                    </TabsContent>
+                  </motion.div>
+                </AnimatePresence>
+              </Tabs>
+            </motion.div>
 
             {/* Footer actions */}
-            <div className="space-y-3 pt-4 border-t border-border">
+            <motion.div className="space-y-3 pt-4 border-t border-border" variants={fadeUp} custom={2}>
               {isInstallable && (
                 <Button variant="outline" className="w-full h-10" onClick={install}>
                   <Download className="mr-2 h-4 w-4" />
@@ -251,8 +278,8 @@ export default function Auth() {
               <Link to="/download" className="block text-center text-sm text-muted-foreground hover:text-primary transition-colors">
                 📱 Comment installer l'appli sur mon téléphone ?
               </Link>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     </div>
