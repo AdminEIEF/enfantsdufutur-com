@@ -7,7 +7,13 @@ import {
 } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import Autoplay from 'embla-carousel-autoplay';
 import heroImage from '@/assets/hero-school.jpg';
+import schoolAnglais from '@/assets/school-anglais.jpg';
+import schoolBepc from '@/assets/school-bepc.jpg';
+import schoolDrapeau from '@/assets/school-drapeau.jpg';
+import schoolGraduation from '@/assets/school-graduation.jpg';
 
 export default function Landing() {
   const { data: schoolConfig } = useSchoolConfig();
@@ -151,6 +157,42 @@ export default function Landing() {
               </a>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Image Carousel */}
+      <section className="py-12 bg-muted/30">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            Notre école en images
+          </h2>
+          <Carousel
+            opts={{ loop: true, align: 'start' }}
+            plugins={[Autoplay({ delay: 4000, stopOnInteraction: false })]}
+            className="w-full"
+          >
+            <CarouselContent>
+              {[
+                { src: schoolAnglais, alt: "Anglais et Informatique dès la maternelle" },
+                { src: schoolBepc, alt: "100% d'admission au BEPC" },
+                { src: schoolDrapeau, alt: "Cérémonie du drapeau" },
+                { src: schoolGraduation, alt: "Cérémonie de graduation" },
+              ].map((img, i) => (
+                <CarouselItem key={i} className="md:basis-1/2 lg:basis-1/2">
+                  <div className="p-2">
+                    <div className="overflow-hidden rounded-2xl shadow-lg">
+                      <img
+                        src={img.src}
+                        alt={img.alt}
+                        className="w-full h-64 sm:h-80 object-cover transition-transform duration-700 hover:scale-110"
+                        loading="lazy"
+                      />
+                    </div>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
         </div>
       </section>
 
