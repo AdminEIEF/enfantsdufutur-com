@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Bell, AlertTriangle, RefreshCw, UtensilsCrossed, Check, Send, Loader2, MessageSquarePlus, Users, GraduationCap, School } from 'lucide-react';
+import { Bell, AlertTriangle, RefreshCw, UtensilsCrossed, Check, Send, Loader2, MessageSquarePlus, Users, GraduationCap, School, History, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +29,62 @@ export default function Notifications() {
   const [msgType, setMsgType] = useState<string>('info');
   const [msgActionUrl, setMsgActionUrl] = useState('');
   const [sendingMsg, setSendingMsg] = useState(false);
+  const [expandedMsgId, setExpandedMsgId] = useState<string | null>(null);
+
+  // Historique des messages envoyés (parent_notifications)
+  const { data: sentMessages = [], isLoading: loadingSent } = useQuery({
+    queryKey: ['sent-messages-history'],
+    queryFn: async () => {
+      // Get all parent notifications with famille info
+      const { data: parentNotifs, error: pErr } = await supabase
+        .from('parent_notifications')
+        .select('id, titre, message, type, action_url, lu, created_at, famille_id, familles(nom_famille)')
+        .order('created_at', { ascending: false })
+        .limit(500);
+      if (pErr) throw pErr;
+
+      // Group by titre+message+created_at (within 5 seconds = same batch)
+      const groups: Record<string, {
+        id: string;
+        titre: string;
+        message: string;
+        type: string;
+        action_url: string | null;
+        created_at: string;
+        destinataires: Array<{ famille_id: string; nom_famille: string; lu: boolean }>;
+        total: number;
+        lus: number;
+      }> = {};
+
+      (parentNotifs || []).forEach((n: any) => {
+        // Group key: titre + first 50 chars of message + minute-rounded timestamp
+        const timeKey = new Date(n.created_at).toISOString().slice(0, 16); // round to minute
+        const key = `${n.titre}||${n.message?.slice(0, 50)}||${timeKey}`;
+        if (!groups[key]) {
+          groups[key] = {
+            id: key,
+            titre: n.titre,
+            message: n.message,
+            type: n.type,
+            action_url: n.action_url,
+            created_at: n.created_at,
+            destinataires: [],
+            total: 0,
+            lus: 0,
+          };
+        }
+        groups[key].destinataires.push({
+          famille_id: n.famille_id,
+          nom_famille: n.familles?.nom_famille || 'Inconnue',
+          lu: n.lu,
+        });
+        groups[key].total++;
+        if (n.lu) groups[key].lus++;
+      });
+
+      return Object.values(groups).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    },
+  });
 
   // Existing notifications
   const { data: notifications = [], isLoading } = useQuery({
@@ -192,6 +249,7 @@ export default function Notifications() {
       }
 
       toast({ title: `✅ ${count} notification(s) envoyée(s)` });
+      qc.invalidateQueries({ queryKey: ['sent-messages-history'] });
       setMsgTitre('');
       setMsgContenu('');
       setMsgActionUrl('');
@@ -309,7 +367,8 @@ export default function Notifications() {
       <Tabs defaultValue="communication">
         <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="communication"><MessageSquarePlus className="h-3.5 w-3.5 mr-1" />Communication</TabsTrigger>
-          <TabsTrigger value="historique">Historique</TabsTrigger>
+          <TabsTrigger value="messages-envoyes"><History className="h-3.5 w-3.5 mr-1" />Messages envoyés</TabsTrigger>
+          <TabsTrigger value="historique">Alertes système</TabsTrigger>
           <TabsTrigger value="reinscription">Réinscriptions</TabsTrigger>
           <TabsTrigger value="paiement">Retards</TabsTrigger>
           <TabsTrigger value="cantine">Cantine</TabsTrigger>
@@ -404,6 +463,105 @@ export default function Notifications() {
                 {sendingMsg ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
                 Envoyer
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Messages envoyés Tab */}
+        <TabsContent value="messages-envoyes" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <History className="h-5 w-5" /> Historique des messages envoyés
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Titre</TableHead>
+                    <TableHead className="text-center">Destinataires</TableHead>
+                    <TableHead className="text-center">Taux de lecture</TableHead>
+                    <TableHead className="text-right">Détails</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loadingSent ? (
+                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
+                  ) : sentMessages.length === 0 ? (
+                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun message envoyé</TableCell></TableRow>
+                  ) : sentMessages.map((msg: any) => {
+                    const readPct = msg.total > 0 ? Math.round((msg.lus / msg.total) * 100) : 0;
+                    const isExpanded = expandedMsgId === msg.id;
+                    return (
+                      <>
+                        <TableRow key={msg.id} className="cursor-pointer hover:bg-accent/50" onClick={() => setExpandedMsgId(isExpanded ? null : msg.id)}>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                            {format(new Date(msg.created_at), 'dd MMM yyyy HH:mm', { locale: fr })}
+                          </TableCell>
+                          <TableCell>{typeBadge(msg.type)}</TableCell>
+                          <TableCell className="max-w-xs">
+                            <p className="font-medium truncate">{msg.titre}</p>
+                            <p className="text-xs text-muted-foreground truncate">{msg.message?.slice(0, 80)}</p>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="secondary">{msg.total} famille{msg.total > 1 ? 's' : ''}</Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center gap-2">
+                              <Progress value={readPct} className="h-2 flex-1" />
+                              <span className="text-xs font-medium whitespace-nowrap">{readPct}%</span>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">{msg.lus}/{msg.total} lu{msg.lus > 1 ? 's' : ''}</p>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button size="sm" variant="ghost">
+                              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                        {isExpanded && (
+                          <TableRow key={`${msg.id}-detail`}>
+                            <TableCell colSpan={6} className="bg-muted/50 p-4">
+                              <div className="space-y-3">
+                                <div>
+                                  <p className="text-sm font-medium mb-1">Message complet :</p>
+                                  <p className="text-sm text-muted-foreground bg-background p-3 rounded-lg border">{msg.message}</p>
+                                  {msg.action_url && (
+                                    <p className="text-xs mt-1">🔗 Lien : <span className="text-primary">{msg.action_url}</span></p>
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium mb-2">Destinataires ({msg.total}) :</p>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5">
+                                    {msg.destinataires.map((d: any, i: number) => (
+                                      <div key={i} className="flex items-center gap-2 text-xs p-1.5 rounded bg-background border">
+                                        {d.lu ? (
+                                          <Eye className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                                        ) : (
+                                          <EyeOff className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                        )}
+                                        <span className="truncate">{d.nom_famille}</span>
+                                        {d.lu ? (
+                                          <Badge variant="outline" className="ml-auto text-[10px] px-1">Lu</Badge>
+                                        ) : (
+                                          <Badge className="ml-auto text-[10px] px-1">Non lu</Badge>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
