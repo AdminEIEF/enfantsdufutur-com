@@ -279,8 +279,63 @@ export default function Auth() {
               </Tabs>
             </motion.div>
 
+            {/* Globe illustration inside card */}
+            <motion.div className="flex justify-center py-2" variants={fadeUp} custom={2}>
+              <div className="relative w-28 h-28">
+                {/* Globe body */}
+                <svg viewBox="0 0 100 100" className="w-full h-full">
+                  {/* Globe fill */}
+                  <circle cx="50" cy="50" r="26" fill="hsl(var(--muted))" opacity="0.5" />
+                  <circle cx="50" cy="50" r="26" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2.5" opacity="0.6" />
+                  {/* Horizontal meridian */}
+                  <ellipse cx="50" cy="50" rx="26" ry="9" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.35" />
+                  {/* Vertical meridian */}
+                  <ellipse cx="50" cy="50" rx="9" ry="26" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.35" />
+                  {/* Continent hints */}
+                  <path d="M38 35 Q45 30 55 33 Q58 38 52 42 Q45 40 38 35Z" fill="hsl(var(--foreground))" opacity="0.15" />
+                  <path d="M42 52 Q48 48 56 50 Q58 56 50 60 Q44 58 42 52Z" fill="hsl(var(--foreground))" opacity="0.15" />
+                  {/* Orbit ring 1 - tilted */}
+                  <ellipse cx="50" cy="50" rx="42" ry="14" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.8" opacity="0.25" transform="rotate(-25 50 50)" />
+                  {/* Orbit ring 2 - opposite tilt */}
+                  <ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="#eab308" strokeWidth="1.5" opacity="0.4" transform="rotate(35 50 50)" />
+                  {/* Orbit ring 3 */}
+                  <ellipse cx="50" cy="50" rx="44" ry="12" fill="none" stroke="#16a34a" strokeWidth="1" opacity="0.3" transform="rotate(-60 50 50)" />
+                </svg>
+                {/* Red dot */}
+                <motion.div
+                  className="absolute w-3 h-3 rounded-full bg-[#dc2626] shadow-[0_0_10px_#dc2626]"
+                  animate={{
+                    x: [0, 36, 44, 12, -24, -42, -30, 0],
+                    y: [-16, -6, 12, 20, 12, -4, -14, -16],
+                  }}
+                  transition={{ duration: 3.5, repeat: Infinity, ease: 'linear' }}
+                  style={{ top: '18%', left: '42%' }}
+                />
+                {/* Yellow dot */}
+                <motion.div
+                  className="absolute w-3 h-3 rounded-full bg-[#eab308] shadow-[0_0_10px_#eab308]"
+                  animate={{
+                    x: [44, 12, -24, -42, -30, 0, 36, 44],
+                    y: [12, 20, 12, -4, -14, -16, -6, 12],
+                  }}
+                  transition={{ duration: 3.5, repeat: Infinity, ease: 'linear' }}
+                  style={{ top: '18%', left: '42%' }}
+                />
+                {/* Green dot */}
+                <motion.div
+                  className="absolute w-2.5 h-2.5 rounded-full bg-[#16a34a] shadow-[0_0_10px_#16a34a]"
+                  animate={{
+                    x: [-24, -42, -30, 0, 36, 44, 12, -24],
+                    y: [12, -4, -14, -16, -6, 12, 20, 12],
+                  }}
+                  transition={{ duration: 3.5, repeat: Infinity, ease: 'linear' }}
+                  style={{ top: '18%', left: '42%' }}
+                />
+              </div>
+            </motion.div>
+
             {/* Footer actions */}
-            <motion.div className="space-y-3 pt-4 border-t border-border" variants={fadeUp} custom={2}>
+            <motion.div className="space-y-3 pt-3 border-t border-border" variants={fadeUp} custom={3}>
               {isInstallable && (
                 <Button variant="outline" className="w-full h-10" onClick={install}>
                   <Download className="mr-2 h-4 w-4" />
@@ -293,61 +348,6 @@ export default function Auth() {
             </motion.div>
           </motion.div>
           </div>
-
-          {/* Globe illustration with orbiting colored dots */}
-          <motion.div
-            className="mt-8 flex justify-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.6 }}
-          >
-            <div className="relative w-32 h-32">
-              {/* Globe */}
-              <svg viewBox="0 0 100 100" className="w-full h-full">
-                <circle cx="50" cy="50" r="28" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" opacity="0.3" />
-                <ellipse cx="50" cy="50" rx="28" ry="10" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.2" />
-                <ellipse cx="50" cy="50" rx="10" ry="28" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.2" />
-                <line x1="22" y1="50" x2="78" y2="50" stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.15" />
-                <line x1="50" y1="22" x2="50" y2="78" stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.15" />
-              </svg>
-              {/* Orbit ring */}
-              <div className="absolute inset-[-12px]">
-                <svg viewBox="0 0 124 124" className="w-full h-full">
-                  <ellipse cx="62" cy="62" rx="58" ry="20" fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" opacity="0.3" transform="rotate(-20 62 62)" />
-                </svg>
-              </div>
-              {/* Red dot - orbiting */}
-              <motion.div
-                className="absolute w-3.5 h-3.5 rounded-full bg-[#dc2626] shadow-[0_0_8px_#dc2626]"
-                animate={{
-                  x: [0, 50, 60, 20, -30, -55, -40, 0],
-                  y: [-20, -8, 15, 25, 15, -5, -18, -20],
-                }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-                style={{ top: '10%', left: '45%' }}
-              />
-              {/* Yellow dot - orbiting with delay */}
-              <motion.div
-                className="absolute w-3.5 h-3.5 rounded-full bg-[#eab308] shadow-[0_0_8px_#eab308]"
-                animate={{
-                  x: [60, 20, -30, -55, -40, 0, 50, 60],
-                  y: [15, 25, 15, -5, -18, -20, -8, 15],
-                }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-                style={{ top: '10%', left: '45%' }}
-              />
-              {/* Green dot - orbiting with more delay */}
-              <motion.div
-                className="absolute w-3 h-3 rounded-full bg-[#16a34a] shadow-[0_0_8px_#16a34a]"
-                animate={{
-                  x: [-30, -55, -40, 0, 50, 60, 20, -30],
-                  y: [15, -5, -18, -20, -8, 15, 25, 15],
-                }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-                style={{ top: '10%', left: '45%' }}
-              />
-            </div>
-          </motion.div>
         </div>
       </div>
     </div>
