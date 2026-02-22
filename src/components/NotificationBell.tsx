@@ -30,9 +30,9 @@ interface Notification {
 }
 
 interface NotificationBellProps {
-  /** 'parent' or 'student' */
-  mode: 'parent' | 'student';
-  /** famille_id for parent, eleve_id for student */
+  /** 'parent', 'student', or 'employee' */
+  mode: 'parent' | 'student' | 'employee';
+  /** famille_id for parent, eleve_id for student, employe_id for employee */
   targetId: string;
   /** Auth token for API calls */
   token: string;
@@ -47,8 +47,8 @@ export function NotificationBell({ mode, targetId, token, onViewAll }: Notificat
   const [selectedNotif, setSelectedNotif] = useState<Notification | null>(null);
   const fetchNotifications = useCallback(async () => {
     try {
-      const action = mode === 'parent' ? 'notifications' : 'notifications';
-      const endpoint = mode === 'parent' ? 'parent-data' : 'student-data';
+      const action = 'notifications';
+      const endpoint = mode === 'parent' ? 'parent-data' : mode === 'student' ? 'student-data' : 'employee-data';
       const body = mode === 'parent'
         ? { code: token, action }
         : { token, action };
@@ -81,8 +81,8 @@ export function NotificationBell({ mode, targetId, token, onViewAll }: Notificat
 
   // Realtime subscription
   useEffect(() => {
-    const tableName = mode === 'parent' ? 'parent_notifications' : 'student_notifications';
-    const filterColumn = mode === 'parent' ? 'famille_id' : 'eleve_id';
+    const tableName = mode === 'parent' ? 'parent_notifications' : mode === 'student' ? 'student_notifications' : 'employee_notifications';
+    const filterColumn = mode === 'parent' ? 'famille_id' : mode === 'student' ? 'eleve_id' : 'employe_id';
 
     const channel = supabase
       .channel(`${tableName}-${targetId}`)
@@ -110,7 +110,7 @@ export function NotificationBell({ mode, targetId, token, onViewAll }: Notificat
   const markAsRead = async (id: string) => {
     try {
       const action = 'mark_notification_read';
-      const endpoint = mode === 'parent' ? 'parent-data' : 'student-data';
+      const endpoint = mode === 'parent' ? 'parent-data' : mode === 'student' ? 'student-data' : 'employee-data';
       const body = mode === 'parent'
         ? { code: token, action, notification_id: id }
         : { token, action, notification_id: id };

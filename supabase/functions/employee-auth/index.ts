@@ -1,0 +1,105 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { matricule, password } = await req.json();
+    if (!matricule || !password) {
+      return new Response(JSON.stringify({ error: "Matricule et mot de passe requis" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: employe, error: empErr } = await supabaseAdmin
+      .from("employes")
+      .select("id, nom, prenom, matricule, sexe, date_naissance, photo_url, categorie, poste, date_embauche, salaire_base, statut, mot_de_passe, telephone, email")
+      .eq("matricule", matricule.trim().toUpperCase())
+      .maybeSingle();
+
+    if (empErr) throw empErr;
+    if (!employe) {
+      return new Response(JSON.stringify({ error: "Matricule introuvable" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!employe.mot_de_passe) {
+      return new Response(JSON.stringify({ error: "Mot de passe non configuré" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: pwCheck } = await supabaseAdmin.rpc("verify_password", {
+      _hash: employe.mot_de_passe,
+      _password: password.trim(),
+    });
+
+    if (!pwCheck) {
+      return new Response(JSON.stringify({ error: "Mot de passe incorrect" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (employe.statut !== "actif") {
+      return new Response(JSON.stringify({ error: "Votre compte est désactivé. Contactez la direction." }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Generate HMAC token
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    const tokenData = `emp:${employe.id}:${Date.now()}`;
+    const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(tokenData));
+    const token = btoa(tokenData + ":" + Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, "0")).join(""));
+
+    const { mot_de_passe, ...employeData } = employe;
+
+    // Get enseignant_classes if teacher
+    let classes: any[] = [];
+    if (employe.categorie === "enseignant") {
+      const { data: ec } = await supabaseAdmin
+        .from("enseignant_classes")
+        .select("id, classe_id, matiere_id, classes(id, nom), matieres:matiere_id(id, nom)")
+        .eq("employe_id", employe.id);
+      classes = ec || [];
+    }
+
+    return new Response(
+      JSON.stringify({ employe: { ...employeData, enseignant_classes: classes }, token }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (e) {
+    console.error("employee-auth error:", e);
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "Erreur serveur" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});

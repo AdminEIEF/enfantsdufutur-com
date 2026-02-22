@@ -26,3 +26,12 @@ verify_jwt = false
 
 [functions.student-submit]
 verify_jwt = false
+
+[functions.employee-auth]
+verify_jwt = false
+
+[functions.employee-data]
+verify_jwt = false
+
+[functions.credit-reminders]
+verify_jwt = false
