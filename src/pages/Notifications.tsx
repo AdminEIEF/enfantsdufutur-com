@@ -4,7 +4,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Bell, AlertTriangle, RefreshCw, UtensilsCrossed, Check, Send, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Bell, AlertTriangle, RefreshCw, UtensilsCrossed, Check, Send, Loader2, MessageSquarePlus, Users, GraduationCap, School } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +21,13 @@ export default function Notifications() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [generatingType, setGeneratingType] = useState<string | null>(null);
+  const [msgCible, setMsgCible] = useState<string>('ecole');
+  const [msgCibleId, setMsgCibleId] = useState<string>('');
+  const [msgTitre, setMsgTitre] = useState('');
+  const [msgContenu, setMsgContenu] = useState('');
+  const [msgType, setMsgType] = useState<string>('info');
+  const [msgActionUrl, setMsgActionUrl] = useState('');
+  const [sendingMsg, setSendingMsg] = useState(false);
 
   // Existing notifications
   const { data: notifications = [], isLoading } = useQuery({
@@ -93,6 +104,104 @@ export default function Notifications() {
         .sort((a: any, b: any) => (a.total_paye / a.frais) - (b.total_paye / b.frais));
     },
   });
+
+  // Familles pour ciblage
+  const { data: familles = [] } = useQuery({
+    queryKey: ['familles-list'],
+    queryFn: async () => {
+      const { data } = await supabase.from('familles').select('id, nom_famille').order('nom_famille');
+      return data || [];
+    },
+  });
+
+  // Classes pour ciblage
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes-list'],
+    queryFn: async () => {
+      const { data } = await supabase.from('classes').select('id, nom, niveaux:niveau_id(nom)').order('nom');
+      return data || [];
+    },
+  });
+
+  // Envoi de message ciblé
+  const sendMessage = async () => {
+    if (!msgTitre.trim() || !msgContenu.trim()) {
+      toast({ title: 'Veuillez remplir le titre et le message', variant: 'destructive' });
+      return;
+    }
+    setSendingMsg(true);
+    try {
+      let count = 0;
+      const actionUrl = msgType === 'action' && msgActionUrl.trim() ? msgActionUrl.trim() : null;
+
+      if (msgCible === 'famille' && msgCibleId) {
+        // Une famille spécifique → notif parent
+        await supabase.from('parent_notifications').insert({
+          famille_id: msgCibleId,
+          titre: msgTitre,
+          message: msgContenu,
+          type: msgType,
+          action_url: actionUrl,
+        });
+        // Aussi pour les élèves de cette famille
+        const { data: enfants } = await supabase.from('eleves').select('id').eq('famille_id', msgCibleId).is('deleted_at', null);
+        if (enfants && enfants.length > 0) {
+          await supabase.from('student_notifications').insert(
+            enfants.map((e: any) => ({ eleve_id: e.id, titre: msgTitre, message: msgContenu, type: msgType, action_url: actionUrl }))
+          );
+        }
+        count = 1 + (enfants?.length || 0);
+      } else if (msgCible === 'classe' && msgCibleId) {
+        // Tous les élèves d'une classe
+        const { data: eleves } = await supabase.from('eleves').select('id, famille_id').eq('classe_id', msgCibleId).is('deleted_at', null);
+        if (eleves && eleves.length > 0) {
+          await supabase.from('student_notifications').insert(
+            eleves.map((e: any) => ({ eleve_id: e.id, titre: msgTitre, message: msgContenu, type: msgType, action_url: actionUrl }))
+          );
+          // Unique families
+          const uniqueFamilies = [...new Set(eleves.filter((e: any) => e.famille_id).map((e: any) => e.famille_id))];
+          if (uniqueFamilies.length > 0) {
+            await supabase.from('parent_notifications').insert(
+              uniqueFamilies.map((fid: any) => ({ famille_id: fid, titre: msgTitre, message: msgContenu, type: msgType, action_url: actionUrl }))
+            );
+          }
+          count = eleves.length + uniqueFamilies.length;
+        }
+      } else if (msgCible === 'ecole') {
+        // Toute l'école
+        const { data: eleves } = await supabase.from('eleves').select('id, famille_id').is('deleted_at', null);
+        if (eleves && eleves.length > 0) {
+          // Batch student notifications (max 1000 per insert)
+          for (let i = 0; i < eleves.length; i += 500) {
+            const batch = eleves.slice(i, i + 500);
+            await supabase.from('student_notifications').insert(
+              batch.map((e: any) => ({ eleve_id: e.id, titre: msgTitre, message: msgContenu, type: msgType, action_url: actionUrl }))
+            );
+          }
+          const uniqueFamilies = [...new Set(eleves.filter((e: any) => e.famille_id).map((e: any) => e.famille_id))];
+          if (uniqueFamilies.length > 0) {
+            for (let i = 0; i < uniqueFamilies.length; i += 500) {
+              const batch = uniqueFamilies.slice(i, i + 500);
+              await supabase.from('parent_notifications').insert(
+                batch.map((fid: any) => ({ famille_id: fid, titre: msgTitre, message: msgContenu, type: msgType, action_url: actionUrl }))
+              );
+            }
+          }
+          count = eleves.length + uniqueFamilies.length;
+        }
+      }
+
+      toast({ title: `✅ ${count} notification(s) envoyée(s)` });
+      setMsgTitre('');
+      setMsgContenu('');
+      setMsgActionUrl('');
+      setMsgCibleId('');
+    } catch (err: any) {
+      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+    } finally {
+      setSendingMsg(false);
+    }
+  };
 
   const markReadMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -197,8 +306,107 @@ export default function Notifications() {
       </div>
 
       {/* Tabs: historique + détails */}
-      <Tabs defaultValue="historique">
-        <TabsList><TabsTrigger value="historique">Historique</TabsTrigger><TabsTrigger value="reinscription">Réinscriptions</TabsTrigger><TabsTrigger value="paiement">Retards paiement</TabsTrigger><TabsTrigger value="cantine">Cantine</TabsTrigger></TabsList>
+      <Tabs defaultValue="communication">
+        <TabsList className="flex-wrap h-auto gap-1">
+          <TabsTrigger value="communication"><MessageSquarePlus className="h-3.5 w-3.5 mr-1" />Communication</TabsTrigger>
+          <TabsTrigger value="historique">Historique</TabsTrigger>
+          <TabsTrigger value="reinscription">Réinscriptions</TabsTrigger>
+          <TabsTrigger value="paiement">Retards</TabsTrigger>
+          <TabsTrigger value="cantine">Cantine</TabsTrigger>
+        </TabsList>
+
+        {/* Communication Tab */}
+        <TabsContent value="communication" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <MessageSquarePlus className="h-5 w-5" /> Envoyer un message
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Ciblage */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Destinataires</Label>
+                  <Select value={msgCible} onValueChange={(v) => { setMsgCible(v); setMsgCibleId(''); }}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ecole"><div className="flex items-center gap-2"><School className="h-4 w-4" /> Toute l'école</div></SelectItem>
+                      <SelectItem value="classe"><div className="flex items-center gap-2"><GraduationCap className="h-4 w-4" /> Une classe</div></SelectItem>
+                      <SelectItem value="famille"><div className="flex items-center gap-2"><Users className="h-4 w-4" /> Une famille</div></SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {msgCible === 'classe' && (
+                  <div className="space-y-2">
+                    <Label>Classe</Label>
+                    <Select value={msgCibleId} onValueChange={setMsgCibleId}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner une classe" /></SelectTrigger>
+                      <SelectContent>
+                        {classes.map((c: any) => (
+                          <SelectItem key={c.id} value={c.id}>{c.nom} — {c.niveaux?.nom}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {msgCible === 'famille' && (
+                  <div className="space-y-2">
+                    <Label>Famille</Label>
+                    <Select value={msgCibleId} onValueChange={setMsgCibleId}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner une famille" /></SelectTrigger>
+                      <SelectContent>
+                        {familles.map((f: any) => (
+                          <SelectItem key={f.id} value={f.id}>{f.nom_famille}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              {/* Type */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Type de message</Label>
+                  <Select value={msgType} onValueChange={setMsgType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="info">ℹ️ Information</SelectItem>
+                      <SelectItem value="action">⚡ Action requise</SelectItem>
+                      <SelectItem value="alerte">🔔 Alerte</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {msgType === 'action' && (
+                  <div className="space-y-2">
+                    <Label>Lien d'action (URL)</Label>
+                    <Input placeholder="https://..." value={msgActionUrl} onChange={e => setMsgActionUrl(e.target.value)} />
+                  </div>
+                )}
+              </div>
+
+              {/* Titre et Message */}
+              <div className="space-y-2">
+                <Label>Titre</Label>
+                <Input placeholder="Ex: Fête de fin d'année" value={msgTitre} onChange={e => setMsgTitre(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Message</Label>
+                <Textarea placeholder="Contenu du message..." rows={4} value={msgContenu} onChange={e => setMsgContenu(e.target.value)} />
+              </div>
+
+              <Button onClick={sendMessage} disabled={sendingMsg || !msgTitre.trim() || !msgContenu.trim() || ((msgCible === 'classe' || msgCible === 'famille') && !msgCibleId)}>
+                {sendingMsg ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+                Envoyer
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="historique" className="mt-4">
           <Card><CardContent className="p-0">

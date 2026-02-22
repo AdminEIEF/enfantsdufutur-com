@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Home, FileText, ClipboardList, Award, Bot, LogOut } from 'lucide-react';
+import { NotificationBell } from '@/components/NotificationBell';
 
 const NAV_ITEMS = [
   { path: '/eleve/dashboard', icon: Home, label: 'Accueil' },
@@ -42,9 +43,17 @@ export function StudentLayout({ children }: { children: ReactNode }) {
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-1" /> Déconnexion
-          </Button>
+          <div className="flex items-center gap-1">
+            <NotificationBell
+              mode="student"
+              targetId={eleve.id}
+              token={session.token}
+              onViewAll={() => navigate('/eleve/notifications')}
+            />
+            <Button variant="ghost" size="sm" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-1" /> Déconnexion
+            </Button>
+          </div>
         </div>
       </header>
 

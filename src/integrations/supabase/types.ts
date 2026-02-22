@@ -1171,6 +1171,7 @@ export type Database = {
       }
       parent_notifications: {
         Row: {
+          action_url: string | null
           created_at: string
           famille_id: string
           id: string
@@ -1180,6 +1181,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          action_url?: string | null
           created_at?: string
           famille_id: string
           id?: string
@@ -1189,6 +1191,7 @@ export type Database = {
           type?: string
         }
         Update: {
+          action_url?: string | null
           created_at?: string
           famille_id?: string
           id?: string
@@ -1398,6 +1401,47 @@ export type Database = {
           },
           {
             foreignKeyName: "soumissions_devoirs_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_notifications: {
+        Row: {
+          action_url: string | null
+          created_at: string
+          eleve_id: string
+          id: string
+          lu: boolean
+          message: string
+          titre: string
+          type: string
+        }
+        Insert: {
+          action_url?: string | null
+          created_at?: string
+          eleve_id: string
+          id?: string
+          lu?: boolean
+          message: string
+          titre: string
+          type?: string
+        }
+        Update: {
+          action_url?: string | null
+          created_at?: string
+          eleve_id?: string
+          id?: string
+          lu?: boolean
+          message?: string
+          titre?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_notifications_eleve_id_fkey"
             columns: ["eleve_id"]
             isOneToOne: false
             referencedRelation: "eleves"

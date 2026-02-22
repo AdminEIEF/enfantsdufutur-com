@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { code, action, eleve_id, montant, type_paiement, description, type_service, items, total } = await req.json();
+    const { code, action, eleve_id, montant, type_paiement, description, type_service, items, total, notification_id } = await req.json();
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -262,6 +262,59 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ success: true, message: "Commande validée" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ─── NOTIFICATIONS (last 5) ───
+    if (action === "notifications") {
+      const { data: notifs, error: nErr } = await supabaseAdmin
+        .from("parent_notifications")
+        .select("id, titre, message, type, action_url, lu, created_at")
+        .eq("famille_id", familleId)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (nErr) throw nErr;
+
+      const { count: unreadCount } = await supabaseAdmin
+        .from("parent_notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("famille_id", familleId)
+        .eq("lu", false);
+
+      return new Response(
+        JSON.stringify({ notifications: notifs || [], unread_count: unreadCount || 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ─── ALL NOTIFICATIONS (archive) ───
+    if (action === "all_notifications") {
+      const { data: notifs } = await supabaseAdmin
+        .from("parent_notifications")
+        .select("id, titre, message, type, action_url, lu, created_at")
+        .eq("famille_id", familleId)
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      return new Response(
+        JSON.stringify({ notifications: notifs || [] }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ─── MARK NOTIFICATION READ ───
+    if (action === "mark_notification_read") {
+      // notification_id already parsed from body
+      if (notification_id) {
+        await supabaseAdmin
+          .from("parent_notifications")
+          .update({ lu: true })
+          .eq("id", notification_id)
+          .eq("famille_id", familleId);
+      }
+      return new Response(
+        JSON.stringify({ success: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
