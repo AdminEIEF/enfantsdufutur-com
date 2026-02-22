@@ -111,25 +111,25 @@ export default function ParentDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
       {/* Header */}
       <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <GraduationCap className="h-6 w-6 text-primary" />
-            <div>
-              <h1 className="font-bold text-sm leading-tight">Espace Parent</h1>
-              <p className="text-xs text-muted-foreground">Famille {famille.nom_famille}</p>
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-1">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
+            <div className="min-w-0">
+              <h1 className="font-bold text-xs sm:text-sm leading-tight truncate">Espace Parent</h1>
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Famille {famille.nom_famille}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => setPaymentOpen(true)}>
-              <Smartphone className="h-4 w-4 mr-1" /> Payer
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <Button size="sm" className="text-xs px-2 sm:px-3 h-8" onClick={() => setPaymentOpen(true)}>
+              <Smartphone className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" /> Payer
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-1" /> Déconnexion
+            <Button variant="ghost" size="sm" className="text-xs px-2 sm:px-3 h-8" onClick={handleLogout}>
+              <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> <span className="hidden sm:inline ml-1">Déconnexion</span>
             </Button>
           </div>
         </div>
       </header>
-      <main className="max-w-4xl mx-auto px-4 py-6 space-y-6 pb-24">
+      <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-24">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -137,17 +137,17 @@ export default function ParentDashboard() {
         ) : (
           <>
             {/* Financial Summary Cards */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <Card className="col-span-2 border-primary/20 bg-primary/5">
-                <CardContent className="pt-4 pb-3">
+                <CardContent className="pt-3 sm:pt-4 pb-2 sm:pb-3 px-3 sm:px-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Reste à payer</p>
-                      <p className="text-2xl font-bold text-primary">{resteTotal.toLocaleString()} GNF</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">Reste à payer</p>
+                      <p className="text-xl sm:text-2xl font-bold text-primary truncate">{resteTotal.toLocaleString()} GNF</p>
                     </div>
-                    <Wallet className="h-10 w-10 text-primary/30" />
+                    <Wallet className="h-8 w-8 sm:h-10 sm:w-10 text-primary/30 shrink-0" />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                     Mensualité {moisActuel} : <span className="font-semibold text-foreground">{mensualiteScolarite.toLocaleString()} GNF</span>
                   </p>
                 </CardContent>
@@ -155,41 +155,41 @@ export default function ParentDashboard() {
 
               {/* Portefeuille famille */}
               <Card className="col-span-2 border-green-200 bg-green-50/50">
-                <CardContent className="pt-4 pb-3">
+                <CardContent className="pt-3 sm:pt-4 pb-2 sm:pb-3 px-3 sm:px-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">💰 Portefeuille Famille</p>
-                      <p className="text-2xl font-bold text-green-700">{(dashData?.solde_famille || 0).toLocaleString()} GNF</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">💰 Portefeuille Famille</p>
+                      <p className="text-xl sm:text-2xl font-bold text-green-700 truncate">{(dashData?.solde_famille || 0).toLocaleString()} GNF</p>
                     </div>
-                    <Wallet className="h-10 w-10 text-green-300" />
+                    <Wallet className="h-8 w-8 sm:h-10 sm:w-10 text-green-300 shrink-0" />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                     Solde rechargeable pour achats boutique, librairie, cantine
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="pt-4 pb-3">
-                  <p className="text-xs text-muted-foreground">Scolarité payée</p>
-                  <p className="text-lg font-bold text-green-600">{totalPayeScolarite.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">/ {totalScolariteAnnuel.toLocaleString()} GNF</p>
+                <CardContent className="pt-3 sm:pt-4 pb-2 sm:pb-3 px-3 sm:px-6">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Scolarité payée</p>
+                  <p className="text-base sm:text-lg font-bold text-green-600 truncate">{totalPayeScolarite.toLocaleString()}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">/ {totalScolariteAnnuel.toLocaleString()} GNF</p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="pt-4 pb-3">
-                  <p className="text-xs text-muted-foreground">Transport payé</p>
-                  <p className="text-lg font-bold text-orange-600">{totalPayeTransport.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">/ {totalTransportAnnuel.toLocaleString()} GNF</p>
+                <CardContent className="pt-3 sm:pt-4 pb-2 sm:pb-3 px-3 sm:px-6">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Transport payé</p>
+                  <p className="text-base sm:text-lg font-bold text-orange-600 truncate">{totalPayeTransport.toLocaleString()}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">/ {totalTransportAnnuel.toLocaleString()} GNF</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Children Cards */}
-            <div className="space-y-3">
-              <h2 className="font-semibold flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" /> Mes enfants
+            <div className="space-y-2 sm:space-y-3">
+              <h2 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" /> Mes enfants
               </h2>
               {eleves.map((enfant: any) => (
                 <Card
@@ -197,31 +197,31 @@ export default function ParentDashboard() {
                   className="cursor-pointer hover:shadow-md transition-shadow"
                   onClick={() => navigate(`/parent/enfant/${enfant.id}`)}
                 >
-                  <CardContent className="pt-4 pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                  <CardContent className="pt-3 sm:pt-4 pb-2 sm:pb-3 px-3 sm:px-6">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                         {enfant.photo_url ? (
-                          <img src={enfant.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                          <img src={enfant.photo_url} alt="" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shrink-0" />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs sm:text-sm shrink-0">
                             {enfant.prenom[0]}{enfant.nom[0]}
                           </div>
                         )}
-                        <div>
-                          <p className="font-semibold">{enfant.prenom} {enfant.nom}</p>
-                          <p className="text-xs text-muted-foreground">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm sm:text-base truncate">{enfant.prenom} {enfant.nom}</p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                             {enfant.classes?.niveaux?.cycles?.nom} — {enfant.classes?.niveaux?.nom} — {enfant.classes?.nom}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                         {enfant.option_cantine && (
-                          <Badge variant="outline" className="text-xs">
-                            <UtensilsCrossed className="h-3 w-3 mr-1" />
+                          <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5 sm:px-2">
+                            <UtensilsCrossed className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
                             {(enfant.solde_cantine || 0).toLocaleString()}
                           </Badge>
                         )}
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                       </div>
                     </div>
                   </CardContent>
@@ -247,15 +247,15 @@ export default function ParentDashboard() {
 
             {/* Payment History */}
             <Tabs defaultValue="devis">
-              <TabsList className="w-full grid grid-cols-3">
-                <TabsTrigger value="devis">
-                  <FileText className="h-4 w-4 mr-1" /> Devis
+              <TabsList className="w-full grid grid-cols-3 h-9 sm:h-10">
+                <TabsTrigger value="devis" className="text-xs sm:text-sm px-1 sm:px-3">
+                  <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" /> Devis
                 </TabsTrigger>
-                <TabsTrigger value="historique">
-                  <CreditCard className="h-4 w-4 mr-1" /> Historique
+                <TabsTrigger value="historique" className="text-xs sm:text-sm px-1 sm:px-3">
+                  <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" /> Hist.
                 </TabsTrigger>
-                <TabsTrigger value="echeancier">
-                  <TrendingDown className="h-4 w-4 mr-1" /> Échéancier
+                <TabsTrigger value="echeancier" className="text-xs sm:text-sm px-1 sm:px-3">
+                  <TrendingDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" /> Éch.
                 </TabsTrigger>
               </TabsList>
 
@@ -277,10 +277,10 @@ export default function ParentDashboard() {
                       const enfant = eleves.find((e: any) => e.id === p.eleve_id);
                       return (
                         <Card key={p.id}>
-                          <CardContent className="py-3 flex items-center justify-between">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-medium">
+                          <CardContent className="py-2 sm:py-3 px-3 sm:px-6 flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                                <p className="text-xs sm:text-sm font-medium truncate">
                                   {p.type_paiement === 'scolarite' ? '🎓' : p.type_paiement === 'transport' ? '🚌' : p.type_paiement === 'cantine' ? '🍽️' : p.type_paiement === 'fournitures' ? '📚' : p.type_paiement === 'librairie' ? '📚' : p.type_paiement === 'boutique' ? '👕' : p.type_paiement === 'inscription' ? '📝' : p.type_paiement === 'reinscription' ? '🔄' : '📦'}
                                   {' '}{p.type_paiement}
                                   {p.type_paiement === 'cantine' && p.mois_concerne === 'Recharge directe' && ' (directe)'}
@@ -288,16 +288,16 @@ export default function ParentDashboard() {
                                   {p.mois_concerne && !p.mois_concerne.startsWith('Recharge') && ` — ${p.mois_concerne}`}
                                 </p>
                                 {enfant && (
-                                  <Badge variant="outline" className="text-xs">
+                                  <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5">
                                     {enfant.prenom}
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-[10px] sm:text-xs text-muted-foreground">
                                 {new Date(p.date_paiement).toLocaleDateString('fr-FR')} • {p.canal}
                               </p>
                             </div>
-                            <p className="font-bold text-green-600">{p.montant.toLocaleString()} GNF</p>
+                            <p className="font-bold text-green-600 text-xs sm:text-sm whitespace-nowrap shrink-0">{p.montant.toLocaleString()} GNF</p>
                           </CardContent>
                         </Card>
                       );
@@ -308,13 +308,13 @@ export default function ParentDashboard() {
 
               <TabsContent value="echeancier" className="mt-4">
                 <Card>
-                  <CardContent className="pt-4">
+                  <CardContent className="pt-3 sm:pt-4 px-2 sm:px-6 overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Mois</TableHead>
-                          <TableHead className="text-right">Scolarité</TableHead>
-                          <TableHead className="text-right">Statut</TableHead>
+                          <TableHead className="text-xs sm:text-sm">Mois</TableHead>
+                          <TableHead className="text-right text-xs sm:text-sm">Scolarité</TableHead>
+                          <TableHead className="text-right text-xs sm:text-sm">Statut</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -327,17 +327,17 @@ export default function ParentDashboard() {
                           const isCurrentMonth = idx === moisIndex;
                           return (
                             <TableRow key={mois} className={isCurrentMonth ? 'bg-primary/5' : ''}>
-                              <TableCell className="font-medium">
-                                {mois} {isCurrentMonth && <Badge variant="outline" className="ml-1 text-xs">Actuel</Badge>}
+                              <TableCell className="font-medium text-xs sm:text-sm py-2 sm:py-3">
+                                {mois} {isCurrentMonth && <Badge variant="outline" className="ml-1 text-[10px] sm:text-xs">Actuel</Badge>}
                               </TableCell>
-                              <TableCell className="text-right">{mensualiteScolarite.toLocaleString()} GNF</TableCell>
-                              <TableCell className="text-right">
+                              <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-3 whitespace-nowrap">{mensualiteScolarite.toLocaleString()} GNF</TableCell>
+                              <TableCell className="text-right py-2 sm:py-3">
                                 {payeMois > 0 ? (
-                                  <Badge variant={isPaid ? 'default' : 'secondary'} className={isPaid ? 'bg-green-600' : ''}>
+                                  <Badge variant={isPaid ? 'default' : 'secondary'} className={`text-[10px] sm:text-xs ${isPaid ? 'bg-green-600' : ''}`}>
                                     {isPaid ? '✓ Payé' : `${payeMois.toLocaleString()} / ${mensualiteScolarite.toLocaleString()}`}
                                   </Badge>
                                 ) : (
-                                  <Badge variant="outline" className="text-destructive border-destructive/30">
+                                  <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px] sm:text-xs">
                                     Non payé
                                   </Badge>
                                 )}
