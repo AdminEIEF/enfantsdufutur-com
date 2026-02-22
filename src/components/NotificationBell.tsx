@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -7,9 +7,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 interface Notification {
@@ -37,7 +44,7 @@ export function NotificationBell({ mode, targetId, token, onViewAll }: Notificat
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
-
+  const [selectedNotif, setSelectedNotif] = useState<Notification | null>(null);
   const fetchNotifications = useCallback(async () => {
     try {
       const action = mode === 'parent' ? 'notifications' : 'notifications';
@@ -143,6 +150,7 @@ export function NotificationBell({ mode, targetId, token, onViewAll }: Notificat
   };
 
   return (
+    <>
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="relative h-8 w-8 p-0">
@@ -174,9 +182,8 @@ export function NotificationBell({ mode, targetId, token, onViewAll }: Notificat
                   }`}
                   onClick={() => {
                     if (!notif.lu) markAsRead(notif.id);
-                    if (notif.action_url) {
-                      window.open(notif.action_url, '_blank');
-                    }
+                    setSelectedNotif(notif);
+                    setOpen(false);
                   }}
                 >
                   <div className="flex items-start gap-2">
@@ -210,5 +217,33 @@ export function NotificationBell({ mode, targetId, token, onViewAll }: Notificat
         )}
       </PopoverContent>
     </Popover>
+
+      {/* Message detail dialog */}
+      <Dialog open={!!selectedNotif} onOpenChange={(v) => { if (!v) setSelectedNotif(null); }}>
+        <DialogContent className="max-w-md w-[95vw]">
+          {selectedNotif && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-base">
+                  <span>{typeIcon(selectedNotif.type)}</span>
+                  {selectedNotif.titre}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground">
+                  {format(new Date(selectedNotif.created_at), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{selectedNotif.message}</p>
+                {selectedNotif.action_url && (
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => window.open(selectedNotif.action_url!, '_blank')}>
+                    ⚡ Ouvrir le lien
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
