@@ -204,9 +204,9 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
   const updateChild = (idx: number, patch: Partial<ChildForm>) => {
     setChildren(prev => {
       const updated = prev.map((c, i) => i === idx ? { ...c, ...patch } : c);
-      // Propagate transport zone to all siblings when changed
-      if ('zoneTransportId' in patch && patch.zoneTransportId) {
-        return updated.map(c => ({ ...c, zoneTransportId: patch.zoneTransportId! }));
+      // Propagate transport zone to all siblings when changed (only first child can set it)
+      if ('zoneTransportId' in patch) {
+        return updated.map(c => ({ ...c, zoneTransportId: patch.zoneTransportId || '' }));
       }
       return updated;
     });
@@ -705,25 +705,33 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
                   {/* Transport */}
                   <div className="mb-3">
                     <Label className="flex items-center gap-1 text-xs"><MapPin className="h-3 w-3" /> Zone de transport</Label>
-                    <Select value={child.zoneTransportId || '__none__'} onValueChange={(v) => updateChild(idx, { zoneTransportId: v === '__none__' ? '' : v })}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Pas de transport" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">Pas de transport</SelectItem>
-                        {zones.map((z: any) => (
-                          <SelectItem key={z.id} value={z.id}>{z.nom} — {Number(z.prix_mensuel).toLocaleString()} GNF/mois</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {zone && <p className="text-[10px] text-accent mt-0.5">💰 {Number(zone.prix_mensuel).toLocaleString()} GNF/mois</p>}
-                    {suggestedZoneId && suggestedZoneId !== child.zoneTransportId && (
-                      <button
-                        type="button"
-                        className="mt-1 text-xs text-primary underline cursor-pointer"
-                        onClick={() => updateChild(idx, { zoneTransportId: suggestedZoneId })}
-                      >
-                        💡 Zone suggérée : {zones.find((z: any) => z.id === suggestedZoneId)?.nom} — Cliquer pour appliquer
-                      </button>
+                    {idx === 0 ? (
+                      <>
+                        <Select value={child.zoneTransportId || '__none__'} onValueChange={(v) => updateChild(idx, { zoneTransportId: v === '__none__' ? '' : v })}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Pas de transport" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">Pas de transport</SelectItem>
+                            {zones.map((z: any) => (
+                              <SelectItem key={z.id} value={z.id}>{z.nom} — {Number(z.prix_mensuel).toLocaleString()} GNF/mois</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {suggestedZoneId && suggestedZoneId !== child.zoneTransportId && (
+                          <button
+                            type="button"
+                            className="mt-1 text-xs text-primary underline cursor-pointer"
+                            onClick={() => updateChild(idx, { zoneTransportId: suggestedZoneId })}
+                          >
+                            💡 Zone suggérée : {zones.find((z: any) => z.id === suggestedZoneId)?.nom} — Cliquer pour appliquer
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {zone ? `${zone.nom} — appliqué depuis le 1er enfant` : 'Pas de transport (défini par le 1er enfant)'}
+                      </p>
                     )}
+                    {zone && <p className="text-[10px] text-accent mt-0.5">💰 {Number(zone.prix_mensuel).toLocaleString()} GNF/mois</p>}
                   </div>
 
                   {/* Uniformes (prix depuis la boutique) */}
