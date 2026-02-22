@@ -26,17 +26,26 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Look up family by plain-text code match
+    // Look up all families with a code and verify with bcrypt
     const codeUpper = code.trim().toUpperCase();
     const { data: familles, error: famErr } = await supabaseAdmin
       .from("familles")
       .select("*")
-      .eq("code_acces", codeUpper)
-      .limit(1);
+      .not("code_acces", "is", null);
 
     if (famErr) throw famErr;
     
-    const famille = familles && familles.length > 0 ? familles[0] : null;
+    let famille = null;
+    for (const f of familles || []) {
+      const { data: match } = await supabaseAdmin.rpc('verify_password', {
+        _hash: f.code_acces,
+        _password: codeUpper
+      });
+      if (match) {
+        famille = f;
+        break;
+      }
+    }
     
     if (!famille) {
       return new Response(JSON.stringify({ error: "Code d'accès incorrect" }), {
