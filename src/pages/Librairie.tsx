@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { BookOpen, Package, Search, Plus, Pencil, Trash2, AlertTriangle, Tag, ShoppingCart, Printer, FileText, Settings, User, CheckCircle2, Clock, ClipboardCheck, Camera } from 'lucide-react';
+import RapportJournalierPanel from '@/components/RapportJournalierPanel';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -1083,6 +1084,7 @@ export default function Librairie() {
           <TabsTrigger value="art_plastique">🎨 Art Plastique</TabsTrigger>
           <TabsTrigger value="ventes">🧾 Historique</TabsTrigger>
           <TabsTrigger value="gestion" className="gap-1"><Settings className="h-4 w-4" /> Gestion</TabsTrigger>
+          <TabsTrigger value="rapport" className="gap-1"><FileText className="h-4 w-4" /> Rapport Journalier</TabsTrigger>
         </TabsList>
 
         <TabsContent value="vente" className="mt-4">
@@ -1125,6 +1127,10 @@ export default function Librairie() {
 
         <TabsContent value="gestion" className="mt-4">
           <GestionCommandesLibrairiePanel />
+        </TabsContent>
+
+        <TabsContent value="rapport" className="mt-4">
+          <RapportJournalierPanel service="Librairie" />
         </TabsContent>
       </Tabs>
     </div>

@@ -9,8 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ScanLine, Search, Utensils, Wallet, History, QrCode, Plus, AlertTriangle,
-  CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera
+  CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera, FileText
 } from 'lucide-react';
+import RapportJournalierPanel from '@/components/RapportJournalierPanel';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -440,6 +441,7 @@ export default function Cantine() {
           <TabsTrigger value="menu"><Package className="h-4 w-4 mr-1" /> Gestion Menu</TabsTrigger>
           <TabsTrigger value="inventaire"><CreditCard className="h-4 w-4 mr-1" /> Inventaire du Jour</TabsTrigger>
           <TabsTrigger value="stats"><BarChart3 className="h-4 w-4 mr-1" /> Statistiques</TabsTrigger>
+          <TabsTrigger value="rapport"><FileText className="h-4 w-4 mr-1" /> Rapport Journalier</TabsTrigger>
         </TabsList>
 
         {/* ═══ TAB: VENTE ═══ */}
@@ -830,6 +832,11 @@ export default function Cantine() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ═══ TAB: RAPPORT JOURNALIER ═══ */}
+        <TabsContent value="rapport" className="space-y-4">
+          <RapportJournalierPanel service="Cantine" />
         </TabsContent>
       </Tabs>
 
