@@ -245,17 +245,63 @@ export default function ParentDashboard() {
             />
 
 
-            {/* Payment History */}
+            {/* Échéancier - toujours visible */}
+            <div className="space-y-3">
+              <h2 className="font-semibold flex items-center gap-2">
+                <TrendingDown className="h-5 w-5 text-primary" /> Échéancier de scolarité
+              </h2>
+              <Card>
+                <CardContent className="pt-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Mois</TableHead>
+                        <TableHead className="text-right">Scolarité</TableHead>
+                        <TableHead className="text-right">Statut</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {MOIS_SCOLAIRES.map((mois, idx) => {
+                        const paiementsMois = paiements.filter(
+                          (p: any) => p.type_paiement === 'scolarite' && p.mois_concerne?.includes(mois)
+                        );
+                        const payeMois = paiementsMois.reduce((s: number, p: any) => s + p.montant, 0);
+                        const isPaid = payeMois >= mensualiteScolarite;
+                        const isCurrentMonth = idx === moisIndex;
+                        return (
+                          <TableRow key={mois} className={isCurrentMonth ? 'bg-primary/5' : ''}>
+                            <TableCell className="font-medium">
+                              {mois} {isCurrentMonth && <Badge variant="outline" className="ml-1 text-xs">Actuel</Badge>}
+                            </TableCell>
+                            <TableCell className="text-right">{mensualiteScolarite.toLocaleString()} GNF</TableCell>
+                            <TableCell className="text-right">
+                              {payeMois > 0 ? (
+                                <Badge variant={isPaid ? 'default' : 'secondary'} className={isPaid ? 'bg-green-600' : ''}>
+                                  {isPaid ? '✓ Payé' : `${payeMois.toLocaleString()} / ${mensualiteScolarite.toLocaleString()}`}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-destructive border-destructive/30">
+                                  Non payé
+                                </Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Devis & Historique */}
             <Tabs defaultValue="devis">
-              <TabsList className="w-full grid grid-cols-3">
+              <TabsList className="w-full grid grid-cols-2">
                 <TabsTrigger value="devis">
                   <FileText className="h-4 w-4 mr-1" /> Devis
                 </TabsTrigger>
                 <TabsTrigger value="historique">
                   <CreditCard className="h-4 w-4 mr-1" /> Historique
-                </TabsTrigger>
-                <TabsTrigger value="echeancier">
-                  <TrendingDown className="h-4 w-4 mr-1" /> Échéancier
                 </TabsTrigger>
               </TabsList>
 
@@ -304,51 +350,6 @@ export default function ParentDashboard() {
                     })}
                   </div>
                 )}
-              </TabsContent>
-
-              <TabsContent value="echeancier" className="mt-4">
-                <Card>
-                  <CardContent className="pt-4">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Mois</TableHead>
-                          <TableHead className="text-right">Scolarité</TableHead>
-                          <TableHead className="text-right">Statut</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {MOIS_SCOLAIRES.map((mois, idx) => {
-                          const paiementsMois = paiements.filter(
-                            (p: any) => p.type_paiement === 'scolarite' && p.mois_concerne?.includes(mois)
-                          );
-                          const payeMois = paiementsMois.reduce((s: number, p: any) => s + p.montant, 0);
-                          const isPaid = payeMois >= mensualiteScolarite;
-                          const isCurrentMonth = idx === moisIndex;
-                          return (
-                            <TableRow key={mois} className={isCurrentMonth ? 'bg-primary/5' : ''}>
-                              <TableCell className="font-medium">
-                                {mois} {isCurrentMonth && <Badge variant="outline" className="ml-1 text-xs">Actuel</Badge>}
-                              </TableCell>
-                              <TableCell className="text-right">{mensualiteScolarite.toLocaleString()} GNF</TableCell>
-                              <TableCell className="text-right">
-                                {payeMois > 0 ? (
-                                  <Badge variant={isPaid ? 'default' : 'secondary'} className={isPaid ? 'bg-green-600' : ''}>
-                                    {isPaid ? '✓ Payé' : `${payeMois.toLocaleString()} / ${mensualiteScolarite.toLocaleString()}`}
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-destructive border-destructive/30">
-                                    Non payé
-                                  </Badge>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
               </TabsContent>
             </Tabs>
           </>
