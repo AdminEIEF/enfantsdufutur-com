@@ -76,6 +76,15 @@ function getBoutiquePrice(articles: any[], categorie: string) {
   return match ? Number(match.prix) : 0;
 }
 
+function getBoutiquePriceByCycle(articles: any[], categorie: string, isPrimaire: boolean) {
+  const matches = articles.filter((a: any) => a.categorie === categorie);
+  if (matches.length <= 1) return matches[0] ? Number(matches[0].prix) : 0;
+  const match = isPrimaire
+    ? matches.find((a: any) => /primaire|maternelle|enfant|crèche|creche/i.test(a.nom + ' ' + (a.taille || '')))
+    : matches.find((a: any) => /coll[eè]ge|lyc[eé]e/i.test(a.nom + ' ' + (a.taille || '')));
+  return match ? Number(match.prix) : Number(matches[0].prix);
+}
+
 function useArticlesForLevel(niveauId: string | null) {
   return useQuery({
     queryKey: ['articles-for-level', niveauId],
@@ -225,9 +234,11 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
     const fraisApresReduction = fraisScolarite * (1 - reduction);
     const zone = zones.find((z: any) => z.id === child.zoneTransportId);
     const fraisTransport = zone ? Number(zone.prix_mensuel) : 0;
+    const cycleName = cl?.niveaux?.cycles?.nom || '';
+    const isPrimaireFees = ['Crèche', 'Maternelle', 'Primaire'].includes(cycleName);
 
     // Prices from boutique_articles
-    const prixTenueScolaire = getBoutiquePrice(boutiqueArticles, 'tenue_scolaire');
+    const prixTenueScolaire = getBoutiquePriceByCycle(boutiqueArticles, 'tenue_scolaire', isPrimaireFees);
     const prixTenueSport = getBoutiquePrice(boutiqueArticles, 'tenue_sport');
     const prixPoloLacoste = getBoutiquePrice(boutiqueArticles, 'polo_lacoste');
     const prixKarate = getBoutiquePrice(boutiqueArticles, 'tenue_karate');
@@ -391,7 +402,10 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
 
           // Commandes articles (uniforms from boutique_articles + selected articles)
           const commandesArticles: any[] = [];
-          const prixTenueScolaire = getBoutiquePrice(boutiqueArticles, 'tenue_scolaire');
+          const clCmd = classes.find((c: any) => c.id === child.classeId);
+          const cycleNameCmd = clCmd?.niveaux?.cycles?.nom || '';
+          const isPrimaireCmd = ['Crèche', 'Maternelle', 'Primaire'].includes(cycleNameCmd);
+          const prixTenueScolaire = getBoutiquePriceByCycle(boutiqueArticles, 'tenue_scolaire', isPrimaireCmd);
           const prixTenueSport = getBoutiquePrice(boutiqueArticles, 'tenue_sport');
           const prixPoloLacoste = getBoutiquePrice(boutiqueArticles, 'polo_lacoste');
           const prixKarate = getBoutiquePrice(boutiqueArticles, 'tenue_karate');
@@ -576,7 +590,7 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
         const zone = zones.find((z: any) => z.id === child.zoneTransportId);
         const suggestedZoneId = suggestZone(child.adresse || adresseParent);
 
-        const prixTenueScolaire = getBoutiquePrice(boutiqueArticles, 'tenue_scolaire');
+        const prixTenueScolaire = getBoutiquePriceByCycle(boutiqueArticles, 'tenue_scolaire', isPrimaire);
         const prixTenueSport = getBoutiquePrice(boutiqueArticles, 'tenue_sport');
         const prixPoloLacoste = getBoutiquePrice(boutiqueArticles, 'polo_lacoste');
         const prixKarate = getBoutiquePrice(boutiqueArticles, 'tenue_karate');
