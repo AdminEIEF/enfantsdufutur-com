@@ -39,7 +39,7 @@ serve(async (req) => {
   }
 
   try {
-    const { token, action, notification_id, conge, avance } = await req.json();
+    const { token, action, notification_id, conge, avance, courrier } = await req.json();
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     let employeId: string;
@@ -72,7 +72,6 @@ serve(async (req) => {
         });
       }
 
-      // Pointages du mois
       const now = new Date();
       const startMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
       const { data: pointages } = await supabaseAdmin
@@ -82,7 +81,6 @@ serve(async (req) => {
         .gte("date_pointage", startMonth)
         .order("date_pointage", { ascending: false });
 
-      // Congés en cours
       const { data: conges } = await supabaseAdmin
         .from("conges")
         .select("*")
@@ -90,7 +88,6 @@ serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(10);
 
-      // Avances en cours
       const { data: avances } = await supabaseAdmin
         .from("avances_salaire")
         .select("*")
@@ -98,7 +95,6 @@ serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(10);
 
-      // Derniers bulletins
       const { data: bulletins } = await supabaseAdmin
         .from("bulletins_paie")
         .select("*")
@@ -107,7 +103,22 @@ serve(async (req) => {
         .order("mois", { ascending: false })
         .limit(12);
 
-      // Classes, cours & devoirs (for teachers)
+      // Evaluations
+      const { data: evaluations } = await supabaseAdmin
+        .from("evaluations_employes")
+        .select("*")
+        .eq("employe_id", employeId)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      // Courriers
+      const { data: courriers } = await supabaseAdmin
+        .from("courriers_employes")
+        .select("*")
+        .eq("employe_id", employeId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
       let classes: any[] = [];
       let cours_enseignant: any[] = [];
       let devoirs_enseignant: any[] = [];
@@ -140,12 +151,24 @@ serve(async (req) => {
         }
       }
 
+      // All month pointages for recap
+      const startOfYear = `${now.getFullYear()}-01-01`;
+      const { data: allPointages } = await supabaseAdmin
+        .from("pointages_employes")
+        .select("*")
+        .eq("employe_id", employeId)
+        .gte("date_pointage", startOfYear)
+        .order("date_pointage", { ascending: false });
+
       return new Response(JSON.stringify({
         employe,
         pointages: pointages || [],
+        allPointages: allPointages || [],
         conges: conges || [],
         avances: avances || [],
         bulletins: bulletins || [],
+        evaluations: evaluations || [],
+        courriers: courriers || [],
         classes,
         cours_enseignant,
         devoirs_enseignant,
@@ -238,6 +261,45 @@ serve(async (req) => {
       });
       if (insertErr) throw insertErr;
       return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ─── ENVOYER UN COURRIER ───
+    if (action === "envoyer_courrier") {
+      if (!courrier?.objet || !courrier?.contenu) {
+        return new Response(JSON.stringify({ error: "Objet et contenu requis" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      // If type is maladie, require a file
+      if (courrier.type === "maladie" && !courrier.fichier_url) {
+        return new Response(JSON.stringify({ error: "Un justificatif est obligatoire pour un congé maladie" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { error: insertErr } = await supabaseAdmin.from("courriers_employes").insert({
+        employe_id: employeId,
+        type: courrier.type || "demande",
+        objet: courrier.objet,
+        contenu: courrier.contenu,
+        fichier_url: courrier.fichier_url || null,
+        fichier_nom: courrier.fichier_nom || null,
+      });
+      if (insertErr) throw insertErr;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ─── UPLOAD COURRIER FILE (returns signed upload URL) ───
+    if (action === "upload_courrier_file") {
+      const fileName = `${employeId}/${Date.now()}_${courrier?.fichier_nom || 'file'}`;
+      // We'll handle this client-side via direct fetch with the service role
+      // Just return a path for the client to use
+      return new Response(JSON.stringify({ path: fileName, bucket: 'courriers-employes' }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

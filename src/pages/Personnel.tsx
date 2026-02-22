@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import {
   Briefcase, Plus, Search, Loader2, Clock, Calendar, DollarSign, FileText,
   Check, X, Eye, Trash2, Upload, UserPlus, Users, ScanLine, CreditCard, Printer,
-  Camera, Download, Key
+  Camera, Download, Key, Mail, Paperclip, BarChart3, MessageSquare
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -118,6 +118,53 @@ function EmployeeDocuments({ employeId }: { employeId: string }) {
   );
 }
 
+function EvalForm({ employes, user, onDone }: { employes: any[]; user: any; onDone: () => void }) {
+  const { toast } = useToast();
+  const [empId, setEmpId] = useState('');
+  const [periode, setPeriode] = useState(`${new Date().getFullYear()}-S1`);
+  const [scores, setScores] = useState({ pedagogie: 5, ponctualite: 5, assiduite: 5, relations: 5, competences: 5, initiative: 5 });
+  const [commentaire, setCommentaire] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!empId) { toast({ title: 'Sélectionnez un employé', variant: 'destructive' }); return; }
+    setSaving(true);
+    const { error } = await supabase.from('evaluations_employes').insert({
+      employe_id: empId, periode, ...scores, commentaire: commentaire || null, evalue_par: user?.id,
+    });
+    setSaving(false);
+    if (error) { toast({ title: 'Erreur', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: '✅ Évaluation enregistrée' });
+    onDone();
+  };
+
+  const labels: Record<string, string> = { pedagogie: 'Pédagogie', ponctualite: 'Ponctualité', assiduite: 'Assiduité', relations: 'Relations', competences: 'Compétences', initiative: 'Initiative' };
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1"><Label>Employé *</Label>
+        <Select value={empId} onValueChange={setEmpId}>
+          <SelectTrigger><SelectValue placeholder="Sélectionner..." /></SelectTrigger>
+          <SelectContent>{employes.filter((e: any) => e.statut === 'actif').map((e: any) => (
+            <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom} ({e.matricule})</SelectItem>
+          ))}</SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1"><Label>Période</Label><Input value={periode} onChange={e => setPeriode(e.target.value)} placeholder="Ex: 2025-S1" /></div>
+      {Object.keys(labels).map(k => (
+        <div key={k} className="flex items-center justify-between">
+          <Label className="text-xs">{labels[k]}</Label>
+          <Input type="number" min={0} max={10} className="w-20 h-8 text-center" value={(scores as any)[k]} onChange={e => setScores(s => ({ ...s, [k]: Number(e.target.value) }))} />
+        </div>
+      ))}
+      <div className="space-y-1"><Label>Commentaire</Label><Textarea value={commentaire} onChange={e => setCommentaire(e.target.value)} /></div>
+      <Button className="w-full" onClick={handleSave} disabled={saving}>
+        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}Enregistrer l'évaluation
+      </Button>
+    </div>
+  );
+}
+
 export default function Personnel() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -136,6 +183,7 @@ export default function Personnel() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraTarget, setCameraTarget] = useState<'add' | 'detail'>('add');
   const [passwordGenOpen, setPasswordGenOpen] = useState(false);
+  const [viewCourrierAdmin, setViewCourrierAdmin] = useState<any>(null);
 
   // Form state for new employee
   const [form, setForm] = useState({
@@ -201,6 +249,34 @@ export default function Personnel() {
         .select('*, employes(nom, prenom, matricule)')
         .eq('statut', 'en_attente')
         .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch courriers
+  const { data: courriers = [], refetch: refetchCourriers } = useQuery({
+    queryKey: ['courriers-employes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('courriers_employes')
+        .select('*, employes(nom, prenom, matricule, categorie)')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch evaluations
+  const { data: evaluationsAdmin = [] } = useQuery({
+    queryKey: ['evaluations-employes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('evaluations_employes')
+        .select('*, employes(nom, prenom, matricule)')
+        .order('created_at', { ascending: false })
+        .limit(100);
       if (error) throw error;
       return data;
     },
@@ -527,6 +603,8 @@ export default function Personnel() {
           <TabsTrigger value="conges"><Calendar className="h-3.5 w-3.5 mr-1" />Congés ({congesEnAttente.length})</TabsTrigger>
           <TabsTrigger value="avances"><DollarSign className="h-3.5 w-3.5 mr-1" />Avances ({avancesEnAttente.length})</TabsTrigger>
           <TabsTrigger value="paie"><FileText className="h-3.5 w-3.5 mr-1" />Paie</TabsTrigger>
+          <TabsTrigger value="courriers"><Mail className="h-3.5 w-3.5 mr-1" />Courriers ({courriers.filter((c: any) => c.statut === 'non_lu').length})</TabsTrigger>
+          <TabsTrigger value="evaluations"><BarChart3 className="h-3.5 w-3.5 mr-1" />Évaluations</TabsTrigger>
         </TabsList>
 
         {/* Employés */}
@@ -768,6 +846,137 @@ export default function Personnel() {
             </div>
           </Card>
         </TabsContent>
+
+        {/* Courriers */}
+        <TabsContent value="courriers" className="mt-4">
+          <Card>
+            <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Mail className="h-4 w-4" /> Courriers reçus des employés</CardTitle></CardHeader>
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employé</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Objet</TableHead>
+                    <TableHead>Pièce jointe</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {courriers.length === 0 ? (
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun courrier</TableCell></TableRow>
+                  ) : courriers.map((c: any) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-medium">{c.employes?.prenom} {c.employes?.nom}</TableCell>
+                      <TableCell>
+                        <Badge variant={c.type === 'maladie' ? 'destructive' : 'secondary'} className="text-xs">
+                          {c.type === 'maladie' ? '🏥 Maladie' : c.type === 'plainte' ? '⚠️ Plainte' : c.type === 'demande' ? '📩 Demande' : '📝 Autre'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-48 truncate text-sm">{c.objet}</TableCell>
+                      <TableCell>
+                        {c.fichier_url ? (
+                          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => window.open(c.fichier_url, '_blank')}>
+                            <Paperclip className="h-3.5 w-3.5 mr-1" /> {c.fichier_nom || 'Voir'}
+                          </Button>
+                        ) : '—'}
+                      </TableCell>
+                      <TableCell className="text-sm">{format(new Date(c.created_at), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>
+                        <Badge variant={c.statut === 'traite' ? 'default' : c.statut === 'lu' ? 'secondary' : 'outline'} className="text-xs">
+                          {c.statut === 'traite' ? 'Traité' : c.statut === 'lu' ? 'Lu' : 'Non lu'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => {
+                            setViewCourrierAdmin(c);
+                          }} title="Lire">
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          {c.statut === 'non_lu' && (
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={async () => {
+                              await supabase.from('courriers_employes').update({ statut: 'lu' }).eq('id', c.id);
+                              refetchCourriers();
+                            }} title="Marquer comme lu">
+                              <Check className="h-3.5 w-3.5 text-green-600" />
+                            </Button>
+                          )}
+                          {c.statut !== 'traite' && (
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={async () => {
+                              const reponse = prompt('Réponse à envoyer (optionnel):');
+                              await supabase.from('courriers_employes').update({
+                                statut: 'traite',
+                                reponse: reponse || null,
+                                traite_par: user?.id,
+                                traite_at: new Date().toISOString(),
+                              }).eq('id', c.id);
+                              toast({ title: '✅ Courrier traité' });
+                              refetchCourriers();
+                            }} title="Traiter">
+                              <FileText className="h-3.5 w-3.5 text-blue-600" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* Évaluations */}
+        <TabsContent value="evaluations" className="mt-4 space-y-4">
+          <div className="flex justify-end">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="sm"><BarChart3 className="h-4 w-4 mr-1" /> Nouvelle évaluation</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Évaluer un employé</DialogTitle></DialogHeader>
+                <EvalForm employes={employes} user={user} onDone={() => qc.invalidateQueries({ queryKey: ['evaluations-employes'] })} />
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <Card>
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employé</TableHead>
+                    <TableHead>Période</TableHead>
+                    <TableHead>Moyenne</TableHead>
+                    <TableHead>Commentaire</TableHead>
+                    <TableHead>Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {evaluationsAdmin.length === 0 ? (
+                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucune évaluation</TableCell></TableRow>
+                  ) : evaluationsAdmin.map((ev: any) => {
+                    const avg = ((Number(ev.pedagogie) + Number(ev.ponctualite) + Number(ev.assiduite) + Number(ev.relations) + Number(ev.competences) + Number(ev.initiative)) / 6).toFixed(1);
+                    return (
+                      <TableRow key={ev.id}>
+                        <TableCell className="font-medium">{ev.employes?.prenom} {ev.employes?.nom}</TableCell>
+                        <TableCell>{ev.periode}</TableCell>
+                        <TableCell>
+                          <Badge variant={Number(avg) >= 7 ? 'default' : Number(avg) >= 5 ? 'secondary' : 'destructive'}>{avg}/10</Badge>
+                        </TableCell>
+                        <TableCell className="max-w-48 truncate text-sm">{ev.commentaire || '—'}</TableCell>
+                        <TableCell className="text-sm">{format(new Date(ev.created_at), 'dd/MM/yyyy')}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Employee detail dialog */}
@@ -898,6 +1107,40 @@ export default function Personnel() {
             <Button className="flex-1" onClick={generatePassword}><Key className="h-4 w-4 mr-1" /> Confirmer</Button>
             <Button variant="outline" onClick={() => setPasswordGenOpen(false)}>Annuler</Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Courrier detail dialog */}
+      <Dialog open={!!viewCourrierAdmin} onOpenChange={v => { if (!v) setViewCourrierAdmin(null); }}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          {viewCourrierAdmin && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{viewCourrierAdmin.objet}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Badge variant={viewCourrierAdmin.type === 'maladie' ? 'destructive' : 'secondary'}>
+                    {viewCourrierAdmin.type === 'maladie' ? '🏥 Maladie' : viewCourrierAdmin.type === 'plainte' ? '⚠️ Plainte' : '📩 ' + viewCourrierAdmin.type}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">de {viewCourrierAdmin.employes?.prenom} {viewCourrierAdmin.employes?.nom}</span>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-4 text-sm whitespace-pre-wrap">{viewCourrierAdmin.contenu}</div>
+                {viewCourrierAdmin.fichier_url && (
+                  <Button size="sm" variant="outline" onClick={() => window.open(viewCourrierAdmin.fichier_url, '_blank')}>
+                    <Paperclip className="h-3.5 w-3.5 mr-1" /> {viewCourrierAdmin.fichier_nom || 'Voir la pièce jointe'}
+                  </Button>
+                )}
+                {viewCourrierAdmin.reponse && (
+                  <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Réponse</p>
+                    <p className="text-sm">{viewCourrierAdmin.reponse}</p>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">{format(new Date(viewCourrierAdmin.created_at), 'dd/MM/yyyy HH:mm')}</p>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

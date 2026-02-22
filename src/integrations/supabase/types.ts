@@ -457,6 +457,62 @@ export type Database = {
           },
         ]
       }
+      courriers_employes: {
+        Row: {
+          contenu: string
+          created_at: string
+          employe_id: string
+          fichier_nom: string | null
+          fichier_url: string | null
+          id: string
+          objet: string
+          reponse: string | null
+          statut: string
+          traite_at: string | null
+          traite_par: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          contenu: string
+          created_at?: string
+          employe_id: string
+          fichier_nom?: string | null
+          fichier_url?: string | null
+          id?: string
+          objet: string
+          reponse?: string | null
+          statut?: string
+          traite_at?: string | null
+          traite_par?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          contenu?: string
+          created_at?: string
+          employe_id?: string
+          fichier_nom?: string | null
+          fichier_url?: string | null
+          id?: string
+          objet?: string
+          reponse?: string | null
+          statut?: string
+          traite_at?: string | null
+          traite_par?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courriers_employes_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cours: {
         Row: {
           classe_id: string
@@ -921,6 +977,59 @@ export type Database = {
             columns: ["matiere_id"]
             isOneToOne: false
             referencedRelation: "matieres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluations_employes: {
+        Row: {
+          assiduite: number | null
+          commentaire: string | null
+          competences: number | null
+          created_at: string
+          employe_id: string
+          evalue_par: string | null
+          id: string
+          initiative: number | null
+          pedagogie: number | null
+          periode: string
+          ponctualite: number | null
+          relations: number | null
+        }
+        Insert: {
+          assiduite?: number | null
+          commentaire?: string | null
+          competences?: number | null
+          created_at?: string
+          employe_id: string
+          evalue_par?: string | null
+          id?: string
+          initiative?: number | null
+          pedagogie?: number | null
+          periode: string
+          ponctualite?: number | null
+          relations?: number | null
+        }
+        Update: {
+          assiduite?: number | null
+          commentaire?: string | null
+          competences?: number | null
+          created_at?: string
+          employe_id?: string
+          evalue_par?: string | null
+          id?: string
+          initiative?: number | null
+          pedagogie?: number | null
+          periode?: string
+          ponctualite?: number | null
+          relations?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluations_employes_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
             referencedColumns: ["id"]
           },
         ]
