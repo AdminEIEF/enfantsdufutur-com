@@ -38,6 +38,7 @@ import ParentDashboard from "./pages/parent/ParentDashboard";
 import ParentEnfant from "./pages/parent/ParentEnfant";
 import { ParentAuthProvider } from "@/hooks/useParentAuth";
 import { StudentAuthProvider } from "@/hooks/useStudentAuth";
+import { EmployeeAuthProvider } from "@/hooks/useEmployeeAuth";
 import StudentLogin from "./pages/student/StudentLogin";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentCours from "./pages/student/StudentCours";
@@ -45,6 +46,12 @@ import StudentDevoirs from "./pages/student/StudentDevoirs";
 import StudentResultats from "./pages/student/StudentResultats";
 import ParentNotifications from "./pages/parent/ParentNotifications";
 import StudentNotifications from "./pages/student/StudentNotifications";
+import Personnel from "./pages/Personnel";
+import EmployeeLogin from "./pages/employee/EmployeeLogin";
+import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
+import EmployeeConges from "./pages/employee/EmployeeConges";
+import EmployeePaie from "./pages/employee/EmployeePaie";
+import EmployeeNotifications from "./pages/employee/EmployeeNotifications";
 
 const queryClient = new QueryClient();
 
@@ -122,6 +129,11 @@ const App = () => (
             <Route path="/eleve/devoirs" element={<StudentAuthProvider><StudentDevoirs /></StudentAuthProvider>} />
             <Route path="/eleve/resultats" element={<StudentAuthProvider><StudentResultats /></StudentAuthProvider>} />
             <Route path="/eleve/notifications" element={<StudentAuthProvider><StudentNotifications /></StudentAuthProvider>} />
+            <Route path="/employe" element={<EmployeeAuthProvider><EmployeeLogin /></EmployeeAuthProvider>} />
+            <Route path="/employe/dashboard" element={<EmployeeAuthProvider><EmployeeDashboard /></EmployeeAuthProvider>} />
+            <Route path="/employe/conges" element={<EmployeeAuthProvider><EmployeeConges /></EmployeeAuthProvider>} />
+            <Route path="/employe/paie" element={<EmployeeAuthProvider><EmployeePaie /></EmployeeAuthProvider>} />
+            <Route path="/employe/notifications" element={<EmployeeAuthProvider><EmployeeNotifications /></EmployeeAuthProvider>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/inscriptions" element={<ProtectedRoute><Inscriptions /></ProtectedRoute>} />
             <Route path="/familles" element={<ProtectedRoute><Familles /></ProtectedRoute>} />
@@ -140,6 +152,7 @@ const App = () => (
             <Route path="/librairie" element={<ProtectedRoute><Librairie /></ProtectedRoute>} />
             <Route path="/bibliotheque" element={<ProtectedRoute><Bibliotheque /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+            <Route path="/personnel" element={<ProtectedRoute><Personnel /></ProtectedRoute>} />
             <Route path="/boutique" element={<ProtectedRoute><Boutique /></ProtectedRoute>} />
             <Route path="/tracabilite" element={<ProtectedRoute><Tracabilite /></ProtectedRoute>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
