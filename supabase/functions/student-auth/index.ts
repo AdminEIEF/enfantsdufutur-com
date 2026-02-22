@@ -42,8 +42,20 @@ serve(async (req) => {
       });
     }
 
-    // Check password
-    if (!eleve.mot_de_passe_eleve || eleve.mot_de_passe_eleve !== password.trim()) {
+    // Check password using bcrypt verification
+    if (!eleve.mot_de_passe_eleve) {
+      return new Response(JSON.stringify({ error: "Mot de passe non configuré" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
+    const { data: pwCheck } = await supabaseAdmin.rpc('verify_password', {
+      _hash: eleve.mot_de_passe_eleve,
+      _password: password.trim()
+    });
+    
+    if (!pwCheck) {
       return new Response(JSON.stringify({ error: "Mot de passe incorrect" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
