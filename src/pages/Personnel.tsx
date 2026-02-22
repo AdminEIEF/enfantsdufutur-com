@@ -126,7 +126,7 @@ export default function Personnel() {
 
   // Form state for new employee
   const [form, setForm] = useState({
-    matricule: '', nom: '', prenom: '', sexe: 'M', telephone: '', email: '',
+    nom: '', prenom: '', sexe: 'M', telephone: '', email: '',
     adresse: '', categorie: 'service' as string, poste: '', salaire_base: '',
     date_embauche: new Date().toISOString().slice(0, 10), mot_de_passe: '',
   });
@@ -211,9 +211,16 @@ export default function Personnel() {
   // Add employee mutation
   const addEmployee = useMutation({
     mutationFn: async () => {
-      if (!form.matricule || !form.nom || !form.prenom) throw new Error('Champs obligatoires manquants');
+      if (!form.nom || !form.prenom) throw new Error('Nom et prénom obligatoires');
+      // Auto-generate matricule: PREFIX-XXXX
+      const prefixMap: Record<string, string> = { enseignant: 'ENS', administration: 'ADM', service: 'SRV', direction: 'DIR' };
+      const prefix = prefixMap[form.categorie] || 'EMP';
+      const { count } = await supabase.from('employes').select('id', { count: 'exact', head: true });
+      const num = String((count || 0) + 1).padStart(4, '0');
+      const matricule = `${prefix}-${num}`;
+
       const { error } = await supabase.from('employes').insert({
-        matricule: form.matricule.toUpperCase(),
+        matricule,
         nom: form.nom,
         prenom: form.prenom,
         sexe: form.sexe,
@@ -232,7 +239,7 @@ export default function Personnel() {
       toast({ title: '✅ Employé ajouté' });
       qc.invalidateQueries({ queryKey: ['employes'] });
       setAddOpen(false);
-      setForm({ matricule: '', nom: '', prenom: '', sexe: 'M', telephone: '', email: '', adresse: '', categorie: 'service', poste: '', salaire_base: '', date_embauche: new Date().toISOString().slice(0, 10), mot_de_passe: '' });
+      setForm({ nom: '', prenom: '', sexe: 'M', telephone: '', email: '', adresse: '', categorie: 'service', poste: '', salaire_base: '', date_embauche: new Date().toISOString().slice(0, 10), mot_de_passe: '' });
     },
     onError: (err: any) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
   });
@@ -362,8 +369,7 @@ export default function Personnel() {
             <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Nouvel employé</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1"><Label>Matricule *</Label><Input value={form.matricule} onChange={e => setForm(f => ({ ...f, matricule: e.target.value.toUpperCase() }))} placeholder="EMP-001" /></div>
+                <div className="grid grid-cols-1 gap-3">
                   <div className="space-y-1"><Label>Catégorie *</Label>
                     <Select value={form.categorie} onValueChange={v => setForm(f => ({ ...f, categorie: v }))}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
@@ -374,6 +380,7 @@ export default function Personnel() {
                         <SelectItem value="direction">Direction</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-[10px] text-muted-foreground">Le matricule sera généré automatiquement (ex: ENS-0001)</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
