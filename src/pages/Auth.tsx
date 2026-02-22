@@ -181,13 +181,47 @@ export default function Auth() {
             </div>
             <div className="absolute inset-0 rounded-2xl border-[4px] border-primary/30" />
           <motion.div
-            className="relative w-full space-y-8 bg-background rounded-2xl p-6"
+            className="relative w-full space-y-8 bg-background rounded-2xl p-6 overflow-hidden"
             initial="hidden"
             animate="visible"
             variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
           >
+            {/* Globe watermark behind content */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-36 h-36 opacity-[0.12] pointer-events-none z-0">
+              <svg viewBox="0 0 100 100" className="w-full h-full">
+                <circle cx="50" cy="50" r="26" fill="hsl(var(--muted))" />
+                <circle cx="50" cy="50" r="26" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2.5" />
+                <ellipse cx="50" cy="50" rx="26" ry="9" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" />
+                <ellipse cx="50" cy="50" rx="9" ry="26" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" />
+                <path d="M38 35 Q45 30 55 33 Q58 38 52 42 Q45 40 38 35Z" fill="hsl(var(--foreground))" opacity="0.4" />
+                <path d="M42 52 Q48 48 56 50 Q58 56 50 60 Q44 58 42 52Z" fill="hsl(var(--foreground))" opacity="0.4" />
+                <ellipse cx="50" cy="50" rx="42" ry="14" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.8" transform="rotate(-25 50 50)" />
+                <ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="#eab308" strokeWidth="2" opacity="0.7" transform="rotate(35 50 50)" />
+                <ellipse cx="50" cy="50" rx="44" ry="12" fill="none" stroke="#16a34a" strokeWidth="1.5" opacity="0.6" transform="rotate(-60 50 50)" />
+              </svg>
+              {/* Animated orbiting dots */}
+              <motion.div
+                className="absolute w-3 h-3 rounded-full bg-[#dc2626]"
+                animate={{ x: [0, 36, 44, 12, -24, -42, -30, 0], y: [-16, -6, 12, 20, 12, -4, -14, -16] }}
+                transition={{ duration: 3.5, repeat: Infinity, ease: 'linear' }}
+                style={{ top: '18%', left: '42%' }}
+              />
+              <motion.div
+                className="absolute w-3 h-3 rounded-full bg-[#eab308]"
+                animate={{ x: [44, 12, -24, -42, -30, 0, 36, 44], y: [12, 20, 12, -4, -14, -16, -6, 12] }}
+                transition={{ duration: 3.5, repeat: Infinity, ease: 'linear' }}
+                style={{ top: '18%', left: '42%' }}
+              />
+              <motion.div
+                className="absolute w-2.5 h-2.5 rounded-full bg-[#16a34a]"
+                animate={{ x: [-24, -42, -30, 0, 36, 44, 12, -24], y: [12, -4, -14, -16, -6, 12, 20, 12] }}
+                transition={{ duration: 3.5, repeat: Infinity, ease: 'linear' }}
+                style={{ top: '18%', left: '42%' }}
+              />
+            </div>
+
             {/* Header */}
-            <motion.div className="space-y-2" variants={fadeUp} custom={0}>
+            <motion.div className="relative z-10 space-y-2" variants={fadeUp} custom={0}>
               <h2 className="text-2xl font-bold tracking-tight" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 Espace Personnel
               </h2>
@@ -196,7 +230,7 @@ export default function Auth() {
               </p>
             </motion.div>
 
-            <motion.div variants={fadeUp} custom={1}>
+            <motion.div className="relative z-10" variants={fadeUp} custom={1}>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 h-11">
                   <TabsTrigger value="login" className="gap-2 text-sm">
@@ -279,63 +313,8 @@ export default function Auth() {
               </Tabs>
             </motion.div>
 
-            {/* Globe illustration inside card */}
-            <motion.div className="flex justify-center py-2" variants={fadeUp} custom={2}>
-              <div className="relative w-28 h-28">
-                {/* Globe body */}
-                <svg viewBox="0 0 100 100" className="w-full h-full">
-                  {/* Globe fill */}
-                  <circle cx="50" cy="50" r="26" fill="hsl(var(--muted))" opacity="0.5" />
-                  <circle cx="50" cy="50" r="26" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2.5" opacity="0.6" />
-                  {/* Horizontal meridian */}
-                  <ellipse cx="50" cy="50" rx="26" ry="9" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.35" />
-                  {/* Vertical meridian */}
-                  <ellipse cx="50" cy="50" rx="9" ry="26" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.35" />
-                  {/* Continent hints */}
-                  <path d="M38 35 Q45 30 55 33 Q58 38 52 42 Q45 40 38 35Z" fill="hsl(var(--foreground))" opacity="0.15" />
-                  <path d="M42 52 Q48 48 56 50 Q58 56 50 60 Q44 58 42 52Z" fill="hsl(var(--foreground))" opacity="0.15" />
-                  {/* Orbit ring 1 - tilted */}
-                  <ellipse cx="50" cy="50" rx="42" ry="14" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.8" opacity="0.25" transform="rotate(-25 50 50)" />
-                  {/* Orbit ring 2 - opposite tilt */}
-                  <ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="#eab308" strokeWidth="1.5" opacity="0.4" transform="rotate(35 50 50)" />
-                  {/* Orbit ring 3 */}
-                  <ellipse cx="50" cy="50" rx="44" ry="12" fill="none" stroke="#16a34a" strokeWidth="1" opacity="0.3" transform="rotate(-60 50 50)" />
-                </svg>
-                {/* Red dot */}
-                <motion.div
-                  className="absolute w-3 h-3 rounded-full bg-[#dc2626] shadow-[0_0_10px_#dc2626]"
-                  animate={{
-                    x: [0, 36, 44, 12, -24, -42, -30, 0],
-                    y: [-16, -6, 12, 20, 12, -4, -14, -16],
-                  }}
-                  transition={{ duration: 3.5, repeat: Infinity, ease: 'linear' }}
-                  style={{ top: '18%', left: '42%' }}
-                />
-                {/* Yellow dot */}
-                <motion.div
-                  className="absolute w-3 h-3 rounded-full bg-[#eab308] shadow-[0_0_10px_#eab308]"
-                  animate={{
-                    x: [44, 12, -24, -42, -30, 0, 36, 44],
-                    y: [12, 20, 12, -4, -14, -16, -6, 12],
-                  }}
-                  transition={{ duration: 3.5, repeat: Infinity, ease: 'linear' }}
-                  style={{ top: '18%', left: '42%' }}
-                />
-                {/* Green dot */}
-                <motion.div
-                  className="absolute w-2.5 h-2.5 rounded-full bg-[#16a34a] shadow-[0_0_10px_#16a34a]"
-                  animate={{
-                    x: [-24, -42, -30, 0, 36, 44, 12, -24],
-                    y: [12, -4, -14, -16, -6, 12, 20, 12],
-                  }}
-                  transition={{ duration: 3.5, repeat: Infinity, ease: 'linear' }}
-                  style={{ top: '18%', left: '42%' }}
-                />
-              </div>
-            </motion.div>
-
             {/* Footer actions */}
-            <motion.div className="space-y-3 pt-3 border-t border-border" variants={fadeUp} custom={3}>
+            <motion.div className="relative z-10 space-y-3 pt-3 border-t border-border" variants={fadeUp} custom={2}>
               {isInstallable && (
                 <Button variant="outline" className="w-full h-10" onClick={install}>
                   <Download className="mr-2 h-4 w-4" />

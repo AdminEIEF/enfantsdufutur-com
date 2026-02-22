@@ -31,7 +31,7 @@ interface ParentEleve {
 interface ParentSession {
   famille: ParentFamille;
   eleves: ParentEleve[];
-  code: string;
+  token: string;
 }
 
 interface ParentAuthContextType {
@@ -80,7 +80,7 @@ export function ParentAuthProvider({ children }: { children: ReactNode }) {
     const newSession: ParentSession = {
       famille: data.famille,
       eleves: data.eleves,
-      code: code.trim().toUpperCase(),
+      token: data.token || code.trim().toUpperCase(),
     };
     setSession(newSession);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newSession));

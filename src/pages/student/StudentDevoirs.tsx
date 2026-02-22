@@ -36,7 +36,7 @@ export default function StudentDevoirs() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ matricule: session!.matricule, password: session!.password, action: 'devoirs' }),
+          body: JSON.stringify({ matricule: session!.matricule, password: session!.token, action: 'devoirs' }),
         }
       );
       const data = await resp.json();
@@ -84,7 +84,7 @@ export default function StudentDevoirs() {
           },
           body: JSON.stringify({
             matricule: session.matricule,
-            password: session.password,
+            password: session.token,
             devoir_id: devoirId,
             fichier_url: publicUrl,
             fichier_nom: file.name,

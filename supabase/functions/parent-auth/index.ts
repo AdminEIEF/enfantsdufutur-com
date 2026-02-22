@@ -51,8 +51,21 @@ serve(async (req) => {
 
     if (elevesErr) throw elevesErr;
 
+    // Generate a session token
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    const tokenData = `${famille.id}:${Date.now()}`;
+    const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(tokenData));
+    const token = btoa(tokenData + ":" + Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join(''));
+
     return new Response(
-      JSON.stringify({ famille, eleves: eleves || [] }),
+      JSON.stringify({ famille, eleves: eleves || [], token }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
