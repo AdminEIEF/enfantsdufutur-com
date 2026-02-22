@@ -111,9 +111,14 @@ export default function EmployeeConges() {
 
   if (!session) return null;
 
-  const statutBadge = (s: string) => {
+  const statutBadge = (s: string, motif?: string) => {
     if (s === 'approuve') return <Badge className="bg-green-500">Approuvé</Badge>;
-    if (s === 'refuse') return <Badge variant="destructive">Refusé</Badge>;
+    if (s === 'refuse') return (
+      <div className="text-right">
+        <Badge variant="destructive">Refusé</Badge>
+        {motif && <p className="text-[10px] text-destructive mt-0.5 max-w-32">{motif}</p>}
+      </div>
+    );
     return <Badge variant="secondary">En attente</Badge>;
   };
 
@@ -211,7 +216,7 @@ export default function EmployeeConges() {
                         </p>
                         {c.motif && <p className="text-xs text-muted-foreground">{c.motif}</p>}
                       </div>
-                      {statutBadge(c.statut)}
+                      {statutBadge(c.statut, c.motif)}
                     </div>
                   ))}
                 </div>
@@ -234,7 +239,7 @@ export default function EmployeeConges() {
                         {a.motif && <p className="text-xs text-muted-foreground">{a.motif}</p>}
                         <p className="text-xs text-muted-foreground">{format(new Date(a.created_at), 'dd MMM yyyy', { locale: fr })}</p>
                       </div>
-                      {statutBadge(a.statut)}
+                      {statutBadge(a.statut, a.motif)}
                     </div>
                   ))}
                 </div>
