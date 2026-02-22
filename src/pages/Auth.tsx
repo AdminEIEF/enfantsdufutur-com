@@ -94,7 +94,7 @@ export default function Auth() {
                 </div>
               )}
               <span className="font-bold text-xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                {schoolConfig?.nom || 'EI Enfant du Futur'}
+                {schoolConfig?.nom || 'Ecole Internationale Les Enfants du Futur'}
               </span>
             </Link>
           </motion.div>

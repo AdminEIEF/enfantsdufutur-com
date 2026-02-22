@@ -53,7 +53,7 @@ export default function BulletinScolaire({
   chartData,
   cycleName,
   anneeScolaire = '2025 - 2026',
-  schoolName = 'Groupe Scolaire EI Enfant du Futur',
+  schoolName = 'Ecole Internationale Les Enfants du Futur',
   schoolSubtitle = 'Enseignement Général et Technique',
   schoolCity = 'Conakry, Guinée',
   schoolLogoUrl,

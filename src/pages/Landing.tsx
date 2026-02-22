@@ -92,7 +92,7 @@ export default function Landing() {
                 </div>
               )}
               <span className="font-bold text-sm sm:text-lg truncate" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                {schoolConfig?.nom || 'EI Enfant du Futur'}
+                {schoolConfig?.nom || 'Ecole Internationale Les Enfants du Futur'}
               </span>
             </Link>
             <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
@@ -253,7 +253,7 @@ export default function Landing() {
             Investir maintenant pour Sourire demain !
           </h2>
           <p className="text-primary-foreground/80 text-lg max-w-xl mx-auto mb-8">
-            Rejoignez la communauté EI Enfant du Futur et donnez à votre enfant les outils pour réussir.
+            Rejoignez la communauté de l'Ecole Internationale Les Enfants du Futur et donnez à votre enfant les outils pour réussir.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/auth">
@@ -282,7 +282,7 @@ export default function Landing() {
                   <GraduationCap className="h-5 w-5 text-primary-foreground" />
                 </div>
                 <span className="font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                  EI Enfant du Futur
+                  Ecole Internationale Les Enfants du Futur
                 </span>
               </div>
               <p className="text-background/60 text-sm leading-relaxed">
