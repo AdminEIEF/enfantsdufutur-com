@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { EmployeeLayout } from '@/components/EmployeeLayout';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Loader2, FileText, DollarSign, Download } from 'lucide-react';
-
+import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -33,7 +33,24 @@ export default function EmployeePaie() {
   if (!session) return null;
 
   const handleDownload = async (b: any) => {
-    // PDF generation removed
+    generateBulletinPaiePDF({
+      employe: {
+        nom: session.employe.nom,
+        prenom: session.employe.prenom,
+        matricule: session.employe.matricule,
+        poste: session.employe.poste,
+        categorie: session.employe.categorie,
+        date_embauche: session.employe.date_embauche,
+      },
+      mois: b.mois,
+      annee: b.annee,
+      salaire_brut: Number(b.salaire_brut),
+      primes: Number(b.primes),
+      retenues: Number(b.retenues),
+      avances_deduites: Number(b.avances_deduites),
+      salaire_net: Number(b.salaire_net),
+      commentaire: b.commentaire,
+    });
   };
 
   return (
