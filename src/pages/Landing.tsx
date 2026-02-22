@@ -84,7 +84,7 @@ export default function Landing() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
-            <Link to="/" onClick={() => window.scrollTo(0, 0)} className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity min-w-0">
+            <Link to="/" onClick={() => window.scrollTo(0, 0)} className="flex items-center hover:opacity-80 transition-opacity">
               {schoolConfig?.logo_url ? (
                 <img src={schoolConfig.logo_url} alt="Logo" className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-contain shrink-0" />
               ) : (
@@ -92,9 +92,6 @@ export default function Landing() {
                   <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
               )}
-              <span className="font-bold text-sm sm:text-lg truncate" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                {schoolConfig?.nom || 'Ecole Internationale Les Enfants du Futur'}
-              </span>
             </Link>
             <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               {isInstallable && (
@@ -136,7 +133,7 @@ export default function Landing() {
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/30" />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-40">
-          <div className="max-w-3xl">
+          <div className="max-w-3xl mx-auto text-center">
             {/* Big colorful title */}
             <motion.h1
               initial={{ opacity: 0, y: -40 }}
@@ -184,7 +181,7 @@ export default function Landing() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.9 }}
-              className="text-sm sm:text-lg lg:text-xl text-white/80 mb-6 sm:mb-8 max-w-lg"
+              className="text-sm sm:text-lg lg:text-xl text-white/80 mb-6 sm:mb-8 max-w-lg mx-auto"
             >
               L'École Internationale Enfant du Futur offre un enseignement d'excellence 
               dans un environnement moderne et bienveillant, du Primaire au Collège.
@@ -194,7 +191,7 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 1.1 }}
-              className="flex flex-wrap gap-2 sm:gap-4"
+              className="flex flex-wrap justify-center gap-2 sm:gap-4"
             >
               <Link to="/auth">
                 <Button size="sm" className="sm:text-base sm:px-8 sm:h-11 text-xs px-4 h-9">
