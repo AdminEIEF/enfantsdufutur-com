@@ -6,6 +6,7 @@ import { BarChart3, TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDow
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
+import { FinanceTresorerieTab } from '@/components/FinanceTresorerieTab';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, LineChart, Line, Area, AreaChart,
@@ -39,6 +40,33 @@ export default function Finances() {
     queryKey: ['depenses-finance'],
     queryFn: async () => {
       const { data, error } = await supabase.from('depenses').select('montant, service, date_depense, sous_categorie, statut').eq('statut', 'validee');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: bulletinsPaie = [] } = useQuery({
+    queryKey: ['bulletins-paie-finance'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('bulletins_paie').select('salaire_net, mois, annee, avances_deduites');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: employesFinance = [] } = useQuery({
+    queryKey: ['employes-finance'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('employes').select('id, salaire_base, statut');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: avancesFinance = [] } = useQuery({
+    queryKey: ['avances-finance'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('avances_salaire').select('montant, montant_rembourse, statut, created_at, employes(prenom, nom)');
       if (error) throw error;
       return data;
     },
@@ -180,7 +208,7 @@ export default function Finances() {
       </div>
 
       <Tabs defaultValue="bilan">
-        <TabsList><TabsTrigger value="bilan">Bilan</TabsTrigger><TabsTrigger value="tendances">Tendances</TabsTrigger><TabsTrigger value="projection">Projection</TabsTrigger><TabsTrigger value="rentabilite">Rentabilité</TabsTrigger></TabsList>
+        <TabsList className="flex-wrap"><TabsTrigger value="bilan">Bilan</TabsTrigger><TabsTrigger value="tendances">Tendances</TabsTrigger><TabsTrigger value="projection">Projection</TabsTrigger><TabsTrigger value="rentabilite">Rentabilité</TabsTrigger><TabsTrigger value="tresorerie">Trésorerie</TabsTrigger></TabsList>
 
         {/* Bilan */}
         <TabsContent value="bilan" className="mt-4 space-y-6">
@@ -343,6 +371,17 @@ export default function Finances() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Trésorerie */}
+        <TabsContent value="tresorerie" className="mt-4">
+          <FinanceTresorerieTab
+            paiements={paiements}
+            depenses={depenses}
+            bulletins={bulletinsPaie}
+            employes={employesFinance}
+            avances={avancesFinance}
+          />
         </TabsContent>
       </Tabs>
     </div>
