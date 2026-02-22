@@ -168,8 +168,20 @@ export default function Auth() {
         </motion.div>
 
         <div className="flex-1 flex items-center justify-center px-6 py-8">
+          <div className="relative w-full max-w-sm">
+            {/* Animated border */}
+            <div className="absolute -inset-[2px] rounded-2xl overflow-hidden">
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: 'conic-gradient(from var(--border-angle), #dc2626, #eab308, #16a34a, #dc2626)',
+                  animation: 'spin-border 3s linear infinite',
+                }}
+              />
+            </div>
+            <div className="absolute inset-0 rounded-2xl border-2 border-primary/30" />
           <motion.div
-            className="w-full max-w-sm space-y-8"
+            className="relative w-full space-y-8 bg-background rounded-2xl p-6"
             initial="hidden"
             animate="visible"
             variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
@@ -280,6 +292,7 @@ export default function Auth() {
               </Link>
             </motion.div>
           </motion.div>
+          </div>
         </div>
       </div>
     </div>
