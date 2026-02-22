@@ -170,7 +170,7 @@ export default function Auth() {
         <div className="flex-1 flex items-center justify-center px-6 py-8">
           <div className="relative w-full max-w-sm">
             {/* Animated border */}
-            <div className="absolute -inset-[2px] rounded-2xl overflow-hidden">
+            <div className="absolute -inset-[4px] rounded-2xl overflow-hidden">
               <div
                 className="absolute inset-0"
                 style={{
@@ -179,7 +179,7 @@ export default function Auth() {
                 }}
               />
             </div>
-            <div className="absolute inset-0 rounded-2xl border-2 border-primary/30" />
+            <div className="absolute inset-0 rounded-2xl border-[3px] border-primary/30" />
           <motion.div
             className="relative w-full space-y-8 bg-background rounded-2xl p-6"
             initial="hidden"
@@ -200,7 +200,7 @@ export default function Auth() {
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 h-11">
                   <TabsTrigger value="login" className="gap-2 text-sm">
-                    <LogIn className="h-4 w-4" />
+                    <motion.span animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }} className="inline-flex"><LogIn className="h-4 w-4" /></motion.span>
                     Connexion
                   </TabsTrigger>
                   <TabsTrigger value="signup" className="gap-2 text-sm">
@@ -234,7 +234,7 @@ export default function Auth() {
                         </div>
                         <motion.div whileTap={{ scale: 0.98 }}>
                           <Button type="submit" className="w-full h-11 text-sm font-medium" disabled={loading}>
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <motion.span animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }} className="inline-flex mr-2"><LogIn className="h-4 w-4" /></motion.span>}
                             Se connecter
                           </Button>
                         </motion.div>
