@@ -410,22 +410,19 @@ function VenteALaCartePanel() {
                       >
                         <CardContent className="pt-0 space-y-1">
                           {items.map((a: any) => {
-                            const dejaAchete = (articlesAchetes[a.id] || 0) > 0;
+                            const nbAchete = articlesAchetes[a.id] || 0;
                             const enPanier = (panier[a.id] || 0) > 0;
                             return (
                               <motion.div
                                 key={a.id}
                                 initial={{ opacity: 0, y: 5 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors ${dejaAchete ? 'bg-emerald-100/50 dark:bg-emerald-900/20' : enPanier ? 'bg-emerald-50 border border-emerald-300 dark:bg-emerald-950/30' : 'bg-muted/50'} ${a.stock <= 0 ? 'opacity-40' : ''}`}
+                                className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors ${enPanier ? 'bg-emerald-50 border border-emerald-300 dark:bg-emerald-950/30' : nbAchete > 0 ? 'bg-emerald-100/50 dark:bg-emerald-900/20' : 'bg-muted/50'} ${a.stock <= 0 ? 'opacity-40' : ''}`}
                               >
                                 <div className="flex items-center gap-2">
-                                  {dejaAchete ? (
-                                    <span className="text-emerald-600 text-xs">✓</span>
-                                  ) : (
-                                    <Checkbox checked={enPanier} onCheckedChange={(v) => togglePanier(a.id, !!v)} disabled={a.stock <= 0} />
-                                  )}
-                                  <span className={dejaAchete ? 'line-through text-muted-foreground' : ''}>{a.nom}</span>
+                                  <Checkbox checked={enPanier} onCheckedChange={(v) => togglePanier(a.id, !!v)} disabled={a.stock <= 0} />
+                                  <span>{a.nom}</span>
+                                  {nbAchete > 0 && <Badge variant="outline" className="text-[10px] px-1 text-emerald-600 border-emerald-300">×{nbAchete} acheté</Badge>}
                                   {a.stock <= 0 && <Badge variant="destructive" className="text-[10px] px-1">Épuisé</Badge>}
                                   {a.stock > 0 && a.stock < 10 && <Badge variant="secondary" className="text-[10px] px-1">Stock: {a.stock}</Badge>}
                                 </div>
