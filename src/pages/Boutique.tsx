@@ -19,6 +19,7 @@ import { generateTicketBoutique } from '@/lib/generateTicketBoutique';
 import { generateBonRecuperation } from '@/lib/generateBonRecuperation';
 import { useAuth } from '@/hooks/useAuth';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import RapportJournalierPanel from '@/components/RapportJournalierPanel';
 
 type BoutiqueArticle = {
   id: string; nom: string; categorie: string; taille: string; prix: number; stock: number;
@@ -1381,6 +1382,7 @@ export default function Boutique() {
           <TabsTrigger value="historique" className="gap-1"><History className="h-4 w-4" /> Historique Ventes</TabsTrigger>
           <TabsTrigger value="historique_retraits" className="gap-1"><ClipboardCheck className="h-4 w-4" /> Historique Retraits</TabsTrigger>
           <TabsTrigger value="gestion" className="gap-1"><Settings className="h-4 w-4" /> Gestion</TabsTrigger>
+          <TabsTrigger value="rapport" className="gap-1"><Receipt className="h-4 w-4" /> Rapport Journalier</TabsTrigger>
         </TabsList>
 
         {/* ===== RETRAITS TAB ===== */}
@@ -1630,6 +1632,11 @@ export default function Boutique() {
         {/* ===== GESTION COMMANDES TAB ===== */}
         <TabsContent value="gestion" className="space-y-4">
           <GestionCommandesPanel />
+        </TabsContent>
+
+        {/* ===== RAPPORT JOURNALIER TAB ===== */}
+        <TabsContent value="rapport" className="space-y-4">
+          <RapportJournalierPanel service="Boutique" />
         </TabsContent>
       </Tabs>
 
