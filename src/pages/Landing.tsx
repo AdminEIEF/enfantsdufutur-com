@@ -81,41 +81,41 @@ export default function Landing() {
     <div className="min-h-screen bg-background">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link to="/" onClick={() => window.scrollTo(0, 0)} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14 sm:h-16">
+            <Link to="/" onClick={() => window.scrollTo(0, 0)} className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity min-w-0">
               {schoolConfig?.logo_url ? (
-                <img src={schoolConfig.logo_url} alt="Logo" className="w-10 h-10 rounded-xl object-contain" />
+                <img src={schoolConfig.logo_url} alt="Logo" className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-contain shrink-0" />
               ) : (
-                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-primary-foreground">
-                  <GraduationCap className="h-5 w-5" />
+                <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary text-primary-foreground shrink-0">
+                  <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
               )}
-              <span className="font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <span className="font-bold text-sm sm:text-lg truncate" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 {schoolConfig?.nom || 'EI Enfant du Futur'}
               </span>
             </Link>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               {isInstallable && (
-                <Button variant="ghost" size="sm" onClick={install} className="hidden sm:flex">
+                <Button variant="ghost" size="sm" onClick={install} className="hidden lg:flex">
                   <Download className="mr-2 h-4 w-4" />
                   Installer
                 </Button>
               )}
               <Link to="/eleve">
-                <Button variant="outline" size="sm">
-                  Espace Élève
+                <Button variant="outline" size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9">
+                  <span className="hidden sm:inline">Espace </span>Élève
                 </Button>
               </Link>
               <Link to="/parent">
-                <Button variant="outline" size="sm">
-                  Espace Parent
+                <Button variant="outline" size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9">
+                  <span className="hidden sm:inline">Espace </span>Parent
                 </Button>
               </Link>
               <Link to="/auth">
-                <Button size="sm">
-                  Espace Personnel
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9">
+                  <span className="hidden sm:inline">Espace </span>Personnel
+                  <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </Link>
             </div>
@@ -124,34 +124,34 @@ export default function Landing() {
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-16 overflow-hidden">
+      <section className="relative pt-14 sm:pt-16 overflow-hidden">
         <div className="absolute inset-0">
           <img src={heroImage} alt="Campus de l'école" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/30" />
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 lg:py-40">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-40">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 bg-secondary/20 text-secondary rounded-full px-4 py-1.5 text-sm font-medium mb-6 backdrop-blur-sm">
-              <Star className="h-4 w-4" />
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 bg-secondary/20 text-secondary rounded-full px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm font-medium mb-4 sm:mb-6 backdrop-blur-sm">
+              <Star className="h-3 w-3 sm:h-4 sm:w-4" />
               Inscriptions 2025-2026 ouvertes
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <h1 className="text-2xl sm:text-4xl lg:text-6xl font-bold text-white leading-tight mb-4 sm:mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Investir maintenant<br />
               <span className="text-secondary">pour Sourire</span> demain !
             </h1>
-            <p className="text-lg sm:text-xl text-white/80 mb-8 max-w-lg">
+            <p className="text-sm sm:text-lg lg:text-xl text-white/80 mb-6 sm:mb-8 max-w-lg">
               L'École Internationale Enfant du Futur offre un enseignement d'excellence 
               dans un environnement moderne et bienveillant, du Primaire au Collège.
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-2 sm:gap-4">
               <Link to="/auth">
-                <Button size="lg" className="text-base px-8">
-                  <GraduationCap className="mr-2 h-5 w-5" />
+                <Button size="sm" className="sm:text-base sm:px-8 sm:h-11 text-xs px-4 h-9">
+                  <GraduationCap className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                   Pré-inscrire mon enfant
                 </Button>
               </Link>
               <a href="#services">
-                <Button size="lg" variant="outline" className="text-base px-8 bg-white/10 border-white/30 text-white hover:bg-white/20">
+                <Button size="sm" variant="outline" className="sm:text-base sm:px-8 sm:h-11 text-xs px-4 h-9 bg-white/10 border-white/30 text-white hover:bg-white/20">
                   Découvrir l'école
                 </Button>
               </a>
@@ -161,9 +161,9 @@ export default function Landing() {
       </section>
 
       {/* Image Carousel */}
-      <section className="py-12 bg-muted/30">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+      <section className="py-8 sm:py-12 bg-muted/30">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-center mb-6 sm:mb-8" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Notre école en images
           </h2>
           <Carousel
@@ -178,13 +178,13 @@ export default function Landing() {
                 { src: schoolDrapeau, alt: "Cérémonie du drapeau" },
                 { src: schoolGraduation, alt: "Cérémonie de graduation" },
               ].map((img, i) => (
-                <CarouselItem key={i} className="md:basis-1/2 lg:basis-1/2">
-                  <div className="p-2">
-                    <div className="overflow-hidden rounded-2xl shadow-lg">
+                <CarouselItem key={i} className="basis-full sm:basis-1/2">
+                  <div className="p-1 sm:p-2">
+                    <div className="overflow-hidden rounded-xl sm:rounded-2xl shadow-lg">
                       <img
                         src={img.src}
                         alt={img.alt}
-                        className="w-full h-64 sm:h-80 object-cover transition-transform duration-700 hover:scale-110"
+                        className="w-full h-48 sm:h-64 lg:h-80 object-cover transition-transform duration-700 hover:scale-110"
                         loading="lazy"
                       />
                     </div>
@@ -197,19 +197,19 @@ export default function Landing() {
       </section>
 
       {/* Stats */}
-      <section className="relative -mt-16 z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <section className="relative -mt-10 sm:-mt-16 z-10 max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           {stats.map((stat) => (
             <Card key={stat.label} className="border-none shadow-lg">
-              <CardContent className="flex items-center gap-4 p-5">
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <stat.icon className="h-6 w-6 text-primary" />
+              <CardContent className="flex items-center gap-2 sm:gap-4 p-3 sm:p-5">
+                <div className="flex-shrink-0 w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center">
+                  <stat.icon className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <div className="min-w-0">
+                  <div className="text-lg sm:text-2xl font-bold text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     {stat.value}
                   </div>
-                  <div className="text-xs text-muted-foreground">{stat.label}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground truncate">{stat.label}</div>
                 </div>
               </CardContent>
             </Card>
