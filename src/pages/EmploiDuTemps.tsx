@@ -93,6 +93,20 @@ export default function EmploiDuTemps() {
     },
   });
 
+  // Fetch enseignant_classes for selected class (to auto-fill teacher)
+  const { data: affectations = [] } = useQuery({
+    queryKey: ['edt-affectations', selectedClasseId],
+    queryFn: async () => {
+      if (!selectedClasseId) return [];
+      const { data } = await supabase
+        .from('enseignant_classes')
+        .select('employe_id, matiere_id')
+        .eq('classe_id', selectedClasseId);
+      return data || [];
+    },
+    enabled: !!selectedClasseId,
+  });
+
   // Fetch timetable for selected class
   const { data: slots = [] } = useQuery({
     queryKey: ['emploi-du-temps', selectedClasseId],
@@ -335,11 +349,27 @@ export default function EmploiDuTemps() {
           >
             <div>
               <Label className="text-xs">Matière *</Label>
-              <Select value={form.matiere_id || '__none__'} onValueChange={v => setForm({ ...form, matiere_id: v === '__none__' ? '' : v })}>
+              <Select value={form.matiere_id || '__none__'} onValueChange={v => {
+                const matiereId = v === '__none__' ? '' : v;
+                const affect = affectations.find((a: any) => a.matiere_id === matiereId);
+                setForm(f => ({
+                  ...f,
+                  matiere_id: matiereId,
+                  enseignant_id: affect ? affect.employe_id : f.enseignant_id,
+                }));
+              }}>
                 <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">— Choisir —</SelectItem>
-                  {matieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}
+                  {matieres.map((m: any) => {
+                    const affect = affectations.find((a: any) => a.matiere_id === m.id);
+                    const teacher = affect ? enseignants.find((e: any) => e.id === affect.employe_id) : null;
+                    return (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.nom}{teacher ? ` (👤 ${teacher.prenom} ${teacher.nom})` : ''}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
