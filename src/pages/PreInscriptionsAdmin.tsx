@@ -170,6 +170,7 @@ export default function PreInscriptionsAdmin() {
         option_cantine: !!d.option_cantine,
         statut: 'inscrit',
         mot_de_passe_eleve: pwd,
+        nom_prenom_pere: d.nom_parent?.trim() || null,
       } as any).select('id').single();
       if (eleveErr) throw eleveErr;
 
