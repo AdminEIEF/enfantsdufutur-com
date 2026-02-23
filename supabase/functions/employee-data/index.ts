@@ -122,6 +122,7 @@ serve(async (req) => {
       let classes: any[] = [];
       let cours_enseignant: any[] = [];
       let devoirs_enseignant: any[] = [];
+      let emploi_du_temps: any[] = [];
       if (employe.categorie === 'enseignant') {
         const { data: ec } = await supabaseAdmin
           .from("enseignant_classes")
@@ -149,6 +150,15 @@ serve(async (req) => {
             .limit(10);
           devoirs_enseignant = devoirsData || [];
         }
+
+        // Fetch real timetable for this teacher
+        const { data: edtData } = await supabaseAdmin
+          .from("emploi_du_temps")
+          .select("*, matieres:matiere_id(nom), classes:classe_id(nom)")
+          .eq("enseignant_id", employeId)
+          .order("jour_semaine")
+          .order("heure_debut");
+        emploi_du_temps = edtData || [];
       }
 
       // All month pointages for recap
@@ -172,6 +182,7 @@ serve(async (req) => {
         classes,
         cours_enseignant,
         devoirs_enseignant,
+        emploi_du_temps,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

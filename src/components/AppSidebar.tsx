@@ -1,7 +1,7 @@
 import {
   GraduationCap, Users, UserPlus, BookOpen, Calculator, AlertTriangle,
   Settings, Bell, ScanLine, Library, BarChart3, LogOut,
-  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays
+  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -38,6 +38,7 @@ const navSections = [
       { title: 'Saisie des notes', url: '/notes', icon: BookOpen },
       { title: 'Bulletins', url: '/bulletins', icon: Award },
       { title: 'Cours & Devoirs', url: '/cours-admin', icon: Video },
+      { title: 'Emploi du temps', url: '/emploi-du-temps', icon: Clock },
       { title: 'Calendrier', url: '/calendrier', icon: CalendarDays },
       { title: 'Orientation', url: '/orientation', icon: BarChart3 },
     ],

@@ -2,12 +2,13 @@ import { ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Home, FileText, ClipboardList, Award, Bot, LogOut } from 'lucide-react';
+import { BookOpen, Home, FileText, ClipboardList, Award, Bot, LogOut, CalendarDays } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 
 const NAV_ITEMS = [
   { path: '/eleve/dashboard', icon: Home, label: 'Accueil' },
   { path: '/eleve/cours', icon: BookOpen, label: 'Cours' },
+  { path: '/eleve/emploi-du-temps', icon: CalendarDays, label: 'Horaires' },
   { path: '/eleve/devoirs', icon: ClipboardList, label: 'Devoirs' },
   { path: '/eleve/resultats', icon: Award, label: 'Résultats' },
 ];

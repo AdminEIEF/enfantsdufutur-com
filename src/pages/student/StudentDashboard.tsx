@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { StudentLayout } from '@/components/StudentLayout';
 import { StudentAIChat } from '@/components/StudentAIChat';
-import { BookOpen, ClipboardList, Award, Clock, UtensilsCrossed, Loader2, ChevronRight } from 'lucide-react';
+import { BookOpen, ClipboardList, Award, Clock, UtensilsCrossed, Loader2, ChevronRight, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -120,6 +120,37 @@ export default function StudentDashboard() {
               </Card>
             )}
           </div>
+
+          {/* Today's Timetable */}
+          {data?.emploi_du_temps_aujourdhui?.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-primary" /> Mon emploi du temps aujourd'hui
+              </h3>
+              <div className="grid gap-2">
+                {data.emploi_du_temps_aujourdhui.map((s: any) => (
+                  <Card key={s.id}>
+                    <CardContent className="py-2.5 px-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="text-xs font-mono text-muted-foreground w-20">
+                          {s.heure_debut?.slice(0, 5)} — {s.heure_fin?.slice(0, 5)}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{s.matieres?.nom}</p>
+                          {s.employes && (
+                            <p className="text-xs text-muted-foreground">
+                              👤 {s.employes.prenom} {s.employes.nom}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      {s.salle && <Badge variant="outline" className="text-xs">🏫 {s.salle}</Badge>}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Upcoming Assignments */}
           {data?.prochains_devoirs?.length > 0 && (

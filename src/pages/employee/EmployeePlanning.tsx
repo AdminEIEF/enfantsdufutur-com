@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmployeeLayout } from '@/components/EmployeeLayout';
@@ -7,6 +7,15 @@ import { Loader2, CalendarDays, BookOpen } from 'lucide-react';
 
 const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 const HEURES = ['07:30', '08:30', '09:30', '10:30', '11:30', '13:00', '14:00', '15:00', '16:00'];
+
+const COULEURS = [
+  'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+  'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
+  'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
+];
 
 export default function EmployeePlanning() {
   const { session } = useEmployeeAuth();
@@ -30,13 +39,29 @@ export default function EmployeePlanning() {
       .finally(() => setLoading(false));
   }, [session]);
 
-  if (!session) return null;
-
-  const emp = session.employe;
-  const isEnseignant = emp.categorie === 'enseignant';
+  const emp = session?.employe;
+  const isEnseignant = emp?.categorie === 'enseignant';
   const classes = data?.classes || [];
+  const edt = data?.emploi_du_temps || [];
   const cours = data?.cours_enseignant || [];
   const devoirs = data?.devoirs_enseignant || [];
+
+  // Color map by matiere
+  const matiereColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    const unique = [...new Set(edt.map((s: any) => s.matiere_id))];
+    unique.forEach((id, i) => { map[id as string] = COULEURS[i % COULEURS.length]; });
+    return map;
+  }, [edt]);
+
+  if (!session) return null;
+
+  const getSlot = (jourIdx: number, heure: string) =>
+    edt.find((s: any) => s.jour_semaine === jourIdx + 1 && s.heure_debut === heure + ':00');
+
+  // Today highlight
+  const todayIdx = new Date().getDay(); // 0=Sun
+  const todayJourIdx = todayIdx === 0 ? 6 : todayIdx - 1; // 0=Mon...5=Sat
 
   return (
     <EmployeeLayout>
@@ -74,51 +99,57 @@ export default function EmployeePlanning() {
                 </CardContent>
               </Card>
 
-              {/* Weekly calendar grid */}
+              {/* Weekly calendar grid with REAL data */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-sm">📅 Emploi du temps hebdomadaire</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs border-collapse">
-                      <thead>
-                        <tr>
-                          <th className="border px-2 py-1.5 bg-muted text-left w-16">Heure</th>
-                          {JOURS.map(j => (
-                            <th key={j} className="border px-2 py-1.5 bg-muted text-center">{j}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {HEURES.map(h => (
-                          <tr key={h}>
-                            <td className="border px-2 py-2 font-medium text-muted-foreground">{h}</td>
-                            {JOURS.map(j => {
-                              // Placeholder: show assigned classes spread across the week
-                              const idx = JOURS.indexOf(j);
-                              const heureIdx = HEURES.indexOf(h);
-                              const assignedClass = classes[((idx * 3 + heureIdx) % classes.length)] || null;
-                              const showClass = assignedClass && heureIdx < 6 && ((idx + heureIdx) % 3 === 0);
-                              return (
-                                <td key={j} className={`border px-1 py-1 text-center ${showClass ? 'bg-emerald-50 dark:bg-emerald-950/20' : ''}`}>
-                                  {showClass && (
-                                    <div className="text-[10px] leading-tight">
-                                      <div className="font-semibold text-emerald-700 dark:text-emerald-400">{assignedClass.classes?.nom}</div>
-                                      <div className="text-muted-foreground">{assignedClass.matieres?.nom}</div>
-                                    </div>
-                                  )}
-                                </td>
-                              );
-                            })}
+                  {edt.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      Aucun créneau configuré. L'emploi du temps sera renseigné par le service informatique.
+                    </p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs border-collapse">
+                        <thead>
+                          <tr>
+                            <th className="border px-2 py-1.5 bg-muted text-left w-16">Heure</th>
+                            {JOURS.map((j, idx) => (
+                              <th key={j} className={`border px-2 py-1.5 text-center ${idx === todayJourIdx ? 'bg-primary/10 font-bold' : 'bg-muted'}`}>
+                                {j}
+                                {idx === todayJourIdx && <span className="ml-1 text-[9px] text-primary">●</span>}
+                              </th>
+                            ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-2">
-                    * L'emploi du temps détaillé est géré par le service informatique
-                  </p>
+                        </thead>
+                        <tbody>
+                          {HEURES.map(h => (
+                            <tr key={h}>
+                              <td className="border px-2 py-2 font-medium text-muted-foreground">{h}</td>
+                              {JOURS.map((j, jIdx) => {
+                                const slot = getSlot(jIdx, h);
+                                if (!slot) {
+                                  return <td key={j} className={`border px-1 py-1 ${jIdx === todayJourIdx ? 'bg-primary/5' : ''}`} />;
+                                }
+                                const colorClass = matiereColorMap[slot.matiere_id] || COULEURS[0];
+                                return (
+                                  <td key={j} className="border px-0.5 py-0.5">
+                                    <div className={`rounded px-1.5 py-1 ${colorClass}`}>
+                                      <div className="font-semibold text-[10px] leading-tight">{slot.matieres?.nom}</div>
+                                      <div className="text-[9px] opacity-80">{slot.classes?.nom}</div>
+                                      {slot.salle && <div className="text-[9px] opacity-70">🏫 {slot.salle}</div>}
+                                      <div className="text-[8px] opacity-60">{slot.heure_debut?.slice(0, 5)}—{slot.heure_fin?.slice(0, 5)}</div>
+                                    </div>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
