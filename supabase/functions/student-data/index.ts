@@ -206,6 +206,19 @@ serve(async (req) => {
       );
     }
 
+    if (action === "emploi_du_temps") {
+      const { data: edt } = await supabaseAdmin
+        .from("emploi_du_temps")
+        .select("*, matieres:matiere_id(nom), employes:enseignant_id(nom, prenom)")
+        .eq("classe_id", classeId)
+        .order("jour_semaine")
+        .order("heure_debut");
+
+      return new Response(JSON.stringify({ emploi_du_temps: edt || [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "dashboard") {
       // Summary data
       const { data: devoirs } = await supabaseAdmin
@@ -239,12 +252,23 @@ serve(async (req) => {
         bulletinCount = count || 0;
       }
 
+      // Today's timetable
+      const todayJS = new Date().getDay(); // 0=Sun, 1=Mon...
+      const jourSemaine = todayJS === 0 ? 7 : todayJS; // Convert to 1=Mon...7=Sun
+      const { data: edtToday } = await supabaseAdmin
+        .from("emploi_du_temps")
+        .select("*, matieres:matiere_id(nom), employes:enseignant_id(nom, prenom)")
+        .eq("classe_id", classeId)
+        .eq("jour_semaine", jourSemaine)
+        .order("heure_debut");
+
       return new Response(JSON.stringify({
         prochains_devoirs: devoirs || [],
         derniers_cours: cours || [],
         nb_soumissions: (soumissions || []).length,
         nb_bulletins: bulletinCount,
         solde_cantine: eleve.solde_cantine || 0,
+        emploi_du_temps_aujourdhui: edtToday || [],
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

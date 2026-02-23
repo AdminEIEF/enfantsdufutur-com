@@ -34,6 +34,7 @@ import DownloadPage from "./pages/Download";
 import Landing from "./pages/Landing";
 import CoursAdmin from "./pages/CoursAdmin";
 import CalendrierScolaire from "./pages/CalendrierScolaire";
+import EmploiDuTemps from "./pages/EmploiDuTemps";
 import ParentLogin from "./pages/parent/ParentLogin";
 import ParentDashboard from "./pages/parent/ParentDashboard";
 import ParentEnfant from "./pages/parent/ParentEnfant";
@@ -44,6 +45,7 @@ import StudentLogin from "./pages/student/StudentLogin";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentCours from "./pages/student/StudentCours";
 import StudentDevoirs from "./pages/student/StudentDevoirs";
+import StudentEmploiDuTemps from "./pages/student/StudentEmploiDuTemps";
 import StudentResultats from "./pages/student/StudentResultats";
 import ParentNotifications from "./pages/parent/ParentNotifications";
 import StudentNotifications from "./pages/student/StudentNotifications";
@@ -132,6 +134,7 @@ const App = () => (
             <Route path="/eleve/dashboard" element={<StudentAuthProvider><StudentDashboard /></StudentAuthProvider>} />
             <Route path="/eleve/cours" element={<StudentAuthProvider><StudentCours /></StudentAuthProvider>} />
             <Route path="/eleve/devoirs" element={<StudentAuthProvider><StudentDevoirs /></StudentAuthProvider>} />
+            <Route path="/eleve/emploi-du-temps" element={<StudentAuthProvider><StudentEmploiDuTemps /></StudentAuthProvider>} />
             <Route path="/eleve/resultats" element={<StudentAuthProvider><StudentResultats /></StudentAuthProvider>} />
             <Route path="/eleve/notifications" element={<StudentAuthProvider><StudentNotifications /></StudentAuthProvider>} />
             <Route path="/employe" element={<EmployeeAuthProvider><EmployeeLogin /></EmployeeAuthProvider>} />
@@ -152,6 +155,7 @@ const App = () => (
             <Route path="/bulletins" element={<ProtectedRoute><Bulletins /></ProtectedRoute>} />
             <Route path="/cours-admin" element={<ProtectedRoute><CoursAdmin /></ProtectedRoute>} />
             <Route path="/calendrier" element={<ProtectedRoute><CalendrierScolaire /></ProtectedRoute>} />
+            <Route path="/emploi-du-temps" element={<ProtectedRoute><EmploiDuTemps /></ProtectedRoute>} />
             <Route path="/orientation" element={<ProtectedRoute><Orientation /></ProtectedRoute>} />
             <Route path="/paiements" element={<ProtectedRoute><Paiements /></ProtectedRoute>} />
             <Route path="/depenses" element={<ProtectedRoute><Depenses /></ProtectedRoute>} />

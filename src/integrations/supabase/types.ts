@@ -828,6 +828,70 @@ export type Database = {
           },
         ]
       }
+      emploi_du_temps: {
+        Row: {
+          classe_id: string
+          created_at: string
+          created_by: string | null
+          enseignant_id: string | null
+          heure_debut: string
+          heure_fin: string
+          id: string
+          jour_semaine: number
+          matiere_id: string
+          salle: string | null
+          updated_at: string
+        }
+        Insert: {
+          classe_id: string
+          created_at?: string
+          created_by?: string | null
+          enseignant_id?: string | null
+          heure_debut: string
+          heure_fin: string
+          id?: string
+          jour_semaine: number
+          matiere_id: string
+          salle?: string | null
+          updated_at?: string
+        }
+        Update: {
+          classe_id?: string
+          created_at?: string
+          created_by?: string | null
+          enseignant_id?: string | null
+          heure_debut?: string
+          heure_fin?: string
+          id?: string
+          jour_semaine?: number
+          matiere_id?: string
+          salle?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emploi_du_temps_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emploi_du_temps_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emploi_du_temps_matiere_id_fkey"
+            columns: ["matiere_id"]
+            isOneToOne: false
+            referencedRelation: "matieres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_notifications: {
         Row: {
           action_url: string | null
