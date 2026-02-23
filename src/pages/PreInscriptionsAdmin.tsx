@@ -26,6 +26,8 @@ export default function PreInscriptionsAdmin() {
   const [notesAdmin, setNotesAdmin] = useState('');
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
   const [convertClasseId, setConvertClasseId] = useState('');
+  const [canalPaiement, setCanalPaiement] = useState('especes');
+  const [referencePaiement, setReferencePaiement] = useState('');
 
   const { data: demandes = [], isLoading } = useQuery({
     queryKey: ['pre-inscriptions'],
@@ -45,6 +47,17 @@ export default function PreInscriptionsAdmin() {
       const { data, error } = await supabase
         .from('classes')
         .select('*, niveaux:niveau_id(nom, cycle_id, cycles:cycle_id(nom))');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: niveauxData = [] } = useQuery({
+    queryKey: ['niveaux-frais'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('niveaux')
+        .select('id, nom, frais_inscription, frais_dossier, frais_assurance');
       if (error) throw error;
       return data;
     },
@@ -117,15 +130,27 @@ export default function PreInscriptionsAdmin() {
   // ── Conversion Logic ──
   const openConvertDialog = () => {
     if (!selectedItem) return;
-    // Pre-select classes matching the requested niveau
     const matchingClasses = classes.filter((c: any) => c.niveau_id === selectedItem.niveau_id);
     setConvertClasseId(matchingClasses.length === 1 ? matchingClasses[0].id : '');
+    setCanalPaiement('especes');
+    setReferencePaiement('');
     setConvertDialogOpen(true);
   };
+
+  const niveauFrais = selectedItem?.niveau_id
+    ? niveauxData.find((n: any) => n.id === selectedItem.niveau_id)
+    : null;
+
+  const fraisInscription = niveauFrais?.frais_inscription || 0;
+  const fraisDossier = niveauFrais?.frais_dossier || 0;
+  const fraisAssurance = niveauFrais?.frais_assurance || 0;
+  const totalFrais = fraisInscription + fraisDossier + fraisAssurance;
 
   const classesForNiveau = selectedItem?.niveau_id
     ? classes.filter((c: any) => c.niveau_id === selectedItem.niveau_id)
     : classes;
+
+  const formatGNF = (n: number) => n.toLocaleString('fr-GN') + ' GNF';
 
   const generateMatricule = async () => {
     const now = new Date();
@@ -174,7 +199,22 @@ export default function PreInscriptionsAdmin() {
       } as any).select('id').single();
       if (eleveErr) throw eleveErr;
 
-      // 4. Update pre-inscription status
+      // 4. Record inscription payment
+      const nf = niveauxData.find((n: any) => n.id === d.niveau_id);
+      const total = (nf?.frais_inscription || 0) + (nf?.frais_dossier || 0) + (nf?.frais_assurance || 0);
+      if (total > 0) {
+        const { error: paiErr } = await supabase.from('paiements').insert({
+          eleve_id: newEleve.id,
+          type_paiement: 'inscription',
+          montant: total,
+          canal: canalPaiement,
+          reference: referencePaiement || null,
+          mois_concerne: `Inscription ${nf?.nom || ''}`.trim(),
+        } as any);
+        if (paiErr) throw paiErr;
+      }
+
+      // 5. Update pre-inscription status
       const { error: updateErr } = await supabase.from('pre_inscriptions').update({
         statut: 'inscrite',
         converted_eleve_id: newEleve.id,
@@ -415,6 +455,7 @@ export default function PreInscriptionsAdmin() {
                 <ul className="list-disc pl-5 space-y-1 text-sm">
                   <li><strong>Une famille</strong> ({selectedItem?.nom_eleve?.toUpperCase()}) avec le téléphone et email du parent</li>
                   <li><strong>Un élève</strong> ({selectedItem?.prenom_eleve} {selectedItem?.nom_eleve}) avec matricule et mot de passe générés</li>
+                  {totalFrais > 0 && <li><strong>Un paiement d'inscription</strong> de {formatGNF(totalFrais)}</li>}
                 </ul>
 
                 <div className="space-y-2 pt-2">
@@ -433,6 +474,62 @@ export default function PreInscriptionsAdmin() {
                     <p className="text-xs text-destructive">Aucune classe trouvée pour ce niveau. Créez-en une d'abord.</p>
                   )}
                 </div>
+
+                {/* Frais d'inscription */}
+                {niveauFrais && (
+                  <div className="rounded-lg border bg-muted/50 p-3 space-y-2">
+                    <p className="text-sm font-semibold">Frais d'inscription</p>
+                    <div className="grid grid-cols-2 gap-1 text-sm">
+                      {fraisInscription > 0 && (
+                        <>
+                          <span className="text-muted-foreground">Inscription</span>
+                          <span className="text-right font-medium">{formatGNF(fraisInscription)}</span>
+                        </>
+                      )}
+                      {fraisDossier > 0 && (
+                        <>
+                          <span className="text-muted-foreground">Dossier</span>
+                          <span className="text-right font-medium">{formatGNF(fraisDossier)}</span>
+                        </>
+                      )}
+                      {fraisAssurance > 0 && (
+                        <>
+                          <span className="text-muted-foreground">Assurance</span>
+                          <span className="text-right font-medium">{formatGNF(fraisAssurance)}</span>
+                        </>
+                      )}
+                      <span className="font-semibold border-t pt-1">Total</span>
+                      <span className="text-right font-bold border-t pt-1">{formatGNF(totalFrais)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {totalFrais > 0 && (
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label>Mode de paiement *</Label>
+                      <Select value={canalPaiement} onValueChange={setCanalPaiement}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="especes">Espèces</SelectItem>
+                          <SelectItem value="orange_money">Orange Money</SelectItem>
+                          <SelectItem value="mtn_momo">MTN MoMo</SelectItem>
+                          <SelectItem value="banque">Banque</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {canalPaiement !== 'especes' && (
+                      <div className="space-y-2">
+                        <Label>Référence de paiement</Label>
+                        <Input
+                          value={referencePaiement}
+                          onChange={e => setReferencePaiement(e.target.value)}
+                          placeholder="N° transaction, bordereau..."
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
