@@ -13,6 +13,8 @@ async function sendSMS(phone: string, message: string): Promise<{ sent: boolean;
   const apiKey = Deno.env.get('AFRICASTALKING_API_KEY');
   const username = Deno.env.get('AFRICASTALKING_USERNAME');
 
+  console.log('AT credentials check — username:', username, '— apiKey length:', apiKey?.length || 0);
+
   if (!apiKey || !username) {
     console.warn('Africa\'s Talking credentials not configured');
     return { sent: false, error: 'SMS credentials not configured' };
