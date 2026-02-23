@@ -6,9 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Search, FileText, Users, Clock, CheckCircle2, XCircle, CalendarDays, Phone, Mail } from 'lucide-react';
+import { Search, FileText, Users, Clock, CheckCircle2, XCircle, CalendarDays, Phone, Mail, UserPlus, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -23,6 +24,8 @@ export default function PreInscriptionsAdmin() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dateRdv, setDateRdv] = useState('');
   const [notesAdmin, setNotesAdmin] = useState('');
+  const [convertDialogOpen, setConvertDialogOpen] = useState(false);
+  const [convertClasseId, setConvertClasseId] = useState('');
 
   const { data: demandes = [], isLoading } = useQuery({
     queryKey: ['pre-inscriptions'],
@@ -31,6 +34,17 @@ export default function PreInscriptionsAdmin() {
         .from('pre_inscriptions')
         .select('*, niveaux:niveau_id(nom, cycle_id, cycles:cycle_id(nom))')
         .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes-for-conversion'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('*, niveaux:niveau_id(nom, cycle_id, cycles:cycle_id(nom))');
       if (error) throw error;
       return data;
     },
@@ -45,7 +59,7 @@ export default function PreInscriptionsAdmin() {
   const enAttente = demandes.filter((d: any) => d.statut === 'en_attente').length;
   const rdvFixe = demandes.filter((d: any) => d.statut === 'rdv_fixe').length;
   const validees = demandes.filter((d: any) => d.statut === 'validee').length;
-  const rejetees = demandes.filter((d: any) => d.statut === 'rejetee').length;
+  const inscrites = demandes.filter((d: any) => d.statut === 'inscrite').length;
 
   const openDetail = (item: any) => {
     setSelectedItem(item);
@@ -79,11 +93,96 @@ export default function PreInscriptionsAdmin() {
     });
   };
 
+  // ── Conversion Logic ──
+  const openConvertDialog = () => {
+    if (!selectedItem) return;
+    // Pre-select classes matching the requested niveau
+    const matchingClasses = classes.filter((c: any) => c.niveau_id === selectedItem.niveau_id);
+    setConvertClasseId(matchingClasses.length === 1 ? matchingClasses[0].id : '');
+    setConvertDialogOpen(true);
+  };
+
+  const classesForNiveau = selectedItem?.niveau_id
+    ? classes.filter((c: any) => c.niveau_id === selectedItem.niveau_id)
+    : classes;
+
+  const generateMatricule = async () => {
+    const now = new Date();
+    const prefix = `EDU-${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const { count } = await supabase.from('eleves').select('*', { count: 'exact', head: true }).like('matricule', `${prefix}%`);
+    return `${prefix}-${String((count || 0) + 1).padStart(4, '0')}`;
+  };
+
+  const convertMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedItem) throw new Error('Aucune demande sélectionnée');
+      if (!convertClasseId) throw new Error('Veuillez sélectionner une classe');
+
+      const d = selectedItem;
+
+      // 1. Create family
+      const familyCode = 'FAM-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+      const { data: newFamille, error: famErr } = await supabase.from('familles').insert({
+        nom_famille: d.nom_eleve.trim().toUpperCase(),
+        telephone_pere: d.telephone_parent.trim() || null,
+        email_parent: d.email_parent?.trim() || null,
+        code_acces: familyCode,
+      } as any).select('id').single();
+      if (famErr) throw famErr;
+
+      // 2. Generate matricule & password
+      const matricule = await generateMatricule();
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let pwd = '';
+      for (let i = 0; i < 6; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+
+      // 3. Create student
+      const { data: newEleve, error: eleveErr } = await supabase.from('eleves').insert({
+        nom: d.nom_eleve.trim(),
+        prenom: d.prenom_eleve.trim(),
+        sexe: d.sexe || null,
+        date_naissance: d.date_naissance || null,
+        classe_id: convertClasseId,
+        famille_id: newFamille.id,
+        matricule,
+        qr_code: matricule,
+        option_cantine: !!d.option_cantine,
+        statut: 'inscrit',
+        mot_de_passe_eleve: pwd,
+      } as any).select('id').single();
+      if (eleveErr) throw eleveErr;
+
+      // 4. Update pre-inscription status
+      const { error: updateErr } = await supabase.from('pre_inscriptions').update({
+        statut: 'inscrite',
+        converted_eleve_id: newEleve.id,
+        converted_famille_id: newFamille.id,
+        traite_at: new Date().toISOString(),
+      } as any).eq('id', d.id);
+      if (updateErr) throw updateErr;
+
+      return { matricule, familyCode, eleveId: newEleve.id };
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ['pre-inscriptions'] });
+      qc.invalidateQueries({ queryKey: ['eleves'] });
+      qc.invalidateQueries({ queryKey: ['familles'] });
+      toast.success(
+        `Inscription créée ! Matricule : ${result.matricule} — Code famille : ${result.familyCode}`,
+        { duration: 8000 }
+      );
+      setConvertDialogOpen(false);
+      setDialogOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const statutBadge = (statut: string) => {
     switch (statut) {
       case 'en_attente': return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400">En attente</Badge>;
       case 'rdv_fixe': return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400">RDV fixé</Badge>;
       case 'validee': return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400">Validée</Badge>;
+      case 'inscrite': return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400">Inscrite ✓</Badge>;
       case 'rejetee': return <Badge variant="destructive">Rejetée</Badge>;
       default: return <Badge variant="secondary">{statut}</Badge>;
     }
@@ -100,7 +199,7 @@ export default function PreInscriptionsAdmin() {
         <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><Clock className="h-8 w-8 text-amber-500" /><div><p className="text-sm text-muted-foreground">En attente</p><p className="text-2xl font-bold">{enAttente}</p></div></div></CardContent></Card>
         <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><CalendarDays className="h-8 w-8 text-blue-500" /><div><p className="text-sm text-muted-foreground">RDV fixé</p><p className="text-2xl font-bold">{rdvFixe}</p></div></div></CardContent></Card>
         <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><CheckCircle2 className="h-8 w-8 text-green-500" /><div><p className="text-sm text-muted-foreground">Validées</p><p className="text-2xl font-bold">{validees}</p></div></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><XCircle className="h-8 w-8 text-destructive" /><div><p className="text-sm text-muted-foreground">Rejetées</p><p className="text-2xl font-bold">{rejetees}</p></div></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><UserPlus className="h-8 w-8 text-emerald-600" /><div><p className="text-sm text-muted-foreground">Inscrites</p><p className="text-2xl font-bold">{inscrites}</p></div></div></CardContent></Card>
       </div>
 
       {/* Filters */}
@@ -116,6 +215,7 @@ export default function PreInscriptionsAdmin() {
             <SelectItem value="en_attente">En attente</SelectItem>
             <SelectItem value="rdv_fixe">RDV fixé</SelectItem>
             <SelectItem value="validee">Validées</SelectItem>
+            <SelectItem value="inscrite">Inscrites</SelectItem>
             <SelectItem value="rejetee">Rejetées</SelectItem>
           </SelectContent>
         </Select>
@@ -222,15 +322,26 @@ export default function PreInscriptionsAdmin() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Date de RDV</Label>
-                <Input type="datetime-local" value={dateRdv} onChange={e => setDateRdv(e.target.value)} />
-              </div>
+              {selectedItem.statut !== 'inscrite' && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Date de RDV</Label>
+                    <Input type="datetime-local" value={dateRdv} onChange={e => setDateRdv(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Notes administratives</Label>
+                    <Textarea value={notesAdmin} onChange={e => setNotesAdmin(e.target.value)} placeholder="Observations, instructions…" rows={3} />
+                  </div>
+                </>
+              )}
 
-              <div className="space-y-2">
-                <Label>Notes administratives</Label>
-                <Textarea value={notesAdmin} onChange={e => setNotesAdmin(e.target.value)} placeholder="Observations, instructions…" rows={3} />
-              </div>
+              {selectedItem.statut === 'inscrite' && (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800 p-3">
+                  <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4" /> Convertie en inscription complète
+                  </p>
+                </div>
+              )}
 
               <div className="text-xs text-muted-foreground">
                 Soumis le {format(new Date(selectedItem.created_at), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
@@ -238,18 +349,86 @@ export default function PreInscriptionsAdmin() {
             </div>
           )}
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="destructive" onClick={() => handleAction('rejetee')} disabled={updateStatut.isPending}>
-              <XCircle className="h-4 w-4 mr-2" /> Rejeter
-            </Button>
-            <Button variant="outline" onClick={() => handleAction('rdv_fixe')} disabled={updateStatut.isPending || !dateRdv}>
-              <CalendarDays className="h-4 w-4 mr-2" /> Fixer RDV
-            </Button>
-            <Button onClick={() => handleAction('validee')} disabled={updateStatut.isPending}>
-              <CheckCircle2 className="h-4 w-4 mr-2" /> Valider
-            </Button>
+            {selectedItem?.statut === 'inscrite' ? (
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>Fermer</Button>
+            ) : (
+              <>
+                <Button variant="destructive" onClick={() => handleAction('rejetee')} disabled={updateStatut.isPending}>
+                  <XCircle className="h-4 w-4 mr-2" /> Rejeter
+                </Button>
+                <Button variant="outline" onClick={() => handleAction('rdv_fixe')} disabled={updateStatut.isPending || !dateRdv}>
+                  <CalendarDays className="h-4 w-4 mr-2" /> Fixer RDV
+                </Button>
+                <Button onClick={() => handleAction('validee')} disabled={updateStatut.isPending}>
+                  <CheckCircle2 className="h-4 w-4 mr-2" /> Valider
+                </Button>
+                {selectedItem?.statut === 'validee' && (
+                  <Button
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={openConvertDialog}
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" /> Convertir en inscription
+                  </Button>
+                )}
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Conversion Confirmation Dialog */}
+      <AlertDialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-emerald-600" />
+              Convertir en inscription
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4 text-left">
+                <p>
+                  Cette action va créer automatiquement :
+                </p>
+                <ul className="list-disc pl-5 space-y-1 text-sm">
+                  <li><strong>Une famille</strong> ({selectedItem?.nom_eleve?.toUpperCase()}) avec le téléphone et email du parent</li>
+                  <li><strong>Un élève</strong> ({selectedItem?.prenom_eleve} {selectedItem?.nom_eleve}) avec matricule et mot de passe générés</li>
+                </ul>
+
+                <div className="space-y-2 pt-2">
+                  <Label>Classe d'affectation *</Label>
+                  <Select value={convertClasseId} onValueChange={setConvertClasseId}>
+                    <SelectTrigger><SelectValue placeholder="Choisir une classe" /></SelectTrigger>
+                    <SelectContent>
+                      {classesForNiveau.map((c: any) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.niveaux?.cycles?.nom} — {c.niveaux?.nom} — {c.nom}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedItem?.niveau_id && classesForNiveau.length === 0 && (
+                    <p className="text-xs text-destructive">Aucune classe trouvée pour ce niveau. Créez-en une d'abord.</p>
+                  )}
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-emerald-600 hover:bg-emerald-700"
+              disabled={!convertClasseId || convertMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                convertMutation.mutate();
+              }}
+            >
+              {convertMutation.isPending ? 'Création en cours…' : 'Confirmer l\'inscription'}
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
