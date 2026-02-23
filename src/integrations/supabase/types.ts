@@ -1858,6 +1858,8 @@ export type Database = {
       }
       pre_inscriptions: {
         Row: {
+          converted_eleve_id: string | null
+          converted_famille_id: string | null
           created_at: string
           date_naissance: string | null
           date_rdv: string | null
@@ -1879,6 +1881,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          converted_eleve_id?: string | null
+          converted_famille_id?: string | null
           created_at?: string
           date_naissance?: string | null
           date_rdv?: string | null
@@ -1900,6 +1904,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          converted_eleve_id?: string | null
+          converted_famille_id?: string | null
           created_at?: string
           date_naissance?: string | null
           date_rdv?: string | null
@@ -1921,6 +1927,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "pre_inscriptions_converted_eleve_id_fkey"
+            columns: ["converted_eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pre_inscriptions_converted_famille_id_fkey"
+            columns: ["converted_famille_id"]
+            isOneToOne: false
+            referencedRelation: "familles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pre_inscriptions_niveau_id_fkey"
             columns: ["niveau_id"]
