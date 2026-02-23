@@ -33,6 +33,7 @@ import Tracabilite from "./pages/Tracabilite";
 import DownloadPage from "./pages/Download";
 import Landing from "./pages/Landing";
 import CoursAdmin from "./pages/CoursAdmin";
+import CalendrierScolaire from "./pages/CalendrierScolaire";
 import ParentLogin from "./pages/parent/ParentLogin";
 import ParentDashboard from "./pages/parent/ParentDashboard";
 import ParentEnfant from "./pages/parent/ParentEnfant";
@@ -150,6 +151,7 @@ const App = () => (
             <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
             <Route path="/bulletins" element={<ProtectedRoute><Bulletins /></ProtectedRoute>} />
             <Route path="/cours-admin" element={<ProtectedRoute><CoursAdmin /></ProtectedRoute>} />
+            <Route path="/calendrier" element={<ProtectedRoute><CalendrierScolaire /></ProtectedRoute>} />
             <Route path="/orientation" element={<ProtectedRoute><Orientation /></ProtectedRoute>} />
             <Route path="/paiements" element={<ProtectedRoute><Paiements /></ProtectedRoute>} />
             <Route path="/depenses" element={<ProtectedRoute><Depenses /></ProtectedRoute>} />
