@@ -202,13 +202,41 @@ export default function Inscriptions() {
   });
 
   // Build grouped structure: niveaux containing classes for the selected cycle
+  // Custom class order for natural educational progression
+  const classeOrderKey = (nom: string) => {
+    const n = (nom || '').toUpperCase().trim();
+    // Crèche / Maternelle
+    if (n.startsWith('CRECHE')) return 'A00' + n;
+    if (n.startsWith('TPS')) return 'A01' + n;
+    if (n.startsWith('PS')) return 'A02' + n;
+    if (n.startsWith('MS')) return 'A03' + n;
+    if (n.startsWith('GS')) return 'A04' + n;
+    // Primaire
+    if (n.startsWith('GS-CP1') || n.startsWith('CP1')) return 'B01' + n;
+    if (n.startsWith('CP2')) return 'B02' + n;
+    if (n.startsWith('CE1')) return 'B03' + n;
+    if (n.startsWith('CE2')) return 'B04' + n;
+    if (n.startsWith('CM1')) return 'B05' + n;
+    if (n.startsWith('CM2')) return 'B06' + n;
+    // Collège (7e → 10e)
+    if (n.startsWith('7E')) return 'C01' + n;
+    if (n.startsWith('8E')) return 'C02' + n;
+    if (n.startsWith('9E')) return 'C03' + n;
+    if (n.startsWith('10E')) return 'C04' + n;
+    // Lycée (11e → 12e → Terminale)
+    if (n.startsWith('11E')) return 'D01' + n;
+    if (n.startsWith('12E')) return 'D02' + n;
+    if (n.startsWith('TS')) return 'D03' + n;
+    return 'Z' + n;
+  };
+
   const classesForCycle = useMemo(() => {
     const filtered = selectedCycle === 'all' ? classes : classes.filter((c: any) => c.niveaux?.cycle_id === selectedCycle);
-    return filtered.sort((a: any, b: any) => {
-      const niveauOrdreA = a.niveaux?.ordre ?? 0;
-      const niveauOrdreB = b.niveaux?.ordre ?? 0;
-      if (niveauOrdreA !== niveauOrdreB) return niveauOrdreA - niveauOrdreB;
-      return (a.nom || '').localeCompare(b.nom || '', 'fr');
+    return [...filtered].sort((a: any, b: any) => {
+      const cycleA = a.niveaux?.cycles?.ordre ?? 0;
+      const cycleB = b.niveaux?.cycles?.ordre ?? 0;
+      if (cycleA !== cycleB) return cycleA - cycleB;
+      return classeOrderKey(a.nom).localeCompare(classeOrderKey(b.nom), 'fr');
     });
   }, [classes, selectedCycle]);
 
