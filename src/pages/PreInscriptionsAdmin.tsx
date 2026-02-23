@@ -83,13 +83,31 @@ export default function PreInscriptionsAdmin() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const handleAction = (statut: string) => {
+  const handleAction = async (statut: string) => {
     if (!selectedItem) return;
     updateStatut.mutate({
       id: selectedItem.id,
       statut,
       date_rdv: dateRdv || null,
       notes_admin: notesAdmin,
+    }, {
+      onSuccess: async () => {
+        // Send notification to parent when RDV is fixed
+        if (statut === 'rdv_fixe' && dateRdv) {
+          try {
+            const { data, error } = await supabase.functions.invoke('notify-parent-rdv', {
+              body: { pre_inscription_id: selectedItem.id, date_rdv: dateRdv },
+            });
+            if (data?.email_sent) {
+              toast.success(`Email de notification envoyé à ${selectedItem.email_parent}`);
+            } else {
+              toast.info(`Le parent sera contacté au ${selectedItem.telephone_parent} pour le RDV.`);
+            }
+          } catch {
+            // Notification in-app already created by trigger
+          }
+        }
+      },
     });
   };
 
