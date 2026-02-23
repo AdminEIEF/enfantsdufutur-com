@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, Users, Download, Trash2, Pencil, Phone, Camera, EyeOff, Eye } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { UserPlus, Search, Plus, CheckCircle2, MapPin, Bell, Users, Download, Trash2, Pencil, Phone, Camera, EyeOff, Eye, GraduationCap } from 'lucide-react';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -28,6 +29,8 @@ export default function Inscriptions() {
   const [search, setSearch] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
+  const [selectedCycle, setSelectedCycle] = useState<string>('all');
+  const [selectedClasse, setSelectedClasse] = useState<string>('all');
   const [editOpen, setEditOpen] = useState(false);
   const [editEleve, setEditEleve] = useState<any>(null);
   const [editNom, setEditNom] = useState('');
@@ -65,7 +68,7 @@ export default function Inscriptions() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('classes')
-        .select('*, niveaux:niveau_id(nom, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, cycles:cycle_id(nom))');
+        .select('*, niveaux:niveau_id(nom, cycle_id, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, cycles:cycle_id(id, nom))');
       if (error) throw error;
       return data;
     },
@@ -90,6 +93,24 @@ export default function Inscriptions() {
   });
 
   const { data: zones = [] } = useZonesTransport();
+
+  const { data: cycles = [] } = useQuery({
+    queryKey: ['cycles'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('cycles').select('*').order('ordre');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: niveaux = [] } = useQuery({
+    queryKey: ['niveaux'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('niveaux').select('*, cycles:cycle_id(nom)').order('ordre');
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const sendRappel = useMutation({
     mutationFn: async (eleve: any) => {
@@ -167,8 +188,28 @@ export default function Inscriptions() {
     const matchSearch = basicMatch || phoneMatch;
     if (isSearchActive) return matchSearch;
     if (!showComplete && isDossierComplete(e)) return false;
+    // Filter by cycle
+    if (selectedCycle !== 'all') {
+      const cycleId = e.classes?.niveaux?.cycle_id;
+      if (cycleId !== selectedCycle) return false;
+    }
+    // Filter by classe
+    if (selectedClasse !== 'all') {
+      if (e.classe_id !== selectedClasse) return false;
+    }
     return true;
   });
+
+  // Build grouped structure: niveaux containing classes for the selected cycle
+  const classesForCycle = useMemo(() => {
+    if (selectedCycle === 'all') return classes;
+    return classes.filter((c: any) => c.niveaux?.cycle_id === selectedCycle);
+  }, [classes, selectedCycle]);
+
+  const niveauxForCycle = useMemo(() => {
+    if (selectedCycle === 'all') return niveaux;
+    return niveaux.filter((n: any) => n.cycle_id === selectedCycle);
+  }, [niveaux, selectedCycle]);
 
   const openEditDialog = (e: any) => {
     setEditEleve(e);
@@ -285,6 +326,83 @@ export default function Inscriptions() {
     setInscriptionOpen(true);
   };
 
+  const renderStudentRow = (e: any, showClasse = false) => {
+    const manquants = [
+      !e.checklist_livret && 'Livret scolaire',
+      !e.checklist_rames && 'Paquet de Rames',
+      !e.checklist_marqueurs && 'Marqueurs',
+      !e.checklist_photo && "Photo d'identité",
+    ].filter(Boolean) as string[];
+    const telPere = e.familles?.telephone_pere;
+    const telMere = e.familles?.telephone_mere;
+    return (
+      <TableRow key={e.id}>
+        <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
+        <TableCell className="font-medium">{e.nom}</TableCell>
+        <TableCell>{e.prenom}</TableCell>
+        {showClasse && <TableCell>{e.classes?.nom || '—'}</TableCell>}
+        <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">
+          {e.nom_prenom_pere || e.nom_prenom_mere ? `${e.nom_prenom_pere || '—'} / ${e.nom_prenom_mere || '—'}` : '—'}
+        </TableCell>
+        <TableCell>
+          {manquants.length > 0 ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="cursor-pointer">
+                  <Badge variant="outline" className="text-warning border-warning/30 text-xs hover:bg-warning/10 transition-colors">{manquants.length} manquant(s)</Badge>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-3">
+                <p className="font-semibold text-sm mb-2">Documents manquants :</p>
+                <ul className="space-y-1">
+                  {manquants.map((doc) => (
+                    <li key={doc} className="text-sm flex items-center gap-1.5">
+                      <span className="text-destructive">✗</span> {doc}
+                    </li>
+                  ))}
+                </ul>
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <Badge variant="default" className="text-xs">Complet</Badge>
+          )}
+        </TableCell>
+        <TableCell>
+          <Badge variant={e.statut === 'inscrit' ? 'default' : 'secondary'}>{e.statut}</Badge>
+        </TableCell>
+        <TableCell className="flex gap-1">
+          <Button variant="ghost" size="sm" title="Modifier" onClick={() => openEditDialog(e)}>
+            <Pencil className="h-4 w-4 text-primary" />
+          </Button>
+          {manquants.length > 0 && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" title="Envoyer un rappel">
+                  <Bell className="h-4 w-4 text-warning" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-3">
+                <p className="font-semibold text-sm mb-2">Notifier les parents de {e.prenom} {e.nom}</p>
+                <p className="text-xs text-muted-foreground mb-2">Documents manquants : {manquants.join(', ')}</p>
+                {(telPere || telMere) ? (
+                  <div className="space-y-1.5 mb-3">
+                    {telPere && <p className="text-sm">📱 Père : <a href={`tel:${telPere}`} className="text-primary underline">{telPere}</a></p>}
+                    {telMere && <p className="text-sm">📱 Mère : <a href={`tel:${telMere}`} className="text-primary underline">{telMere}</a></p>}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground mb-3">Aucun numéro enregistré.</p>
+                )}
+                <Button size="sm" className="w-full" onClick={() => sendRappel.mutate(e)}>
+                  <Bell className="h-3.5 w-3.5 mr-1" /> Envoyer le rappel
+                </Button>
+              </PopoverContent>
+            </Popover>
+          )}
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -353,105 +471,152 @@ export default function Inscriptions() {
       </div>
       <QRScannerDialog open={scannerOpen} onOpenChange={setScannerOpen} onScan={(matricule) => setSearch(matricule)} />
 
+      {/* Cycle Tabs */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={selectedCycle === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => { setSelectedCycle('all'); setSelectedClasse('all'); }}
+        >
+          <GraduationCap className="h-4 w-4 mr-1" /> Tous
+          <Badge variant="secondary" className="ml-1.5 text-xs">{eleves.length}</Badge>
+        </Button>
+        {cycles.map((cycle: any) => {
+          const count = eleves.filter((e: any) => {
+            const cId = e.classes?.niveaux?.cycle_id;
+            return cId === cycle.id;
+          }).length;
+          return (
+            <Button
+              key={cycle.id}
+              variant={selectedCycle === cycle.id ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => { setSelectedCycle(cycle.id); setSelectedClasse('all'); }}
+            >
+              {cycle.nom}
+              <Badge variant="secondary" className="ml-1.5 text-xs">{count}</Badge>
+            </Button>
+          );
+        })}
+      </div>
+
+      {/* Classe filter within selected cycle */}
+      {selectedCycle !== 'all' && (
+        <div className="flex flex-wrap gap-1.5">
+          <Button
+            variant={selectedClasse === 'all' ? 'secondary' : 'ghost'}
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => setSelectedClasse('all')}
+          >
+            Toutes les classes
+          </Button>
+          {niveauxForCycle.map((niveau: any) => {
+            const nClasses = classesForCycle.filter((c: any) => c.niveau_id === niveau.id);
+            if (nClasses.length === 0) return null;
+            return nClasses.map((c: any) => {
+              const cCount = filtered.filter((e: any) => e.classe_id === c.id).length;
+              return (
+                <Button
+                  key={c.id}
+                  variant={selectedClasse === c.id ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setSelectedClasse(c.id)}
+                >
+                  {niveau.nom} — {c.nom}
+                  <Badge variant="outline" className="ml-1 text-[10px] px-1">{cCount}</Badge>
+                </Button>
+              );
+            });
+          })}
+        </div>
+      )}
+
       {/* Student table */}
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Matricule</TableHead>
-                <TableHead>Nom</TableHead>
-                <TableHead>Prénom</TableHead>
-                <TableHead>Classe</TableHead>
-                <TableHead>Filiation</TableHead>
-                <TableHead>Documents</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
-              ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
-              ) : filtered.map((e: any) => {
-                const manquants = [
-                  !e.checklist_livret && 'Livret scolaire',
-                  !e.checklist_rames && 'Paquet de Rames',
-                  !e.checklist_marqueurs && 'Marqueurs',
-                  !e.checklist_photo && "Photo d'identité",
-                ].filter(Boolean) as string[];
-                const telPere = e.familles?.telephone_pere;
-                const telMere = e.familles?.telephone_mere;
+          {selectedCycle !== 'all' && selectedClasse === 'all' ? (
+            /* Grouped view by niveau > classe */
+            <Accordion type="multiple" className="w-full" defaultValue={niveauxForCycle.map((n: any) => n.id)}>
+              {niveauxForCycle.map((niveau: any) => {
+                const nClasses = classesForCycle.filter((c: any) => c.niveau_id === niveau.id);
+                const niveauEleves = filtered.filter((e: any) => nClasses.some((c: any) => c.id === e.classe_id));
+                if (nClasses.length === 0) return null;
                 return (
-                  <TableRow key={e.id}>
-                    <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
-                    <TableCell className="font-medium">{e.nom}</TableCell>
-                    <TableCell>{e.prenom}</TableCell>
-                    <TableCell>{e.classes?.nom || '—'}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">{(e as any).nom_prenom_pere || (e as any).nom_prenom_mere ? `${(e as any).nom_prenom_pere || '—'} / ${(e as any).nom_prenom_mere || '—'}` : '—'}</TableCell>
-                    <TableCell>
-                      {manquants.length > 0 ? (
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <button className="cursor-pointer">
-                              <Badge variant="outline" className="text-warning border-warning/30 text-xs hover:bg-warning/10 transition-colors">{manquants.length} manquant(s)</Badge>
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-56 p-3">
-                            <p className="font-semibold text-sm mb-2">Documents manquants :</p>
-                            <ul className="space-y-1">
-                              {manquants.map((doc) => (
-                                <li key={doc} className="text-sm flex items-center gap-1.5">
-                                  <span className="text-destructive">✗</span> {doc}
-                                </li>
-                              ))}
-                            </ul>
-                          </PopoverContent>
-                        </Popover>
-                      ) : (
-                        <Badge variant="default" className="text-xs">Complet</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={e.statut === 'inscrit' ? 'default' : 'secondary'}>{e.statut}</Badge>
-                    </TableCell>
-                    <TableCell className="flex gap-1">
-                      <Button variant="ghost" size="sm" title="Modifier" onClick={() => openEditDialog(e)}>
-                        <Pencil className="h-4 w-4 text-primary" />
-                      </Button>
-                      {manquants.length > 0 && (
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" size="sm" title="Envoyer un rappel">
-                              <Bell className="h-4 w-4 text-warning" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-72 p-3">
-                            <p className="font-semibold text-sm mb-2">Notifier les parents de {e.prenom} {e.nom}</p>
-                            <p className="text-xs text-muted-foreground mb-2">Documents manquants : {manquants.join(', ')}</p>
-                            {(telPere || telMere) ? (
-                              <div className="space-y-1.5 mb-3">
-                                {telPere && <p className="text-sm">📱 Père : <a href={`tel:${telPere}`} className="text-primary underline">{telPere}</a></p>}
-                                {telMere && <p className="text-sm">📱 Mère : <a href={`tel:${telMere}`} className="text-primary underline">{telMere}</a></p>}
-                              </div>
+                  <AccordionItem key={niveau.id} value={niveau.id}>
+                    <AccordionTrigger className="px-4 hover:no-underline">
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="h-4 w-4 text-primary" />
+                        <span className="font-semibold">{niveau.nom}</span>
+                        <Badge variant="secondary" className="text-xs">{niveauEleves.length} élève(s)</Badge>
+                        <span className="text-xs text-muted-foreground">({nClasses.length} classe{nClasses.length > 1 ? 's' : ''})</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-0 pb-0">
+                      {nClasses.map((classe: any) => {
+                        const classeEleves = filtered.filter((e: any) => e.classe_id === classe.id);
+                        return (
+                          <div key={classe.id}>
+                            <div className="px-4 py-2 bg-muted/50 border-y flex items-center gap-2">
+                              <span className="text-sm font-medium">{classe.nom}</span>
+                              <Badge variant="outline" className="text-xs">{classeEleves.length}</Badge>
+                            </div>
+                            {classeEleves.length === 0 ? (
+                              <p className="text-center text-muted-foreground text-sm py-4">Aucun élève dans cette classe</p>
                             ) : (
-                              <p className="text-xs text-muted-foreground mb-3">Aucun numéro enregistré.</p>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Matricule</TableHead>
+                                    <TableHead>Nom</TableHead>
+                                    <TableHead>Prénom</TableHead>
+                                    <TableHead>Filiation</TableHead>
+                                    <TableHead>Documents</TableHead>
+                                    <TableHead>Statut</TableHead>
+                                    <TableHead></TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {classeEleves.map((e: any) => renderStudentRow(e))}
+                                </TableBody>
+                              </Table>
                             )}
-                            <Button size="sm" className="w-full" onClick={() => sendRappel.mutate(e)}>
-                              <Bell className="h-3.5 w-3.5 mr-1" /> Envoyer le rappel
-                            </Button>
-                          </PopoverContent>
-                        </Popover>
-                      )}
-                    </TableCell>
-                  </TableRow>
+                          </div>
+                        );
+                      })}
+                    </AccordionContent>
+                  </AccordionItem>
                 );
               })}
-            </TableBody>
-          </Table>
+            </Accordion>
+          ) : (
+            /* Flat table view */
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Matricule</TableHead>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Prénom</TableHead>
+                  <TableHead>Classe</TableHead>
+                  <TableHead>Filiation</TableHead>
+                  <TableHead>Documents</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
+                ) : filtered.length === 0 ? (
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
+                ) : filtered.map((e: any) => renderStudentRow(e, true))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
+
 
       {/* ─── Edit Dialog ─── */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
