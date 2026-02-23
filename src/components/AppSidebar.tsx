@@ -1,7 +1,7 @@
 import {
   GraduationCap, Users, UserPlus, BookOpen, Calculator, AlertTriangle,
   Settings, Bell, ScanLine, Library, BarChart3, LogOut,
-  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock
+  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock, FileText
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,6 +25,7 @@ const navSections = [
     label: 'Scolarité',
     roles: ['admin', 'secretaire'] as const,
     items: [
+      { title: 'Pré-inscriptions', url: '/pre-inscriptions', icon: FileText },
       { title: 'Inscriptions', url: '/inscriptions', icon: UserPlus },
       { title: 'Familles', url: '/familles', icon: Users },
       { title: 'Élèves', url: '/eleves', icon: ClipboardList },
