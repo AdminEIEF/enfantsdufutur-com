@@ -188,10 +188,80 @@ export default function Inscriptions() {
   const updateEleve = useMutation({
     mutationFn: async () => {
       if (!editEleve) throw new Error('Aucun élève sélectionné');
+
+      let finalFamilleId = editFamilleId || null;
+      const pereNorm = editNomPrenomPere.trim().toLowerCase();
+      const mereNorm = editNomPrenomMere.trim().toLowerCase();
+
+      // Auto-regroupement familial par noms de parents identiques
+      if (pereNorm || mereNorm) {
+        // Chercher un élève existant avec les mêmes noms de parents et déjà dans une famille
+        const { data: siblings } = await supabase
+          .from('eleves')
+          .select('id, famille_id, nom_prenom_pere, nom_prenom_mere')
+          .is('deleted_at', null)
+          .not('famille_id', 'is', null)
+          .neq('id', editEleve.id);
+
+        const matchingSibling = (siblings || []).find((s: any) => {
+          const sPere = (s.nom_prenom_pere || '').trim().toLowerCase();
+          const sMere = (s.nom_prenom_mere || '').trim().toLowerCase();
+          const pereMatch = pereNorm && sPere && pereNorm === sPere;
+          const mereMatch = mereNorm && sMere && mereNorm === sMere;
+          return pereMatch || mereMatch;
+        });
+
+        if (matchingSibling && matchingSibling.famille_id) {
+          finalFamilleId = matchingSibling.famille_id;
+          toast({ title: '👨‍👩‍👧‍👦 Famille détectée', description: `Élève regroupé automatiquement dans la famille existante.` });
+        } else if (!finalFamilleId && (pereNorm || mereNorm)) {
+          // Pas de fratrie trouvée et pas de famille assignée → chercher aussi les élèves sans famille avec mêmes parents
+          const { data: orphans } = await supabase
+            .from('eleves')
+            .select('id, nom_prenom_pere, nom_prenom_mere')
+            .is('deleted_at', null)
+            .is('famille_id', null)
+            .neq('id', editEleve.id);
+
+          const matchingOrphans = (orphans || []).filter((s: any) => {
+            const sPere = (s.nom_prenom_pere || '').trim().toLowerCase();
+            const sMere = (s.nom_prenom_mere || '').trim().toLowerCase();
+            const pereMatch = pereNorm && sPere && pereNorm === sPere;
+            const mereMatch = mereNorm && sMere && mereNorm === sMere;
+            return pereMatch || mereMatch;
+          });
+
+          // Créer une nouvelle famille et y regrouper tous ces enfants
+          const nomFamille = editNomPrenomPere.trim() ? editNom.trim().toUpperCase() : editNom.trim().toUpperCase();
+          const codeAcces = `FAM-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+          const { data: newFamille, error: famError } = await supabase
+            .from('familles')
+            .insert({
+              nom_famille: nomFamille,
+              code_acces: codeAcces,
+              telephone_pere: null,
+              telephone_mere: null,
+            } as any)
+            .select()
+            .single();
+          if (famError) throw famError;
+          finalFamilleId = newFamille.id;
+
+          // Regrouper les orphelins correspondants dans cette famille
+          if (matchingOrphans.length > 0) {
+            const orphanIds = matchingOrphans.map((o: any) => o.id);
+            await supabase.from('eleves').update({ famille_id: newFamille.id } as any).in('id', orphanIds);
+            toast({ title: '👨‍👩‍👧‍👦 Famille créée', description: `${matchingOrphans.length + 1} enfant(s) regroupés dans la famille "${nomFamille}" (Code: ${codeAcces}).` });
+          } else {
+            toast({ title: '👨‍👩‍👧‍👦 Famille créée', description: `Famille "${nomFamille}" créée (Code: ${codeAcces}).` });
+          }
+        }
+      }
+
       const { error } = await supabase.from('eleves').update({
         nom: editNom.trim(), prenom: editPrenom.trim(),
         sexe: editSexe || null, date_naissance: editDateNaissance || null,
-        classe_id: editClasseId || null, famille_id: editFamilleId || null,
+        classe_id: editClasseId || null, famille_id: finalFamilleId,
         zone_transport_id: editZoneTransportId || null,
         transport_zone: editSelectedZone?.nom || null,
         option_cantine: editOptionCantine,
@@ -203,6 +273,7 @@ export default function Inscriptions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['eleves'] });
+      queryClient.invalidateQueries({ queryKey: ['familles'] });
       toast({ title: 'Élève modifié' });
       setEditOpen(false);
     },
