@@ -366,26 +366,27 @@ export default function PreInscriptionsAdmin() {
               </div>
             </div>
           )}
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex-wrap gap-2 sm:justify-start">
             {selectedItem?.statut === 'inscrite' ? (
               <Button variant="outline" onClick={() => setDialogOpen(false)}>Fermer</Button>
             ) : (
               <>
-                <Button variant="destructive" onClick={() => handleAction('rejetee')} disabled={updateStatut.isPending}>
-                  <XCircle className="h-4 w-4 mr-2" /> Rejeter
+                <Button variant="destructive" size="sm" onClick={() => handleAction('rejetee')} disabled={updateStatut.isPending}>
+                  <XCircle className="h-4 w-4 mr-1" /> Rejeter
                 </Button>
-                <Button variant="outline" onClick={() => handleAction('rdv_fixe')} disabled={updateStatut.isPending || !dateRdv}>
-                  <CalendarDays className="h-4 w-4 mr-2" /> Fixer RDV
+                <Button variant="outline" size="sm" onClick={() => handleAction('rdv_fixe')} disabled={updateStatut.isPending || !dateRdv}>
+                  <CalendarDays className="h-4 w-4 mr-1" /> Fixer RDV
                 </Button>
-                <Button onClick={() => handleAction('validee')} disabled={updateStatut.isPending}>
-                  <CheckCircle2 className="h-4 w-4 mr-2" /> Valider
+                <Button size="sm" onClick={() => handleAction('validee')} disabled={updateStatut.isPending}>
+                  <CheckCircle2 className="h-4 w-4 mr-1" /> Valider
                 </Button>
                 {selectedItem?.statut === 'validee' && (
                   <Button
+                    size="sm"
                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
                     onClick={openConvertDialog}
                   >
-                    <UserPlus className="h-4 w-4 mr-2" /> Convertir en inscription
+                    <UserPlus className="h-4 w-4 mr-1" /> Convertir
                   </Button>
                 )}
               </>
