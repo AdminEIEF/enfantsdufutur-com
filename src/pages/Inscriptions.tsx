@@ -68,7 +68,8 @@ export default function Inscriptions() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('classes')
-        .select('*, niveaux:niveau_id(nom, cycle_id, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, cycles:cycle_id(id, nom))');
+        .select('*, niveaux:niveau_id(nom, ordre, cycle_id, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, cycles:cycle_id(id, nom, ordre))')
+        .order('nom');
       if (error) throw error;
       return data;
     },
@@ -202,8 +203,13 @@ export default function Inscriptions() {
 
   // Build grouped structure: niveaux containing classes for the selected cycle
   const classesForCycle = useMemo(() => {
-    if (selectedCycle === 'all') return classes;
-    return classes.filter((c: any) => c.niveaux?.cycle_id === selectedCycle);
+    const filtered = selectedCycle === 'all' ? classes : classes.filter((c: any) => c.niveaux?.cycle_id === selectedCycle);
+    return filtered.sort((a: any, b: any) => {
+      const niveauOrdreA = a.niveaux?.ordre ?? 0;
+      const niveauOrdreB = b.niveaux?.ordre ?? 0;
+      if (niveauOrdreA !== niveauOrdreB) return niveauOrdreA - niveauOrdreB;
+      return (a.nom || '').localeCompare(b.nom || '', 'fr');
+    });
   }, [classes, selectedCycle]);
 
   const niveauxForCycle = useMemo(() => {
