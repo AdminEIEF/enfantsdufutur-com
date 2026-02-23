@@ -143,13 +143,56 @@ export default function EmploiDuTemps() {
         const { error } = await supabase.from('emploi_du_temps').insert(payload);
         if (error) throw error;
       }
+      return formData;
     },
-    onSuccess: () => {
+    onSuccess: async (formData) => {
       queryClient.invalidateQueries({ queryKey: ['emploi-du-temps', selectedClasseId] });
-      toast.success(editingId ? 'Créneau modifié' : 'Créneau ajouté');
+      const isEdit = !!editingId;
+      toast.success(isEdit ? 'Créneau modifié' : 'Créneau ajouté');
       setDialogOpen(false);
       setEditingId(null);
       setForm(emptySlot);
+
+      // Send notifications
+      const jourLabel = JOURS.find(j => j.value === formData.jour_semaine)?.label || '';
+      const matiereNom = matieres.find((m: any) => m.id === formData.matiere_id)?.nom || '';
+      const classeNom = selectedClasse?.nom || '';
+      const action = isEdit ? 'modifié' : 'ajouté';
+      const msg = `Créneau ${action} : ${matiereNom} le ${jourLabel} de ${formData.heure_debut} à ${formData.heure_fin}${formData.salle ? ' (Salle: ' + formData.salle + ')' : ''}`;
+
+      // Notify students of this class
+      try {
+        const { data: elevesClasse } = await supabase
+          .from('eleves')
+          .select('id')
+          .eq('classe_id', selectedClasseId)
+          .eq('statut', 'inscrit');
+        if (elevesClasse && elevesClasse.length > 0) {
+          const studentNotifs = elevesClasse.map((e: any) => ({
+            eleve_id: e.id,
+            titre: `📅 Emploi du temps ${action}`,
+            message: `${classeNom} — ${msg}`,
+            type: 'info',
+          }));
+          await supabase.from('student_notifications').insert(studentNotifs);
+        }
+      } catch (err) {
+        console.error('Erreur notification élèves:', err);
+      }
+
+      // Notify the assigned teacher
+      if (formData.enseignant_id) {
+        try {
+          await supabase.from('employee_notifications').insert({
+            employe_id: formData.enseignant_id,
+            titre: `📅 Emploi du temps ${action}`,
+            message: `${classeNom} — ${msg}`,
+            type: 'info',
+          });
+        } catch (err) {
+          console.error('Erreur notification enseignant:', err);
+        }
+      }
     },
     onError: (e: any) => toast.error(e.message?.includes('unique') ? 'Ce créneau existe déjà pour cette classe' : e.message),
   });
