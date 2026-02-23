@@ -49,8 +49,20 @@ async function sendSMS(phone: string, message: string): Promise<{ sent: boolean;
       body: body.toString(),
     });
 
-    const data = await res.json();
-    console.log('AT SMS response:', JSON.stringify(data));
+    const rawText = await res.text();
+    console.log('AT SMS raw response:', rawText);
+
+    if (!res.ok) {
+      return { sent: false, error: `AT API error (${res.status}): ${rawText}` };
+    }
+
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      return { sent: false, error: `AT invalid response: ${rawText.substring(0, 200)}` };
+    }
+    console.log('AT SMS parsed:', JSON.stringify(data));
 
     const recipients = data?.SMSMessageData?.Recipients;
     if (recipients && recipients.length > 0) {
