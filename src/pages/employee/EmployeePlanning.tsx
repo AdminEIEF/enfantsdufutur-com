@@ -6,7 +6,7 @@ import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Loader2, CalendarDays, BookOpen } from 'lucide-react';
 
 const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-const HEURES = ['07:30', '08:30', '09:30', '10:30', '11:30', '13:00', '14:00', '15:00', '16:00'];
+const HEURES_DEFAULT = ['07:30', '08:30', '09:30', '10:30', '11:30', '13:00', '14:00', '15:00', '16:00'];
 
 const COULEURS = [
   'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
@@ -45,6 +45,15 @@ export default function EmployeePlanning() {
   const edt = data?.emploi_du_temps || [];
   const cours = data?.cours_enseignant || [];
   const devoirs = data?.devoirs_enseignant || [];
+
+  // Build dynamic HEURES from actual data + defaults
+  const HEURES = useMemo(() => {
+    const allTimes = new Set(HEURES_DEFAULT);
+    edt.forEach((s: any) => {
+      if (s.heure_debut) allTimes.add(s.heure_debut.slice(0, 5));
+    });
+    return [...allTimes].sort();
+  }, [edt]);
 
   // Color map by matiere
   const matiereColorMap = useMemo(() => {

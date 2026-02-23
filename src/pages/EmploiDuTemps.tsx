@@ -21,7 +21,7 @@ const JOURS = [
   { value: 6, label: 'Samedi' },
 ];
 
-const CRENEAUX = [
+const CRENEAUX_DEFAULT = [
   '07:30', '08:30', '09:30', '10:30', '11:30', '13:00', '14:00', '15:00', '16:00',
 ];
 
@@ -150,6 +150,15 @@ export default function EmploiDuTemps() {
       toast.success('Créneau supprimé');
     },
   });
+
+  // Build dynamic time slots from data + defaults
+  const CRENEAUX = useMemo(() => {
+    const allTimes = new Set(CRENEAUX_DEFAULT);
+    slots.forEach((s: any) => {
+      if (s.heure_debut) allTimes.add(s.heure_debut.slice(0, 5));
+    });
+    return [...allTimes].sort();
+  }, [slots]);
 
   // Build color map for matieres
   const matiereColorMap = useMemo(() => {
