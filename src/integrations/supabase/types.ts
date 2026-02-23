@@ -1034,6 +1034,72 @@ export type Database = {
           },
         ]
       }
+      evenements_calendrier: {
+        Row: {
+          classe_id: string | null
+          couleur: string | null
+          created_at: string
+          created_by: string | null
+          date_debut: string
+          date_fin: string | null
+          description: string | null
+          heure_debut: string | null
+          heure_fin: string | null
+          id: string
+          matiere_id: string | null
+          titre: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          classe_id?: string | null
+          couleur?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_debut: string
+          date_fin?: string | null
+          description?: string | null
+          heure_debut?: string | null
+          heure_fin?: string | null
+          id?: string
+          matiere_id?: string | null
+          titre: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          classe_id?: string | null
+          couleur?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_debut?: string
+          date_fin?: string | null
+          description?: string | null
+          heure_debut?: string | null
+          heure_fin?: string | null
+          id?: string
+          matiere_id?: string | null
+          titre?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evenements_calendrier_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evenements_calendrier_matiere_id_fkey"
+            columns: ["matiere_id"]
+            isOneToOne: false
+            referencedRelation: "matieres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       familles: {
         Row: {
           adresse: string | null
