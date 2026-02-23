@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import {
   Briefcase, Plus, Search, Loader2, Clock, Calendar, DollarSign, FileText,
   Check, X, Eye, Trash2, Upload, UserPlus, Users, ScanLine, CreditCard, Printer,
-  Camera, Download, Key, Mail, Paperclip, BarChart3, MessageSquare, Wallet, TrendingUp, TrendingDown, AlertTriangle, GraduationCap
+  Camera, Download, Key, Mail, Paperclip, BarChart3, MessageSquare, TrendingUp, TrendingDown, AlertTriangle, GraduationCap
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -25,7 +25,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { generateBadgeEmployePDF } from '@/lib/generateBadgeEmploye';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
-import { TresorerieTab } from '@/components/TresorerieTab';
+
 import AffectationsEnseignants from '@/components/AffectationsEnseignants';
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
@@ -303,18 +303,6 @@ export default function Personnel() {
       return data;
     },
   });
-
-  // Treasury data: tuition income
-  const { data: tresorPaiements = [] } = useQuery({
-    queryKey: ['tresor-paiements'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('paiements').select('montant, type_paiement, date_paiement');
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // Treasury: all approved avances
   const { data: allAvances = [] } = useQuery({
     queryKey: ['all-avances'],
     queryFn: async () => {
@@ -720,7 +708,7 @@ export default function Personnel() {
           <TabsTrigger value="conges"><Calendar className="h-3.5 w-3.5 mr-1" />Congés ({congesEnAttente.length})</TabsTrigger>
           <TabsTrigger value="avances"><DollarSign className="h-3.5 w-3.5 mr-1" />Avances ({avancesEnAttente.length})</TabsTrigger>
           <TabsTrigger value="paie"><FileText className="h-3.5 w-3.5 mr-1" />Paie</TabsTrigger>
-          <TabsTrigger value="tresorerie"><Wallet className="h-3.5 w-3.5 mr-1" />Trésorerie</TabsTrigger>
+          
           <TabsTrigger value="courriers"><Mail className="h-3.5 w-3.5 mr-1" />Courriers ({courriers.filter((c: any) => c.statut === 'non_lu').length})</TabsTrigger>
           <TabsTrigger value="evaluations"><BarChart3 className="h-3.5 w-3.5 mr-1" />Évaluations</TabsTrigger>
           <TabsTrigger value="affectations"><GraduationCap className="h-3.5 w-3.5 mr-1" />Affectations</TabsTrigger>
@@ -1011,10 +999,6 @@ export default function Personnel() {
           </Card>
         </TabsContent>
 
-        {/* Trésorerie */}
-        <TabsContent value="tresorerie" className="mt-4 space-y-4">
-          <TresorerieTab paiements={tresorPaiements} bulletins={bulletins} avances={allAvances} employes={employes} />
-        </TabsContent>
 
 
         <TabsContent value="courriers" className="mt-4">
