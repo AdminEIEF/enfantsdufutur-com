@@ -201,7 +201,7 @@ export default function Landing() {
               transition={{ duration: 0.5, delay: 1.1 }}
               className="flex flex-wrap gap-2 sm:gap-4"
             >
-              <Link to="/auth">
+              <Link to="/pre-inscription">
                 <Button size="sm" className="sm:text-base sm:px-8 sm:h-11 text-xs px-4 h-9">
                   <GraduationCap className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                   Pré-inscrire mon enfant

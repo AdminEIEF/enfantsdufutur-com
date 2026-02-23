@@ -1856,6 +1856,80 @@ export type Database = {
           },
         ]
       }
+      pre_inscriptions: {
+        Row: {
+          created_at: string
+          date_naissance: string | null
+          date_rdv: string | null
+          email_parent: string | null
+          id: string
+          niveau_id: string | null
+          nom_eleve: string
+          nom_parent: string
+          notes_admin: string | null
+          option_cantine: boolean | null
+          option_transport: boolean | null
+          option_uniformes: boolean | null
+          prenom_eleve: string
+          sexe: string | null
+          statut: string
+          telephone_parent: string
+          traite_at: string | null
+          traite_par: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_naissance?: string | null
+          date_rdv?: string | null
+          email_parent?: string | null
+          id?: string
+          niveau_id?: string | null
+          nom_eleve: string
+          nom_parent: string
+          notes_admin?: string | null
+          option_cantine?: boolean | null
+          option_transport?: boolean | null
+          option_uniformes?: boolean | null
+          prenom_eleve: string
+          sexe?: string | null
+          statut?: string
+          telephone_parent: string
+          traite_at?: string | null
+          traite_par?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_naissance?: string | null
+          date_rdv?: string | null
+          email_parent?: string | null
+          id?: string
+          niveau_id?: string | null
+          nom_eleve?: string
+          nom_parent?: string
+          notes_admin?: string | null
+          option_cantine?: boolean | null
+          option_transport?: boolean | null
+          option_uniformes?: boolean | null
+          prenom_eleve?: string
+          sexe?: string | null
+          statut?: string
+          telephone_parent?: string
+          traite_at?: string | null
+          traite_par?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pre_inscriptions_niveau_id_fkey"
+            columns: ["niveau_id"]
+            isOneToOne: false
+            referencedRelation: "niveaux"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

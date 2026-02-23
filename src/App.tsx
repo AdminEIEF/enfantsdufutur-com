@@ -32,6 +32,7 @@ import Boutique from "./pages/Boutique";
 import Tracabilite from "./pages/Tracabilite";
 import DownloadPage from "./pages/Download";
 import Landing from "./pages/Landing";
+import PreInscriptionPublic from "./pages/PreInscriptionPublic";
 import CoursAdmin from "./pages/CoursAdmin";
 import CalendrierScolaire from "./pages/CalendrierScolaire";
 import EmploiDuTemps from "./pages/EmploiDuTemps";
@@ -50,6 +51,7 @@ import StudentResultats from "./pages/student/StudentResultats";
 import ParentNotifications from "./pages/parent/ParentNotifications";
 import StudentNotifications from "./pages/student/StudentNotifications";
 import Personnel from "./pages/Personnel";
+import PreInscriptionsAdmin from "./pages/PreInscriptionsAdmin";
 import EmployeeLogin from "./pages/employee/EmployeeLogin";
 import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
 import EmployeeConges from "./pages/employee/EmployeeConges";
@@ -126,6 +128,7 @@ const App = () => (
             <Route path="/download" element={<DownloadPage />} />
             <Route path="/fiche-eleve/:matricule" element={<ElevePublic />} />
             <Route path="/" element={<Landing />} />
+            <Route path="/pre-inscription" element={<PreInscriptionPublic />} />
             <Route path="/parent" element={<ParentAuthProvider><ParentLogin /></ParentAuthProvider>} />
             <Route path="/parent/dashboard" element={<ParentAuthProvider><ParentDashboard /></ParentAuthProvider>} />
             <Route path="/parent/enfant/:id" element={<ParentAuthProvider><ParentEnfant /></ParentAuthProvider>} />
@@ -151,6 +154,7 @@ const App = () => (
             <Route path="/familles" element={<ProtectedRoute><Familles /></ProtectedRoute>} />
             <Route path="/eleves" element={<ProtectedRoute><Eleves /></ProtectedRoute>} />
             <Route path="/reinscription" element={<ProtectedRoute><Reinscription /></ProtectedRoute>} />
+            <Route path="/pre-inscriptions" element={<ProtectedRoute><PreInscriptionsAdmin /></ProtectedRoute>} />
             <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
             <Route path="/bulletins" element={<ProtectedRoute><Bulletins /></ProtectedRoute>} />
             <Route path="/cours-admin" element={<ProtectedRoute><CoursAdmin /></ProtectedRoute>} />
