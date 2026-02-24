@@ -362,7 +362,17 @@ export default function Dashboard() {
       </div>
 
       {/* Family & Librairie KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Impayés</CardTitle>
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">{impayesFamilles.reduce((s, f) => s + f.reste, 0).toLocaleString()} <span className="text-sm font-normal">GNF</span></div>
+            <p className="text-xs text-muted-foreground mt-1">{impayesFamilles.length} familles concernées</p>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Familles inscrites</CardTitle>
