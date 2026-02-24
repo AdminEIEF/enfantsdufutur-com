@@ -81,15 +81,15 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-xl border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 sm:h-16">
+          <div className="flex items-center justify-between h-16 sm:h-20">
             <Link to="/" onClick={() => window.scrollTo(0, 0)} className="flex items-center hover:opacity-80 transition-opacity">
               {schoolConfig?.logo_url ? (
-                <img src={schoolConfig.logo_url} alt="Logo" className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-contain shrink-0" />
+                <img src={schoolConfig.logo_url} alt="Logo" className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-contain shrink-0 drop-shadow-lg" />
               ) : (
-                <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary text-primary-foreground shrink-0">
-                  <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5" />
+                <div className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary text-primary-foreground shrink-0 drop-shadow-lg">
+                  <GraduationCap className="h-6 w-6 sm:h-7 sm:w-7" />
                 </div>
               )}
             </Link>
@@ -127,7 +127,7 @@ export default function Landing() {
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-14 sm:pt-16 overflow-hidden">
+      <section className="relative pt-16 sm:pt-20 overflow-hidden">
         <div className="absolute inset-0">
           <img src={heroImage} alt="Campus de l'école" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/30" />
