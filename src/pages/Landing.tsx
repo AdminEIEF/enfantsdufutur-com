@@ -132,7 +132,21 @@ export default function Landing() {
           <img src={heroImage} alt="Campus de l'école" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/30" />
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 lg:py-32">
+        {/* Globe watermark - large & blurred above content */}
+        <div className="absolute top-4 sm:top-8 left-1/2 -translate-x-1/2 w-64 h-64 sm:w-96 sm:h-96 lg:w-[28rem] lg:h-[28rem] opacity-[0.15] pointer-events-none z-[1] blur-[2px]">
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            <circle cx="50" cy="50" r="26" fill="hsl(var(--muted))" />
+            <circle cx="50" cy="50" r="26" fill="none" stroke="white" strokeWidth="2.5" />
+            <ellipse cx="50" cy="50" rx="26" ry="9" fill="none" stroke="white" strokeWidth="1.5" />
+            <ellipse cx="50" cy="50" rx="9" ry="26" fill="none" stroke="white" strokeWidth="1.5" />
+            <path d="M38 35 Q45 30 55 33 Q58 38 52 42 Q45 40 38 35Z" fill="white" opacity="0.4" />
+            <path d="M42 52 Q48 48 56 50 Q58 56 50 60 Q44 58 42 52Z" fill="white" opacity="0.4" />
+            <ellipse cx="50" cy="50" rx="42" ry="14" fill="none" stroke="white" strokeWidth="1.8" transform="rotate(-25 50 50)" />
+            <ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="#eab308" strokeWidth="2" opacity="0.7" transform="rotate(35 50 50)" />
+            <ellipse cx="50" cy="50" rx="44" ry="12" fill="none" stroke="#16a34a" strokeWidth="1.5" opacity="0.6" transform="rotate(-60 50 50)" />
+          </svg>
+        </div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 lg:py-32 z-[2]">
           <div className="w-full mb-6 sm:mb-10">
             <motion.p
               initial={{ opacity: 0, y: -50 }}
