@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
-import { Briefcase, KeyRound, Loader2, ArrowLeft } from 'lucide-react';
+import { Briefcase, Lock, Loader2, User } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
 export default function EmployeeLogin() {
   const { session, login, loading } = useEmployeeAuth();
@@ -35,66 +34,111 @@ export default function EmployeeLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-500/10 via-background to-teal-500/10 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/10 mb-2">
-            <Briefcase className="h-8 w-8 text-emerald-600" />
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4"
+      style={{ background: 'linear-gradient(135deg, #059669 0%, #0d9488 30%, #14b8a6 50%, #06b6d4 70%, #0891b2 100%)' }}
+    >
+      {/* Organic blob shapes */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full opacity-30"
+          style={{ background: 'radial-gradient(circle, #06b6d4 0%, transparent 70%)' }}
+          animate={{ scale: [1, 1.1, 1], x: [0, 20, 0], y: [0, -10, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #059669 0%, transparent 70%)' }}
+          animate={{ scale: [1, 1.15, 1], x: [0, -15, 0], y: [0, 15, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      </div>
+
+      <motion.div
+        className="relative z-10 w-full max-w-sm"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1] }}
+      >
+        {/* Hexagonal avatar */}
+        <div className="flex justify-center mb-6">
+          <div className="relative">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <polygon
+                points="40,4 72,20 72,56 40,72 8,56 8,20"
+                fill="rgba(255,255,255,0.15)"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="2"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Briefcase className="h-8 w-8 text-white/80" />
+            </div>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Espace Personnel</h1>
-          <p className="text-muted-foreground text-sm">École Internationale Enfant du Futur</p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <KeyRound className="h-5 w-5" /> Connexion Employé
-            </CardTitle>
-            <CardDescription>
-              Connectez-vous avec votre matricule et le mot de passe fourni par l'administration.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="matricule">Matricule</Label>
-                <Input
-                  id="matricule"
-                  value={matricule}
-                  onChange={(e) => setMatricule(e.target.value.toUpperCase())}
-                  placeholder="Ex: EMP-001"
-                  className="text-center text-lg tracking-widest font-mono"
-                  maxLength={20}
-                  autoFocus
-                  autoComplete="off"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Mot de passe</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  maxLength={30}
-                  autoComplete="off"
-                />
-              </div>
-              <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={submitting || !matricule.trim() || !password.trim()}>
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Accéder à mon espace
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        {/* Glassmorphism card */}
+        <div
+          className="relative p-8 rounded-3xl"
+          style={{
+            background: 'rgba(255, 255, 255, 0.12)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              Espace Personnel
+            </h2>
+            <p className="text-white/60 text-sm mt-1">
+              Connectez-vous avec votre matricule
+            </p>
+          </div>
 
-        <div className="text-center">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Retour à l'accueil
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal-700/50" />
+              <Input
+                value={matricule}
+                onChange={(e) => setMatricule(e.target.value.toUpperCase())}
+                placeholder="Matricule (Ex: EMP-001)"
+                maxLength={20}
+                autoFocus
+                autoComplete="off"
+                className="h-12 pl-10 pr-4 bg-white/80 border-0 rounded-full text-teal-900 placeholder:text-teal-700/40 focus-visible:ring-2 focus-visible:ring-white/40 shadow-sm text-center tracking-widest font-mono"
+              />
+            </div>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal-700/50" />
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mot de passe"
+                maxLength={30}
+                autoComplete="off"
+                className="h-12 pl-10 pr-4 bg-white/80 border-0 rounded-full text-teal-900 placeholder:text-teal-700/40 focus-visible:ring-2 focus-visible:ring-white/40 shadow-sm"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={submitting || !matricule.trim() || !password.trim()}
+              className="w-full h-12 rounded-full text-sm font-semibold tracking-wide uppercase bg-emerald-900 hover:bg-emerald-950 text-white shadow-lg"
+            >
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Accéder à mon espace
+            </Button>
+          </form>
+        </div>
+
+        {/* Back link */}
+        <div className="text-center mt-6">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="text-white/50 hover:text-white/80 hover:bg-transparent">
+            ← Retour à l'accueil
           </Button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
