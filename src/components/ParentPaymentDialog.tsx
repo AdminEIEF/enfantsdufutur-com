@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Smartphone, CreditCard, Wallet } from 'lucide-react';
+import { Loader2, Smartphone, CreditCard, Wallet, Copy, MessageCircle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PaymentDialogProps {
@@ -48,6 +48,11 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
   const [montant, setMontant] = useState('');
   const [moisConcerne, setMoisConcerne] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mobileMode, setMobileMode] = useState<'manuel' | 'auto'>('manuel');
+  const [copied, setCopied] = useState(false);
+
+  const NUMERO_MARCHAND = '621 00 00 00'; // À remplacer par le vrai numéro
+  const WHATSAPP_NUMERO = '224621000000'; // À remplacer
 
   // Debit wallet state
   const [debitEleveId, setDebitEleveId] = useState(isSingle ? enfants[0]?.id || '' : '');
@@ -214,71 +219,144 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
 
           {/* ─── MOBILE MONEY TAB ─── */}
           <TabsContent value="mobile" className="space-y-4 mt-4">
-            <EnfantSelector value={eleveId} onChange={setEleveId} />
-
-            <div className="space-y-2">
-              <Label>Type de paiement</Label>
-              <Select value={typePaiement} onValueChange={setTypePaiement}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner le type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TYPE_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Mode toggle */}
+            <div className="flex gap-2 p-1 bg-muted rounded-lg">
+              <button
+                onClick={() => setMobileMode('manuel')}
+                className={`flex-1 text-xs font-medium py-2 px-3 rounded-md transition-all ${mobileMode === 'manuel' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+              >
+                📱 Manuel (Facile)
+              </button>
+              <button
+                onClick={() => setMobileMode('auto')}
+                className={`flex-1 text-xs font-medium py-2 px-3 rounded-md transition-all ${mobileMode === 'auto' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+              >
+                ⚡ Automatique
+              </button>
             </div>
 
-            {typePaiement === 'scolarite' && (
-              <div className="space-y-2">
-                <Label>Mois concerné</Label>
-                <Select value={moisConcerne} onValueChange={setMoisConcerne}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner le mois" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MOIS_SCOLAIRES.map(m => (
-                      <SelectItem key={m} value={m}>{m}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {mobileMode === 'manuel' ? (
+              /* ─── MODE MANUEL ─── */
+              <div className="space-y-4">
+                <Card className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/20">
+                  <CardContent className="pt-5 pb-4 space-y-4">
+                    <div className="text-center space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Numéro Marchand Orange Money</p>
+                      <div className="flex items-center justify-center gap-2">
+                        <p className="text-3xl font-bold tracking-wider text-orange-600 dark:text-orange-400">{NUMERO_MARCHAND}</p>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(NUMERO_MARCHAND.replace(/\s/g, ''));
+                            setCopied(true);
+                            toast.success('Numéro copié !');
+                            setTimeout(() => setCopied(false), 2000);
+                          }}
+                          className="p-1.5 rounded-md hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+                        >
+                          {copied ? <CheckCircle2 className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5 text-muted-foreground" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="bg-background/80 rounded-lg p-3 space-y-2 text-sm">
+                      <p className="font-semibold text-foreground">📋 Instructions :</p>
+                      <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
+                        <li>Ouvrez <strong className="text-orange-600">Orange Money</strong> sur votre téléphone</li>
+                        <li>Envoyez le montant au <strong className="text-foreground">{NUMERO_MARCHAND}</strong></li>
+                        <li>Faites une <strong className="text-foreground">capture d'écran</strong> de la confirmation</li>
+                        <li>Envoyez la capture sur <strong className="text-green-600">WhatsApp</strong> ci-dessous</li>
+                      </ol>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Button
+                  onClick={() => {
+                    const message = encodeURIComponent(
+                      `Bonjour, je viens d'effectuer un paiement Orange Money.\n\nCode famille : ${code}\nVoici ma capture d'écran.`
+                    );
+                    window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${message}`, '_blank');
+                  }}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  size="lg"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Envoyer la capture sur WhatsApp
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  Votre paiement sera validé après vérification de la capture.
+                </p>
+              </div>
+            ) : (
+              /* ─── MODE AUTOMATIQUE (PayDunya) ─── */
+              <div className="space-y-4">
+                <EnfantSelector value={eleveId} onChange={setEleveId} />
+
+                <div className="space-y-2">
+                  <Label>Type de paiement</Label>
+                  <Select value={typePaiement} onValueChange={setTypePaiement}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner le type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TYPE_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {typePaiement === 'scolarite' && (
+                  <div className="space-y-2">
+                    <Label>Mois concerné</Label>
+                    <Select value={moisConcerne} onValueChange={setMoisConcerne}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner le mois" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MOIS_SCOLAIRES.map(m => (
+                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label>Montant (GNF)</Label>
+                  <Input
+                    type="number"
+                    placeholder="Ex: 500000"
+                    value={montant}
+                    onChange={e => setMontant(e.target.value)}
+                    min={1000}
+                  />
+                </div>
+
+                {eleveId && typePaiement && montant && Number(montant) > 0 && (
+                  <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
+                    <p className="font-medium">Récapitulatif :</p>
+                    <p>👤 {selectedEnfant?.prenom} {selectedEnfant?.nom}</p>
+                    <p>📋 {TYPE_OPTIONS.find(t => t.value === typePaiement)?.label}</p>
+                    {moisConcerne && <p>📅 {moisConcerne}</p>}
+                    <p className="text-lg font-bold text-primary">{Number(montant).toLocaleString()} GNF</p>
+                  </div>
+                )}
+
+                <Button onClick={handlePay} disabled={loading} className="w-full" size="lg">
+                  {loading ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Initialisation...</>
+                  ) : (
+                    <><Smartphone className="h-4 w-4 mr-2" /> Payer via Mobile Money</>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  Paiement sécurisé via PayDunya • Orange Money & MTN MoMo
+                </p>
               </div>
             )}
-
-            <div className="space-y-2">
-              <Label>Montant (GNF)</Label>
-              <Input
-                type="number"
-                placeholder="Ex: 500000"
-                value={montant}
-                onChange={e => setMontant(e.target.value)}
-                min={1000}
-              />
-            </div>
-
-            {eleveId && typePaiement && montant && Number(montant) > 0 && (
-              <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
-                <p className="font-medium">Récapitulatif :</p>
-                <p>👤 {selectedEnfant?.prenom} {selectedEnfant?.nom}</p>
-                <p>📋 {TYPE_OPTIONS.find(t => t.value === typePaiement)?.label}</p>
-                {moisConcerne && <p>📅 {moisConcerne}</p>}
-                <p className="text-lg font-bold text-primary">{Number(montant).toLocaleString()} GNF</p>
-              </div>
-            )}
-
-            <Button onClick={handlePay} disabled={loading} className="w-full" size="lg">
-              {loading ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Initialisation...</>
-              ) : (
-                <><Smartphone className="h-4 w-4 mr-2" /> Payer via Mobile Money</>
-              )}
-            </Button>
-            <p className="text-xs text-muted-foreground text-center">
-              Paiement sécurisé via PayDunya • Orange Money & MTN MoMo
-            </p>
           </TabsContent>
 
           {/* ─── WALLET DEBIT TAB ─── */}
