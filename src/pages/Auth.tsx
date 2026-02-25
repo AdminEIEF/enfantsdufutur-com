@@ -4,25 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, Loader2, Download, ArrowLeft, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
+import { Loader2, Download, Eye, EyeOff, LogIn, UserPlus, User, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import heroImage from '@/assets/hero-school.jpg';
-
-const ease = [0.25, 0.4, 0.25, 1] as [number, number, number, number];
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.5, ease } }),
-};
-
-const slideIn = {
-  hidden: { opacity: 0, x: -30 },
-  visible: (i: number) => ({ opacity: 1, x: 0, transition: { delay: i * 0.15, duration: 0.6, ease } }),
-};
+import { motion } from 'framer-motion';
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
@@ -66,269 +53,185 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Panel - Hero Image */}
-      <motion.div
-        className="hidden lg:flex lg:w-1/2 relative overflow-hidden"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
-      >
-        <motion.img
-          src={heroImage}
-          alt="Campus"
-          className="absolute inset-0 w-full h-full object-cover"
-          initial={{ scale: 1.1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 1.4, ease: [0.25, 0.4, 0.25, 1] }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/70 to-primary/50" />
-        <div className="relative z-10 flex flex-col justify-between p-10 text-primary-foreground w-full">
-          <motion.div initial="hidden" animate="visible" custom={0} variants={slideIn}>
-            <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity w-fit">
-              {schoolConfig?.logo_url ? (
-                <img src={schoolConfig.logo_url} alt="Logo" className="w-12 h-12 rounded-xl object-contain bg-white/20 backdrop-blur-sm p-1" />
-              ) : (
-                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm">
-                  <GraduationCap className="h-6 w-6" />
-                </div>
-              )}
-              <span className="font-bold text-xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                {schoolConfig?.nom || 'Ecole Internationale Les Enfants du Futur'}
-              </span>
-            </Link>
-          </motion.div>
-
-          <div className="space-y-6">
-            <motion.h1
-              className="text-4xl xl:text-5xl font-bold leading-tight"
-              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
-              initial="hidden" animate="visible" custom={1} variants={slideIn}
-            >
-              Bâtir l'avenir,<br />
-              <span className="text-secondary">un enfant</span> à la fois
-            </motion.h1>
-            <motion.p
-              className="text-primary-foreground/80 text-lg max-w-md leading-relaxed"
-              initial="hidden" animate="visible" custom={2} variants={slideIn}
-            >
-              Accédez à votre espace de gestion scolaire pour suivre les notes, paiements, 
-              inscriptions et bien plus encore.
-            </motion.p>
-            <motion.div
-              className="flex items-center gap-6 text-sm text-primary-foreground/60"
-              initial="hidden" animate="visible" custom={3} variants={slideIn}
-            >
-              {['Notes & Bulletins', 'Paiements', 'Inscriptions'].map((item) => (
-                <div key={item} className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-secondary" />
-                  {item}
-                </div>
-              ))}
-            </motion.div>
-          </div>
-
-          <motion.p
-            className="text-xs text-primary-foreground/40"
-            initial="hidden" animate="visible" custom={4} variants={slideIn}
-          >
-            © {new Date().getFullYear()} IdrissdevTech — Propulsé par RJP SARLU
-          </motion.p>
-        </div>
-      </motion.div>
-
-      {/* Right Panel - Form */}
-      <div className="w-full lg:w-1/2 flex flex-col bg-background">
-        {/* Mobile Header */}
-        <div className="lg:hidden flex items-center justify-between p-4 border-b border-border">
-          <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm">Retour à l'accueil</span>
-          </Link>
-          {schoolConfig?.logo_url ? (
-            <img src={schoolConfig.logo_url} alt="Logo" className="w-8 h-8 rounded-lg object-contain" />
-          ) : (
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground">
-              <GraduationCap className="h-4 w-4" />
-            </div>
-          )}
-        </div>
-
-        {/* Desktop back link */}
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4"
+      style={{ background: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 30%, #2dd4bf 50%, #06b6d4 70%, #0891b2 100%)' }}
+    >
+      {/* Organic blob shapes */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          className="hidden lg:block p-6"
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3, duration: 0.4 }}
-        >
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-            Retour à l'accueil
-          </Link>
-        </motion.div>
+          className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full opacity-30"
+          style={{ background: 'radial-gradient(circle, #06b6d4 0%, transparent 70%)' }}
+          animate={{ scale: [1, 1.1, 1], x: [0, 20, 0], y: [0, -10, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #0d9488 0%, transparent 70%)' }}
+          animate={{ scale: [1, 1.15, 1], x: [0, -15, 0], y: [0, 15, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute top-1/3 -right-20 w-[300px] h-[300px] rounded-full opacity-25"
+          style={{ background: 'radial-gradient(circle, #2dd4bf 0%, transparent 70%)' }}
+          animate={{ scale: [1, 1.08, 1] }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      </div>
 
-        <div className="flex-1 flex items-center justify-center px-6 py-8">
-          <div className="relative w-full max-w-sm">
-            {/* Animated border */}
-            <div className="absolute -inset-[6px] rounded-2xl overflow-hidden">
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: 'conic-gradient(from var(--border-angle), #dc2626, #eab308, #16a34a, #dc2626)',
-                  animation: 'spin-border 3s linear infinite',
-                }}
+      <motion.div
+        className="relative z-10 w-full max-w-md"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1] }}
+      >
+        {/* Hexagonal avatar */}
+        <div className="flex justify-center mb-6">
+          <div className="relative">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <polygon
+                points="40,4 72,20 72,56 40,72 8,56 8,20"
+                fill="rgba(255,255,255,0.15)"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="2"
               />
-            </div>
-            <div className="absolute inset-0 rounded-2xl border-[4px] border-primary/30" />
-          <motion.div
-            className="relative w-full space-y-8 bg-background rounded-2xl p-6 overflow-hidden"
-            initial="hidden"
-            animate="visible"
-            variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-          >
-            {/* Globe watermark behind content */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/4 w-36 h-36 opacity-[0.12] pointer-events-none z-0">
-              <svg viewBox="0 0 100 100" className="w-full h-full">
-                <circle cx="50" cy="50" r="26" fill="hsl(var(--muted))" />
-                <circle cx="50" cy="50" r="26" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2.5" />
-                <ellipse cx="50" cy="50" rx="26" ry="9" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" />
-                <ellipse cx="50" cy="50" rx="9" ry="26" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" />
-                <path d="M38 35 Q45 30 55 33 Q58 38 52 42 Q45 40 38 35Z" fill="hsl(var(--foreground))" opacity="0.4" />
-                <path d="M42 52 Q48 48 56 50 Q58 56 50 60 Q44 58 42 52Z" fill="hsl(var(--foreground))" opacity="0.4" />
-                <ellipse cx="50" cy="50" rx="42" ry="14" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.8" transform="rotate(-25 50 50)" />
-                <ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="#eab308" strokeWidth="2" opacity="0.7" transform="rotate(35 50 50)" />
-                <ellipse cx="50" cy="50" rx="44" ry="12" fill="none" stroke="#16a34a" strokeWidth="1.5" opacity="0.6" transform="rotate(-60 50 50)" />
-              </svg>
-              {/* Animated orbiting dots */}
-              <motion.div
-                className="absolute w-3 h-3 rounded-full bg-[#dc2626]"
-                animate={{ x: [0, 36, 44, 12, -24, -42, -30, 0], y: [-16, -6, 12, 20, 12, -4, -14, -16] }}
-                transition={{ duration: 3.5, repeat: Infinity, ease: 'linear' }}
-                style={{ top: '18%', left: '42%' }}
-              />
-              <motion.div
-                className="absolute w-3 h-3 rounded-full bg-[#eab308]"
-                animate={{ x: [44, 12, -24, -42, -30, 0, 36, 44], y: [12, 20, 12, -4, -14, -16, -6, 12] }}
-                transition={{ duration: 3.5, repeat: Infinity, ease: 'linear' }}
-                style={{ top: '18%', left: '42%' }}
-              />
-              <motion.div
-                className="absolute w-2.5 h-2.5 rounded-full bg-[#16a34a]"
-                animate={{ x: [-24, -42, -30, 0, 36, 44, 12, -24], y: [12, -4, -14, -16, -6, 12, 20, 12] }}
-                transition={{ duration: 3.5, repeat: Infinity, ease: 'linear' }}
-                style={{ top: '18%', left: '42%' }}
-              />
-            </div>
-
-            {/* Header */}
-            <motion.div className="relative z-10 space-y-2" variants={fadeUp} custom={0}>
-              <h2 className="text-2xl font-bold tracking-tight" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                Espace Personnel
-              </h2>
-              <p className="text-muted-foreground text-sm">
-                Connectez-vous pour accéder à votre tableau de bord
-              </p>
-            </motion.div>
-
-            <motion.div className="relative z-10" variants={fadeUp} custom={1}>
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 h-11">
-                  <TabsTrigger value="login" className="gap-2 text-sm">
-                    <motion.span animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }} className="inline-flex"><LogIn className="h-4 w-4" /></motion.span>
-                    Connexion
-                  </TabsTrigger>
-                  <TabsTrigger value="signup" className="gap-2 text-sm">
-                    <UserPlus className="h-4 w-4" />
-                    Inscription
-                  </TabsTrigger>
-                </TabsList>
-
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeTab}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -12 }}
-                    transition={{ duration: 0.25, ease: [0.25, 0.4, 0.25, 1] }}
-                  >
-                    <TabsContent value="login" className="mt-6" forceMount={activeTab === 'login' ? true : undefined}>
-                      <form onSubmit={handleLogin} className="space-y-5">
-                        <div className="space-y-2">
-                          <Label htmlFor="login-email" className="text-sm font-medium">Adresse email</Label>
-                          <Input id="login-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="admin@edugestion.com" className="h-11" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="login-password" className="text-sm font-medium">Mot de passe</Label>
-                          <div className="relative">
-                            <Input id="login-password" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" className="h-11 pr-10" />
-                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
-                          </div>
-                        </div>
-                        <motion.div whileTap={{ scale: 0.98 }}>
-                          <Button type="submit" className="w-full h-11 text-sm font-medium" disabled={loading}>
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <motion.span animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }} className="inline-flex mr-2"><LogIn className="h-4 w-4" /></motion.span>}
-                            Se connecter
-                          </Button>
-                        </motion.div>
-                      </form>
-                    </TabsContent>
-
-                    <TabsContent value="signup" className="mt-6" forceMount={activeTab === 'signup' ? true : undefined}>
-                      <form onSubmit={handleSignup} className="space-y-5">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-2">
-                            <Label htmlFor="signup-nom" className="text-sm font-medium">Nom</Label>
-                            <Input id="signup-nom" value={nom} onChange={e => setNom(e.target.value)} required className="h-11" placeholder="Diallo" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="signup-prenom" className="text-sm font-medium">Prénom</Label>
-                            <Input id="signup-prenom" value={prenom} onChange={e => setPrenom(e.target.value)} required className="h-11" placeholder="Mamadou" />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="signup-email" className="text-sm font-medium">Adresse email</Label>
-                          <Input id="signup-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required className="h-11" placeholder="votre@email.com" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="signup-password" className="text-sm font-medium">Mot de passe</Label>
-                          <div className="relative">
-                            <Input id="signup-password" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required minLength={6} className="h-11 pr-10" placeholder="6 caractères minimum" />
-                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
-                          </div>
-                        </div>
-                        <motion.div whileTap={{ scale: 0.98 }}>
-                          <Button type="submit" className="w-full h-11 text-sm font-medium" disabled={loading}>
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                            Créer mon compte
-                          </Button>
-                        </motion.div>
-                      </form>
-                    </TabsContent>
-                  </motion.div>
-                </AnimatePresence>
-              </Tabs>
-            </motion.div>
-
-            {/* Footer actions */}
-            <motion.div className="relative z-10 space-y-3 pt-3 border-t border-border" variants={fadeUp} custom={2}>
-              {isInstallable && (
-                <Button variant="outline" className="w-full h-10" onClick={install}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Installer l'Application
-                </Button>
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              {schoolConfig?.logo_url ? (
+                <img src={schoolConfig.logo_url} alt="Logo" className="w-10 h-10 rounded-lg object-contain" />
+              ) : (
+                <User className="h-8 w-8 text-white/80" />
               )}
-              <Link to="/download" className="block text-center text-sm text-muted-foreground hover:text-primary transition-colors">
-                📱 Comment installer l'appli sur mon téléphone ?
-              </Link>
-            </motion.div>
-          </motion.div>
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Glassmorphism hexagonal card */}
+        <div
+          className="relative p-8 rounded-3xl"
+          style={{
+            background: 'rgba(255, 255, 255, 0.12)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          {/* School name */}
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              {activeTab === 'login' ? 'Connexion' : 'Inscription'}
+            </h2>
+            <p className="text-white/60 text-sm mt-1">
+              {schoolConfig?.nom || 'École Internationale Les Enfants du Futur'}
+            </p>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 h-10 bg-white/10 border border-white/15 rounded-xl mb-6">
+              <TabsTrigger value="login" className="text-white/70 data-[state=active]:bg-white/20 data-[state=active]:text-white rounded-lg text-sm gap-1.5">
+                <LogIn className="h-3.5 w-3.5" /> Connexion
+              </TabsTrigger>
+              <TabsTrigger value="signup" className="text-white/70 data-[state=active]:bg-white/20 data-[state=active]:text-white rounded-lg text-sm gap-1.5">
+                <UserPlus className="h-3.5 w-3.5" /> Inscription
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="login" className="mt-0">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal-700/50" />
+                  <Input
+                    type="email" value={email} onChange={e => setEmail(e.target.value)} required
+                    placeholder="Adresse email"
+                    className="h-12 pl-10 pr-4 bg-white/80 border-0 rounded-full text-teal-900 placeholder:text-teal-700/40 focus-visible:ring-2 focus-visible:ring-white/40 shadow-sm"
+                  />
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal-700/50" />
+                  <Input
+                    type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required
+                    placeholder="Mot de passe"
+                    className="h-12 pl-10 pr-10 bg-white/80 border-0 rounded-full text-teal-900 placeholder:text-teal-700/40 focus-visible:ring-2 focus-visible:ring-white/40 shadow-sm"
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-teal-700/50 hover:text-teal-900 transition-colors">
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <Button
+                  type="submit" disabled={loading}
+                  className="w-full h-12 rounded-full text-sm font-semibold tracking-wide uppercase bg-teal-900 hover:bg-teal-950 text-white shadow-lg"
+                >
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
+                  Se connecter
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="signup" className="mt-0">
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    value={nom} onChange={e => setNom(e.target.value)} required placeholder="Nom"
+                    className="h-12 px-4 bg-white/80 border-0 rounded-full text-teal-900 placeholder:text-teal-700/40 focus-visible:ring-2 focus-visible:ring-white/40 shadow-sm"
+                  />
+                  <Input
+                    value={prenom} onChange={e => setPrenom(e.target.value)} required placeholder="Prénom"
+                    className="h-12 px-4 bg-white/80 border-0 rounded-full text-teal-900 placeholder:text-teal-700/40 focus-visible:ring-2 focus-visible:ring-white/40 shadow-sm"
+                  />
+                </div>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal-700/50" />
+                  <Input
+                    type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="Adresse email"
+                    className="h-12 pl-10 pr-4 bg-white/80 border-0 rounded-full text-teal-900 placeholder:text-teal-700/40 focus-visible:ring-2 focus-visible:ring-white/40 shadow-sm"
+                  />
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal-700/50" />
+                  <Input
+                    type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required minLength={6}
+                    placeholder="Mot de passe (6 car. min)"
+                    className="h-12 pl-10 pr-10 bg-white/80 border-0 rounded-full text-teal-900 placeholder:text-teal-700/40 focus-visible:ring-2 focus-visible:ring-white/40 shadow-sm"
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-teal-700/50 hover:text-teal-900 transition-colors">
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <Button
+                  type="submit" disabled={loading}
+                  className="w-full h-12 rounded-full text-sm font-semibold tracking-wide uppercase bg-teal-900 hover:bg-teal-950 text-white shadow-lg"
+                >
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                  Créer mon compte
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+
+          {/* Footer */}
+          <div className="mt-6 space-y-3">
+            {isInstallable && (
+              <Button variant="ghost" className="w-full h-10 text-white/70 hover:text-white hover:bg-white/10 rounded-full text-sm" onClick={install}>
+                <Download className="mr-2 h-4 w-4" /> Installer l'Application
+              </Button>
+            )}
+            <Link to="/download" className="block text-center text-xs text-white/50 hover:text-white/80 transition-colors">
+              📱 Comment installer l'appli sur mon téléphone ?
+            </Link>
+          </div>
+        </div>
+
+        {/* Back link */}
+        <div className="text-center mt-6">
+          <Link to="/" className="text-sm text-white/50 hover:text-white/80 transition-colors">
+            ← Retour à l'accueil
+          </Link>
+        </div>
+
+        <p className="text-center text-xs text-white/30 mt-4">
+          © {new Date().getFullYear()} IdrissdevTech — Propulsé par RJP SARLU
+        </p>
+      </motion.div>
     </div>
   );
 }
