@@ -76,60 +76,77 @@ export default function EmployeeLogin() {
           </div>
         </div>
 
-        {/* Glassmorphism card */}
-        <div
-          className="relative p-8 rounded-3xl"
-          style={{
-            background: 'rgba(255, 255, 255, 0.12)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Espace Personnel
-            </h2>
-            <p className="text-white/60 text-sm mt-1">
-              Connectez-vous avec votre matricule
-            </p>
+        {/* Card with animated tricolor border */}
+        <div className="relative p-[3px] rounded-3xl">
+          {/* Animated red-yellow-green spinning border */}
+          <div className="absolute inset-0 rounded-3xl overflow-hidden">
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'conic-gradient(from var(--border-angle, 0deg), #dc2626, #eab308, #16a34a, #dc2626)',
+                animation: 'spin-border 3s linear infinite',
+              }}
+            />
           </div>
+          {/* Inner mask */}
+          <div
+            className="relative rounded-[22px] p-8"
+            style={{
+              background: 'rgba(255, 255, 255, 0.12)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            <div className="text-center mb-6">
+              <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase mb-3"
+                style={{ background: 'linear-gradient(90deg, #dc2626, #eab308, #16a34a)', color: '#fff', letterSpacing: '0.15em' }}
+              >
+                Espace Personnel
+              </span>
+              <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Connexion
+              </h2>
+              <p className="text-white/60 text-sm mt-1">
+                Connectez-vous avec votre matricule
+              </p>
+            </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal-700/50" />
-              <Input
-                value={matricule}
-                onChange={(e) => setMatricule(e.target.value.toUpperCase())}
-                placeholder="Matricule (Ex: EMP-001)"
-                maxLength={20}
-                autoFocus
-                autoComplete="off"
-                className="h-12 pl-10 pr-4 bg-white/80 border-0 rounded-full text-teal-900 placeholder:text-teal-700/40 focus-visible:ring-2 focus-visible:ring-white/40 shadow-sm text-center tracking-widest font-mono"
-              />
-            </div>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal-700/50" />
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mot de passe"
-                maxLength={30}
-                autoComplete="off"
-                className="h-12 pl-10 pr-4 bg-white/80 border-0 rounded-full text-teal-900 placeholder:text-teal-700/40 focus-visible:ring-2 focus-visible:ring-white/40 shadow-sm"
-              />
-            </div>
-            <Button
-              type="submit"
-              disabled={submitting || !matricule.trim() || !password.trim()}
-              className="w-full h-12 rounded-full text-sm font-semibold tracking-wide uppercase bg-emerald-900 hover:bg-emerald-950 text-white shadow-lg"
-            >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Accéder à mon espace
-            </Button>
-          </form>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal-700/50" />
+                <Input
+                  value={matricule}
+                  onChange={(e) => setMatricule(e.target.value.toUpperCase())}
+                  placeholder="Matricule (Ex: EMP-001)"
+                  maxLength={20}
+                  autoFocus
+                  autoComplete="off"
+                  className="h-12 pl-10 pr-4 bg-white/80 border-0 rounded-full text-teal-900 placeholder:text-teal-700/40 focus-visible:ring-2 focus-visible:ring-white/40 shadow-sm text-center tracking-widest font-mono"
+                />
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal-700/50" />
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Mot de passe"
+                  maxLength={30}
+                  autoComplete="off"
+                  className="h-12 pl-10 pr-4 bg-white/80 border-0 rounded-full text-teal-900 placeholder:text-teal-700/40 focus-visible:ring-2 focus-visible:ring-white/40 shadow-sm"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={submitting || !matricule.trim() || !password.trim()}
+                className="w-full h-12 rounded-full text-sm font-semibold tracking-wide uppercase bg-emerald-900 hover:bg-emerald-950 text-white shadow-lg"
+              >
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Accéder à mon espace
+              </Button>
+            </form>
+          </div>
         </div>
 
         {/* Back link */}
@@ -139,6 +156,18 @@ export default function EmployeeLogin() {
           </Button>
         </div>
       </motion.div>
+
+      {/* CSS for spinning border animation */}
+      <style>{`
+        @property --border-angle {
+          syntax: '<angle>';
+          initial-value: 0deg;
+          inherits: false;
+        }
+        @keyframes spin-border {
+          to { --border-angle: 360deg; }
+        }
+      `}</style>
     </div>
   );
 }
