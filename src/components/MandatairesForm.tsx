@@ -47,8 +47,8 @@ export async function uploadMandatairePhotos(
       if (error) {
         toast({ title: 'Erreur upload photo', description: error.message, variant: 'destructive' });
       } else {
-        const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
-        photoUrl = urlData.publicUrl;
+        const { data: signedData } = await supabase.storage.from('photos').createSignedUrl(path, 31536000);
+        photoUrl = signedData?.signedUrl || null;
       }
     }
     results.push({ ...m, photo_url: photoUrl, photoFile: null, photoPreview: null });
