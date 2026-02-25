@@ -352,8 +352,8 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
           const path = `eleves/${matricule}.${ext}`;
           const { error: uploadErr } = await supabase.storage.from('photos').upload(path, child.photoEleve, { upsert: true });
           if (!uploadErr) {
-            const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
-            photoUrl = urlData.publicUrl;
+            const { data: signedData } = await supabase.storage.from('photos').createSignedUrl(path, 31536000);
+            photoUrl = signedData?.signedUrl || null;
           }
         }
 

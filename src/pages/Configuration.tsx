@@ -1385,8 +1385,8 @@ function EcoleTab() {
       const path = `school-logo.${ext}`;
       const { error: uploadError } = await supabase.storage.from('photos').upload(path, file, { upsert: true });
       if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
-      setLogoUrl(urlData.publicUrl + '?t=' + Date.now());
+      const { data: signedData } = await supabase.storage.from('photos').createSignedUrl(path, 31536000);
+      setLogoUrl((signedData?.signedUrl || '') + '&t=' + Date.now());
       toast.success('Logo téléversé avec succès');
     } catch (err: any) {
       toast.error('Erreur upload: ' + err.message);

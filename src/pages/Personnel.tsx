@@ -554,8 +554,8 @@ export default function Personnel() {
     const path = `${employeId}/photo_${Date.now()}.jpg`;
     const { error: upErr } = await supabase.storage.from('photos').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
     if (upErr) { toast({ title: 'Erreur upload photo', variant: 'destructive' }); return null; }
-    const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
-    return urlData?.publicUrl || null;
+    const { data: signedData } = await supabase.storage.from('photos').createSignedUrl(path, 31536000);
+    return signedData?.signedUrl || null;
   };
 
   // Generate password for existing employee
