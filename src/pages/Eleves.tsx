@@ -149,6 +149,15 @@ export default function Eleves() {
     },
   });
 
+  const { data: familles = [] } = useQuery({
+    queryKey: ['familles-all'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('familles').select('id, nom_famille').order('nom_famille');
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: paiementsAll = [] } = useQuery({
     queryKey: ['paiements-all'],
     queryFn: async () => {
@@ -238,6 +247,7 @@ export default function Eleves() {
       classe_id: editing.classe_id,
       transport_zone: editing.transport_zone,
       option_cantine: editing.option_cantine,
+      famille_id: editing.famille_id || null,
     });
   };
 
@@ -689,6 +699,15 @@ export default function Eleves() {
                 <Select value={editing.classe_id || ''} onValueChange={v => setEditing({ ...editing, classe_id: v })}>
                   <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
                   <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label>Famille</Label>
+                <Select value={editing.famille_id || 'none'} onValueChange={v => setEditing({ ...editing, famille_id: v === 'none' ? null : v })}>
+                  <SelectTrigger><SelectValue placeholder="Aucune famille" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Aucune famille</SelectItem>
+                    {familles.map((f: any) => <SelectItem key={f.id} value={f.id}>{f.nom_famille}</SelectItem>)}
+                  </SelectContent>
                 </Select>
               </div>
             </div>
