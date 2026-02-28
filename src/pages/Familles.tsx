@@ -62,6 +62,8 @@ export default function Familles() {
 
   // Add child dialog
   const [addChildOpen, setAddChildOpen] = useState(false);
+  const [addChildMode, setAddChildMode] = useState<'search' | 'create'>('search');
+  const [childSearch, setChildSearch] = useState('');
   const [childNom, setChildNom] = useState('');
   const [childPrenom, setChildPrenom] = useState('');
   const [childSexe, setChildSexe] = useState('');
@@ -71,12 +73,37 @@ export default function Familles() {
   // Delete confirm
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
+  // Query for unattached students
+  const { data: allEleves = [] } = useQuery({
+    queryKey: ['eleves-for-famille-search'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('eleves')
+        .select('id, nom, prenom, matricule, sexe, classe_id, famille_id, classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom)))')
+        .is('deleted_at', null)
+        .order('nom');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const searchedEleves = useMemo(() => {
+    if (!childSearch.trim()) return [];
+    const q = childSearch.toLowerCase();
+    return allEleves
+      .filter((e: any) => 
+        `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(q)
+      )
+      .slice(0, 10);
+  }, [allEleves, childSearch]);
+
   const resetForm = () => {
     setNomFamille(''); setTelPere(''); setTelMere(''); setEmail(''); setAdresse(''); setEditId(null);
   };
 
   const resetChildForm = () => {
     setChildNom(''); setChildPrenom(''); setChildSexe(''); setChildDob(''); setChildClasseId('');
+    setChildSearch(''); setAddChildMode('search');
   };
 
   const openEdit = (f: any) => {
@@ -136,6 +163,22 @@ export default function Familles() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const attachExistingChild = useMutation({
+    mutationFn: async (eleveId: string) => {
+      if (!selectedFamille) throw new Error('Aucune famille sélectionnée');
+      const { error } = await supabase.from('eleves').update({ famille_id: selectedFamille.id }).eq('id', eleveId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['familles-with-children'] });
+      qc.invalidateQueries({ queryKey: ['eleves-for-famille-search'] });
+      toast.success('Élève rattaché à la famille');
+      resetChildForm(); setAddChildOpen(false);
+      refreshSelectedFamille();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const addChild = useMutation({
     mutationFn: async () => {
       if (!childNom.trim() || !childPrenom.trim()) throw new Error('Nom et prénom obligatoires');
@@ -153,19 +196,23 @@ export default function Familles() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['familles-with-children'] });
+      qc.invalidateQueries({ queryKey: ['eleves-for-famille-search'] });
       toast.success(`${childPrenom} ${childNom} ajouté(e) à la famille`);
       resetChildForm(); setAddChildOpen(false);
-      // Refresh selected famille
-      setTimeout(() => {
-        const updated = qc.getQueryData<any[]>(['familles-with-children']);
-        if (updated) {
-          const f = updated.find((fam: any) => fam.id === selectedFamille.id);
-          if (f) setSelectedFamille(f);
-        }
-      }, 500);
+      refreshSelectedFamille();
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const refreshSelectedFamille = () => {
+    setTimeout(() => {
+      const updated = qc.getQueryData<any[]>(['familles-with-children']);
+      if (updated && selectedFamille) {
+        const f = updated.find((fam: any) => fam.id === selectedFamille.id);
+        if (f) setSelectedFamille(f);
+      }
+    }, 500);
+  };
 
   const removeChildFromFamily = useMutation({
     mutationFn: async (eleveId: string) => {
@@ -460,46 +507,104 @@ export default function Familles() {
 
       {/* ─── Add Child Dialog ─── */}
       <Dialog open={addChildOpen} onOpenChange={(o) => { setAddChildOpen(o); if (!o) resetChildForm(); }}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>Ajouter un enfant à la famille {selectedFamille?.nom_famille}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Prénom *</Label><Input value={childPrenom} onChange={e => setChildPrenom(e.target.value)} maxLength={50} placeholder="Prénom" /></div>
-              <div><Label>Nom *</Label><Input value={childNom} onChange={e => setChildNom(e.target.value)} maxLength={50} placeholder="Nom" /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+          
+          <Tabs value={addChildMode} onValueChange={v => setAddChildMode(v as 'search' | 'create')} className="mt-2">
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="search"><Search className="h-3.5 w-3.5 mr-1.5" /> Chercher un élève</TabsTrigger>
+              <TabsTrigger value="create"><Plus className="h-3.5 w-3.5 mr-1.5" /> Nouvel élève</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="search" className="mt-3 space-y-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher par nom, prénom ou matricule..."
+                  value={childSearch}
+                  onChange={e => setChildSearch(e.target.value)}
+                  className="pl-9"
+                  autoFocus
+                />
+              </div>
+              {childSearch.trim() && (
+                <div className="border rounded-lg max-h-[300px] overflow-y-auto">
+                  {searchedEleves.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-6">Aucun élève trouvé pour "{childSearch}"</p>
+                  ) : (
+                    searchedEleves.map((e: any) => (
+                      <div
+                        key={e.id}
+                        className="flex items-center justify-between px-3 py-2.5 hover:bg-muted/50 border-b last:border-b-0 transition-colors"
+                      >
+                        <div>
+                          <p className="font-medium text-sm">{e.prenom} {e.nom}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {e.matricule && <span className="font-mono mr-2">{e.matricule}</span>}
+                            {e.classes ? `${e.classes.niveaux?.cycles?.nom} — ${e.classes.nom}` : 'Sans classe'}
+                            {e.famille_id && <Badge variant="secondary" className="ml-2 text-[10px]">Déjà en famille</Badge>}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={e.famille_id ? 'outline' : 'default'}
+                          disabled={attachExistingChild.isPending}
+                          onClick={() => attachExistingChild.mutate(e.id)}
+                        >
+                          <UserPlus className="h-3.5 w-3.5 mr-1" />
+                          {e.famille_id ? 'Réattribuer' : 'Ajouter'}
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+              {!childSearch.trim() && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Tapez le nom ou le matricule d'un élève déjà inscrit pour le rattacher à cette famille.
+                </p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="create" className="mt-3 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Prénom *</Label><Input value={childPrenom} onChange={e => setChildPrenom(e.target.value)} maxLength={50} placeholder="Prénom" /></div>
+                <div><Label>Nom *</Label><Input value={childNom} onChange={e => setChildNom(e.target.value)} maxLength={50} placeholder="Nom" /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Sexe</Label>
+                  <Select value={childSexe} onValueChange={setChildSexe}>
+                    <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="M">Masculin</SelectItem>
+                      <SelectItem value="F">Féminin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Date de naissance</Label><Input type="date" value={childDob} onChange={e => setChildDob(e.target.value)} /></div>
+              </div>
               <div>
-                <Label>Sexe</Label>
-                <Select value={childSexe} onValueChange={setChildSexe}>
-                  <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                <Label>Classe</Label>
+                <Select value={childClasseId} onValueChange={setChildClasseId}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner la classe" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="M">Masculin</SelectItem>
-                    <SelectItem value="F">Féminin</SelectItem>
+                    {allClasses.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.niveaux?.cycles?.nom} — {c.niveaux?.nom} — {c.nom}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Date de naissance</Label><Input type="date" value={childDob} onChange={e => setChildDob(e.target.value)} /></div>
-            </div>
-            <div>
-              <Label>Classe</Label>
-              <Select value={childClasseId} onValueChange={setChildClasseId}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner la classe" /></SelectTrigger>
-                <SelectContent>
-                  {allClasses.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.niveaux?.cycles?.nom} — {c.niveaux?.nom} — {c.nom}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddChildOpen(false)}>Annuler</Button>
-            <Button onClick={() => addChild.mutate()} disabled={addChild.isPending}>
-              <UserPlus className="h-4 w-4 mr-2" /> Ajouter l'enfant
-            </Button>
-          </DialogFooter>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setAddChildOpen(false)}>Annuler</Button>
+                <Button onClick={() => addChild.mutate()} disabled={addChild.isPending}>
+                  <UserPlus className="h-4 w-4 mr-2" /> Créer et ajouter
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
