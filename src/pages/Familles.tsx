@@ -70,6 +70,9 @@ export default function Familles() {
   const [childDob, setChildDob] = useState('');
   const [childClasseId, setChildClasseId] = useState('');
 
+  // Edit child dialog
+  const [editingChild, setEditingChild] = useState<any>(null);
+
   // Delete confirm
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
@@ -220,6 +223,22 @@ export default function Familles() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['familles-with-children'] });
       toast.success('Enfant détaché de la famille');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const updateChild = useMutation({
+    mutationFn: async (child: any) => {
+      const { id, ...rest } = child;
+      const { error } = await supabase.from('eleves').update(rest).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['familles-with-children'] });
+      await qc.invalidateQueries({ queryKey: ['eleves-for-famille-search'] });
+      toast.success('Élève mis à jour');
+      setEditingChild(null);
+      refreshSelectedFamille();
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -473,7 +492,14 @@ export default function Familles() {
                     <TableBody>
                       {selectedFamille.eleves.map((e: any) => (
                         <TableRow key={e.id}>
-                          <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
+                          <TableCell>
+                            <button
+                              className="font-medium text-primary hover:underline cursor-pointer text-left"
+                              onClick={() => setEditingChild({ ...e })}
+                            >
+                              {e.prenom} {e.nom}
+                            </button>
+                          </TableCell>
                           <TableCell>{e.sexe || '—'}</TableCell>
                           <TableCell>
                             {e.classes ? (
@@ -485,7 +511,10 @@ export default function Familles() {
                               {e.statut}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="flex gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => setEditingChild({ ...e })} title="Modifier">
+                              <Edit className="h-3 w-3" />
+                            </Button>
                             <Button variant="ghost" size="sm" onClick={() => removeChildFromFamily.mutate(e.id)} title="Détacher de la famille">
                               <Trash2 className="h-3 w-3 text-destructive" />
                             </Button>
@@ -603,6 +632,79 @@ export default function Familles() {
               </DialogFooter>
             </TabsContent>
           </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Edit Child Dialog ─── */}
+      <Dialog open={!!editingChild} onOpenChange={(o) => { if (!o) setEditingChild(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Modifier l'élève</DialogTitle></DialogHeader>
+          {editingChild && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Prénom</Label><Input value={editingChild.prenom} onChange={e => setEditingChild({ ...editingChild, prenom: e.target.value })} /></div>
+                <div><Label>Nom</Label><Input value={editingChild.nom} onChange={e => setEditingChild({ ...editingChild, nom: e.target.value })} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Sexe</Label>
+                  <Select value={editingChild.sexe || ''} onValueChange={v => setEditingChild({ ...editingChild, sexe: v })}>
+                    <SelectTrigger><SelectValue placeholder="Sexe" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="M">Masculin</SelectItem>
+                      <SelectItem value="F">Féminin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Date de naissance</Label><Input type="date" value={editingChild.date_naissance || ''} onChange={e => setEditingChild({ ...editingChild, date_naissance: e.target.value })} /></div>
+              </div>
+              <div>
+                <Label>Classe</Label>
+                <Select value={editingChild.classe_id || ''} onValueChange={v => setEditingChild({ ...editingChild, classe_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner la classe" /></SelectTrigger>
+                  <SelectContent>
+                    {allClasses.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.niveaux?.cycles?.nom} — {c.niveaux?.nom} — {c.nom}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Statut</Label>
+                <Select value={editingChild.statut || 'inscrit'} onValueChange={v => setEditingChild({ ...editingChild, statut: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="inscrit">Inscrit</SelectItem>
+                    <SelectItem value="réinscrit">Réinscrit</SelectItem>
+                    <SelectItem value="suspendu">Suspendu</SelectItem>
+                    <SelectItem value="radié">Radié</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingChild(null)}>Annuler</Button>
+            <Button
+              disabled={updateChild.isPending}
+              onClick={() => {
+                if (!editingChild) return;
+                updateChild.mutate({
+                  id: editingChild.id,
+                  nom: editingChild.nom,
+                  prenom: editingChild.prenom,
+                  sexe: editingChild.sexe,
+                  date_naissance: editingChild.date_naissance || null,
+                  classe_id: editingChild.classe_id || null,
+                  statut: editingChild.statut,
+                });
+              }}
+            >
+              {updateChild.isPending ? 'Enregistrement...' : 'Enregistrer'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
