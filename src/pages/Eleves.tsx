@@ -100,11 +100,16 @@ export default function Eleves() {
   const [search, setSearch] = useState('');
   const [filterCycle, setFilterCycle] = useState('all');
   const [filterClasse, setFilterClasse] = useState('all');
-  const [filterType, setFilterType] = useState<'all' | 'famille' | 'individuel'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'famille' | 'individuel'>('individuel');
   const [showComplete, setShowComplete] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [editing, setEditing] = useState<any>(null);
   const [badgeEleve, setBadgeEleve] = useState<any>(null);
+  const [creatingFamille, setCreatingFamille] = useState(false);
+  const [newFamilleName, setNewFamilleName] = useState('');
+  const [newFamilleTelPere, setNewFamilleTelPere] = useState('');
+  const [newFamilleTelMere, setNewFamilleTelMere] = useState('');
+  const [savingFamille, setSavingFamille] = useState(false);
   const { toast } = useToast();
   const qc = useQueryClient();
   const { data: schoolConfig } = useSchoolConfig();
@@ -702,13 +707,52 @@ export default function Eleves() {
                 </Select>
               </div>
               <div><Label>Famille</Label>
-                <Select value={editing.famille_id || 'none'} onValueChange={v => setEditing({ ...editing, famille_id: v === 'none' ? null : v })}>
-                  <SelectTrigger><SelectValue placeholder="Aucune famille" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Aucune famille</SelectItem>
-                    {familles.map((f: any) => <SelectItem key={f.id} value={f.id}>{f.nom_famille}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select value={editing.famille_id || 'none'} onValueChange={v => setEditing({ ...editing, famille_id: v === 'none' ? null : v })}>
+                    <SelectTrigger><SelectValue placeholder="Aucune famille" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Aucune famille</SelectItem>
+                      {familles.map((f: any) => <SelectItem key={f.id} value={f.id}>{f.nom_famille}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" size="sm" variant="outline" onClick={() => setCreatingFamille(!creatingFamille)} className="shrink-0">
+                    {creatingFamille ? '✕' : '+ Créer'}
+                  </Button>
+                </div>
+                {creatingFamille && (
+                  <div className="mt-2 border rounded-lg p-3 space-y-2 bg-muted/30">
+                    <p className="text-xs font-semibold">Nouvelle famille</p>
+                    <Input placeholder="Nom de famille *" value={newFamilleName} onChange={e => setNewFamilleName(e.target.value)} className="h-8 text-sm" />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input placeholder="Tél. père" value={newFamilleTelPere} onChange={e => setNewFamilleTelPere(e.target.value)} className="h-8 text-sm" />
+                      <Input placeholder="Tél. mère" value={newFamilleTelMere} onChange={e => setNewFamilleTelMere(e.target.value)} className="h-8 text-sm" />
+                    </div>
+                    <Button size="sm" disabled={!newFamilleName.trim() || savingFamille} onClick={async () => {
+                      setSavingFamille(true);
+                      try {
+                        const { data, error } = await supabase.from('familles').insert({
+                          nom_famille: newFamilleName.trim(),
+                          telephone_pere: newFamilleTelPere.trim() || null,
+                          telephone_mere: newFamilleTelMere.trim() || null,
+                        }).select('id').single();
+                        if (error) throw error;
+                        qc.invalidateQueries({ queryKey: ['familles-all'] });
+                        setEditing({ ...editing, famille_id: data.id });
+                        setCreatingFamille(false);
+                        setNewFamilleName('');
+                        setNewFamilleTelPere('');
+                        setNewFamilleTelMere('');
+                        toast({ title: 'Famille créée', description: `"${newFamilleName.trim()}" ajoutée` });
+                      } catch (err: any) {
+                        toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+                      } finally {
+                        setSavingFamille(false);
+                      }
+                    }}>
+                      {savingFamille ? 'Création...' : 'Créer et attribuer'}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
