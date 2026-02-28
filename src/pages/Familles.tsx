@@ -169,10 +169,10 @@ export default function Familles() {
       const { error } = await supabase.from('eleves').update({ famille_id: selectedFamille.id }).eq('id', eleveId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['familles-with-children'] });
-      qc.invalidateQueries({ queryKey: ['eleves-for-famille-search'] });
-      toast.success('Élève rattaché à la famille');
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['familles-with-children'] });
+      await qc.invalidateQueries({ queryKey: ['eleves-for-famille-search'] });
+      toast.success('Élève rattaché à la famille (retiré de l\'ancienne si existante)');
       resetChildForm(); setAddChildOpen(false);
       refreshSelectedFamille();
     },
@@ -194,9 +194,9 @@ export default function Familles() {
       });
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['familles-with-children'] });
-      qc.invalidateQueries({ queryKey: ['eleves-for-famille-search'] });
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['familles-with-children'] });
+      await qc.invalidateQueries({ queryKey: ['eleves-for-famille-search'] });
       toast.success(`${childPrenom} ${childNom} ajouté(e) à la famille`);
       resetChildForm(); setAddChildOpen(false);
       refreshSelectedFamille();
@@ -205,13 +205,11 @@ export default function Familles() {
   });
 
   const refreshSelectedFamille = () => {
-    setTimeout(() => {
-      const updated = qc.getQueryData<any[]>(['familles-with-children']);
-      if (updated && selectedFamille) {
-        const f = updated.find((fam: any) => fam.id === selectedFamille.id);
-        if (f) setSelectedFamille(f);
-      }
-    }, 500);
+    const updated = qc.getQueryData<any[]>(['familles-with-children']);
+    if (updated && selectedFamille) {
+      const f = updated.find((fam: any) => fam.id === selectedFamille.id);
+      if (f) setSelectedFamille(f);
+    }
   };
 
   const removeChildFromFamily = useMutation({
