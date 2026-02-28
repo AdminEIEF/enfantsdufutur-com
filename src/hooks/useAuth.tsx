@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 
@@ -21,9 +21,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
-  const initializedRef = useRef(false);
+  const fetchingRolesRef = useRef(false);
+  const lastUserIdRef = useRef<string | null>(null);
 
-  const fetchRoles = async () => {
+  const fetchRoles = useCallback(async (userId: string) => {
+    // Prevent concurrent fetches for the same user
+    if (fetchingRolesRef.current && lastUserIdRef.current === userId) return;
+    fetchingRolesRef.current = true;
+    lastUserIdRef.current = userId;
     try {
       const { data, error } = await supabase.rpc('get_my_roles');
       if (!error && data) {
@@ -31,65 +36,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch {
       setRoles([]);
+    } finally {
+      fetchingRolesRef.current = false;
     }
-  };
+  }, []);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    let mounted = true;
+
+    // onAuthStateChange is the SINGLE source of truth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        // Skip if this is just a token refresh (not a real auth change)
+      (event, newSession) => {
+        if (!mounted) return;
+
+        // Ignore token refresh events entirely - session is already valid
         if (event === 'TOKEN_REFRESHED') {
-          // Only update session/user, don't re-fetch roles
-          setSession(newSession);
-          setUser(newSession?.user ?? null);
           return;
         }
 
+        const newUser = newSession?.user ?? null;
         setSession(newSession);
-        setUser(newSession?.user ?? null);
+        setUser(newUser);
 
-        if (newSession?.user) {
-          // Use setTimeout to avoid Supabase auth deadlock
-          setTimeout(() => fetchRoles(), 0);
+        if (newUser) {
+          // Only fetch roles if user changed
+          if (lastUserIdRef.current !== newUser.id) {
+            setTimeout(() => {
+              if (mounted) fetchRoles(newUser.id);
+            }, 0);
+          }
         } else {
           setRoles([]);
+          lastUserIdRef.current = null;
         }
 
-        // Mark loading as done after first event
-        if (!initializedRef.current) {
-          initializedRef.current = true;
-          setLoading(false);
-        }
+        setLoading(false);
       }
     );
 
-    // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      // Only set initial state if onAuthStateChange hasn't fired yet
-      if (!initializedRef.current) {
-        setSession(existingSession);
-        setUser(existingSession?.user ?? null);
-        if (existingSession?.user) {
-          fetchRoles();
-        }
-        initializedRef.current = true;
-        setLoading(false);
-      }
-    });
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchRoles]);
 
-    return () => subscription.unsubscribe();
-  }, []);
+  const hasRole = useCallback((role: AppRole) => roles.includes(role), [roles]);
+  const hasAnyRole = useCallback((r: AppRole[]) => r.some(role => roles.includes(role)), [roles]);
 
-  const hasRole = (role: AppRole) => roles.includes(role);
-  const hasAnyRole = (r: AppRole[]) => r.some(role => roles.includes(role));
-
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
     setRoles([]);
-  };
+    lastUserIdRef.current = null;
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, session, roles, loading, hasRole, hasAnyRole, signOut }}>
