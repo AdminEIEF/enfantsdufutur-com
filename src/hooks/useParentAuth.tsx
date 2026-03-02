@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ParentFamille {
   id: string;
@@ -60,6 +61,25 @@ export function ParentAuthProvider({ children }: { children: ReactNode }) {
     }
     setLoading(false);
   }, []);
+
+  // Listen for forced disconnect by admin
+  useEffect(() => {
+    if (!session?.famille?.id) return;
+    const channel = supabase
+      .channel(`parent-disconnect-${session.famille.id}`)
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'active_connections',
+        filter: `ref_id=eq.${session.famille.id}`,
+      }, () => {
+        setSession(null);
+        localStorage.removeItem(STORAGE_KEY);
+        window.location.href = '/parent/login';
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [session?.famille?.id]);
 
   const login = async (code: string) => {
     const resp = await fetch(

@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StudentEleve {
   id: string;
@@ -48,6 +49,25 @@ export function StudentAuthProvider({ children }: { children: ReactNode }) {
     }
     setLoading(false);
   }, []);
+
+  // Listen for forced disconnect by admin
+  useEffect(() => {
+    if (!session?.eleve?.id) return;
+    const channel = supabase
+      .channel(`student-disconnect-${session.eleve.id}`)
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'active_connections',
+        filter: `ref_id=eq.${session.eleve.id}`,
+      }, () => {
+        setSession(null);
+        localStorage.removeItem(STORAGE_KEY);
+        window.location.href = '/student/login';
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [session?.eleve?.id]);
 
   const login = async (matricule: string, password: string) => {
     const resp = await fetch(
