@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Shield, ShieldOff, Wifi, WifiOff, Activity, Search, Eye, Ban, CheckCircle, Clock, Users, FileText, GraduationCap, Briefcase, UserCheck } from 'lucide-react';
+import { Shield, ShieldOff, Wifi, WifiOff, Activity, Search, Eye, Ban, CheckCircle, Clock, Users, FileText, GraduationCap, Briefcase, UserCheck, LogOut, KeyRound, Copy, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -92,6 +92,9 @@ export default function AdminMonitoring() {
   const [connectionDetail, setConnectionDetail] = useState<ActiveConnection | null>(null);
   const [confirmBlock, setConfirmBlock] = useState<ProfileUser | null>(null);
   const [auditLimit, setAuditLimit] = useState(50);
+  const [showPasswordDialog, setShowPasswordDialog] = useState<ActiveConnection | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     fetchAll();
@@ -164,7 +167,54 @@ export default function AdminMonitoring() {
     setConfirmBlock(null);
   };
 
-  // Group connections by type
+  const forceDisconnect = async (conn: ActiveConnection) => {
+    setActionLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-session-action', {
+        body: { action: 'disconnect', connection_id: conn.id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`${conn.display_name} déconnecté`);
+      setConnections(prev => prev.filter(c => c.id !== conn.id));
+      setConnectionDetail(null);
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur lors de la déconnexion');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const changePassword = async (conn: ActiveConnection) => {
+    if (!newPassword.trim() || newPassword.length < 4) {
+      toast.error('Le mot de passe doit contenir au moins 4 caractères');
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-session-action', {
+        body: { action: 'change_password', type: conn.type, ref_id: conn.ref_id, new_password: newPassword.trim() },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Mot de passe de ${conn.display_name} modifié`);
+      setShowPasswordDialog(null);
+      setNewPassword('');
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur lors du changement de mot de passe');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let pwd = '';
+    for (let i = 0; i < 8; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+    setNewPassword(pwd);
+  };
+
+
   const connectionsByType = useMemo(() => {
     const map: Record<string, ActiveConnection[]> = { eleve: [], parent: [], employe: [], admin: [] };
     connections.forEach(c => { if (map[c.type]) map[c.type].push(c); });
@@ -610,7 +660,7 @@ export default function AdminMonitoring() {
             </DialogTitle>
           </DialogHeader>
           {connectionDetail && (
-            <div className="space-y-3 text-sm">
+            <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">Nom :</span><br /><strong>{connectionDetail.display_name}</strong></div>
                 <div><span className="text-muted-foreground">Type :</span><br /><Badge>{TYPE_CONFIG[connectionDetail.type]?.label || connectionDetail.type}</Badge></div>
@@ -635,8 +685,76 @@ export default function AdminMonitoring() {
                   </div>
                 </div>
               )}
+
+              {/* Action buttons */}
+              {connectionDetail.type !== 'admin' && (
+                <div className="flex gap-2 pt-2 border-t">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="gap-1.5 flex-1"
+                    disabled={actionLoading}
+                    onClick={() => forceDisconnect(connectionDetail)}
+                  >
+                    {actionLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5" />}
+                    Déconnecter
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 flex-1"
+                    onClick={() => { setShowPasswordDialog(connectionDetail); setNewPassword(''); }}
+                  >
+                    <KeyRound className="h-3.5 w-3.5" />
+                    Changer MDP
+                  </Button>
+                </div>
+              )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Password change dialog */}
+      <Dialog open={!!showPasswordDialog} onOpenChange={() => { setShowPasswordDialog(null); setNewPassword(''); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-primary" />
+              Changer le mot de passe
+            </DialogTitle>
+            <DialogDescription>
+              Modifier le mot de passe de <strong>{showPasswordDialog?.display_name}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nouveau mot de passe"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                className="flex-1"
+              />
+              <Button variant="outline" size="icon" onClick={generateRandomPassword} title="Générer un mot de passe">
+                <Activity className="h-4 w-4" />
+              </Button>
+            </div>
+            {newPassword && (
+              <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+                <code className="text-sm font-mono flex-1">{newPassword}</code>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(newPassword); toast.success('Copié !'); }}>
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowPasswordDialog(null); setNewPassword(''); }}>Annuler</Button>
+            <Button disabled={actionLoading || !newPassword.trim() || newPassword.length < 4} onClick={() => showPasswordDialog && changePassword(showPasswordDialog)}>
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Confirmer
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
