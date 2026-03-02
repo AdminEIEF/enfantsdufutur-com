@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,7 @@ import { Users, UserPlus, CreditCard, BookOpen, GraduationCap, TrendingUp, Utens
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { DashboardImpayesSection } from '@/components/DashboardImpayesSection';
 
 export default function Dashboard() {
   const { roles } = useAuth();
@@ -115,17 +116,30 @@ export default function Dashboard() {
   // Impayés par famille
   const impayesFamilles = useMemo(() => {
     const familleIds = new Set(eleves.filter((e: any) => e.famille_id).map((e: any) => e.famille_id));
-    const result: { nom: string; reste: number }[] = [];
+    const result: { nom: string; reste: number; niveau: string }[] = [];
     familleIds.forEach(fid => {
       const kids = eleves.filter((e: any) => e.famille_id === fid);
       const fam = familles.find((f: any) => f.id === fid);
       const annuel = kids.reduce((s: number, e: any) => s + Number(e.classes?.niveaux?.frais_scolarite || 0), 0);
       const paye = kids.reduce((s: number, e: any) => s + paiements.filter((p: any) => p.eleve_id === e.id && p.type_paiement === 'scolarite').reduce((ss: number, p: any) => ss + Number(p.montant), 0), 0);
       const reste = annuel - paye;
-      if (reste > 0) result.push({ nom: fam?.nom_famille || 'Inconnue', reste });
+      // Get the predominant niveau from kids
+      const niveaux = kids.map((e: any) => e.classes?.niveaux?.nom).filter(Boolean);
+      const niveau = niveaux[0] || 'Non classé';
+      if (reste > 0) result.push({ nom: fam?.nom_famille || 'Inconnue', reste, niveau });
     });
     return result.sort((a, b) => b.reste - a.reste);
   }, [eleves, paiements, familles]);
+
+  // Group impayés by niveau
+  const impayesParNiveau = useMemo(() => {
+    const map: Record<string, typeof impayesFamilles> = {};
+    impayesFamilles.forEach(f => {
+      if (!map[f.niveau]) map[f.niveau] = [];
+      map[f.niveau].push(f);
+    });
+    return Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
+  }, [impayesFamilles]);
 
   const paiementsMois = paiements.filter((p: any) => p.date_paiement?.startsWith(thisMonth));
   const totalRecettesMois = paiementsMois.reduce((s: number, p: any) => s + Number(p.montant), 0);
@@ -450,33 +464,7 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Impayés par famille */}
-      {impayesFamilles.length > 0 && (
-        <Card className="border-destructive/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-destructive" /> Impayés par famille ({impayesFamilles.length})</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Famille</TableHead>
-                  <TableHead className="text-right">Reste à payer</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {impayesFamilles.slice(0, 10).map((f, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="font-medium">{f.nom}</TableCell>
-                    <TableCell className="text-right"><Badge variant="destructive">{f.reste.toLocaleString()} GNF</Badge></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            {impayesFamilles.length > 10 && <p className="text-xs text-muted-foreground text-center py-2">… et {impayesFamilles.length - 10} autre(s)</p>}
-          </CardContent>
-        </Card>
-      )}
+      <DashboardImpayesSection impayesFamilles={impayesFamilles} impayesParNiveau={impayesParNiveau} />
 
       {/* Financial balance */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
