@@ -11,8 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Search, FileText, Undo2, ChevronDown, ChevronUp, CheckCircle, History } from 'lucide-react';
+import { Plus, Search, FileText, Undo2, ChevronDown, ChevronUp, CheckCircle, History, Users, AlertTriangle, UserX, ClipboardList, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -70,6 +71,8 @@ export default function CoordinateurDocuments() {
   const [telephoneRetrait, setTelephoneRetrait] = useState('');
   const [historiqueDialog, setHistoriqueDialog] = useState<string | null>(null);
   const [validationDialog, setValidationDialog] = useState<Eleve | null>(null);
+  const [abandonDialog, setAbandonDialog] = useState<Eleve | null>(null);
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   const [form, setForm] = useState({ nom: '', prenom: '', ecole_provenance: '', niveau_scolaire: '' });
 
@@ -90,26 +93,49 @@ export default function CoordinateurDocuments() {
 
   const ecoles = useMemo(() => [...new Set(eleves.map(e => e.ecole_provenance).filter(Boolean))], [eleves]);
 
-  const filteredEleves = useMemo(() => {
-    return eleves.filter(e => {
-      const matchSearch = `${e.nom} ${e.prenom}`.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchEcole = filterEcole === 'all' || e.ecole_provenance === filterEcole;
-      const matchNiveau = filterNiveau === 'all' || e.niveau_scolaire === filterNiveau;
-      return matchSearch && matchEcole && matchNiveau;
-    });
-  }, [eleves, searchTerm, filterEcole, filterNiveau]);
-
   const getEleveDocs = (eleveId: string) => documents.filter(d => d.eleve_id === eleveId);
   const getEleveHistorique = (eleveId: string) => historique.filter(h => h.eleve_id === eleveId);
 
   const getStatutDossier = (eleveId: string) => {
     const docs = getEleveDocs(eleveId);
-    const eleve = eleves.find(e => e.id === eleveId);
-    if (eleve?.statut === 'sortant') return 'sortant';
     const deposited = docs.filter(d => d.statut === 'depose').length;
     if (deposited === DOCUMENT_TYPES.length) return 'complet';
     return 'incomplet';
   };
+
+  // Stats
+  const stats = useMemo(() => {
+    const preInscrits = eleves.filter(e => e.valide && e.statut === 'actif');
+    const enManqueDocs = eleves.filter(e => e.statut === 'actif' && !e.valide && getStatutDossier(e.id) === 'incomplet');
+    const sortants = eleves.filter(e => e.statut === 'sortant');
+    const abandons = eleves.filter(e => e.statut === 'abandon');
+    const actifs = eleves.filter(e => e.statut === 'actif' && !e.valide);
+    return { preInscrits: preInscrits.length, enManqueDocs: enManqueDocs.length, sortants: sortants.length, abandons: abandons.length, actifs: actifs.length, total: eleves.length };
+  }, [eleves, documents]);
+
+  // Filtered eleves based on active tab
+  const filteredEleves = useMemo(() => {
+    let base = eleves;
+
+    if (activeTab === 'actifs') {
+      base = eleves.filter(e => e.statut === 'actif' && !e.valide);
+    } else if (activeTab === 'pre-inscrits') {
+      base = eleves.filter(e => e.valide);
+    } else if (activeTab === 'sortants') {
+      base = eleves.filter(e => e.statut === 'sortant');
+    } else if (activeTab === 'abandons') {
+      base = eleves.filter(e => e.statut === 'abandon');
+    } else if (activeTab === 'dashboard') {
+      return [];
+    }
+
+    return base.filter(e => {
+      const matchSearch = `${e.nom} ${e.prenom}`.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchEcole = filterEcole === 'all' || e.ecole_provenance === filterEcole;
+      const matchNiveau = filterNiveau === 'all' || e.niveau_scolaire === filterNiveau;
+      return matchSearch && matchEcole && matchNiveau;
+    });
+  }, [eleves, searchTerm, filterEcole, filterNiveau, activeTab, documents]);
 
   const handleAddEleve = async () => {
     if (!form.nom.trim() || !form.prenom.trim()) {
@@ -186,21 +212,19 @@ export default function CoordinateurDocuments() {
   const handleValider = async () => {
     if (!validationDialog) return;
     const eleve = validationDialog;
+
     const dossierStatut = getStatutDossier(eleve.id);
+    const notesDossier = dossierStatut === 'complet'
+      ? `Dossier complet.`
+      : `Dossier incomplet — documents manquants.`;
 
-    if (dossierStatut !== 'complet') {
-      toast({ title: 'Erreur', description: 'Le dossier doit être complet avant validation', variant: 'destructive' });
-      return;
-    }
-
-    // Create pre-inscription entry
     const { data: preInsc, error: preErr } = await supabase.from('pre_inscriptions').insert({
       nom_eleve: eleve.nom,
       prenom_eleve: eleve.prenom,
       nom_parent: 'Validé par coordinateur',
       telephone_parent: '—',
       statut: 'en_attente',
-      notes_admin: `Élève validé par le coordinateur. École de provenance: ${eleve.ecole_provenance || '—'}. Niveau: ${eleve.niveau_scolaire || '—'}.`,
+      notes_admin: `Élève pré-inscrit par le coordinateur. École: ${eleve.ecole_provenance || '—'}. Niveau: ${eleve.niveau_scolaire || '—'}. ${notesDossier}`,
     } as any).select().single();
 
     if (preErr) {
@@ -208,25 +232,51 @@ export default function CoordinateurDocuments() {
       return;
     }
 
-    // Update coordinateur_eleves with validation
     await supabase.from('coordinateur_eleves').update({
       valide: true,
       valide_at: new Date().toISOString(),
       pre_inscription_id: (preInsc as any).id,
     } as any).eq('id', eleve.id);
 
-    toast({ title: 'Élève validé', description: 'L\'élève apparaît maintenant dans les pré-inscriptions' });
+    toast({ title: 'Élève pré-inscrit', description: 'L\'élève apparaît maintenant dans les pré-inscriptions' });
     setValidationDialog(null);
     fetchData();
   };
+
+  const handleAbandon = async () => {
+    if (!abandonDialog) return;
+    await supabase.from('coordinateur_eleves').update({
+      statut: 'abandon',
+    } as any).eq('id', abandonDialog.id);
+
+    toast({ title: 'Élève marqué en abandon' });
+    setAbandonDialog(null);
+    fetchData();
+  };
+
+  const handleMarquerSortant = async (eleve: Eleve) => {
+    await supabase.from('coordinateur_eleves').update({
+      statut: 'sortant',
+    } as any).eq('id', eleve.id);
+    toast({ title: 'Élève marqué comme sortant' });
+    fetchData();
+  };
+
+  const formatDate = (d: string | null) => d ? format(new Date(d), 'dd/MM/yyyy à HH:mm', { locale: fr }) : null;
 
   const statusBadge = (statut: string) => {
     switch (statut) {
       case 'complet': return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800">Complet</Badge>;
       case 'incomplet': return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">Incomplet</Badge>;
-      case 'sortant': return <Badge variant="destructive">Sortant</Badge>;
       default: return <Badge variant="outline">{statut}</Badge>;
     }
+  };
+
+  const eleveStatutBadge = (eleve: Eleve) => {
+    if (eleve.statut === 'abandon') return <Badge variant="destructive">Abandon</Badge>;
+    if (eleve.statut === 'sortant') return <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200 dark:border-orange-800">Sortant</Badge>;
+    if (eleve.valide) return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800"><CheckCircle className="h-3 w-3 mr-1" />Pré-inscrit</Badge>;
+    return <Badge variant="outline" className="text-xs">En attente</Badge>;
   };
 
   const docStatusBadge = (statut: string) => {
@@ -237,153 +287,284 @@ export default function CoordinateurDocuments() {
     }
   };
 
-  const formatDate = (d: string | null) => d ? format(new Date(d), 'dd/MM/yyyy à HH:mm', { locale: fr }) : null;
+  const getSortantDocsInfo = (eleveId: string) => {
+    const docs = getEleveDocs(eleveId);
+    const rendus = docs.filter(d => d.statut === 'rendu').length;
+    const restants = docs.filter(d => d.statut === 'depose').length;
+    return { rendus, restants, total: docs.length };
+  };
+
+  const renderEleveTable = (list: Eleve[], showActions = true) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Nom & Prénom</TableHead>
+          <TableHead>École</TableHead>
+          <TableHead>Niveau</TableHead>
+          <TableHead>Dossier</TableHead>
+          <TableHead>Statut</TableHead>
+          <TableHead>Date</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {loading ? (
+          <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
+        ) : list.length === 0 ? (
+          <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
+        ) : list.map(eleve => {
+          const isExpanded = expandedEleve === eleve.id;
+          const docs = getEleveDocs(eleve.id);
+          const dossierStatut = getStatutDossier(eleve.id);
+          const sortantInfo = eleve.statut === 'sortant' ? getSortantDocsInfo(eleve.id) : null;
+          return (
+            <> 
+              <TableRow key={eleve.id} className="cursor-pointer" onClick={() => setExpandedEleve(isExpanded ? null : eleve.id)}>
+                <TableCell className="font-medium">{eleve.nom} {eleve.prenom}</TableCell>
+                <TableCell>{eleve.ecole_provenance || '—'}</TableCell>
+                <TableCell>{eleve.niveau_scolaire || '—'}</TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    {statusBadge(dossierStatut)}
+                    {sortantInfo && (
+                      <span className="text-xs text-muted-foreground">
+                        {sortantInfo.rendus} rendu(s), {sortantInfo.restants} restant(s)
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>{eleveStatutBadge(eleve)}</TableCell>
+                <TableCell className="text-xs">{formatDate(eleve.created_at)}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
+                    <Button variant="ghost" size="sm" onClick={() => setHistoriqueDialog(eleve.id)} title="Historique">
+                      <History className="h-4 w-4" />
+                    </Button>
+                    {showActions && eleve.statut === 'actif' && !eleve.valide && (
+                      <>
+                        <Button variant="ghost" size="sm" className="text-blue-600" onClick={() => setValidationDialog(eleve)} title="Pré-inscrire">
+                          <CheckCircle className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-orange-600" onClick={() => handleMarquerSortant(eleve)} title="Sortant">
+                          <Undo2 className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setAbandonDialog(eleve)} title="Abandon">
+                          <UserX className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                    {eleve.statut === 'sortant' && (
+                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setAbandonDialog(eleve)} title="Abandon">
+                        <UserX className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm">
+                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+              {isExpanded && (
+                <TableRow key={`${eleve.id}-docs`}>
+                  <TableCell colSpan={7} className="bg-muted/30 p-4">
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-sm">Documents</h4>
+                      <div className="grid gap-3">
+                        {DOCUMENT_TYPES.map(type => {
+                          const doc = docs.find(d => d.type_document === type);
+                          if (!doc) return null;
+                          return (
+                            <div key={doc.id} className="flex items-center justify-between bg-background rounded-lg border p-3">
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 min-w-[180px]">
+                                  {doc.statut === 'non_depose' && (
+                                    <Checkbox checked={false} onCheckedChange={() => handleDepot(doc.id, eleve.id, type)} />
+                                  )}
+                                  <span className="text-sm font-medium">{type}</span>
+                                </div>
+                                {docStatusBadge(doc.statut)}
+                              </div>
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                {doc.date_depot && <span>Déposé le {formatDate(doc.date_depot)}</span>}
+                                {doc.date_retrait && <span>Récupéré le {formatDate(doc.date_retrait)}</span>}
+                                {doc.note_retrait && <span className="italic">({doc.note_retrait})</span>}
+                                {doc.telephone_retrait && <span>📞 {doc.telephone_retrait}</span>}
+                                {doc.statut === 'depose' && (
+                                  <Button size="sm" variant="outline" className="ml-2 text-xs" onClick={(e) => { e.stopPropagation(); setRetraitDialog({ docId: doc.id, typeName: type, eleveId: eleve.id }); }}>
+                                    <Undo2 className="mr-1 h-3 w-3" /> Rendre
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </>
+          );
+        })}
+      </TableBody>
+    </Table>
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Gestion des documents - Coordinateur</h1>
-          <p className="text-muted-foreground">Suivi des dépôts et retraits de documents scolaires</p>
+          <h1 className="text-2xl font-bold">Espace Coordinateur</h1>
+          <p className="text-muted-foreground">Gestion des pré-inscriptions et documents scolaires</p>
         </div>
         <Button onClick={() => setShowForm(true)}>
           <Plus className="mr-2 h-4 w-4" /> Enregistrer un élève
         </Button>
       </div>
 
-      {/* Filtres */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex flex-wrap gap-3">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Rechercher un élève..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
-            </div>
-            <Select value={filterEcole} onValueChange={setFilterEcole}>
-              <SelectTrigger className="w-[200px]"><SelectValue placeholder="École de provenance" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes les écoles</SelectItem>
-                {ecoles.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={filterNiveau} onValueChange={setFilterNiveau}>
-              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Niveau" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les niveaux</SelectItem>
-                {NIVEAUX.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-5 w-full">
+          <TabsTrigger value="dashboard" className="gap-1"><ClipboardList className="h-4 w-4" /> Tableau de bord</TabsTrigger>
+          <TabsTrigger value="actifs" className="gap-1"><Users className="h-4 w-4" /> En cours ({stats.actifs})</TabsTrigger>
+          <TabsTrigger value="pre-inscrits" className="gap-1"><CheckCircle className="h-4 w-4" /> Pré-inscrits ({stats.preInscrits})</TabsTrigger>
+          <TabsTrigger value="sortants" className="gap-1"><Undo2 className="h-4 w-4" /> Sortants ({stats.sortants})</TabsTrigger>
+          <TabsTrigger value="abandons" className="gap-1"><UserX className="h-4 w-4" /> Abandons ({stats.abandons})</TabsTrigger>
+        </TabsList>
 
-      {/* Tableau */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Élèves enregistrés ({filteredEleves.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom & Prénom</TableHead>
-                <TableHead>École de provenance</TableHead>
-                <TableHead>Niveau</TableHead>
-                <TableHead>Dossier</TableHead>
-                <TableHead>Validation</TableHead>
-                <TableHead>Date d'enregistrement</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
-              ) : filteredEleves.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
-              ) : filteredEleves.map(eleve => {
-                const isExpanded = expandedEleve === eleve.id;
-                const docs = getEleveDocs(eleve.id);
-                const dossierStatut = getStatutDossier(eleve.id);
-                return (
-                  <> 
-                    <TableRow key={eleve.id} className="cursor-pointer" onClick={() => setExpandedEleve(isExpanded ? null : eleve.id)}>
-                      <TableCell className="font-medium">{eleve.nom} {eleve.prenom}</TableCell>
-                      <TableCell>{eleve.ecole_provenance || '—'}</TableCell>
-                      <TableCell>{eleve.niveau_scolaire || '—'}</TableCell>
-                      <TableCell>{statusBadge(dossierStatut)}</TableCell>
-                      <TableCell>
-                        {eleve.valide ? (
-                          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800">
-                            <CheckCircle className="h-3 w-3 mr-1" /> Validé
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-xs">Non validé</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>{formatDate(eleve.created_at)}</TableCell>
-                      <TableCell className="text-right flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setHistoriqueDialog(eleve.id); }} title="Historique">
-                          <History className="h-4 w-4" />
-                        </Button>
-                        {!eleve.valide && dossierStatut === 'complet' && (
-                          <Button variant="ghost" size="sm" className="text-blue-600" onClick={(e) => { e.stopPropagation(); setValidationDialog(eleve); }} title="Valider">
-                            <CheckCircle className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="sm">
-                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    {isExpanded && (
-                      <TableRow key={`${eleve.id}-docs`}>
-                        <TableCell colSpan={7} className="bg-muted/30 p-4">
-                          <div className="space-y-3">
-                            <h4 className="font-semibold text-sm">Documents</h4>
-                            <div className="grid gap-3">
-                              {DOCUMENT_TYPES.map(type => {
-                                const doc = docs.find(d => d.type_document === type);
-                                if (!doc) return null;
-                                return (
-                                  <div key={doc.id} className="flex items-center justify-between bg-background rounded-lg border p-3">
-                                    <div className="flex items-center gap-3">
-                                      <div className="flex items-center gap-2 min-w-[180px]">
-                                        {doc.statut === 'non_depose' && (
-                                          <Checkbox checked={false} onCheckedChange={() => handleDepot(doc.id, eleve.id, type)} />
-                                        )}
-                                        <span className="text-sm font-medium">{type}</span>
-                                      </div>
-                                      {docStatusBadge(doc.statut)}
-                                    </div>
-                                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                      {doc.date_depot && <span>Déposé le {formatDate(doc.date_depot)}</span>}
-                                      {doc.date_retrait && <span>Récupéré le {formatDate(doc.date_retrait)}</span>}
-                                      {doc.note_retrait && <span className="italic">({doc.note_retrait})</span>}
-                                      {doc.telephone_retrait && <span>📞 {doc.telephone_retrait}</span>}
-                                      {doc.statut === 'depose' && (
-                                        <Button size="sm" variant="outline" className="ml-2 text-xs" onClick={(e) => { e.stopPropagation(); setRetraitDialog({ docId: doc.id, typeName: type, eleveId: eleve.id }); }}>
-                                          <Undo2 className="mr-1 h-3 w-3" /> Rendre
-                                        </Button>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+        {/* Dashboard */}
+        <TabsContent value="dashboard">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setActiveTab('actifs')}>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                    <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{stats.actifs}</p>
+                    <p className="text-sm text-muted-foreground">En cours de traitement</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setActiveTab('pre-inscrits')}>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
+                    <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{stats.preInscrits}</p>
+                    <p className="text-sm text-muted-foreground">Pré-inscrits</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+                    <AlertTriangle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{stats.enManqueDocs}</p>
+                    <p className="text-sm text-muted-foreground">Dossiers incomplets</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setActiveTab('sortants')}>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-orange-100 dark:bg-orange-900/30">
+                    <Undo2 className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{stats.sortants}</p>
+                    <p className="text-sm text-muted-foreground">Sortants</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setActiveTab('abandons')}>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30">
+                    <UserX className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{stats.abandons}</p>
+                    <p className="text-sm text-muted-foreground">Abandons</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-muted">
+                    <FileText className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{stats.total}</p>
+                    <p className="text-sm text-muted-foreground">Total enregistrés</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Filtres + Tableaux pour chaque onglet */}
+        {['actifs', 'pre-inscrits', 'sortants', 'abandons'].map(tab => (
+          <TabsContent key={tab} value={tab}>
+            <Card className="mb-4">
+              <CardContent className="pt-4">
+                <div className="flex flex-wrap gap-3">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Rechercher par nom..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
+                  </div>
+                  <Select value={filterEcole} onValueChange={setFilterEcole}>
+                    <SelectTrigger className="w-[200px]"><SelectValue placeholder="École" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes les écoles</SelectItem>
+                      {ecoles.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={filterNiveau} onValueChange={setFilterNiveau}>
+                    <SelectTrigger className="w-[160px]"><SelectValue placeholder="Niveau" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous</SelectItem>
+                      {NIVEAUX.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  {tab === 'actifs' && 'Élèves en cours de traitement'}
+                  {tab === 'pre-inscrits' && 'Élèves pré-inscrits (historique)'}
+                  {tab === 'sortants' && 'Élèves sortants'}
+                  {tab === 'abandons' && 'Élèves en abandon'}
+                  {' '}({filteredEleves.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {renderEleveTable(filteredEleves, tab === 'actifs' || tab === 'sortants')}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        ))}
+      </Tabs>
 
       {/* Dialog Ajout */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -455,23 +636,55 @@ export default function CoordinateurDocuments() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Validation */}
+      {/* Dialog Validation / Pré-inscription */}
       <Dialog open={!!validationDialog} onOpenChange={() => setValidationDialog(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Valider l'élève</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Pré-inscrire l'élève</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <p className="text-sm">
-              Voulez-vous valider <strong>{validationDialog?.prenom} {validationDialog?.nom}</strong> ?
+              Voulez-vous pré-inscrire <strong>{validationDialog?.prenom} {validationDialog?.nom}</strong> ?
             </p>
+            {validationDialog && getStatutDossier(validationDialog.id) === 'incomplet' && (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+                <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                  Le dossier est <strong>incomplet</strong>. L'élève sera pré-inscrit avec mention « dossier incomplet » dans les notes.
+                </p>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">
-              Cette action créera une pré-inscription avec la mention « Validé par coordinateur ». 
-              L'élève apparaîtra dans la liste des pré-inscriptions et pourra être converti en inscrit.
+              L'élève apparaîtra dans la liste des pré-inscriptions avec la mention « Validé par coordinateur ».
+              Il ne sera plus visible dans l'onglet « En cours » mais restera accessible via « Pré-inscrits ».
             </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setValidationDialog(null)}>Annuler</Button>
             <Button onClick={handleValider}>
-              <CheckCircle className="mr-2 h-4 w-4" /> Confirmer la validation
+              <CheckCircle className="mr-2 h-4 w-4" /> Confirmer la pré-inscription
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Abandon */}
+      <Dialog open={!!abandonDialog} onOpenChange={() => setAbandonDialog(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Marquer comme abandon</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm">
+              Voulez-vous marquer <strong>{abandonDialog?.prenom} {abandonDialog?.nom}</strong> comme ayant abandonné ?
+            </p>
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+              <XCircle className="h-4 w-4 text-red-600 mt-0.5" />
+              <p className="text-sm text-red-800 dark:text-red-300">
+                L'élève sera déplacé dans l'onglet « Abandons ». Cette action peut être annulée ultérieurement.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAbandonDialog(null)}>Annuler</Button>
+            <Button variant="destructive" onClick={handleAbandon}>
+              <UserX className="mr-2 h-4 w-4" /> Confirmer l'abandon
             </Button>
           </DialogFooter>
         </DialogContent>
