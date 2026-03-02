@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound } from 'lucide-react';
+import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -105,6 +105,7 @@ export default function Eleves() {
   const [selected, setSelected] = useState<any>(null);
   const [editing, setEditing] = useState<any>(null);
   const [badgeEleve, setBadgeEleve] = useState<any>(null);
+  const [abandonDialog, setAbandonDialog] = useState<any>(null);
   const [creatingFamille, setCreatingFamille] = useState(false);
   const [newFamilleName, setNewFamilleName] = useState('');
   const [newFamilleTelPere, setNewFamilleTelPere] = useState('');
@@ -197,6 +198,46 @@ export default function Eleves() {
     },
   });
 
+  const handleAbandon = async () => {
+    if (!abandonDialog) return;
+    // Update eleve status to 'abandon'
+    const { error } = await supabase.from('eleves').update({ statut: 'abandon' }).eq('id', abandonDialog.id);
+    if (error) {
+      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+      return;
+    }
+
+    // Create coordinator entry with full info for document management
+    const { data: coordEleve } = await supabase.from('coordinateur_eleves').insert({
+      nom: abandonDialog.nom,
+      prenom: abandonDialog.prenom,
+      ecole_provenance: abandonDialog.classes?.niveaux?.cycles?.nom ? `${abandonDialog.classes.niveaux.cycles.nom} — ${abandonDialog.classes.nom}` : '',
+      niveau_scolaire: abandonDialog.classes?.niveaux?.nom || '',
+      statut: 'abandon',
+    } as any).select().single();
+
+    // Create document entries for the coordinator based on eleve's checklist
+    if (coordEleve) {
+      const docTypes = ['Photo d\'identité', 'Livret Scolaire', 'Extrait de Naissance'];
+      const checklistMap: Record<string, boolean> = {
+        'Photo d\'identité': !!abandonDialog.checklist_photo,
+        'Livret Scolaire': !!abandonDialog.checklist_livret,
+        'Extrait de Naissance': false, // Not tracked in eleves checklist
+      };
+      const docInserts = docTypes.map(type => ({
+        eleve_id: (coordEleve as any).id,
+        type_document: type,
+        statut: checklistMap[type] ? 'depose' : 'non_depose',
+        date_depot: checklistMap[type] ? new Date().toISOString() : null,
+      }));
+      await supabase.from('coordinateur_documents').insert(docInserts as any);
+    }
+
+    toast({ title: 'Élève marqué en abandon', description: 'L\'élève est maintenant visible chez le coordinateur pour la gestion de ses documents.' });
+    setAbandonDialog(null);
+    qc.invalidateQueries({ queryKey: ['eleves-full'] });
+  };
+
   const filteredClasses = filterCycle === 'all'
     ? classes
     : classes.filter((c: any) => c.niveaux?.cycle_id === filterCycle);
@@ -240,6 +281,7 @@ export default function Eleves() {
 
   const totalFamille = eleves.filter((e: any) => !!e.famille_id).length;
   const totalIndividuel = eleves.filter((e: any) => !e.famille_id).length;
+  const totalAbandons = eleves.filter((e: any) => e.statut === 'abandon').length;
 
   const handleSaveEdit = () => {
     if (!editing) return;
@@ -406,7 +448,7 @@ export default function Eleves() {
       </h1>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         <Card><CardContent className="pt-4 flex items-center gap-3">
           <Users className="h-8 w-8 text-primary" />
           <div><p className="text-2xl font-bold">{eleves.length}</p><p className="text-xs text-muted-foreground">Total élèves</p></div>
@@ -419,6 +461,12 @@ export default function Eleves() {
           <UserCheck className="h-8 w-8 text-orange-500" />
           <div><p className="text-2xl font-bold">{totalIndividuel}</p><p className="text-xs text-muted-foreground">Individuels</p></div>
         </CardContent></Card>
+        {totalAbandons > 0 && (
+          <Card className="border-destructive/30"><CardContent className="pt-4 flex items-center gap-3">
+            <UserX className="h-8 w-8 text-destructive" />
+            <div><p className="text-2xl font-bold text-destructive">{totalAbandons}</p><p className="text-xs text-muted-foreground">Abandons</p></div>
+          </CardContent></Card>
+        )}
       </div>
 
       {/* Filters */}
@@ -524,11 +572,16 @@ export default function Eleves() {
                   <TableCell>{e.sexe || '—'}</TableCell>
                   <TableCell><Badge variant="outline">{e.classes?.niveaux?.cycles?.nom || '—'}</Badge></TableCell>
                   <TableCell>{e.classes?.nom || '—'}</TableCell>
-                  <TableCell><Badge variant={e.statut === 'inscrit' ? 'default' : 'secondary'}>{e.statut}</Badge></TableCell>
+                  <TableCell><Badge variant={e.statut === 'inscrit' ? 'default' : e.statut === 'abandon' ? 'destructive' : 'secondary'}>{e.statut}</Badge></TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-1 justify-end" onClick={ev => ev.stopPropagation()}>
                       <Button size="icon" variant="ghost" onClick={() => setEditing({ ...e })}><Edit className="h-4 w-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => setBadgeEleve(e)}><QrCode className="h-4 w-4" /></Button>
+                      {e.statut === 'inscrit' && (
+                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setAbandonDialog(e)} title="Marquer en abandon">
+                          <UserX className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -832,6 +885,30 @@ export default function Eleves() {
               </div>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Abandon dialog */}
+      <Dialog open={!!abandonDialog} onOpenChange={() => setAbandonDialog(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><UserX className="h-5 w-5 text-destructive" /> Marquer en abandon</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm">
+              Voulez-vous marquer <strong>{abandonDialog?.prenom} {abandonDialog?.nom}</strong> comme ayant abandonné ?
+            </p>
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <XCircle className="h-4 w-4 text-destructive mt-0.5" />
+              <p className="text-sm">
+                L'élève sera marqué comme « abandon » et ses documents seront transférés au coordinateur pour gestion du retrait éventuel.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAbandonDialog(null)}>Annuler</Button>
+            <Button variant="destructive" onClick={handleAbandon}>
+              <UserX className="mr-2 h-4 w-4" /> Confirmer l'abandon
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
