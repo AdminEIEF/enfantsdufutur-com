@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, UserPlus, CreditCard, BookOpen, GraduationCap, TrendingUp, Utensils, AlertTriangle, Wallet, ArrowUpRight, ArrowDownRight, DollarSign } from 'lucide-react';
+import { Users, UserPlus, CreditCard, BookOpen, GraduationCap, TrendingUp, Utensils, AlertTriangle, Wallet, ArrowUpRight, ArrowDownRight, DollarSign, UserX } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -78,6 +78,7 @@ export default function Dashboard() {
 
   // ─── KPIs ──────────────────────────────────────────────
   const totalEleves = eleves.length;
+  const totalAbandons = eleves.filter((e: any) => e.statut === 'abandon').length;
   const now = new Date();
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
@@ -392,6 +393,22 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Abandon KPI */}
+      {totalAbandons > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <Card className="border-destructive/30">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Abandons</CardTitle>
+              <UserX className="h-5 w-5 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">{totalAbandons}</div>
+              <p className="text-xs text-muted-foreground mt-1">Élèves ayant abandonné</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Family & Librairie KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
