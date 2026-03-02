@@ -218,13 +218,12 @@ export default function Eleves() {
 
     // Create document entries ONLY for documents the student actually provided
     if (coordEleve) {
+      // Documents récupérables par les parents (pas rames/marqueurs)
       const checklistItems: { label: string; provided: boolean }[] = [
         { label: 'Photo d\'identité', provided: !!abandonDialog.checklist_photo },
         { label: 'Livret Scolaire', provided: !!abandonDialog.checklist_livret },
-        { label: 'Rames de papier', provided: !!abandonDialog.checklist_rames },
-        { label: 'Marqueurs', provided: !!abandonDialog.checklist_marqueurs },
+        { label: 'Extrait de Naissance', provided: true }, // Toujours déposé à l'inscription
       ];
-      // Only create coordinator documents for items that were actually deposited
       const docInserts = checklistItems
         .filter(item => item.provided)
         .map(item => ({
