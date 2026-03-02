@@ -95,6 +95,7 @@ function RoleBasedRedirect() {
     if (roles[0] === 'cantine') return <Navigate to="/cantine" replace />;
     if (roles[0] === 'boutique') return <Navigate to="/boutique" replace />;
     if (roles[0] === 'librairie') return <Navigate to="/librairie" replace />;
+    if ((roles[0] as string) === 'coordinateur') return <Navigate to="/coordinateur-documents" replace />;
   }
   return <Navigate to="/dashboard" replace />;
 }
