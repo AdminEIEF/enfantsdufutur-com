@@ -114,38 +114,38 @@ export default function Dashboard() {
   const caLibrairie = ventesArticles.reduce((s: number, v: any) => s + Number(v.prix_unitaire) * v.quantite, 0);
   const caScolarite = paiements.filter((p: any) => p.type_paiement === 'scolarite').reduce((s: number, p: any) => s + Number(p.montant), 0);
 
-  // ─── Ordre pédagogique des niveaux ──────────────────
-  const NIVEAU_ORDRE = ['Crèche', 'TPS', 'PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2', '7E', '8E', '9E', '10E', '11E', '12E', 'Terminale'];
-  const getNiveauOrdre = (nom: string) => {
-    const idx = NIVEAU_ORDRE.findIndex(n => nom.toUpperCase().includes(n.toUpperCase()));
+  // ─── Ordre pédagogique des cycles ──────────────────
+  const CYCLE_ORDRE = ['Crèche', 'Maternelle', 'Primaire', 'Collège', 'Lycée'];
+  const getCycleOrdre = (nom: string) => {
+    const idx = CYCLE_ORDRE.findIndex(n => nom.toUpperCase().includes(n.toUpperCase()));
     return idx >= 0 ? idx : 999;
   };
 
   // Impayés par famille
   const impayesFamilles = useMemo(() => {
     const familleIds = new Set(eleves.filter((e: any) => e.famille_id).map((e: any) => e.famille_id));
-    const result: { nom: string; reste: number; niveau: string }[] = [];
+    const result: { nom: string; reste: number; cycle: string }[] = [];
     familleIds.forEach(fid => {
       const kids = eleves.filter((e: any) => e.famille_id === fid);
       const fam = familles.find((f: any) => f.id === fid);
       const annuel = kids.reduce((s: number, e: any) => s + Number(e.classes?.niveaux?.frais_scolarite || 0), 0);
       const paye = kids.reduce((s: number, e: any) => s + paiements.filter((p: any) => p.eleve_id === e.id && p.type_paiement === 'scolarite').reduce((ss: number, p: any) => ss + Number(p.montant), 0), 0);
       const reste = annuel - paye;
-      const niveaux = kids.map((e: any) => e.classes?.niveaux?.nom).filter(Boolean);
-      const niveau = niveaux[0] || 'Non classé';
-      if (reste > 0) result.push({ nom: fam?.nom_famille || 'Inconnue', reste, niveau });
+      const cycles = kids.map((e: any) => e.classes?.niveaux?.cycles?.nom).filter(Boolean);
+      const cycle = cycles[0] || 'Non classé';
+      if (reste > 0) result.push({ nom: fam?.nom_famille || 'Inconnue', reste, cycle });
     });
     return result.sort((a, b) => b.reste - a.reste);
   }, [eleves, paiements, familles]);
 
-  // Group impayés by niveau
+  // Group impayés by cycle
   const impayesParNiveau = useMemo(() => {
     const map: Record<string, typeof impayesFamilles> = {};
     impayesFamilles.forEach(f => {
-      if (!map[f.niveau]) map[f.niveau] = [];
-      map[f.niveau].push(f);
+      if (!map[f.cycle]) map[f.cycle] = [];
+      map[f.cycle].push(f);
     });
-    return Object.entries(map).sort(([a], [b]) => getNiveauOrdre(a) - getNiveauOrdre(b));
+    return Object.entries(map).sort(([a], [b]) => getCycleOrdre(a) - getCycleOrdre(b));
   }, [impayesFamilles]);
 
   const paiementsMois = paiements.filter((p: any) => p.date_paiement?.startsWith(thisMonth));
@@ -159,16 +159,16 @@ export default function Dashboard() {
 
   // ─── Taux de recouvrement par classe ──────────────────
   const recouvrementParClasse = useMemo(() => {
-    const classeMap: Record<string, { nom: string; niveauNom: string; totalAttendu: number; totalPaye: number; effectif: number }> = {};
+    const classeMap: Record<string, { nom: string; cycleNom: string; totalAttendu: number; totalPaye: number; effectif: number }> = {};
 
     eleves.forEach((e: any) => {
       if (!e.classe_id || !e.classes) return;
       const classeNom = e.classes.nom;
-      const niveauNom = e.classes.niveaux?.nom || 'Non classé';
+      const cycleNom = e.classes.niveaux?.cycles?.nom || 'Non classé';
       const totalAnnuel = Number(e.classes.niveaux?.frais_scolarite || 0);
 
       if (!classeMap[e.classe_id]) {
-        classeMap[e.classe_id] = { nom: classeNom, niveauNom, totalAttendu: 0, totalPaye: 0, effectif: 0 };
+        classeMap[e.classe_id] = { nom: classeNom, cycleNom, totalAttendu: 0, totalPaye: 0, effectif: 0 };
       }
       classeMap[e.classe_id].totalAttendu += totalAnnuel;
       classeMap[e.classe_id].effectif += 1;
@@ -189,17 +189,17 @@ export default function Dashboard() {
         taux: Math.min(100, Math.round((c.totalPaye / c.totalAttendu) * 100)),
         reste: c.totalAttendu - c.totalPaye,
       }))
-      .sort((a, b) => getNiveauOrdre(a.niveauNom) - getNiveauOrdre(b.niveauNom) || a.nom.localeCompare(b.nom));
+      .sort((a, b) => getCycleOrdre(a.cycleNom) - getCycleOrdre(b.cycleNom) || a.nom.localeCompare(b.nom));
   }, [eleves, paiements]);
 
-  // Group recouvrement by niveau
+  // Group recouvrement by cycle
   const recouvrementParNiveau = useMemo(() => {
     const map: Record<string, typeof recouvrementParClasse> = {};
     recouvrementParClasse.forEach(c => {
-      if (!map[c.niveauNom]) map[c.niveauNom] = [];
-      map[c.niveauNom].push(c);
+      if (!map[c.cycleNom]) map[c.cycleNom] = [];
+      map[c.cycleNom].push(c);
     });
-    return Object.entries(map).sort(([a], [b]) => getNiveauOrdre(a) - getNiveauOrdre(b));
+    return Object.entries(map).sort(([a], [b]) => getCycleOrdre(a) - getCycleOrdre(b));
   }, [recouvrementParClasse]);
 
   const tauxGlobal = useMemo(() => {
