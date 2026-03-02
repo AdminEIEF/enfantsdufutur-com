@@ -173,13 +173,13 @@ export default function CoordinateurDocuments() {
       date_depot: new Date().toISOString(),
     } as any).eq('id', docId);
 
-    await supabase.from('coordinateur_documents_historique').insert({
+    await supabase.from('coordinateur_documents_historique').upsert({
       document_id: docId,
       eleve_id: eleveId,
       action: 'depot',
       type_document: typeDocument,
       created_by: user?.id,
-    } as any);
+    } as any, { onConflict: 'document_id,action', ignoreDuplicates: true });
 
     toast({ title: 'Document déposé' });
     fetchData();
@@ -194,7 +194,7 @@ export default function CoordinateurDocuments() {
       telephone_retrait: telephoneRetrait.trim() || null,
     } as any).eq('id', retraitDialog.docId);
 
-    await supabase.from('coordinateur_documents_historique').insert({
+    await supabase.from('coordinateur_documents_historique').upsert({
       document_id: retraitDialog.docId,
       eleve_id: retraitDialog.eleveId,
       action: 'retrait',
@@ -202,7 +202,7 @@ export default function CoordinateurDocuments() {
       note: noteRetrait.trim() || null,
       telephone: telephoneRetrait.trim() || null,
       created_by: user?.id,
-    } as any);
+    } as any, { onConflict: 'document_id,action', ignoreDuplicates: true });
 
     toast({ title: 'Document rendu' });
     setRetraitDialog(null);
