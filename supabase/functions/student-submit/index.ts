@@ -13,7 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    const { token, devoir_id, fichier_url, fichier_nom } = await req.json();
+    const body = await req.json();
+    const { token, action = 'submit_file', devoir_id, fichier_url, fichier_nom, reponses } = body;
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -74,26 +75,111 @@ serve(async (req) => {
       });
     }
 
-    // Upsert submission
-    const { error: insertErr } = await supabaseAdmin
-      .from("soumissions_devoirs")
-      .upsert({
-        devoir_id,
-        eleve_id: eleve.id,
-        fichier_url,
-        fichier_nom,
-        soumis_at: new Date().toISOString(),
-      }, { onConflict: "devoir_id,eleve_id" });
+    // ─── FILE SUBMISSION ───
+    if (action === 'submit_file') {
+      if (!devoir_id || !fichier_url || !fichier_nom) {
+        return new Response(JSON.stringify({ error: "Données manquantes" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
-    if (insertErr) throw insertErr;
+      const { error: insertErr } = await supabaseAdmin
+        .from("soumissions_devoirs")
+        .upsert({
+          devoir_id,
+          eleve_id: eleve.id,
+          fichier_url,
+          fichier_nom,
+          soumis_at: new Date().toISOString(),
+        }, { onConflict: "devoir_id,eleve_id" });
 
-    return new Response(JSON.stringify({ success: true }), {
+      if (insertErr) throw insertErr;
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ─── QUIZ SUBMISSION ───
+    if (action === 'submit_quiz') {
+      if (!devoir_id || !reponses || !Array.isArray(reponses)) {
+        return new Response(JSON.stringify({ error: "Données manquantes" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Check if already submitted
+      const { data: existing } = await supabaseAdmin
+        .from("quiz_reponses")
+        .select("id")
+        .eq("devoir_id", devoir_id)
+        .eq("eleve_id", eleve.id)
+        .maybeSingle();
+
+      if (existing) {
+        return new Response(JSON.stringify({ error: "Quiz déjà soumis" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Fetch quiz questions to calculate score
+      const { data: questions } = await supabaseAdmin
+        .from("quiz_questions")
+        .select("*")
+        .eq("devoir_id", devoir_id)
+        .order("ordre");
+
+      if (!questions || questions.length === 0) {
+        return new Response(JSON.stringify({ error: "Quiz introuvable" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Calculate score
+      let score = 0;
+      let scoreMax = 0;
+      for (const q of questions) {
+        scoreMax += q.points;
+        const studentAnswer = reponses.find((r: any) => r.question_id === q.id);
+        if (studentAnswer && studentAnswer.answer_index >= 0) {
+          const options = q.options as any[];
+          if (options[studentAnswer.answer_index]?.correct) {
+            score += q.points;
+          }
+        }
+      }
+
+      // Insert quiz response
+      const { error: insertErr } = await supabaseAdmin
+        .from("quiz_reponses")
+        .insert({
+          devoir_id,
+          eleve_id: eleve.id,
+          reponses,
+          score,
+          score_max: scoreMax,
+          soumis_at: new Date().toISOString(),
+        });
+
+      if (insertErr) throw insertErr;
+
+      return new Response(JSON.stringify({ success: true, score, score_max: scoreMax }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: "Action inconnue" }), {
+      status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("student-submit error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Erreur serveur" }),
+      JSON.stringify({ error: "Erreur serveur" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

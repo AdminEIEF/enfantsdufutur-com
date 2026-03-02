@@ -79,11 +79,8 @@ serve(async (req) => {
 
     const eleveId = eleve.id;
     const classeId = eleve.classe_id;
-    const niveauId = (eleve as any).classes?.niveau_id;
-    const cycleId = (eleve as any).classes?.niveaux?.cycle_id;
 
     if (action === "cours") {
-      // Get courses for this student's class (only visible ones)
       const { data: cours } = await supabaseAdmin
         .from("cours")
         .select("*, matieres:matiere_id(nom, pole, coefficient)")
@@ -97,36 +94,69 @@ serve(async (req) => {
     }
 
     if (action === "devoirs") {
-      // Get assignments for this student's class
+      // Get assignments with type_devoir
       const { data: devoirs } = await supabaseAdmin
         .from("devoirs")
         .select("*, matieres:matiere_id(nom, pole)")
         .eq("classe_id", classeId)
         .order("date_limite", { ascending: true });
 
-      // Get student's submissions
+      // Get student's file submissions
       const { data: soumissions } = await supabaseAdmin
         .from("soumissions_devoirs")
         .select("*")
         .eq("eleve_id", eleveId);
 
+      // Get quiz questions for quiz-type devoirs
+      const quizDevoirIds = (devoirs || []).filter((d: any) => d.type_devoir === 'quiz').map((d: any) => d.id);
+      let allQuestions: any[] = [];
+      if (quizDevoirIds.length > 0) {
+        const { data: questions } = await supabaseAdmin
+          .from("quiz_questions")
+          .select("*")
+          .in("devoir_id", quizDevoirIds)
+          .order("ordre");
+        allQuestions = questions || [];
+      }
+
+      // Get student's quiz responses
+      const { data: quizReponses } = await supabaseAdmin
+        .from("quiz_reponses")
+        .select("*")
+        .eq("eleve_id", eleveId);
+
+      // Attach questions to devoirs (strip correct answers for non-submitted quizzes)
+      const devoirsWithQuestions = (devoirs || []).map((d: any) => {
+        if (d.type_devoir === 'quiz') {
+          const hasResponded = (quizReponses || []).find((r: any) => r.devoir_id === d.id);
+          const questions = allQuestions.filter((q: any) => q.devoir_id === d.id).map(q => ({
+            ...q,
+            // Only show correct answers if already submitted
+            options: hasResponded
+              ? q.options
+              : (q.options as any[]).map((o: any) => ({ label: o.label })),
+          }));
+          return { ...d, questions };
+        }
+        return d;
+      });
+
       return new Response(JSON.stringify({ 
-        devoirs: devoirs || [], 
-        soumissions: soumissions || [] 
+        devoirs: devoirsWithQuestions, 
+        soumissions: soumissions || [],
+        quiz_reponses: quizReponses || [],
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (action === "resultats") {
-      // Get notes for this student
       const { data: notes } = await supabaseAdmin
         .from("notes")
         .select("*, matieres:matiere_id(nom, pole, coefficient), periodes:periode_id(nom, ordre)")
         .eq("eleve_id", eleveId)
         .order("created_at", { ascending: false });
 
-      // Get bulletin publications for this class
       let bulletinPublications: any[] = [];
       if (classeId) {
         const { data: pubs } = await supabaseAdmin
@@ -138,7 +168,6 @@ serve(async (req) => {
         bulletinPublications = pubs || [];
       }
 
-      // Get submission notes
       const { data: soumissions } = await supabaseAdmin
         .from("soumissions_devoirs")
         .select("*, devoirs:devoir_id(titre, note_max, matieres:matiere_id(nom))")
@@ -155,7 +184,6 @@ serve(async (req) => {
       });
     }
 
-    // ─── NOTIFICATIONS (last 5) ───
     if (action === "notifications") {
       const { data: notifs } = await supabaseAdmin
         .from("student_notifications")
@@ -176,7 +204,6 @@ serve(async (req) => {
       );
     }
 
-    // ─── ALL NOTIFICATIONS (archive) ───
     if (action === "all_notifications") {
       const { data: notifs } = await supabaseAdmin
         .from("student_notifications")
@@ -191,7 +218,6 @@ serve(async (req) => {
       );
     }
 
-    // ─── MARK NOTIFICATION READ ───
     if (action === "mark_notification_read") {
       if (notification_id) {
         await supabaseAdmin
@@ -220,7 +246,6 @@ serve(async (req) => {
     }
 
     if (action === "dashboard") {
-      // Summary data
       const { data: devoirs } = await supabaseAdmin
         .from("devoirs")
         .select("id, titre, date_limite, matieres:matiere_id(nom)")
@@ -241,7 +266,6 @@ serve(async (req) => {
         .select("devoir_id")
         .eq("eleve_id", eleveId);
 
-      // Count visible bulletins
       let bulletinCount = 0;
       if (classeId) {
         const { count } = await supabaseAdmin
@@ -252,9 +276,8 @@ serve(async (req) => {
         bulletinCount = count || 0;
       }
 
-      // Today's timetable
-      const todayJS = new Date().getDay(); // 0=Sun, 1=Mon...
-      const jourSemaine = todayJS === 0 ? 7 : todayJS; // Convert to 1=Mon...7=Sun
+      const todayJS = new Date().getDay();
+      const jourSemaine = todayJS === 0 ? 7 : todayJS;
       const { data: edtToday } = await supabaseAdmin
         .from("emploi_du_temps")
         .select("*, matieres:matiere_id(nom), employes:enseignant_id(nom, prenom)")
@@ -281,7 +304,7 @@ serve(async (req) => {
   } catch (e) {
     console.error("student-data error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Erreur serveur" }),
+      JSON.stringify({ error: "Erreur serveur" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

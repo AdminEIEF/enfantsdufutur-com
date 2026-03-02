@@ -3,10 +3,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { StudentLayout } from '@/components/StudentLayout';
 import { StudentAIChat } from '@/components/StudentAIChat';
-import { ClipboardList, Upload, CheckCircle, Clock, AlertTriangle, Loader2, FileText } from 'lucide-react';
+import { ClipboardList, Upload, CheckCircle, Clock, AlertTriangle, Loader2, FileText, ListChecks, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -16,10 +18,15 @@ export default function StudentDevoirs() {
   const { session } = useStudentAuth();
   const [devoirs, setDevoirs] = useState<any[]>([]);
   const [soumissions, setSoumissions] = useState<any[]>([]);
+  const [quizReponses, setQuizReponses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedDevoirId, setSelectedDevoirId] = useState<string | null>(null);
+
+  // Quiz state: { [devoirId]: { [questionId]: answerIndex } }
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, Record<string, number>>>({});
+  const [submittingQuiz, setSubmittingQuiz] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -36,13 +43,14 @@ export default function StudentDevoirs() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ matricule: session!.matricule, password: session!.token, action: 'devoirs' }),
+          body: JSON.stringify({ token: session!.token, action: 'devoirs' }),
         }
       );
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error);
       setDevoirs(data.devoirs || []);
       setSoumissions(data.soumissions || []);
+      setQuizReponses(data.quiz_reponses || []);
     } catch (err: any) {
       toast.error(err.message || 'Erreur');
     } finally {
@@ -53,9 +61,9 @@ export default function StudentDevoirs() {
   const handleUpload = async (devoirId: string, file: File) => {
     if (!file || !session) return;
     const ext = file.name.split('.').pop();
-    const allowed = ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
+    const allowed = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx'];
     if (!allowed.includes(ext?.toLowerCase() || '')) {
-      toast.error('Format autorisé : PDF, JPG, PNG');
+      toast.error('Format autorisé : PDF, JPG, PNG, Word (.doc, .docx)');
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
@@ -69,11 +77,8 @@ export default function StudentDevoirs() {
       const { error: uploadError } = await supabase.storage.from('devoirs').upload(fileName, file);
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage.from('devoirs').getPublicUrl(fileName);
+      const { data: signedData } = await supabase.storage.from('devoirs').createSignedUrl(fileName, 31536000);
 
-      // Insert submission via edge function would require admin, so use direct insert
-      // Since RLS allows authenticated reads only, we use the edge function approach
-      // For now, we'll call a simple submission endpoint
       const resp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/student-submit`,
         {
@@ -84,8 +89,9 @@ export default function StudentDevoirs() {
           },
           body: JSON.stringify({
             token: session.token,
+            action: 'submit_file',
             devoir_id: devoirId,
-            fichier_url: publicUrl,
+            fichier_url: signedData?.signedUrl || '',
             fichier_nom: file.name,
           }),
         }
@@ -102,24 +108,95 @@ export default function StudentDevoirs() {
     }
   };
 
-  const aFaire = devoirs.filter(d => !isPast(new Date(d.date_limite)) && !soumissions.find(s => s.devoir_id === d.id));
-  const soumis = devoirs.filter(d => soumissions.find(s => s.devoir_id === d.id));
-  const expires = devoirs.filter(d => isPast(new Date(d.date_limite)) && !soumissions.find(s => s.devoir_id === d.id));
+  const handleSubmitQuiz = async (devoirId: string, questions: any[]) => {
+    if (!session) return;
+    const answers = quizAnswers[devoirId];
+    if (!answers || Object.keys(answers).length === 0) {
+      toast.error('Veuillez répondre à au moins une question');
+      return;
+    }
+
+    setSubmittingQuiz(devoirId);
+    try {
+      const reponses = questions.map(q => ({
+        question_id: q.id,
+        answer_index: answers[q.id] ?? -1,
+      }));
+
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/student-submit`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            token: session.token,
+            action: 'submit_quiz',
+            devoir_id: devoirId,
+            reponses,
+          }),
+        }
+      );
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.error);
+
+      toast.success(`Quiz soumis ! Score : ${result.score}/${result.score_max}`);
+      fetchDevoirs();
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur');
+    } finally {
+      setSubmittingQuiz(null);
+    }
+  };
+
+  const setAnswer = (devoirId: string, questionId: string, answerIndex: number) => {
+    setQuizAnswers(prev => ({
+      ...prev,
+      [devoirId]: { ...(prev[devoirId] || {}), [questionId]: answerIndex },
+    }));
+  };
+
+  const aFaire = devoirs.filter(d => {
+    const expired = isPast(new Date(d.date_limite));
+    const hasSubmission = d.type_devoir === 'quiz' 
+      ? quizReponses.find((r: any) => r.devoir_id === d.id)
+      : soumissions.find((s: any) => s.devoir_id === d.id);
+    return !expired && !hasSubmission;
+  });
+  const soumis = devoirs.filter(d => {
+    return d.type_devoir === 'quiz'
+      ? quizReponses.find((r: any) => r.devoir_id === d.id)
+      : soumissions.find((s: any) => s.devoir_id === d.id);
+  });
+  const expires = devoirs.filter(d => {
+    const hasSubmission = d.type_devoir === 'quiz'
+      ? quizReponses.find((r: any) => r.devoir_id === d.id)
+      : soumissions.find((s: any) => s.devoir_id === d.id);
+    return isPast(new Date(d.date_limite)) && !hasSubmission;
+  });
 
   const renderDevoir = (d: any, canSubmit: boolean) => {
-    const soumission = soumissions.find(s => s.devoir_id === d.id);
+    const soumission = soumissions.find((s: any) => s.devoir_id === d.id);
+    const quizReponse = quizReponses.find((r: any) => r.devoir_id === d.id);
     const isExpired = isPast(new Date(d.date_limite));
+    const isQuiz = d.type_devoir === 'quiz';
+    const hasAnswer = isQuiz ? !!quizReponse : !!soumission;
 
     return (
       <Card key={d.id}>
         <CardContent className="py-4 space-y-3">
           <div className="flex items-start justify-between">
             <div>
-              <p className="font-semibold">{d.titre}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold">{d.titre}</p>
+                {isQuiz && <Badge variant="default" className="gap-1 text-xs"><ListChecks className="h-3 w-3" /> Quiz</Badge>}
+              </div>
               <p className="text-xs text-muted-foreground">{d.matieres?.nom}</p>
               {d.description && <p className="text-sm text-muted-foreground mt-1">{d.description}</p>}
             </div>
-            {soumission ? (
+            {hasAnswer ? (
               <Badge className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Soumis</Badge>
             ) : isExpired ? (
               <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" /> Expiré</Badge>
@@ -136,7 +213,8 @@ export default function StudentDevoirs() {
             <span>Note max : {d.note_max}</span>
           </div>
 
-          {soumission ? (
+          {/* File submission result */}
+          {!isQuiz && soumission && (
             <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3 space-y-1">
               <p className="text-sm flex items-center gap-2">
                 <FileText className="h-4 w-4" />
@@ -149,13 +227,28 @@ export default function StudentDevoirs() {
                 <p className="text-xs text-muted-foreground">💬 {soumission.commentaire}</p>
               )}
             </div>
-          ) : canSubmit ? (
+          )}
+
+          {/* Quiz result */}
+          {isQuiz && quizReponse && (
+            <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3">
+              <p className="text-sm font-semibold">
+                Score : {quizReponse.score}/{quizReponse.score_max}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Soumis le {new Date(quizReponse.soumis_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+          )}
+
+          {/* File upload form */}
+          {!isQuiz && canSubmit && !soumission && (
             <div>
               <input
                 type="file"
                 ref={fileInputRef}
                 className="hidden"
-                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
                 onChange={e => {
                   const file = e.target.files?.[0];
                   if (file && selectedDevoirId) handleUpload(selectedDevoirId, file);
@@ -173,8 +266,45 @@ export default function StudentDevoirs() {
                 {uploading === d.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
                 Soumettre mon travail
               </Button>
+              <p className="text-xs text-muted-foreground mt-1">PDF, JPG, PNG, Word (.doc, .docx)</p>
             </div>
-          ) : null}
+          )}
+
+          {/* Quiz form */}
+          {isQuiz && canSubmit && !quizReponse && d.questions && d.questions.length > 0 && (
+            <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+              <h4 className="font-semibold text-sm">📝 Répondez aux questions</h4>
+              {d.questions.sort((a: any, b: any) => a.ordre - b.ordre).map((q: any, qi: number) => (
+                <div key={q.id} className="space-y-2">
+                  <p className="text-sm font-medium">
+                    <span className="text-muted-foreground mr-1">{qi + 1}.</span>
+                    {q.question}
+                    <span className="text-xs text-muted-foreground ml-1">({q.points} pt{q.points > 1 ? 's' : ''})</span>
+                  </p>
+                  <RadioGroup
+                    value={String(quizAnswers[d.id]?.[q.id] ?? '')}
+                    onValueChange={v => setAnswer(d.id, q.id, Number(v))}
+                    className="ml-4 space-y-1"
+                  >
+                    {(q.options as any[]).map((opt: any, oi: number) => (
+                      <div key={oi} className="flex items-center gap-2">
+                        <RadioGroupItem value={String(oi)} id={`q-${q.id}-${oi}`} />
+                        <Label htmlFor={`q-${q.id}-${oi}`} className="cursor-pointer text-sm">{opt.label}</Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+              ))}
+              <Button
+                size="sm"
+                disabled={submittingQuiz === d.id}
+                onClick={() => handleSubmitQuiz(d.id, d.questions)}
+              >
+                {submittingQuiz === d.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
+                Soumettre le quiz
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     );

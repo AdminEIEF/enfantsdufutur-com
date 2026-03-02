@@ -127,6 +127,7 @@ export default function StudentCours() {
 
   const getIcon = (type: string) => {
     if (type === 'pdf') return <FileText className="h-5 w-5 text-red-500" />;
+    if (type === 'word') return <FileText className="h-5 w-5 text-blue-700" />;
     if (type.includes('video')) return <Video className="h-5 w-5 text-blue-500" />;
     return <ExternalLink className="h-5 w-5 text-green-500" />;
   };

@@ -661,6 +661,7 @@ export type Database = {
           matiere_id: string
           note_max: number
           titre: string
+          type_devoir: string
           updated_at: string
         }
         Insert: {
@@ -673,6 +674,7 @@ export type Database = {
           matiere_id: string
           note_max?: number
           titre: string
+          type_devoir?: string
           updated_at?: string
         }
         Update: {
@@ -685,6 +687,7 @@ export type Database = {
           matiere_id?: string
           note_max?: number
           titre?: string
+          type_devoir?: string
           updated_at?: string
         }
         Relationships: [
@@ -1985,6 +1988,92 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      quiz_questions: {
+        Row: {
+          created_at: string
+          devoir_id: string
+          id: string
+          options: Json
+          ordre: number
+          points: number
+          question: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          devoir_id: string
+          id?: string
+          options?: Json
+          ordre?: number
+          points?: number
+          question: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          devoir_id?: string
+          id?: string
+          options?: Json
+          ordre?: number
+          points?: number
+          question?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_devoir_id_fkey"
+            columns: ["devoir_id"]
+            isOneToOne: false
+            referencedRelation: "devoirs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_reponses: {
+        Row: {
+          devoir_id: string
+          eleve_id: string
+          id: string
+          reponses: Json
+          score: number | null
+          score_max: number | null
+          soumis_at: string
+        }
+        Insert: {
+          devoir_id: string
+          eleve_id: string
+          id?: string
+          reponses?: Json
+          score?: number | null
+          score_max?: number | null
+          soumis_at?: string
+        }
+        Update: {
+          devoir_id?: string
+          eleve_id?: string
+          id?: string
+          reponses?: Json
+          score?: number | null
+          score_max?: number | null
+          soumis_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_reponses_devoir_id_fkey"
+            columns: ["devoir_id"]
+            isOneToOne: false
+            referencedRelation: "devoirs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_reponses_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       repas_cantine: {
         Row: {

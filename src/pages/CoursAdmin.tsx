@@ -1,18 +1,28 @@
-import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useRef } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Video, FileText, Plus, Eye, EyeOff, Trash2, BookOpen, Search, Loader2 } from 'lucide-react';
+import { Video, FileText, Plus, Trash2, BookOpen, Search, Loader2, Upload, CirclePlus, CircleMinus, FileType, ListChecks } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
+
+interface QuizQuestion {
+  question: string;
+  type: 'choix_multiple' | 'vrai_faux';
+  options: { label: string; correct: boolean }[];
+  points: number;
+}
 
 export default function CoursAdmin() {
   const [tab, setTab] = useState('cours');
@@ -29,6 +39,9 @@ export default function CoursAdmin() {
   const [cClasseId, setCClasseId] = useState('');
   const [cTypeContenu, setCTypeContenu] = useState('pdf');
   const [cUrl, setCUrl] = useState('');
+  const [cFile, setCFile] = useState<File | null>(null);
+  const [cUploading, setCUploading] = useState(false);
+  const cFileRef = useRef<HTMLInputElement>(null);
 
   // Form states - Devoir
   const [dTitre, setDTitre] = useState('');
@@ -37,6 +50,8 @@ export default function CoursAdmin() {
   const [dClasseId, setDClasseId] = useState('');
   const [dDateLimite, setDDateLimite] = useState('');
   const [dNoteMax, setDNoteMax] = useState('20');
+  const [dTypeDevoir, setDTypeDevoir] = useState('fichier');
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
 
   const { data: classes = [] } = useQuery({
     queryKey: ['classes-all'],
@@ -87,14 +102,32 @@ export default function CoursAdmin() {
 
   const createCours = useMutation({
     mutationFn: async () => {
-      if (!cTitre.trim() || !cMatiereId || !cClasseId || !cUrl.trim()) throw new Error('Champs obligatoires manquants');
+      if (!cTitre.trim() || !cMatiereId || !cClasseId) throw new Error('Champs obligatoires manquants');
+
+      let finalUrl = cUrl.trim();
+
+      // If file upload type (word or pdf-upload), upload the file
+      if ((cTypeContenu === 'word' || cTypeContenu === 'pdf') && cFile) {
+        setCUploading(true);
+        const ext = cFile.name.split('.').pop();
+        const fileName = `cours/${cClasseId}/${Date.now()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage.from('cours').upload(fileName, cFile);
+        if (uploadErr) throw uploadErr;
+        const { data: signedData } = await supabase.storage.from('cours').createSignedUrl(fileName, 31536000);
+        finalUrl = signedData?.signedUrl || '';
+        setCUploading(false);
+      }
+
+      if (!finalUrl) throw new Error('URL ou fichier manquant');
+
       const { error } = await supabase.from('cours').insert({
         titre: cTitre.trim(),
         description: cDescription.trim() || null,
         matiere_id: cMatiereId,
         classe_id: cClasseId,
         type_contenu: cTypeContenu,
-        contenu_url: cUrl.trim(),
+        contenu_url: finalUrl,
+        fichier_nom: cFile?.name || null,
         visible: true,
       } as any);
       if (error) throw error;
@@ -103,29 +136,64 @@ export default function CoursAdmin() {
       qc.invalidateQueries({ queryKey: ['admin-cours'] });
       toast({ title: 'Cours ajouté' });
       setOpenCours(false);
-      setCTitre(''); setCDescription(''); setCMatiereId(''); setCClasseId(''); setCUrl(''); setCTypeContenu('pdf');
+      setCTitre(''); setCDescription(''); setCMatiereId(''); setCClasseId(''); setCUrl(''); setCTypeContenu('pdf'); setCFile(null);
     },
-    onError: (e: Error) => toast({ title: 'Erreur', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => {
+      setCUploading(false);
+      toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
+    },
   });
 
   const createDevoir = useMutation({
     mutationFn: async () => {
       if (!dTitre.trim() || !dMatiereId || !dClasseId || !dDateLimite) throw new Error('Champs obligatoires manquants');
-      const { error } = await supabase.from('devoirs').insert({
+
+      if (dTypeDevoir === 'quiz' && quizQuestions.length === 0) throw new Error('Ajoutez au moins une question');
+
+      // Validate quiz questions
+      if (dTypeDevoir === 'quiz') {
+        for (const q of quizQuestions) {
+          if (!q.question.trim()) throw new Error('Toutes les questions doivent avoir un intitulé');
+          if (q.type === 'choix_multiple' && q.options.length < 2) throw new Error('Au moins 2 options par question');
+          if (!q.options.some(o => o.correct)) throw new Error(`La question "${q.question}" n'a pas de bonne réponse`);
+        }
+      }
+
+      const totalPoints = dTypeDevoir === 'quiz' 
+        ? quizQuestions.reduce((s, q) => s + q.points, 0) 
+        : Number(dNoteMax) || 20;
+
+      const { data: devoir, error } = await supabase.from('devoirs').insert({
         titre: dTitre.trim(),
         description: dDescription.trim() || null,
         matiere_id: dMatiereId,
         classe_id: dClasseId,
         date_limite: dDateLimite,
-        note_max: Number(dNoteMax) || 20,
-      } as any);
+        note_max: totalPoints,
+        type_devoir: dTypeDevoir,
+      } as any).select('id').single();
       if (error) throw error;
+
+      // Insert quiz questions
+      if (dTypeDevoir === 'quiz' && devoir) {
+        const questions = quizQuestions.map((q, i) => ({
+          devoir_id: devoir.id,
+          question: q.question.trim(),
+          type: q.type,
+          options: q.options,
+          points: q.points,
+          ordre: i,
+        }));
+        const { error: qErr } = await supabase.from('quiz_questions').insert(questions as any);
+        if (qErr) throw qErr;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-devoirs'] });
       toast({ title: 'Devoir ajouté' });
       setOpenDevoir(false);
       setDTitre(''); setDDescription(''); setDMatiereId(''); setDClasseId(''); setDDateLimite(''); setDNoteMax('20');
+      setDTypeDevoir('fichier'); setQuizQuestions([]);
     },
     onError: (e: Error) => toast({ title: 'Erreur', description: e.message, variant: 'destructive' }),
   });
@@ -164,6 +232,53 @@ export default function CoursAdmin() {
     return matchClasse && matchSearch;
   });
 
+  // Quiz question helpers
+  const addQuestion = () => {
+    setQuizQuestions([...quizQuestions, {
+      question: '',
+      type: 'choix_multiple',
+      options: [{ label: '', correct: false }, { label: '', correct: false }],
+      points: 1,
+    }]);
+  };
+
+  const removeQuestion = (idx: number) => {
+    setQuizQuestions(quizQuestions.filter((_, i) => i !== idx));
+  };
+
+  const updateQuestion = (idx: number, field: string, value: any) => {
+    const updated = [...quizQuestions];
+    (updated[idx] as any)[field] = value;
+    if (field === 'type' && value === 'vrai_faux') {
+      updated[idx].options = [{ label: 'Vrai', correct: true }, { label: 'Faux', correct: false }];
+    }
+    setQuizQuestions(updated);
+  };
+
+  const updateOption = (qIdx: number, oIdx: number, field: string, value: any) => {
+    const updated = [...quizQuestions];
+    (updated[qIdx].options[oIdx] as any)[field] = value;
+    setQuizQuestions(updated);
+  };
+
+  const addOption = (qIdx: number) => {
+    const updated = [...quizQuestions];
+    if (updated[qIdx].options.length < 6) {
+      updated[qIdx].options.push({ label: '', correct: false });
+      setQuizQuestions(updated);
+    }
+  };
+
+  const removeOption = (qIdx: number, oIdx: number) => {
+    const updated = [...quizQuestions];
+    if (updated[qIdx].options.length > 2) {
+      updated[qIdx].options.splice(oIdx, 1);
+      setQuizQuestions(updated);
+    }
+  };
+
+  const needsFileUpload = cTypeContenu === 'word' || cTypeContenu === 'pdf';
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
@@ -198,7 +313,7 @@ export default function CoursAdmin() {
               <DialogTrigger asChild>
                 <Button><Plus className="h-4 w-4 mr-2" /> Ajouter un cours</Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-lg">
                 <DialogHeader><DialogTitle>Nouveau cours</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div><Label>Titre *</Label><Input value={cTitre} onChange={e => setCTitre(e.target.value)} /></div>
@@ -218,21 +333,42 @@ export default function CoursAdmin() {
                     </div>
                   </div>
                   <div><Label>Type de contenu</Label>
-                    <Select value={cTypeContenu} onValueChange={setCTypeContenu}>
+                    <Select value={cTypeContenu} onValueChange={(v) => { setCTypeContenu(v); setCFile(null); setCUrl(''); }}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pdf">PDF</SelectItem>
-                        <SelectItem value="video">Vidéo (YouTube/Vimeo/MP4)</SelectItem>
-                        <SelectItem value="lien">Lien externe</SelectItem>
+                        <SelectItem value="pdf">📄 Fichier PDF</SelectItem>
+                        <SelectItem value="word">📝 Fichier Word (.docx)</SelectItem>
+                        <SelectItem value="video">🎬 Vidéo (YouTube/Vimeo/MP4)</SelectItem>
+                        <SelectItem value="lien">🔗 Lien externe</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <div><Label>URL du contenu *</Label><Input value={cUrl} onChange={e => setCUrl(e.target.value)} placeholder={cTypeContenu === 'video' ? 'https://youtube.com/watch?v=...' : 'https://...'} /></div>
+
+                  {needsFileUpload ? (
+                    <div>
+                      <Label>Fichier {cTypeContenu === 'word' ? 'Word' : 'PDF'} *</Label>
+                      <input
+                        ref={cFileRef}
+                        type="file"
+                        className="hidden"
+                        accept={cTypeContenu === 'word' ? '.doc,.docx' : '.pdf'}
+                        onChange={e => { if (e.target.files?.[0]) setCFile(e.target.files[0]); }}
+                      />
+                      <div className="mt-1 flex items-center gap-2">
+                        <Button type="button" variant="outline" size="sm" onClick={() => cFileRef.current?.click()}>
+                          <Upload className="h-4 w-4 mr-1" /> Choisir un fichier
+                        </Button>
+                        {cFile && <span className="text-sm text-muted-foreground truncate max-w-[200px]">{cFile.name}</span>}
+                      </div>
+                    </div>
+                  ) : (
+                    <div><Label>URL du contenu *</Label><Input value={cUrl} onChange={e => setCUrl(e.target.value)} placeholder={cTypeContenu === 'video' ? 'https://youtube.com/watch?v=...' : 'https://...'} /></div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setOpenCours(false)}>Annuler</Button>
-                  <Button onClick={() => createCours.mutate()} disabled={createCours.isPending}>
-                    {createCours.isPending ? 'Ajout...' : 'Ajouter'}
+                  <Button onClick={() => createCours.mutate()} disabled={createCours.isPending || cUploading}>
+                    {(createCours.isPending || cUploading) ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Upload...</> : 'Ajouter'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -264,7 +400,9 @@ export default function CoursAdmin() {
                       <TableCell>{(c.classes as any)?.nom || '—'}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="gap-1">
-                          {c.type_contenu === 'video' ? <Video className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
+                          {c.type_contenu === 'video' ? <Video className="h-3 w-3" /> :
+                           c.type_contenu === 'word' ? <FileType className="h-3 w-3" /> :
+                           <FileText className="h-3 w-3" />}
                           {c.type_contenu}
                         </Badge>
                       </TableCell>
@@ -294,7 +432,7 @@ export default function CoursAdmin() {
               <DialogTrigger asChild>
                 <Button><Plus className="h-4 w-4 mr-2" /> Ajouter un devoir</Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                 <DialogHeader><DialogTitle>Nouveau devoir</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div><Label>Titre *</Label><Input value={dTitre} onChange={e => setDTitre(e.target.value)} /></div>
@@ -315,8 +453,111 @@ export default function CoursAdmin() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>Date limite *</Label><Input type="datetime-local" value={dDateLimite} onChange={e => setDDateLimite(e.target.value)} /></div>
-                    <div><Label>Note max</Label><Input type="number" value={dNoteMax} onChange={e => setDNoteMax(e.target.value)} /></div>
+                    {dTypeDevoir === 'fichier' && (
+                      <div><Label>Note max</Label><Input type="number" value={dNoteMax} onChange={e => setDNoteMax(e.target.value)} /></div>
+                    )}
                   </div>
+
+                  {/* Type de devoir */}
+                  <div>
+                    <Label>Type de devoir</Label>
+                    <RadioGroup value={dTypeDevoir} onValueChange={setDTypeDevoir} className="flex gap-4 mt-1">
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="fichier" id="type-fichier" />
+                        <Label htmlFor="type-fichier" className="flex items-center gap-1 cursor-pointer">
+                          <Upload className="h-4 w-4" /> Soumission fichier
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="quiz" id="type-quiz" />
+                        <Label htmlFor="type-quiz" className="flex items-center gap-1 cursor-pointer">
+                          <ListChecks className="h-4 w-4" /> Quiz en ligne
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {/* Quiz builder */}
+                  {dTypeDevoir === 'quiz' && (
+                    <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-sm">Questions du quiz ({quizQuestions.length})</h3>
+                        <Button type="button" size="sm" variant="outline" onClick={addQuestion}>
+                          <CirclePlus className="h-4 w-4 mr-1" /> Ajouter
+                        </Button>
+                      </div>
+                      {quizQuestions.map((q, qi) => (
+                        <Card key={qi}>
+                          <CardContent className="py-3 space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="shrink-0">Q{qi + 1}</Badge>
+                                  <Input
+                                    value={q.question}
+                                    onChange={e => updateQuestion(qi, 'question', e.target.value)}
+                                    placeholder="Intitulé de la question"
+                                    className="flex-1"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <Select value={q.type} onValueChange={v => updateQuestion(qi, 'type', v)}>
+                                    <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="choix_multiple">Choix multiple</SelectItem>
+                                      <SelectItem value="vrai_faux">Vrai / Faux</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <div className="flex items-center gap-1">
+                                    <Label className="text-xs whitespace-nowrap">Points :</Label>
+                                    <Input type="number" min={1} max={20} value={q.points} onChange={e => updateQuestion(qi, 'points', Number(e.target.value) || 1)} className="w-16" />
+                                  </div>
+                                </div>
+                              </div>
+                              <Button type="button" size="icon" variant="ghost" className="text-destructive shrink-0" onClick={() => removeQuestion(qi)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+
+                            {/* Options */}
+                            <div className="space-y-2 pl-6">
+                              {q.options.map((opt, oi) => (
+                                <div key={oi} className="flex items-center gap-2">
+                                  <Checkbox
+                                    checked={opt.correct}
+                                    onCheckedChange={(checked) => updateOption(qi, oi, 'correct', !!checked)}
+                                  />
+                                  <Input
+                                    value={opt.label}
+                                    onChange={e => updateOption(qi, oi, 'label', e.target.value)}
+                                    placeholder={`Option ${oi + 1}`}
+                                    className="flex-1"
+                                    disabled={q.type === 'vrai_faux'}
+                                  />
+                                  {q.type === 'choix_multiple' && q.options.length > 2 && (
+                                    <Button type="button" size="icon" variant="ghost" onClick={() => removeOption(qi, oi)}>
+                                      <CircleMinus className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                              {q.type === 'choix_multiple' && q.options.length < 6 && (
+                                <Button type="button" size="sm" variant="ghost" className="text-xs" onClick={() => addOption(qi)}>
+                                  <CirclePlus className="h-3 w-3 mr-1" /> Option
+                                </Button>
+                              )}
+                              <p className="text-xs text-muted-foreground">✅ Cochez la/les bonne(s) réponse(s)</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      {quizQuestions.length > 0 && (
+                        <p className="text-sm text-muted-foreground text-right">
+                          Total : {quizQuestions.reduce((s, q) => s + q.points, 0)} points
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setOpenDevoir(false)}>Annuler</Button>
@@ -336,6 +577,7 @@ export default function CoursAdmin() {
                     <TableHead>Titre</TableHead>
                     <TableHead>Matière</TableHead>
                     <TableHead>Classe</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead>Date limite</TableHead>
                     <TableHead>Note max</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -343,14 +585,20 @@ export default function CoursAdmin() {
                 </TableHeader>
                 <TableBody>
                   {loadingDevoirs ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></TableCell></TableRow>
                   ) : filteredDevoirs.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun devoir</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun devoir</TableCell></TableRow>
                   ) : filteredDevoirs.map((d: any) => (
                     <TableRow key={d.id}>
                       <TableCell className="font-medium">{d.titre}</TableCell>
                       <TableCell>{(d.matieres as any)?.nom || '—'}</TableCell>
                       <TableCell>{(d.classes as any)?.nom || '—'}</TableCell>
+                      <TableCell>
+                        <Badge variant={d.type_devoir === 'quiz' ? 'default' : 'outline'} className="gap-1">
+                          {d.type_devoir === 'quiz' ? <ListChecks className="h-3 w-3" /> : <Upload className="h-3 w-3" />}
+                          {d.type_devoir === 'quiz' ? 'Quiz' : 'Fichier'}
+                        </Badge>
+                      </TableCell>
                       <TableCell>{new Date(d.date_limite).toLocaleDateString('fr-FR')}</TableCell>
                       <TableCell>{d.note_max}</TableCell>
                       <TableCell className="text-right">
