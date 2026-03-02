@@ -10,12 +10,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Video, FileText, Plus, Trash2, BookOpen, Search, Loader2, Upload, CirclePlus, CircleMinus, FileType, ListChecks } from 'lucide-react';
+import { Video, FileText, Plus, Trash2, BookOpen, Search, Loader2, Upload, CirclePlus, CircleMinus, FileType, ListChecks, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DevoirSoumissionsDialog } from '@/components/DevoirSoumissionsDialog';
 
 interface QuizQuestion {
   question: string;
@@ -30,6 +31,7 @@ export default function CoursAdmin() {
   const [search, setSearch] = useState('');
   const [openCours, setOpenCours] = useState(false);
   const [openDevoir, setOpenDevoir] = useState(false);
+  const [viewDevoir, setViewDevoir] = useState<any>(null);
   const qc = useQueryClient();
 
   // Form states - Cours
@@ -601,7 +603,10 @@ export default function CoursAdmin() {
                       </TableCell>
                       <TableCell>{new Date(d.date_limite).toLocaleDateString('fr-FR')}</TableCell>
                       <TableCell>{d.note_max}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right flex gap-1 justify-end">
+                        <Button size="icon" variant="ghost" onClick={() => setViewDevoir(d)} title="Voir soumissions">
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteDevoir.mutate(d.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -614,6 +619,14 @@ export default function CoursAdmin() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {viewDevoir && (
+        <DevoirSoumissionsDialog
+          devoir={viewDevoir}
+          open={!!viewDevoir}
+          onOpenChange={(open) => { if (!open) setViewDevoir(null); }}
+        />
+      )}
     </div>
   );
 }
