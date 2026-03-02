@@ -538,6 +538,86 @@ export type Database = {
           },
         ]
       }
+      coordinateur_documents: {
+        Row: {
+          created_at: string
+          date_depot: string | null
+          date_retrait: string | null
+          eleve_id: string
+          id: string
+          note_retrait: string | null
+          statut: string
+          type_document: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_depot?: string | null
+          date_retrait?: string | null
+          eleve_id: string
+          id?: string
+          note_retrait?: string | null
+          statut?: string
+          type_document: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_depot?: string | null
+          date_retrait?: string | null
+          eleve_id?: string
+          id?: string
+          note_retrait?: string | null
+          statut?: string
+          type_document?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coordinateur_documents_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "coordinateur_eleves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coordinateur_eleves: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          ecole_provenance: string
+          id: string
+          niveau_scolaire: string
+          nom: string
+          prenom: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          ecole_provenance?: string
+          id?: string
+          niveau_scolaire?: string
+          nom: string
+          prenom: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          ecole_provenance?: string
+          id?: string
+          niveau_scolaire?: string
+          nom?: string
+          prenom?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       courriers_employes: {
         Row: {
           contenu: string

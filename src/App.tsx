@@ -63,6 +63,7 @@ import EmployeePointage from "./pages/employee/EmployeePointage";
 import EmployeeEvaluation from "./pages/employee/EmployeeEvaluation";
 import EmployeePlanning from "./pages/employee/EmployeePlanning";
 import AdminMonitoring from "./pages/AdminMonitoring";
+import CoordinateurDocuments from "./pages/CoordinateurDocuments";
 
 const queryClient = new QueryClient();
 
@@ -177,6 +178,7 @@ const App = () => (
             <Route path="/boutique" element={<ProtectedRoute><Boutique /></ProtectedRoute>} />
             <Route path="/tracabilite" element={<ProtectedRoute><Tracabilite /></ProtectedRoute>} />
             <Route path="/supervision" element={<ProtectedRoute><AdminMonitoring /></ProtectedRoute>} />
+            <Route path="/coordinateur-documents" element={<ProtectedRoute><CoordinateurDocuments /></ProtectedRoute>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

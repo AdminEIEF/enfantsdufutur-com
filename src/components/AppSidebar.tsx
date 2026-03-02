@@ -91,6 +91,13 @@ const navSections = [
     ],
   },
   {
+    label: 'Scolarité - Coordination',
+    roles: ['admin', 'secretaire'] as const,
+    items: [
+      { title: 'Documents coordinateur', url: '/coordinateur-documents', icon: FileText },
+    ],
+  },
+  {
     label: 'Administration',
     roles: ['admin'] as const,
     items: [
