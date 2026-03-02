@@ -7,7 +7,7 @@ import { AlertTriangle, ChevronDown } from 'lucide-react';
 interface ImpayeFamille {
   nom: string;
   reste: number;
-  niveau: string;
+  cycle: string;
 }
 
 interface Props {

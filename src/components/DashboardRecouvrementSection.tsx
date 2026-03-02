@@ -6,7 +6,7 @@ import { GraduationCap, ChevronDown } from 'lucide-react';
 
 interface ClasseRecouvrement {
   nom: string;
-  niveauNom: string;
+  cycleNom: string;
   totalAttendu: number;
   totalPaye: number;
   effectif: number;
