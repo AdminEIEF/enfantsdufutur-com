@@ -7,6 +7,36 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// In-memory rate limiting
+const attempts = new Map<string, { count: number; lockUntil: number }>();
+
+function checkRateLimit(key: string): { blocked: boolean; retryAfter?: number } {
+  const now = Date.now();
+  const record = attempts.get(key);
+  if (!record) return { blocked: false };
+  if (record.lockUntil > now) {
+    return { blocked: true, retryAfter: Math.ceil((record.lockUntil - now) / 1000) };
+  }
+  if (record.lockUntil <= now && record.count >= 5) {
+    attempts.delete(key);
+  }
+  return { blocked: false };
+}
+
+function recordFailedAttempt(key: string) {
+  const now = Date.now();
+  const record = attempts.get(key) || { count: 0, lockUntil: 0 };
+  record.count++;
+  if (record.count >= 5) {
+    record.lockUntil = now + 15 * 60 * 1000;
+  }
+  attempts.set(key, record);
+}
+
+function clearAttempts(key: string) {
+  attempts.delete(key);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -19,6 +49,17 @@ serve(async (req) => {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Rate limiting
+    const clientIP = req.headers.get("x-forwarded-for") || "unknown";
+    const rateLimitKey = `student:${clientIP}:${matricule.trim().toUpperCase()}`;
+    const rateCheck = checkRateLimit(rateLimitKey);
+    if (rateCheck.blocked) {
+      return new Response(
+        JSON.stringify({ error: `Trop de tentatives. Réessayez dans ${Math.ceil((rateCheck.retryAfter || 900) / 60)} minutes.` }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const supabaseAdmin = createClient(
@@ -36,6 +77,7 @@ serve(async (req) => {
 
     if (eleveErr) throw eleveErr;
     if (!eleve) {
+      recordFailedAttempt(rateLimitKey);
       return new Response(JSON.stringify({ error: "Matricule introuvable" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -56,11 +98,14 @@ serve(async (req) => {
     });
     
     if (!pwCheck) {
+      recordFailedAttempt(rateLimitKey);
       return new Response(JSON.stringify({ error: "Mot de passe incorrect" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    clearAttempts(rateLimitKey);
 
     // Check suspension
     if (eleve.statut === 'suspendu') {
@@ -96,7 +141,7 @@ serve(async (req) => {
   } catch (e) {
     console.error("student-auth error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Erreur serveur" }),
+      JSON.stringify({ error: "Erreur serveur" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
