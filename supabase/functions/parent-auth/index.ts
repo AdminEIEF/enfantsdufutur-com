@@ -7,6 +7,36 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// In-memory rate limiting
+const attempts = new Map<string, { count: number; lockUntil: number }>();
+
+function checkRateLimit(key: string): { blocked: boolean; retryAfter?: number } {
+  const now = Date.now();
+  const record = attempts.get(key);
+  if (!record) return { blocked: false };
+  if (record.lockUntil > now) {
+    return { blocked: true, retryAfter: Math.ceil((record.lockUntil - now) / 1000) };
+  }
+  if (record.lockUntil <= now && record.count >= 5) {
+    attempts.delete(key);
+  }
+  return { blocked: false };
+}
+
+function recordFailedAttempt(key: string) {
+  const now = Date.now();
+  const record = attempts.get(key) || { count: 0, lockUntil: 0 };
+  record.count++;
+  if (record.count >= 5) {
+    record.lockUntil = now + 15 * 60 * 1000; // 15 min lockout
+  }
+  attempts.set(key, record);
+}
+
+function clearAttempts(key: string) {
+  attempts.delete(key);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -14,11 +44,22 @@ serve(async (req) => {
 
   try {
     const { code } = await req.json();
-    if (!code || typeof code !== "string" || code.trim().length < 4) {
-      return new Response(JSON.stringify({ error: "Code d'accès invalide" }), {
+    if (!code || typeof code !== "string" || code.trim().length < 6) {
+      return new Response(JSON.stringify({ error: "Code d'accès invalide (6 caractères minimum)" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Rate limiting by IP + code
+    const clientIP = req.headers.get("x-forwarded-for") || "unknown";
+    const rateLimitKey = `parent:${clientIP}`;
+    const rateCheck = checkRateLimit(rateLimitKey);
+    if (rateCheck.blocked) {
+      return new Response(
+        JSON.stringify({ error: `Trop de tentatives. Réessayez dans ${Math.ceil((rateCheck.retryAfter || 900) / 60)} minutes.` }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const supabaseAdmin = createClient(
@@ -48,11 +89,14 @@ serve(async (req) => {
     }
     
     if (!famille) {
+      recordFailedAttempt(rateLimitKey);
       return new Response(JSON.stringify({ error: "Code d'accès incorrect" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    clearAttempts(rateLimitKey);
 
     // Fetch children with class info
     const { data: eleves, error: elevesErr } = await supabaseAdmin
@@ -84,7 +128,7 @@ serve(async (req) => {
   } catch (e) {
     console.error("parent-auth error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Erreur serveur" }),
+      JSON.stringify({ error: "Erreur serveur" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
