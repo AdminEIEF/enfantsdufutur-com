@@ -372,17 +372,16 @@ export default function CoordinateurDocuments() {
                     <div className="space-y-3">
                       <h4 className="font-semibold text-sm">Documents</h4>
                       <div className="grid gap-3">
-                        {DOCUMENT_TYPES.map(type => {
-                          const doc = docs.find(d => d.type_document === type);
-                          if (!doc) return null;
-                          return (
+                        {docs.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">Aucun document enregistré</p>
+                        ) : docs.map(doc => (
                             <div key={doc.id} className="flex items-center justify-between bg-background rounded-lg border p-3">
                               <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-2 min-w-[180px]">
                                   {doc.statut === 'non_depose' && (
-                                    <Checkbox checked={false} onCheckedChange={() => handleDepot(doc.id, eleve.id, type)} />
+                                    <Checkbox checked={false} onCheckedChange={() => handleDepot(doc.id, eleve.id, doc.type_document)} />
                                   )}
-                                  <span className="text-sm font-medium">{type}</span>
+                                  <span className="text-sm font-medium">{doc.type_document}</span>
                                 </div>
                                 {docStatusBadge(doc.statut)}
                               </div>
@@ -392,14 +391,13 @@ export default function CoordinateurDocuments() {
                                 {doc.note_retrait && <span className="italic">({doc.note_retrait})</span>}
                                 {doc.telephone_retrait && <span>📞 {doc.telephone_retrait}</span>}
                                 {doc.statut === 'depose' && (
-                                  <Button size="sm" variant="outline" className="ml-2 text-xs" onClick={(e) => { e.stopPropagation(); setRetraitDialog({ docId: doc.id, typeName: type, eleveId: eleve.id }); }}>
+                                  <Button size="sm" variant="outline" className="ml-2 text-xs" onClick={(e) => { e.stopPropagation(); setRetraitDialog({ docId: doc.id, typeName: doc.type_document, eleveId: eleve.id }); }}>
                                     <Undo2 className="mr-1 h-3 w-3" /> Rendre
                                   </Button>
                                 )}
                               </div>
                             </div>
-                          );
-                        })}
+                        ))}
                       </div>
                     </div>
                   </TableCell>
