@@ -58,6 +58,39 @@ export type Database = {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          record_id: string | null
+          table_name: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          record_id?: string | null
+          table_name?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          record_id?: string | null
+          table_name?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       avances_salaire: {
         Row: {
           created_at: string
@@ -2010,7 +2043,11 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          blocked: boolean | null
+          blocked_at: string | null
+          blocked_by: string | null
           created_at: string
+          display_name: string | null
           email: string | null
           id: string
           nom: string
@@ -2021,7 +2058,11 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          blocked?: boolean | null
+          blocked_at?: string | null
+          blocked_by?: string | null
           created_at?: string
+          display_name?: string | null
           email?: string | null
           id?: string
           nom?: string
@@ -2032,7 +2073,11 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          blocked?: boolean | null
+          blocked_at?: string | null
+          blocked_by?: string | null
           created_at?: string
+          display_name?: string | null
           email?: string | null
           id?: string
           nom?: string
@@ -2327,6 +2372,36 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          connected_at: string
+          disconnected_at: string | null
+          email: string | null
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          connected_at?: string
+          disconnected_at?: string | null
+          email?: string | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          connected_at?: string
+          disconnected_at?: string | null
+          email?: string | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
           user_id?: string
         }
         Relationships: []
