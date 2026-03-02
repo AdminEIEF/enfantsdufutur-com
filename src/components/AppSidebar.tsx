@@ -1,7 +1,7 @@
 import {
   GraduationCap, Users, UserPlus, BookOpen, Calculator, AlertTriangle,
   Settings, Bell, ScanLine, Library, BarChart3, LogOut,
-  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock, FileText
+  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock, FileText, Shield
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -96,6 +96,7 @@ const navSections = [
     items: [
       { title: 'Personnel', url: '/personnel', icon: Briefcase },
       { title: 'Traçabilité', url: '/tracabilite', icon: ClipboardList },
+      { title: 'Supervision', url: '/supervision', icon: Shield },
       { title: 'Configuration', url: '/configuration', icon: Settings },
     ],
   },

@@ -41,6 +41,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Track session for monitoring
+  const trackSession = useCallback(async (userId: string, email?: string) => {
+    try {
+      await supabase.from('user_sessions').insert({
+        user_id: userId,
+        email: email || '',
+      });
+    } catch { /* silent */ }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
 
@@ -62,7 +72,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Only fetch roles if user changed
           if (lastUserIdRef.current !== newUser.id) {
             setTimeout(() => {
-              if (mounted) fetchRoles(newUser.id);
+              if (mounted) {
+                fetchRoles(newUser.id);
+                if (event === 'SIGNED_IN') {
+                  trackSession(newUser.id, newUser.email);
+                }
+              }
             }, 0);
           }
         } else {
@@ -78,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchRoles]);
+  }, [fetchRoles, trackSession]);
 
   const hasRole = useCallback((role: AppRole) => roles.includes(role), [roles]);
   const hasAnyRole = useCallback((r: AppRole[]) => r.some(role => roles.includes(role)), [roles]);
