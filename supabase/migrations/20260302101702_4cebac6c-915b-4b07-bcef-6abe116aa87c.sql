@@ -1,0 +1,2 @@
+ALTER TABLE public.eleves DROP CONSTRAINT IF EXISTS eleves_statut_check;
+ALTER TABLE public.eleves ADD CONSTRAINT eleves_statut_check CHECK (statut IN ('inscrit', 'pre_inscrit', 'radie', 'transfere', 'abandon'));
