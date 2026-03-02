@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      active_connections: {
+        Row: {
+          categorie: string | null
+          classe_nom: string | null
+          connected_at: string
+          cycle_nom: string | null
+          display_name: string
+          email: string | null
+          extra_info: Json | null
+          id: string
+          last_seen_at: string
+          niveau_nom: string | null
+          poste: string | null
+          ref_id: string
+          type: string
+        }
+        Insert: {
+          categorie?: string | null
+          classe_nom?: string | null
+          connected_at?: string
+          cycle_nom?: string | null
+          display_name: string
+          email?: string | null
+          extra_info?: Json | null
+          id?: string
+          last_seen_at?: string
+          niveau_nom?: string | null
+          poste?: string | null
+          ref_id: string
+          type: string
+        }
+        Update: {
+          categorie?: string | null
+          classe_nom?: string | null
+          connected_at?: string
+          cycle_nom?: string | null
+          display_name?: string
+          email?: string | null
+          extra_info?: Json | null
+          id?: string
+          last_seen_at?: string
+          niveau_nom?: string | null
+          poste?: string | null
+          ref_id?: string
+          type?: string
+        }
+        Relationships: []
+      }
       articles: {
         Row: {
           categorie: string
