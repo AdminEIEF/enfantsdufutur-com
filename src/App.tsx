@@ -48,6 +48,7 @@ import StudentCours from "./pages/student/StudentCours";
 import StudentDevoirs from "./pages/student/StudentDevoirs";
 import StudentEmploiDuTemps from "./pages/student/StudentEmploiDuTemps";
 import StudentResultats from "./pages/student/StudentResultats";
+import StudentEvaluations from "./pages/student/StudentEvaluations";
 import ParentNotifications from "./pages/parent/ParentNotifications";
 import StudentNotifications from "./pages/student/StudentNotifications";
 import Personnel from "./pages/Personnel";
@@ -139,6 +140,7 @@ const App = () => (
             <Route path="/eleve/devoirs" element={<StudentAuthProvider><StudentDevoirs /></StudentAuthProvider>} />
             <Route path="/eleve/emploi-du-temps" element={<StudentAuthProvider><StudentEmploiDuTemps /></StudentAuthProvider>} />
             <Route path="/eleve/resultats" element={<StudentAuthProvider><StudentResultats /></StudentAuthProvider>} />
+            <Route path="/eleve/evaluations" element={<StudentAuthProvider><StudentEvaluations /></StudentAuthProvider>} />
             <Route path="/eleve/notifications" element={<StudentAuthProvider><StudentNotifications /></StudentAuthProvider>} />
             <Route path="/employe" element={<EmployeeAuthProvider><EmployeeLogin /></EmployeeAuthProvider>} />
             <Route path="/employe/dashboard" element={<EmployeeAuthProvider><EmployeeDashboard /></EmployeeAuthProvider>} />

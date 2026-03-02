@@ -172,6 +172,79 @@ serve(async (req) => {
       });
     }
 
+    // ─── TEACHER EVALUATION ───
+    if (action === 'eval_enseignant') {
+      const { enseignant_id, periode, pedagogie, ponctualite, competences, relations, commentaire } = body;
+      if (!enseignant_id || !periode) {
+        return new Response(JSON.stringify({ error: "Données manquantes" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Validate scores
+      for (const score of [pedagogie, ponctualite, competences, relations]) {
+        if (typeof score !== 'number' || score < 1 || score > 10) {
+          return new Response(JSON.stringify({ error: "Notes invalides (1-10)" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+
+      // Server-side profanity filter
+      const bannedWords = ['idiot','imbecile','stupide','con','connard','merde','putain','salaud',
+        'enculé','bâtard','débile','crétin','abruti','foutre','chier','pute','bordel',
+        'connasse','enfoiré','salopard','salope'];
+      if (commentaire) {
+        const lower = commentaire.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        for (const word of bannedWords) {
+          const normalized = word.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          if (lower.includes(normalized)) {
+            return new Response(JSON.stringify({ error: "Commentaire inapproprié détecté" }), {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+        }
+      }
+
+      // Check duplicate
+      const { data: existing } = await supabaseAdmin
+        .from("eval_enseignants_eleves")
+        .select("id")
+        .eq("eleve_id", eleve.id)
+        .eq("enseignant_id", enseignant_id)
+        .eq("periode", periode)
+        .maybeSingle();
+
+      if (existing) {
+        return new Response(JSON.stringify({ error: "Vous avez déjà évalué ce professeur pour cette période" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { error: insertErr } = await supabaseAdmin
+        .from("eval_enseignants_eleves")
+        .insert({
+          eleve_id: eleve.id,
+          enseignant_id,
+          periode,
+          pedagogie,
+          ponctualite,
+          competences,
+          relations,
+          commentaire: commentaire || null,
+        });
+
+      if (insertErr) throw insertErr;
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Action inconnue" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

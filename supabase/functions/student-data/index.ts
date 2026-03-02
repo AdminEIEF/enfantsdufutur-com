@@ -245,6 +245,38 @@ serve(async (req) => {
       });
     }
 
+    if (action === "evaluations_enseignants") {
+      // Get teachers assigned to student's class
+      const { data: affectations } = await supabaseAdmin
+        .from("enseignant_classes")
+        .select("id, employe_id, matiere_id, employes:employe_id(nom, prenom), matieres:matiere_id(nom)")
+        .eq("classe_id", classeId);
+
+      const enseignants = (affectations || []).map((a: any) => ({
+        id: a.id,
+        employe_id: a.employe_id,
+        nom: a.employes?.nom,
+        prenom: a.employes?.prenom,
+        matiere_nom: a.matieres?.nom || null,
+      }));
+
+      // Current period
+      const year = new Date().getFullYear();
+      const semester = new Date().getMonth() < 6 ? 'S1' : 'S2';
+      const periode = `${year}-${semester}`;
+
+      // Get existing evaluations by this student for this period
+      const { data: evals } = await supabaseAdmin
+        .from("eval_enseignants_eleves")
+        .select("id, enseignant_id, pedagogie, ponctualite, competences, relations, commentaire")
+        .eq("eleve_id", eleveId)
+        .eq("periode", periode);
+
+      return new Response(JSON.stringify({ enseignants, evaluations: evals || [], periode }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "dashboard") {
       const { data: devoirs } = await supabaseAdmin
         .from("devoirs")
