@@ -2825,6 +2825,7 @@ export type Database = {
         | "boutique"
         | "cantine"
         | "librairie"
+        | "coordinateur"
       categorie_employe:
         | "enseignant"
         | "administration"
@@ -2965,6 +2966,7 @@ export const Constants = {
         "boutique",
         "cantine",
         "librairie",
+        "coordinateur",
       ],
       categorie_employe: [
         "enseignant",
