@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -252,6 +253,88 @@ export default function AdminMonitoring() {
               <p className="text-xl font-bold">{auditLog.length}</p>
               <p className="text-xs text-muted-foreground">Modifications</p>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Usage Comparison Chart */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Activity className="h-4 w-4 text-primary" />
+              Comparaison des connexions par profil
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const chartData = [
+                { name: 'Élèves', value: connectionsByType.eleve.length, fill: 'hsl(217, 91%, 60%)' },
+                { name: 'Parents', value: connectionsByType.parent.length, fill: 'hsl(160, 84%, 39%)' },
+                { name: 'Employés', value: connectionsByType.employe.length, fill: 'hsl(38, 92%, 50%)' },
+                { name: 'Admins', value: connectionsByType.admin.length, fill: 'hsl(262, 83%, 58%)' },
+              ];
+              const total = chartData.reduce((s, d) => s + d.value, 0);
+              if (total === 0) return <p className="text-center text-muted-foreground py-8 text-sm">Aucune connexion active</p>;
+              return (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(v: number) => [`${v} connecté${v > 1 ? 's' : ''}`, 'Total']} />
+                    <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                      {chartData.map((entry, i) => (
+                        <Cell key={i} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              );
+            })()}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
+              Répartition des utilisateurs connectés
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const pieData = [
+                { name: 'Élèves', value: connectionsByType.eleve.length, fill: 'hsl(217, 91%, 60%)' },
+                { name: 'Parents', value: connectionsByType.parent.length, fill: 'hsl(160, 84%, 39%)' },
+                { name: 'Employés', value: connectionsByType.employe.length, fill: 'hsl(38, 92%, 50%)' },
+                { name: 'Admins', value: connectionsByType.admin.length, fill: 'hsl(262, 83%, 58%)' },
+              ].filter(d => d.value > 0);
+              const total = pieData.reduce((s, d) => s + d.value, 0);
+              if (total === 0) return <p className="text-center text-muted-foreground py-8 text-sm">Aucune connexion active</p>;
+              return (
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {pieData.map((entry, i) => (
+                        <Cell key={i} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(v: number) => [`${v} connecté${v > 1 ? 's' : ''}`, '']} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              );
+            })()}
           </CardContent>
         </Card>
       </div>
