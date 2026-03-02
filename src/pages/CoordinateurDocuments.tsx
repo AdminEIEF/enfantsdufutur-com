@@ -98,8 +98,10 @@ export default function CoordinateurDocuments() {
 
   const getStatutDossier = (eleveId: string) => {
     const docs = getEleveDocs(eleveId);
+    if (docs.length === 0) return 'incomplet';
     const deposited = docs.filter(d => d.statut === 'depose').length;
-    if (deposited === DOCUMENT_TYPES.length) return 'complet';
+    const total = docs.length;
+    if (deposited === total) return 'complet';
     return 'incomplet';
   };
 

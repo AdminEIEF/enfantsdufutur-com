@@ -216,21 +216,26 @@ export default function Eleves() {
       statut: 'abandon',
     } as any).select().single();
 
-    // Create document entries for the coordinator based on eleve's checklist
+    // Create document entries ONLY for documents the student actually provided
     if (coordEleve) {
-      const docTypes = ['Photo d\'identité', 'Livret Scolaire', 'Extrait de Naissance'];
-      const checklistMap: Record<string, boolean> = {
-        'Photo d\'identité': !!abandonDialog.checklist_photo,
-        'Livret Scolaire': !!abandonDialog.checklist_livret,
-        'Extrait de Naissance': false, // Not tracked in eleves checklist
-      };
-      const docInserts = docTypes.map(type => ({
-        eleve_id: (coordEleve as any).id,
-        type_document: type,
-        statut: checklistMap[type] ? 'depose' : 'non_depose',
-        date_depot: checklistMap[type] ? new Date().toISOString() : null,
-      }));
-      await supabase.from('coordinateur_documents').insert(docInserts as any);
+      const checklistItems: { label: string; provided: boolean }[] = [
+        { label: 'Photo d\'identité', provided: !!abandonDialog.checklist_photo },
+        { label: 'Livret Scolaire', provided: !!abandonDialog.checklist_livret },
+        { label: 'Rames de papier', provided: !!abandonDialog.checklist_rames },
+        { label: 'Marqueurs', provided: !!abandonDialog.checklist_marqueurs },
+      ];
+      // Only create coordinator documents for items that were actually deposited
+      const docInserts = checklistItems
+        .filter(item => item.provided)
+        .map(item => ({
+          eleve_id: (coordEleve as any).id,
+          type_document: item.label,
+          statut: 'depose',
+          date_depot: new Date().toISOString(),
+        }));
+      if (docInserts.length > 0) {
+        await supabase.from('coordinateur_documents').insert(docInserts as any);
+      }
     }
 
     toast({ title: 'Élève marqué en abandon', description: 'L\'élève est maintenant visible chez le coordinateur pour la gestion de ses documents.' });
