@@ -102,8 +102,13 @@ export default function AdminMonitoring() {
 
   const fetchAll = async () => {
     setLoading(true);
-    await Promise.all([fetchConnections(), fetchSessions(), fetchAuditLog(), fetchUsers()]);
-    setLoading(false);
+    try {
+      await Promise.all([fetchConnections(), fetchSessions(), fetchAuditLog(), fetchUsers()]);
+    } catch (err) {
+      console.error('Erreur chargement supervision:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchConnections = async () => {
@@ -215,11 +220,21 @@ export default function AdminMonitoring() {
   };
 
 
+  // Deduplicate connections by ref_id (keep only latest per user)
+  const uniqueConnections = useMemo(() => {
+    const map = new Map<string, ActiveConnection>();
+    connections.forEach(c => {
+      const key = `${c.type}-${c.ref_id}`;
+      if (!map.has(key)) map.set(key, c);
+    });
+    return Array.from(map.values());
+  }, [connections]);
+
   const connectionsByType = useMemo(() => {
     const map: Record<string, ActiveConnection[]> = { eleve: [], parent: [], employe: [], admin: [] };
-    connections.forEach(c => { if (map[c.type]) map[c.type].push(c); });
+    uniqueConnections.forEach(c => { if (map[c.type]) map[c.type].push(c); });
     return map;
-  }, [connections]);
+  }, [uniqueConnections]);
 
   // Group students by class
   const studentsByClass = useMemo(() => {
@@ -263,6 +278,14 @@ export default function AdminMonitoring() {
   };
 
   const catLabels: Record<string, string> = { enseignant: '👨‍🏫 Enseignants', service: '🔧 Service', administration: '📋 Administration', direction: '👔 Direction' };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
