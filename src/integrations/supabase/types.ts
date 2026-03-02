@@ -547,6 +547,7 @@ export type Database = {
           id: string
           note_retrait: string | null
           statut: string
+          telephone_retrait: string | null
           type_document: string
           updated_at: string
         }
@@ -558,6 +559,7 @@ export type Database = {
           id?: string
           note_retrait?: string | null
           statut?: string
+          telephone_retrait?: string | null
           type_document: string
           updated_at?: string
         }
@@ -569,12 +571,64 @@ export type Database = {
           id?: string
           note_retrait?: string | null
           statut?: string
+          telephone_retrait?: string | null
           type_document?: string
           updated_at?: string
         }
         Relationships: [
           {
             foreignKeyName: "coordinateur_documents_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "coordinateur_eleves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coordinateur_documents_historique: {
+        Row: {
+          action: string
+          created_at: string
+          created_by: string | null
+          document_id: string
+          eleve_id: string
+          id: string
+          note: string | null
+          telephone: string | null
+          type_document: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          created_by?: string | null
+          document_id: string
+          eleve_id: string
+          id?: string
+          note?: string | null
+          telephone?: string | null
+          type_document: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          created_by?: string | null
+          document_id?: string
+          eleve_id?: string
+          id?: string
+          note?: string | null
+          telephone?: string | null
+          type_document?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coordinateur_documents_historique_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "coordinateur_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coordinateur_documents_historique_eleve_id_fkey"
             columns: ["eleve_id"]
             isOneToOne: false
             referencedRelation: "coordinateur_eleves"
@@ -590,9 +644,12 @@ export type Database = {
           id: string
           niveau_scolaire: string
           nom: string
+          pre_inscription_id: string | null
           prenom: string
           statut: string
           updated_at: string
+          valide: boolean
+          valide_at: string | null
         }
         Insert: {
           created_at?: string
@@ -601,9 +658,12 @@ export type Database = {
           id?: string
           niveau_scolaire?: string
           nom: string
+          pre_inscription_id?: string | null
           prenom: string
           statut?: string
           updated_at?: string
+          valide?: boolean
+          valide_at?: string | null
         }
         Update: {
           created_at?: string
@@ -612,11 +672,22 @@ export type Database = {
           id?: string
           niveau_scolaire?: string
           nom?: string
+          pre_inscription_id?: string | null
           prenom?: string
           statut?: string
           updated_at?: string
+          valide?: boolean
+          valide_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "coordinateur_eleves_pre_inscription_id_fkey"
+            columns: ["pre_inscription_id"]
+            isOneToOne: false
+            referencedRelation: "pre_inscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       courriers_employes: {
         Row: {
