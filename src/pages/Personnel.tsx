@@ -289,6 +289,20 @@ export default function Personnel() {
     },
   });
 
+  // Fetch student evaluations of teachers
+  const { data: evalElevesAdmin = [] } = useQuery({
+    queryKey: ['eval-enseignants-eleves'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('eval_enseignants_eleves' as any)
+        .select('*, eleves:eleve_id(nom, prenom, matricule, classes:classe_id(nom)), employes:enseignant_id(nom, prenom, matricule)')
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Fetch bulletins de paie
   const { data: bulletins = [] } = useQuery({
     queryKey: ['bulletins-paie'],
@@ -1122,6 +1136,56 @@ export default function Personnel() {
                         </TableCell>
                         <TableCell className="max-w-48 truncate text-sm">{ev.commentaire || '—'}</TableCell>
                         <TableCell className="text-sm">{format(new Date(ev.created_at), 'dd/MM/yyyy')}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+
+          {/* Student evaluations of teachers */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <GraduationCap className="h-4 w-4" /> Évaluations par les élèves
+              </CardTitle>
+            </CardHeader>
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Enseignant</TableHead>
+                    <TableHead>Élève</TableHead>
+                    <TableHead>Classe</TableHead>
+                    <TableHead>Période</TableHead>
+                    <TableHead>Péd.</TableHead>
+                    <TableHead>Ponct.</TableHead>
+                    <TableHead>Comp.</TableHead>
+                    <TableHead>Rel.</TableHead>
+                    <TableHead>Moy.</TableHead>
+                    <TableHead>Commentaire</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {evalElevesAdmin.length === 0 ? (
+                    <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Aucune évaluation d'élève</TableCell></TableRow>
+                  ) : evalElevesAdmin.map((ev: any) => {
+                    const avg = ((Number(ev.pedagogie) + Number(ev.ponctualite) + Number(ev.competences) + Number(ev.relations)) / 4).toFixed(1);
+                    return (
+                      <TableRow key={ev.id}>
+                        <TableCell className="font-medium">{ev.employes?.prenom} {ev.employes?.nom}</TableCell>
+                        <TableCell className="text-sm">{ev.eleves?.prenom} {ev.eleves?.nom}</TableCell>
+                        <TableCell className="text-sm">{ev.eleves?.classes?.nom || '—'}</TableCell>
+                        <TableCell className="text-sm">{ev.periode}</TableCell>
+                        <TableCell className="text-center">{ev.pedagogie}</TableCell>
+                        <TableCell className="text-center">{ev.ponctualite}</TableCell>
+                        <TableCell className="text-center">{ev.competences}</TableCell>
+                        <TableCell className="text-center">{ev.relations}</TableCell>
+                        <TableCell>
+                          <Badge variant={Number(avg) >= 7 ? 'default' : Number(avg) >= 5 ? 'secondary' : 'destructive'}>{avg}/10</Badge>
+                        </TableCell>
+                        <TableCell className="max-w-48 truncate text-sm">{ev.commentaire || '—'}</TableCell>
                       </TableRow>
                     );
                   })}

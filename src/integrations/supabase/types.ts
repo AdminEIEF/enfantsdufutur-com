@@ -1048,6 +1048,60 @@ export type Database = {
           },
         ]
       }
+      eval_enseignants_eleves: {
+        Row: {
+          commentaire: string | null
+          competences: number
+          created_at: string
+          eleve_id: string
+          enseignant_id: string
+          id: string
+          pedagogie: number
+          periode: string
+          ponctualite: number
+          relations: number
+        }
+        Insert: {
+          commentaire?: string | null
+          competences?: number
+          created_at?: string
+          eleve_id: string
+          enseignant_id: string
+          id?: string
+          pedagogie?: number
+          periode: string
+          ponctualite?: number
+          relations?: number
+        }
+        Update: {
+          commentaire?: string | null
+          competences?: number
+          created_at?: string
+          eleve_id?: string
+          enseignant_id?: string
+          id?: string
+          pedagogie?: number
+          periode?: string
+          ponctualite?: number
+          relations?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eval_enseignants_eleves_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eval_enseignants_eleves_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evaluations_employes: {
         Row: {
           assiduite: number | null
