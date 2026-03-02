@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { StudentLayout } from '@/components/StudentLayout';
 import { StudentAIChat } from '@/components/StudentAIChat';
-import { ClipboardList, Upload, CheckCircle, Clock, AlertTriangle, Loader2, FileText, ListChecks, Send } from 'lucide-react';
+import { ClipboardList, Upload, CheckCircle, Clock, AlertTriangle, Loader2, FileText, ListChecks, Send, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -229,15 +229,58 @@ export default function StudentDevoirs() {
             </div>
           )}
 
-          {/* Quiz result */}
+          {/* Quiz result + correction */}
           {isQuiz && quizReponse && (
-            <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3">
+            <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3 space-y-3">
               <p className="text-sm font-semibold">
                 Score : {quizReponse.score}/{quizReponse.score_max}
               </p>
               <p className="text-xs text-muted-foreground">
                 Soumis le {new Date(quizReponse.soumis_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
               </p>
+              {/* Show correction with correct answers */}
+              {d.questions && d.questions.length > 0 && (
+                <div className="space-y-2 pt-2 border-t">
+                  <p className="text-xs font-semibold text-muted-foreground">📋 Correction :</p>
+                  {d.questions.sort((a: any, b: any) => a.ordre - b.ordre).map((q: any, qi: number) => {
+                    const studentReponses = quizReponse.reponses as any[];
+                    const studentAnswer = studentReponses?.find((r: any) => r.question_id === q.id);
+                    const answerIndex = studentAnswer?.answer_index ?? -1;
+                    const options = q.options as any[];
+
+                    return (
+                      <div key={q.id} className="text-sm space-y-1">
+                        <p className="font-medium">
+                          <span className="text-muted-foreground mr-1">{qi + 1}.</span>
+                          {q.question}
+                          <span className="text-xs text-muted-foreground ml-1">({q.points} pt{q.points > 1 ? 's' : ''})</span>
+                        </p>
+                        <div className="ml-4 space-y-0.5">
+                          {options.map((opt: any, oi: number) => {
+                            const isSelected = oi === answerIndex;
+                            const isCorrect = opt.correct;
+                            let cls = 'flex items-center gap-1.5 text-xs px-2 py-0.5 rounded ';
+                            if (isSelected && isCorrect) cls += 'bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 font-medium';
+                            else if (isSelected && !isCorrect) cls += 'bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400';
+                            else if (isCorrect) cls += 'text-green-600 dark:text-green-500';
+                            else cls += 'text-muted-foreground';
+
+                            return (
+                              <div key={oi} className={cls}>
+                                {isSelected && isCorrect && <CheckCircle className="h-3 w-3" />}
+                                {isSelected && !isCorrect && <XCircle className="h-3 w-3" />}
+                                {!isSelected && isCorrect && <CheckCircle className="h-3 w-3 opacity-50" />}
+                                {!isSelected && !isCorrect && <span className="w-3 h-3" />}
+                                {opt.label}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
