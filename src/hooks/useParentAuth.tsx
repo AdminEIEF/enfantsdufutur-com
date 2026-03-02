@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface ParentFamille {
   id: string;
@@ -62,23 +61,31 @@ export function ParentAuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  // Listen for forced disconnect by admin
+  // Poll to detect forced disconnect by admin
   useEffect(() => {
     if (!session?.famille?.id) return;
-    const channel = supabase
-      .channel(`parent-disconnect-${session.famille.id}`)
-      .on('postgres_changes', {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'active_connections',
-        filter: `ref_id=eq.${session.famille.id}`,
-      }, () => {
-        setSession(null);
-        localStorage.removeItem(STORAGE_KEY);
-        window.location.href = '/parent/login';
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    const intervalId = setInterval(async () => {
+      try {
+        const resp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-connection`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ type: 'parent', ref_id: session.famille.id }),
+          }
+        );
+        const data = await resp.json();
+        if (!data.active) {
+          setSession(null);
+          localStorage.removeItem(STORAGE_KEY);
+          window.location.href = '/parent/login';
+        }
+      } catch { /* ignore */ }
+    }, 10000);
+    return () => clearInterval(intervalId);
   }, [session?.famille?.id]);
 
   const login = async (code: string) => {

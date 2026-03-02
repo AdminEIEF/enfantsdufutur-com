@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface EmployeeData {
   id: string;
@@ -52,23 +51,31 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  // Listen for forced disconnect by admin
+  // Poll to detect forced disconnect by admin
   useEffect(() => {
     if (!session?.employe?.id) return;
-    const channel = supabase
-      .channel(`employee-disconnect-${session.employe.id}`)
-      .on('postgres_changes', {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'active_connections',
-        filter: `ref_id=eq.${session.employe.id}`,
-      }, () => {
-        setSession(null);
-        localStorage.removeItem(STORAGE_KEY);
-        window.location.href = '/employee/login';
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    const intervalId = setInterval(async () => {
+      try {
+        const resp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-connection`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ type: 'employe', ref_id: session.employe.id }),
+          }
+        );
+        const data = await resp.json();
+        if (!data.active) {
+          setSession(null);
+          localStorage.removeItem(STORAGE_KEY);
+          window.location.href = '/employee/login';
+        }
+      } catch { /* ignore */ }
+    }, 10000);
+    return () => clearInterval(intervalId);
   }, [session?.employe?.id]);
 
   const login = async (matricule: string, password: string) => {
