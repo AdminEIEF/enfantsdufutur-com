@@ -136,6 +136,21 @@ serve(async (req) => {
       classes = ec || [];
     }
 
+    // Log connection for monitoring
+    try {
+      await supabaseAdmin.from('active_connections').insert({
+        type: 'employe',
+        ref_id: employe.id,
+        display_name: `${employe.prenom} ${employe.nom}`,
+        email: employe.email,
+        categorie: employe.categorie,
+        poste: employe.poste,
+        extra_info: { matricule: employe.matricule, telephone: employe.telephone, photo_url: employe.photo_url },
+      });
+    } catch (logErr) {
+      console.error("Connection log error:", logErr);
+    }
+
     return new Response(
       JSON.stringify({ employe: { ...employeData, enseignant_classes: classes }, token }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

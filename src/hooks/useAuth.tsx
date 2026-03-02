@@ -48,6 +48,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user_id: userId,
         email: email || '',
       });
+      // Also log to active_connections for unified monitoring
+      await supabase.from('active_connections').insert({
+        type: 'admin',
+        ref_id: userId,
+        display_name: email || 'Admin',
+        email: email || '',
+      });
     } catch { /* silent */ }
   }, []);
 

@@ -134,6 +134,24 @@ serve(async (req) => {
     // Remove password from response
     const { mot_de_passe_eleve, ...eleveData } = eleve;
 
+    // Log connection for monitoring
+    try {
+      const classeNom = eleve.classes?.nom || '';
+      const niveauNom = eleve.classes?.niveaux?.nom || '';
+      const cycleNom = eleve.classes?.niveaux?.cycles?.nom || '';
+      await supabaseAdmin.from('active_connections').insert({
+        type: 'eleve',
+        ref_id: eleve.id,
+        display_name: `${eleve.prenom} ${eleve.nom}`,
+        classe_nom: classeNom,
+        niveau_nom: niveauNom,
+        cycle_nom: cycleNom,
+        extra_info: { matricule: eleve.matricule, sexe: eleve.sexe, photo_url: eleve.photo_url },
+      });
+    } catch (logErr) {
+      console.error("Connection log error:", logErr);
+    }
+
     return new Response(
       JSON.stringify({ eleve: eleveData, token }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -121,6 +121,20 @@ serve(async (req) => {
     const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(tokenData));
     const token = btoa(tokenData + ":" + Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join(''));
 
+    // Log connection for monitoring
+    try {
+      const enfantsNoms = (eleves || []).map((e: any) => `${e.prenom} ${e.nom}`).join(', ');
+      await supabaseAdmin.from('active_connections').insert({
+        type: 'parent',
+        ref_id: famille.id,
+        display_name: famille.nom_famille,
+        email: famille.email_parent,
+        extra_info: { telephone_pere: famille.telephone_pere, telephone_mere: famille.telephone_mere, enfants: enfantsNoms, nb_enfants: (eleves || []).length },
+      });
+    } catch (logErr) {
+      console.error("Connection log error:", logErr);
+    }
+
     return new Response(
       JSON.stringify({ famille, eleves: eleves || [], token }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
