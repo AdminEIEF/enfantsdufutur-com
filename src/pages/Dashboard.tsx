@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { DashboardImpayesSection } from '@/components/DashboardImpayesSection';
+import { DashboardRecouvrementSection } from '@/components/DashboardRecouvrementSection';
 
 export default function Dashboard() {
   const { roles } = useAuth();
@@ -113,6 +114,13 @@ export default function Dashboard() {
   const caLibrairie = ventesArticles.reduce((s: number, v: any) => s + Number(v.prix_unitaire) * v.quantite, 0);
   const caScolarite = paiements.filter((p: any) => p.type_paiement === 'scolarite').reduce((s: number, p: any) => s + Number(p.montant), 0);
 
+  // ─── Ordre pédagogique des niveaux ──────────────────
+  const NIVEAU_ORDRE = ['Crèche', 'TPS', 'PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2', '7E', '8E', '9E', '10E', '11E', '12E', 'Terminale'];
+  const getNiveauOrdre = (nom: string) => {
+    const idx = NIVEAU_ORDRE.findIndex(n => nom.toUpperCase().includes(n.toUpperCase()));
+    return idx >= 0 ? idx : 999;
+  };
+
   // Impayés par famille
   const impayesFamilles = useMemo(() => {
     const familleIds = new Set(eleves.filter((e: any) => e.famille_id).map((e: any) => e.famille_id));
@@ -123,7 +131,6 @@ export default function Dashboard() {
       const annuel = kids.reduce((s: number, e: any) => s + Number(e.classes?.niveaux?.frais_scolarite || 0), 0);
       const paye = kids.reduce((s: number, e: any) => s + paiements.filter((p: any) => p.eleve_id === e.id && p.type_paiement === 'scolarite').reduce((ss: number, p: any) => ss + Number(p.montant), 0), 0);
       const reste = annuel - paye;
-      // Get the predominant niveau from kids
       const niveaux = kids.map((e: any) => e.classes?.niveaux?.nom).filter(Boolean);
       const niveau = niveaux[0] || 'Non classé';
       if (reste > 0) result.push({ nom: fam?.nom_famille || 'Inconnue', reste, niveau });
@@ -138,7 +145,7 @@ export default function Dashboard() {
       if (!map[f.niveau]) map[f.niveau] = [];
       map[f.niveau].push(f);
     });
-    return Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
+    return Object.entries(map).sort(([a], [b]) => getNiveauOrdre(a) - getNiveauOrdre(b));
   }, [impayesFamilles]);
 
   const paiementsMois = paiements.filter((p: any) => p.date_paiement?.startsWith(thisMonth));
@@ -152,15 +159,16 @@ export default function Dashboard() {
 
   // ─── Taux de recouvrement par classe ──────────────────
   const recouvrementParClasse = useMemo(() => {
-    const classeMap: Record<string, { nom: string; totalAttendu: number; totalPaye: number; effectif: number }> = {};
+    const classeMap: Record<string, { nom: string; niveauNom: string; totalAttendu: number; totalPaye: number; effectif: number }> = {};
 
     eleves.forEach((e: any) => {
       if (!e.classe_id || !e.classes) return;
       const classeNom = e.classes.nom;
+      const niveauNom = e.classes.niveaux?.nom || 'Non classé';
       const totalAnnuel = Number(e.classes.niveaux?.frais_scolarite || 0);
 
       if (!classeMap[e.classe_id]) {
-        classeMap[e.classe_id] = { nom: classeNom, totalAttendu: 0, totalPaye: 0, effectif: 0 };
+        classeMap[e.classe_id] = { nom: classeNom, niveauNom, totalAttendu: 0, totalPaye: 0, effectif: 0 };
       }
       classeMap[e.classe_id].totalAttendu += totalAnnuel;
       classeMap[e.classe_id].effectif += 1;
@@ -181,8 +189,18 @@ export default function Dashboard() {
         taux: Math.min(100, Math.round((c.totalPaye / c.totalAttendu) * 100)),
         reste: c.totalAttendu - c.totalPaye,
       }))
-      .sort((a, b) => a.taux - b.taux);
+      .sort((a, b) => getNiveauOrdre(a.niveauNom) - getNiveauOrdre(b.niveauNom) || a.nom.localeCompare(b.nom));
   }, [eleves, paiements]);
+
+  // Group recouvrement by niveau
+  const recouvrementParNiveau = useMemo(() => {
+    const map: Record<string, typeof recouvrementParClasse> = {};
+    recouvrementParClasse.forEach(c => {
+      if (!map[c.niveauNom]) map[c.niveauNom] = [];
+      map[c.niveauNom].push(c);
+    });
+    return Object.entries(map).sort(([a], [b]) => getNiveauOrdre(a) - getNiveauOrdre(b));
+  }, [recouvrementParClasse]);
 
   const tauxGlobal = useMemo(() => {
     const totalAttendu = recouvrementParClasse.reduce((s, c) => s + c.totalAttendu, 0);
@@ -551,46 +569,7 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* Taux de recouvrement par classe */}
-      {recouvrementParClasse.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <GraduationCap className="h-5 w-5" /> Taux de recouvrement scolarité par classe
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Classe</TableHead>
-                  <TableHead className="text-center">Effectif</TableHead>
-                  <TableHead className="text-right">Attendu</TableHead>
-                  <TableHead className="text-right">Payé</TableHead>
-                  <TableHead className="text-right">Reste</TableHead>
-                  <TableHead className="text-center">Taux</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recouvrementParClasse.map((c, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="font-medium">{c.nom}</TableCell>
-                    <TableCell className="text-center">{c.effectif}</TableCell>
-                    <TableCell className="text-right">{c.totalAttendu.toLocaleString()} GNF</TableCell>
-                    <TableCell className="text-right text-accent">{c.totalPaye.toLocaleString()} GNF</TableCell>
-                    <TableCell className="text-right text-destructive">{c.reste.toLocaleString()} GNF</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant={c.taux >= 75 ? 'default' : c.taux >= 50 ? 'secondary' : 'destructive'}>
-                        {c.taux}%
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+      <DashboardRecouvrementSection recouvrementParNiveau={recouvrementParNiveau} tauxGlobal={tauxGlobal} />
 
       {/* Alertes cantine */}
       {cantineInscrits > 0 && (
