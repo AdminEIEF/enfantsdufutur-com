@@ -110,6 +110,7 @@ function RoleBasedRedirect() {
   if (!user) return <Navigate to="/auth" replace />;
   // Redirect to role-specific page for single-purpose roles
   if (roles.length === 1) {
+    if (roles[0] === 'superviseur') return <Navigate to="/supervision" replace />;
     if (roles[0] === 'cantine') return <Navigate to="/cantine" replace />;
     if (roles[0] === 'boutique') return <Navigate to="/boutique" replace />;
     if (roles[0] === 'librairie') return <Navigate to="/librairie" replace />;
@@ -129,6 +130,7 @@ function AuthRoute() {
   }
   if (user) {
     if (roles.length === 1) {
+      if (roles[0] === 'superviseur') return <Navigate to="/supervision" replace />;
       if (roles[0] === 'cantine') return <Navigate to="/cantine" replace />;
       if (roles[0] === 'boutique') return <Navigate to="/boutique" replace />;
       if (roles[0] === 'librairie') return <Navigate to="/librairie" replace />;

@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 const navSections = [
   {
     label: 'Principal',
-    roles: ['admin', 'secretaire', 'service_info', 'comptable'] as const,
+    roles: ['admin', 'secretaire', 'service_info', 'comptable', 'superviseur'] as const,
     items: [
       { title: 'Tableau de bord', url: '/dashboard', icon: Home },
     ],
@@ -99,7 +99,7 @@ const navSections = [
   },
   {
     label: 'Administration',
-    roles: ['admin'] as const,
+    roles: ['admin', 'superviseur'] as const,
     items: [
       { title: 'Personnel', url: '/personnel', icon: Briefcase },
       { title: 'Traçabilité', url: '/tracabilite', icon: ClipboardList },
@@ -129,7 +129,7 @@ export function AppSidebar() {
       <SidebarSeparator />
       <SidebarContent>
         {navSections.map((section) => {
-          if (!hasAnyRole(section.roles as unknown as ('admin' | 'secretaire' | 'service_info' | 'comptable' | 'boutique' | 'cantine' | 'librairie' | 'coordinateur')[])) return null;
+          if (!hasAnyRole(section.roles as unknown as ('superviseur' | 'admin' | 'secretaire' | 'service_info' | 'comptable' | 'boutique' | 'cantine' | 'librairie' | 'coordinateur')[])) return null;
           return (
             <SidebarGroup key={section.label}>
               <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
