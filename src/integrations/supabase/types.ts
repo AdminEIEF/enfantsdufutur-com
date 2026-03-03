@@ -2249,6 +2249,7 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          must_change_password: boolean
           nom: string
           prenom: string
           telephone: string | null
@@ -2264,6 +2265,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          must_change_password?: boolean
           nom?: string
           prenom?: string
           telephone?: string | null
@@ -2279,6 +2281,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          must_change_password?: boolean
           nom?: string
           prenom?: string
           telephone?: string | null
