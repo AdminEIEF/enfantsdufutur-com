@@ -41,6 +41,7 @@ export default function AdminUserManagement() {
   const [createdPassword, setCreatedPassword] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [showCreatedPwd, setShowCreatedPwd] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const [form, setForm] = useState({
     email: '',
     nom: '',
@@ -225,7 +226,14 @@ export default function AdminUserManagement() {
               <TableBody>
                 {users.map((u: any) => (
                   <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.prenom} {u.nom}</TableCell>
+                    <TableCell>
+                      <button
+                        className="font-medium text-primary hover:underline cursor-pointer bg-transparent border-none p-0"
+                        onClick={() => setSelectedUser(u)}
+                      >
+                        {u.prenom} {u.nom}
+                      </button>
+                    </TableCell>
                     <TableCell className="text-muted-foreground">{u.email}</TableCell>
                     <TableCell>
                       <div className="flex gap-1 flex-wrap">
@@ -254,6 +262,61 @@ export default function AdminUserManagement() {
           </div>
         )}
       </CardContent>
+
+      {/* Detail dialog */}
+      <Dialog open={!!selectedUser} onOpenChange={(v) => { if (!v) setSelectedUser(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Détails de l'utilisateur</DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                  {selectedUser.prenom?.[0]}{selectedUser.nom?.[0]}
+                </div>
+                <div>
+                  <p className="font-semibold text-lg">{selectedUser.prenom} {selectedUser.nom}</p>
+                  <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Rôle(s)</p>
+                  <div className="flex gap-1 flex-wrap mt-1">
+                    {selectedUser.roles?.length > 0 ? selectedUser.roles.map((r: string) => (
+                      <Badge key={r} variant="outline" className={ROLE_COLORS[r] || ''}>
+                        {ROLE_LABELS[r] || r}
+                      </Badge>
+                    )) : <span className="text-muted-foreground">Aucun</span>}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Statut</p>
+                  <div className="mt-1">
+                    {selectedUser.must_change_password ? (
+                      <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20">1ère connexion</Badge>
+                    ) : selectedUser.blocked ? (
+                      <Badge variant="destructive">Bloqué</Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20">Actif</Badge>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Créé le</p>
+                  <p className="mt-1">{selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleDateString('fr-FR') : '—'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">ID utilisateur</p>
+                  <p className="mt-1 font-mono text-xs truncate">{selectedUser.user_id || selectedUser.id}</p>
+                </div>
+              </div>
+              <Button variant="outline" className="w-full" onClick={() => setSelectedUser(null)}>Fermer</Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
