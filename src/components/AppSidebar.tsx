@@ -34,7 +34,7 @@ const navSections = [
   },
   {
     label: 'Académique',
-    roles: ['admin', 'service_info'] as const,
+    roles: ['admin', 'service_info', 'coordinateur'] as const,
     items: [
       { title: 'Saisie des notes', url: '/notes', icon: BookOpen },
       { title: 'Bulletins', url: '/bulletins', icon: Award },
@@ -129,7 +129,7 @@ export function AppSidebar() {
       <SidebarSeparator />
       <SidebarContent>
         {navSections.map((section) => {
-          if (!hasAnyRole(section.roles as unknown as ('admin' | 'secretaire' | 'service_info' | 'comptable' | 'boutique' | 'cantine' | 'librairie')[])) return null;
+          if (!hasAnyRole(section.roles as unknown as ('admin' | 'secretaire' | 'service_info' | 'comptable' | 'boutique' | 'cantine' | 'librairie' | 'coordinateur')[])) return null;
           return (
             <SidebarGroup key={section.label}>
               <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
