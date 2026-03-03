@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Loader2, Copy, CheckCircle2, Shield, Users, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, Loader2, Copy, CheckCircle2, Shield, Users, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -42,6 +42,9 @@ export default function AdminUserManagement() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showCreatedPwd, setShowCreatedPwd] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [resettingPwd, setResettingPwd] = useState(false);
+  const [resetPwd, setResetPwd] = useState('');
+  const [showResetPwd, setShowResetPwd] = useState(false);
   const [form, setForm] = useState({
     email: '',
     nom: '',
@@ -264,7 +267,7 @@ export default function AdminUserManagement() {
       </CardContent>
 
       {/* Detail dialog */}
-      <Dialog open={!!selectedUser} onOpenChange={(v) => { if (!v) setSelectedUser(null); }}>
+      <Dialog open={!!selectedUser} onOpenChange={(v) => { if (!v) { setSelectedUser(null); setResetPwd(''); setShowResetPwd(false); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Détails de l'utilisateur</DialogTitle>
@@ -312,7 +315,55 @@ export default function AdminUserManagement() {
                   <p className="mt-1 font-mono text-xs truncate">{selectedUser.user_id || selectedUser.id}</p>
                 </div>
               </div>
-              <Button variant="outline" className="w-full" onClick={() => setSelectedUser(null)}>Fermer</Button>
+              <div className="border-t pt-3 space-y-2">
+                <p className="text-sm text-muted-foreground font-medium">Mot de passe</p>
+                {resetPwd ? (
+                  <div className="bg-muted rounded-lg p-3 space-y-1">
+                    <p className="text-xs text-muted-foreground">Nouveau mot de passe temporaire :</p>
+                    <div className="flex items-center gap-2 justify-center">
+                      <code className="text-lg font-mono font-bold">
+                        {showResetPwd ? resetPwd : '••••••••••••'}
+                      </code>
+                      <Button variant="ghost" size="icon" onClick={() => setShowResetPwd(!showResetPwd)}>
+                        {showResetPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => { navigator.clipboard.writeText(resetPwd); toast.success('Copié !'); }}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center">L'utilisateur devra le changer à la prochaine connexion.</p>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    disabled={resettingPwd}
+                    onClick={async () => {
+                      setResettingPwd(true);
+                      const newPwd = generatePassword();
+                      try {
+                        const { data, error } = await supabase.functions.invoke('admin-session-action', {
+                          body: { action: 'change_password', type: 'admin_user', ref_id: selectedUser.user_id, new_password: newPwd },
+                        });
+                        if (error) throw error;
+                        if (data?.error) throw new Error(data.error);
+                        setResetPwd(newPwd);
+                        queryClient.invalidateQueries({ queryKey: ['admin-users-list'] });
+                        toast.success('Mot de passe réinitialisé');
+                      } catch (err: any) {
+                        toast.error(err.message || 'Erreur');
+                      } finally {
+                        setResettingPwd(false);
+                      }
+                    }}
+                  >
+                    {resettingPwd ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <KeyRound className="h-4 w-4 mr-2" />}
+                    Réinitialiser le mot de passe
+                  </Button>
+                )}
+              </div>
+              <Button variant="outline" className="w-full" onClick={() => { setSelectedUser(null); setResetPwd(''); setShowResetPwd(false); }}>Fermer</Button>
             </div>
           )}
         </DialogContent>
