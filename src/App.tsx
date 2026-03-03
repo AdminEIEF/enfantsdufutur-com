@@ -150,27 +150,27 @@ const App = () => (
             <Route path="/fiche-eleve/:matricule" element={<ElevePublic />} />
             <Route path="/" element={<Landing />} />
             <Route path="/pre-inscription" element={<PreInscriptionPublic />} />
-            <Route path="/parent" element={<><ParentAuthProvider><ParentLogin /></ParentAuthProvider></>} />
-            <Route path="/parent/dashboard" element={<><ParentAuthProvider><ParentDashboard /></ParentAuthProvider></>} />
-            <Route path="/parent/enfant/:id" element={<><ParentAuthProvider><ParentEnfant /></ParentAuthProvider></>} />
-            <Route path="/parent/notifications" element={<><ParentAuthProvider><ParentNotifications /></ParentAuthProvider></>} />
-            <Route path="/eleve" element={<><StudentAuthProvider><StudentLogin /></StudentAuthProvider></>} />
-            <Route path="/eleve/dashboard" element={<><StudentAuthProvider><StudentDashboard /></StudentAuthProvider></>} />
-            <Route path="/eleve/cours" element={<><StudentAuthProvider><StudentCours /></StudentAuthProvider></>} />
-            <Route path="/eleve/devoirs" element={<><StudentAuthProvider><StudentDevoirs /></StudentAuthProvider></>} />
-            <Route path="/eleve/emploi-du-temps" element={<><StudentAuthProvider><StudentEmploiDuTemps /></StudentAuthProvider></>} />
-            <Route path="/eleve/resultats" element={<><StudentAuthProvider><StudentResultats /></StudentAuthProvider></>} />
-            <Route path="/eleve/evaluations" element={<><StudentAuthProvider><StudentEvaluations /></StudentAuthProvider></>} />
-            <Route path="/eleve/notifications" element={<><StudentAuthProvider><StudentNotifications /></StudentAuthProvider></>} />
-            <Route path="/employe" element={<><EmployeeAuthProvider><EmployeeLogin /></EmployeeAuthProvider></>} />
-            <Route path="/employe/dashboard" element={<><EmployeeAuthProvider><EmployeeDashboard /></EmployeeAuthProvider></>} />
-            <Route path="/employe/conges" element={<><EmployeeAuthProvider><EmployeeConges /></EmployeeAuthProvider></>} />
-            <Route path="/employe/paie" element={<><EmployeeAuthProvider><EmployeePaie /></EmployeeAuthProvider></>} />
-            <Route path="/employe/notifications" element={<><EmployeeAuthProvider><EmployeeNotifications /></EmployeeAuthProvider></>} />
-            <Route path="/employe/courriers" element={<><EmployeeAuthProvider><EmployeeCourriers /></EmployeeAuthProvider></>} />
-            <Route path="/employe/pointage" element={<><EmployeeAuthProvider><EmployeePointage /></EmployeeAuthProvider></>} />
-            <Route path="/employe/evaluation" element={<><EmployeeAuthProvider><EmployeeEvaluation /></EmployeeAuthProvider></>} />
-            <Route path="/employe/planning" element={<><EmployeeAuthProvider><EmployeePlanning /></EmployeeAuthProvider></>} />
+            <Route path="/parent" element={<ParentAuthProvider><ParentLogin /></ParentAuthProvider>} />
+            <Route path="/parent/dashboard" element={<ParentAuthProvider><ParentDashboard /></ParentAuthProvider>} />
+            <Route path="/parent/enfant/:id" element={<ParentAuthProvider><ParentEnfant /></ParentAuthProvider>} />
+            <Route path="/parent/notifications" element={<ParentAuthProvider><ParentNotifications /></ParentAuthProvider>} />
+            <Route path="/eleve" element={<StudentAuthProvider><StudentLogin /></StudentAuthProvider>} />
+            <Route path="/eleve/dashboard" element={<StudentAuthProvider><StudentDashboard /></StudentAuthProvider>} />
+            <Route path="/eleve/cours" element={<StudentAuthProvider><StudentCours /></StudentAuthProvider>} />
+            <Route path="/eleve/devoirs" element={<StudentAuthProvider><StudentDevoirs /></StudentAuthProvider>} />
+            <Route path="/eleve/emploi-du-temps" element={<StudentAuthProvider><StudentEmploiDuTemps /></StudentAuthProvider>} />
+            <Route path="/eleve/resultats" element={<StudentAuthProvider><StudentResultats /></StudentAuthProvider>} />
+            <Route path="/eleve/evaluations" element={<StudentAuthProvider><StudentEvaluations /></StudentAuthProvider>} />
+            <Route path="/eleve/notifications" element={<StudentAuthProvider><StudentNotifications /></StudentAuthProvider>} />
+            <Route path="/employe" element={<EmployeeAuthProvider><EmployeeLogin /></EmployeeAuthProvider>} />
+            <Route path="/employe/dashboard" element={<EmployeeAuthProvider><EmployeeDashboard /></EmployeeAuthProvider>} />
+            <Route path="/employe/conges" element={<EmployeeAuthProvider><EmployeeConges /></EmployeeAuthProvider>} />
+            <Route path="/employe/paie" element={<EmployeeAuthProvider><EmployeePaie /></EmployeeAuthProvider>} />
+            <Route path="/employe/notifications" element={<EmployeeAuthProvider><EmployeeNotifications /></EmployeeAuthProvider>} />
+            <Route path="/employe/courriers" element={<EmployeeAuthProvider><EmployeeCourriers /></EmployeeAuthProvider>} />
+            <Route path="/employe/pointage" element={<EmployeeAuthProvider><EmployeePointage /></EmployeeAuthProvider>} />
+            <Route path="/employe/evaluation" element={<EmployeeAuthProvider><EmployeeEvaluation /></EmployeeAuthProvider>} />
+            <Route path="/employe/planning" element={<EmployeeAuthProvider><EmployeePlanning /></EmployeeAuthProvider>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/inscriptions" element={<ProtectedRoute><Inscriptions /></ProtectedRoute>} />
             <Route path="/familles" element={<ProtectedRoute><Familles /></ProtectedRoute>} />
