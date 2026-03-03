@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -296,37 +295,35 @@ export default function CoordinateurDocuments() {
     return { rendus, restants, total: docs.length };
   };
 
-  const renderEleveTable = (list: Eleve[], showActions = true) => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Nom & Prénom</TableHead>
-          <TableHead>École</TableHead>
-          <TableHead>Niveau</TableHead>
-          <TableHead>Dossier</TableHead>
-          <TableHead>Statut</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {loading ? (
-          <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
-        ) : list.length === 0 ? (
-          <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
-        ) : list.map(eleve => {
-          const isExpanded = expandedEleve === eleve.id;
-          const docs = getEleveDocs(eleve.id);
-          const dossierStatut = getStatutDossier(eleve.id);
-          const sortantInfo = eleve.statut === 'sortant' ? getSortantDocsInfo(eleve.id) : null;
-          return (
-            <> 
-              <TableRow key={eleve.id} className="cursor-pointer" onClick={() => setExpandedEleve(isExpanded ? null : eleve.id)}>
-                <TableCell className="font-medium">{eleve.nom} {eleve.prenom}</TableCell>
-                <TableCell>{eleve.ecole_provenance || '—'}</TableCell>
-                <TableCell>{eleve.niveau_scolaire || '—'}</TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-1">
+  const renderEleveCards = (list: Eleve[], showActions = true) => (
+    <div className="space-y-3">
+      {loading ? (
+        <p className="text-center py-8 text-muted-foreground">Chargement...</p>
+      ) : list.length === 0 ? (
+        <p className="text-center py-8 text-muted-foreground">Aucun élève trouvé</p>
+      ) : list.map(eleve => {
+        const isExpanded = expandedEleve === eleve.id;
+        const docs = getEleveDocs(eleve.id);
+        const dossierStatut = getStatutDossier(eleve.id);
+        const sortantInfo = eleve.statut === 'sortant' ? getSortantDocsInfo(eleve.id) : null;
+        return (
+          <div key={eleve.id} className="border rounded-lg overflow-hidden">
+            <div
+              className="p-3 sm:p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+              onClick={() => setExpandedEleve(isExpanded ? null : eleve.id)}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-sm sm:text-base">{eleve.nom} {eleve.prenom}</span>
+                    {eleveStatutBadge(eleve)}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
+                    {eleve.ecole_provenance && <span>{eleve.ecole_provenance}</span>}
+                    {eleve.niveau_scolaire && <span>• {eleve.niveau_scolaire}</span>}
+                    <span>• {formatDate(eleve.created_at)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
                     {statusBadge(dossierStatut)}
                     {sortantInfo && (
                       <span className="text-xs text-muted-foreground">
@@ -334,101 +331,91 @@ export default function CoordinateurDocuments() {
                       </span>
                     )}
                   </div>
-                </TableCell>
-                <TableCell>{eleveStatutBadge(eleve)}</TableCell>
-                <TableCell className="text-xs">{formatDate(eleve.created_at)}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
-                    <Button variant="ghost" size="sm" onClick={() => setHistoriqueDialog(eleve.id)} title="Historique">
-                      <History className="h-4 w-4" />
-                    </Button>
-                    {showActions && eleve.statut === 'actif' && !eleve.valide && (
-                      <>
-                        <Button variant="ghost" size="sm" className="text-blue-600" onClick={() => setValidationDialog(eleve)} title="Pré-inscrire">
-                          <CheckCircle className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-orange-600" onClick={() => handleMarquerSortant(eleve)} title="Sortant">
-                          <Undo2 className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setAbandonDialog(eleve)} title="Abandon">
-                          <UserX className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                    {eleve.statut === 'sortant' && (
-                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setAbandonDialog(eleve)} title="Abandon">
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0" onClick={e => e.stopPropagation()}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setHistoriqueDialog(eleve.id)} title="Historique">
+                    <History className="h-4 w-4" />
+                  </Button>
+                  {showActions && eleve.statut === 'actif' && !eleve.valide && (
+                    <>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600" onClick={() => setValidationDialog(eleve)} title="Pré-inscrire">
+                        <CheckCircle className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-orange-600" onClick={() => handleMarquerSortant(eleve)} title="Sortant">
+                        <Undo2 className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setAbandonDialog(eleve)} title="Abandon">
                         <UserX className="h-4 w-4" />
                       </Button>
-                    )}
-                    <Button variant="ghost" size="sm">
-                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </>
+                  )}
+                  {eleve.statut === 'sortant' && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setAbandonDialog(eleve)} title="Abandon">
+                      <UserX className="h-4 w-4" />
                     </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-              {isExpanded && (
-                <TableRow key={`${eleve.id}-docs`}>
-                  <TableCell colSpan={7} className="bg-muted/30 p-4">
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-sm">Documents</h4>
-                      <div className="grid gap-3">
-                        {docs.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">Aucun document enregistré</p>
-                        ) : docs.map(doc => (
-                            <div key={doc.id} className="flex items-center justify-between bg-background rounded-lg border p-3">
-                              <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-2 min-w-[180px]">
-                                  {doc.statut === 'non_depose' && (
-                                    <Checkbox checked={false} onCheckedChange={() => handleDepot(doc.id, eleve.id, doc.type_document)} />
-                                  )}
-                                  <span className="text-sm font-medium">{doc.type_document}</span>
-                                </div>
-                                {docStatusBadge(doc.statut)}
-                              </div>
-                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                {doc.date_depot && <span>Déposé le {formatDate(doc.date_depot)}</span>}
-                                {doc.date_retrait && <span>Récupéré le {formatDate(doc.date_retrait)}</span>}
-                                {doc.note_retrait && <span className="italic">({doc.note_retrait})</span>}
-                                {doc.telephone_retrait && <span>📞 {doc.telephone_retrait}</span>}
-                                {doc.statut === 'depose' && (
-                                  <Button size="sm" variant="outline" className="ml-2 text-xs" onClick={(e) => { e.stopPropagation(); setRetraitDialog({ docId: doc.id, typeName: doc.type_document, eleveId: eleve.id }); }}>
-                                    <Undo2 className="mr-1 h-3 w-3" /> Rendre
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                        ))}
+                  )}
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            </div>
+            {isExpanded && (
+              <div className="border-t bg-muted/30 p-3 sm:p-4 space-y-3">
+                <h4 className="font-semibold text-sm">Documents</h4>
+                <div className="grid gap-2">
+                  {docs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Aucun document enregistré</p>
+                  ) : docs.map(doc => (
+                    <div key={doc.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-background rounded-lg border p-3 gap-2">
+                      <div className="flex items-center gap-2">
+                        {doc.statut === 'non_depose' && (
+                          <Checkbox checked={false} onCheckedChange={() => handleDepot(doc.id, eleve.id, doc.type_document)} />
+                        )}
+                        <span className="text-sm font-medium">{doc.type_document}</span>
+                        {docStatusBadge(doc.statut)}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        {doc.date_depot && <span>Déposé {formatDate(doc.date_depot)}</span>}
+                        {doc.date_retrait && <span>Récupéré {formatDate(doc.date_retrait)}</span>}
+                        {doc.note_retrait && <span className="italic">({doc.note_retrait})</span>}
+                        {doc.telephone_retrait && <span>📞 {doc.telephone_retrait}</span>}
+                        {doc.statut === 'depose' && (
+                          <Button size="sm" variant="outline" className="text-xs h-7" onClick={(e) => { e.stopPropagation(); setRetraitDialog({ docId: doc.id, typeName: doc.type_document, eleveId: eleve.id }); }}>
+                            <Undo2 className="mr-1 h-3 w-3" /> Rendre
+                          </Button>
+                        )}
                       </div>
                     </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </>
-          );
-        })}
-      </TableBody>
-    </Table>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Espace Coordinateur</h1>
-          <p className="text-muted-foreground">Gestion des pré-inscriptions et documents scolaires</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Espace Coordinateur</h1>
+          <p className="text-sm text-muted-foreground">Gestion des pré-inscriptions et documents</p>
         </div>
-        <Button onClick={() => setShowForm(true)}>
+        <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" /> Enregistrer un élève
         </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-5 w-full">
-          <TabsTrigger value="dashboard" className="gap-1"><ClipboardList className="h-4 w-4" /> Tableau de bord</TabsTrigger>
-          <TabsTrigger value="actifs" className="gap-1"><Users className="h-4 w-4" /> En cours ({stats.actifs})</TabsTrigger>
-          <TabsTrigger value="pre-inscrits" className="gap-1"><CheckCircle className="h-4 w-4" /> Pré-inscrits ({stats.preInscrits})</TabsTrigger>
-          <TabsTrigger value="sortants" className="gap-1"><Undo2 className="h-4 w-4" /> Sortants ({stats.sortants})</TabsTrigger>
-          <TabsTrigger value="abandons" className="gap-1"><UserX className="h-4 w-4" /> Abandons ({stats.abandons})</TabsTrigger>
+        <TabsList className="flex flex-wrap h-auto gap-1 w-full">
+          <TabsTrigger value="dashboard" className="gap-1 flex-1 min-w-[120px] text-xs sm:text-sm"><ClipboardList className="h-3.5 w-3.5 sm:h-4 sm:w-4" /><span className="hidden xs:inline">Tableau de </span>bord</TabsTrigger>
+          <TabsTrigger value="actifs" className="gap-1 flex-1 min-w-[100px] text-xs sm:text-sm"><Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> En cours ({stats.actifs})</TabsTrigger>
+          <TabsTrigger value="pre-inscrits" className="gap-1 flex-1 min-w-[110px] text-xs sm:text-sm"><CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" /><span className="hidden sm:inline">Pré-inscrits</span><span className="sm:hidden">Pré-ins.</span> ({stats.preInscrits})</TabsTrigger>
+          <TabsTrigger value="sortants" className="gap-1 flex-1 min-w-[100px] text-xs sm:text-sm"><Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Sortants ({stats.sortants})</TabsTrigger>
+          <TabsTrigger value="abandons" className="gap-1 flex-1 min-w-[100px] text-xs sm:text-sm"><UserX className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Abandons ({stats.abandons})</TabsTrigger>
         </TabsList>
 
         {/* Dashboard */}
@@ -525,25 +512,27 @@ export default function CoordinateurDocuments() {
           <TabsContent key={tab} value={tab}>
             <Card className="mb-4">
               <CardContent className="pt-4">
-                <div className="flex flex-wrap gap-3">
-                  <div className="relative flex-1 min-w-[200px]">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Rechercher par nom..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
                   </div>
-                  <Select value={filterEcole} onValueChange={setFilterEcole}>
-                    <SelectTrigger className="w-[200px]"><SelectValue placeholder="École" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Toutes les écoles</SelectItem>
-                      {ecoles.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Select value={filterNiveau} onValueChange={setFilterNiveau}>
-                    <SelectTrigger className="w-[160px]"><SelectValue placeholder="Niveau" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous</SelectItem>
-                      {NIVEAUX.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Select value={filterEcole} onValueChange={setFilterEcole}>
+                      <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="École" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Toutes les écoles</SelectItem>
+                        {ecoles.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Select value={filterNiveau} onValueChange={setFilterNiveau}>
+                      <SelectTrigger className="w-full sm:w-[140px]"><SelectValue placeholder="Niveau" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous</SelectItem>
+                        {NIVEAUX.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -559,7 +548,7 @@ export default function CoordinateurDocuments() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {renderEleveTable(filteredEleves, tab === 'actifs' || tab === 'sortants')}
+                {renderEleveCards(filteredEleves, tab === 'actifs' || tab === 'sortants')}
               </CardContent>
             </Card>
           </TabsContent>
