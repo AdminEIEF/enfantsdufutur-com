@@ -13,6 +13,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 const ROLE_LABELS: Record<string, string> = {
+  superviseur: 'Superviseur',
   admin: 'Administrateur',
   secretaire: 'Secrétaire',
   service_info: 'Service Info',
@@ -24,6 +25,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
+  superviseur: 'bg-amber-600/10 text-amber-500 border-amber-600/20',
   admin: 'bg-red-500/10 text-red-400 border-red-500/20',
   secretaire: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
   service_info: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
