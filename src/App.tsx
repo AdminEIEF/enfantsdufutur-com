@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
 import { Loader2 } from "lucide-react";
+import ForcePasswordChange from "@/components/ForcePasswordChange";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -69,7 +72,20 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) {
+  const [mustChange, setMustChange] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      supabase.from('profiles').select('must_change_password').eq('user_id', user.id).single()
+        .then(({ data }) => {
+          setMustChange(data?.must_change_password ?? false);
+        });
+    } else {
+      setMustChange(null);
+    }
+  }, [user]);
+
+  if (loading || (user && mustChange === null)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -77,6 +93,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   if (!user) return <Navigate to="/auth" replace />;
+  if (mustChange) return <ForcePasswordChange onSuccess={() => setMustChange(false)} />;
   return <AppLayout>{children}</AppLayout>;
 }
 
