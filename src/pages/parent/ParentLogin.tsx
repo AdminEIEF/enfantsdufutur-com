@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useParentAuth } from '@/hooks/useParentAuth';
-import { GraduationCap, KeyRound, Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { GraduationCap, KeyRound, Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
-import parentIllustration from '@/assets/parent-login-illustration.jpg';
 
 export default function ParentLogin() {
   const { session, login, loading } = useParentAuth();
@@ -14,6 +14,7 @@ export default function ParentLogin() {
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Already logged in → redirect
   if (!loading && session) {
     navigate('/parent/dashboard', { replace: true });
     return null;
@@ -34,113 +35,53 @@ export default function ParentLogin() {
   };
 
   return (
-    <div className="min-h-screen flex bg-orange-50">
-      {/* Left side — Illustration */}
-      <div
-        className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #fff7ed 0%, #fdba74 40%, #ea580c 100%)' }}
-      >
-        {/* Decorative shapes */}
-        <div className="absolute top-8 left-8 w-20 h-20 rounded-full bg-white/10" />
-        <div className="absolute bottom-12 right-12 w-32 h-32 rounded-full bg-white/10" />
-        <div className="absolute top-1/4 right-8 w-12 h-12 rounded-full bg-orange-400/30" />
-
-        <motion.div
-          className="relative z-10 p-8"
-          initial={{ opacity: 0, x: -40 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-        >
-          <img
-            src={parentIllustration}
-            alt="Illustration espace parent"
-            className="w-full max-w-md rounded-3xl shadow-2xl"
-          />
-          <div className="mt-6 text-center">
-            <h2 className="text-2xl font-bold text-white drop-shadow-md" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Suivez la scolarité
-            </h2>
-            <p className="text-white/80 mt-2 text-sm max-w-xs mx-auto">
-              Résultats, paiements, notifications et bien plus dans votre espace dédié.
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-2">
+            <GraduationCap className="h-8 w-8 text-primary" />
           </div>
-        </motion.div>
-      </div>
+          <h1 className="text-2xl font-bold tracking-tight">Espace Parent</h1>
+          <p className="text-muted-foreground text-sm">École Internationale Enfant du Futur</p>
+        </div>
 
-      {/* Right side — Form */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
-        <motion.div
-          className="w-full max-w-md"
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          {/* Logo / Badge */}
-          <div className="flex items-center gap-2 mb-10">
-            <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center shadow-md">
-              <GraduationCap className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-lg font-bold text-orange-900 tracking-tight" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Espace Parent
-            </span>
-          </div>
-
-          {/* Title */}
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Connexion
-          </h1>
-          <p className="text-muted-foreground mb-8">
-            Entrez le code d'accès fourni par le secrétariat de l'école.
-          </p>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Code d'accès</label>
-              <div className="relative">
-                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <KeyRound className="h-5 w-5" /> Connexion
+            </CardTitle>
+            <CardDescription>
+              Entrez le code d'accès fourni par le secrétariat de l'école.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="code">Code d'accès</Label>
                 <Input
+                  id="code"
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder="Ex: FAM-XXXX"
+                  className="text-center text-lg tracking-widest font-mono"
                   maxLength={20}
                   autoFocus
                   autoComplete="off"
-                  className="h-12 pl-11 pr-4 rounded-xl border-border bg-background text-foreground placeholder:text-muted-foreground/50 font-mono tracking-widest text-center focus-visible:ring-2 focus-visible:ring-orange-500/40"
                 />
               </div>
-            </div>
+              <Button type="submit" className="w-full" disabled={submitting || !code.trim()}>
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Accéder à mon espace
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
-            <Button
-              type="submit"
-              disabled={submitting || !code.trim()}
-              className="w-full h-12 rounded-xl text-sm font-semibold tracking-wide bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-600/20 transition-all"
-            >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Accéder à mon espace
-            </Button>
-          </form>
-
-          {/* Divider */}
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-          </div>
-
-          {/* Back link */}
-          <div className="text-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/')}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Retour à l'accueil
-            </Button>
-          </div>
-        </motion.div>
+        <div className="text-center">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Retour à l'accueil
+          </Button>
+        </div>
       </div>
     </div>
   );
