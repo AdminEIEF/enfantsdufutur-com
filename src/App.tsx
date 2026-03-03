@@ -46,6 +46,7 @@ import { ParentAuthProvider } from "@/hooks/useParentAuth";
 import { StudentAuthProvider } from "@/hooks/useStudentAuth";
 import { EmployeeAuthProvider } from "@/hooks/useEmployeeAuth";
 import StudentLogin from "./pages/student/StudentLogin";
+import StudentPrimaryLogin from "./pages/student/StudentPrimaryLogin";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentCours from "./pages/student/StudentCours";
 import StudentDevoirs from "./pages/student/StudentDevoirs";
@@ -155,6 +156,7 @@ const App = () => (
             <Route path="/parent/enfant/:id" element={<ParentAuthProvider><ParentEnfant /></ParentAuthProvider>} />
             <Route path="/parent/notifications" element={<ParentAuthProvider><ParentNotifications /></ParentAuthProvider>} />
             <Route path="/eleve" element={<StudentAuthProvider><StudentLogin /></StudentAuthProvider>} />
+            <Route path="/eleve-primaire" element={<StudentAuthProvider><StudentPrimaryLogin /></StudentAuthProvider>} />
             <Route path="/eleve/dashboard" element={<StudentAuthProvider><StudentDashboard /></StudentAuthProvider>} />
             <Route path="/eleve/cours" element={<StudentAuthProvider><StudentCours /></StudentAuthProvider>} />
             <Route path="/eleve/devoirs" element={<StudentAuthProvider><StudentDevoirs /></StudentAuthProvider>} />
