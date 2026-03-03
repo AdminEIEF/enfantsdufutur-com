@@ -35,10 +35,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check admin role
+    // Check superviseur role
     const { data: roles } = await callerClient.rpc("get_my_roles");
-    if (!roles || !(roles as string[]).includes("admin")) {
-      return new Response(JSON.stringify({ error: "Accès réservé aux administrateurs" }), {
+    if (!roles || !(roles as string[]).includes("superviseur")) {
+      return new Response(JSON.stringify({ error: "Accès réservé au superviseur" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
