@@ -98,12 +98,22 @@ serve(async (req) => {
           .eq("id", ref_id);
         if (updErr) throw updErr;
       } else if (type === "parent") {
-        // Parents use famille code_acces - need to find famille by ref_id
         const { error: updErr } = await supabaseAdmin
           .from("familles")
           .update({ code_acces: new_password })
           .eq("id", ref_id);
         if (updErr) throw updErr;
+      } else if (type === "admin_user") {
+        // Reset Supabase auth user password
+        const { error: updErr } = await supabaseAdmin.auth.admin.updateUserById(ref_id, {
+          password: new_password,
+        });
+        if (updErr) throw updErr;
+        // Set must_change_password flag
+        await supabaseAdmin
+          .from("profiles")
+          .update({ must_change_password: true })
+          .eq("user_id", ref_id);
       } else {
         return new Response(JSON.stringify({ error: "Type non supporté pour le changement de mot de passe" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
