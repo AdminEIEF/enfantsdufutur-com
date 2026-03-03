@@ -3,15 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
-import { Briefcase, Lock, Loader2, User } from 'lucide-react';
+import { Briefcase, Lock, Loader2, User, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import employeeIllustration from '@/assets/employee-login-illustration.jpg';
 
 export default function EmployeeLogin() {
   const { session, login, loading } = useEmployeeAuth();
   const navigate = useNavigate();
   const [matricule, setMatricule] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   if (!loading && session) {
@@ -34,140 +36,137 @@ export default function EmployeeLogin() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4"
-      style={{ background: 'linear-gradient(135deg, #059669 0%, #0d9488 30%, #14b8a6 50%, #06b6d4 70%, #0891b2 100%)' }}
-    >
-      {/* Organic blob shapes */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className="min-h-screen flex bg-emerald-50">
+      {/* Left side — Illustration */}
+      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden"
+        style={{ background: 'linear-gradient(160deg, #d1fae5 0%, #6ee7b7 40%, #059669 100%)' }}
+      >
+        {/* Decorative shapes */}
+        <div className="absolute top-8 left-8 w-20 h-20 rounded-full bg-white/10" />
+        <div className="absolute bottom-12 right-12 w-32 h-32 rounded-full bg-white/10" />
+        <div className="absolute top-1/4 right-8 w-12 h-12 rounded-full bg-emerald-400/30" />
+
         <motion.div
-          className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full opacity-30"
-          style={{ background: 'radial-gradient(circle, #06b6d4 0%, transparent 70%)' }}
-          animate={{ scale: [1, 1.1, 1], x: [0, 20, 0], y: [0, -10, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #059669 0%, transparent 70%)' }}
-          animate={{ scale: [1, 1.15, 1], x: [0, -15, 0], y: [0, 15, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-        />
+          className="relative z-10 p-8"
+          initial={{ opacity: 0, x: -40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, ease: 'easeOut' }}
+        >
+          <img
+            src={employeeIllustration}
+            alt="Illustration employé"
+            className="w-full max-w-md rounded-3xl shadow-2xl"
+          />
+          <div className="mt-6 text-center">
+            <h2 className="text-2xl font-bold text-white drop-shadow-md" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              Bienvenue sur votre espace
+            </h2>
+            <p className="text-white/80 mt-2 text-sm max-w-xs mx-auto">
+              Gérez vos congés, plannings, bulletins de paie et plus encore.
+            </p>
+          </div>
+        </motion.div>
       </div>
 
-      <motion.div
-        className="relative z-10 w-full max-w-sm"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1] }}
-      >
-        {/* Hexagonal avatar */}
-        <div className="flex justify-center mb-6">
-          <div className="relative">
-            <svg width="80" height="80" viewBox="0 0 80 80">
-              <polygon
-                points="40,4 72,20 72,56 40,72 8,56 8,20"
-                fill="rgba(255,255,255,0.15)"
-                stroke="rgba(255,255,255,0.3)"
-                strokeWidth="2"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Briefcase className="h-8 w-8 text-white/80" />
+      {/* Right side — Form */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
+        <motion.div
+          className="w-full max-w-md"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          {/* Logo / Badge */}
+          <div className="flex items-center gap-2 mb-10">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center shadow-md">
+              <Briefcase className="h-5 w-5 text-white" />
             </div>
+            <span className="text-lg font-bold text-emerald-900 tracking-tight" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              Espace Personnel
+            </span>
           </div>
-        </div>
 
-        {/* Card with animated tricolor border */}
-        <div className="relative p-[3px] rounded-3xl">
-          {/* Animated red-yellow-green spinning border */}
-          <div className="absolute inset-0 rounded-3xl overflow-hidden">
-            <div
-              className="absolute inset-0"
-              style={{
-                background: 'conic-gradient(from var(--border-angle, 0deg), #dc2626, #eab308, #16a34a, #dc2626)',
-                animation: 'spin-border 3s linear infinite',
-              }}
-            />
-          </div>
-          {/* Inner mask */}
-          <div
-            className="relative rounded-[22px] p-8"
-            style={{
-              background: 'rgba(255, 255, 255, 0.12)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-            }}
-          >
-            <div className="text-center mb-6">
-              <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase mb-3"
-                style={{ background: 'linear-gradient(90deg, #dc2626, #eab308, #16a34a)', color: '#fff', letterSpacing: '0.15em' }}
-              >
-                Espace Personnel
-              </span>
-              <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                Connexion
-              </h2>
-              <p className="text-white/60 text-sm mt-1">
-                Connectez-vous avec votre matricule
-              </p>
-            </div>
+          {/* Title */}
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            Connexion
+          </h1>
+          <p className="text-muted-foreground mb-8">
+            Entrez votre matricule et mot de passe pour accéder à votre espace.
+          </p>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">Matricule</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal-700/50" />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                 <Input
                   value={matricule}
                   onChange={(e) => setMatricule(e.target.value.toUpperCase())}
-                  placeholder="Matricule (Ex: EMP-001)"
+                  placeholder="Ex: EMP-001"
                   maxLength={20}
                   autoFocus
                   autoComplete="off"
-                  className="h-12 pl-10 pr-4 bg-white/80 border-0 rounded-full text-teal-900 placeholder:text-teal-700/40 focus-visible:ring-2 focus-visible:ring-white/40 shadow-sm text-center tracking-widest font-mono"
+                  className="h-12 pl-11 pr-4 rounded-xl border-border bg-background text-foreground placeholder:text-muted-foreground/50 font-mono tracking-wider focus-visible:ring-2 focus-visible:ring-emerald-500/40"
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">Mot de passe</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-teal-700/50" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                 <Input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mot de passe"
+                  placeholder="Votre mot de passe"
                   maxLength={30}
                   autoComplete="off"
-                  className="h-12 pl-10 pr-4 bg-white/80 border-0 rounded-full text-teal-900 placeholder:text-teal-700/40 focus-visible:ring-2 focus-visible:ring-white/40 shadow-sm"
+                  className="h-12 pl-11 pr-12 rounded-xl border-border bg-background text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
-              <Button
-                type="submit"
-                disabled={submitting || !matricule.trim() || !password.trim()}
-                className="w-full h-12 rounded-full text-sm font-semibold tracking-wide uppercase bg-emerald-900 hover:bg-emerald-950 text-white shadow-lg"
-              >
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Accéder à mon espace
-              </Button>
-            </form>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={submitting || !matricule.trim() || !password.trim()}
+              className="w-full h-12 rounded-xl text-sm font-semibold tracking-wide bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 transition-all"
+            >
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Se connecter
+            </Button>
+          </form>
+
+          {/* Divider */}
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
           </div>
-        </div>
 
-        {/* Back link */}
-        <div className="text-center mt-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="text-white/50 hover:text-white/80 hover:bg-transparent">
-            ← Retour à l'accueil
-          </Button>
-        </div>
-      </motion.div>
-
-      {/* CSS for spinning border animation */}
-      <style>{`
-        @property --border-angle {
-          syntax: '<angle>';
-          initial-value: 0deg;
-          inherits: false;
-        }
-        @keyframes spin-border {
-          to { --border-angle: 360deg; }
-        }
-      `}</style>
+          {/* Back link */}
+          <div className="text-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Retour à l'accueil
+            </Button>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }
