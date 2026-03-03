@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Loader2, Copy, CheckCircle2, Shield, Users } from 'lucide-react';
+import { UserPlus, Loader2, Copy, CheckCircle2, Shield, Users, Eye, EyeOff } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -40,6 +40,7 @@ export default function AdminUserManagement() {
   const [creating, setCreating] = useState(false);
   const [createdPassword, setCreatedPassword] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showCreatedPwd, setShowCreatedPwd] = useState(false);
   const [form, setForm] = useState({
     email: '',
     nom: '',
@@ -106,6 +107,7 @@ export default function AdminUserManagement() {
     setForm({ email: '', nom: '', prenom: '', role: '', password: '' });
     setCreatedPassword('');
     setShowSuccess(false);
+    setShowCreatedPwd(false);
     setOpen(false);
   };
 
@@ -143,7 +145,12 @@ export default function AdminUserManagement() {
                 <div className="bg-muted rounded-lg p-3 space-y-1">
                   <p className="text-xs text-muted-foreground">Mot de passe temporaire :</p>
                   <div className="flex items-center gap-2 justify-center">
-                    <code className="text-lg font-mono font-bold">{createdPassword}</code>
+                    <code className="text-lg font-mono font-bold">
+                      {showCreatedPwd ? createdPassword : '••••••••••••'}
+                    </code>
+                    <Button variant="ghost" size="icon" onClick={() => setShowCreatedPwd(!showCreatedPwd)} title={showCreatedPwd ? 'Masquer' : 'Afficher'}>
+                      {showCreatedPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => { navigator.clipboard.writeText(createdPassword); toast.success('Copié !'); }}>
                       <Copy className="h-4 w-4" />
                     </Button>
