@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Bot, Users, CheckCircle2, XCircle, CalendarDays, Loader2, Save, DollarSign, TrendingUp } from 'lucide-react';
+import { Bot, Users, CheckCircle2, XCircle, CalendarDays, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -23,7 +23,6 @@ export default function RobotiqueDashboard() {
   const [historyDate, setHistoryDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [historyData, setHistoryData] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [prixRobotique, setPrixRobotique] = useState(0);
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -31,7 +30,7 @@ export default function RobotiqueDashboard() {
     setLoading(true);
     const { data } = await supabase
       .from('eleves')
-      .select('id, nom, prenom, matricule, robotique_paye, classes(nom)')
+      .select('id, nom, prenom, matricule, classes(nom)')
       .eq('statut', 'inscrit')
       .eq('option_robotique', true)
       .is('deleted_at', null)
@@ -56,16 +55,8 @@ export default function RobotiqueDashboard() {
     setLoading(false);
   }, [selectedDate]);
 
-  const fetchPrix = async () => {
-    const { data } = await supabase.from('parametres').select('valeur').eq('cle', 'prix_robotique').maybeSingle();
-    if (data?.valeur) {
-      setPrixRobotique(Number(typeof data.valeur === 'string' ? data.valeur : String(data.valeur)) || 0);
-    }
-  };
-
   useEffect(() => {
     fetchInscrits();
-    fetchPrix();
 
     const channel = supabase
       .channel('robotique-realtime')
@@ -125,11 +116,6 @@ export default function RobotiqueDashboard() {
 
   const presentCount = Object.values(attendance).filter(s => s === 'present').length;
   const absentCount = inscrits.length - presentCount;
-  const totalPayes = inscrits.filter((e: any) => e.robotique_paye).length;
-  const totalNonPayes = inscrits.length - totalPayes;
-  const revenuAttendu = inscrits.length * prixRobotique;
-  const revenuReel = totalPayes * prixRobotique;
-  const formatGNF = (n: number) => n.toLocaleString('fr-GN') + ' GNF';
 
   return (
     <div className="space-y-6">
@@ -139,7 +125,7 @@ export default function RobotiqueDashboard() {
       </div>
 
       {/* Counters */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6 text-center">
             <Users className="h-8 w-8 mx-auto mb-2 text-indigo-600" />
@@ -159,20 +145,6 @@ export default function RobotiqueDashboard() {
             <XCircle className="h-8 w-8 mx-auto mb-2 text-red-500" />
             <p className="text-3xl font-bold text-red-500">{absentCount}</p>
             <p className="text-sm text-muted-foreground">Absents</p>
-          </CardContent>
-        </Card>
-        <Card className="border-blue-200 bg-blue-50/30">
-          <CardContent className="pt-6 text-center">
-            <TrendingUp className="h-7 w-7 mx-auto mb-2 text-blue-600" />
-            <p className="text-lg font-bold text-blue-600">{formatGNF(revenuAttendu)}</p>
-            <p className="text-xs text-muted-foreground">Revenu Attendu</p>
-          </CardContent>
-        </Card>
-        <Card className="border-emerald-200 bg-emerald-50/30">
-          <CardContent className="pt-6 text-center">
-            <DollarSign className="h-7 w-7 mx-auto mb-2 text-emerald-600" />
-            <p className="text-lg font-bold text-emerald-600">{formatGNF(revenuReel)}</p>
-            <p className="text-xs text-muted-foreground">Revenu Réel ({totalPayes}/{inscrits.length} payés)</p>
           </CardContent>
         </Card>
       </div>
@@ -211,7 +183,6 @@ export default function RobotiqueDashboard() {
                     <TableHead>Élève</TableHead>
                     <TableHead>Matricule</TableHead>
                     <TableHead>Classe</TableHead>
-                    <TableHead>Paiement</TableHead>
                     <TableHead>Statut</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -224,12 +195,6 @@ export default function RobotiqueDashboard() {
                         <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
                         <TableCell><code className="text-xs">{e.matricule}</code></TableCell>
                         <TableCell>{(e.classes as any)?.nom || '—'}</TableCell>
-                        <TableCell>
-                          {e.robotique_paye
-                            ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">Payé</Badge>
-                            : <Badge variant="destructive" className="text-xs">Non Payé</Badge>
-                          }
-                        </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button
