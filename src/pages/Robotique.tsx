@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 export default function Robotique() {
   const { roles } = useAuth();
   const [search, setSearch] = useState('');
+  const [searchNiveau, setSearchNiveau] = useState('__none__');
   const [allEleves, setAllEleves] = useState<any[]>([]);
   const [inscrits, setInscrits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -159,10 +160,14 @@ export default function Robotique() {
   };
 
   const filtered = search.trim()
-    ? allEleves.filter(e =>
-        `${e.prenom} ${e.nom} ${e.matricule}`.toLowerCase().includes(search.toLowerCase())
-      )
-    : [];
+    ? allEleves.filter(e => {
+        const matchText = `${e.prenom} ${e.nom} ${e.matricule}`.toLowerCase().includes(search.toLowerCase());
+        const matchNiveau = searchNiveau === '__none__' || (e.classes as any)?.niveau_id === searchNiveau;
+        return matchText && matchNiveau;
+      })
+    : searchNiveau !== '__none__'
+      ? allEleves.filter(e => (e.classes as any)?.niveau_id === searchNiveau)
+      : [];
 
   const prix = Number(prixRobotique) || 0;
   const totalInscrits = inscrits.length;
@@ -201,13 +206,29 @@ export default function Robotique() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Input
-                placeholder="Nom, prénom ou matricule..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="max-w-md"
-              />
-              {search.trim() && (
+              <div className="flex items-center gap-3 flex-wrap">
+                <Input
+                  placeholder="Nom, prénom ou matricule..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="max-w-md"
+                />
+                <Select value={searchNiveau} onValueChange={setSearchNiveau}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Tous les niveaux" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Tous les niveaux</SelectItem>
+                    {niveaux.map((n: any) => (
+                      <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {searchNiveau !== '__none__' && (
+                  <Button variant="ghost" size="sm" onClick={() => setSearchNiveau('__none__')}>✕</Button>
+                )}
+              </div>
+              {(search.trim() || searchNiveau !== '__none__') && (
                 <div className="border rounded-lg max-h-60 overflow-auto">
                   <Table>
                     <TableHeader>
