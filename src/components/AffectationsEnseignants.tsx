@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { sortClasses } from '@/lib/utils';
 import { Plus, Pencil, Trash2, Loader2, BookOpen, GraduationCap } from 'lucide-react';
 
 export default function AffectationsEnseignants() {
@@ -38,9 +39,8 @@ export default function AffectationsEnseignants() {
     queryFn: async () => {
       const { data } = await supabase
         .from('classes')
-        .select('id, nom, niveaux:niveau_id(nom)')
-        .order('nom');
-      return data || [];
+        .select('id, nom, niveaux:niveau_id(nom, ordre, cycles:cycle_id(ordre))');
+      return sortClasses(data || []);
     },
   });
 

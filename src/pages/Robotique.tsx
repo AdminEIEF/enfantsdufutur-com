@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Bot, UserPlus, UserMinus, Users, Loader2, DollarSign, TrendingUp, CheckCircle2, XCircle, Save, Settings, Filter, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
+import { sortClasses } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Robotique() {
@@ -51,11 +52,11 @@ export default function Robotique() {
 
   const fetchStructure = async () => {
     const [nRes, cRes] = await Promise.all([
-      supabase.from('niveaux').select('id, nom, ordre, cycle_id').order('ordre'),
-      supabase.from('classes').select('id, nom, niveau_id').order('nom'),
+      supabase.from('niveaux').select('id, nom, ordre, cycle_id, cycles:cycle_id(ordre)').order('ordre'),
+      supabase.from('classes').select('id, nom, niveau_id, niveaux:niveau_id(ordre, cycles:cycle_id(ordre))'),
     ]);
     if (nRes.data) setNiveaux(nRes.data);
-    if (cRes.data) setClasses(cRes.data);
+    if (cRes.data) setClasses(sortClasses(cRes.data));
   };
 
   const fetchPrix = async () => {

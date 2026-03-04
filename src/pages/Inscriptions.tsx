@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { exportToExcel } from '@/lib/excelUtils';
+import { sortClasses } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -68,10 +69,9 @@ export default function Inscriptions() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('classes')
-        .select('*, niveaux:niveau_id(nom, ordre, cycle_id, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, cycles:cycle_id(id, nom, ordre))')
-        .order('nom');
+        .select('*, niveaux:niveau_id(nom, ordre, cycle_id, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, cycles:cycle_id(id, nom, ordre))');
       if (error) throw error;
-      return data;
+      return sortClasses(data || []);
     },
   });
 

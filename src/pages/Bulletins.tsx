@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import BulletinScolaire from '@/components/BulletinScolaire';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { generateBulletinPDF } from '@/lib/generateBulletinPDF';
+import { sortClasses } from '@/lib/utils';
 import { toast } from 'sonner';
 
 export default function Bulletins() {
@@ -24,9 +25,9 @@ export default function Bulletins() {
   const { data: classes = [] } = useQuery({
     queryKey: ['classes-bulletin'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('classes').select('*, niveaux:niveau_id(nom, cycle_id, frais_scolarite, cycles:cycle_id(nom))').order('nom');
+      const { data, error } = await supabase.from('classes').select('*, niveaux:niveau_id(nom, ordre, cycle_id, frais_scolarite, cycles:cycle_id(nom, ordre))');
       if (error) throw error;
-      return data;
+      return sortClasses(data || []);
     },
   });
 
