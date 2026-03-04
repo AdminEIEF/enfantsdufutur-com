@@ -1495,7 +1495,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function Configuration() {
   const { hasRole } = useAuth();
-  const isSuperviseur = hasRole('superviseur');
+  const canManageUsers = hasRole('superviseur') || hasRole('admin');
 
   return (
     <div className="space-y-6">
@@ -1505,7 +1505,7 @@ export default function Configuration() {
       <Tabs defaultValue="ecole">
         <TabsList className="flex-wrap">
           <TabsTrigger value="ecole">🏫 École</TabsTrigger>
-          {isSuperviseur && <TabsTrigger value="utilisateurs">👥 Utilisateurs</TabsTrigger>}
+          {canManageUsers && <TabsTrigger value="utilisateurs">👥 Utilisateurs</TabsTrigger>}
           <TabsTrigger value="cycles">Cycles & Barèmes</TabsTrigger>
           <TabsTrigger value="niveaux">Niveaux</TabsTrigger>
           <TabsTrigger value="classes">Classes</TabsTrigger>
@@ -1516,7 +1516,7 @@ export default function Configuration() {
           <TabsTrigger value="corbeille">🗑️ Corbeille</TabsTrigger>
         </TabsList>
         <TabsContent value="ecole"><EcoleTab /></TabsContent>
-        {isSuperviseur && <TabsContent value="utilisateurs"><AdminUserManagement /></TabsContent>}
+        {canManageUsers && <TabsContent value="utilisateurs"><AdminUserManagement /></TabsContent>}
         <TabsContent value="cycles"><CyclesTab /></TabsContent>
         <TabsContent value="niveaux"><NiveauxTab /></TabsContent>
         <TabsContent value="classes"><ClassesTab /></TabsContent>
