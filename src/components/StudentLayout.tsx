@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button } from '@/components/ui/button';
@@ -19,8 +19,13 @@ export function StudentLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  useEffect(() => {
+    if (!session) {
+      navigate('/eleve', { replace: true });
+    }
+  }, [session, navigate]);
+
   if (!session) {
-    navigate('/eleve', { replace: true });
     return null;
   }
 
