@@ -159,11 +159,9 @@ export default function Robotique() {
   };
 
   const filtered = search.trim()
-    ? allEleves.filter(e => {
-        const niveauNom = (e.classes as any)?.niveaux?.nom || '';
-        const classeNom = (e.classes as any)?.nom || '';
-        return `${e.prenom} ${e.nom} ${e.matricule} ${niveauNom} ${classeNom}`.toLowerCase().includes(search.toLowerCase());
-      })
+    ? allEleves.filter(e =>
+        `${e.prenom} ${e.nom} ${e.matricule}`.toLowerCase().includes(search.toLowerCase())
+      )
     : [];
 
   const prix = Number(prixRobotique) || 0;
