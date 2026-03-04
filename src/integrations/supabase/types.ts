@@ -2854,6 +2854,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_maternelle_or_primary_class: {
+        Args: { _classe_id: string }
+        Returns: boolean
+      }
       is_primary_class: { Args: { _classe_id: string }; Returns: boolean }
       is_primary_niveau: { Args: { _niveau_id: string }; Returns: boolean }
       notify_credit_reminders: { Args: never; Returns: undefined }

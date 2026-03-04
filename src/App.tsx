@@ -68,6 +68,7 @@ import EmployeeEvaluation from "./pages/employee/EmployeeEvaluation";
 import EmployeePlanning from "./pages/employee/EmployeePlanning";
 import AdminMonitoring from "./pages/AdminMonitoring";
 import CoordinateurDocuments from "./pages/CoordinateurDocuments";
+import CoordinateurEleves from "./pages/CoordinateurEleves";
 import Robotique from "./pages/Robotique";
 import RobotiqueDashboard from "./pages/RobotiqueDashboard";
 import StudentEcriture from "./pages/student/StudentEcriture";
@@ -208,6 +209,7 @@ const App = () => (
             <Route path="/tracabilite" element={<ProtectedRoute><Tracabilite /></ProtectedRoute>} />
             <Route path="/supervision" element={<ProtectedRoute><AdminMonitoring /></ProtectedRoute>} />
             <Route path="/coordinateur-documents" element={<ProtectedRoute><CoordinateurDocuments /></ProtectedRoute>} />
+            <Route path="/coordinateur-eleves" element={<ProtectedRoute><CoordinateurEleves /></ProtectedRoute>} />
             <Route path="/robotique" element={<ProtectedRoute><Robotique /></ProtectedRoute>} />
             <Route path="/robotique-dashboard" element={<ProtectedRoute><RobotiqueDashboard /></ProtectedRoute>} />
             <Route path="/eleve/ecriture" element={<StudentAuthProvider><StudentEcriture /></StudentAuthProvider>} />
