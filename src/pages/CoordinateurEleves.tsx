@@ -46,6 +46,7 @@ export default function CoordinateurEleves() {
   const [coordEleveId, setCoordEleveId] = useState<string | null>(null);
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
+  const [dossierStats, setDossierStats] = useState<{ complet: Set<string>; incomplet: Set<string> }>({ complet: new Set(), incomplet: new Set() });
 
   useEffect(() => {
     fetchEleves();
@@ -58,8 +59,41 @@ export default function CoordinateurEleves() {
       .select('id, nom, prenom, matricule, sexe, classe_id, statut, created_at, classes(nom, niveau_id, niveaux:niveau_id(nom, cycle_id, cycles:cycle_id(nom)))')
       .is('deleted_at', null)
       .order('nom');
-    setEleves((data as any) || []);
+    const elevesData = (data as any) || [];
+    setEleves(elevesData);
     setLoading(false);
+    fetchDossierStats(elevesData);
+  };
+
+  const fetchDossierStats = async (elevesData: Eleve[]) => {
+    // Get all coordinateur_eleves with their documents
+    const { data: coordEleves } = await supabase
+      .from('coordinateur_eleves')
+      .select('id, nom, prenom, coordinateur_documents(type_document, statut)');
+
+    const complet = new Set<string>();
+    const incomplet = new Set<string>();
+
+    elevesData.forEach(eleve => {
+      const match = (coordEleves as any[])?.find(
+        (ce: any) => ce.nom?.toLowerCase() === eleve.nom?.toLowerCase() && ce.prenom?.toLowerCase() === eleve.prenom?.toLowerCase()
+      );
+      if (match) {
+        const docs = (match.coordinateur_documents || []) as any[];
+        const allDeposed = DOCUMENT_TYPES.every(type =>
+          docs.some((d: any) => d.type_document === type && d.statut === 'depose')
+        );
+        if (allDeposed) {
+          complet.add(eleve.id);
+        } else {
+          incomplet.add(eleve.id);
+        }
+      } else {
+        incomplet.add(eleve.id);
+      }
+    });
+
+    setDossierStats({ complet, incomplet });
   };
 
   const fetchDocuments = async (eleve: Eleve) => {
@@ -161,6 +195,8 @@ export default function CoordinateurEleves() {
       }
     }
     setToggling(null);
+    // Refresh global stats
+    fetchDossierStats(eleves);
   };
 
   const classes = useMemo(() => {
@@ -195,6 +231,43 @@ export default function CoordinateurEleves() {
       <div className="flex items-center gap-2">
         <Users className="h-6 w-6 text-primary" />
         <h1 className="text-xl sm:text-2xl font-bold">Élèves Maternelle & Primaire</h1>
+      </div>
+
+      {/* Stats cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Users className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{filtered.length}</p>
+              <p className="text-xs text-muted-foreground">Total élèves</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{filtered.filter(e => dossierStats.complet.has(e.id)).length}</p>
+              <p className="text-xs text-muted-foreground">Dossiers complets</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+              <FileText className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{filtered.filter(e => dossierStats.incomplet.has(e.id)).length}</p>
+              <p className="text-xs text-muted-foreground">Dossiers incomplets</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
