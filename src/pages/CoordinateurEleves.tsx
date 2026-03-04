@@ -3,13 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Users, ChevronDown, ChevronUp, FileText, FolderOpen } from 'lucide-react';
+import { Search, Users, FileText, FolderOpen, CheckCircle, Circle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { toast } from '@/hooks/use-toast';
+
+const DOCUMENT_TYPES = ["Photo d'identité", 'Livret Scolaire', 'Extrait de Naissance'];
 
 interface Eleve {
   id: string;
@@ -31,12 +35,6 @@ interface CoordDoc {
   date_retrait: string | null;
 }
 
-interface CoordEleve {
-  id: string;
-  nom: string;
-  prenom: string;
-}
-
 export default function CoordinateurEleves() {
   const [eleves, setEleves] = useState<Eleve[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +43,7 @@ export default function CoordinateurEleves() {
   const [filterCycle, setFilterCycle] = useState('all');
   const [selectedEleve, setSelectedEleve] = useState<Eleve | null>(null);
   const [coordDocs, setCoordDocs] = useState<CoordDoc[]>([]);
+  const [coordEleveId, setCoordEleveId] = useState<string | null>(null);
   const [loadingDocs, setLoadingDocs] = useState(false);
 
   useEffect(() => {
@@ -65,7 +64,8 @@ export default function CoordinateurEleves() {
   const fetchDocuments = async (eleve: Eleve) => {
     setSelectedEleve(eleve);
     setLoadingDocs(true);
-    // Find matching coordinateur_eleve by name
+    setCoordEleveId(null);
+
     const { data: coordEleves } = await supabase
       .from('coordinateur_eleves')
       .select('id')
@@ -74,6 +74,7 @@ export default function CoordinateurEleves() {
       .limit(1);
 
     if (coordEleves && coordEleves.length > 0) {
+      setCoordEleveId(coordEleves[0].id);
       const { data: docs } = await supabase
         .from('coordinateur_documents')
         .select('id, type_document, statut, date_depot, date_retrait')
@@ -83,6 +84,15 @@ export default function CoordinateurEleves() {
       setCoordDocs([]);
     }
     setLoadingDocs(false);
+  };
+
+  const getDocForType = (type: string) => {
+    return coordDocs.find(d => d.type_document === type && d.statut === 'depose');
+  };
+
+  const docCount = (eleve: Eleve) => {
+    // We don't have docs loaded for all students, so we won't show count
+    return null;
   };
 
   const classes = useMemo(() => {
@@ -111,14 +121,6 @@ export default function CoordinateurEleves() {
       return matchSearch && matchClasse && matchCycle;
     });
   }, [eleves, searchTerm, filterClasse, filterCycle]);
-
-  const docStatusBadge = (statut: string) => {
-    switch (statut) {
-      case 'depose': return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Déposé</Badge>;
-      case 'rendu': return <Badge variant="destructive">Rendu</Badge>;
-      default: return <Badge variant="outline">Non déposé</Badge>;
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -179,7 +181,7 @@ export default function CoordinateurEleves() {
                     <TableHead className="hidden sm:table-cell">Matricule</TableHead>
                     <TableHead>Classe</TableHead>
                     <TableHead className="hidden sm:table-cell">Cycle</TableHead>
-                    <TableHead className="text-center">Documents</TableHead>
+                    <TableHead className="text-center">Dossier</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -219,45 +221,86 @@ export default function CoordinateurEleves() {
         </CardContent>
       </Card>
 
-      {/* Documents Dialog */}
+      {/* Documents Checklist Dialog */}
       <Dialog open={!!selectedEleve} onOpenChange={() => setSelectedEleve(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Documents de {selectedEleve?.prenom} {selectedEleve?.nom}
+              Dossier de {selectedEleve?.prenom} {selectedEleve?.nom}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {loadingDocs ? (
               <p className="text-center py-4 text-muted-foreground">Chargement...</p>
-            ) : coordDocs.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <FolderOpen className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                <p>Aucun document enregistré pour cet élève</p>
-                <p className="text-xs mt-1">Les documents sont gérés dans la section "Documents coordinateur"</p>
-              </div>
             ) : (
-              <div className="space-y-2">
-                {coordDocs.map(doc => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-                    <div>
-                      <p className="font-medium text-sm">{doc.type_document}</p>
-                      {doc.date_depot && (
-                        <p className="text-xs text-muted-foreground">
-                          Déposé le {format(new Date(doc.date_depot), 'dd/MM/yyyy', { locale: fr })}
-                        </p>
-                      )}
-                      {doc.date_retrait && (
-                        <p className="text-xs text-muted-foreground">
-                          Rendu le {format(new Date(doc.date_retrait), 'dd/MM/yyyy', { locale: fr })}
-                        </p>
-                      )}
-                    </div>
-                    {docStatusBadge(doc.statut)}
+              <>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Liste des documents à fournir — cochez ceux déjà disponibles.
+                </p>
+                <div className="space-y-3">
+                  {DOCUMENT_TYPES.map(type => {
+                    const doc = getDocForType(type);
+                    const isChecked = !!doc;
+                    return (
+                      <div key={type} className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+                        {isChecked ? (
+                          <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+                        ) : (
+                          <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-medium text-sm ${isChecked ? 'text-foreground' : 'text-muted-foreground'}`}>
+                            {type}
+                          </p>
+                          {doc?.date_depot && (
+                            <p className="text-xs text-muted-foreground">
+                              Déposé le {format(new Date(doc.date_depot), 'dd/MM/yyyy', { locale: fr })}
+                            </p>
+                          )}
+                        </div>
+                        <Badge className={isChecked
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
+                        }>
+                          {isChecked ? 'Déposé' : 'Manquant'}
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Summary */}
+                <div className="mt-4 pt-3 border-t">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Dossier complet</span>
+                    <Badge variant={
+                      DOCUMENT_TYPES.every(t => getDocForType(t)) ? 'default' : 'destructive'
+                    }>
+                      {DOCUMENT_TYPES.filter(t => getDocForType(t)).length} / {DOCUMENT_TYPES.length}
+                    </Badge>
                   </div>
-                ))}
-              </div>
+                </div>
+
+                {/* Additional deposited docs not in standard list */}
+                {coordDocs.filter(d => !DOCUMENT_TYPES.includes(d.type_document) && d.statut === 'depose').length > 0 && (
+                  <div className="mt-3 pt-3 border-t">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Autres documents déposés</p>
+                    {coordDocs.filter(d => !DOCUMENT_TYPES.includes(d.type_document) && d.statut === 'depose').map(doc => (
+                      <div key={doc.id} className="flex items-center gap-3 p-2 rounded-md bg-muted/20">
+                        <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                        <span className="text-sm">{doc.type_document}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!coordEleveId && (
+                  <p className="text-xs text-muted-foreground text-center mt-3">
+                    Cet élève n'a pas encore de dossier coordinateur. Les documents se gèrent dans "Documents coordinateur".
+                  </p>
+                )}
+              </>
             )}
           </div>
         </DialogContent>
