@@ -99,9 +99,15 @@ const navSections = [
   },
   {
     label: 'Robotique',
-    roles: ['admin', 'secretaire', 'robotique'] as any,
+    roles: ['admin', 'secretaire'] as any,
     items: [
       { title: 'Gestion Robotique', url: '/robotique', icon: Bot },
+    ],
+  },
+  {
+    label: 'Robotique',
+    roles: ['robotique'] as any,
+    items: [
       { title: 'Dashboard Robotique', url: '/robotique-dashboard', icon: Bot },
     ],
   },
