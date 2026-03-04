@@ -962,6 +962,7 @@ export type Database = {
           photo_url: string | null
           prenom: string
           qr_code: string | null
+          robotique_paye: boolean | null
           sexe: string | null
           solde_cantine: number | null
           statut: string
@@ -996,6 +997,7 @@ export type Database = {
           photo_url?: string | null
           prenom: string
           qr_code?: string | null
+          robotique_paye?: boolean | null
           sexe?: string | null
           solde_cantine?: number | null
           statut?: string
@@ -1030,6 +1032,7 @@ export type Database = {
           photo_url?: string | null
           prenom?: string
           qr_code?: string | null
+          robotique_paye?: boolean | null
           sexe?: string | null
           solde_cantine?: number | null
           statut?: string
