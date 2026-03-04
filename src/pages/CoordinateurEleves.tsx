@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Users, FileText, FolderOpen, CheckCircle, Circle } from 'lucide-react';
+import { Search, Users, FileText, FolderOpen, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
@@ -45,6 +45,7 @@ export default function CoordinateurEleves() {
   const [coordDocs, setCoordDocs] = useState<CoordDoc[]>([]);
   const [coordEleveId, setCoordEleveId] = useState<string | null>(null);
   const [loadingDocs, setLoadingDocs] = useState(false);
+  const [toggling, setToggling] = useState<string | null>(null);
 
   useEffect(() => {
     fetchEleves();
@@ -90,9 +91,76 @@ export default function CoordinateurEleves() {
     return coordDocs.find(d => d.type_document === type && d.statut === 'depose');
   };
 
-  const docCount = (eleve: Eleve) => {
-    // We don't have docs loaded for all students, so we won't show count
-    return null;
+  const ensureCoordEleve = async (): Promise<string | null> => {
+    if (coordEleveId) return coordEleveId;
+    if (!selectedEleve) return null;
+
+    const { data, error } = await supabase
+      .from('coordinateur_eleves')
+      .insert({
+        nom: selectedEleve.nom,
+        prenom: selectedEleve.prenom,
+        ecole_provenance: '',
+        niveau_scolaire: (selectedEleve.classes as any)?.niveaux?.nom || '',
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+      return null;
+    }
+    setCoordEleveId(data.id);
+    return data.id;
+  };
+
+  const toggleDocument = async (type: string) => {
+    setToggling(type);
+    const existingDoc = coordDocs.find(d => d.type_document === type);
+
+    if (existingDoc && existingDoc.statut === 'depose') {
+      // Uncheck: update status to non_depose
+      const { error } = await supabase
+        .from('coordinateur_documents')
+        .update({ statut: 'non_depose', date_depot: null, updated_at: new Date().toISOString() })
+        .eq('id', existingDoc.id);
+
+      if (error) {
+        toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+      } else {
+        setCoordDocs(prev => prev.map(d => d.id === existingDoc.id ? { ...d, statut: 'non_depose', date_depot: null } : d));
+      }
+    } else {
+      // Check: create or update document
+      const eleveId = await ensureCoordEleve();
+      if (!eleveId) { setToggling(null); return; }
+
+      if (existingDoc) {
+        const { error } = await supabase
+          .from('coordinateur_documents')
+          .update({ statut: 'depose', date_depot: new Date().toISOString(), updated_at: new Date().toISOString() })
+          .eq('id', existingDoc.id);
+
+        if (error) {
+          toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+        } else {
+          setCoordDocs(prev => prev.map(d => d.id === existingDoc.id ? { ...d, statut: 'depose', date_depot: new Date().toISOString() } : d));
+        }
+      } else {
+        const { data, error } = await supabase
+          .from('coordinateur_documents')
+          .insert({ eleve_id: eleveId, type_document: type, statut: 'depose', date_depot: new Date().toISOString() })
+          .select('id, type_document, statut, date_depot, date_retrait')
+          .single();
+
+        if (error) {
+          toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+        } else {
+          setCoordDocs(prev => [...prev, data as any]);
+        }
+      }
+    }
+    setToggling(null);
   };
 
   const classes = useMemo(() => {
@@ -243,12 +311,18 @@ export default function CoordinateurEleves() {
                     const doc = getDocForType(type);
                     const isChecked = !!doc;
                     return (
-                      <div key={type} className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
-                        {isChecked ? (
-                          <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
-                        ) : (
-                          <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
-                        )}
+                      <div
+                        key={type}
+                        className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => toggleDocument(type)}
+                      >
+                        <Checkbox
+                          checked={isChecked}
+                          disabled={toggling === type}
+                          onCheckedChange={() => toggleDocument(type)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="shrink-0"
+                        />
                         <div className="flex-1 min-w-0">
                           <p className={`font-medium text-sm ${isChecked ? 'text-foreground' : 'text-muted-foreground'}`}>
                             {type}
@@ -259,12 +333,16 @@ export default function CoordinateurEleves() {
                             </p>
                           )}
                         </div>
-                        <Badge className={isChecked
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                          : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
-                        }>
-                          {isChecked ? 'Déposé' : 'Manquant'}
-                        </Badge>
+                        {toggling === type ? (
+                          <span className="text-xs text-muted-foreground">...</span>
+                        ) : (
+                          <Badge className={isChecked
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
+                          }>
+                            {isChecked ? 'Déposé' : 'Manquant'}
+                          </Badge>
+                        )}
                       </div>
                     );
                   })}
