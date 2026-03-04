@@ -90,6 +90,7 @@ function PasswordSection({ eleve, onUpdate }: { eleve: any; onUpdate: () => void
 import { QRCodeSVG } from 'qrcode.react';
 import { useToast } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/excelUtils';
+import { sortClasses } from '@/lib/utils';
 import { generateBadgeRetrait } from '@/lib/generateBadgeRetrait';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
@@ -140,9 +141,9 @@ export default function Eleves() {
   const { data: classes = [] } = useQuery({
     queryKey: ['classes-all'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('classes').select('*, niveaux:niveau_id(nom, cycle_id)').order('nom');
+      const { data, error } = await supabase.from('classes').select('*, niveaux:niveau_id(nom, ordre, cycle_id, cycles:cycle_id(nom, ordre))');
       if (error) throw error;
-      return data;
+      return sortClasses(data || []);
     },
   });
 

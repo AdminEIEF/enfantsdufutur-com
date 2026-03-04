@@ -13,6 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { sortClasses } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -175,8 +176,8 @@ export default function Notifications() {
   const { data: classes = [] } = useQuery({
     queryKey: ['classes-list'],
     queryFn: async () => {
-      const { data } = await supabase.from('classes').select('id, nom, niveaux:niveau_id(nom)').order('nom');
-      return data || [];
+      const { data } = await supabase.from('classes').select('id, nom, niveaux:niveau_id(nom, ordre, cycles:cycle_id(ordre))');
+      return sortClasses(data || []);
     },
   });
 

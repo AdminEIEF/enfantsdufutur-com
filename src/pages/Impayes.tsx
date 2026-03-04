@@ -9,6 +9,7 @@ import { AlertTriangle, Search, Download, ChevronDown, ChevronRight } from 'luci
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { exportToExcel } from '@/lib/excelUtils';
+import { sortClasses } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
 const MOIS_SCOLAIRES = [
@@ -79,9 +80,9 @@ export default function Impayes() {
   const { data: classes = [] } = useQuery({
     queryKey: ['impayes-classes'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('classes').select('id, nom').order('nom');
+      const { data, error } = await supabase.from('classes').select('id, nom, niveaux:niveau_id(nom, ordre, cycles:cycle_id(ordre))');
       if (error) throw error;
-      return data;
+      return sortClasses(data || []);
     },
   });
 

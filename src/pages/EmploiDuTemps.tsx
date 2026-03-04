@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { sortClasses } from '@/lib/utils';
 import { Clock, Plus, Trash2, Pencil, CalendarDays } from 'lucide-react';
 
 const JOURS = [
@@ -64,9 +65,8 @@ export default function EmploiDuTemps() {
     queryFn: async () => {
       const { data } = await supabase
         .from('classes')
-        .select('id, nom, niveaux:niveau_id(nom, cycles:cycle_id(nom))')
-        .order('nom');
-      return data || [];
+        .select('id, nom, niveaux:niveau_id(nom, ordre, cycles:cycle_id(nom, ordre))');
+      return sortClasses(data || []);
     },
   });
 

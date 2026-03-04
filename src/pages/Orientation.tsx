@@ -7,14 +7,15 @@ import { BarChart3, TrendingUp, Award, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { sortClasses } from '@/lib/utils';
 
 function useClasses() {
   return useQuery({
     queryKey: ['classes'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('classes').select('*, niveaux(nom, cycle_id, cycles(nom))');
+      const { data, error } = await supabase.from('classes').select('*, niveaux(nom, ordre, cycle_id, cycles(nom, ordre))');
       if (error) throw error;
-      return data;
+      return sortClasses(data || []);
     },
   });
 }

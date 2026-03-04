@@ -14,6 +14,7 @@ import { Video, FileText, Plus, Trash2, BookOpen, Search, Loader2, Upload, Circl
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
+import { sortClasses } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DevoirSoumissionsDialog } from '@/components/DevoirSoumissionsDialog';
@@ -58,9 +59,9 @@ export default function CoursAdmin() {
   const { data: classes = [] } = useQuery({
     queryKey: ['classes-all'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('classes').select('*, niveaux:niveau_id(nom, cycle_id, cycles:cycle_id(nom))').order('nom');
+      const { data, error } = await supabase.from('classes').select('*, niveaux:niveau_id(nom, ordre, cycle_id, cycles:cycle_id(nom, ordre))');
       if (error) throw error;
-      return data;
+      return sortClasses(data || []);
     },
   });
 

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { sortClasses } from '@/lib/utils';
 import {
   CalendarDays, Plus, ChevronLeft, ChevronRight, Trash2, Pencil, Clock, MapPin
 } from 'lucide-react';
@@ -74,8 +75,8 @@ export default function CalendrierScolaire() {
   const { data: classes = [] } = useQuery({
     queryKey: ['classes-cal'],
     queryFn: async () => {
-      const { data } = await supabase.from('classes').select('id, nom').order('nom');
-      return data || [];
+      const { data } = await supabase.from('classes').select('id, nom, niveaux:niveau_id(nom, ordre, cycles:cycle_id(ordre))');
+      return sortClasses(data || []);
     },
   });
 

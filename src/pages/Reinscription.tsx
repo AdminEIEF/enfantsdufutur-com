@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { sortClasses } from '@/lib/utils';
 
 // ─── Hooks ───────────────────────────────────────────────
 function useAllEleves() {
@@ -48,10 +49,9 @@ function useClassesAll() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('classes')
-        .select('*, niveaux:niveau_id(nom, ordre, cycle_id, cycles:cycle_id(nom, ordre))')
-        .order('nom');
+        .select('*, niveaux:niveau_id(nom, ordre, cycle_id, cycles:cycle_id(nom, ordre))');
       if (error) throw error;
-      return data;
+      return sortClasses(data || []);
     },
   });
 }

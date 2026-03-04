@@ -13,6 +13,7 @@ import { BookOpen, Save, CheckCircle, Circle, ChevronRight, AlertTriangle, Eye, 
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
+import { sortClasses } from '@/lib/utils';
 
 export default function Notes() {
   const [cycleId, setCycleId] = useState('');
@@ -37,11 +38,10 @@ export default function Notes() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('classes')
-        .select('*, niveaux!inner(cycle_id, nom, id)')
-        .eq('niveaux.cycle_id', cycleId)
-        .order('nom');
+        .select('*, niveaux!inner(cycle_id, nom, id, ordre)')
+        .eq('niveaux.cycle_id', cycleId);
       if (error) throw error;
-      return data;
+      return sortClasses(data || []);
     },
   });
 

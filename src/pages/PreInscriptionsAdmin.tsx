@@ -13,6 +13,7 @@ import { Search, FileText, Users, Clock, CheckCircle2, XCircle, CalendarDays, Ph
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { sortClasses } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -46,9 +47,9 @@ export default function PreInscriptionsAdmin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('classes')
-        .select('*, niveaux:niveau_id(nom, cycle_id, cycles:cycle_id(nom))');
+        .select('*, niveaux:niveau_id(nom, ordre, cycle_id, cycles:cycle_id(nom, ordre))');
       if (error) throw error;
-      return data;
+      return sortClasses(data || []);
     },
   });
 
