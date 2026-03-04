@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Bot, UserPlus, UserMinus, Users, Loader2, DollarSign, TrendingUp, CheckCircle2, XCircle, Save, Settings } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, Bot, UserPlus, UserMinus, Users, Loader2, DollarSign, TrendingUp, CheckCircle2, XCircle, Save, Settings, Filter, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -23,6 +24,12 @@ export default function Robotique() {
   const [savingPrix, setSavingPrix] = useState(false);
   const [editingPrix, setEditingPrix] = useState(false);
 
+  // Filters
+  const [niveaux, setNiveaux] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [filterNiveau, setFilterNiveau] = useState('__none__');
+  const [filterClasse, setFilterClasse] = useState('__none__');
+
   const isAdmin = roles.includes('admin') || roles.includes('superviseur');
   const canAccess = roles.includes('admin') || roles.includes('secretaire') || roles.includes('superviseur');
 
@@ -30,7 +37,7 @@ export default function Robotique() {
     setLoading(true);
     const { data } = await supabase
       .from('eleves')
-      .select('id, nom, prenom, matricule, classe_id, option_robotique, robotique_paye, classes(nom)')
+      .select('id, nom, prenom, matricule, classe_id, option_robotique, robotique_paye, classes(nom, niveau_id, niveaux(id, nom, ordre))')
       .eq('statut', 'inscrit')
       .is('deleted_at', null)
       .order('nom');
@@ -39,6 +46,15 @@ export default function Robotique() {
       setInscrits(data.filter((e: any) => e.option_robotique));
     }
     setLoading(false);
+  };
+
+  const fetchStructure = async () => {
+    const [nRes, cRes] = await Promise.all([
+      supabase.from('niveaux').select('id, nom, ordre, cycle_id').order('ordre'),
+      supabase.from('classes').select('id, nom, niveau_id').order('nom'),
+    ]);
+    if (nRes.data) setNiveaux(nRes.data);
+    if (cRes.data) setClasses(cRes.data);
   };
 
   const fetchPrix = async () => {
@@ -50,9 +66,42 @@ export default function Robotique() {
     }
   };
 
+  // Filtered classes based on selected niveau
+  const filteredClasses = filterNiveau !== '__none__'
+    ? classes.filter(c => c.niveau_id === filterNiveau)
+    : classes;
+
+  // Apply filters to inscrits
+  const filteredInscrits = useMemo(() => {
+    let list = inscrits;
+    if (filterNiveau !== '__none__') {
+      list = list.filter((e: any) => (e.classes as any)?.niveau_id === filterNiveau);
+    }
+    if (filterClasse !== '__none__') {
+      list = list.filter((e: any) => e.classe_id === filterClasse);
+    }
+    return list;
+  }, [inscrits, filterNiveau, filterClasse]);
+
+  // Stats by niveau
+  const statsByNiveau = useMemo(() => {
+    const map: Record<string, { nom: string; ordre: number; total: number; payes: number }> = {};
+    inscrits.forEach((e: any) => {
+      const niv = (e.classes as any)?.niveaux;
+      if (!niv) return;
+      if (!map[niv.id]) {
+        map[niv.id] = { nom: niv.nom, ordre: niv.ordre, total: 0, payes: 0 };
+      }
+      map[niv.id].total++;
+      if (e.robotique_paye) map[niv.id].payes++;
+    });
+    return Object.values(map).sort((a, b) => b.total - a.total);
+  }, [inscrits]);
+
   useEffect(() => {
     fetchData();
     fetchPrix();
+    fetchStructure();
 
     const channel = supabase
       .channel('robotique-eleves')
@@ -62,7 +111,6 @@ export default function Robotique() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // Garde d'accès après les hooks
   if (!canAccess) {
     return <Navigate to="/robotique-dashboard" replace />;
   }
@@ -124,6 +172,11 @@ export default function Robotique() {
   const revenuReel = totalPayes * prix;
 
   const formatGNF = (n: number) => n.toLocaleString('fr-GN') + ' GNF';
+
+  const resetFilters = () => {
+    setFilterNiveau('__none__');
+    setFilterClasse('__none__');
+  };
 
   return (
     <div className="space-y-6">
@@ -203,6 +256,48 @@ export default function Robotique() {
             </CardContent>
           </Card>
 
+          {/* Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Filter className="h-4 w-4" /> Filtrer par Niveau / Classe
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-3 flex-wrap">
+                <Select value={filterNiveau} onValueChange={(v) => { setFilterNiveau(v); setFilterClasse('__none__'); }}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Tous les niveaux" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Tous les niveaux</SelectItem>
+                    {niveaux.map(n => (
+                      <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterClasse} onValueChange={setFilterClasse}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Toutes les classes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Toutes les classes</SelectItem>
+                    {filteredClasses.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {(filterNiveau !== '__none__' || filterClasse !== '__none__') && (
+                  <Button variant="ghost" size="sm" onClick={resetFilters}>✕ Réinitialiser</Button>
+                )}
+
+                <Badge variant="outline" className="ml-auto">{filteredInscrits.length} élève(s) affiché(s)</Badge>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Enrolled students list */}
           <Card>
             <CardHeader>
@@ -213,7 +308,7 @@ export default function Robotique() {
             <CardContent>
               {loading ? (
                 <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-              ) : inscrits.length === 0 ? (
+              ) : filteredInscrits.length === 0 ? (
                 <p className="text-center py-8 text-muted-foreground">Aucun élève inscrit en Robotique</p>
               ) : (
                 <div className="border rounded-lg overflow-auto">
@@ -223,17 +318,19 @@ export default function Robotique() {
                         <TableHead>#</TableHead>
                         <TableHead>Élève</TableHead>
                         <TableHead>Matricule</TableHead>
+                        <TableHead>Niveau</TableHead>
                         <TableHead>Classe</TableHead>
                         <TableHead>Paiement</TableHead>
                         <TableHead>Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {inscrits.map((e, i) => (
+                      {filteredInscrits.map((e, i) => (
                         <TableRow key={e.id}>
                           <TableCell>{i + 1}</TableCell>
                           <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
                           <TableCell><code className="text-xs">{e.matricule}</code></TableCell>
+                          <TableCell>{(e.classes as any)?.niveaux?.nom || '—'}</TableCell>
                           <TableCell>{(e.classes as any)?.nom || '—'}</TableCell>
                           <TableCell>
                             <Button
@@ -257,6 +354,62 @@ export default function Robotique() {
                           </TableCell>
                         </TableRow>
                       ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Stats by Niveau */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" /> Intérêt par Niveau
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {statsByNiveau.length === 0 ? (
+                <p className="text-center py-6 text-muted-foreground">Aucune donnée</p>
+              ) : (
+                <div className="border rounded-lg overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>#</TableHead>
+                        <TableHead>Niveau</TableHead>
+                        <TableHead className="text-center">Inscrits</TableHead>
+                        <TableHead className="text-center">Payés</TableHead>
+                        <TableHead className="text-center">Non Payés</TableHead>
+                        <TableHead className="text-center">% du total</TableHead>
+                        <TableHead>Popularité</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {statsByNiveau.map((s, i) => {
+                        const pct = totalInscrits > 0 ? Math.round((s.total / totalInscrits) * 100) : 0;
+                        return (
+                          <TableRow key={s.nom} className={i === 0 ? 'bg-indigo-50/50' : ''}>
+                            <TableCell className="font-bold">{i + 1}</TableCell>
+                            <TableCell className="font-medium">
+                              {s.nom}
+                              {i === 0 && <Badge className="ml-2 bg-indigo-600 text-white border-0 text-[10px]">🏆 Top</Badge>}
+                            </TableCell>
+                            <TableCell className="text-center font-bold text-indigo-600">{s.total}</TableCell>
+                            <TableCell className="text-center text-emerald-600">{s.payes}</TableCell>
+                            <TableCell className="text-center text-red-500">{s.total - s.payes}</TableCell>
+                            <TableCell className="text-center font-medium">{pct}%</TableCell>
+                            <TableCell>
+                              <div className="w-full bg-muted rounded-full h-2.5">
+                                <div
+                                  className="bg-indigo-500 h-2.5 rounded-full transition-all"
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
