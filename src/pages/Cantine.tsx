@@ -12,6 +12,7 @@ import {
   CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera, FileText
 } from 'lucide-react';
 import RapportJournalierPanel from '@/components/RapportJournalierPanel';
+import CarteCantine from '@/components/CarteCantine';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -40,7 +41,7 @@ function useElevesCantine() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, solde_cantine, option_cantine, qr_code, statut, classes(nom)')
+        .select('id, nom, prenom, matricule, solde_cantine, option_cantine, qr_code, statut, photo_url, classes(nom), familles(telephone_pere, telephone_mere)')
         .is('deleted_at', null)
         .order('nom');
       if (error) throw error;
@@ -162,6 +163,7 @@ export default function Cantine() {
   const [newPlat, setNewPlat] = useState({ nom: '', prix: '', stock: '' });
   const [activeTab, setActiveTab] = useState('vente');
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [carteEleve, setCarteEleve] = useState<any>(null);
 
   const { data: repasHistory = [] } = useRepasHistory(historyEleveId);
   const { data: paiementsCantine = [] } = usePaiementsCantine(selectedEleve?.id || historyEleveId);
@@ -607,6 +609,9 @@ export default function Cantine() {
                           <Button variant="ghost" size="sm" onClick={() => { setHistoryEleveId(e.id); setHistoryOpen(true); }}>
                             <History className="h-4 w-4" />
                           </Button>
+                          <Button variant="ghost" size="sm" onClick={() => setCarteEleve(e)} title="Carte cantine">
+                            <CreditCard className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -927,6 +932,31 @@ export default function Cantine() {
               </div>
               <Button variant="outline" onClick={() => window.print()}>Imprimer le badge</Button>
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Carte Cantine */}
+      <Dialog open={!!carteEleve} onOpenChange={() => setCarteEleve(null)}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> Carte Cantine</DialogTitle></DialogHeader>
+          {carteEleve && (
+            <CarteCantine
+              nom={carteEleve.nom}
+              prenom={carteEleve.prenom}
+              matricule={carteEleve.matricule || '—'}
+              classe={carteEleve.classes?.nom || '—'}
+              photo_url={carteEleve.photo_url}
+              telephone_pere={carteEleve.familles?.telephone_pere}
+              telephone_mere={carteEleve.familles?.telephone_mere}
+              qrValue={JSON.stringify({
+                matricule: carteEleve.matricule || '',
+                nom: carteEleve.nom,
+                prenom: carteEleve.prenom,
+                classe: carteEleve.classes?.nom || '',
+                type: 'cantine',
+              })}
+            />
           )}
         </DialogContent>
       </Dialog>
