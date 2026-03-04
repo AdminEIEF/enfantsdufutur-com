@@ -31,7 +31,7 @@ export default function StudentDashboard() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ matricule: session!.matricule, password: session!.token, action: 'dashboard' }),
+          body: JSON.stringify({ token: session!.token, action: 'dashboard' }),
         }
       );
       const result = await resp.json();

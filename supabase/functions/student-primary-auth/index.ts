@@ -75,7 +75,7 @@ serve(async (req) => {
       false,
       ["sign"]
     );
-    const tokenData = `primary:${eleve.id}:${Date.now()}`;
+    const tokenData = `${eleve.id}:${Date.now()}`;
     const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(tokenData));
     const token = btoa(tokenData + ":" + Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join(''));
 
