@@ -68,6 +68,9 @@ import EmployeeEvaluation from "./pages/employee/EmployeeEvaluation";
 import EmployeePlanning from "./pages/employee/EmployeePlanning";
 import AdminMonitoring from "./pages/AdminMonitoring";
 import CoordinateurDocuments from "./pages/CoordinateurDocuments";
+import Robotique from "./pages/Robotique";
+import RobotiqueDashboard from "./pages/RobotiqueDashboard";
+import StudentEcriture from "./pages/student/StudentEcriture";
 
 const queryClient = new QueryClient();
 
@@ -115,6 +118,7 @@ function RoleBasedRedirect() {
     if (roles[0] === 'boutique') return <Navigate to="/boutique" replace />;
     if (roles[0] === 'librairie') return <Navigate to="/librairie" replace />;
     if ((roles[0] as string) === 'coordinateur') return <Navigate to="/coordinateur-documents" replace />;
+    if (roles[0] === 'robotique') return <Navigate to="/robotique-dashboard" replace />;
   }
   return <Navigate to="/dashboard" replace />;
 }
@@ -134,6 +138,7 @@ function AuthRoute() {
       if (roles[0] === 'cantine') return <Navigate to="/cantine" replace />;
       if (roles[0] === 'boutique') return <Navigate to="/boutique" replace />;
       if (roles[0] === 'librairie') return <Navigate to="/librairie" replace />;
+      if (roles[0] === 'robotique') return <Navigate to="/robotique-dashboard" replace />;
     }
     return <Navigate to="/dashboard" replace />;
   }
@@ -201,6 +206,9 @@ const App = () => (
             <Route path="/tracabilite" element={<ProtectedRoute><Tracabilite /></ProtectedRoute>} />
             <Route path="/supervision" element={<ProtectedRoute><AdminMonitoring /></ProtectedRoute>} />
             <Route path="/coordinateur-documents" element={<ProtectedRoute><CoordinateurDocuments /></ProtectedRoute>} />
+            <Route path="/robotique" element={<ProtectedRoute><Robotique /></ProtectedRoute>} />
+            <Route path="/robotique-dashboard" element={<ProtectedRoute><RobotiqueDashboard /></ProtectedRoute>} />
+            <Route path="/eleve/ecriture" element={<StudentAuthProvider><StudentEcriture /></StudentAuthProvider>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -958,6 +958,7 @@ export type Database = {
           nom_prenom_pere: string | null
           option_cantine: boolean | null
           option_fournitures: boolean | null
+          option_robotique: boolean | null
           photo_url: string | null
           prenom: string
           qr_code: string | null
@@ -991,6 +992,7 @@ export type Database = {
           nom_prenom_pere?: string | null
           option_cantine?: boolean | null
           option_fournitures?: boolean | null
+          option_robotique?: boolean | null
           photo_url?: string | null
           prenom: string
           qr_code?: string | null
@@ -1024,6 +1026,7 @@ export type Database = {
           nom_prenom_pere?: string | null
           option_cantine?: boolean | null
           option_fournitures?: boolean | null
+          option_robotique?: boolean | null
           photo_url?: string | null
           prenom?: string
           qr_code?: string | null
@@ -2421,6 +2424,41 @@ export type Database = {
           },
         ]
       }
+      robotics_attendance: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date_seance: string
+          eleve_id: string
+          id: string
+          statut: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date_seance?: string
+          eleve_id: string
+          id?: string
+          statut?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date_seance?: string
+          eleve_id?: string
+          id?: string
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "robotics_attendance_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       soumissions_devoirs: {
         Row: {
           commentaire: string | null
@@ -2832,6 +2870,7 @@ export type Database = {
         | "librairie"
         | "coordinateur"
         | "superviseur"
+        | "robotique"
       categorie_employe:
         | "enseignant"
         | "administration"
@@ -2974,6 +3013,7 @@ export const Constants = {
         "librairie",
         "coordinateur",
         "superviseur",
+        "robotique",
       ],
       categorie_employe: [
         "enseignant",

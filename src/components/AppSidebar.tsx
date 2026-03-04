@@ -1,7 +1,7 @@
 import {
   GraduationCap, Users, UserPlus, BookOpen, Calculator, AlertTriangle,
   Settings, Bell, ScanLine, Library, BarChart3, LogOut,
-  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock, FileText, Shield
+  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock, FileText, Shield, Bot
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -95,6 +95,14 @@ const navSections = [
     roles: ['admin', 'secretaire', 'coordinateur'] as any,
     items: [
       { title: 'Documents coordinateur', url: '/coordinateur-documents', icon: FileText },
+    ],
+  },
+  {
+    label: 'Robotique',
+    roles: ['admin', 'secretaire', 'robotique'] as any,
+    items: [
+      { title: 'Gestion Robotique', url: '/robotique', icon: Bot },
+      { title: 'Dashboard Robotique', url: '/robotique-dashboard', icon: Bot },
     ],
   },
   {
