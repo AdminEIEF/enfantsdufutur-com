@@ -85,7 +85,7 @@ export default function StudentCours() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ matricule: session!.matricule, password: session!.token, action: 'cours' }),
+          body: JSON.stringify({ token: session!.token, action: 'cours' }),
         }
       );
       const data = await resp.json();
