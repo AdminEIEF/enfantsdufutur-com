@@ -281,11 +281,9 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
   const grandTotalImmediat = childrenFees.reduce((s, f) => s + f.totalImmediat, 0);
   const grandTotalScolariteAnnuel = childrenFees.reduce((s, f) => s + f.fraisScolariteAnnuel, 0);
 
-  const generateMatricule = async () => {
+  const getMatriculePrefix = () => {
     const now = new Date();
-    const prefix = `EDU-${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const { count } = await supabase.from('eleves').select('*', { count: 'exact', head: true }).like('matricule', `${prefix}%`);
-    return `${prefix}-${String((count || 0) + 1).padStart(4, '0')}`;
+    return `EDU-${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}`;
   };
 
   const inscription = useMutation({
@@ -335,10 +333,16 @@ export default function InscriptionFamilleForm({ classes, familles, tarifs, exis
         return pwd;
       };
 
+      // Get matricule counter once before the loop
+      const prefix = getMatriculePrefix();
+      const { count: existingCount } = await supabase.from('eleves').select('*', { count: 'exact', head: true }).like('matricule', `${prefix}%`);
+      let seqCounter = existingCount || 0;
+
       // Insert each child
       for (let i = 0; i < children.length; i++) {
         const child = children[i];
-        const matricule = await generateMatricule();
+        seqCounter++;
+        const matricule = `${prefix}-${String(seqCounter).padStart(4, '0')}`;
         const zone = zones.find((z: any) => z.id === child.zoneTransportId);
         const cl = classes.find((c: any) => c.id === child.classeId);
         const cycleName = cl?.niveaux?.cycles?.nom?.toLowerCase() || '';
