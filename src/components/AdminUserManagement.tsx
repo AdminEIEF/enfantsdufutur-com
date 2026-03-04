@@ -105,7 +105,12 @@ export default function AdminUserManagement() {
       queryClient.invalidateQueries({ queryKey: ['admin-users-list'] });
       toast.success(`Compte créé pour ${form.prenom} ${form.nom}`);
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de la création');
+      const msg = err.message || 'Erreur lors de la création';
+      if (msg.includes('already been registered') || msg.includes('email_exists')) {
+        toast.error('Un compte avec cet email existe déjà. Veuillez utiliser un autre email.');
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setCreating(false);
     }
