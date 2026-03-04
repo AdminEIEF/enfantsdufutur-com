@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ export default function Robotique() {
   const [savingPrix, setSavingPrix] = useState(false);
 
   const isAdmin = roles.includes('admin') || roles.includes('superviseur');
+  const canAccess = roles.includes('admin') || roles.includes('secretaire') || roles.includes('superviseur');
 
   const fetchData = async () => {
     setLoading(true);
@@ -58,6 +60,11 @@ export default function Robotique() {
 
     return () => { supabase.removeChannel(channel); };
   }, []);
+
+  // Garde d'accès après les hooks
+  if (!canAccess) {
+    return <Navigate to="/robotique-dashboard" replace />;
+  }
 
   const toggleRobotique = async (eleveId: string, currentVal: boolean) => {
     setActionId(eleveId);
