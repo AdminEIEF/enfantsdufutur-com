@@ -21,6 +21,7 @@ export default function Robotique() {
   const [prixRobotique, setPrixRobotique] = useState('500000');
   const [prixInput, setPrixInput] = useState('');
   const [savingPrix, setSavingPrix] = useState(false);
+  const [editingPrix, setEditingPrix] = useState(false);
 
   const isAdmin = roles.includes('admin') || roles.includes('superviseur');
   const canAccess = roles.includes('admin') || roles.includes('secretaire') || roles.includes('superviseur');
@@ -103,6 +104,7 @@ export default function Robotique() {
     if (error) toast.error('Erreur: ' + error.message);
     else {
       setPrixRobotique(prixInput);
+      setEditingPrix(false);
       toast.success('Prix de formation mis à jour !');
     }
     setSavingPrix(false);
@@ -273,21 +275,34 @@ export default function Robotique() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <label className="text-sm font-medium">Prix de formation Robotique :</label>
-                  <Input
-                    type="number"
-                    value={prixInput}
-                    onChange={e => setPrixInput(e.target.value)}
-                    className="w-48"
-                    min={0}
-                  />
-                  <span className="text-sm text-muted-foreground">GNF</span>
-                  <Button onClick={savePrix} disabled={savingPrix || prixInput === prixRobotique} size="sm" className="bg-indigo-600 hover:bg-indigo-700">
-                    {savingPrix ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-                    Enregistrer
-                  </Button>
-                </div>
+                {editingPrix ? (
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <label className="text-sm font-medium">Prix de formation Robotique :</label>
+                    <Input
+                      type="number"
+                      value={prixInput}
+                      onChange={e => setPrixInput(e.target.value)}
+                      className="w-48"
+                      min={0}
+                    />
+                    <span className="text-sm text-muted-foreground">GNF</span>
+                    <Button onClick={savePrix} disabled={savingPrix || !prixInput} size="sm" className="bg-indigo-600 hover:bg-indigo-700">
+                      {savingPrix ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+                      Valider
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => { setPrixInput(prixRobotique); setEditingPrix(false); }}>
+                      Annuler
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <label className="text-sm font-medium">Prix de formation Robotique :</label>
+                    <span className="text-lg font-bold text-indigo-600">{Number(prixRobotique).toLocaleString('fr-GN')} GNF</span>
+                    <Button variant="outline" size="sm" onClick={() => { setPrixInput(prixRobotique); setEditingPrix(true); }}>
+                      ✏️ Modifier
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
