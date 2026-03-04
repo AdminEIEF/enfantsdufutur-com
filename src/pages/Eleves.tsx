@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle } from 'lucide-react';
+import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle, Camera, Upload } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -112,6 +112,14 @@ export default function Eleves() {
   const [newFamilleTelPere, setNewFamilleTelPere] = useState('');
   const [newFamilleTelMere, setNewFamilleTelMere] = useState('');
   const [savingFamille, setSavingFamille] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const cameraRef = useRef<HTMLVideoElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const qc = useQueryClient();
   const { data: schoolConfig } = useSchoolConfig();
@@ -288,8 +296,80 @@ export default function Eleves() {
   const totalIndividuel = eleves.filter((e: any) => !e.famille_id).length;
   const totalAbandons = eleves.filter((e: any) => e.statut === 'abandon').length;
 
-  const handleSaveEdit = () => {
+  // Camera & photo functions
+  const startCamera = async () => {
+    setCameraOpen(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
+      setCameraStream(stream);
+      setTimeout(() => { if (cameraRef.current) cameraRef.current.srcObject = stream; }, 100);
+    } catch { toast({ title: 'Impossible d\'accéder à la caméra', variant: 'destructive' }); setCameraOpen(false); }
+  };
+
+  const capturePhoto = () => {
+    if (!cameraRef.current) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = cameraRef.current.videoWidth;
+    canvas.height = cameraRef.current.videoHeight;
+    canvas.getContext('2d')?.drawImage(cameraRef.current, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    setCapturedPhoto(dataUrl);
+    setPhotoFile(null);
+    setPhotoPreview(dataUrl);
+    stopCamera();
+  };
+
+  const stopCamera = () => {
+    cameraStream?.getTracks().forEach(t => t.stop());
+    setCameraStream(null);
+    setCameraOpen(false);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setCapturedPhoto(null);
+    const reader = new FileReader();
+    reader.onload = () => setPhotoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const uploadElevePhoto = async (eleveId: string): Promise<string | null> => {
+    let blob: Blob;
+    if (capturedPhoto) {
+      blob = await (await fetch(capturedPhoto)).blob();
+    } else if (photoFile) {
+      blob = photoFile;
+    } else {
+      return null;
+    }
+    const ext = photoFile ? (photoFile.name.split('.').pop() || 'jpg') : 'jpg';
+    const path = `eleves/${eleveId}/photo_${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('photos').upload(path, blob, { contentType: blob.type || 'image/jpeg', upsert: true });
+    if (error) { toast({ title: 'Erreur upload photo', description: error.message, variant: 'destructive' }); return null; }
+    const { data: signedData } = await supabase.storage.from('photos').createSignedUrl(path, 31536000);
+    return signedData?.signedUrl || null;
+  };
+
+  const resetPhotoState = () => {
+    setCapturedPhoto(null);
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  };
+
+  const handleSaveEdit = async () => {
     if (!editing) return;
+
+    // Upload photo if new one selected
+    let photoUrl = editing.photo_url;
+    if (photoPreview) {
+      setUploadingPhoto(true);
+      const url = await uploadElevePhoto(editing.id);
+      if (url) photoUrl = url;
+      setUploadingPhoto(false);
+    }
+
     updateMutation.mutate({
       id: editing.id,
       nom: editing.nom,
@@ -300,8 +380,29 @@ export default function Eleves() {
       transport_zone: editing.transport_zone,
       option_cantine: editing.option_cantine,
       famille_id: editing.famille_id || null,
+      photo_url: photoUrl,
     });
+    resetPhotoState();
   };
+
+  const handleSavePhotoOnly = async (eleve: any) => {
+    if (!photoPreview) return;
+    setUploadingPhoto(true);
+    const url = await uploadElevePhoto(eleve.id);
+    if (url) {
+      const { error } = await supabase.from('eleves').update({ photo_url: url } as any).eq('id', eleve.id);
+      if (error) {
+        toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+      } else {
+        toast({ title: 'Photo mise à jour' });
+        qc.invalidateQueries({ queryKey: ['eleves-full'] });
+        setSelected({ ...eleve, photo_url: url });
+      }
+    }
+    setUploadingPhoto(false);
+    resetPhotoState();
+  };
+
 
   const buildQrData = (eleve: any) => {
     const baseUrl = window.location.origin;
@@ -599,7 +700,7 @@ export default function Eleves() {
       <div className="text-sm text-muted-foreground">{filtered.length} élève(s) trouvé(s)</div>
 
       {/* Detail dialog */}
-      <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
+      <Dialog open={!!selected} onOpenChange={() => { setSelected(null); resetPhotoState(); }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><User className="h-5 w-5" /> {selected?.prenom} {selected?.nom}</DialogTitle></DialogHeader>
           {selected && (() => {
@@ -622,6 +723,30 @@ export default function Eleves() {
             <Tabs defaultValue="info" className="mt-2">
               <TabsList className="grid w-full grid-cols-4"><TabsTrigger value="info">Infos</TabsTrigger><TabsTrigger value="scolarite">Scolarité</TabsTrigger><TabsTrigger value="options">Options</TabsTrigger><TabsTrigger value="famille">Famille</TabsTrigger></TabsList>
               <TabsContent value="info" className="space-y-3 text-sm mt-3">
+                {/* Photo section */}
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    {(photoPreview || selected.photo_url) ? (
+                      <img src={photoPreview || selected.photo_url} alt={selected.prenom} className="w-20 h-20 rounded-lg object-cover border-2 border-primary" />
+                    ) : (
+                      <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center text-3xl border-2 border-dashed border-muted-foreground/30">👤</div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => photoInputRef.current?.click()}>
+                      <Upload className="h-3 w-3 mr-1" /> {selected.photo_url ? 'Changer photo' : 'Ajouter photo'}
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={startCamera}>
+                      <Camera className="h-3 w-3 mr-1" /> Caméra
+                    </Button>
+                    {photoPreview && (
+                      <Button size="sm" className="h-7 text-xs" disabled={uploadingPhoto} onClick={() => handleSavePhotoOnly(selected)}>
+                        {uploadingPhoto ? 'Envoi...' : 'Enregistrer photo'}
+                      </Button>
+                    )}
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div><strong>Matricule:</strong> {selected.matricule || '—'}</div>
                   <div><strong>Sexe:</strong> {selected.sexe || '—'}</div>
@@ -745,6 +870,25 @@ export default function Eleves() {
           <DialogHeader><DialogTitle>Modifier l'élève</DialogTitle></DialogHeader>
           {editing && (
             <div className="space-y-3">
+              {/* Photo upload in edit */}
+              <div className="flex items-center gap-3">
+                {(photoPreview || editing.photo_url) ? (
+                  <img src={photoPreview || editing.photo_url} alt={editing.prenom} className="w-16 h-16 rounded-lg object-cover border" />
+                ) : (
+                  <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center text-2xl border-2 border-dashed border-muted-foreground/30">👤</div>
+                )}
+                <div className="flex flex-col gap-1">
+                  <input type="file" accept="image/*" className="hidden" id="edit-photo-input" onChange={handleFileSelect} />
+                  <label htmlFor="edit-photo-input" className="cursor-pointer">
+                    <span className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                      <Upload className="h-3 w-3" /> {editing.photo_url || photoPreview ? 'Changer photo' : 'Ajouter photo'}
+                    </span>
+                  </label>
+                  <button type="button" className="inline-flex items-center gap-1 text-xs text-primary hover:underline" onClick={startCamera}>
+                    <Camera className="h-3 w-3" /> Caméra
+                  </button>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Nom</Label><Input value={editing.nom} onChange={e => setEditing({ ...editing, nom: e.target.value })} /></div>
                 <div><Label>Prénom</Label><Input value={editing.prenom} onChange={e => setEditing({ ...editing, prenom: e.target.value })} /></div>
@@ -815,8 +959,8 @@ export default function Eleves() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(null)}>Annuler</Button>
-            <Button onClick={handleSaveEdit} disabled={updateMutation.isPending}>{updateMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}</Button>
+            <Button variant="outline" onClick={() => { setEditing(null); resetPhotoState(); }}>Annuler</Button>
+            <Button onClick={handleSaveEdit} disabled={updateMutation.isPending || uploadingPhoto}>{uploadingPhoto ? 'Upload photo...' : updateMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -914,6 +1058,20 @@ export default function Eleves() {
               <UserX className="mr-2 h-4 w-4" /> Confirmer l'abandon
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Camera Dialog */}
+      <Dialog open={cameraOpen} onOpenChange={v => { if (!v) stopCamera(); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Prendre une photo</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <video ref={cameraRef} autoPlay playsInline muted className="w-full rounded-lg bg-muted aspect-[4/3] object-cover" />
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={capturePhoto}><Camera className="h-4 w-4 mr-1" /> Capturer</Button>
+              <Button variant="outline" onClick={stopCamera}>Annuler</Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
