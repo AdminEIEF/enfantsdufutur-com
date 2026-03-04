@@ -16,6 +16,7 @@ const roleMeta: Record<AppRole, { label: string; color: string }> = {
   cantine: { label: 'Cantine', color: 'bg-orange-600 text-white' },
   librairie: { label: 'Librairie', color: 'bg-teal-600 text-white' },
   coordinateur: { label: 'Coordinateur', color: 'bg-indigo-600 text-white' },
+  robotique: { label: 'Robotique', color: 'bg-violet-600 text-white' },
 };
 
 export function AppLayout({ children }: { children: ReactNode }) {
