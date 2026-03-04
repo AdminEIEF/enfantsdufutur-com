@@ -71,6 +71,8 @@ import CoordinateurDocuments from "./pages/CoordinateurDocuments";
 import Robotique from "./pages/Robotique";
 import RobotiqueDashboard from "./pages/RobotiqueDashboard";
 import StudentEcriture from "./pages/student/StudentEcriture";
+import StudentCalculMental from "./pages/student/StudentCalculMental";
+import StudentCultureGenerale from "./pages/student/StudentCultureGenerale";
 
 const queryClient = new QueryClient();
 
@@ -209,6 +211,8 @@ const App = () => (
             <Route path="/robotique" element={<ProtectedRoute><Robotique /></ProtectedRoute>} />
             <Route path="/robotique-dashboard" element={<ProtectedRoute><RobotiqueDashboard /></ProtectedRoute>} />
             <Route path="/eleve/ecriture" element={<StudentAuthProvider><StudentEcriture /></StudentAuthProvider>} />
+            <Route path="/eleve/calcul" element={<StudentAuthProvider><StudentCalculMental /></StudentAuthProvider>} />
+            <Route path="/eleve/culture" element={<StudentAuthProvider><StudentCultureGenerale /></StudentAuthProvider>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
