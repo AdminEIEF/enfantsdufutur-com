@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle, Camera, Upload } from 'lucide-react';
+import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle, Camera, Upload, Bus } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -168,6 +168,15 @@ export default function Eleves() {
     queryKey: ['familles-all'],
     queryFn: async () => {
       const { data, error } = await supabase.from('familles').select('id, nom_famille').order('nom_famille');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: zonesTransport = [] } = useQuery({
+    queryKey: ['zones-transport-all'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('zones_transport').select('id, nom, prix_mensuel').order('nom');
       if (error) throw error;
       return data;
     },
@@ -835,13 +844,53 @@ export default function Eleves() {
                 <div>
                   <h4 className="font-semibold mb-1">Options</h4>
                   <div className="flex gap-2 flex-wrap">
-                    {selected.transport_zone && <Badge variant="outline">Transport: {selected.transport_zone}</Badge>}
+                    {selected.zone_transport_id && zonesTransport.find((z: any) => z.id === selected.zone_transport_id) && (
+                      <Badge variant="default" className="gap-1"><Bus className="h-3 w-3" />Transport: {zonesTransport.find((z: any) => z.id === selected.zone_transport_id)?.nom}</Badge>
+                    )}
                     {selected.option_cantine && <Badge variant="outline">Cantine</Badge>}
                     {selected.uniforme_scolaire && <Badge variant="outline">Uniforme scolaire</Badge>}
                     {selected.uniforme_sport && <Badge variant="outline">Uniforme sport</Badge>}
                     {selected.uniforme_polo_lacoste && <Badge variant="outline">Polo Lacoste</Badge>}
                     {selected.uniforme_karate && <Badge variant="outline">Karaté</Badge>}
                   </div>
+                </div>
+                <div className="border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Bus className="h-4 w-4 text-muted-foreground" />
+                    <strong className="text-sm">Affecter au transport</strong>
+                  </div>
+                  <div className="flex gap-2 items-end">
+                    <div className="flex-1">
+                      <Label className="text-xs">Zone de transport</Label>
+                      <Select
+                        value={selected.zone_transport_id || 'none'}
+                        onValueChange={async (val) => {
+                          const zoneId = val === 'none' ? null : val;
+                          const { error } = await supabase.from('eleves').update({ zone_transport_id: zoneId }).eq('id', selected.id);
+                          if (error) {
+                            toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+                          } else {
+                            toast({ title: zoneId ? 'Transport assigné' : 'Transport retiré', description: zoneId ? `${selected.prenom} ${selected.nom} a été affecté(e) à la zone sélectionnée.` : `${selected.prenom} ${selected.nom} a été retiré(e) du transport.` });
+                            qc.invalidateQueries({ queryKey: ['eleves-full'] });
+                            qc.invalidateQueries({ queryKey: ['transport-eleves'] });
+                            qc.invalidateQueries({ queryKey: ['transport-card-eleves'] });
+                            setSelected({ ...selected, zone_transport_id: zoneId });
+                          }
+                        }}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Choisir une zone" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Aucun (pas de transport)</SelectItem>
+                          {zonesTransport.map((z: any) => (
+                            <SelectItem key={z.id} value={z.id}>{z.nom} — {Number(z.prix_mensuel).toLocaleString()} GNF/mois</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  {selected.zone_transport_id && (
+                    <p className="text-xs text-muted-foreground">Cet élève apparaîtra dans le module Transport avec sa classe et sa zone.</p>
+                  )}
                 </div>
               </TabsContent>
               <TabsContent value="famille" className="space-y-3 text-sm mt-3">
