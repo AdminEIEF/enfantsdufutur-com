@@ -1,8 +1,9 @@
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Printer, X } from 'lucide-react';
+import { Printer, Download, X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { CARTE_CANTINE_STYLES } from './CarteCantine';
+import html2canvas from 'html2canvas';
 
 interface EleveData {
   id: string;
@@ -101,6 +102,20 @@ export default function PlancheCarteCantine({ eleves, onClose, schoolName, schoo
     setTimeout(() => w.print(), 600);
   };
 
+  const handleDownload = async () => {
+    const el = printRef.current;
+    if (!el) return;
+    try {
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      const link = document.createElement('a');
+      link.download = `planche-cartes-cantine-${eleves.length}-eleves.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error('Download error:', err);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 overflow-auto">
       <div className="no-print sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-3 flex items-center justify-between">
@@ -108,6 +123,9 @@ export default function PlancheCarteCantine({ eleves, onClose, schoolName, schoo
           Planche d'impression A4 — {eleves.length} carte{eleves.length > 1 ? 's' : ''}
         </h2>
         <div className="flex gap-2">
+          <Button onClick={handleDownload} variant="outline" className="gap-2">
+            <Download className="h-4 w-4" /> Télécharger
+          </Button>
           <Button onClick={handlePrint} className="gap-2">
             <Printer className="h-4 w-4" /> Imprimer
           </Button>
@@ -128,6 +146,7 @@ export default function PlancheCarteCantine({ eleves, onClose, schoolName, schoo
                   nom: e.nom, prenom: e.prenom,
                   classe: e.classe, type: 'cantine',
                 });
+                const parentPhone = e.telephone_pere || e.telephone_mere || null;
                 return (
                   <div key={e.id} className="planche-cell">
                     <div className="crop-bl" />
@@ -148,9 +167,17 @@ export default function PlancheCarteCantine({ eleves, onClose, schoolName, schoo
                           <div className="name">{e.prenom} {e.nom}</div>
                           <div className="detail"><span>Matricule :</span> {e.matricule || '—'}</div>
                           <div className="detail"><span>Classe :</span> {e.classe}</div>
+                          {parentPhone && (
+                            <div className="detail"><span>Tél. parent :</span> {parentPhone}</div>
+                          )}
                         </div>
-                        <div className="qr-zone">
-                          <QRCodeSVG value={qrValue} size={52} level="M" />
+                        <div className="qr-zone" style={{ position: 'relative' }}>
+                          <QRCodeSVG value={qrValue} size={68} level="M" />
+                          {schoolLogo && (
+                            <div className="qr-logo">
+                              <img src={schoolLogo} alt="" />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
