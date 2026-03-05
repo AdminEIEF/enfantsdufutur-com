@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Non autorisé" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -22,23 +22,32 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify caller is admin
-    const callerClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    // Verify caller JWT via getClaims (doesn't require active session)
+    const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Non autorisé" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Check superviseur role
-    const { data: roles } = await callerClient.rpc("get_my_roles");
-    const roleList = roles as string[];
-    if (!roleList || (!roleList.includes("superviseur") && !roleList.includes("admin"))) {
+    const callerId = claimsData.claims.sub as string;
+    const callerEmail = claimsData.claims.email as string;
+
+    // Check superviseur/admin role using service role client (bypasses RLS)
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const { data: rolesData } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerId);
+    const roleList = (rolesData || []).map((r: any) => r.role);
+    if (!roleList.includes("superviseur") && !roleList.includes("admin")) {
       return new Response(JSON.stringify({ error: "Accès réservé au superviseur ou administrateur" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -52,8 +61,6 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     // Create user with admin API
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
@@ -88,12 +95,12 @@ Deno.serve(async (req) => {
 
     // Audit log
     await adminClient.from("audit_log").insert({
-      user_id: caller.id,
-      user_email: caller.email,
+      user_id: callerId,
+      user_email: callerEmail,
       action: "CREATE_USER",
       table_name: "auth.users",
       record_id: userId,
-      details: { email, nom, prenom, role, created_by: caller.email },
+      details: { email, nom, prenom, role, created_by: callerEmail },
     });
 
     return new Response(
