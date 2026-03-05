@@ -8,12 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Bus, MapPin, Users, Search, Wallet, CheckCircle, Circle, Download, AlertTriangle } from 'lucide-react';
+import { Bus, MapPin, Users, Search, Wallet, CheckCircle, Circle, Download, AlertTriangle, CreditCard, ScanLine } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { exportToExcel } from '@/lib/excelUtils';
 import { useToast } from '@/hooks/use-toast';
+import CarteTransportEleve from '@/components/CarteTransportEleve';
+import ValidationTransportBus from '@/components/ValidationTransportBus';
 
 const MOIS_SCOLAIRES = [
   'Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -202,6 +204,8 @@ export default function Transport() {
           <TabsTrigger value="zones">Zones & Bus</TabsTrigger>
           <TabsTrigger value="eleves">Élèves</TabsTrigger>
           <TabsTrigger value="suivi">Suivi mensuel</TabsTrigger>
+          <TabsTrigger value="cartes" className="gap-1"><CreditCard className="h-3.5 w-3.5" /> Cartes</TabsTrigger>
+          <TabsTrigger value="validation" className="gap-1"><ScanLine className="h-3.5 w-3.5" /> Validation bus</TabsTrigger>
         </TabsList>
 
         {/* Tab: Zones */}
@@ -442,6 +446,15 @@ export default function Transport() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+        {/* Tab: Cartes transport */}
+        <TabsContent value="cartes" className="mt-4">
+          <CarteTransportEleve zones={zones} />
+        </TabsContent>
+
+        {/* Tab: Validation bus */}
+        <TabsContent value="validation" className="mt-4">
+          <ValidationTransportBus />
         </TabsContent>
       </Tabs>
 

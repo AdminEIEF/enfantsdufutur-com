@@ -2382,6 +2382,47 @@ export type Database = {
           },
         ]
       }
+      recharges_transport: {
+        Row: {
+          actif: boolean
+          created_at: string
+          created_by: string | null
+          date_expiration: string
+          date_recharge: string
+          eleve_id: string
+          id: string
+          montant: number
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          created_by?: string | null
+          date_expiration?: string
+          date_recharge?: string
+          eleve_id: string
+          id?: string
+          montant: number
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          created_by?: string | null
+          date_expiration?: string
+          date_recharge?: string
+          eleve_id?: string
+          id?: string
+          montant?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recharges_transport_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       repas_cantine: {
         Row: {
           created_by: string | null
@@ -2648,6 +2689,61 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      validations_transport: {
+        Row: {
+          eleve_id: string
+          id: string
+          motif_rejet: string | null
+          recharge_id: string | null
+          validated_at: string
+          validated_by: string | null
+          valide: boolean
+          zone_transport_id: string | null
+        }
+        Insert: {
+          eleve_id: string
+          id?: string
+          motif_rejet?: string | null
+          recharge_id?: string | null
+          validated_at?: string
+          validated_by?: string | null
+          valide?: boolean
+          zone_transport_id?: string | null
+        }
+        Update: {
+          eleve_id?: string
+          id?: string
+          motif_rejet?: string | null
+          recharge_id?: string | null
+          validated_at?: string
+          validated_by?: string | null
+          valide?: boolean
+          zone_transport_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validations_transport_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validations_transport_recharge_id_fkey"
+            columns: ["recharge_id"]
+            isOneToOne: false
+            referencedRelation: "recharges_transport"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validations_transport_zone_transport_id_fkey"
+            columns: ["zone_transport_id"]
+            isOneToOne: false
+            referencedRelation: "zones_transport"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ventes_articles: {
         Row: {
