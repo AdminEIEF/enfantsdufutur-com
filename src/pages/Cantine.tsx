@@ -9,11 +9,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ScanLine, Search, Utensils, Wallet, History, QrCode, Plus, AlertTriangle,
-  CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera, FileText
+  CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera, FileText, Printer
 } from 'lucide-react';
 import RapportJournalierPanel from '@/components/RapportJournalierPanel';
 import CarteCantine from '@/components/CarteCantine';
+import PlancheCarteCantine from '@/components/PlancheCarteCantine';
 import QRScannerDialog from '@/components/QRScannerDialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -164,6 +166,23 @@ export default function Cantine() {
   const [activeTab, setActiveTab] = useState('vente');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [carteEleve, setCarteEleve] = useState<any>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [plancheOpen, setPlancheOpen] = useState(false);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((e: any) => e.id)));
+    }
+  };
 
   const { data: repasHistory = [] } = useRepasHistory(historyEleveId);
   const { data: paiementsCantine = [] } = usePaiementsCantine(selectedEleve?.id || historyEleveId);
@@ -557,11 +576,16 @@ export default function Cantine() {
           </Card>
 
           {/* Liste élèves */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 justify-between">
             <div className="relative max-w-sm flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
             </div>
+            {selectedIds.size > 0 && (
+              <Button onClick={() => setPlancheOpen(true)} className="gap-2">
+                <Printer className="h-4 w-4" /> Imprimer la sélection ({selectedIds.size})
+              </Button>
+            )}
           </div>
 
           <Card>
@@ -569,6 +593,9 @@ export default function Cantine() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleAll} />
+                    </TableHead>
                     <TableHead>Élève</TableHead>
                     <TableHead>Classe</TableHead>
                     <TableHead>Solde</TableHead>
@@ -578,11 +605,12 @@ export default function Cantine() {
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Chargement…</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Chargement…</TableCell></TableRow>
                   ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucun élève inscrit à la cantine</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun élève inscrit à la cantine</TableCell></TableRow>
                   ) : filtered.map((e: any) => (
                     <TableRow key={e.id}>
+                      <TableCell><Checkbox checked={selectedIds.has(e.id)} onCheckedChange={() => toggleSelect(e.id)} /></TableCell>
                       <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
                       <TableCell>{e.classes?.nom || '—'}</TableCell>
                       <TableCell>
@@ -960,6 +988,27 @@ export default function Cantine() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Planche A4 */}
+      {plancheOpen && (
+        <PlancheCarteCantine
+          eleves={
+            (eleves || [])
+              .filter((e: any) => selectedIds.has(e.id))
+              .map((e: any) => ({
+                id: e.id,
+                nom: e.nom,
+                prenom: e.prenom,
+                matricule: e.matricule,
+                classe: e.classes?.nom || '—',
+                photo_url: e.photo_url,
+                telephone_pere: e.familles?.telephone_pere,
+                telephone_mere: e.familles?.telephone_mere,
+              }))
+          }
+          onClose={() => setPlancheOpen(false)}
+        />
+      )}
     </div>
   );
 }
