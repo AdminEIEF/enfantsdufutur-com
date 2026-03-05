@@ -1,7 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
-import { Printer } from 'lucide-react';
+import { Printer, Download } from 'lucide-react';
+import html2canvas from 'html2canvas';
 
 export interface CarteCantineProps {
   nom: string;
@@ -63,14 +64,20 @@ export const CARTE_CANTINE_STYLES = `
   }
   .carte-recto .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
   .carte-recto .photo-frame .placeholder { font-size: 8mm; opacity: 0.5; }
-  .carte-recto .info { flex: 1; display: flex; flex-direction: column; gap: 1mm; }
+  .carte-recto .info { flex: 1; display: flex; flex-direction: column; gap: 0.8mm; }
   .carte-recto .info .name { font-size: 3.2mm; font-weight: 700; letter-spacing: 0.1mm; line-height: 1.2; }
-  .carte-recto .info .detail { font-size: 2.2mm; opacity: 0.85; }
+  .carte-recto .info .detail { font-size: 2.1mm; opacity: 0.85; }
   .carte-recto .info .detail span { font-weight: 600; opacity: 1; }
   .carte-recto .qr-zone {
-    width: 16mm; height: 16mm; background: white; border-radius: 1.5mm;
+    width: 20mm; height: 20mm; background: white; border-radius: 1.5mm;
     padding: 1mm; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
   }
+  .carte-recto .qr-zone .qr-logo {
+    position: absolute; width: 5mm; height: 5mm; border-radius: 50%;
+    background: white; display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .carte-recto .qr-zone .qr-logo img { width: 100%; height: 100%; object-fit: cover; }
   .carte-recto .alert-bar {
     background: #fef2f2; color: #991b1b;
     padding: 1.2mm 3mm; font-size: 2mm; font-weight: 700;
@@ -138,6 +145,20 @@ export default function CarteCantine({
     setTimeout(() => w.print(), 400);
   };
 
+  const handleDownload = useCallback(async () => {
+    const el = printRef.current;
+    if (!el) return;
+    try {
+      const canvas = await html2canvas(el, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
+      const link = document.createElement('a');
+      link.download = `carte-cantine-${prenom}-${nom}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error('Download error:', err);
+    }
+  }, [nom, prenom]);
+
   const hasAlerts = (allergies && allergies.length > 0) || regime;
 
   return (
@@ -153,9 +174,14 @@ export default function CarteCantine({
         />
       </div>
       {!hidePrintButton && (
-        <Button onClick={handlePrint} className="gap-2 no-print">
-          <Printer className="h-4 w-4" /> Imprimer la carte
-        </Button>
+        <div className="flex gap-2 no-print">
+          <Button onClick={handlePrint} className="gap-2">
+            <Printer className="h-4 w-4" /> Imprimer
+          </Button>
+          <Button onClick={handleDownload} variant="outline" className="gap-2">
+            <Download className="h-4 w-4" /> Télécharger
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -174,6 +200,8 @@ export function CarteRectoVerso({
   qrValue: string; schoolName?: string; schoolLogo?: string | null;
   hasAlerts?: boolean;
 }) {
+  const parentPhone = telephone_pere || telephone_mere || null;
+
   return (
     <>
       {/* RECTO */}
@@ -193,9 +221,17 @@ export function CarteRectoVerso({
             <div className="name">{prenom} {nom}</div>
             <div className="detail"><span>Matricule :</span> {matricule || '—'}</div>
             <div className="detail"><span>Classe :</span> {classe}</div>
+            {parentPhone && (
+              <div className="detail"><span>Tél. parent :</span> {parentPhone}</div>
+            )}
           </div>
-          <div className="qr-zone">
-            <QRCodeSVG value={qrValue} size={52} level="M" />
+          <div className="qr-zone" style={{ position: 'relative' }}>
+            <QRCodeSVG value={qrValue} size={68} level="M" />
+            {schoolLogo && (
+              <div className="qr-logo">
+                <img src={schoolLogo} alt="" />
+              </div>
+            )}
           </div>
         </div>
         {hasAlerts && (
