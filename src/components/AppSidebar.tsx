@@ -19,6 +19,7 @@ const navSections = [
     roles: ['admin', 'secretaire', 'service_info', 'comptable', 'superviseur'] as const,
     items: [
       { title: 'Tableau de bord', url: '/dashboard', icon: Home },
+      { title: 'Notifications', url: '/notifications', icon: Bell },
     ],
   },
   {
@@ -66,7 +67,6 @@ const navSections = [
     roles: ['admin', 'secretaire', 'chauffeur'] as const,
     items: [
       { title: 'Transport', url: '/transport', icon: Bus },
-      { title: 'Notifications', url: '/notifications', icon: Bell },
     ],
   },
   {

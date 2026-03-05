@@ -603,9 +603,11 @@ export default function Cantine() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-10">
-                      <Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleAll} />
-                    </TableHead>
+                    {isAdmin && (
+                      <TableHead className="w-10">
+                        <Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleAll} />
+                      </TableHead>
+                    )}
                     <TableHead>Élève</TableHead>
                     <TableHead>Classe</TableHead>
                     <TableHead>Solde</TableHead>
@@ -620,7 +622,7 @@ export default function Cantine() {
                     <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun élève inscrit à la cantine</TableCell></TableRow>
                   ) : filtered.map((e: any) => (
                     <TableRow key={e.id}>
-                      <TableCell><Checkbox checked={selectedIds.has(e.id)} onCheckedChange={() => toggleSelect(e.id)} /></TableCell>
+                      {isAdmin && <TableCell><Checkbox checked={selectedIds.has(e.id)} onCheckedChange={() => toggleSelect(e.id)} /></TableCell>}
                       <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
                       <TableCell>{e.classes?.nom || '—'}</TableCell>
                       <TableCell>
