@@ -14,6 +14,7 @@ import {
 import RapportJournalierPanel from '@/components/RapportJournalierPanel';
 import CarteCantine from '@/components/CarteCantine';
 import PlancheCarteCantine from '@/components/PlancheCarteCantine';
+import BordereauRemiseCartes from '@/components/BordereauRemiseCartes';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,7 +44,7 @@ function useElevesCantine() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, solde_cantine, option_cantine, qr_code, statut, photo_url, classes(nom), familles(telephone_pere, telephone_mere)')
+        .select('id, nom, prenom, matricule, solde_cantine, option_cantine, qr_code, statut, photo_url, transport_zone, classes(nom), familles(telephone_pere, telephone_mere)')
         .is('deleted_at', null)
         .order('nom');
       if (error) throw error;
@@ -168,6 +169,7 @@ export default function Cantine() {
   const [carteEleve, setCarteEleve] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [plancheOpen, setPlancheOpen] = useState(false);
+  const [bordereauOpen, setBordereauOpen] = useState(false);
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
@@ -582,9 +584,14 @@ export default function Cantine() {
               <Input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
             </div>
             {selectedIds.size > 0 && (
-              <Button onClick={() => setPlancheOpen(true)} className="gap-2">
-                <Printer className="h-4 w-4" /> Imprimer la sélection ({selectedIds.size})
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => setPlancheOpen(true)} className="gap-2">
+                  <Printer className="h-4 w-4" /> Imprimer cartes ({selectedIds.size})
+                </Button>
+                <Button onClick={() => setBordereauOpen(true)} variant="outline" className="gap-2">
+                  <FileText className="h-4 w-4" /> Bordereau ({selectedIds.size})
+                </Button>
+              </div>
             )}
           </div>
 
@@ -1007,6 +1014,25 @@ export default function Cantine() {
               }))
           }
           onClose={() => setPlancheOpen(false)}
+        />
+      )}
+
+      {bordereauOpen && (
+        <BordereauRemiseCartes
+          eleves={
+            (eleves || [])
+              .filter((e: any) => selectedIds.has(e.id))
+              .map((e: any) => ({
+                id: e.id,
+                nom: e.nom,
+                prenom: e.prenom,
+                matricule: e.matricule,
+                classe: e.classes?.nom || '—',
+                option_cantine: e.option_cantine,
+                transport_zone: e.transport_zone,
+              }))
+          }
+          onClose={() => setBordereauOpen(false)}
         />
       )}
     </div>
