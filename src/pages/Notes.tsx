@@ -9,7 +9,8 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BookOpen, Save, CheckCircle, Circle, ChevronRight, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { BookOpen, Save, CheckCircle, Circle, ChevronRight, AlertTriangle, Eye, EyeOff, FileSpreadsheet } from 'lucide-react';
+import ImportNotesExcel from '@/components/ImportNotesExcel';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -21,6 +22,7 @@ export default function Notes() {
   const [periodeId, setPeriodeId] = useState('');
   const [selectedEleveId, setSelectedEleveId] = useState<string | null>(null);
   const [notesMap, setNotesMap] = useState<Record<string, string>>({});
+  const [importOpen, setImportOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: cycles = [] } = useQuery({
@@ -210,9 +212,14 @@ export default function Notes() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-        <BookOpen className="h-7 w-7 text-primary" /> Saisie des Notes
-      </h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <BookOpen className="h-7 w-7 text-primary" /> Saisie des Notes
+        </h1>
+        <Button variant="outline" onClick={() => setImportOpen(true)}>
+          <FileSpreadsheet className="h-4 w-4 mr-2" /> Importer Excel
+        </Button>
+      </div>
 
       {/* Filters */}
       <Card>
@@ -406,6 +413,11 @@ export default function Notes() {
           </Button>
         </DialogContent>
       </Dialog>
+      <ImportNotesExcel
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImportDone={() => queryClient.invalidateQueries({ queryKey: ['all-notes-period'] })}
+      />
     </div>
   );
 }
