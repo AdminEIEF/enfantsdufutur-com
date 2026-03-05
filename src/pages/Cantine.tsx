@@ -18,6 +18,7 @@ import BordereauRemiseCartes from '@/components/BordereauRemiseCartes';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
@@ -150,6 +151,8 @@ const CHART_COLORS = [
 
 export default function Cantine() {
   const qc = useQueryClient();
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole('admin') || hasRole('superviseur');
   const { data: eleves = [], isLoading } = useElevesCantine();
   const { data: plats = [] } = usePlatsCantine();
   const { data: repasToday = [] } = useRepasToday();
@@ -583,7 +586,7 @@ export default function Cantine() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
             </div>
-            {selectedIds.size > 0 && (
+            {selectedIds.size > 0 && isAdmin && (
               <div className="flex gap-2">
                 <Button onClick={() => setPlancheOpen(true)} className="gap-2">
                   <Printer className="h-4 w-4" /> Imprimer cartes ({selectedIds.size})
@@ -644,9 +647,11 @@ export default function Cantine() {
                           <Button variant="ghost" size="sm" onClick={() => { setHistoryEleveId(e.id); setHistoryOpen(true); }}>
                             <History className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => setCarteEleve(e)} title="Carte cantine">
-                            <CreditCard className="h-4 w-4" />
-                          </Button>
+                          {isAdmin && (
+                            <Button variant="ghost" size="sm" onClick={() => setCarteEleve(e)} title="Carte cantine">
+                              <CreditCard className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

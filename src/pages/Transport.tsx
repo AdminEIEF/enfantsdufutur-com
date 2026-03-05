@@ -14,6 +14,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { exportToExcel } from '@/lib/excelUtils';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import CarteTransportEleve from '@/components/CarteTransportEleve';
 import ValidationTransportBus from '@/components/ValidationTransportBus';
 
@@ -27,6 +28,8 @@ const COLORS = [
 ];
 
 export default function Transport() {
+  const { hasRole } = useAuth();
+  const isChauffeur = hasRole('chauffeur') && !hasRole('admin') && !hasRole('secretaire');
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -152,6 +155,7 @@ export default function Transport() {
       </h1>
 
       {/* KPIs */}
+      {!isChauffeur && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -198,7 +202,14 @@ export default function Transport() {
           </CardContent>
         </Card>
       </div>
+      )}
 
+      {isChauffeur ? (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2"><ScanLine className="h-5 w-5" /> Validation bus</h2>
+          <ValidationTransportBus />
+        </div>
+      ) : (
       <Tabs defaultValue="zones">
         <TabsList>
           <TabsTrigger value="zones">Zones & Bus</TabsTrigger>
@@ -457,6 +468,7 @@ export default function Transport() {
           <ValidationTransportBus />
         </TabsContent>
       </Tabs>
+      )}
 
       {/* Quick pay dialog */}
       <Dialog open={!!quickPay} onOpenChange={() => setQuickPay(null)}>

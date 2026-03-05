@@ -23,6 +23,7 @@ const ROLE_LABELS: Record<string, string> = {
   librairie: 'Librairie',
   coordinateur: 'Coordinateur',
   robotique: 'Robotique',
+  chauffeur: 'Chauffeur de Bus',
 };
 
 const ROLE_COLORS: Record<string, string> = {
@@ -36,6 +37,7 @@ const ROLE_COLORS: Record<string, string> = {
   librairie: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
   coordinateur: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
   robotique: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+  chauffeur: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
 };
 
 export default function AdminUserManagement() {
