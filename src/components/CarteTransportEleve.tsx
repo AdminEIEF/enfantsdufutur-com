@@ -1,15 +1,16 @@
 import { useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Bus, CreditCard, Download, Printer, Search, Wallet, RefreshCw } from 'lucide-react';
+import { Bus, CreditCard, Download, Printer, Search, Wallet, RefreshCw, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useState, useMemo } from 'react';
 import html2canvas from 'html2canvas';
@@ -21,6 +22,7 @@ interface CarteTransportEleveProps {
 export default function CarteTransportEleve({ zones }: CarteTransportEleveProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: schoolConfig } = useSchoolConfig();
   const [search, setSearch] = useState('');
   const [filterZone, setFilterZone] = useState('all');
   const [rechargeDialog, setRechargeDialog] = useState<any>(null);
@@ -33,7 +35,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, classe_id, classes(nom), zone_transport_id, zones_transport:zone_transport_id(id, nom, prix_mensuel, chauffeur_bus)')
+        .select('id, nom, prenom, matricule, classe_id, photo_url, classes(nom), zone_transport_id, zones_transport:zone_transport_id(id, nom, prix_mensuel, chauffeur_bus)')
         .not('zone_transport_id', 'is', null)
         .eq('statut', 'inscrit')
         .order('nom');
@@ -68,7 +70,12 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         montant,
         actif: true,
       } as any);
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes('déjà été rechargé')) {
+          throw new Error('Cet élève a déjà été rechargé pour ce mois.');
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recharges-transport'] });
@@ -87,6 +94,15 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     );
   };
 
+  const hasRechargeThisMonth = (eleveId: string) => {
+    const now = new Date();
+    return recharges.some(
+      (r: any) => r.eleve_id === eleveId &&
+        new Date(r.date_recharge).getMonth() === now.getMonth() &&
+        new Date(r.date_recharge).getFullYear() === now.getFullYear()
+    );
+  };
+
   const getDaysRemaining = (dateExpiration: string) => {
     const diff = new Date(dateExpiration).getTime() - new Date().getTime();
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
@@ -102,7 +118,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
 
   const exportCard = async () => {
     if (!cardRef.current) return;
-    const canvas = await html2canvas(cardRef.current, { scale: 3, useCORS: true });
+    const canvas = await html2canvas(cardRef.current, { scale: 4, useCORS: true, backgroundColor: null });
     const link = document.createElement('a');
     link.download = `carte_transport_${printCard?.matricule || 'eleve'}.png`;
     link.href = canvas.toDataURL('image/png');
@@ -193,6 +209,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
               ) : filteredEleves.map((e: any) => {
                 const recharge = getActiveRecharge(e.id);
                 const jours = recharge ? getDaysRemaining(recharge.date_expiration) : 0;
+                const alreadyThisMonth = hasRechargeThisMonth(e.id);
                 return (
                   <TableRow key={e.id}>
                     <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
@@ -213,11 +230,17 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-1 justify-end">
-                        <Button size="sm" variant="outline" onClick={() => {
-                          setRechargeDialog(e);
-                          setMontantRecharge(String((e.zones_transport as any)?.prix_mensuel || 0));
-                        }}>
-                          <Wallet className="h-3 w-3 mr-1" /> Recharger
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={alreadyThisMonth}
+                          title={alreadyThisMonth ? 'Déjà rechargé ce mois' : ''}
+                          onClick={() => {
+                            setRechargeDialog(e);
+                            setMontantRecharge(String((e.zones_transport as any)?.prix_mensuel || 0));
+                          }}
+                        >
+                          <Wallet className="h-3 w-3 mr-1" /> {alreadyThisMonth ? 'Rechargé' : 'Recharger'}
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => setPrintCard({ ...e, recharge })}>
                           <Printer className="h-3 w-3" />
@@ -243,6 +266,11 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 <p><strong>Zone :</strong> {(rechargeDialog.zones_transport as any)?.nom}</p>
                 <p><strong>Validité :</strong> 30 jours à partir d'aujourd'hui</p>
               </div>
+              {hasRechargeThisMonth(rechargeDialog.id) && (
+                <div className="bg-warning/10 border border-warning/30 rounded-md p-3 text-sm text-warning-foreground">
+                  ⚠️ Cet élève a déjà été rechargé ce mois-ci. Une seule recharge par mois est autorisée.
+                </div>
+              )}
               <div>
                 <label className="text-sm font-medium">Montant (GNF)</label>
                 <Input type="number" value={montantRecharge} onChange={e => setMontantRecharge(e.target.value)} />
@@ -250,7 +278,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => setRechargeDialog(null)}>Annuler</Button>
                 <Button
-                  disabled={rechargeMutation.isPending || !montantRecharge}
+                  disabled={rechargeMutation.isPending || !montantRecharge || hasRechargeThisMonth(rechargeDialog.id)}
                   onClick={() => rechargeMutation.mutate({ eleveId: rechargeDialog.id, montant: Number(montantRecharge) })}
                 >
                   {rechargeMutation.isPending ? 'En cours…' : 'Confirmer la recharge'}
@@ -261,48 +289,199 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         </DialogContent>
       </Dialog>
 
-      {/* Dialog impression carte */}
+      {/* Dialog impression carte PVC */}
       <Dialog open={!!printCard} onOpenChange={() => setPrintCard(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Carte de transport</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Carte de transport scolaire</DialogTitle></DialogHeader>
           {printCard && (
             <div className="space-y-4">
-              <div ref={cardRef} className="bg-gradient-to-br from-primary/90 to-primary rounded-xl p-5 text-primary-foreground mx-auto" style={{ width: 340, minHeight: 200 }}>
-                <div className="flex items-center gap-2 mb-3 border-b border-primary-foreground/20 pb-2">
-                  <Bus className="h-6 w-6" />
-                  <div>
-                    <p className="font-bold text-sm">CARTE DE TRANSPORT</p>
-                    <p className="text-[10px] opacity-80">Rechargeable • 30 jours</p>
+              {/* PVC Card — 85.6mm x 54mm ratio = ~1.585 */}
+              <div
+                ref={cardRef}
+                className="relative mx-auto overflow-hidden"
+                style={{
+                  width: 400,
+                  height: 252,
+                  borderRadius: 14,
+                  fontFamily: "'Inter', 'Space Grotesk', sans-serif",
+                  background: '#FFFFFF',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.13)',
+                }}
+              >
+                {/* Background wave shape */}
+                <svg
+                  className="absolute bottom-0 left-0 w-full"
+                  viewBox="0 0 400 90"
+                  preserveAspectRatio="none"
+                  style={{ height: 90 }}
+                >
+                  <path
+                    d="M0,40 C80,0 160,70 240,35 C300,10 360,50 400,25 L400,90 L0,90 Z"
+                    fill="#87CEEB"
+                    opacity="0.35"
+                  />
+                  <path
+                    d="M0,55 C60,30 140,75 220,50 C290,30 350,65 400,40 L400,90 L0,90 Z"
+                    fill="#5BA3D9"
+                    opacity="0.25"
+                  />
+                </svg>
+
+                {/* Bus watermark */}
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-[0.06]">
+                  <svg width="140" height="90" viewBox="0 0 140 90" fill="none">
+                    <rect x="10" y="15" width="110" height="50" rx="8" fill="#F59E0B" />
+                    <rect x="15" y="22" width="22" height="18" rx="3" fill="#FDE68A" />
+                    <rect x="42" y="22" width="22" height="18" rx="3" fill="#FDE68A" />
+                    <rect x="69" y="22" width="22" height="18" rx="3" fill="#FDE68A" />
+                    <rect x="96" y="22" width="18" height="18" rx="3" fill="#FDE68A" />
+                    <rect x="5" y="45" width="120" height="8" rx="2" fill="#D97706" />
+                    <circle cx="35" cy="70" r="10" fill="#374151" />
+                    <circle cx="35" cy="70" r="5" fill="#9CA3AF" />
+                    <circle cx="95" cy="70" r="10" fill="#374151" />
+                    <circle cx="95" cy="70" r="5" fill="#9CA3AF" />
+                    <rect x="110" y="30" width="15" height="12" rx="2" fill="#EF4444" />
+                    <text x="65" y="42" textAnchor="middle" fontSize="8" fill="#92400E" fontWeight="bold">SCHOOL BUS</text>
+                  </svg>
+                </div>
+
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 pt-3 pb-1 relative z-10">
+                  <div className="flex items-center gap-2">
+                    {schoolConfig?.logo_url ? (
+                      <img
+                        src={schoolConfig.logo_url}
+                        alt="Logo"
+                        className="h-8 w-8 rounded-full object-cover"
+                        crossOrigin="anonymous"
+                      />
+                    ) : (
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Bus className="h-4 w-4 text-primary" />
+                      </div>
+                    )}
+                    <div className="leading-none">
+                      <p style={{ fontSize: 7, color: '#6B7280', fontWeight: 500 }}>
+                        {schoolConfig?.nom || 'École'}
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    className="flex items-center gap-1 px-3 py-1 rounded-full"
+                    style={{ background: '#FCD34D', fontSize: 8, fontWeight: 700, color: '#92400E' }}
+                  >
+                    <Bus style={{ width: 10, height: 10 }} />
+                    TRANSPORT SCOLAIRE
                   </div>
                 </div>
-                <div className="flex gap-3">
-                  <div className="flex-1 space-y-1.5">
-                    <p className="text-lg font-bold leading-tight">{printCard.prenom} {printCard.nom}</p>
-                    <p className="text-xs opacity-80">Matricule : {printCard.matricule || '—'}</p>
-                    <p className="text-xs opacity-80">Classe : {printCard.classes?.nom || '—'}</p>
-                    <p className="text-xs opacity-80">Zone : {(printCard.zones_transport as any)?.nom || '—'}</p>
-                    <div className="mt-2 pt-2 border-t border-primary-foreground/20">
+
+                {/* Body */}
+                <div className="flex gap-3 px-4 pt-2 relative z-10" style={{ height: 140 }}>
+                  {/* Photo */}
+                  <div
+                    className="flex-shrink-0 rounded-lg overflow-hidden bg-muted border"
+                    style={{
+                      width: 72,
+                      height: 90,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                    }}
+                  >
+                    {printCard.photo_url ? (
+                      <img
+                        src={printCard.photo_url}
+                        alt="Photo"
+                        className="w-full h-full object-cover"
+                        crossOrigin="anonymous"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground" style={{ fontSize: 10 }}>
+                        Photo
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 flex flex-col justify-between py-0.5">
+                    <div>
+                      <p style={{ fontSize: 16, fontWeight: 800, color: '#1F2937', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+                        {printCard.prenom} {printCard.nom}
+                      </p>
+                      <div className="flex gap-3 mt-1.5">
+                        <div>
+                          <p style={{ fontSize: 7, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Matricule</p>
+                          <p style={{ fontSize: 10, fontWeight: 600, color: '#374151', fontFamily: 'monospace' }}>{printCard.matricule || '—'}</p>
+                        </div>
+                        <div>
+                          <p style={{ fontSize: 7, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Classe</p>
+                          <p style={{ fontSize: 10, fontWeight: 600, color: '#374151' }}>{printCard.classes?.nom || '—'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Zone / Ligne */}
+                    <div
+                      className="flex items-center gap-1 rounded-md px-2 py-1 mt-1"
+                      style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', width: 'fit-content' }}
+                    >
+                      <MapPin style={{ width: 10, height: 10, color: '#3B82F6' }} />
+                      <span style={{ fontSize: 9, fontWeight: 600, color: '#1E40AF' }}>
+                        LIGNE : {(printCard.zones_transport as any)?.nom || '—'}
+                      </span>
+                    </div>
+
+                    {/* Validity */}
+                    <div className="mt-1">
                       {printCard.recharge ? (
-                        <>
-                          <p className="text-[10px] opacity-70">Expire le</p>
-                          <p className="text-sm font-bold">{new Date(printCard.recharge.date_expiration).toLocaleDateString('fr-FR')}</p>
-                        </>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="rounded-full px-2 py-0.5"
+                            style={{ background: '#D1FAE5', fontSize: 7, fontWeight: 600, color: '#065F46' }}
+                          >
+                            ● ACTIVE
+                          </div>
+                          <span style={{ fontSize: 8, color: '#6B7280' }}>
+                            Expire le {new Date(printCard.recharge.date_expiration).toLocaleDateString('fr-FR')}
+                          </span>
+                        </div>
                       ) : (
-                        <p className="text-xs font-bold text-warning">NON RECHARGÉE</p>
+                        <div
+                          className="rounded-full px-2 py-0.5"
+                          style={{ background: '#FEE2E2', fontSize: 7, fontWeight: 700, color: '#991B1B', width: 'fit-content' }}
+                        >
+                          NON RECHARGÉE
+                        </div>
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="bg-white rounded-lg p-1.5">
+
+                  {/* QR Code */}
+                  <div className="flex-shrink-0 flex flex-col items-center justify-center">
+                    <div
+                      className="bg-white rounded-lg p-1.5"
+                      style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.1)', border: '2px solid #E5E7EB' }}
+                    >
                       <QRCodeCanvas
                         value={JSON.stringify({ type: 'transport', matricule: printCard.matricule, id: printCard.id })}
-                        size={80}
+                        size={70}
                         level="M"
+                        includeMargin={false}
                       />
                     </div>
+                    <p style={{ fontSize: 6, color: '#9CA3AF', marginTop: 3 }}>Scanner pour valider</p>
                   </div>
                 </div>
+
+                {/* Footer */}
+                <div className="absolute bottom-1.5 left-4 right-4 flex justify-between items-center z-10">
+                  <p style={{ fontSize: 6, color: '#9CA3AF' }}>
+                    {schoolConfig?.ville || 'Conakry, Guinée'} • Année scolaire 2025-2026
+                  </p>
+                  <p style={{ fontSize: 6, color: '#9CA3AF' }}>
+                    Carte rechargeable • 30 jours
+                  </p>
+                </div>
               </div>
+
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => setPrintCard(null)}>Fermer</Button>
                 <Button onClick={exportCard}>
