@@ -154,7 +154,7 @@ export default function QRScannerDialog({ open, onOpenChange, onScan, title = 'S
         await html5QrCode.start(
           cameraConfig,
           {
-            fps: 15,
+            fps: 25,
             qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
               const minDim = Math.min(viewfinderWidth, viewfinderHeight);
               const size = Math.floor(minDim * 0.7);
@@ -201,7 +201,7 @@ export default function QRScannerDialog({ open, onOpenChange, onScan, title = 'S
       }
     };
 
-    const timer = setTimeout(startScanner, 300);
+    const timer = setTimeout(startScanner, 100);
 
     return () => {
       cancelled = true;
