@@ -63,7 +63,7 @@ const navSections = [
   },
   {
     label: 'Services',
-    roles: ['admin', 'secretaire'] as const,
+    roles: ['admin', 'secretaire', 'chauffeur'] as const,
     items: [
       { title: 'Transport', url: '/transport', icon: Bus },
       { title: 'Notifications', url: '/notifications', icon: Bell },
@@ -144,7 +144,7 @@ export function AppSidebar() {
       <SidebarSeparator />
       <SidebarContent>
         {navSections.map((section) => {
-          if (!hasAnyRole(section.roles as unknown as ('superviseur' | 'admin' | 'secretaire' | 'service_info' | 'comptable' | 'boutique' | 'cantine' | 'librairie' | 'coordinateur')[])) return null;
+          if (!hasAnyRole(section.roles as unknown as ('superviseur' | 'admin' | 'secretaire' | 'service_info' | 'comptable' | 'boutique' | 'cantine' | 'librairie' | 'coordinateur' | 'chauffeur')[])) return null;
           return (
             <SidebarGroup key={section.label}>
               <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
