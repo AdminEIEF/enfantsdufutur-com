@@ -351,6 +351,35 @@ export default function Dashboard() {
         </p>
       </div>
 
+      {/* Scan result banner */}
+      {scanResult && (
+        <Card className="border-primary/30 bg-primary/5 animate-in fade-in slide-in-from-top-2">
+          <CardContent className="pt-4 pb-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ScanBarcode className="h-6 w-6 text-primary" />
+              <div>
+                <p className="font-semibold">{scanResult.prenom} {scanResult.nom}</p>
+                <p className="text-sm text-muted-foreground">
+                  {scanResult.matricule} — {(scanResult as any).classes?.nom || 'N/A'} — {(scanResult as any).classes?.niveaux?.nom || ''}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant={scanResult.statut === 'actif' ? 'default' : 'destructive'}>{scanResult.statut}</Badge>
+              <button onClick={() => setScanResult(null)} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Floating scan indicator */}
+      <div className="fixed bottom-4 right-4 z-50 pointer-events-none">
+        <div className="flex items-center gap-2 bg-muted/80 backdrop-blur rounded-full px-3 py-1.5 text-xs text-muted-foreground">
+          <ScanBarcode className="h-3.5 w-3.5" />
+          Scanner actif
+        </div>
+      </div>
+
       {roles.length === 0 && (
         <Card className="border-warning/30 bg-warning/5">
           <CardContent className="pt-6">
