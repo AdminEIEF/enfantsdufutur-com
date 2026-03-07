@@ -1,17 +1,48 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, UserPlus, CreditCard, BookOpen, GraduationCap, TrendingUp, Utensils, AlertTriangle, Wallet, ArrowUpRight, ArrowDownRight, DollarSign, UserX } from 'lucide-react';
+import { Users, UserPlus, CreditCard, BookOpen, GraduationCap, TrendingUp, Utensils, AlertTriangle, Wallet, ArrowUpRight, ArrowDownRight, DollarSign, UserX, ScanBarcode } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { DashboardImpayesSection } from '@/components/DashboardImpayesSection';
 import { DashboardRecouvrementSection } from '@/components/DashboardRecouvrementSection';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { toast } from 'sonner';
 
 export default function Dashboard() {
   const { roles } = useAuth();
+  const navigate = useNavigate();
+  const [scanResult, setScanResult] = useState<any>(null);
+
+  const handleSearchStudent = useCallback(async (matricule: string) => {
+    toast.info(`🔍 Recherche: ${matricule}...`);
+    try {
+      const { data, error } = await supabase
+        .from('eleves')
+        .select('id, nom, prenom, matricule, qr_code, statut, classe_id, classes(nom, niveaux:niveau_id(nom))')
+        .is('deleted_at', null)
+        .or(`matricule.eq.${matricule},qr_code.eq.${matricule}`)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setScanResult(data);
+        toast.success(`✅ ${data.prenom} ${data.nom} — ${(data as any).classes?.nom || ''}`);
+      } else {
+        setScanResult(null);
+        toast.error(`Aucun élève trouvé pour "${matricule}"`);
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur de recherche');
+    }
+  }, []);
+
+  useBarcodeScanner({ onScan: handleSearchStudent });
 
   const { data: eleves = [] } = useQuery({
     queryKey: ['dashboard-eleves'],
@@ -318,6 +349,35 @@ export default function Dashboard() {
         <p className="text-muted-foreground mt-1">
           Bienvenue sur EduGestion Pro — Rôle(s) : {roles.length > 0 ? roles.join(', ') : 'Aucun rôle assigné'}
         </p>
+      </div>
+
+      {/* Scan result banner */}
+      {scanResult && (
+        <Card className="border-primary/30 bg-primary/5 animate-in fade-in slide-in-from-top-2">
+          <CardContent className="pt-4 pb-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ScanBarcode className="h-6 w-6 text-primary" />
+              <div>
+                <p className="font-semibold">{scanResult.prenom} {scanResult.nom}</p>
+                <p className="text-sm text-muted-foreground">
+                  {scanResult.matricule} — {(scanResult as any).classes?.nom || 'N/A'} — {(scanResult as any).classes?.niveaux?.nom || ''}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant={scanResult.statut === 'actif' ? 'default' : 'destructive'}>{scanResult.statut}</Badge>
+              <button onClick={() => setScanResult(null)} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Floating scan indicator */}
+      <div className="fixed bottom-4 right-4 z-50 pointer-events-none">
+        <div className="flex items-center gap-2 bg-muted/80 backdrop-blur rounded-full px-3 py-1.5 text-xs text-muted-foreground">
+          <ScanBarcode className="h-3.5 w-3.5" />
+          Scanner actif
+        </div>
       </div>
 
       {roles.length === 0 && (
