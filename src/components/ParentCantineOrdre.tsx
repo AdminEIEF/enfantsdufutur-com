@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { UtensilsCrossed, Loader2, QrCode, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -18,7 +18,7 @@ interface Props {
 
 export default function ParentCantineOrdre({ enfants, code, onSuccess }: Props) {
   const [open, setOpen] = useState(false);
-  const [eleveId, setEleveId] = useState(enfants.length === 1 ? enfants[0]?.id || '' : '');
+  const [selectedIds, setSelectedIds] = useState<string[]>(enfants.length === 1 ? [enfants[0]?.id || ''] : []);
   const [montant, setMontant] = useState('');
   const [loading, setLoading] = useState(false);
   const [ordres, setOrdres] = useState<any[]>([]);
@@ -51,27 +51,45 @@ export default function ParentCantineOrdre({ enfants, code, onSuccess }: Props) 
     fetchOrdres();
   }, []);
 
+  const toggleChild = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const selectAll = () => {
+    if (selectedIds.length === enfants.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(enfants.map(e => e.id));
+    }
+  };
+
   const handleCreate = async () => {
-    if (!eleveId || !montant || Number(montant) <= 0) {
-      toast.error('Veuillez sélectionner un enfant et saisir un montant');
+    if (selectedIds.length === 0 || !montant || Number(montant) <= 0) {
+      toast.error('Veuillez sélectionner au moins un enfant et saisir un montant');
       return;
     }
     setLoading(true);
     try {
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cantine-ordre`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ action: 'create_ordre', code, eleve_id: eleveId, montant: Number(montant) }),
-        }
-      );
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error);
-      toast.success('Ordre de rechargement créé ! Présentez-vous à la caisse avec le code.');
+      // Create one order per selected child
+      for (const eleveId of selectedIds) {
+        const resp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cantine-ordre`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ action: 'create_ordre', code, eleve_id: eleveId, montant: Number(montant) }),
+          }
+        );
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error);
+      }
+      const count = selectedIds.length;
+      toast.success(`${count} ordre(s) de rechargement créé(s) ! Présentez-vous à la caisse avec le code.`);
       setMontant('');
       setOpen(false);
       fetchOrdres();
@@ -88,6 +106,8 @@ export default function ParentCantineOrdre({ enfants, code, onSuccess }: Props) 
     valide: { label: 'Validé', icon: CheckCircle, className: 'bg-green-100 text-green-800 border-green-300' },
     annule: { label: 'Annulé', icon: XCircle, className: 'bg-red-100 text-red-800 border-red-300' },
   };
+
+  const totalRecharge = selectedIds.length * Number(montant || 0);
 
   return (
     <div className="space-y-3 sm:space-y-4">
@@ -108,35 +128,47 @@ export default function ParentCantineOrdre({ enfants, code, onSuccess }: Props) 
                 Rechargement Cantine
               </DialogTitle>
               <DialogDescription className="text-xs sm:text-sm">
-                Créez un ordre de rechargement. Présentez-vous ensuite à la caisse avec le code.
+                Sélectionnez un ou plusieurs enfants et saisissez le montant par enfant.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 sm:space-y-4">
-              {enfants.length > 1 ? (
-                <div className="space-y-1.5 sm:space-y-2">
-                  <Label className="text-xs sm:text-sm">Enfant concerné</Label>
-                  <Select value={eleveId} onValueChange={setEleveId}>
-                    <SelectTrigger className="text-xs sm:text-sm h-9 sm:h-10">
-                      <SelectValue placeholder="Sélectionner un enfant" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {enfants.map(e => (
-                        <SelectItem key={e.id} value={e.id} className="text-xs sm:text-sm">
-                          {e.prenom} {e.nom} — {(e.solde_cantine || 0).toLocaleString()} GNF
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : enfants[0] ? (
-                <div className="bg-muted/50 rounded-lg p-2.5 sm:p-3">
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Élève</p>
-                  <p className="font-semibold text-sm">{enfants[0].prenom} {enfants[0].nom}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Solde: {(enfants[0].solde_cantine || 0).toLocaleString()} GNF</p>
-                </div>
-              ) : null}
+              {/* Multi-child selection */}
               <div className="space-y-1.5 sm:space-y-2">
-                <Label className="text-xs sm:text-sm">Montant à recharger (GNF)</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs sm:text-sm">Enfant(s) à recharger</Label>
+                  {enfants.length > 1 && (
+                    <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={selectAll}>
+                      {selectedIds.length === enfants.length ? 'Tout désélectionner' : 'Tout sélectionner'}
+                    </Button>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  {enfants.map(e => (
+                    <label
+                      key={e.id}
+                      className={`flex items-center gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                        selectedIds.includes(e.id)
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:bg-muted/50'
+                      }`}
+                    >
+                      <Checkbox
+                        checked={selectedIds.includes(e.id)}
+                        onCheckedChange={() => toggleChild(e.id)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{e.prenom} {e.nom}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">
+                          Solde: {(e.solde_cantine || 0).toLocaleString()} GNF
+                        </p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label className="text-xs sm:text-sm">Montant par enfant (GNF)</Label>
                 <Input
                   type="number"
                   placeholder="Ex: 100000"
@@ -145,10 +177,15 @@ export default function ParentCantineOrdre({ enfants, code, onSuccess }: Props) 
                   min={1000}
                   className="h-9 sm:h-10 text-sm"
                 />
+                {selectedIds.length > 1 && Number(montant) > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Total: <span className="font-bold text-primary">{totalRecharge.toLocaleString()} GNF</span> ({selectedIds.length} × {Number(montant).toLocaleString()} GNF)
+                  </p>
+                )}
               </div>
               <Button onClick={handleCreate} disabled={loading} className="w-full h-9 sm:h-10 text-xs sm:text-sm">
                 {loading ? <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 animate-spin" /> : <QrCode className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />}
-                Créer l'ordre de rechargement
+                Recharger {selectedIds.length > 1 ? `${selectedIds.length} enfants` : ''}
               </Button>
             </div>
           </DialogContent>
@@ -157,7 +194,7 @@ export default function ParentCantineOrdre({ enfants, code, onSuccess }: Props) 
 
       {/* Soldes actuels */}
       <div className="grid grid-cols-2 gap-2">
-        {enfants.filter(e => e.option_cantine).map(e => (
+        {enfants.map(e => (
           <Card key={e.id} className="border-primary/20">
             <CardContent className="pt-2.5 sm:pt-3 pb-2 px-3 sm:px-6">
               <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{e.prenom} {e.nom}</p>
