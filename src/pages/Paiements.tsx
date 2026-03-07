@@ -9,8 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Printer, Download, Upload, Users, Landmark, Calendar, FileImage, UtensilsCrossed, XCircle, ShoppingCart, Package } from 'lucide-react';
+import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Printer, Download, Upload, Users, Landmark, Calendar, FileImage, UtensilsCrossed, XCircle, ShoppingCart, Package, QrCode } from 'lucide-react';
 import CantineDirectePanel from '@/components/CantineDirectePanel';
+import QRScannerDialog from '@/components/QRScannerDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -109,8 +110,37 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
   const [dateDepot, setDateDepot] = useState('');
   const [preuveFile, setPreuveFile] = useState<File | null>(null);
   const [uploadingPreuve, setUploadingPreuve] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const { data: banques = DEFAULT_BANQUES } = useBanquesPartenaires();
+
+  const filteredEleves = useMemo(() => {
+    if (!searchQuery.trim()) return eleves;
+    const q = searchQuery.toLowerCase().trim();
+    return eleves.filter((e: any) =>
+      `${e.prenom} ${e.nom}`.toLowerCase().includes(q) ||
+      (e.matricule && e.matricule.toLowerCase().includes(q)) ||
+      (e.qr_code && e.qr_code.toLowerCase().includes(q))
+    );
+  }, [eleves, searchQuery]);
+
+  const handleQRScan = (code: string) => {
+    setScannerOpen(false);
+    // Try to find student by matricule or qr_code
+    const found = eleves.find((e: any) =>
+      (e.matricule && e.matricule.toUpperCase() === code.toUpperCase()) ||
+      (e.qr_code && e.qr_code.toUpperCase() === code.toUpperCase())
+    );
+    if (found) {
+      setEleveId(found.id);
+      setSearchQuery(`${found.prenom} ${found.nom}`);
+      toast({ title: 'Élève trouvé', description: `${found.prenom} ${found.nom}` });
+    } else {
+      setSearchQuery(code);
+      toast({ title: 'Élève non trouvé', description: `Aucun élève avec le code "${code}"`, variant: 'destructive' });
+    }
+  };
 
   const selectedEleve = eleves.find((e: any) => e.id === eleveId);
   const niveauIdForTranches = selectedEleve?.classes?.niveau_id || null;
@@ -266,6 +296,21 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-between items-center gap-2 mb-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher par nom, matricule..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="pl-9 h-9"
+          />
+        </div>
+        <Button variant="outline" size="sm" className="h-9 px-2.5" onClick={() => setScannerOpen(true)}>
+          <QrCode className="h-4 w-4" />
+        </Button>
+      </div>
+      <QRScannerDialog open={scannerOpen} onOpenChange={setScannerOpen} onScan={handleQRScan} />
       <div className="flex justify-end">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" /> Paiement Individuel</Button></DialogTrigger>
@@ -277,7 +322,7 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
                 <Select value={eleveId} onValueChange={setEleveId}>
                   <SelectTrigger><SelectValue placeholder="Sélectionner l'élève" /></SelectTrigger>
                   <SelectContent>
-                    {eleves.map((e: any) => (
+                    {filteredEleves.map((e: any) => (
                       <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom} {e.matricule ? `(${e.matricule})` : ''}{e.famille_id ? ' 👨‍👩‍👧' : ''}</SelectItem>
                     ))}
                   </SelectContent>

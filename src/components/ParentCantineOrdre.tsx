@@ -120,7 +120,7 @@ export default function ParentCantineOrdre({ enfants, code, onSuccess }: Props) 
                       <SelectValue placeholder="Sélectionner un enfant" />
                     </SelectTrigger>
                     <SelectContent>
-                      {enfants.filter(e => e.option_cantine).map(e => (
+                      {enfants.map(e => (
                         <SelectItem key={e.id} value={e.id} className="text-xs sm:text-sm">
                           {e.prenom} {e.nom} — {(e.solde_cantine || 0).toLocaleString()} GNF
                         </SelectItem>
@@ -128,13 +128,13 @@ export default function ParentCantineOrdre({ enfants, code, onSuccess }: Props) 
                     </SelectContent>
                   </Select>
                 </div>
-              ) : (
+              ) : enfants[0] ? (
                 <div className="bg-muted/50 rounded-lg p-2.5 sm:p-3">
                   <p className="text-[10px] sm:text-xs text-muted-foreground">Élève</p>
-                  <p className="font-semibold text-sm">{enfants[0]?.prenom} {enfants[0]?.nom}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Solde: {(enfants[0]?.solde_cantine || 0).toLocaleString()} GNF</p>
+                  <p className="font-semibold text-sm">{enfants[0].prenom} {enfants[0].nom}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Solde: {(enfants[0].solde_cantine || 0).toLocaleString()} GNF</p>
                 </div>
-              )}
+              ) : null}
               <div className="space-y-1.5 sm:space-y-2">
                 <Label className="text-xs sm:text-sm">Montant à recharger (GNF)</Label>
                 <Input
