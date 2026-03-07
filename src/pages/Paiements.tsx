@@ -109,8 +109,37 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
   const [dateDepot, setDateDepot] = useState('');
   const [preuveFile, setPreuveFile] = useState<File | null>(null);
   const [uploadingPreuve, setUploadingPreuve] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const { data: banques = DEFAULT_BANQUES } = useBanquesPartenaires();
+
+  const filteredEleves = useMemo(() => {
+    if (!searchQuery.trim()) return eleves;
+    const q = searchQuery.toLowerCase().trim();
+    return eleves.filter((e: any) =>
+      `${e.prenom} ${e.nom}`.toLowerCase().includes(q) ||
+      (e.matricule && e.matricule.toLowerCase().includes(q)) ||
+      (e.qr_code && e.qr_code.toLowerCase().includes(q))
+    );
+  }, [eleves, searchQuery]);
+
+  const handleQRScan = (code: string) => {
+    setScannerOpen(false);
+    // Try to find student by matricule or qr_code
+    const found = eleves.find((e: any) =>
+      (e.matricule && e.matricule.toUpperCase() === code.toUpperCase()) ||
+      (e.qr_code && e.qr_code.toUpperCase() === code.toUpperCase())
+    );
+    if (found) {
+      setEleveId(found.id);
+      setSearchQuery(`${found.prenom} ${found.nom}`);
+      toast({ title: 'Élève trouvé', description: `${found.prenom} ${found.nom}` });
+    } else {
+      setSearchQuery(code);
+      toast({ title: 'Élève non trouvé', description: `Aucun élève avec le code "${code}"`, variant: 'destructive' });
+    }
+  };
 
   const selectedEleve = eleves.find((e: any) => e.id === eleveId);
   const niveauIdForTranches = selectedEleve?.classes?.niveau_id || null;
