@@ -9,8 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Printer, Download, Upload, Users, Landmark, Calendar, FileImage, UtensilsCrossed, XCircle, ShoppingCart, Package } from 'lucide-react';
+import { CreditCard, Plus, Search, TrendingUp, Wallet, Smartphone, CheckCircle, Printer, Download, Upload, Users, Landmark, Calendar, FileImage, UtensilsCrossed, XCircle, ShoppingCart, Package, QrCode } from 'lucide-react';
 import CantineDirectePanel from '@/components/CantineDirectePanel';
+import QRScannerDialog from '@/components/QRScannerDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
