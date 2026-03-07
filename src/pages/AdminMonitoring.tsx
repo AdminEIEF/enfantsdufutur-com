@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { useAuth } from '@/hooks/useAuth';
@@ -273,6 +273,24 @@ export default function AdminMonitoring() {
     return users.filter(u => u.email?.toLowerCase().includes(q));
   }, [users, searchUsers]);
 
+  // Live clock tick for duration display
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatDuration = useCallback((connectedAt: string) => {
+    const diff = Math.floor((Date.now() - new Date(connectedAt).getTime()) / 1000);
+    if (diff < 0) return '0s';
+    const h = Math.floor(diff / 3600);
+    const m = Math.floor((diff % 3600) / 60);
+    const s = diff % 60;
+    if (h > 0) return `${h}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+    if (m > 0) return `${m}m ${s.toString().padStart(2, '0')}s`;
+    return `${s}s`;
+  }, [tick]);
+
   const formatDate = (d: string) => {
     try { return format(new Date(d), 'dd/MM/yyyy HH:mm', { locale: fr }); } catch { return d; }
   };
@@ -448,11 +466,19 @@ export default function AdminMonitoring() {
                           {eleves.map(e => (
                             <div key={e.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 cursor-pointer" onClick={() => setConnectionDetail(e)}>
                               <div className="flex items-center gap-2">
-                                <Wifi className="h-3 w-3 text-emerald-500" />
+                                <span className="relative flex h-3 w-3">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                                </span>
                                 <span className="font-medium text-sm">{e.display_name}</span>
                                 {e.extra_info?.matricule && <span className="text-xs text-muted-foreground">({e.extra_info.matricule})</span>}
                               </div>
-                              <span className="text-xs text-muted-foreground">{formatDate(e.connected_at)}</span>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums">
+                                  <Clock className="h-3 w-3" />
+                                  {formatDuration(e.connected_at)}
+                                </Badge>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -478,14 +504,20 @@ export default function AdminMonitoring() {
                 <p className="text-center text-muted-foreground py-4">Aucun parent connecté</p>
               ) : (
                 <div className="space-y-1">
-                  {connectionsByType.parent.map(p => (
+                    {connectionsByType.parent.map(p => (
                     <div key={p.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 cursor-pointer" onClick={() => setConnectionDetail(p)}>
                       <div className="flex items-center gap-2">
-                        <Wifi className="h-3 w-3 text-emerald-500" />
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                        </span>
                         <span className="font-medium text-sm">{p.display_name}</span>
                         {p.extra_info?.nb_enfants && <Badge variant="outline" className="text-xs">{p.extra_info.nb_enfants} enfant{p.extra_info.nb_enfants > 1 ? 's' : ''}</Badge>}
                       </div>
-                      <span className="text-xs text-muted-foreground">{formatDate(p.connected_at)}</span>
+                      <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums">
+                        <Clock className="h-3 w-3" />
+                        {formatDuration(p.connected_at)}
+                      </Badge>
                     </div>
                   ))}
                 </div>
@@ -520,11 +552,17 @@ export default function AdminMonitoring() {
                           {emps.map(e => (
                             <div key={e.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 cursor-pointer" onClick={() => setConnectionDetail(e)}>
                               <div className="flex items-center gap-2">
-                                <Wifi className="h-3 w-3 text-emerald-500" />
+                                <span className="relative flex h-3 w-3">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                                </span>
                                 <span className="font-medium text-sm">{e.display_name}</span>
                                 {e.poste && <span className="text-xs text-muted-foreground">— {e.poste}</span>}
                               </div>
-                              <span className="text-xs text-muted-foreground">{formatDate(e.connected_at)}</span>
+                              <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums">
+                                <Clock className="h-3 w-3" />
+                                {formatDuration(e.connected_at)}
+                              </Badge>
                             </div>
                           ))}
                         </div>
@@ -551,10 +589,16 @@ export default function AdminMonitoring() {
                   {connectionsByType.admin.map(a => (
                     <div key={a.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 cursor-pointer" onClick={() => setConnectionDetail(a)}>
                       <div className="flex items-center gap-2">
-                        <Wifi className="h-3 w-3 text-emerald-500" />
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                        </span>
                         <span className="font-medium text-sm">{a.email || a.display_name}</span>
                       </div>
-                      <span className="text-xs text-muted-foreground">{formatDate(a.connected_at)}</span>
+                      <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums">
+                        <Clock className="h-3 w-3" />
+                        {formatDuration(a.connected_at)}
+                      </Badge>
                     </div>
                   ))}
                 </div>
@@ -694,6 +738,7 @@ export default function AdminMonitoring() {
                 {connectionDetail.poste && <div><span className="text-muted-foreground">Poste :</span><br /><strong>{connectionDetail.poste}</strong></div>}
                 {connectionDetail.email && <div><span className="text-muted-foreground">Email :</span><br /><strong>{connectionDetail.email}</strong></div>}
                 <div><span className="text-muted-foreground">Connexion :</span><br /><strong>{formatDate(connectionDetail.connected_at)}</strong></div>
+                <div><span className="text-muted-foreground">Durée :</span><br /><strong className="text-emerald-600 dark:text-emerald-400">{formatDuration(connectionDetail.connected_at)}</strong></div>
               </div>
               {connectionDetail.extra_info && Object.keys(connectionDetail.extra_info).length > 0 && (
                 <div>
