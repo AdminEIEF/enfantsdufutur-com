@@ -1,17 +1,48 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, UserPlus, CreditCard, BookOpen, GraduationCap, TrendingUp, Utensils, AlertTriangle, Wallet, ArrowUpRight, ArrowDownRight, DollarSign, UserX } from 'lucide-react';
+import { Users, UserPlus, CreditCard, BookOpen, GraduationCap, TrendingUp, Utensils, AlertTriangle, Wallet, ArrowUpRight, ArrowDownRight, DollarSign, UserX, ScanBarcode } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { DashboardImpayesSection } from '@/components/DashboardImpayesSection';
 import { DashboardRecouvrementSection } from '@/components/DashboardRecouvrementSection';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { toast } from 'sonner';
 
 export default function Dashboard() {
   const { roles } = useAuth();
+  const navigate = useNavigate();
+  const [scanResult, setScanResult] = useState<any>(null);
+
+  const handleSearchStudent = useCallback(async (matricule: string) => {
+    toast.info(`🔍 Recherche: ${matricule}...`);
+    try {
+      const { data, error } = await supabase
+        .from('eleves')
+        .select('id, nom, prenom, matricule, qr_code, statut, classe_id, classes(nom, niveaux:niveau_id(nom))')
+        .is('deleted_at', null)
+        .or(`matricule.eq.${matricule},qr_code.eq.${matricule}`)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setScanResult(data);
+        toast.success(`✅ ${data.prenom} ${data.nom} — ${(data as any).classes?.nom || ''}`);
+      } else {
+        setScanResult(null);
+        toast.error(`Aucun élève trouvé pour "${matricule}"`);
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur de recherche');
+    }
+  }, []);
+
+  useBarcodeScanner({ onScan: handleSearchStudent });
 
   const { data: eleves = [] } = useQuery({
     queryKey: ['dashboard-eleves'],
