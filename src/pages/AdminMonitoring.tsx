@@ -273,6 +273,24 @@ export default function AdminMonitoring() {
     return users.filter(u => u.email?.toLowerCase().includes(q));
   }, [users, searchUsers]);
 
+  // Live clock tick for duration display
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatDuration = useCallback((connectedAt: string) => {
+    const diff = Math.floor((Date.now() - new Date(connectedAt).getTime()) / 1000);
+    if (diff < 0) return '0s';
+    const h = Math.floor(diff / 3600);
+    const m = Math.floor((diff % 3600) / 60);
+    const s = diff % 60;
+    if (h > 0) return `${h}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+    if (m > 0) return `${m}m ${s.toString().padStart(2, '0')}s`;
+    return `${s}s`;
+  }, [tick]);
+
   const formatDate = (d: string) => {
     try { return format(new Date(d), 'dd/MM/yyyy HH:mm', { locale: fr }); } catch { return d; }
   };
