@@ -295,6 +295,21 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-between items-center gap-2 mb-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher par nom, matricule..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="pl-9 h-9"
+          />
+        </div>
+        <Button variant="outline" size="sm" className="h-9 px-2.5" onClick={() => setScannerOpen(true)}>
+          <QrCode className="h-4 w-4" />
+        </Button>
+      </div>
+      <QRScannerDialog open={scannerOpen} onOpenChange={setScannerOpen} onScan={handleQRScan} />
       <div className="flex justify-end">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" /> Paiement Individuel</Button></DialogTrigger>
@@ -306,7 +321,7 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
                 <Select value={eleveId} onValueChange={setEleveId}>
                   <SelectTrigger><SelectValue placeholder="Sélectionner l'élève" /></SelectTrigger>
                   <SelectContent>
-                    {eleves.map((e: any) => (
+                    {filteredEleves.map((e: any) => (
                       <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom} {e.matricule ? `(${e.matricule})` : ''}{e.famille_id ? ' 👨‍👩‍👧' : ''}</SelectItem>
                     ))}
                   </SelectContent>
