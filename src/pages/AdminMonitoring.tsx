@@ -291,6 +291,12 @@ export default function AdminMonitoring() {
     return `${s}s`;
   }, [tick]);
 
+  // Consider online if last_seen_at is within 30 seconds
+  const isOnline = useCallback((conn: ActiveConnection) => {
+    const lastSeen = new Date(conn.last_seen_at).getTime();
+    return (Date.now() - lastSeen) < 30000;
+  }, [tick]);
+
   const formatDate = (d: string) => {
     try { return format(new Date(d), 'dd/MM/yyyy HH:mm', { locale: fr }); } catch { return d; }
   };
