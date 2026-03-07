@@ -738,6 +738,7 @@ export default function AdminMonitoring() {
                 {connectionDetail.poste && <div><span className="text-muted-foreground">Poste :</span><br /><strong>{connectionDetail.poste}</strong></div>}
                 {connectionDetail.email && <div><span className="text-muted-foreground">Email :</span><br /><strong>{connectionDetail.email}</strong></div>}
                 <div><span className="text-muted-foreground">Connexion :</span><br /><strong>{formatDate(connectionDetail.connected_at)}</strong></div>
+                <div><span className="text-muted-foreground">Durée :</span><br /><strong className="text-emerald-600 dark:text-emerald-400">{formatDuration(connectionDetail.connected_at)}</strong></div>
               </div>
               {connectionDetail.extra_info && Object.keys(connectionDetail.extra_info).length > 0 && (
                 <div>
