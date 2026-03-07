@@ -526,6 +526,7 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
 // ─── Family Account Payment Panel ──────────────────────────
 function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; paiements: any[]; familles: any[] }) {
   const [open, setOpen] = useState(false);
+  const [searchFamille, setSearchFamille] = useState('');
   const queryClient = useQueryClient();
   const { data: schoolConfig } = useSchoolConfig();
 
@@ -653,10 +654,28 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
     });
   }, [familles, eleves, paiements]);
 
+  const filteredFamilles = useMemo(() => {
+    if (!searchFamille.trim()) return famillesAvecEnfants;
+    const q = searchFamille.toLowerCase().trim();
+    return famillesAvecEnfants.filter((f: any) =>
+      f.nom_famille.toLowerCase().includes(q) ||
+      f.enfants.some((e: any) => `${e.prenom} ${e.nom}`.toLowerCase().includes(q))
+    );
+  }, [famillesAvecEnfants, searchFamille]);
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-muted-foreground">{famillesAvecEnfants.length} famille(s) avec enfants inscrits</p>
+      <div className="flex items-center gap-2 mb-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher une famille par nom..."
+            value={searchFamille}
+            onChange={e => setSearchFamille(e.target.value)}
+            className="pl-9 h-9"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground whitespace-nowrap">{filteredFamilles.length}/{famillesAvecEnfants.length}</p>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" /> Paiement Famille</Button></DialogTrigger>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
@@ -740,7 +759,7 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
 
       {/* Family accounts list */}
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {famillesAvecEnfants.map((f: any) => (
+        {filteredFamilles.map((f: any) => (
           <Card key={f.id} className={f.reste > 0 ? 'border-destructive/20' : 'border-green-300/50'}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
