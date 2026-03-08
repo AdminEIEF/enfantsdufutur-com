@@ -49,7 +49,7 @@ export default function Landing() {
     {
       icon: BookOpen,
       title: 'Excellence Académique',
-      description: 'Un programme rigoureux du Primaire au Collège, avec un suivi personnalisé de chaque élève.',
+      description: 'Un programme rigoureux de la Crèche au Lycée, avec un suivi personnalisé de chaque élève.',
     },
     {
       icon: Shield,
@@ -206,7 +206,7 @@ export default function Landing() {
               className="text-sm sm:text-lg lg:text-xl text-white/80 mb-6 sm:mb-8 max-w-lg"
             >
               L'École Internationale Enfant du Futur offre un enseignement d'excellence 
-              dans un environnement moderne et bienveillant, du Primaire au Collège.
+              dans un environnement moderne et bienveillant, de la Crèche au Lycée.
             </motion.p>
 
             <motion.div
@@ -323,11 +323,11 @@ export default function Landing() {
           <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Investir maintenant pour Sourire demain !
           </h2>
-          <p className="text-primary-foreground/80 text-lg max-w-xl mx-auto mb-8">
+          <p className="text-lg max-w-xl mx-auto mb-8" style={{ color: 'hsl(0 0% 100% / 0.85)' }}>
             Rejoignez la communauté de l'Ecole Internationale Les Enfants du Futur et donnez à votre enfant les outils pour réussir.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link to="/auth">
+            <Link to="/parent">
               <Button size="lg" variant="secondary" className="text-base px-8">
                 Accéder à l'espace parent
                 <ArrowRight className="ml-2 h-5 w-5" />
