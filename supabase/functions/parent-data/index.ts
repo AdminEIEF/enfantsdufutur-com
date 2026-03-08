@@ -426,6 +426,41 @@ serve(async (req) => {
         bulletinPublications = pubs || [];
       }
 
+      // Fetch devoirs for this child's class
+      let devoirs: any[] = [];
+      let soumissions: any[] = [];
+      if (classeId) {
+        const { data: devoirsData } = await supabaseAdmin
+          .from("devoirs")
+          .select("id, titre, description, date_limite, type_devoir, note_max, matieres:matiere_id(nom)")
+          .eq("classe_id", classeId)
+          .order("date_limite", { ascending: false })
+          .limit(30);
+        devoirs = devoirsData || [];
+
+        if (devoirs.length > 0) {
+          const devoirIds = devoirs.map((d: any) => d.id);
+          const { data: soumsData } = await supabaseAdmin
+            .from("soumissions_devoirs")
+            .select("id, devoir_id, note, soumis_at, commentaire")
+            .eq("eleve_id", eleve_id)
+            .in("devoir_id", devoirIds);
+          soumissions = soumsData || [];
+        }
+      }
+
+      // Fetch emploi du temps for this child's class
+      let emploiDuTemps: any[] = [];
+      if (classeId) {
+        const { data: edtData } = await supabaseAdmin
+          .from("emploi_du_temps")
+          .select("id, jour_semaine, heure_debut, heure_fin, salle, matieres:matiere_id(nom), employes:enseignant_id(prenom, nom)")
+          .eq("classe_id", classeId)
+          .order("jour_semaine")
+          .order("heure_debut");
+        emploiDuTemps = edtData || [];
+      }
+
       return new Response(
         JSON.stringify({
           solde_cantine,
@@ -436,6 +471,9 @@ serve(async (req) => {
           commandesArticles: commandesArticles || [],
           articlesNiveau,
           bulletinPublications,
+          devoirs,
+          soumissions,
+          emploiDuTemps,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
