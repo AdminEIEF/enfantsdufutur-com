@@ -71,6 +71,7 @@ import CoordinateurDocuments from "./pages/CoordinateurDocuments";
 import CoordinateurEleves from "./pages/CoordinateurEleves";
 import Robotique from "./pages/Robotique";
 import RobotiqueDashboard from "./pages/RobotiqueDashboard";
+import PointageEleves from "./pages/PointageEleves";
 import StudentEcriture from "./pages/student/StudentEcriture";
 import StudentCalculMental from "./pages/student/StudentCalculMental";
 import StudentCultureGenerale from "./pages/student/StudentCultureGenerale";
@@ -212,6 +213,7 @@ const App = () => (
             <Route path="/coordinateur-eleves" element={<ProtectedRoute><CoordinateurEleves /></ProtectedRoute>} />
             <Route path="/robotique" element={<ProtectedRoute><Robotique /></ProtectedRoute>} />
             <Route path="/robotique-dashboard" element={<ProtectedRoute><RobotiqueDashboard /></ProtectedRoute>} />
+            <Route path="/pointage-eleves" element={<ProtectedRoute><PointageEleves /></ProtectedRoute>} />
             <Route path="/eleve/ecriture" element={<StudentAuthProvider><StudentEcriture /></StudentAuthProvider>} />
             <Route path="/eleve/calcul" element={<StudentAuthProvider><StudentCalculMental /></StudentAuthProvider>} />
             <Route path="/eleve/culture" element={<StudentAuthProvider><StudentCultureGenerale /></StudentAuthProvider>} />
