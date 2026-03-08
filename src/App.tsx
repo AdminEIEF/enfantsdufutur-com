@@ -72,6 +72,7 @@ import CoordinateurEleves from "./pages/CoordinateurEleves";
 import Robotique from "./pages/Robotique";
 import RobotiqueDashboard from "./pages/RobotiqueDashboard";
 import PointageEleves from "./pages/PointageEleves";
+import PointeurPointage from "./pages/PointeurPointage";
 import StudentEcriture from "./pages/student/StudentEcriture";
 import StudentCalculMental from "./pages/student/StudentCalculMental";
 import StudentCultureGenerale from "./pages/student/StudentCultureGenerale";
