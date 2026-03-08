@@ -5,6 +5,8 @@ import { AIChatBubble } from '@/components/AIChatBubble';
 import { AdminNotificationBell } from '@/components/AdminNotificationBell';
 import { useAuth, AppRole } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
+import { motion } from 'framer-motion';
+import schoolLogo from '@/assets/school-logo.png';
 
 const roleMeta: Record<AppRole, { label: string; color: string }> = {
   superviseur: { label: 'Superviseur', color: 'bg-red-600 text-white' },
@@ -32,6 +34,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <main className="flex-1 flex flex-col">
           <header className="h-14 border-b flex items-center px-4 gap-3 bg-card">
             <SidebarTrigger />
+            <motion.div
+              className="w-9 h-9 rounded-full border-2 border-primary/20 overflow-hidden bg-white shadow-sm shrink-0"
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
+              whileHover={{ scale: 1.1, rotate: 10 }}
+            >
+              <img src={schoolLogo} alt="Logo EIEF" className="w-full h-full object-contain p-0.5" />
+            </motion.div>
             <div className="flex-1" />
             <div className="flex items-center gap-2">
               {roles.map((role) => {
