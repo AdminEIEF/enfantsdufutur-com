@@ -592,7 +592,6 @@ export default function AdminMonitoring() {
                                 <span className="text-[10px] text-muted-foreground">Vu {formatDate(e.last_seen_at)}</span>
                               )}
                             </div>
-                            </div>
                           ))}
                         </div>
                       </AccordionContent>
