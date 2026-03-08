@@ -1,12 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { BookOpen, Lock, Loader2, User, Eye, EyeOff, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import studentIllustration from '@/assets/student-login-illustration.jpg';
+
+interface StudentPreview {
+  found: boolean;
+  prenom?: string;
+  nom?: string;
+  photo_url?: string | null;
+  classe?: string;
+  niveau?: string;
+  cycle?: string;
+}
 
 export default function StudentLogin() {
   const { session, login, loading } = useStudentAuth();
@@ -16,11 +26,45 @@ export default function StudentLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [suspended, setSuspended] = useState(false);
+  const [preview, setPreview] = useState<StudentPreview | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   if (!loading && session) {
     navigate('/eleve/dashboard', { replace: true });
     return null;
   }
+
+  const fetchPreview = async (mat: string) => {
+    if (mat.length < 3) { setPreview(null); return; }
+    setLoadingPreview(true);
+    try {
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/student-preview`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ matricule: mat }),
+        }
+      );
+      const data = await resp.json();
+      setPreview(data);
+    } catch {
+      setPreview(null);
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  const handleMatriculeChange = (val: string) => {
+    const upper = val.toUpperCase();
+    setMatricule(upper);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchPreview(upper), 500);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,9 +75,7 @@ export default function StudentLogin() {
       await login(matricule, password);
       navigate('/eleve/dashboard', { replace: true });
     } catch (err: any) {
-      if (err.message?.includes('régulariser')) {
-        setSuspended(true);
-      }
+      if (err.message?.includes('régulariser')) setSuspended(true);
       toast.error(err.message || "Identifiants invalides");
     } finally {
       setSubmitting(false);
@@ -50,18 +92,73 @@ export default function StudentLogin() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
       >
-        {/* Left — Illustration */}
-        <div className="md:w-5/12 relative flex items-center justify-center p-6 md:p-8"
+        {/* Left — Illustration or Preview */}
+        <div className="md:w-5/12 relative flex flex-col items-center justify-center p-6 md:p-8"
           style={{ background: 'linear-gradient(160deg, #dbeafe 0%, #bfdbfe 100%)' }}
         >
-          <motion.img
-            src={studentIllustration}
-            alt="Illustration élève"
-            className="w-full max-w-[280px] rounded-2xl"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          />
+          <AnimatePresence mode="wait">
+            {preview?.found && preview.photo_url ? (
+              <motion.div
+                key="preview"
+                className="flex flex-col items-center gap-4"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+              >
+                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-xl">
+                  <img
+                    src={preview.photo_url}
+                    alt={`${preview.prenom} ${preview.nom}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="text-center">
+                  <p className="font-bold text-lg text-foreground">{preview.prenom} {preview.nom}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {preview.cycle} — {preview.niveau}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{preview.classe}</p>
+                </div>
+              </motion.div>
+            ) : preview?.found && !preview.photo_url ? (
+              <motion.div
+                key="no-photo"
+                className="flex flex-col items-center gap-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-blue-100 flex items-center justify-center border-4 border-white shadow-xl">
+                  <span className="text-3xl font-bold text-blue-600">
+                    {preview.prenom?.[0]}{preview.nom?.[0]}
+                  </span>
+                </div>
+                <div className="text-center">
+                  <p className="font-bold text-lg text-foreground">{preview.prenom} {preview.nom}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {preview.cycle} — {preview.niveau}
+                  </p>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.img
+                key="illustration"
+                src={studentIllustration}
+                alt="Illustration élève"
+                className="w-full max-w-[280px] rounded-2xl"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              />
+            )}
+          </AnimatePresence>
+          {loadingPreview && (
+            <div className="absolute bottom-4">
+              <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
+            </div>
+          )}
         </div>
 
         {/* Right — Form */}
@@ -71,7 +168,6 @@ export default function StudentLogin() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
           >
-            {/* Header */}
             <div className="flex items-center gap-2 mb-2">
               <BookOpen className="h-5 w-5 text-blue-600" />
               <span className="text-sm font-semibold text-blue-600 tracking-wide">Espace Élève</span>
@@ -84,7 +180,6 @@ export default function StudentLogin() {
               Accède à tes cours, devoirs et résultats.
             </p>
 
-            {/* Suspended alert */}
             {suspended && (
               <div className="mb-6 flex items-start gap-3 p-3 rounded-xl bg-destructive/5 border border-destructive/20">
                 <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
@@ -94,7 +189,6 @@ export default function StudentLogin() {
               </div>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground flex items-center gap-1">
@@ -104,7 +198,7 @@ export default function StudentLogin() {
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                   <Input
                     value={matricule}
-                    onChange={(e) => setMatricule(e.target.value.toUpperCase())}
+                    onChange={(e) => handleMatriculeChange(e.target.value)}
                     placeholder="Ex: EI-2026-001"
                     maxLength={20}
                     autoFocus
@@ -150,7 +244,6 @@ export default function StudentLogin() {
               </Button>
             </form>
 
-            {/* Back link */}
             <div className="mt-8 text-center">
               <Button
                 variant="ghost"

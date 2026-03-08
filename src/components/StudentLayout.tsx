@@ -42,11 +42,20 @@ export function StudentLayout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-blue-600" />
+            {eleve.photo_url ? (
+              <img src={eleve.photo_url} alt="" className="w-8 h-8 rounded-full object-cover border-2 border-blue-200" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
+                {eleve.prenom[0]}{eleve.nom[0]}
+              </div>
+            )}
+            <BookOpen className="h-5 w-5 text-blue-600" />
             <div>
-              <h1 className="font-bold text-sm leading-tight">Espace Élève</h1>
+              <h1 className="font-bold text-sm leading-tight">
+                {eleve.prenom} {eleve.nom}
+              </h1>
               <p className="text-xs text-muted-foreground">
-                {eleve.prenom} {eleve.nom} — {eleve.classes?.nom || ''}
+                {eleve.classes?.nom || 'Espace Élève'}
               </p>
             </div>
           </div>
