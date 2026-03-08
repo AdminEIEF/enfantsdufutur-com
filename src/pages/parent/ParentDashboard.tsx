@@ -114,11 +114,30 @@ export default function ParentDashboard() {
       <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b">
         <div className="max-w-4xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-1">
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-            <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
+            {/* Show first child's photo or icon */}
+            {eleves.length > 0 && eleves[0].photo_url ? (
+              <img src={eleves[0].photo_url} alt="" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border-2 border-primary/20 shrink-0" />
+            ) : (
+              <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
+            )}
             <div className="min-w-0">
               <h1 className="font-bold text-xs sm:text-sm leading-tight truncate">Espace Parent</h1>
               <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Famille {famille.nom_famille}</p>
             </div>
+            {/* Additional children avatars */}
+            {eleves.length > 1 && (
+              <div className="hidden sm:flex -space-x-2 ml-2">
+                {eleves.slice(1, 4).map((e: any) => (
+                  e.photo_url ? (
+                    <img key={e.id} src={e.photo_url} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-card" />
+                  ) : (
+                    <div key={e.id} className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] border-2 border-card">
+                      {e.prenom[0]}{e.nom[0]}
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <NotificationBell
