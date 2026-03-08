@@ -92,9 +92,16 @@ const navSections = [
   },
   {
     label: 'Surveillance',
-    roles: ['admin', 'secretaire'] as const,
+    roles: ['admin', 'secretaire', 'surveillant'] as const,
     items: [
       { title: 'Pointage Élèves', url: '/pointage-eleves', icon: ScanLine },
+    ],
+  },
+  {
+    label: 'Pointage',
+    roles: ['pointeur'] as any,
+    items: [
+      { title: 'Pointage Élèves', url: '/pointeur-pointage', icon: ScanLine },
     ],
   },
   {
@@ -151,7 +158,7 @@ export function AppSidebar() {
       <SidebarSeparator />
       <SidebarContent>
         {navSections.map((section) => {
-          if (!hasAnyRole(section.roles as unknown as ('superviseur' | 'admin' | 'secretaire' | 'service_info' | 'comptable' | 'boutique' | 'cantine' | 'librairie' | 'coordinateur' | 'chauffeur')[])) return null;
+          if (!hasAnyRole(section.roles as unknown as ('superviseur' | 'admin' | 'secretaire' | 'service_info' | 'comptable' | 'boutique' | 'cantine' | 'librairie' | 'coordinateur' | 'chauffeur' | 'pointeur' | 'surveillant')[])) return null;
           return (
             <SidebarGroup key={section.label}>
               <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
