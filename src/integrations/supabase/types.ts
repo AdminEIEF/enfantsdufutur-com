@@ -2939,6 +2939,7 @@ export type Database = {
         }
         Returns: Json
       }
+      find_famille_by_code: { Args: { _code: string }; Returns: string }
       get_my_roles: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"][]
