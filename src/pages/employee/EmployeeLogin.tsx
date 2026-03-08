@@ -36,9 +36,10 @@ export default function EmployeeLogin() {
   };
 
   return (
-    <div className="min-h-screen flex bg-emerald-50">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-background">
       {/* Left side — Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden"
+      <div
+        className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden"
         style={{ background: 'linear-gradient(160deg, #d1fae5 0%, #6ee7b7 40%, #059669 100%)' }}
       >
         {/* Decorative shapes */}
@@ -47,7 +48,7 @@ export default function EmployeeLogin() {
         <div className="absolute top-1/4 right-8 w-12 h-12 rounded-full bg-emerald-400/30" />
 
         <motion.div
-          className="relative z-10 p-8"
+          className="relative z-10 flex flex-col items-center px-8"
           initial={{ opacity: 0, x: -40 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, ease: 'easeOut' }}
@@ -55,7 +56,7 @@ export default function EmployeeLogin() {
           <img
             src={employeeIllustration}
             alt="Illustration employé"
-            className="w-full max-w-md rounded-3xl shadow-2xl"
+            className="w-full max-w-sm rounded-3xl shadow-2xl object-cover aspect-[4/3]"
           />
           <div className="mt-6 text-center">
             <h2 className="text-2xl font-bold text-white drop-shadow-md" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -69,37 +70,37 @@ export default function EmployeeLogin() {
       </div>
 
       {/* Right side — Form */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
+      <div className="flex-1 flex items-center justify-center px-5 py-10 sm:px-10">
         <motion.div
-          className="w-full max-w-md"
+          className="w-full max-w-sm"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           {/* Logo / Badge */}
-          <div className="flex items-center gap-2 mb-10">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center shadow-md">
+          <div className="flex items-center gap-2.5 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center shadow-md shrink-0">
               <Briefcase className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-emerald-900 tracking-tight" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <span className="text-lg font-bold text-foreground tracking-tight" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Espace Personnel
             </span>
           </div>
 
           {/* Title */}
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Connexion
           </h1>
-          <p className="text-muted-foreground mb-8">
+          <p className="text-muted-foreground text-sm mb-7">
             Entrez votre matricule et mot de passe pour accéder à votre espace.
           </p>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Matricule</label>
               <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                 <Input
                   value={matricule}
                   onChange={(e) => setMatricule(e.target.value.toUpperCase())}
@@ -107,7 +108,7 @@ export default function EmployeeLogin() {
                   maxLength={20}
                   autoFocus
                   autoComplete="off"
-                  className="h-12 pl-11 pr-4 rounded-xl border-border bg-background text-foreground placeholder:text-muted-foreground/50 font-mono tracking-wider focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+                  className="h-11 pl-10 pr-4 rounded-xl border-input bg-background text-foreground placeholder:text-muted-foreground/50 font-mono tracking-wider focus-visible:ring-2 focus-visible:ring-emerald-500/40"
                 />
               </div>
             </div>
@@ -115,7 +116,7 @@ export default function EmployeeLogin() {
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Mot de passe</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                 <Input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -123,12 +124,12 @@ export default function EmployeeLogin() {
                   placeholder="Votre mot de passe"
                   maxLength={30}
                   autoComplete="off"
-                  className="h-12 pl-11 pr-12 rounded-xl border-border bg-background text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+                  className="h-11 pl-10 pr-11 rounded-xl border-input bg-background text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -139,19 +140,22 @@ export default function EmployeeLogin() {
             <Button
               type="submit"
               disabled={submitting || !matricule.trim() || !password.trim()}
-              className="w-full h-12 rounded-xl text-sm font-semibold tracking-wide bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 transition-all"
+              className="w-full h-11 rounded-xl text-sm font-semibold tracking-wide bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 transition-all"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Se connecter
             </Button>
           </form>
 
-          {/* Divider */}
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
+          {/* Mobile illustration hint */}
+          <div className="lg:hidden flex items-center justify-center mt-6">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+              <Briefcase className="h-6 w-6 text-emerald-600" />
             </div>
           </div>
+
+          {/* Separator */}
+          <div className="my-6 border-t border-border" />
 
           {/* Back link */}
           <div className="text-center">
