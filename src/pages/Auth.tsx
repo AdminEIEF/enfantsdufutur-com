@@ -79,11 +79,11 @@ export default function Auth() {
           </motion.div>
 
           <div className="mt-8 text-center">
-            <h2 className="text-2xl font-bold text-white drop-shadow-md" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              École Internationale
+            <h2 className="text-2xl font-extrabold text-white uppercase tracking-wide drop-shadow-md" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              ÉCOLE INTERNATIONALE
             </h2>
-            <h3 className="text-xl font-bold text-white/90 mt-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Les Enfants du Futur
+            <h3 className="text-xl font-extrabold text-white/90 uppercase tracking-wide mt-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              LES ENFANTS DU FUTUR
             </h3>
             <p className="text-blue-100/70 mt-3 text-sm max-w-xs mx-auto italic">
               Faisons Plus !
