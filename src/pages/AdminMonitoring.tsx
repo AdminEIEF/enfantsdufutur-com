@@ -519,17 +519,25 @@ export default function AdminMonitoring() {
                     {connectionsByType.parent.map(p => (
                     <div key={p.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 cursor-pointer" onClick={() => setConnectionDetail(p)}>
                       <div className="flex items-center gap-2">
-                        <span className="relative flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
-                        </span>
+                        {isOnline(p) ? (
+                          <span className="relative flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full h-3 w-3 bg-muted-foreground/30" />
+                        )}
                         <span className="font-medium text-sm">{p.display_name}</span>
                         {p.extra_info?.nb_enfants && <Badge variant="outline" className="text-xs">{p.extra_info.nb_enfants} enfant{p.extra_info.nb_enfants > 1 ? 's' : ''}</Badge>}
                       </div>
-                      <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums">
-                        <Clock className="h-3 w-3" />
-                        {formatDuration(p.connected_at)}
-                      </Badge>
+                      {isOnline(p) ? (
+                        <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums border-emerald-300 text-emerald-700 dark:text-emerald-400">
+                          <Clock className="h-3 w-3" />
+                          {formatDuration(p.connected_at)}
+                        </Badge>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">Vu {formatDate(p.last_seen_at)}</span>
+                      )}
                     </div>
                   ))}
                 </div>
