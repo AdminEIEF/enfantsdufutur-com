@@ -489,7 +489,7 @@ serve(async (req) => {
       thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30);
       const { data: pointagesData } = await supabaseAdmin
         .from("pointages_eleves")
-        .select("id, date_pointage, heure_arrivee, heure_depart")
+        .select("id, date_pointage, heure_arrivee, heure_depart, en_retard")
         .eq("eleve_id", eleve_id)
         .gte("date_pointage", thirtyDaysAgoDate.toISOString().split('T')[0])
         .order("date_pointage", { ascending: false });

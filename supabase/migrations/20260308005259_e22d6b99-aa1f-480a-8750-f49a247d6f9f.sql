@@ -1,0 +1,1 @@
+ALTER TABLE public.pointages_eleves ADD COLUMN en_retard boolean NOT NULL DEFAULT false;

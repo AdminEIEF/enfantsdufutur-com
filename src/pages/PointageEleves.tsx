@@ -81,26 +81,49 @@ export default function PointageEleves() {
         .maybeSingle();
 
       const now = new Date().toISOString();
+      const HEURE_LIMITE = '08:10';
+      const heureArrivee = format(new Date(now), 'HH:mm');
+      const enRetard = heureArrivee > HEURE_LIMITE;
 
       if (!existing) {
         // First scan = arrival
         const { error } = await supabase
           .from('pointages_eleves')
-          .insert({ eleve_id: eleve.id, date_pointage: today, heure_arrivee: now });
+          .insert({ eleve_id: eleve.id, date_pointage: today, heure_arrivee: now, en_retard: enRetard });
         if (error) throw error;
 
-        setLastScanned({ ...eleve, action: 'arrivee', heure: now });
-        toast.success(`✅ Arrivée enregistrée`, {
-          description: `${eleve.prenom} ${eleve.nom} — ${format(new Date(now), 'HH:mm')}`,
-        });
+        // Count total late arrivals
+        let lateCount = 0;
+        if (enRetard) {
+          const { count } = await supabase
+            .from('pointages_eleves')
+            .select('id', { count: 'exact', head: true })
+            .eq('eleve_id', eleve.id)
+            .eq('en_retard', true);
+          lateCount = count || 0;
+        }
+
+        setLastScanned({ ...eleve, action: 'arrivee', heure: now, en_retard: enRetard, retard_count: lateCount });
+        if (enRetard) {
+          toast.warning(`⚠️ Arrivée en RETARD`, {
+            description: `${eleve.prenom} ${eleve.nom} — ${heureArrivee} (${lateCount} retard${lateCount > 1 ? 's' : ''} au total)`,
+          });
+        } else {
+          toast.success(`✅ Arrivée enregistrée`, {
+            description: `${eleve.prenom} ${eleve.nom} — ${heureArrivee}`,
+          });
+        }
 
         // Notify parent
         if (eleve.famille_id) {
+          const retardMsg = enRetard
+            ? ` ⚠️ EN RETARD (${heureArrivee} au lieu de 08:10). Nombre total de retards : ${enRetard ? (await supabase.from('pointages_eleves').select('id', { count: 'exact', head: true }).eq('eleve_id', eleve.id).eq('en_retard', true)).count || 0 : 0}.`
+            : '';
           await supabase.from('parent_notifications').insert({
             famille_id: eleve.famille_id,
-            titre: '🏫 Arrivée à l\'école',
-            message: `${eleve.prenom} ${eleve.nom} est arrivé(e) à l'école à ${format(new Date(now), 'HH:mm')}.`,
-            type: 'info',
+            titre: enRetard ? '⚠️ Arrivée en retard' : '🏫 Arrivée à l\'école',
+            message: `${eleve.prenom} ${eleve.nom} est arrivé(e) à l'école à ${heureArrivee}.${retardMsg}`,
+            type: enRetard ? 'alerte' : 'info',
           });
         }
       } else if (!existing.heure_depart) {
@@ -147,6 +170,7 @@ export default function PointageEleves() {
   const arrivedCount = todayPointages.filter(p => p.heure_arrivee).length;
   const departedCount = todayPointages.filter(p => p.heure_depart).length;
   const presentCount = todayPointages.filter(p => p.heure_arrivee && !p.heure_depart).length;
+  const lateCount = todayPointages.filter(p => p.en_retard).length;
 
   return (
     <div className="space-y-6">
@@ -188,6 +212,7 @@ export default function PointageEleves() {
       {/* Last scanned feedback */}
       {lastScanned && (
         <Card className={`border-2 ${
+          lastScanned.en_retard ? 'border-red-500 bg-red-50 dark:bg-red-950/20' :
           lastScanned.action === 'arrivee' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20' :
           lastScanned.action === 'depart' ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20' :
           'border-muted'
@@ -195,10 +220,13 @@ export default function PointageEleves() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                lastScanned.en_retard ? 'bg-red-100 dark:bg-red-900' :
                 lastScanned.action === 'arrivee' ? 'bg-emerald-100 dark:bg-emerald-900' :
                 lastScanned.action === 'depart' ? 'bg-orange-100 dark:bg-orange-900' : 'bg-muted'
               }`}>
-                {lastScanned.action === 'arrivee' ? (
+                {lastScanned.en_retard ? (
+                  <Clock className="h-7 w-7 text-red-600" />
+                ) : lastScanned.action === 'arrivee' ? (
                   <LogIn className="h-7 w-7 text-emerald-600" />
                 ) : lastScanned.action === 'depart' ? (
                   <LogOut className="h-7 w-7 text-orange-600" />
@@ -213,8 +241,13 @@ export default function PointageEleves() {
                 </p>
                 {lastScanned.action !== 'complet' && (
                   <p className="text-sm font-medium mt-1">
-                    {lastScanned.action === 'arrivee' ? '✅ Arrivée' : '🚪 Départ'} à {format(new Date(lastScanned.heure), 'HH:mm')}
+                    {lastScanned.action === 'arrivee' ? (lastScanned.en_retard ? '⚠️ Arrivée en RETARD' : '✅ Arrivée') : '🚪 Départ'} à {format(new Date(lastScanned.heure), 'HH:mm')}
                   </p>
+                )}
+                {lastScanned.en_retard && lastScanned.retard_count > 0 && (
+                  <Badge className="bg-red-100 text-red-700 text-[10px] mt-1">
+                    {lastScanned.retard_count} retard{lastScanned.retard_count > 1 ? 's' : ''} au total
+                  </Badge>
                 )}
                 {lastScanned.action === 'complet' && (
                   <p className="text-sm text-muted-foreground mt-1">Pointage déjà complet pour aujourd'hui</p>
@@ -226,7 +259,7 @@ export default function PointageEleves() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4 text-center">
             <LogIn className="h-5 w-5 mx-auto text-emerald-600 mb-1" />
@@ -246,6 +279,13 @@ export default function PointageEleves() {
             <LogOut className="h-5 w-5 mx-auto text-orange-600 mb-1" />
             <div className="text-2xl font-bold">{departedCount}</div>
             <p className="text-xs text-muted-foreground">Partis</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 text-center">
+            <Clock className="h-5 w-5 mx-auto text-red-600 mb-1" />
+            <div className="text-2xl font-bold">{lateCount}</div>
+            <p className="text-xs text-muted-foreground">En retard</p>
           </CardContent>
         </Card>
       </div>
@@ -284,7 +324,10 @@ export default function PointageEleves() {
                         ↑ {format(new Date(p.heure_depart), 'HH:mm')}
                       </span>
                     )}
-                    {!p.heure_depart && p.heure_arrivee && (
+                    {p.en_retard && (
+                      <Badge className="bg-red-100 text-red-700 text-[10px]">Retard</Badge>
+                    )}
+                    {!p.heure_depart && p.heure_arrivee && !p.en_retard && (
                       <Badge className="bg-emerald-100 text-emerald-700 text-[10px]">Présent</Badge>
                     )}
                   </div>

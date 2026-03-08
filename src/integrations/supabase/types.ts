@@ -2121,6 +2121,7 @@ export type Database = {
           created_at: string
           date_pointage: string
           eleve_id: string
+          en_retard: boolean
           heure_arrivee: string | null
           heure_depart: string | null
           id: string
@@ -2130,6 +2131,7 @@ export type Database = {
           created_at?: string
           date_pointage?: string
           eleve_id: string
+          en_retard?: boolean
           heure_arrivee?: string | null
           heure_depart?: string | null
           id?: string
@@ -2139,6 +2141,7 @@ export type Database = {
           created_at?: string
           date_pointage?: string
           eleve_id?: string
+          en_retard?: boolean
           heure_arrivee?: string | null
           heure_depart?: string | null
           id?: string
