@@ -442,10 +442,33 @@ serve(async (req) => {
           const devoirIds = devoirs.map((d: any) => d.id);
           const { data: soumsData } = await supabaseAdmin
             .from("soumissions_devoirs")
-            .select("id, devoir_id, note, soumis_at, commentaire")
+            .select("id, devoir_id, note, soumis_at, commentaire, fichier_nom")
             .eq("eleve_id", eleve_id)
             .in("devoir_id", devoirIds);
           soumissions = soumsData || [];
+
+          // Also fetch quiz responses for quiz-type devoirs
+          const quizDevoirIds = devoirs.filter((d: any) => d.type_devoir === 'quiz').map((d: any) => d.id);
+          if (quizDevoirIds.length > 0) {
+            const { data: quizData } = await supabaseAdmin
+              .from("quiz_reponses")
+              .select("id, devoir_id, score, score_max, soumis_at")
+              .eq("eleve_id", eleve_id)
+              .in("devoir_id", quizDevoirIds);
+            // Merge quiz responses into soumissions format
+            for (const qr of (quizData || [])) {
+              soumissions.push({
+                id: qr.id,
+                devoir_id: qr.devoir_id,
+                note: qr.score,
+                soumis_at: qr.soumis_at,
+                commentaire: null,
+                fichier_nom: null,
+                is_quiz: true,
+                score_max: qr.score_max,
+              });
+            }
+          }
         }
       }
 
