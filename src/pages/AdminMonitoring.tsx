@@ -155,7 +155,14 @@ export default function AdminMonitoring() {
     const ch2 = supabase.channel('connections-rt')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'active_connections' }, (p) => {
         setConnections(prev => [p.new as ActiveConnection, ...prev].slice(0, 500));
-      }).subscribe();
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'active_connections' }, (p) => {
+        setConnections(prev => prev.filter(c => c.id !== (p.old as any).id));
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'active_connections' }, (p) => {
+        setConnections(prev => prev.map(c => c.id === (p.new as ActiveConnection).id ? (p.new as ActiveConnection) : c));
+      })
+      .subscribe();
 
     return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
   }, []);
@@ -289,6 +296,12 @@ export default function AdminMonitoring() {
     if (h > 0) return `${h}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
     if (m > 0) return `${m}m ${s.toString().padStart(2, '0')}s`;
     return `${s}s`;
+  }, [tick]);
+
+  // Consider online if last_seen_at is within 30 seconds
+  const isOnline = useCallback((conn: ActiveConnection) => {
+    const lastSeen = new Date(conn.last_seen_at).getTime();
+    return (Date.now() - lastSeen) < 30000;
   }, [tick]);
 
   const formatDate = (d: string) => {
@@ -466,19 +479,25 @@ export default function AdminMonitoring() {
                           {eleves.map(e => (
                             <div key={e.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 cursor-pointer" onClick={() => setConnectionDetail(e)}>
                               <div className="flex items-center gap-2">
-                                <span className="relative flex h-3 w-3">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
-                                </span>
+                                {isOnline(e) ? (
+                                  <span className="relative flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex rounded-full h-3 w-3 bg-muted-foreground/30" />
+                                )}
                                 <span className="font-medium text-sm">{e.display_name}</span>
                                 {e.extra_info?.matricule && <span className="text-xs text-muted-foreground">({e.extra_info.matricule})</span>}
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums">
+                              {isOnline(e) ? (
+                                <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums border-emerald-300 text-emerald-700 dark:text-emerald-400">
                                   <Clock className="h-3 w-3" />
                                   {formatDuration(e.connected_at)}
                                 </Badge>
-                              </div>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground">Vu {formatDate(e.last_seen_at)}</span>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -507,17 +526,25 @@ export default function AdminMonitoring() {
                     {connectionsByType.parent.map(p => (
                     <div key={p.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 cursor-pointer" onClick={() => setConnectionDetail(p)}>
                       <div className="flex items-center gap-2">
-                        <span className="relative flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
-                        </span>
+                        {isOnline(p) ? (
+                          <span className="relative flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full h-3 w-3 bg-muted-foreground/30" />
+                        )}
                         <span className="font-medium text-sm">{p.display_name}</span>
                         {p.extra_info?.nb_enfants && <Badge variant="outline" className="text-xs">{p.extra_info.nb_enfants} enfant{p.extra_info.nb_enfants > 1 ? 's' : ''}</Badge>}
                       </div>
-                      <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums">
-                        <Clock className="h-3 w-3" />
-                        {formatDuration(p.connected_at)}
-                      </Badge>
+                      {isOnline(p) ? (
+                        <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums border-emerald-300 text-emerald-700 dark:text-emerald-400">
+                          <Clock className="h-3 w-3" />
+                          {formatDuration(p.connected_at)}
+                        </Badge>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">Vu {formatDate(p.last_seen_at)}</span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -552,17 +579,25 @@ export default function AdminMonitoring() {
                           {emps.map(e => (
                             <div key={e.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 cursor-pointer" onClick={() => setConnectionDetail(e)}>
                               <div className="flex items-center gap-2">
-                                <span className="relative flex h-3 w-3">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
-                                </span>
+                                {isOnline(e) ? (
+                                  <span className="relative flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex rounded-full h-3 w-3 bg-muted-foreground/30" />
+                                )}
                                 <span className="font-medium text-sm">{e.display_name}</span>
                                 {e.poste && <span className="text-xs text-muted-foreground">— {e.poste}</span>}
                               </div>
-                              <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums">
-                                <Clock className="h-3 w-3" />
-                                {formatDuration(e.connected_at)}
-                              </Badge>
+                              {isOnline(e) ? (
+                                <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums border-emerald-300 text-emerald-700 dark:text-emerald-400">
+                                  <Clock className="h-3 w-3" />
+                                  {formatDuration(e.connected_at)}
+                                </Badge>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground">Vu {formatDate(e.last_seen_at)}</span>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -589,16 +624,24 @@ export default function AdminMonitoring() {
                   {connectionsByType.admin.map(a => (
                     <div key={a.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 cursor-pointer" onClick={() => setConnectionDetail(a)}>
                       <div className="flex items-center gap-2">
-                        <span className="relative flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
-                        </span>
+                        {isOnline(a) ? (
+                          <span className="relative flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full h-3 w-3 bg-muted-foreground/30" />
+                        )}
                         <span className="font-medium text-sm">{a.email || a.display_name}</span>
                       </div>
-                      <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums">
-                        <Clock className="h-3 w-3" />
-                        {formatDuration(a.connected_at)}
-                      </Badge>
+                      {isOnline(a) ? (
+                        <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums border-emerald-300 text-emerald-700 dark:text-emerald-400">
+                          <Clock className="h-3 w-3" />
+                          {formatDuration(a.connected_at)}
+                        </Badge>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">Vu {formatDate(a.last_seen_at)}</span>
+                      )}
                     </div>
                   ))}
                 </div>
