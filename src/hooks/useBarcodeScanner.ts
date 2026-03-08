@@ -7,39 +7,43 @@ interface UseBarcodeScannerOptions {
 }
 
 /**
- * Global key listener that detects rapid keyboard input (e.g. barcode/QR scanners).
- * If characters arrive within `maxIntervalMs` of each other and end with Enter,
- * the accumulated string is passed to `onScan`.
+ * Global key listener that detects rapid keyboard input from physical barcode/QR scanners.
+ * Works even when focus is on an input field (for flasheur/douchette compatibility).
+ * Characters arriving within `maxIntervalMs` of each other ending with Enter trigger `onScan`.
  */
 export function useBarcodeScanner({
   onScan,
-  maxIntervalMs = 100,
+  maxIntervalMs = 80,
   minLength = 3,
 }: UseBarcodeScannerOptions) {
   const bufferRef = useRef('');
   const lastKeyTimeRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isRapidInputRef = useRef(false);
 
   const resetBuffer = useCallback(() => {
     bufferRef.current = '';
+    isRapidInputRef.current = false;
   }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input/textarea
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-
       const now = Date.now();
       const elapsed = now - lastKeyTimeRef.current;
       lastKeyTimeRef.current = now;
 
-      // If too much time passed, reset the buffer
-      if (elapsed > maxIntervalMs && bufferRef.current.length > 0) {
-        bufferRef.current = '';
+      // Detect rapid sequential input (scanner behavior)
+      if (elapsed < maxIntervalMs) {
+        isRapidInputRef.current = true;
       }
 
-      // Clear any pending reset timer
+      // If too much time passed, reset buffer
+      if (elapsed > maxIntervalMs && bufferRef.current.length > 0) {
+        bufferRef.current = '';
+        isRapidInputRef.current = false;
+      }
+
+      // Clear pending reset timer
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
@@ -47,11 +51,14 @@ export function useBarcodeScanner({
 
       if (e.key === 'Enter') {
         const code = bufferRef.current.trim();
-        if (code.length >= minLength) {
+        // Only trigger if rapid input detected (scanner) AND meets minimum length
+        if (code.length >= minLength && isRapidInputRef.current) {
           e.preventDefault();
+          e.stopPropagation();
           onScan(code);
         }
         bufferRef.current = '';
+        isRapidInputRef.current = false;
         return;
       }
 
@@ -60,10 +67,11 @@ export function useBarcodeScanner({
         bufferRef.current += e.key;
       }
 
-      // Auto-reset buffer after a pause (in case Enter never comes)
-      timerRef.current = setTimeout(resetBuffer, 500);
+      // Auto-reset buffer after a pause
+      timerRef.current = setTimeout(resetBuffer, 300);
     };
 
+    // Use capture phase to intercept before input fields
     window.addEventListener('keydown', handleKeyDown, true);
     return () => {
       window.removeEventListener('keydown', handleKeyDown, true);
