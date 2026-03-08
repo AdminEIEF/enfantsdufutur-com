@@ -170,6 +170,7 @@ export default function PointageEleves() {
   const arrivedCount = todayPointages.filter(p => p.heure_arrivee).length;
   const departedCount = todayPointages.filter(p => p.heure_depart).length;
   const presentCount = todayPointages.filter(p => p.heure_arrivee && !p.heure_depart).length;
+  const lateCount = todayPointages.filter(p => p.en_retard).length;
 
   return (
     <div className="space-y-6">
@@ -258,7 +259,7 @@ export default function PointageEleves() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4 text-center">
             <LogIn className="h-5 w-5 mx-auto text-emerald-600 mb-1" />
@@ -278,6 +279,13 @@ export default function PointageEleves() {
             <LogOut className="h-5 w-5 mx-auto text-orange-600 mb-1" />
             <div className="text-2xl font-bold">{departedCount}</div>
             <p className="text-xs text-muted-foreground">Partis</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 text-center">
+            <Clock className="h-5 w-5 mx-auto text-red-600 mb-1" />
+            <div className="text-2xl font-bold">{lateCount}</div>
+            <p className="text-xs text-muted-foreground">En retard</p>
           </CardContent>
         </Card>
       </div>
@@ -316,7 +324,10 @@ export default function PointageEleves() {
                         ↑ {format(new Date(p.heure_depart), 'HH:mm')}
                       </span>
                     )}
-                    {!p.heure_depart && p.heure_arrivee && (
+                    {p.en_retard && (
+                      <Badge className="bg-red-100 text-red-700 text-[10px]">Retard</Badge>
+                    )}
+                    {!p.heure_depart && p.heure_arrivee && !p.en_retard && (
                       <Badge className="bg-emerald-100 text-emerald-700 text-[10px]">Présent</Badge>
                     )}
                   </div>
