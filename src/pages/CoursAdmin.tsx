@@ -55,6 +55,10 @@ export default function CoursAdmin() {
   const [dNoteMax, setDNoteMax] = useState('20');
   const [dTypeDevoir, setDTypeDevoir] = useState('fichier');
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [dSujetMode, setDSujetMode] = useState<'texte' | 'fichier'>('texte');
+  const [dSujetFile, setDSujetFile] = useState<File | null>(null);
+  const [dUploading, setDUploading] = useState(false);
+  const dFileRef = useRef<HTMLInputElement>(null);
 
   const { data: classes = [] } = useQuery({
     queryKey: ['classes-all'],
