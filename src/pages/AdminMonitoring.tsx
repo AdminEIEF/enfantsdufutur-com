@@ -572,17 +572,26 @@ export default function AdminMonitoring() {
                           {emps.map(e => (
                             <div key={e.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 cursor-pointer" onClick={() => setConnectionDetail(e)}>
                               <div className="flex items-center gap-2">
-                                <span className="relative flex h-3 w-3">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
-                                </span>
+                                {isOnline(e) ? (
+                                  <span className="relative flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex rounded-full h-3 w-3 bg-muted-foreground/30" />
+                                )}
                                 <span className="font-medium text-sm">{e.display_name}</span>
                                 {e.poste && <span className="text-xs text-muted-foreground">— {e.poste}</span>}
                               </div>
-                              <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums">
-                                <Clock className="h-3 w-3" />
-                                {formatDuration(e.connected_at)}
-                              </Badge>
+                              {isOnline(e) ? (
+                                <Badge variant="outline" className="text-xs font-mono gap-1 tabular-nums border-emerald-300 text-emerald-700 dark:text-emerald-400">
+                                  <Clock className="h-3 w-3" />
+                                  {formatDuration(e.connected_at)}
+                                </Badge>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground">Vu {formatDate(e.last_seen_at)}</span>
+                              )}
+                            </div>
                             </div>
                           ))}
                         </div>
