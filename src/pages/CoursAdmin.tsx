@@ -170,14 +170,31 @@ export default function CoursAdmin() {
         ? quizQuestions.reduce((s, q) => s + q.points, 0) 
         : Number(dNoteMax) || 20;
 
+      // Handle sujet file upload
+      let sujetUrl: string | null = null;
+      let sujetNom: string | null = null;
+      if (dSujetMode === 'fichier' && dSujetFile) {
+        setDUploading(true);
+        const ext = dSujetFile.name.split('.').pop();
+        const fileName = `devoirs-sujets/${dClasseId}/${Date.now()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage.from('devoirs').upload(fileName, dSujetFile);
+        if (uploadErr) throw uploadErr;
+        const { data: signedData } = await supabase.storage.from('devoirs').createSignedUrl(fileName, 31536000);
+        sujetUrl = signedData?.signedUrl || null;
+        sujetNom = dSujetFile.name;
+        setDUploading(false);
+      }
+
       const { data: devoir, error } = await supabase.from('devoirs').insert({
         titre: dTitre.trim(),
-        description: dDescription.trim() || null,
+        description: dSujetMode === 'texte' ? (dDescription.trim() || null) : null,
         matiere_id: dMatiereId,
         classe_id: dClasseId,
         date_limite: dDateLimite,
         note_max: totalPoints,
         type_devoir: dTypeDevoir,
+        sujet_url: sujetUrl,
+        sujet_nom: sujetNom,
       } as any).select('id').single();
       if (error) throw error;
 
@@ -200,9 +217,12 @@ export default function CoursAdmin() {
       toast({ title: 'Devoir ajouté' });
       setOpenDevoir(false);
       setDTitre(''); setDDescription(''); setDMatiereId(''); setDClasseId(''); setDDateLimite(''); setDNoteMax('20');
-      setDTypeDevoir('fichier'); setQuizQuestions([]);
+      setDTypeDevoir('fichier'); setQuizQuestions([]); setDSujetMode('texte'); setDSujetFile(null);
     },
-    onError: (e: Error) => toast({ title: 'Erreur', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => {
+      setDUploading(false);
+      toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
+    },
   });
 
   const deleteCours = useMutation({
