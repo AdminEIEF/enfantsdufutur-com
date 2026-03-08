@@ -155,7 +155,14 @@ export default function AdminMonitoring() {
     const ch2 = supabase.channel('connections-rt')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'active_connections' }, (p) => {
         setConnections(prev => [p.new as ActiveConnection, ...prev].slice(0, 500));
-      }).subscribe();
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'active_connections' }, (p) => {
+        setConnections(prev => prev.filter(c => c.id !== (p.old as any).id));
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'active_connections' }, (p) => {
+        setConnections(prev => prev.map(c => c.id === (p.new as ActiveConnection).id ? (p.new as ActiveConnection) : c));
+      })
+      .subscribe();
 
     return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
   }, []);
