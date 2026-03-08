@@ -35,26 +35,26 @@ export default function Auth() {
       {/* Left side — Logo & Branding */}
       <div
         className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #1e3a5f 0%, #0f1b2d 50%, #162d50 100%)' }}
+        style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f1f5f9 50%, #94a3b8 100%)' }}
       >
         {/* Animated background blobs */}
         <motion.div
-          className="absolute -top-32 -right-32 w-[400px] h-[400px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #2563eb 0%, transparent 70%)' }}
+          className="absolute -top-32 -right-32 w-[400px] h-[400px] rounded-full opacity-10"
+          style={{ background: 'radial-gradient(circle, #16a34a 0%, transparent 70%)' }}
           animate={{ scale: [1, 1.1, 1], x: [0, 20, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
-          className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full opacity-15"
-          style={{ background: 'radial-gradient(circle, #1d4ed8 0%, transparent 70%)' }}
+          className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full opacity-10"
+          style={{ background: 'radial-gradient(circle, #dc2626 0%, transparent 70%)' }}
           animate={{ scale: [1, 1.15, 1], y: [0, 15, 0] }}
           transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
         />
 
         {/* Decorative tricolor ring accents */}
-        <div className="absolute top-10 left-10 w-16 h-16 rounded-full border-2 border-red-500/20" />
-        <div className="absolute bottom-16 right-16 w-24 h-24 rounded-full border-2 border-yellow-500/20" />
-        <div className="absolute top-1/3 right-12 w-10 h-10 rounded-full border-2 border-green-500/20" />
+        <div className="absolute top-10 left-10 w-16 h-16 rounded-full border-2 border-red-400/20" />
+        <div className="absolute bottom-16 right-16 w-24 h-24 rounded-full border-2 border-green-400/20" />
+        <div className="absolute top-1/3 right-12 w-10 h-10 rounded-full border-2 border-yellow-400/20" />
 
         <motion.div
           className="relative z-10 flex flex-col items-center px-8"
@@ -79,15 +79,15 @@ export default function Auth() {
           </motion.div>
 
           <div className="mt-8 text-center">
-            <h2 className="text-2xl font-bold text-white drop-shadow-md" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              <span className="text-red-400">Ecole</span>{' '}
-              <span className="text-yellow-400">Internationale</span>
+            <h2 className="text-2xl font-bold drop-shadow-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <span className="text-red-600">Ecole</span>{' '}
+              <span className="text-yellow-500">Internationale</span>
             </h2>
             <h3 className="text-xl font-bold mt-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              <span className="text-yellow-400">Les Enfants </span>
-              <span className="text-green-400">du Futur</span>
+              <span className="text-yellow-500">Les Enfants </span>
+              <span className="text-green-600">du Futur</span>
             </h3>
-            <p className="text-blue-300/60 mt-3 text-sm max-w-xs mx-auto italic">
+            <p className="text-slate-500 mt-3 text-sm max-w-xs mx-auto italic">
               Faisons Plus !
             </p>
           </div>
