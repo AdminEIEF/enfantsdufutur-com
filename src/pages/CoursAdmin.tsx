@@ -629,8 +629,8 @@ export default function CoursAdmin() {
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setOpenDevoir(false)}>Annuler</Button>
-                  <Button onClick={() => createDevoir.mutate()} disabled={createDevoir.isPending}>
-                    {createDevoir.isPending ? 'Ajout...' : 'Ajouter'}
+                  <Button onClick={() => createDevoir.mutate()} disabled={createDevoir.isPending || dUploading}>
+                    {(createDevoir.isPending || dUploading) ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> {dUploading ? 'Upload...' : 'Ajout...'}</> : 'Ajouter'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
