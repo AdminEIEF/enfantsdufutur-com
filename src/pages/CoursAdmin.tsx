@@ -462,6 +462,7 @@ export default function CoursAdmin() {
               <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                 <DialogHeader><DialogTitle>Nouveau devoir</DialogTitle></DialogHeader>
                 <div className="space-y-3">
+                  <div><Label>Titre *</Label><Input value={dTitre} onChange={e => setDTitre(e.target.value)} /></div>
                   {/* Sujet du devoir : texte ou fichier */}
                   <div>
                     <Label>Sujet / Consigne</Label>
