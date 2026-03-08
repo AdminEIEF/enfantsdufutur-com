@@ -124,6 +124,7 @@ function RoleBasedRedirect() {
     if (roles[0] === 'librairie') return <Navigate to="/librairie" replace />;
     if ((roles[0] as string) === 'coordinateur') return <Navigate to="/coordinateur-documents" replace />;
     if (roles[0] === 'robotique') return <Navigate to="/robotique-dashboard" replace />;
+    if (roles[0] === 'surveillant') return <Navigate to="/surveillant-pointage" replace />;
   }
   return <Navigate to="/dashboard" replace />;
 }
@@ -144,6 +145,7 @@ function AuthRoute() {
       if (roles[0] === 'boutique') return <Navigate to="/boutique" replace />;
       if (roles[0] === 'librairie') return <Navigate to="/librairie" replace />;
       if (roles[0] === 'robotique') return <Navigate to="/robotique-dashboard" replace />;
+      if (roles[0] === 'surveillant') return <Navigate to="/surveillant-pointage" replace />;
     }
     return <Navigate to="/dashboard" replace />;
   }
