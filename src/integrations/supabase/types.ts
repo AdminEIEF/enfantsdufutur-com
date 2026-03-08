@@ -2116,6 +2116,44 @@ export type Database = {
         }
         Relationships: []
       }
+      pointages_eleves: {
+        Row: {
+          created_at: string
+          date_pointage: string
+          eleve_id: string
+          heure_arrivee: string | null
+          heure_depart: string | null
+          id: string
+          scanne_par: string | null
+        }
+        Insert: {
+          created_at?: string
+          date_pointage?: string
+          eleve_id: string
+          heure_arrivee?: string | null
+          heure_depart?: string | null
+          id?: string
+          scanne_par?: string | null
+        }
+        Update: {
+          created_at?: string
+          date_pointage?: string
+          eleve_id?: string
+          heure_arrivee?: string | null
+          heure_depart?: string | null
+          id?: string
+          scanne_par?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pointages_eleves_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pointages_employes: {
         Row: {
           created_at: string

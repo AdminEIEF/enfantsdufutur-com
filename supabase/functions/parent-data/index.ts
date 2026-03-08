@@ -484,6 +484,16 @@ serve(async (req) => {
         emploiDuTemps = edtData || [];
       }
 
+      // Fetch pointages (last 30 days)
+      const thirtyDaysAgoDate = new Date();
+      thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30);
+      const { data: pointagesData } = await supabaseAdmin
+        .from("pointages_eleves")
+        .select("id, date_pointage, heure_arrivee, heure_depart")
+        .eq("eleve_id", eleve_id)
+        .gte("date_pointage", thirtyDaysAgoDate.toISOString().split('T')[0])
+        .order("date_pointage", { ascending: false });
+
       return new Response(
         JSON.stringify({
           solde_cantine,
@@ -497,6 +507,7 @@ serve(async (req) => {
           devoirs,
           soumissions,
           emploiDuTemps,
+          pointages: pointagesData || [],
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

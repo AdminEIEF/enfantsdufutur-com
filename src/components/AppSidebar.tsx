@@ -91,6 +91,13 @@ const navSections = [
     ],
   },
   {
+    label: 'Surveillance',
+    roles: ['admin', 'secretaire'] as const,
+    items: [
+      { title: 'Pointage Élèves', url: '/pointage-eleves', icon: ScanLine },
+    ],
+  },
+  {
     label: 'Scolarité - Coordination',
     roles: ['admin', 'secretaire', 'coordinateur'] as any,
     items: [
