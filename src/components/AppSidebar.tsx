@@ -92,9 +92,10 @@ const navSections = [
   },
   {
     label: 'Surveillance',
-    roles: ['admin', 'secretaire'] as const,
+    roles: ['admin', 'secretaire', 'surveillant'] as any,
     items: [
       { title: 'Pointage Élèves', url: '/pointage-eleves', icon: ScanLine },
+      { title: 'Pointage Surveillant', url: '/surveillant-pointage', icon: ScanLine },
     ],
   },
   {
