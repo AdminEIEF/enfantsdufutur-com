@@ -51,8 +51,8 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
   const [mobileMode, setMobileMode] = useState<'manuel' | 'auto'>('manuel');
   const [copied, setCopied] = useState(false);
 
-  const NUMERO_MARCHAND = '621 00 00 00'; // À remplacer par le vrai numéro
-  const WHATSAPP_NUMERO = '224621000000'; // À remplacer
+  const NUMERO_MARCHAND = '47 09 03';
+  const WHATSAPP_NUMERO = '224628848437';
 
   // Debit wallet state
   const [debitEleveId, setDebitEleveId] = useState(isSingle ? enfants[0]?.id || '' : '');
