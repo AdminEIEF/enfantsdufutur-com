@@ -52,9 +52,9 @@ export default function Auth() {
         />
 
         {/* Decorative tricolor ring accents */}
-        <div className="absolute top-10 left-10 w-16 h-16 rounded-full border-2 border-gray-300/30" />
-        <div className="absolute bottom-16 right-16 w-24 h-24 rounded-full border-2 border-gray-300/25" />
-        <div className="absolute top-1/3 right-12 w-10 h-10 rounded-full border-2 border-gray-300/30" />
+        <div className="absolute top-10 left-10 w-16 h-16 rounded-full bg-gray-300/20" />
+        <div className="absolute bottom-16 right-16 w-24 h-24 rounded-full bg-gray-300/15" />
+        <div className="absolute top-1/3 right-12 w-10 h-10 rounded-full bg-gray-300/20" />
 
         <motion.div
           className="relative z-10 flex flex-col items-center px-8"
