@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useParentAuth } from '@/hooks/useParentAuth';
 import {
   ArrowLeft, UtensilsCrossed, BookOpen, ShoppingBag, FileText,
-  Loader2, CheckCircle2, Clock, Package, Download, ClipboardList, Calendar
+  Loader2, CheckCircle2, Clock, Package, Download, ClipboardList, Calendar, ScanLine
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateBonRecuperation } from '@/lib/generateBonRecuperation';
@@ -17,6 +17,7 @@ import ParentEnfantFournitures from '@/components/parent/ParentEnfantFournitures
 import ParentEnfantBulletins from '@/components/parent/ParentEnfantBulletins';
 import ParentEnfantDevoirs from '@/components/parent/ParentEnfantDevoirs';
 import ParentEnfantEmploiDuTemps from '@/components/parent/ParentEnfantEmploiDuTemps';
+import ParentEnfantPointage from '@/components/parent/ParentEnfantPointage';
 
 export default function ParentEnfant() {
   const { id } = useParams<{ id: string }>();
@@ -102,8 +103,11 @@ export default function ParentEnfant() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <Tabs defaultValue="devoirs">
-            <TabsList className="w-full grid grid-cols-3 sm:grid-cols-6">
+          <Tabs defaultValue="pointage">
+            <TabsList className="w-full grid grid-cols-4 sm:grid-cols-7">
+              <TabsTrigger value="pointage">
+                <ScanLine className="h-4 w-4 mr-1" /> Présence
+              </TabsTrigger>
               <TabsTrigger value="devoirs">
                 <ClipboardList className="h-4 w-4 mr-1" /> Devoirs
                 {devoirsEnAttente.length > 0 && (
@@ -126,6 +130,10 @@ export default function ParentEnfant() {
                 <FileText className="h-4 w-4 mr-1" /> Bulletins
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="pointage" className="mt-4">
+              <ParentEnfantPointage pointages={data?.pointages || []} />
+            </TabsContent>
 
             <TabsContent value="devoirs" className="mt-4">
               <ParentEnfantDevoirs devoirs={devoirs} soumissions={soumissions} />
