@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import QRScannerDialog from '@/components/QRScannerDialog';
+import PointageHistorique from '@/components/PointageHistorique';
 
 export default function PointageEleves() {
   const [searchMatricule, setSearchMatricule] = useState('');
@@ -337,6 +338,9 @@ export default function PointageEleves() {
           )}
         </CardContent>
       </Card>
+
+      {/* Historique semaine/mois */}
+      <PointageHistorique />
 
       <QRScannerDialog
         open={scannerOpen}
