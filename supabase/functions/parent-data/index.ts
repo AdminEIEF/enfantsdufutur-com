@@ -432,7 +432,7 @@ serve(async (req) => {
       if (classeId) {
         const { data: devoirsData } = await supabaseAdmin
           .from("devoirs")
-          .select("id, titre, description, date_limite, type_devoir, note_max, matieres:matiere_id(nom)")
+          .select("id, titre, description, date_limite, type_devoir, note_max, sujet_url, sujet_nom, matieres:matiere_id(nom)")
           .eq("classe_id", classeId)
           .order("date_limite", { ascending: false })
           .limit(30);

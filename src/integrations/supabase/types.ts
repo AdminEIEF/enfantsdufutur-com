@@ -892,6 +892,8 @@ export type Database = {
           id: string
           matiere_id: string
           note_max: number
+          sujet_nom: string | null
+          sujet_url: string | null
           titre: string
           type_devoir: string
           updated_at: string
@@ -905,6 +907,8 @@ export type Database = {
           id?: string
           matiere_id: string
           note_max?: number
+          sujet_nom?: string | null
+          sujet_url?: string | null
           titre: string
           type_devoir?: string
           updated_at?: string
@@ -918,6 +922,8 @@ export type Database = {
           id?: string
           matiere_id?: string
           note_max?: number
+          sujet_nom?: string | null
+          sujet_url?: string | null
           titre?: string
           type_devoir?: string
           updated_at?: string

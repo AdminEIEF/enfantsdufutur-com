@@ -1,0 +1,1 @@
+ALTER TABLE public.devoirs ADD COLUMN sujet_url text, ADD COLUMN sujet_nom text;

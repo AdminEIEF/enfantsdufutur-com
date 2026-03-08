@@ -55,6 +55,10 @@ export default function CoursAdmin() {
   const [dNoteMax, setDNoteMax] = useState('20');
   const [dTypeDevoir, setDTypeDevoir] = useState('fichier');
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [dSujetMode, setDSujetMode] = useState<'texte' | 'fichier'>('texte');
+  const [dSujetFile, setDSujetFile] = useState<File | null>(null);
+  const [dUploading, setDUploading] = useState(false);
+  const dFileRef = useRef<HTMLInputElement>(null);
 
   const { data: classes = [] } = useQuery({
     queryKey: ['classes-all'],
@@ -166,14 +170,31 @@ export default function CoursAdmin() {
         ? quizQuestions.reduce((s, q) => s + q.points, 0) 
         : Number(dNoteMax) || 20;
 
+      // Handle sujet file upload
+      let sujetUrl: string | null = null;
+      let sujetNom: string | null = null;
+      if (dSujetMode === 'fichier' && dSujetFile) {
+        setDUploading(true);
+        const ext = dSujetFile.name.split('.').pop();
+        const fileName = `devoirs-sujets/${dClasseId}/${Date.now()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage.from('devoirs').upload(fileName, dSujetFile);
+        if (uploadErr) throw uploadErr;
+        const { data: signedData } = await supabase.storage.from('devoirs').createSignedUrl(fileName, 31536000);
+        sujetUrl = signedData?.signedUrl || null;
+        sujetNom = dSujetFile.name;
+        setDUploading(false);
+      }
+
       const { data: devoir, error } = await supabase.from('devoirs').insert({
         titre: dTitre.trim(),
-        description: dDescription.trim() || null,
+        description: dSujetMode === 'texte' ? (dDescription.trim() || null) : null,
         matiere_id: dMatiereId,
         classe_id: dClasseId,
         date_limite: dDateLimite,
         note_max: totalPoints,
         type_devoir: dTypeDevoir,
+        sujet_url: sujetUrl,
+        sujet_nom: sujetNom,
       } as any).select('id').single();
       if (error) throw error;
 
@@ -196,9 +217,12 @@ export default function CoursAdmin() {
       toast({ title: 'Devoir ajouté' });
       setOpenDevoir(false);
       setDTitre(''); setDDescription(''); setDMatiereId(''); setDClasseId(''); setDDateLimite(''); setDNoteMax('20');
-      setDTypeDevoir('fichier'); setQuizQuestions([]);
+      setDTypeDevoir('fichier'); setQuizQuestions([]); setDSujetMode('texte'); setDSujetFile(null);
     },
-    onError: (e: Error) => toast({ title: 'Erreur', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => {
+      setDUploading(false);
+      toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
+    },
   });
 
   const deleteCours = useMutation({
@@ -439,7 +463,49 @@ export default function CoursAdmin() {
                 <DialogHeader><DialogTitle>Nouveau devoir</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div><Label>Titre *</Label><Input value={dTitre} onChange={e => setDTitre(e.target.value)} /></div>
-                  <div><Label>Description</Label><Input value={dDescription} onChange={e => setDDescription(e.target.value)} /></div>
+                  {/* Sujet du devoir : texte ou fichier */}
+                  <div>
+                    <Label>Sujet / Consigne</Label>
+                    <RadioGroup value={dSujetMode} onValueChange={(v: any) => { setDSujetMode(v); setDSujetFile(null); setDDescription(''); }} className="flex gap-4 mt-1 mb-2">
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="texte" id="sujet-texte" />
+                        <Label htmlFor="sujet-texte" className="flex items-center gap-1 cursor-pointer text-sm">
+                          <FileText className="h-4 w-4" /> Saisir le sujet
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="fichier" id="sujet-fichier" />
+                        <Label htmlFor="sujet-fichier" className="flex items-center gap-1 cursor-pointer text-sm">
+                          <Upload className="h-4 w-4" /> Joindre un fichier (Word/PDF)
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                    {dSujetMode === 'texte' ? (
+                      <Textarea
+                        value={dDescription}
+                        onChange={e => setDDescription(e.target.value)}
+                        placeholder="Saisissez le sujet ou les consignes du devoir..."
+                        className="min-h-[100px]"
+                      />
+                    ) : (
+                      <div>
+                        <input
+                          ref={dFileRef}
+                          type="file"
+                          className="hidden"
+                          accept=".pdf,.doc,.docx"
+                          onChange={e => { if (e.target.files?.[0]) setDSujetFile(e.target.files[0]); }}
+                        />
+                        <div className="flex items-center gap-2">
+                          <Button type="button" variant="outline" size="sm" onClick={() => dFileRef.current?.click()}>
+                            <Upload className="h-4 w-4 mr-1" /> Choisir un fichier
+                          </Button>
+                          {dSujetFile && <span className="text-sm text-muted-foreground truncate max-w-[250px]">📎 {dSujetFile.name}</span>}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Formats acceptés : PDF, Word (.doc, .docx)</p>
+                      </div>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>Classe *</Label>
                       <Select value={dClasseId} onValueChange={setDClasseId}>
@@ -564,8 +630,8 @@ export default function CoursAdmin() {
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setOpenDevoir(false)}>Annuler</Button>
-                  <Button onClick={() => createDevoir.mutate()} disabled={createDevoir.isPending}>
-                    {createDevoir.isPending ? 'Ajout...' : 'Ajouter'}
+                  <Button onClick={() => createDevoir.mutate()} disabled={createDevoir.isPending || dUploading}>
+                    {(createDevoir.isPending || dUploading) ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> {dUploading ? 'Upload...' : 'Ajout...'}</> : 'Ajouter'}
                   </Button>
                 </DialogFooter>
               </DialogContent>

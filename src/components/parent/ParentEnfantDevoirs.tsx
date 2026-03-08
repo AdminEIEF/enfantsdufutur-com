@@ -95,6 +95,22 @@ export default function ParentEnfantDevoirs({ devoirs, soumissions }: Props) {
                     </div>
                   )}
 
+                  {/* Sujet en fichier */}
+                  {d.sujet_url && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">📎 Sujet joint</p>
+                      <a
+                        href={d.sujet_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-sm text-primary hover:underline bg-muted/50 rounded-md px-3 py-2"
+                      >
+                        <FileText className="h-4 w-4" />
+                        {d.sujet_nom || 'Télécharger le sujet'}
+                      </a>
+                    </div>
+                  )}
+
                   {/* Informations de soumission */}
                   {estSoumis && (
                     <div className="space-y-2">
