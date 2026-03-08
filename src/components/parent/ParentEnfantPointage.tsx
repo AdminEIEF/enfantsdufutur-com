@@ -1,8 +1,9 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LogIn, LogOut, Clock, AlertTriangle } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek, eachWeekOfInterval } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface Props {
   pointages: any[];
@@ -23,6 +24,22 @@ export default function ParentEnfantPointage({ pointages }: Props) {
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayEntry = sorted.find(p => p.date_pointage === today);
   const totalRetards = pointages.filter(p => p.en_retard).length;
+
+  // Group by weeks
+  const dates = pointages.map(p => new Date(p.date_pointage));
+  const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+  const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+  const weeks = eachWeekOfInterval({ start: minDate, end: maxDate }, { weekStartsOn: 1 }).reverse();
+
+  const weekGroups = weeks.map(ws => {
+    const we = endOfWeek(ws, { weekStartsOn: 1 });
+    const weekPointages = sorted.filter(p => {
+      const d = new Date(p.date_pointage);
+      return d >= ws && d <= we;
+    });
+    const retards = weekPointages.filter(p => p.en_retard).length;
+    return { ws, we, pointages: weekPointages, retards };
+  }).filter(w => w.pointages.length > 0);
 
   return (
     <div className="space-y-4">
@@ -104,35 +121,53 @@ export default function ParentEnfantPointage({ pointages }: Props) {
         </Card>
       )}
 
-      {/* History */}
+      {/* Weekly history */}
       <Card>
         <CardContent className="pt-4">
           <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-            <Clock className="h-4 w-4" /> Historique (30 derniers jours)
+            <Clock className="h-4 w-4" /> Historique par semaine
           </h4>
-          <div className="space-y-1.5">
-            {sorted.map(p => (
-              <div key={p.id} className={`flex items-center justify-between text-sm border rounded px-3 py-2 ${p.en_retard ? 'border-red-200 bg-red-50/50 dark:bg-red-950/10' : ''}`}>
-                <span className="font-medium min-w-[100px]">
-                  {format(new Date(p.date_pointage), 'EEE dd MMM', { locale: fr })}
-                </span>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  {p.heure_arrivee && (
-                    <span className={p.en_retard ? 'text-red-600' : 'text-emerald-600'}>↓ {format(new Date(p.heure_arrivee), 'HH:mm')}</span>
-                  )}
-                  {p.heure_depart && (
-                    <span className="text-orange-600">↑ {format(new Date(p.heure_depart), 'HH:mm')}</span>
-                  )}
-                  {p.en_retard && (
-                    <Badge className="bg-red-100 text-red-700 text-[10px]">Retard</Badge>
-                  )}
-                  {!p.en_retard && !p.heure_depart && p.heure_arrivee && (
-                    <Badge className="bg-emerald-100 text-emerald-700 text-[10px]">Présent</Badge>
-                  )}
-                </div>
-              </div>
+          <Accordion type="multiple" defaultValue={weekGroups.length > 0 ? [weekGroups[0].ws.toISOString()] : []} className="space-y-2">
+            {weekGroups.map(week => (
+              <AccordionItem key={week.ws.toISOString()} value={week.ws.toISOString()} className="border rounded-lg px-3">
+                <AccordionTrigger className="py-2.5 hover:no-underline text-sm">
+                  <div className="flex items-center justify-between w-full mr-2">
+                    <span className="font-medium">
+                      {format(week.ws, 'dd MMM', { locale: fr })} — {format(week.we, 'dd MMM', { locale: fr })}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px]">{week.pointages.length}j</Badge>
+                      {week.retards > 0 && (
+                        <Badge className="bg-red-100 text-red-700 text-[10px]">{week.retards} retard{week.retards > 1 ? 's' : ''}</Badge>
+                      )}
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-1.5 pb-1">
+                    {week.pointages.map(p => (
+                      <div key={p.id} className={`flex items-center justify-between text-sm border rounded px-3 py-2 ${p.en_retard ? 'border-red-200 bg-red-50/50 dark:bg-red-950/10' : ''}`}>
+                        <span className="font-medium min-w-[90px] capitalize">
+                          {format(new Date(p.date_pointage), 'EEE dd', { locale: fr })}
+                        </span>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          {p.heure_arrivee && (
+                            <span className={p.en_retard ? 'text-red-600' : 'text-emerald-600'}>↓ {format(new Date(p.heure_arrivee), 'HH:mm')}</span>
+                          )}
+                          {p.heure_depart && (
+                            <span className="text-orange-600">↑ {format(new Date(p.heure_depart), 'HH:mm')}</span>
+                          )}
+                          {p.en_retard && (
+                            <Badge className="bg-red-100 text-red-700 text-[10px]">Retard</Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             ))}
-          </div>
+          </Accordion>
         </CardContent>
       </Card>
     </div>
