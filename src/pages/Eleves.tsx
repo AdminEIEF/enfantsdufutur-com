@@ -430,6 +430,7 @@ export default function Eleves() {
     if (!badgeEleve) return;
     const qrValue = buildQrData(badgeEleve);
     const qrDataUrl = await QRCode.toDataURL(qrValue, { width: 300, margin: 1, color: { dark: '#1a1a2e', light: '#ffffff' } });
+    const siteQrUrl = await QRCode.toDataURL('https://enfantsdufutur-com.lovable.app/eleve', { width: 200, margin: 1, color: { dark: '#1e8449', light: '#ffffff' } });
     const w = window.open('', '_blank', 'width=650,height=750');
     if (!w) return;
     const sName = schoolConfig?.nom || 'Groupe Scolaire';
@@ -535,6 +536,18 @@ export default function Eleves() {
 
         /* Info */
         .info-col { flex: 1; padding-left: 16px; display: flex; flex-direction: column; }
+        .site-qr-zone {
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          flex-shrink: 0; margin-left: 8px;
+        }
+        .site-qr-img {
+          width: 70px; height: 70px; border-radius: 6px; border: 1.5px solid #1e8449;
+          padding: 3px; background: white; box-shadow: 0 2px 6px rgba(30,132,73,0.12);
+        }
+        .site-qr-label {
+          font-size: 6.5px; font-weight: 700; color: #1e8449; text-transform: uppercase;
+          letter-spacing: 0.5px; margin-top: 3px; text-align: center;
+        }
         .student-name { font-size: 16px; font-weight: 800; color: #1a1a2e; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.3px; }
         .info-rows { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
         .info-row { display: flex; align-items: baseline; gap: 6px; }
@@ -621,6 +634,10 @@ export default function Eleves() {
               <span class="m-label">N°</span>
               <span class="m-value">${badgeEleve.matricule || '—'}</span>
             </div>
+          </div>
+          <div class="site-qr-zone">
+            <img src="${siteQrUrl}" class="site-qr-img" alt="QR Site" />
+            <span class="site-qr-label">Espace Élève</span>
           </div>
         </div>
 
