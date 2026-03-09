@@ -814,6 +814,20 @@ export default function Eleves() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={filtered.length > 0 && filtered.every((e: any) => selectedIds.has(e.id))}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedIds(new Set([...selectedIds, ...filtered.map((e: any) => e.id)]));
+                      } else {
+                        const newSet = new Set(selectedIds);
+                        filtered.forEach((e: any) => newSet.delete(e.id));
+                        setSelectedIds(newSet);
+                      }
+                    }}
+                  />
+                </TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Matricule</TableHead><TableHead>Nom</TableHead><TableHead>Prénom</TableHead>
                 <TableHead>Sexe</TableHead><TableHead>Cycle</TableHead><TableHead>Classe</TableHead>
