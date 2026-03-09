@@ -426,10 +426,12 @@ export default function Eleves() {
     });
   };
 
-  const printBadge = () => {
-    const w = window.open('', '_blank', 'width=650,height=600');
-    if (!w || !badgeEleve) return;
+  const printBadge = async () => {
+    if (!badgeEleve) return;
     const qrValue = buildQrData(badgeEleve);
+    const qrDataUrl = await QRCode.toDataURL(qrValue, { width: 300, margin: 1, color: { dark: '#1a1a2e', light: '#ffffff' } });
+    const w = window.open('', '_blank', 'width=650,height=750');
+    if (!w) return;
     const sName = schoolConfig?.nom || 'Groupe Scolaire';
     const anneeScolaire = '2025-2026';
     const cycleName = badgeEleve.classes?.niveaux?.cycles?.nom || '';
