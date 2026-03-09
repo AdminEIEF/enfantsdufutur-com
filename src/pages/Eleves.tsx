@@ -538,15 +538,15 @@ export default function Eleves() {
         .info-col { flex: 1; padding-left: 16px; display: flex; flex-direction: column; }
         .site-qr-zone {
           display: flex; flex-direction: column; align-items: center; justify-content: center;
-          flex-shrink: 0; margin-left: 8px;
+          flex-shrink: 0; margin-left: 6px;
         }
         .site-qr-img {
-          width: 70px; height: 70px; border-radius: 6px; border: 1.5px solid #1e8449;
-          padding: 3px; background: white; box-shadow: 0 2px 6px rgba(30,132,73,0.12);
+          width: 65px; height: 65px; border-radius: 5px; border: 1.5px solid #1e8449;
+          padding: 2px; background: white; box-shadow: 0 2px 6px rgba(30,132,73,0.12);
         }
         .site-qr-label {
-          font-size: 6.5px; font-weight: 700; color: #1e8449; text-transform: uppercase;
-          letter-spacing: 0.5px; margin-top: 3px; text-align: center;
+          font-size: 6px; font-weight: 700; color: #1e8449; text-transform: uppercase;
+          letter-spacing: 0.4px; margin-top: 2px; text-align: center;
         }
         .student-name { font-size: 16px; font-weight: 800; color: #1a1a2e; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.3px; }
         .info-rows { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
