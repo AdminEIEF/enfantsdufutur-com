@@ -8,7 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle, Camera, Upload, Bus } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle, Camera, Upload, Bus, FileDown } from 'lucide-react';
+import PlancheBadgesScolaires from '@/components/PlancheBadgesScolaires';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -108,6 +110,8 @@ export default function Eleves() {
   const [editing, setEditing] = useState<any>(null);
   const [badgeEleve, setBadgeEleve] = useState<any>(null);
   const [abandonDialog, setAbandonDialog] = useState<any>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showPlanche, setShowPlanche] = useState(false);
   const [creatingFamille, setCreatingFamille] = useState(false);
   const [newFamilleName, setNewFamilleName] = useState('');
   const [newFamilleTelPere, setNewFamilleTelPere] = useState('');
@@ -797,6 +801,11 @@ export default function Eleves() {
         }}>
           <Download className="h-4 w-4 mr-1" /> Exporter Excel
         </Button>
+        {selectedIds.size > 0 && (
+          <Button size="sm" onClick={() => setShowPlanche(true)} className="gap-2">
+            <FileDown className="h-4 w-4" /> Planches badges ({selectedIds.size})
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -805,6 +814,20 @@ export default function Eleves() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={filtered.length > 0 && filtered.every((e: any) => selectedIds.has(e.id))}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedIds(new Set([...selectedIds, ...filtered.map((e: any) => e.id)]));
+                      } else {
+                        const newSet = new Set(selectedIds);
+                        filtered.forEach((e: any) => newSet.delete(e.id));
+                        setSelectedIds(newSet);
+                      }
+                    }}
+                  />
+                </TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Matricule</TableHead><TableHead>Nom</TableHead><TableHead>Prénom</TableHead>
                 <TableHead>Sexe</TableHead><TableHead>Cycle</TableHead><TableHead>Classe</TableHead>
@@ -813,11 +836,21 @@ export default function Eleves() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
               ) : filtered.map((e: any) => (
                 <TableRow key={e.id} className="cursor-pointer" onClick={() => setSelected(e)}>
+                  <TableCell onClick={ev => ev.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedIds.has(e.id)}
+                      onCheckedChange={(checked) => {
+                        const newSet = new Set(selectedIds);
+                        if (checked) newSet.add(e.id); else newSet.delete(e.id);
+                        setSelectedIds(newSet);
+                      }}
+                    />
+                  </TableCell>
                   <TableCell>
                     {e.famille_id ? (
                       <Badge variant="default" className="gap-1 text-xs"><Users className="h-3 w-3" />Famille</Badge>
@@ -1267,6 +1300,16 @@ export default function Eleves() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Planche Badges Scolaires */}
+      {showPlanche && selectedIds.size > 0 && (
+        <PlancheBadgesScolaires
+          eleves={eleves.filter((e: any) => selectedIds.has(e.id))}
+          onClose={() => setShowPlanche(false)}
+          schoolName={schoolConfig?.nom}
+          schoolLogo={schoolConfig?.logo_url}
+        />
+      )}
     </div>
   );
 }
