@@ -430,6 +430,7 @@ export default function Eleves() {
     if (!badgeEleve) return;
     const qrValue = buildQrData(badgeEleve);
     const qrDataUrl = await QRCode.toDataURL(qrValue, { width: 300, margin: 1, color: { dark: '#1a1a2e', light: '#ffffff' } });
+    const siteQrUrl = await QRCode.toDataURL('https://enfantsdufutur-com.lovable.app/eleve', { width: 200, margin: 1, color: { dark: '#1e8449', light: '#ffffff' } });
     const w = window.open('', '_blank', 'width=650,height=750');
     if (!w) return;
     const sName = schoolConfig?.nom || 'Groupe Scolaire';
