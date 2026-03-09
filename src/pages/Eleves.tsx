@@ -442,118 +442,120 @@ export default function Eleves() {
       <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Poppins', sans-serif; background: #e8edf3; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 24px; }
+        body { font-family: 'Poppins', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 24px; }
 
         .id-card {
-          width: 500px; height: 310px; border-radius: 16px; position: relative;
+          width: 86mm; height: 54mm; border-radius: 3mm; position: relative;
           overflow: hidden; background: #ffffff;
-          box-shadow: 0 20px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.12);
         }
 
-        /* Top banner */
+        /* Top banner — rouge + vert drapeau */
         .top-banner {
-          height: 90px; background: linear-gradient(135deg, #0c2461 0%, #1e3799 40%, #4a69bd 100%);
-          position: relative; display: flex; align-items: center; padding: 0 24px;
+          height: 18mm; position: relative; display: flex; align-items: center; padding: 0 4mm;
+          background: linear-gradient(135deg, #c0392b 0%, #a93226 35%, #1e8449 65%, #196f3d 100%);
         }
         .top-banner::after {
-          content: ''; position: absolute; bottom: -20px; left: 0; right: 0; height: 40px;
-          background: linear-gradient(135deg, #0c2461 0%, #1e3799 40%, #4a69bd 100%);
-          clip-path: ellipse(60% 100% at 50% 0%);
+          content: ''; position: absolute; bottom: -3mm; left: 0; right: 0; height: 6mm;
+          background: linear-gradient(135deg, #c0392b 0%, #a93226 35%, #1e8449 65%, #196f3d 100%);
+          clip-path: ellipse(55% 100% at 50% 0%);
         }
         .banner-pattern {
-          position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.08;
-          background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.3) 10px, rgba(255,255,255,0.3) 20px);
+          position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.06;
+          background-image: repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,255,255,0.4) 8px, rgba(255,255,255,0.4) 16px);
         }
+
+        /* Logo avec fond blanc */
         .school-logo-badge {
-          width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.2);
-          backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0; overflow: hidden; border: 2px solid rgba(255,255,255,0.3);
+          width: 12mm; height: 12mm; border-radius: 50%; background: #ffffff;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0; overflow: hidden; border: 0.6mm solid rgba(255,255,255,0.8);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 2;
         }
-        .school-logo-badge img { width: 100%; height: 100%; object-fit: cover; }
-        .school-info { flex: 1; margin-left: 14px; z-index: 1; }
-        .school-name-text { color: white; font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
-        .school-year-text { color: rgba(255,255,255,0.75); font-size: 10px; font-weight: 500; margin-top: 2px; }
+        .school-logo-badge img { width: 85%; height: 85%; object-fit: contain; }
+        .school-info { flex: 1; margin-left: 3mm; z-index: 1; }
+        .school-name-text { color: white; font-size: 2.4mm; font-weight: 800; letter-spacing: 0.3mm; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        .school-year-text { color: rgba(255,255,255,0.85); font-size: 1.8mm; font-weight: 500; margin-top: 0.5mm; }
         .card-type-label {
-          z-index: 1; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);
-          color: white; padding: 4px 14px; border-radius: 20px; font-size: 9px;
-          font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
-          border: 1px solid rgba(255,255,255,0.3);
+          z-index: 1; background: rgba(255,255,255,0.25); backdrop-filter: blur(8px);
+          color: white; padding: 1mm 3mm; border-radius: 3mm; font-size: 1.6mm;
+          font-weight: 700; letter-spacing: 0.8mm; text-transform: uppercase;
+          border: 0.3mm solid rgba(255,255,255,0.4);
         }
 
         /* Body */
         .card-body {
-          display: flex; padding: 24px 24px 0; position: relative; z-index: 2; margin-top: -8px;
+          display: flex; padding: 4mm 4mm 0; position: relative; z-index: 2; margin-top: -1.5mm;
         }
 
         /* Photo */
         .photo-wrapper {
-          width: 110px; height: 135px; border-radius: 12px; overflow: hidden; flex-shrink: 0;
-          border: 3px solid #1e3799; box-shadow: 0 8px 20px rgba(30,55,153,0.2);
-          background: #f1f3f8;
+          width: 18mm; height: 22mm; border-radius: 2mm; overflow: hidden; flex-shrink: 0;
+          border: 0.5mm solid #1e8449; box-shadow: 0 3px 10px rgba(30,132,73,0.2);
+          background: #f5f5f5;
         }
         .photo-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-        .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 44px; color: #c5cee0; background: linear-gradient(135deg, #f1f3f8, #e2e8f0); }
+        .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 8mm; color: #c5cee0; background: linear-gradient(135deg, #f5f5f5, #e8e8e8); }
 
         /* Info */
-        .info-col { flex: 1; padding-left: 18px; display: flex; flex-direction: column; }
-        .student-name { font-size: 16px; font-weight: 800; color: #0c2461; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.5px; }
-        .info-rows { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
-        .info-row { display: flex; align-items: baseline; gap: 6px; }
-        .info-row .lbl { font-size: 8px; font-weight: 700; color: #8395a7; text-transform: uppercase; letter-spacing: 0.8px; min-width: 62px; }
-        .info-row .val { font-size: 11px; font-weight: 600; color: #2d3436; }
+        .info-col { flex: 1; padding-left: 3mm; display: flex; flex-direction: column; }
+        .student-name { font-size: 3mm; font-weight: 800; color: #1a1a2e; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.2mm; }
+        .info-rows { margin-top: 1.5mm; display: flex; flex-direction: column; gap: 1mm; }
+        .info-row { display: flex; align-items: baseline; gap: 1.5mm; }
+        .info-row .lbl { font-size: 1.6mm; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.3mm; min-width: 12mm; }
+        .info-row .val { font-size: 2.2mm; font-weight: 600; color: #2d3436; }
         .matricule-box {
-          margin-top: 8px; background: linear-gradient(135deg, #0c2461, #1e3799);
-          color: white; padding: 5px 14px; border-radius: 8px; display: inline-flex;
-          align-items: center; gap: 6px; width: fit-content;
+          margin-top: 1.5mm; background: linear-gradient(135deg, #c0392b, #1e8449);
+          color: white; padding: 1mm 3mm; border-radius: 1.5mm; display: inline-flex;
+          align-items: center; gap: 1.5mm; width: fit-content;
         }
-        .matricule-box .m-label { font-size: 7px; font-weight: 600; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
-        .matricule-box .m-value { font-size: 13px; font-weight: 800; font-family: 'Courier New', monospace; letter-spacing: 1.5px; }
+        .matricule-box .m-label { font-size: 1.4mm; font-weight: 600; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5mm; }
+        .matricule-box .m-value { font-size: 2.6mm; font-weight: 800; font-family: 'Courier New', monospace; letter-spacing: 0.8mm; }
 
-        /* QR Code */
+        /* QR Code — agrandi */
         .qr-section {
-          position: absolute; bottom: 14px; right: 20px;
-          display: flex; flex-direction: column; align-items: center; gap: 4px;
+          position: absolute; bottom: 7mm; right: 3.5mm;
+          display: flex; flex-direction: column; align-items: center; gap: 0.8mm; z-index: 3;
         }
         .qr-frame {
-          background: white; padding: 6px; border-radius: 10px;
-          border: 2px solid #1e3799; box-shadow: 0 4px 12px rgba(30,55,153,0.15);
+          background: white; padding: 1.2mm; border-radius: 1.5mm;
+          border: 0.4mm solid #1e8449; box-shadow: 0 2px 8px rgba(30,132,73,0.15);
         }
-        .qr-hint { font-size: 7px; color: #8395a7; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .qr-hint { font-size: 1.3mm; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3mm; }
 
         /* Footer */
         .card-footer-bar {
-          position: absolute; bottom: 0; left: 0; right: 0; height: 28px;
-          background: linear-gradient(90deg, #0c2461, #1e3799, #4a69bd);
+          position: absolute; bottom: 0; left: 0; right: 0; height: 5mm;
+          background: linear-gradient(90deg, #c0392b, #a93226, #1e8449, #196f3d);
           display: flex; align-items: center; justify-content: center;
         }
-        .footer-bar-text { font-size: 7.5px; color: rgba(255,255,255,0.7); font-weight: 500; letter-spacing: 0.8px; }
+        .footer-bar-text { font-size: 1.4mm; color: rgba(255,255,255,0.8); font-weight: 500; letter-spacing: 0.5mm; }
 
-        /* Decorative elements */
-        .deco-circle {
-          position: absolute; border-radius: 50%; opacity: 0.04; background: #1e3799;
-        }
+        /* Decorative */
+        .deco-circle { position: absolute; border-radius: 50%; opacity: 0.03; }
 
         .actions { display: flex; gap: 12px; }
         .btn { padding: 12px 28px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px; font-family: 'Poppins', sans-serif; transition: transform 0.15s; }
         .btn:hover { transform: translateY(-1px); }
-        .btn-primary { background: linear-gradient(135deg, #0c2461, #1e3799); color: white; box-shadow: 0 4px 15px rgba(30,55,153,0.3); }
+        .btn-primary { background: linear-gradient(135deg, #c0392b, #1e8449); color: white; box-shadow: 0 4px 15px rgba(30,132,73,0.3); }
         .btn-secondary { background: white; color: #2d3436; border: 1.5px solid #dfe6e9; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 
         @media print {
           body { background: white; padding: 0; }
           .actions, .hint { display: none !important; }
           .id-card { box-shadow: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          @page { size: 86mm 54mm; margin: 0; }
         }
       </style>
     </head><body>
       <div class="id-card" id="badge-card">
-        <div class="deco-circle" style="width:180px;height:180px;right:-40px;bottom:40px;"></div>
-        <div class="deco-circle" style="width:120px;height:120px;left:-30px;bottom:-20px;"></div>
+        <div class="deco-circle" style="width:30mm;height:30mm;right:-8mm;bottom:8mm;background:#1e8449;"></div>
+        <div class="deco-circle" style="width:20mm;height:20mm;left:-5mm;bottom:-4mm;background:#c0392b;"></div>
 
         <div class="top-banner">
           <div class="banner-pattern"></div>
           <div class="school-logo-badge">
-            ${logoUrl ? `<img src="${logoUrl}" alt="Logo" />` : '🎓'}
+            ${logoUrl ? `<img src="${logoUrl}" alt="Logo" />` : '<span style="font-size:6mm;">🎓</span>'}
           </div>
           <div class="school-info">
             <div class="school-name-text">${sName}</div>
@@ -601,9 +603,9 @@ export default function Eleves() {
       <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
       <script>
-        QRCode.toCanvas(document.getElementById('qr'), ${JSON.stringify(qrValue)}, { width: 120, margin: 0, color: { dark: '#0c2461' } }, function(){});
+        QRCode.toCanvas(document.getElementById('qr'), ${JSON.stringify(qrValue)}, { width: 130, margin: 0, color: { dark: '#1a1a2e' } }, function(){});
         function downloadPNG() {
-          html2canvas(document.getElementById('badge-card'), { scale: 3, useCORS: true, backgroundColor: '#ffffff' }).then(function(canvas) {
+          html2canvas(document.getElementById('badge-card'), { scale: 4, useCORS: true, backgroundColor: '#ffffff' }).then(function(canvas) {
             var a = document.createElement('a');
             a.download = '${badgeEleve.matricule || 'badge'}_${badgeEleve.nom}.png';
             a.href = canvas.toDataURL('image/png');
