@@ -582,11 +582,10 @@ export default function Eleves() {
               <span class="m-value">${badgeEleve.matricule || '—'}</span>
             </div>
           </div>
-        </div>
-
-        <div class="qr-section">
-          <div class="qr-frame"><canvas id="qr"></canvas></div>
-          <span class="qr-hint">Scanner pour identification</span>
+          <div class="qr-col">
+            <div class="qr-frame"><canvas id="qr"></canvas></div>
+            <span class="qr-hint">Scanner pour identification</span>
+          </div>
         </div>
 
         <div class="card-footer-bar">
@@ -603,7 +602,7 @@ export default function Eleves() {
       <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
       <script>
-        QRCode.toCanvas(document.getElementById('qr'), ${JSON.stringify(qrValue)}, { width: 110, margin: 0, color: { dark: '#1a1a2e' } }, function(){});
+        QRCode.toCanvas(document.getElementById('qr'), ${JSON.stringify(qrValue)}, { width: 90, margin: 0, color: { dark: '#1a1a2e' } }, function(){});
         function downloadPNG() {
           html2canvas(document.getElementById('badge-card'), { scale: 4, useCORS: true, backgroundColor: '#ffffff' }).then(function(canvas) {
             var a = document.createElement('a');
