@@ -538,15 +538,15 @@ export default function Eleves() {
         .info-col { flex: 1; padding-left: 16px; display: flex; flex-direction: column; }
         .site-qr-zone {
           display: flex; flex-direction: column; align-items: center; justify-content: center;
-          flex-shrink: 0; margin-left: 8px;
+          flex-shrink: 0; margin-left: 6px;
         }
         .site-qr-img {
-          width: 70px; height: 70px; border-radius: 6px; border: 1.5px solid #1e8449;
-          padding: 3px; background: white; box-shadow: 0 2px 6px rgba(30,132,73,0.12);
+          width: 65px; height: 65px; border-radius: 5px; border: 1.5px solid #1e8449;
+          padding: 2px; background: white; box-shadow: 0 2px 6px rgba(30,132,73,0.12);
         }
         .site-qr-label {
-          font-size: 6.5px; font-weight: 700; color: #1e8449; text-transform: uppercase;
-          letter-spacing: 0.5px; margin-top: 3px; text-align: center;
+          font-size: 6px; font-weight: 700; color: #1e8449; text-transform: uppercase;
+          letter-spacing: 0.4px; margin-top: 2px; text-align: center;
         }
         .student-name { font-size: 16px; font-weight: 800; color: #1a1a2e; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.3px; }
         .info-rows { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
@@ -563,15 +563,18 @@ export default function Eleves() {
 
         /* Motto + Contact */
         .motto-contact {
-          padding: 4px 20px 2px; position: relative; z-index: 2; text-align: center;
+          padding: 3px 20px 2px; position: relative; z-index: 2; text-align: center;
         }
         .motto-line {
           font-size: 13px; font-weight: 800; color: #1e8449; font-style: italic;
           letter-spacing: 0.5px;
         }
         .contact-line {
-          font-size: 8.5px; font-weight: 600; color: #555; letter-spacing: 0.3px; margin-top: 1px;
+          font-size: 8px; font-weight: 600; color: #555; letter-spacing: 0.2px; margin-top: 1px;
+          display: flex; align-items: center; justify-content: center; gap: 4px;
         }
+        .contact-line svg { width: 9px; height: 9px; flex-shrink: 0; }
+        .contact-line .sep { margin: 0 3px; color: #ccc; }
 
         /* Footer */
         .card-footer-bar {
@@ -643,7 +646,14 @@ export default function Eleves() {
 
         <div class="motto-contact">
           <div class="motto-line">Faisons plus !</div>
-          <div class="contact-line">Contact : (+224) 628 84 84 37 / 625 54 95 79 — eiefinfos@enfantsdufutur.com</div>
+          <div class="contact-line">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1e8449" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            (+224) 628 84 84 37 / 625 54 95 79
+          </div>
+          <div class="contact-line">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1e8449" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            eiefinfos@enfantsdufutur.com
+          </div>
         </div>
 
         <div class="card-footer-bar">
