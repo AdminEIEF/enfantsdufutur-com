@@ -445,18 +445,18 @@ export default function Eleves() {
         body { font-family: 'Poppins', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 24px; }
 
         .id-card {
-          width: 86mm; height: 54mm; border-radius: 3mm; position: relative;
+          width: 520px; height: 326px; border-radius: 14px; position: relative;
           overflow: hidden; background: #ffffff;
           box-shadow: 0 10px 30px rgba(0,0,0,0.12);
         }
 
-        /* Top banner — rouge + vert drapeau */
+        /* Top banner — rouge + vert */
         .top-banner {
-          height: 18mm; position: relative; display: flex; align-items: center; padding: 0 4mm;
+          height: 88px; position: relative; display: flex; align-items: center; padding: 0 20px;
           background: linear-gradient(135deg, #c0392b 0%, #a93226 35%, #1e8449 65%, #196f3d 100%);
         }
         .top-banner::after {
-          content: ''; position: absolute; bottom: -3mm; left: 0; right: 0; height: 6mm;
+          content: ''; position: absolute; bottom: -14px; left: 0; right: 0; height: 28px;
           background: linear-gradient(135deg, #c0392b 0%, #a93226 35%, #1e8449 65%, #196f3d 100%);
           clip-path: ellipse(55% 100% at 50% 0%);
         }
@@ -465,74 +465,74 @@ export default function Eleves() {
           background-image: repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,255,255,0.4) 8px, rgba(255,255,255,0.4) 16px);
         }
 
-        /* Logo avec fond blanc */
+        /* Logo avec fond blanc bien visible */
         .school-logo-badge {
-          width: 12mm; height: 12mm; border-radius: 50%; background: #ffffff;
+          width: 54px; height: 54px; border-radius: 50%; background: #ffffff;
           display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0; overflow: hidden; border: 0.6mm solid rgba(255,255,255,0.8);
-          box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 2;
+          flex-shrink: 0; overflow: hidden; border: 3px solid rgba(255,255,255,0.9);
+          box-shadow: 0 3px 10px rgba(0,0,0,0.25); z-index: 2;
         }
-        .school-logo-badge img { width: 85%; height: 85%; object-fit: contain; }
-        .school-info { flex: 1; margin-left: 3mm; z-index: 1; }
-        .school-name-text { color: white; font-size: 2.4mm; font-weight: 800; letter-spacing: 0.3mm; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-        .school-year-text { color: rgba(255,255,255,0.85); font-size: 1.8mm; font-weight: 500; margin-top: 0.5mm; }
+        .school-logo-badge img { width: 82%; height: 82%; object-fit: contain; }
+        .school-info { flex: 1; margin-left: 14px; z-index: 1; }
+        .school-name-text { color: white; font-size: 12.5px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; text-shadow: 0 1px 3px rgba(0,0,0,0.25); line-height: 1.3; }
+        .school-year-text { color: rgba(255,255,255,0.85); font-size: 10px; font-weight: 500; margin-top: 2px; }
         .card-type-label {
           z-index: 1; background: rgba(255,255,255,0.25); backdrop-filter: blur(8px);
-          color: white; padding: 1mm 3mm; border-radius: 3mm; font-size: 1.6mm;
-          font-weight: 700; letter-spacing: 0.8mm; text-transform: uppercase;
-          border: 0.3mm solid rgba(255,255,255,0.4);
+          color: white; padding: 5px 14px; border-radius: 14px; font-size: 9px;
+          font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+          border: 1px solid rgba(255,255,255,0.4);
         }
 
         /* Body */
         .card-body {
-          display: flex; padding: 4mm 4mm 0; position: relative; z-index: 2; margin-top: -1.5mm;
+          display: flex; padding: 18px 20px 0; position: relative; z-index: 2; margin-top: -6px;
         }
 
         /* Photo */
         .photo-wrapper {
-          width: 18mm; height: 22mm; border-radius: 2mm; overflow: hidden; flex-shrink: 0;
-          border: 0.5mm solid #1e8449; box-shadow: 0 3px 10px rgba(30,132,73,0.2);
+          width: 100px; height: 120px; border-radius: 10px; overflow: hidden; flex-shrink: 0;
+          border: 3px solid #1e8449; box-shadow: 0 4px 12px rgba(30,132,73,0.2);
           background: #f5f5f5;
         }
         .photo-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-        .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 8mm; color: #c5cee0; background: linear-gradient(135deg, #f5f5f5, #e8e8e8); }
+        .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #c5cee0; background: linear-gradient(135deg, #f5f5f5, #e8e8e8); }
 
         /* Info */
-        .info-col { flex: 1; padding-left: 3mm; display: flex; flex-direction: column; }
-        .student-name { font-size: 3mm; font-weight: 800; color: #1a1a2e; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.2mm; }
-        .info-rows { margin-top: 1.5mm; display: flex; flex-direction: column; gap: 1mm; }
-        .info-row { display: flex; align-items: baseline; gap: 1.5mm; }
-        .info-row .lbl { font-size: 1.6mm; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.3mm; min-width: 12mm; }
-        .info-row .val { font-size: 2.2mm; font-weight: 600; color: #2d3436; }
+        .info-col { flex: 1; padding-left: 16px; display: flex; flex-direction: column; }
+        .student-name { font-size: 15px; font-weight: 800; color: #1a1a2e; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.3px; }
+        .info-rows { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+        .info-row { display: flex; align-items: baseline; gap: 6px; }
+        .info-row .lbl { font-size: 8px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; min-width: 58px; }
+        .info-row .val { font-size: 11.5px; font-weight: 600; color: #2d3436; }
         .matricule-box {
-          margin-top: 1.5mm; background: linear-gradient(135deg, #c0392b, #1e8449);
-          color: white; padding: 1mm 3mm; border-radius: 1.5mm; display: inline-flex;
-          align-items: center; gap: 1.5mm; width: fit-content;
+          margin-top: 8px; background: linear-gradient(135deg, #c0392b, #1e8449);
+          color: white; padding: 4px 12px; border-radius: 6px; display: inline-flex;
+          align-items: center; gap: 6px; width: fit-content;
         }
-        .matricule-box .m-label { font-size: 1.4mm; font-weight: 600; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5mm; }
-        .matricule-box .m-value { font-size: 2.6mm; font-weight: 800; font-family: 'Courier New', monospace; letter-spacing: 0.8mm; }
+        .matricule-box .m-label { font-size: 7px; font-weight: 600; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.8px; }
+        .matricule-box .m-value { font-size: 13px; font-weight: 800; font-family: 'Courier New', monospace; letter-spacing: 1.2px; }
 
         /* QR Code — agrandi */
         .qr-section {
-          position: absolute; bottom: 7mm; right: 3.5mm;
-          display: flex; flex-direction: column; align-items: center; gap: 0.8mm; z-index: 3;
+          position: absolute; bottom: 38px; right: 16px;
+          display: flex; flex-direction: column; align-items: center; gap: 3px; z-index: 3;
         }
         .qr-frame {
-          background: white; padding: 1.2mm; border-radius: 1.5mm;
-          border: 0.4mm solid #1e8449; box-shadow: 0 2px 8px rgba(30,132,73,0.15);
+          background: white; padding: 5px; border-radius: 8px;
+          border: 2px solid #1e8449; box-shadow: 0 3px 10px rgba(30,132,73,0.15);
         }
-        .qr-hint { font-size: 1.3mm; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3mm; }
+        .qr-hint { font-size: 7px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
         /* Footer */
         .card-footer-bar {
-          position: absolute; bottom: 0; left: 0; right: 0; height: 5mm;
+          position: absolute; bottom: 0; left: 0; right: 0; height: 26px;
           background: linear-gradient(90deg, #c0392b, #a93226, #1e8449, #196f3d);
           display: flex; align-items: center; justify-content: center;
         }
-        .footer-bar-text { font-size: 1.4mm; color: rgba(255,255,255,0.8); font-weight: 500; letter-spacing: 0.5mm; }
+        .footer-bar-text { font-size: 8px; color: rgba(255,255,255,0.85); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
 
         /* Decorative */
-        .deco-circle { position: absolute; border-radius: 50%; opacity: 0.03; }
+        .deco-circle { position: absolute; border-radius: 50%; opacity: 0.04; }
 
         .actions { display: flex; gap: 12px; }
         .btn { padding: 12px 28px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px; font-family: 'Poppins', sans-serif; transition: transform 0.15s; }
@@ -549,13 +549,13 @@ export default function Eleves() {
       </style>
     </head><body>
       <div class="id-card" id="badge-card">
-        <div class="deco-circle" style="width:30mm;height:30mm;right:-8mm;bottom:8mm;background:#1e8449;"></div>
-        <div class="deco-circle" style="width:20mm;height:20mm;left:-5mm;bottom:-4mm;background:#c0392b;"></div>
+        <div class="deco-circle" style="width:160px;height:160px;right:-40px;bottom:40px;background:#1e8449;"></div>
+        <div class="deco-circle" style="width:100px;height:100px;left:-25px;bottom:-20px;background:#c0392b;"></div>
 
         <div class="top-banner">
           <div class="banner-pattern"></div>
           <div class="school-logo-badge">
-            ${logoUrl ? `<img src="${logoUrl}" alt="Logo" />` : '<span style="font-size:6mm;">🎓</span>'}
+            ${logoUrl ? `<img src="${logoUrl}" alt="Logo" />` : '<span style="font-size:24px;">🎓</span>'}
           </div>
           <div class="school-info">
             <div class="school-name-text">${sName}</div>
@@ -590,7 +590,7 @@ export default function Eleves() {
         </div>
 
         <div class="card-footer-bar">
-          <span class="footer-bar-text">CARTE OBLIGATOIRE — ACCÈS AUX SERVICES SCOLAIRES</span>
+          <span class="footer-bar-text">Carte obligatoire — Accès aux services scolaires</span>
         </div>
       </div>
 
@@ -603,7 +603,7 @@ export default function Eleves() {
       <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
       <script>
-        QRCode.toCanvas(document.getElementById('qr'), ${JSON.stringify(qrValue)}, { width: 130, margin: 0, color: { dark: '#1a1a2e' } }, function(){});
+        QRCode.toCanvas(document.getElementById('qr'), ${JSON.stringify(qrValue)}, { width: 110, margin: 0, color: { dark: '#1a1a2e' } }, function(){});
         function downloadPNG() {
           html2canvas(document.getElementById('badge-card'), { scale: 4, useCORS: true, backgroundColor: '#ffffff' }).then(function(canvas) {
             var a = document.createElement('a');
