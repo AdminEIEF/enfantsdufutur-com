@@ -88,6 +88,7 @@ function PasswordSection({ eleve, onUpdate }: { eleve: any; onUpdate: () => void
 }
 
 import { QRCodeSVG } from 'qrcode.react';
+import QRCode from 'qrcode';
 import { useToast } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/excelUtils';
 import { sortClasses } from '@/lib/utils';
@@ -425,10 +426,12 @@ export default function Eleves() {
     });
   };
 
-  const printBadge = () => {
-    const w = window.open('', '_blank', 'width=650,height=600');
-    if (!w || !badgeEleve) return;
+  const printBadge = async () => {
+    if (!badgeEleve) return;
     const qrValue = buildQrData(badgeEleve);
+    const qrDataUrl = await QRCode.toDataURL(qrValue, { width: 300, margin: 1, color: { dark: '#1a1a2e', light: '#ffffff' } });
+    const w = window.open('', '_blank', 'width=650,height=750');
+    if (!w) return;
     const sName = schoolConfig?.nom || 'Groupe Scolaire';
     const anneeScolaire = '2025-2026';
     const cycleName = badgeEleve.classes?.niveaux?.cycles?.nom || '';
@@ -619,7 +622,7 @@ export default function Eleves() {
       <div class="id-card-verso">
         <div class="verso-header">🎓 Carte Scolaire — Verso</div>
         <div class="verso-body">
-          <div class="verso-qr-frame"><canvas id="qr"></canvas></div>
+          <div class="verso-qr-frame"><img src="${qrDataUrl}" style="width:140px;height:140px;" alt="QR Code" /></div>
           <span class="verso-qr-hint">Scanner pour identification</span>
           <div class="verso-mention">
             Cette carte est personnelle et obligatoire. Elle doit être présentée pour l'accès aux services scolaires. En cas de perte, veuillez contacter l'administration.
@@ -637,10 +640,8 @@ export default function Eleves() {
       </div>
       <p class="hint" style="font-size:11px;color:#9ca3af;margin-top:-8px;">Astuce : choisissez « Enregistrer au format PDF » dans la fenêtre d'impression.</p>
 
-      <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
       <script>
-        QRCode.toCanvas(document.getElementById('qr'), ${JSON.stringify(qrValue)}, { width: 140, margin: 0, color: { dark: '#1a1a2e' } }, function(){});
         function downloadPNG() {
           html2canvas(document.getElementById('badge-card'), { scale: 4, useCORS: true, backgroundColor: '#ffffff' }).then(function(canvas) {
             var a = document.createElement('a');
