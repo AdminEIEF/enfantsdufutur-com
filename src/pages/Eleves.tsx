@@ -563,15 +563,18 @@ export default function Eleves() {
 
         /* Motto + Contact */
         .motto-contact {
-          padding: 4px 20px 2px; position: relative; z-index: 2; text-align: center;
+          padding: 3px 20px 2px; position: relative; z-index: 2; text-align: center;
         }
         .motto-line {
           font-size: 13px; font-weight: 800; color: #1e8449; font-style: italic;
           letter-spacing: 0.5px;
         }
         .contact-line {
-          font-size: 8.5px; font-weight: 600; color: #555; letter-spacing: 0.3px; margin-top: 1px;
+          font-size: 8px; font-weight: 600; color: #555; letter-spacing: 0.2px; margin-top: 1px;
+          display: flex; align-items: center; justify-content: center; gap: 4px;
         }
+        .contact-line svg { width: 9px; height: 9px; flex-shrink: 0; }
+        .contact-line .sep { margin: 0 3px; color: #ccc; }
 
         /* Footer */
         .card-footer-bar {
