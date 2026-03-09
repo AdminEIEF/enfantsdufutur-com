@@ -88,6 +88,7 @@ function PasswordSection({ eleve, onUpdate }: { eleve: any; onUpdate: () => void
 }
 
 import { QRCodeSVG } from 'qrcode.react';
+import QRCode from 'qrcode';
 import { useToast } from '@/hooks/use-toast';
 import { exportToExcel } from '@/lib/excelUtils';
 import { sortClasses } from '@/lib/utils';
