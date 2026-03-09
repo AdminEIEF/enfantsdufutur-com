@@ -426,123 +426,182 @@ export default function Eleves() {
   };
 
   const printBadge = () => {
-    const w = window.open('', '_blank', 'width=600,height=500');
+    const w = window.open('', '_blank', 'width=650,height=600');
     if (!w || !badgeEleve) return;
     const qrValue = buildQrData(badgeEleve);
     const sName = schoolConfig?.nom || 'Groupe Scolaire';
     const anneeScolaire = '2025-2026';
     const cycleName = badgeEleve.classes?.niveaux?.cycles?.nom || '';
     const className = badgeEleve.classes?.nom || '';
-    const statutLabel = badgeEleve.statut === 'actif' ? 'Élève Actif' : badgeEleve.statut === 'suspendu' ? 'Suspendu' : badgeEleve.statut;
-    const statutColor = badgeEleve.statut === 'actif' ? 'background:#dcfce7;color:#166534;' : 'background:#fee2e2;color:#991b1b;';
+    const logoUrl = schoolConfig?.logo_url || '';
+    const dateNaissance = badgeEleve.date_naissance ? new Date(badgeEleve.date_naissance).toLocaleDateString('fr-FR') : '—';
 
     w.document.write(`<!DOCTYPE html><html lang="fr"><head>
       <meta charset="UTF-8" />
       <title>Badge ${badgeEleve.prenom} ${badgeEleve.nom}</title>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #f3f4f6; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 20px; }
+        body { font-family: 'Poppins', sans-serif; background: #e8edf3; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 24px; }
+
         .id-card {
-          width: 450px; height: 280px; background: white; border-radius: 14px; position: relative;
-          overflow: hidden; display: flex; flex-direction: column; border: 1px solid #e5e7eb;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+          width: 500px; height: 310px; border-radius: 16px; position: relative;
+          overflow: hidden; background: #ffffff;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05);
         }
-        .header-accent {
-          position: absolute; top: 0; left: 0; right: 0; height: 85px;
-          background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-          clip-path: polygon(0 0, 100% 0, 100% 80%, 0% 100%);
+
+        /* Top banner */
+        .top-banner {
+          height: 90px; background: linear-gradient(135deg, #0c2461 0%, #1e3799 40%, #4a69bd 100%);
+          position: relative; display: flex; align-items: center; padding: 0 24px;
         }
-        .card-body { display: flex; position: relative; z-index: 1; flex: 1; }
-        .left-col { display: flex; flex-direction: column; align-items: center; padding-top: 30px; padding-left: 25px; }
-        .photo-container {
-          width: 105px; height: 125px; background: #f9fafb; border: 3px solid white;
-          border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;
+        .top-banner::after {
+          content: ''; position: absolute; bottom: -20px; left: 0; right: 0; height: 40px;
+          background: linear-gradient(135deg, #0c2461 0%, #1e3799 40%, #4a69bd 100%);
+          clip-path: ellipse(60% 100% at 50% 0%);
         }
-        .photo-container img { width: 100%; height: 100%; object-fit: cover; }
-        .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #ccc; }
-        .right-col { flex: 1; display: flex; flex-direction: column; padding: 14px 20px 0 20px; }
-        .school-header { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
-        .school-logo { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 14px; }
-        .school-name { color: white; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
-        .school-year { color: rgba(255,255,255,0.85); font-size: 9px; font-weight: 600; margin-left: auto; }
-        .status-badge {
-          position: absolute; top: 95px; right: 25px; padding: 2px 10px; border-radius: 9999px;
-          font-size: 10px; font-weight: 700; text-transform: uppercase; ${statutColor}
+        .banner-pattern {
+          position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.08;
+          background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.3) 10px, rgba(255,255,255,0.3) 20px);
         }
-        .info-section { margin-top: 30px; }
-        .info-label { font-size: 8px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
-        .info-value { font-size: 13px; font-weight: 700; color: #1f2937; margin-bottom: 6px; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px; }
-        .qr-code-container {
-          position: absolute; bottom: 20px; right: 25px; background: white; padding: 4px;
-          border-radius: 4px; border: 1px solid #e5e7eb;
+        .school-logo-badge {
+          width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.2);
+          backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0; overflow: hidden; border: 2px solid rgba(255,255,255,0.3);
         }
-        .card-footer {
-          position: absolute; bottom: 0; left: 0; right: 0; padding: 4px 25px;
-          background: #f9fafb; border-top: 1px solid #f3f4f6; display: flex; align-items: center;
+        .school-logo-badge img { width: 100%; height: 100%; object-fit: cover; }
+        .school-info { flex: 1; margin-left: 14px; z-index: 1; }
+        .school-name-text { color: white; font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+        .school-year-text { color: rgba(255,255,255,0.75); font-size: 10px; font-weight: 500; margin-top: 2px; }
+        .card-type-label {
+          z-index: 1; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);
+          color: white; padding: 4px 14px; border-radius: 20px; font-size: 9px;
+          font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+          border: 1px solid rgba(255,255,255,0.3);
         }
-        .footer-text { font-size: 7px; color: #9ca3af; }
-        .actions { display: flex; gap: 12px; margin-top: 10px; }
-        .btn { padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px; }
-        .btn-primary { background: #2563eb; color: white; }
-        .btn-secondary { background: white; color: #374151; border: 1px solid #d1d5db; }
+
+        /* Body */
+        .card-body {
+          display: flex; padding: 24px 24px 0; position: relative; z-index: 2; margin-top: -8px;
+        }
+
+        /* Photo */
+        .photo-wrapper {
+          width: 110px; height: 135px; border-radius: 12px; overflow: hidden; flex-shrink: 0;
+          border: 3px solid #1e3799; box-shadow: 0 8px 20px rgba(30,55,153,0.2);
+          background: #f1f3f8;
+        }
+        .photo-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 44px; color: #c5cee0; background: linear-gradient(135deg, #f1f3f8, #e2e8f0); }
+
+        /* Info */
+        .info-col { flex: 1; padding-left: 18px; display: flex; flex-direction: column; }
+        .student-name { font-size: 16px; font-weight: 800; color: #0c2461; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.5px; }
+        .info-rows { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
+        .info-row { display: flex; align-items: baseline; gap: 6px; }
+        .info-row .lbl { font-size: 8px; font-weight: 700; color: #8395a7; text-transform: uppercase; letter-spacing: 0.8px; min-width: 62px; }
+        .info-row .val { font-size: 11px; font-weight: 600; color: #2d3436; }
+        .matricule-box {
+          margin-top: 8px; background: linear-gradient(135deg, #0c2461, #1e3799);
+          color: white; padding: 5px 14px; border-radius: 8px; display: inline-flex;
+          align-items: center; gap: 6px; width: fit-content;
+        }
+        .matricule-box .m-label { font-size: 7px; font-weight: 600; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+        .matricule-box .m-value { font-size: 13px; font-weight: 800; font-family: 'Courier New', monospace; letter-spacing: 1.5px; }
+
+        /* QR Code */
+        .qr-section {
+          position: absolute; bottom: 14px; right: 20px;
+          display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+        .qr-frame {
+          background: white; padding: 6px; border-radius: 10px;
+          border: 2px solid #1e3799; box-shadow: 0 4px 12px rgba(30,55,153,0.15);
+        }
+        .qr-hint { font-size: 7px; color: #8395a7; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Footer */
+        .card-footer-bar {
+          position: absolute; bottom: 0; left: 0; right: 0; height: 28px;
+          background: linear-gradient(90deg, #0c2461, #1e3799, #4a69bd);
+          display: flex; align-items: center; justify-content: center;
+        }
+        .footer-bar-text { font-size: 7.5px; color: rgba(255,255,255,0.7); font-weight: 500; letter-spacing: 0.8px; }
+
+        /* Decorative elements */
+        .deco-circle {
+          position: absolute; border-radius: 50%; opacity: 0.04; background: #1e3799;
+        }
+
+        .actions { display: flex; gap: 12px; }
+        .btn { padding: 12px 28px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px; font-family: 'Poppins', sans-serif; transition: transform 0.15s; }
+        .btn:hover { transform: translateY(-1px); }
+        .btn-primary { background: linear-gradient(135deg, #0c2461, #1e3799); color: white; box-shadow: 0 4px 15px rgba(30,55,153,0.3); }
+        .btn-secondary { background: white; color: #2d3436; border: 1.5px solid #dfe6e9; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
         @media print {
           body { background: white; padding: 0; }
           .actions, .hint { display: none !important; }
-          .id-card { box-shadow: none !important; border: 1px solid #ddd !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .id-card { box-shadow: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
       </style>
     </head><body>
       <div class="id-card" id="badge-card">
-        <div class="header-accent"></div>
-        <div class="card-body">
-          <div class="left-col">
-            <div class="photo-container">
-              ${badgeEleve.photo_url
-                ? `<img src="${badgeEleve.photo_url}" alt="${badgeEleve.prenom}" />`
-                : '<div class="photo-placeholder">👤</div>'}
-            </div>
+        <div class="deco-circle" style="width:180px;height:180px;right:-40px;bottom:40px;"></div>
+        <div class="deco-circle" style="width:120px;height:120px;left:-30px;bottom:-20px;"></div>
+
+        <div class="top-banner">
+          <div class="banner-pattern"></div>
+          <div class="school-logo-badge">
+            ${logoUrl ? `<img src="${logoUrl}" alt="Logo" />` : '🎓'}
           </div>
-          <div class="right-col">
-            <div class="school-header">
-              <div class="school-logo">🎓</div>
-              <span class="school-name">${sName}</span>
-              <span class="school-year">${anneeScolaire}</span>
+          <div class="school-info">
+            <div class="school-name-text">${sName}</div>
+            <div class="school-year-text">Année scolaire ${anneeScolaire}</div>
+          </div>
+          <div class="card-type-label">Carte Scolaire</div>
+        </div>
+
+        <div class="card-body">
+          <div class="photo-wrapper">
+            ${badgeEleve.photo_url
+              ? `<img src="${badgeEleve.photo_url}" alt="${badgeEleve.prenom}" />`
+              : '<div class="photo-placeholder">👤</div>'}
+          </div>
+          <div class="info-col">
+            <div class="student-name">${badgeEleve.nom.toUpperCase()} ${badgeEleve.prenom}</div>
+            <div class="info-rows">
+              <div class="info-row"><span class="lbl">Cycle</span><span class="val">${cycleName}</span></div>
+              <div class="info-row"><span class="lbl">Classe</span><span class="val">${className}</span></div>
+              <div class="info-row"><span class="lbl">Né(e) le</span><span class="val">${dateNaissance}</span></div>
             </div>
-            <div class="status-badge">${statutLabel}</div>
-            <div class="info-section">
-              <p class="info-label">Nom & Prénoms</p>
-              <p class="info-value">${badgeEleve.nom.toUpperCase()} ${badgeEleve.prenom}</p>
-              <div class="info-grid">
-                <div>
-                  <p class="info-label">Classe</p>
-                  <p class="info-value">${cycleName} — ${className}</p>
-                </div>
-                <div>
-                  <p class="info-label">Matricule</p>
-                  <p class="info-value" style="font-family:monospace;">${badgeEleve.matricule || '—'}</p>
-                </div>
-              </div>
+            <div class="matricule-box">
+              <span class="m-label">N°</span>
+              <span class="m-value">${badgeEleve.matricule || '—'}</span>
             </div>
           </div>
         </div>
-        <div class="qr-code-container"><canvas id="qr"></canvas></div>
-        <div class="card-footer">
-          <span class="footer-text">Carte obligatoire pour l'accès aux services scolaires.</span>
+
+        <div class="qr-section">
+          <div class="qr-frame"><canvas id="qr"></canvas></div>
+          <span class="qr-hint">Scanner pour identification</span>
+        </div>
+
+        <div class="card-footer-bar">
+          <span class="footer-bar-text">CARTE OBLIGATOIRE — ACCÈS AUX SERVICES SCOLAIRES</span>
         </div>
       </div>
 
       <div class="actions">
-        <button class="btn btn-primary" onclick="downloadPNG()">📥 Télécharger Image (PNG)</button>
-        <button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimer / Export PDF</button>
+        <button class="btn btn-primary" onclick="downloadPNG()">📥 Télécharger PNG</button>
+        <button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimer / PDF</button>
       </div>
-      <p class="hint" style="font-size:11px;color:#9ca3af;">Astuce : Pour le PDF, choisissez "Enregistrer au format PDF" dans la fenêtre d'impression.</p>
+      <p class="hint" style="font-size:11px;color:#9ca3af;margin-top:-8px;">Astuce : choisissez « Enregistrer au format PDF » dans la fenêtre d'impression.</p>
 
       <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
       <script>
-        QRCode.toCanvas(document.getElementById('qr'), ${JSON.stringify(qrValue)}, { width: 80, margin: 0 }, function(){});
+        QRCode.toCanvas(document.getElementById('qr'), ${JSON.stringify(qrValue)}, { width: 120, margin: 0, color: { dark: '#0c2461' } }, function(){});
         function downloadPNG() {
           html2canvas(document.getElementById('badge-card'), { scale: 3, useCORS: true, backgroundColor: '#ffffff' }).then(function(canvas) {
             var a = document.createElement('a');
