@@ -548,6 +548,18 @@ export default function Eleves() {
         .matricule-box .m-label { font-size: 7px; font-weight: 600; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.8px; }
         .matricule-box .m-value { font-size: 14px; font-weight: 800; font-family: 'Courier New', monospace; letter-spacing: 1.2px; }
 
+        /* Motto + Contact */
+        .motto-contact {
+          padding: 4px 20px 2px; position: relative; z-index: 2; text-align: center;
+        }
+        .motto-line {
+          font-size: 13px; font-weight: 800; color: #1e8449; font-style: italic;
+          letter-spacing: 0.5px;
+        }
+        .contact-line {
+          font-size: 8.5px; font-weight: 600; color: #555; letter-spacing: 0.3px; margin-top: 1px;
+        }
+
         /* Footer */
         .card-footer-bar {
           position: absolute; bottom: 0; left: 0; right: 0; height: 24px;
