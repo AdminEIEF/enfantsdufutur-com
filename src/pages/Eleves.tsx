@@ -445,18 +445,18 @@ export default function Eleves() {
         body { font-family: 'Poppins', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 24px; }
 
         .id-card {
-          width: 520px; height: 326px; border-radius: 14px; position: relative;
+          width: 520px; height: 310px; border-radius: 14px; position: relative;
           overflow: hidden; background: #ffffff;
           box-shadow: 0 10px 30px rgba(0,0,0,0.12);
         }
 
         /* Top banner — rouge + vert */
         .top-banner {
-          height: 88px; position: relative; display: flex; align-items: center; padding: 0 20px;
+          height: 80px; position: relative; display: flex; align-items: center; padding: 0 18px;
           background: linear-gradient(135deg, #c0392b 0%, #a93226 35%, #1e8449 65%, #196f3d 100%);
         }
         .top-banner::after {
-          content: ''; position: absolute; bottom: -14px; left: 0; right: 0; height: 28px;
+          content: ''; position: absolute; bottom: -12px; left: 0; right: 0; height: 24px;
           background: linear-gradient(135deg, #c0392b 0%, #a93226 35%, #1e8449 65%, #196f3d 100%);
           clip-path: ellipse(55% 100% at 50% 0%);
         }
@@ -465,71 +465,71 @@ export default function Eleves() {
           background-image: repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,255,255,0.4) 8px, rgba(255,255,255,0.4) 16px);
         }
 
-        /* Logo avec fond blanc bien visible */
+        /* Logo avec fond blanc */
         .school-logo-badge {
-          width: 54px; height: 54px; border-radius: 50%; background: #ffffff;
+          width: 50px; height: 50px; border-radius: 50%; background: #ffffff;
           display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0; overflow: hidden; border: 3px solid rgba(255,255,255,0.9);
+          flex-shrink: 0; overflow: hidden; border: 2.5px solid rgba(255,255,255,0.9);
           box-shadow: 0 3px 10px rgba(0,0,0,0.25); z-index: 2;
         }
         .school-logo-badge img { width: 82%; height: 82%; object-fit: contain; }
-        .school-info { flex: 1; margin-left: 14px; z-index: 1; }
-        .school-name-text { color: white; font-size: 12.5px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; text-shadow: 0 1px 3px rgba(0,0,0,0.25); line-height: 1.3; }
-        .school-year-text { color: rgba(255,255,255,0.85); font-size: 10px; font-weight: 500; margin-top: 2px; }
+        .school-info { flex: 1; margin-left: 12px; z-index: 1; }
+        .school-name-text { color: white; font-size: 11.5px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; text-shadow: 0 1px 3px rgba(0,0,0,0.25); line-height: 1.3; }
+        .school-year-text { color: rgba(255,255,255,0.85); font-size: 9.5px; font-weight: 500; margin-top: 2px; }
         .card-type-label {
           z-index: 1; background: rgba(255,255,255,0.25); backdrop-filter: blur(8px);
-          color: white; padding: 5px 14px; border-radius: 14px; font-size: 9px;
-          font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
-          border: 1px solid rgba(255,255,255,0.4);
+          color: white; padding: 4px 12px; border-radius: 12px; font-size: 8px;
+          font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+          border: 1px solid rgba(255,255,255,0.4); white-space: nowrap;
         }
 
-        /* Body */
+        /* Body — disposition en 3 colonnes: photo | infos | QR */
         .card-body {
-          display: flex; padding: 18px 20px 0; position: relative; z-index: 2; margin-top: -6px;
+          display: flex; padding: 14px 16px 0; position: relative; z-index: 2; margin-top: -4px;
+          align-items: flex-start;
         }
 
-        /* Photo */
+        /* Photo — contour fin */
         .photo-wrapper {
-          width: 100px; height: 120px; border-radius: 10px; overflow: hidden; flex-shrink: 0;
-          border: 3px solid #1e8449; box-shadow: 0 4px 12px rgba(30,132,73,0.2);
+          width: 88px; height: 105px; border-radius: 8px; overflow: hidden; flex-shrink: 0;
+          border: 1.5px solid #1e8449; box-shadow: 0 3px 8px rgba(30,132,73,0.15);
           background: #f5f5f5;
         }
         .photo-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-        .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #c5cee0; background: linear-gradient(135deg, #f5f5f5, #e8e8e8); }
+        .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 36px; color: #c5cee0; background: linear-gradient(135deg, #f5f5f5, #e8e8e8); }
 
-        /* Info */
-        .info-col { flex: 1; padding-left: 16px; display: flex; flex-direction: column; }
-        .student-name { font-size: 15px; font-weight: 800; color: #1a1a2e; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.3px; }
-        .info-rows { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
-        .info-row { display: flex; align-items: baseline; gap: 6px; }
-        .info-row .lbl { font-size: 8px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; min-width: 58px; }
-        .info-row .val { font-size: 11.5px; font-weight: 600; color: #2d3436; }
+        /* Info — colonne centrale */
+        .info-col { flex: 1; padding: 0 12px; display: flex; flex-direction: column; min-width: 0; }
+        .student-name { font-size: 14px; font-weight: 800; color: #1a1a2e; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.3px; word-wrap: break-word; }
+        .info-rows { margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
+        .info-row { display: flex; align-items: baseline; gap: 5px; }
+        .info-row .lbl { font-size: 7.5px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.4px; min-width: 52px; flex-shrink: 0; }
+        .info-row .val { font-size: 11px; font-weight: 600; color: #2d3436; }
         .matricule-box {
-          margin-top: 8px; background: linear-gradient(135deg, #c0392b, #1e8449);
-          color: white; padding: 4px 12px; border-radius: 6px; display: inline-flex;
-          align-items: center; gap: 6px; width: fit-content;
+          margin-top: 6px; background: linear-gradient(135deg, #c0392b, #1e8449);
+          color: white; padding: 3px 10px; border-radius: 5px; display: inline-flex;
+          align-items: center; gap: 5px; width: fit-content;
         }
-        .matricule-box .m-label { font-size: 7px; font-weight: 600; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.8px; }
-        .matricule-box .m-value { font-size: 13px; font-weight: 800; font-family: 'Courier New', monospace; letter-spacing: 1.2px; }
+        .matricule-box .m-label { font-size: 6.5px; font-weight: 600; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.6px; }
+        .matricule-box .m-value { font-size: 12px; font-weight: 800; font-family: 'Courier New', monospace; letter-spacing: 1px; }
 
-        /* QR Code — agrandi */
-        .qr-section {
-          position: absolute; bottom: 38px; right: 16px;
-          display: flex; flex-direction: column; align-items: center; gap: 3px; z-index: 3;
+        /* QR Code — colonne droite, bien dimensionné */
+        .qr-col {
+          flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
         }
         .qr-frame {
-          background: white; padding: 5px; border-radius: 8px;
-          border: 2px solid #1e8449; box-shadow: 0 3px 10px rgba(30,132,73,0.15);
+          background: white; padding: 4px; border-radius: 6px;
+          border: 1.5px solid #1e8449; box-shadow: 0 2px 8px rgba(30,132,73,0.12);
         }
-        .qr-hint { font-size: 7px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .qr-hint { font-size: 6.5px; color: #999; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
 
         /* Footer */
         .card-footer-bar {
-          position: absolute; bottom: 0; left: 0; right: 0; height: 26px;
+          position: absolute; bottom: 0; left: 0; right: 0; height: 24px;
           background: linear-gradient(90deg, #c0392b, #a93226, #1e8449, #196f3d);
           display: flex; align-items: center; justify-content: center;
         }
-        .footer-bar-text { font-size: 8px; color: rgba(255,255,255,0.85); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+        .footer-bar-text { font-size: 7.5px; color: rgba(255,255,255,0.85); font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; }
 
         /* Decorative */
         .deco-circle { position: absolute; border-radius: 50%; opacity: 0.04; }
