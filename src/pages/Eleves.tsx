@@ -836,11 +836,21 @@ export default function Eleves() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
               ) : filtered.map((e: any) => (
                 <TableRow key={e.id} className="cursor-pointer" onClick={() => setSelected(e)}>
+                  <TableCell onClick={ev => ev.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedIds.has(e.id)}
+                      onCheckedChange={(checked) => {
+                        const newSet = new Set(selectedIds);
+                        if (checked) newSet.add(e.id); else newSet.delete(e.id);
+                        setSelectedIds(newSet);
+                      }}
+                    />
+                  </TableCell>
                   <TableCell>
                     {e.famille_id ? (
                       <Badge variant="default" className="gap-1 text-xs"><Users className="h-3 w-3" />Famille</Badge>
