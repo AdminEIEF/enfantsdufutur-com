@@ -626,11 +626,11 @@ export default function Eleves() {
 
         <div class="motto-contact">
           <div class="motto-line">Faisons plus !</div>
-          <div class="contact-line">Contact : +224 625 00 00 00 — contact@eief.edu.gn</div>
+          <div class="contact-line">Contact : (+224) 628 84 84 37 / 625 54 95 79 — eiefinfos@enfantsdufutur.com</div>
         </div>
 
         <div class="card-footer-bar">
-          <span class="footer-bar-text">Carte obligatoire — Accès aux services scolaires</span>
+          <span class="footer-bar-text">Carte obligatoire — Accès aux services scolaires — www.enfantsdufutur.com</span>
         </div>
       </div>
 
