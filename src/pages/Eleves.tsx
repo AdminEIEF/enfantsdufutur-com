@@ -450,6 +450,38 @@ export default function Eleves() {
           box-shadow: 0 10px 30px rgba(0,0,0,0.12);
         }
 
+        /* VERSO */
+        .id-card-verso {
+          width: 520px; height: 310px; border-radius: 14px; position: relative;
+          overflow: hidden; background: #f8faf8;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          margin-top: 20px;
+        }
+        .verso-header {
+          background: linear-gradient(90deg, #c0392b, #1e8449);
+          color: white; padding: 8px 0; text-align: center; width: 100%;
+          font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+        }
+        .verso-body {
+          flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px;
+        }
+        .verso-qr-frame {
+          background: white; padding: 8px; border-radius: 10px;
+          border: 2px solid #1e8449; box-shadow: 0 4px 14px rgba(30,132,73,0.15);
+        }
+        .verso-qr-hint { font-size: 9px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+        .verso-mention {
+          font-size: 9px; text-align: center; color: #888; font-style: italic;
+          max-width: 380px; line-height: 1.5;
+        }
+        .verso-footer {
+          background: linear-gradient(90deg, #c0392b, #a93226, #1e8449, #196f3d);
+          color: rgba(255,255,255,0.8); padding: 6px 0; text-align: center; width: 100%;
+          font-size: 7.5px; font-weight: 600; letter-spacing: 0.8px;
+        }
+        .card-label { font-size: 10px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
+
         /* Top banner — rouge + vert */
         .top-banner {
           height: 80px; position: relative; display: flex; align-items: center; padding: 0 18px;
@@ -483,45 +515,35 @@ export default function Eleves() {
           border: 1px solid rgba(255,255,255,0.4); white-space: nowrap;
         }
 
-        /* Body — disposition en 3 colonnes: photo | infos | QR */
+        /* Body — photo + infos uniquement */
         .card-body {
-          display: flex; padding: 14px 16px 0; position: relative; z-index: 2; margin-top: -4px;
+          display: flex; padding: 16px 20px 0; position: relative; z-index: 2; margin-top: -4px;
           align-items: flex-start;
         }
 
         /* Photo — contour fin */
         .photo-wrapper {
-          width: 88px; height: 105px; border-radius: 8px; overflow: hidden; flex-shrink: 0;
+          width: 95px; height: 115px; border-radius: 8px; overflow: hidden; flex-shrink: 0;
           border: 1.5px solid #1e8449; box-shadow: 0 3px 8px rgba(30,132,73,0.15);
           background: #f5f5f5;
         }
         .photo-wrapper img { width: 100%; height: 100%; object-fit: cover; }
         .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 36px; color: #c5cee0; background: linear-gradient(135deg, #f5f5f5, #e8e8e8); }
 
-        /* Info — colonne centrale */
-        .info-col { flex: 1; padding: 0 12px; display: flex; flex-direction: column; min-width: 0; }
-        .student-name { font-size: 14px; font-weight: 800; color: #1a1a2e; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.3px; word-wrap: break-word; }
-        .info-rows { margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
-        .info-row { display: flex; align-items: baseline; gap: 5px; }
-        .info-row .lbl { font-size: 7.5px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.4px; min-width: 52px; flex-shrink: 0; }
-        .info-row .val { font-size: 11px; font-weight: 600; color: #2d3436; }
+        /* Info */
+        .info-col { flex: 1; padding-left: 16px; display: flex; flex-direction: column; }
+        .student-name { font-size: 16px; font-weight: 800; color: #1a1a2e; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.3px; }
+        .info-rows { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
+        .info-row { display: flex; align-items: baseline; gap: 6px; }
+        .info-row .lbl { font-size: 8px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; min-width: 58px; flex-shrink: 0; }
+        .info-row .val { font-size: 12px; font-weight: 600; color: #2d3436; }
         .matricule-box {
-          margin-top: 6px; background: linear-gradient(135deg, #c0392b, #1e8449);
-          color: white; padding: 3px 10px; border-radius: 5px; display: inline-flex;
-          align-items: center; gap: 5px; width: fit-content;
+          margin-top: 10px; background: linear-gradient(135deg, #c0392b, #1e8449);
+          color: white; padding: 5px 14px; border-radius: 6px; display: inline-flex;
+          align-items: center; gap: 6px; width: fit-content;
         }
-        .matricule-box .m-label { font-size: 6.5px; font-weight: 600; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.6px; }
-        .matricule-box .m-value { font-size: 12px; font-weight: 800; font-family: 'Courier New', monospace; letter-spacing: 1px; }
-
-        /* QR Code — colonne droite, bien dimensionné */
-        .qr-col {
-          flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
-        }
-        .qr-frame {
-          background: white; padding: 4px; border-radius: 6px;
-          border: 1.5px solid #1e8449; box-shadow: 0 2px 8px rgba(30,132,73,0.12);
-        }
-        .qr-hint { font-size: 6.5px; color: #999; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+        .matricule-box .m-label { font-size: 7px; font-weight: 600; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.8px; }
+        .matricule-box .m-value { font-size: 14px; font-weight: 800; font-family: 'Courier New', monospace; letter-spacing: 1.2px; }
 
         /* Footer */
         .card-footer-bar {
@@ -542,13 +564,16 @@ export default function Eleves() {
 
         @media print {
           body { background: white; padding: 0; }
-          .actions, .hint { display: none !important; }
-          .id-card { box-shadow: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          @page { size: 86mm 54mm; margin: 0; }
+          .actions, .hint, .card-label { display: none !important; }
+          .id-card, .id-card-verso { box-shadow: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          @page { size: 86mm 108mm; margin: 0; }
         }
       </style>
     </head><body>
-      <div class="id-card" id="badge-card">
+      <div id="badge-card">
+      <!-- RECTO -->
+      <div class="card-label">▸ Recto</div>
+      <div class="id-card">
         <div class="deco-circle" style="width:160px;height:160px;right:-40px;bottom:40px;background:#1e8449;"></div>
         <div class="deco-circle" style="width:100px;height:100px;left:-25px;bottom:-20px;background:#c0392b;"></div>
 
@@ -582,15 +607,28 @@ export default function Eleves() {
               <span class="m-value">${badgeEleve.matricule || '—'}</span>
             </div>
           </div>
-          <div class="qr-col">
-            <div class="qr-frame"><canvas id="qr"></canvas></div>
-            <span class="qr-hint">Scanner pour identification</span>
-          </div>
         </div>
 
         <div class="card-footer-bar">
           <span class="footer-bar-text">Carte obligatoire — Accès aux services scolaires</span>
         </div>
+      </div>
+
+      <!-- VERSO -->
+      <div class="card-label" style="margin-top:16px;">▸ Verso</div>
+      <div class="id-card-verso">
+        <div class="verso-header">🎓 Carte Scolaire — Verso</div>
+        <div class="verso-body">
+          <div class="verso-qr-frame"><canvas id="qr"></canvas></div>
+          <span class="verso-qr-hint">Scanner pour identification</span>
+          <div class="verso-mention">
+            Cette carte est personnelle et obligatoire. Elle doit être présentée pour l'accès aux services scolaires. En cas de perte, veuillez contacter l'administration.
+          </div>
+        </div>
+        <div class="verso-footer">
+          ${sName} — Année scolaire ${anneeScolaire}
+        </div>
+      </div>
       </div>
 
       <div class="actions">
@@ -602,7 +640,7 @@ export default function Eleves() {
       <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"><\/script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
       <script>
-        QRCode.toCanvas(document.getElementById('qr'), ${JSON.stringify(qrValue)}, { width: 90, margin: 0, color: { dark: '#1a1a2e' } }, function(){});
+        QRCode.toCanvas(document.getElementById('qr'), ${JSON.stringify(qrValue)}, { width: 140, margin: 0, color: { dark: '#1a1a2e' } }, function(){});
         function downloadPNG() {
           html2canvas(document.getElementById('badge-card'), { scale: 4, useCORS: true, backgroundColor: '#ffffff' }).then(function(canvas) {
             var a = document.createElement('a');
