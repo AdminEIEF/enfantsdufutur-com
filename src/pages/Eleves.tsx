@@ -623,6 +623,10 @@ export default function Eleves() {
               <span class="m-value">${badgeEleve.matricule || '—'}</span>
             </div>
           </div>
+          <div class="site-qr-zone">
+            <img src="${siteQrUrl}" class="site-qr-img" alt="QR Site" />
+            <span class="site-qr-label">Espace Élève</span>
+          </div>
         </div>
 
         <div class="motto-contact">
