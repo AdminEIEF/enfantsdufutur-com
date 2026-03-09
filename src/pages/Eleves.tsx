@@ -1300,6 +1300,16 @@ export default function Eleves() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Planche Badges Scolaires */}
+      {showPlanche && selectedIds.size > 0 && (
+        <PlancheBadgesScolaires
+          eleves={eleves.filter((e: any) => selectedIds.has(e.id))}
+          onClose={() => setShowPlanche(false)}
+          schoolName={schoolConfig?.nom}
+          schoolLogo={schoolConfig?.logo_url}
+        />
+      )}
     </div>
   );
 }
