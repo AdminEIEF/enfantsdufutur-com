@@ -521,13 +521,13 @@ export default function Eleves() {
 
         /* Body — photo + infos uniquement */
         .card-body {
-          display: flex; padding: 16px 20px 0; position: relative; z-index: 2; margin-top: -4px;
-          align-items: flex-start;
+          display: flex; padding: 14px 16px 0; position: relative; z-index: 2; margin-top: -4px;
+          align-items: stretch;
         }
 
         /* Photo — contour fin */
         .photo-wrapper {
-          width: 95px; height: 115px; border-radius: 8px; overflow: hidden; flex-shrink: 0;
+          width: 90px; height: 110px; border-radius: 8px; overflow: hidden; flex-shrink: 0;
           border: 1.5px solid #1e8449; box-shadow: 0 3px 8px rgba(30,132,73,0.15);
           background: #f5f5f5;
         }
@@ -535,18 +535,19 @@ export default function Eleves() {
         .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 36px; color: #c5cee0; background: linear-gradient(135deg, #f5f5f5, #e8e8e8); }
 
         /* Info */
-        .info-col { flex: 1; padding-left: 16px; display: flex; flex-direction: column; }
+        .info-col { flex: 1; padding-left: 14px; display: flex; flex-direction: column; }
         .site-qr-zone {
           display: flex; flex-direction: column; align-items: center; justify-content: center;
-          flex-shrink: 0; margin-left: 6px;
+          flex-shrink: 0; margin-left: 10px; padding: 4px;
+          background: rgba(30,132,73,0.04); border-radius: 8px;
         }
         .site-qr-img {
-          width: 65px; height: 65px; border-radius: 5px; border: 1.5px solid #1e8449;
-          padding: 2px; background: white; box-shadow: 0 2px 6px rgba(30,132,73,0.12);
+          width: 88px; height: 88px; border-radius: 6px; border: 2px solid #1e8449;
+          padding: 3px; background: white; box-shadow: 0 3px 10px rgba(30,132,73,0.15);
         }
         .site-qr-label {
-          font-size: 6px; font-weight: 700; color: #1e8449; text-transform: uppercase;
-          letter-spacing: 0.4px; margin-top: 2px; text-align: center;
+          font-size: 7px; font-weight: 800; color: #1e8449; text-transform: uppercase;
+          letter-spacing: 0.6px; margin-top: 3px; text-align: center;
         }
         .student-name { font-size: 16px; font-weight: 800; color: #1a1a2e; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.3px; }
         .info-rows { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
