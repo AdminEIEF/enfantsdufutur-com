@@ -612,6 +612,11 @@ export default function Eleves() {
           </div>
         </div>
 
+        <div class="motto-contact">
+          <div class="motto-line">Faisons plus !</div>
+          <div class="contact-line">Contact : +224 625 00 00 00 — contact@eief.edu.gn</div>
+        </div>
+
         <div class="card-footer-bar">
           <span class="footer-bar-text">Carte obligatoire — Accès aux services scolaires</span>
         </div>
