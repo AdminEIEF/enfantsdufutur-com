@@ -630,7 +630,7 @@ export default function Eleves() {
         </div>
 
         <div class="card-footer-bar">
-          <span class="footer-bar-text">Carte obligatoire — Accès aux services scolaires</span>
+          <span class="footer-bar-text">Carte obligatoire — Accès aux services scolaires — www.enfantsdufutur.com</span>
         </div>
       </div>
 
