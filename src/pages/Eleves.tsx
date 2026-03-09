@@ -801,6 +801,11 @@ export default function Eleves() {
         }}>
           <Download className="h-4 w-4 mr-1" /> Exporter Excel
         </Button>
+        {selectedIds.size > 0 && (
+          <Button size="sm" onClick={() => setShowPlanche(true)} className="gap-2">
+            <FileDown className="h-4 w-4" /> Planches badges ({selectedIds.size})
+          </Button>
+        )}
       </div>
 
       {/* Table */}
