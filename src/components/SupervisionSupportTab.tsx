@@ -62,10 +62,16 @@ export default function SupervisionSupportTab() {
   const [newMsgDialog, setNewMsgDialog] = useState(false);
   const [roleUsers, setRoleUsers] = useState<RoleUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedUser, setSelectedUser] = useState<RoleUser | null>(null);
   const [newMsgText, setNewMsgText] = useState('');
   const [sendingNewMsg, setSendingNewMsg] = useState(false);
   const [userSearch, setUserSearch] = useState('');
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [loadingChat, setLoadingChat] = useState(false);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const [newMsgImage, setNewMsgImage] = useState<File | null>(null);
+  const [newMsgImagePreview, setNewMsgImagePreview] = useState<string | null>(null);
+  const newMsgFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchMessages();
@@ -204,30 +210,80 @@ export default function SupervisionSupportTab() {
 
   const openNewMsgDialog = () => {
     setNewMsgDialog(true);
-    setSelectedUserId('');
+    setSelectedUser(null);
     setNewMsgText('');
     setUserSearch('');
+    setChatMessages([]);
+    setNewMsgImage(null);
+    setNewMsgImagePreview(null);
     fetchRoleUsers();
   };
 
+  const selectUserForChat = async (u: RoleUser) => {
+    setSelectedUser(u);
+    setNewMsgText('');
+    setNewMsgImage(null);
+    setNewMsgImagePreview(null);
+    setLoadingChat(true);
+    // Fetch conversation history with this user
+    const { data } = await supabase
+      .from('support_messages')
+      .select('id, message, reply, reply_image_url, sender_image_url, sender_id, sender_type, target_user_id, statut, created_at, replied_at, sender_name')
+      .or(`and(sender_id.eq.${u.user_id},sender_type.neq.superviseur),and(target_user_id.eq.${u.user_id},sender_type.eq.superviseur)`)
+      .order('created_at', { ascending: true });
+    setChatMessages(data || []);
+    setLoadingChat(false);
+    setTimeout(() => {
+      if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }, 100);
+  };
+
+  const handleNewMsgImageSelect = (file: File) => {
+    if (!file.type.startsWith('image/')) { toast.error('Sélectionnez une image'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image trop volumineuse (max 5 Mo)'); return; }
+    setNewMsgImage(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setNewMsgImagePreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
   const handleSendNewMsg = async () => {
-    if (!selectedUserId || !newMsgText.trim() || !user) return;
+    if (!selectedUser || (!newMsgText.trim() && !newMsgImage) || !user) return;
     setSendingNewMsg(true);
-    const targetUser = roleUsers.find(u => u.user_id === selectedUserId);
+
+    let imageUrl: string | null = null;
+    if (newMsgImage) {
+      const ext = newMsgImage.name.split('.').pop();
+      const path = `messages/${user.id}_${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('support-images').upload(path, newMsgImage);
+      if (uploadError) {
+        toast.error("Erreur lors de l'upload de l'image");
+        setSendingNewMsg(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('support-images').getPublicUrl(path);
+      imageUrl = urlData.publicUrl;
+    }
+
     const { error } = await supabase.from('support_messages').insert({
       sender_id: user.id,
       sender_type: 'superviseur',
       sender_name: 'Superviseur',
       sender_email: user.email,
-      message: newMsgText.trim(),
-      target_user_id: selectedUserId,
+      message: newMsgText.trim() || '📷 Image',
+      target_user_id: selectedUser.user_id,
+      sender_image_url: imageUrl,
       statut: 'ouvert',
     });
     if (error) {
       toast.error('Erreur lors de l\'envoi');
     } else {
-      toast.success(`Message envoyé à ${targetUser?.display_name || targetUser?.email}`);
-      setNewMsgDialog(false);
+      toast.success(`Message envoyé à ${selectedUser.display_name || selectedUser.email}`);
+      setNewMsgText('');
+      setNewMsgImage(null);
+      setNewMsgImagePreview(null);
+      // Refresh chat
+      selectUserForChat(selectedUser);
       fetchMessages();
     }
     setSendingNewMsg(false);
@@ -466,85 +522,175 @@ export default function SupervisionSupportTab() {
       </Dialog>
 
       {/* New Message Dialog */}
-      <Dialog open={newMsgDialog} onOpenChange={setNewMsgDialog}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={newMsgDialog} onOpenChange={(open) => { if (!open) { setNewMsgDialog(false); setSelectedUser(null); } }}>
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <PenSquare className="h-5 w-5 text-primary" />
-              Écrire à un utilisateur
+              {selectedUser ? (
+                <>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedUser(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <MessageCircle className="h-5 w-5 text-primary" />
+                  <span className="truncate">Envoyer message à {selectedUser.display_name || selectedUser.email}</span>
+                  <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${selectedUser.isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/30'}`} />
+                </>
+              ) : (
+                <>
+                  <PenSquare className="h-5 w-5 text-primary" />
+                  Écrire à un utilisateur
+                </>
+              )}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            {/* User search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher un utilisateur..."
-                value={userSearch}
-                onChange={(e) => setUserSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
 
-            {/* User list */}
-            <ScrollArea className="max-h-[200px] border rounded-lg">
-              {loadingUsers ? (
-                <div className="flex items-center justify-center py-6">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : filteredRoleUsers.length === 0 ? (
-                <div className="text-center py-6 text-sm text-muted-foreground">
-                  <Users className="h-6 w-6 mx-auto mb-1 opacity-30" />
-                  Aucun utilisateur trouvé
-                </div>
-              ) : (
-                <div className="divide-y">
-                  {filteredRoleUsers.map((u) => (
-                    <button
-                      key={u.user_id}
-                      onClick={() => setSelectedUserId(u.user_id)}
-                      className={`w-full text-left px-3 py-2 hover:bg-accent transition-colors ${
-                        selectedUserId === u.user_id ? 'bg-primary/10 border-l-2 border-primary' : ''
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${u.isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/30'}`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{u.display_name || u.email}</p>
-                          {u.display_name && <p className="text-[10px] text-muted-foreground truncate">{u.email}</p>}
+          {!selectedUser ? (
+            /* Step 1: User selection */
+            <div className="space-y-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher par nom, email ou rôle..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <ScrollArea className="max-h-[350px] border rounded-lg">
+                {loadingUsers ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : filteredRoleUsers.length === 0 ? (
+                  <div className="text-center py-6 text-sm text-muted-foreground">
+                    <Users className="h-6 w-6 mx-auto mb-1 opacity-30" />
+                    Aucun utilisateur trouvé
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {filteredRoleUsers.map((u) => (
+                      <button
+                        key={u.user_id}
+                        onClick={() => selectUserForChat(u)}
+                        className="w-full text-left px-3 py-2 hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${u.isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/30'}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{u.display_name || u.email}</p>
+                            {u.display_name && <p className="text-[10px] text-muted-foreground truncate">{u.email}</p>}
+                          </div>
+                          <span className={`text-[10px] shrink-0 ${u.isOnline ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                            {u.isOnline ? 'En ligne' : 'Hors ligne'}
+                          </span>
                         </div>
-                        <span className={`text-[10px] shrink-0 ${u.isOnline ? 'text-emerald-600' : 'text-muted-foreground'}`}>
-                          {u.isOnline ? 'En ligne' : 'Hors ligne'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 mt-0.5 flex-wrap ml-4.5">
-                        {u.roles.map((r) => (
-                          <Badge key={r} variant="outline" className="text-[10px] px-1.5 py-0">
-                            {r}
-                          </Badge>
-                        ))}
-                      </div>
-                    </button>
-                  ))}
+                        <div className="flex items-center gap-1 mt-0.5 flex-wrap ml-4.5">
+                          {u.roles.map((r) => (
+                            <Badge key={r} variant="outline" className="text-[10px] px-1.5 py-0">
+                              {r}
+                            </Badge>
+                          ))}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+          ) : (
+            /* Step 2: Chat view */
+            <div className="flex flex-col flex-1 min-h-0">
+              {/* Chat messages */}
+              <div className="flex-1 overflow-y-auto max-h-[320px] p-3 border rounded-lg mb-3" ref={chatScrollRef}>
+                {loadingChat ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : chatMessages.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                    Aucun message. Écrivez votre premier message ci-dessous.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {chatMessages.map((msg) => {
+                      const isMine = msg.sender_type === 'superviseur';
+                      return (
+                        <div key={msg.id} className="space-y-1.5">
+                          {/* Main message */}
+                          <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`rounded-lg px-3 py-2 max-w-[85%] text-sm ${
+                              isMine ? 'bg-primary/10 rounded-br-sm' : 'bg-muted rounded-bl-sm'
+                            }`}>
+                              {!isMine && <p className="text-[10px] font-medium text-muted-foreground mb-0.5">{msg.sender_name}</p>}
+                              <p className="whitespace-pre-wrap">{msg.message}</p>
+                              {msg.sender_image_url && (
+                                <a href={msg.sender_image_url} target="_blank" rel="noopener noreferrer">
+                                  <img src={msg.sender_image_url} alt="Image" className="max-h-32 rounded mt-1" />
+                                </a>
+                              )}
+                              <p className={`text-[10px] text-muted-foreground mt-1 ${isMine ? 'text-right' : ''}`}>
+                                {format(new Date(msg.created_at), 'dd/MM HH:mm', { locale: fr })}
+                              </p>
+                            </div>
+                          </div>
+                          {/* Reply if exists */}
+                          {(msg.reply || msg.reply_image_url) && (
+                            <div className="flex justify-end">
+                              <div className="bg-primary/10 rounded-lg rounded-br-sm px-3 py-2 max-w-[85%] text-sm">
+                                <p className="text-[10px] font-medium text-primary mb-0.5">Superviseur</p>
+                                {msg.reply && <p className="whitespace-pre-wrap">{msg.reply}</p>}
+                                {msg.reply_image_url && (
+                                  <a href={msg.reply_image_url} target="_blank" rel="noopener noreferrer">
+                                    <img src={msg.reply_image_url} alt="Image réponse" className="max-h-32 rounded mt-1" />
+                                  </a>
+                                )}
+                                <p className="text-[10px] text-muted-foreground mt-1 text-right">
+                                  {msg.replied_at && format(new Date(msg.replied_at), 'dd/MM HH:mm', { locale: fr })}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Image preview */}
+              {newMsgImagePreview && (
+                <div className="relative inline-block mb-2">
+                  <img src={newMsgImagePreview} alt="Aperçu" className="max-h-20 rounded border" />
+                  <button onClick={() => { setNewMsgImage(null); setNewMsgImagePreview(null); }} className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs">
+                    <X className="h-3 w-3" />
+                  </button>
                 </div>
               )}
-            </ScrollArea>
 
-            {/* Message */}
-            <Textarea
-              value={newMsgText}
-              onChange={(e) => setNewMsgText(e.target.value)}
-              placeholder="Votre message..."
-              className="min-h-[100px]"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setNewMsgDialog(false)}>Annuler</Button>
-            <Button onClick={handleSendNewMsg} disabled={!selectedUserId || !newMsgText.trim() || sendingNewMsg}>
-              {sendingNewMsg ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-              Envoyer
-            </Button>
-          </DialogFooter>
+              {/* Input */}
+              <div className="flex gap-2">
+                <input ref={newMsgFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleNewMsgImageSelect(file);
+                  e.target.value = '';
+                }} />
+                <Button onClick={() => newMsgFileRef.current?.click()} size="icon" variant="outline" className="shrink-0 self-end" type="button">
+                  <Camera className="h-4 w-4" />
+                </Button>
+                <Textarea
+                  value={newMsgText}
+                  onChange={(e) => setNewMsgText(e.target.value)}
+                  placeholder="Votre message..."
+                  className="min-h-[60px] max-h-[100px] text-sm resize-none"
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendNewMsg(); } }}
+                />
+                <Button onClick={handleSendNewMsg} disabled={(!newMsgText.trim() && !newMsgImage) || sendingNewMsg} size="icon" className="shrink-0 self-end">
+                  {sendingNewMsg ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
