@@ -19,7 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { QRCodeSVG } from 'qrcode.react';
+
 import {
   ChartContainer, ChartTooltip, ChartTooltipContent
 } from '@/components/ui/chart';
