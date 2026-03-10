@@ -65,6 +65,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </main>
       </div>
       <AIChatBubble />
+      <SupportChat />
     </SidebarProvider>
   );
 }
