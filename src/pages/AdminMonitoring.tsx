@@ -1019,7 +1019,9 @@ export default function AdminMonitoring() {
                                     </Button>
                                   </TableCell>
                                 </TableRow>
-                              ))}
+                                );
+                              })}
+
                             </TableBody>
                           </Table>
                         </CardContent>
