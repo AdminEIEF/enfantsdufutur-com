@@ -14,7 +14,7 @@ import {
 import RapportJournalierPanel from '@/components/RapportJournalierPanel';
 import BordereauRemiseCartes from '@/components/BordereauRemiseCartes';
 import QRScannerDialog from '@/components/QRScannerDialog';
-import { Checkbox } from '@/components/ui/checkbox';
+
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
