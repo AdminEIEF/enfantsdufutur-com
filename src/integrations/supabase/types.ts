@@ -2661,6 +2661,7 @@ export type Database = {
           sender_name: string
           sender_type: string
           statut: string
+          target_user_id: string | null
           updated_at: string
         }
         Insert: {
@@ -2678,6 +2679,7 @@ export type Database = {
           sender_name: string
           sender_type?: string
           statut?: string
+          target_user_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -2695,6 +2697,7 @@ export type Database = {
           sender_name?: string
           sender_type?: string
           statut?: string
+          target_user_id?: string | null
           updated_at?: string
         }
         Relationships: []

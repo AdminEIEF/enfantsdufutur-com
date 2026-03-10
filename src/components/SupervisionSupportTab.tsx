@@ -8,12 +8,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Search, MessageCircle, Send, Loader2, CheckCircle, Clock, AlertCircle, X, Camera } from 'lucide-react';
+import { Search, MessageCircle, Send, Loader2, CheckCircle, Clock, AlertCircle, X, Camera, PenSquare, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+interface RoleUser {
+  user_id: string;
+  email: string;
+  display_name: string | null;
+  roles: string[];
+}
 
 interface SupportMessage {
   id: string;
@@ -49,6 +56,15 @@ export default function SupervisionSupportTab() {
   const [replyImagePreview, setReplyImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  
+  // New message dialog state
+  const [newMsgDialog, setNewMsgDialog] = useState(false);
+  const [roleUsers, setRoleUsers] = useState<RoleUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [newMsgText, setNewMsgText] = useState('');
+  const [sendingNewMsg, setSendingNewMsg] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
 
   useEffect(() => {
     fetchMessages();
@@ -145,6 +161,82 @@ export default function SupervisionSupportTab() {
     fetchMessages();
   };
 
+  const fetchRoleUsers = async () => {
+    setLoadingUsers(true);
+    // Get all users with roles + their profile info
+    const { data: rolesData } = await supabase
+      .from('user_roles')
+      .select('user_id, role');
+    
+    if (!rolesData || rolesData.length === 0) {
+      setLoadingUsers(false);
+      return;
+    }
+
+    const userIds = [...new Set(rolesData.map(r => r.user_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, email, display_name')
+      .in('user_id', userIds);
+
+    const usersMap: Record<string, RoleUser> = {};
+    for (const r of rolesData) {
+      if (!usersMap[r.user_id]) {
+        const profile = profiles?.find(p => p.user_id === r.user_id);
+        usersMap[r.user_id] = {
+          user_id: r.user_id,
+          email: profile?.email || '',
+          display_name: profile?.display_name || null,
+          roles: [],
+        };
+      }
+      usersMap[r.user_id].roles.push(r.role);
+    }
+    // Exclude current supervisor
+    const list = Object.values(usersMap).filter(u => u.user_id !== user?.id);
+    setRoleUsers(list);
+    setLoadingUsers(false);
+  };
+
+  const openNewMsgDialog = () => {
+    setNewMsgDialog(true);
+    setSelectedUserId('');
+    setNewMsgText('');
+    setUserSearch('');
+    fetchRoleUsers();
+  };
+
+  const handleSendNewMsg = async () => {
+    if (!selectedUserId || !newMsgText.trim() || !user) return;
+    setSendingNewMsg(true);
+    const targetUser = roleUsers.find(u => u.user_id === selectedUserId);
+    const { error } = await supabase.from('support_messages').insert({
+      sender_id: user.id,
+      sender_type: 'superviseur',
+      sender_name: 'Superviseur',
+      sender_email: user.email,
+      message: newMsgText.trim(),
+      target_user_id: selectedUserId,
+      statut: 'ouvert',
+    });
+    if (error) {
+      toast.error('Erreur lors de l\'envoi');
+    } else {
+      toast.success(`Message envoyé à ${targetUser?.display_name || targetUser?.email}`);
+      setNewMsgDialog(false);
+      fetchMessages();
+    }
+    setSendingNewMsg(false);
+  };
+
+  const filteredRoleUsers = roleUsers.filter(u => {
+    if (!userSearch) return true;
+    const s = userSearch.toLowerCase();
+    return (u.email?.toLowerCase().includes(s)) || 
+           (u.display_name?.toLowerCase().includes(s)) ||
+           u.roles.some(r => r.toLowerCase().includes(s));
+  });
+
   const filtered = messages.filter((m) => {
     const matchSearch = !search || 
       m.sender_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -218,6 +310,9 @@ export default function SupervisionSupportTab() {
             <SelectItem value="resolu">Résolu</SelectItem>
           </SelectContent>
         </Select>
+        <Button onClick={openNewMsgDialog} className="gap-2">
+          <PenSquare className="h-4 w-4" /> Nouveau message
+        </Button>
       </div>
 
       {/* Table */}
@@ -361,6 +456,80 @@ export default function SupervisionSupportTab() {
             <Button onClick={handleReply} disabled={(!replyText.trim() && !replyImage) || replying}>
               {replying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
               Envoyer la réponse
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Message Dialog */}
+      <Dialog open={newMsgDialog} onOpenChange={setNewMsgDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PenSquare className="h-5 w-5 text-primary" />
+              Écrire à un utilisateur
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {/* User search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher un utilisateur..."
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* User list */}
+            <ScrollArea className="max-h-[200px] border rounded-lg">
+              {loadingUsers ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : filteredRoleUsers.length === 0 ? (
+                <div className="text-center py-6 text-sm text-muted-foreground">
+                  <Users className="h-6 w-6 mx-auto mb-1 opacity-30" />
+                  Aucun utilisateur trouvé
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {filteredRoleUsers.map((u) => (
+                    <button
+                      key={u.user_id}
+                      onClick={() => setSelectedUserId(u.user_id)}
+                      className={`w-full text-left px-3 py-2 hover:bg-accent transition-colors ${
+                        selectedUserId === u.user_id ? 'bg-primary/10 border-l-2 border-primary' : ''
+                      }`}
+                    >
+                      <p className="text-sm font-medium">{u.display_name || u.email}</p>
+                      <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                        {u.roles.map((r) => (
+                          <Badge key={r} variant="outline" className="text-[10px] px-1.5 py-0">
+                            {r}
+                          </Badge>
+                        ))}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+
+            {/* Message */}
+            <Textarea
+              value={newMsgText}
+              onChange={(e) => setNewMsgText(e.target.value)}
+              placeholder="Votre message..."
+              className="min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewMsgDialog(false)}>Annuler</Button>
+            <Button onClick={handleSendNewMsg} disabled={!selectedUserId || !newMsgText.trim() || sendingNewMsg}>
+              {sendingNewMsg ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+              Envoyer
             </Button>
           </DialogFooter>
         </DialogContent>
