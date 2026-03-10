@@ -56,6 +56,15 @@ export default function SupervisionSupportTab() {
   const [replyImagePreview, setReplyImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  
+  // New message dialog state
+  const [newMsgDialog, setNewMsgDialog] = useState(false);
+  const [roleUsers, setRoleUsers] = useState<RoleUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [newMsgText, setNewMsgText] = useState('');
+  const [sendingNewMsg, setSendingNewMsg] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
 
   useEffect(() => {
     fetchMessages();
