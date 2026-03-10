@@ -1182,6 +1182,15 @@ export default function Eleves() {
                   </div>
                 )}
               </div>
+              {/* Option Cantine */}
+              <div className="flex items-center gap-2 pt-2">
+                <Checkbox
+                  id="edit-option-cantine"
+                  checked={!!editing.option_cantine}
+                  onCheckedChange={(checked) => setEditing({ ...editing, option_cantine: !!checked })}
+                />
+                <Label htmlFor="edit-option-cantine" className="text-sm cursor-pointer">Inscrit à la cantine</Label>
+              </div>
             </div>
           )}
           <DialogFooter>
