@@ -707,19 +707,10 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
             <div className="space-y-3">
               <div>
                 <Label>Famille *</Label>
-                <div className="relative mb-2">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Rechercher par nom ou téléphone..."
-                    value={searchFamilleDialog}
-                    onChange={e => setSearchFamilleDialog(e.target.value)}
-                    className="pl-9 h-9"
-                  />
-                </div>
                 <Select value={familleId} onValueChange={setFamilleId}>
                   <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                   <SelectContent>
-                    {filteredFamillesDialog.map((f: any) => (
+                    {famillesAvecEnfants.map((f: any) => (
                       <SelectItem key={f.id} value={f.id}>👨‍👩‍👧‍👦 {f.nom_famille} ({f.enfants.length} enfants){f.telephone_pere ? ` — ${f.telephone_pere}` : ''}</SelectItem>
                     ))}
                   </SelectContent>
