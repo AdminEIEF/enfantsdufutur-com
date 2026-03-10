@@ -112,7 +112,7 @@ export function SupportChat() {
         >
           {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
           {unreadCount > 0 && !open && (
-            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-600 text-white text-xs flex items-center justify-center">
               {unreadCount}
             </span>
           )}

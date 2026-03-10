@@ -191,9 +191,12 @@ export function AppSidebar() {
             Installer l'Appli
           </Button>
         )}
-        <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground" onClick={signOut}>
-          <LogOut className="mr-2 h-4 w-4" />
-          Déconnexion
+        <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground" onClick={() => {
+          const chatBubble = document.querySelector('[data-ai-chat-trigger]') as HTMLButtonElement;
+          if (chatBubble) chatBubble.click();
+        }}>
+          <Bot className="mr-2 h-4 w-4" />
+          Assistance IA
         </Button>
       </SidebarFooter>
     </Sidebar>

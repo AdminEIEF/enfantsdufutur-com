@@ -28,7 +28,7 @@ const roleMeta: Record<AppRole, { label: string; color: string }> = {
 };
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const { user, roles } = useAuth();
+  const { user, roles, signOut } = useAuth();
 
   return (
     <SidebarProvider>
