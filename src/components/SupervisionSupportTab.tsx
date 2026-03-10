@@ -62,10 +62,16 @@ export default function SupervisionSupportTab() {
   const [newMsgDialog, setNewMsgDialog] = useState(false);
   const [roleUsers, setRoleUsers] = useState<RoleUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedUser, setSelectedUser] = useState<RoleUser | null>(null);
   const [newMsgText, setNewMsgText] = useState('');
   const [sendingNewMsg, setSendingNewMsg] = useState(false);
   const [userSearch, setUserSearch] = useState('');
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [loadingChat, setLoadingChat] = useState(false);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const [newMsgImage, setNewMsgImage] = useState<File | null>(null);
+  const [newMsgImagePreview, setNewMsgImagePreview] = useState<string | null>(null);
+  const newMsgFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchMessages();
