@@ -6,6 +6,8 @@ import { SupportChat } from '@/components/SupportChat';
 import { AdminNotificationBell } from '@/components/AdminNotificationBell';
 import { useAuth, AppRole } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import schoolLogo from '@/assets/school-logo.png';
 
