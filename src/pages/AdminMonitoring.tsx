@@ -871,7 +871,111 @@ export default function AdminMonitoring() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* === DOUBLONS === */}
+        <TabsContent value="doublons">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  Détection des doublons élèves
+                  {duplicates.length > 0 && <Badge variant="destructive">{duplicates.length} groupe{duplicates.length > 1 ? 's' : ''}</Badge>}
+                </CardTitle>
+                <Button variant="outline" size="sm" onClick={fetchDuplicates} disabled={loadingDuplicates} className="gap-1">
+                  {loadingDuplicates ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                  Analyser
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">Élèves ayant le même nom, prénom, classe et famille</p>
+            </CardHeader>
+            <CardContent>
+              {loadingDuplicates ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : duplicates.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">Aucun doublon détecté ✅</p>
+              ) : (
+                <ScrollArea className="h-[500px]">
+                  <div className="space-y-4">
+                    {duplicates.map(group => (
+                      <Card key={group.key} className="border-amber-200 dark:border-amber-800">
+                        <CardHeader className="pb-2 pt-4">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="outline" className="gap-1 text-amber-700 dark:text-amber-400 border-amber-300">
+                              <Copy className="h-3 w-3" />
+                              {group.eleves.length} occurrences
+                            </Badge>
+                            <span className="font-semibold">{group.prenom} {group.nom}</span>
+                            <span className="text-sm text-muted-foreground">— {group.classe_nom} • {group.famille_nom}</span>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Matricule</TableHead>
+                                <TableHead>Nom Prénom</TableHead>
+                                <TableHead>Date naiss.</TableHead>
+                                <TableHead>Statut</TableHead>
+                                <TableHead>Créé le</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {group.eleves.map(e => (
+                                <TableRow key={e.id}>
+                                  <TableCell className="font-mono text-sm">{e.matricule || '—'}</TableCell>
+                                  <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
+                                  <TableCell className="text-sm">{e.date_naissance || '—'}</TableCell>
+                                  <TableCell><Badge variant="outline">{e.statut}</Badge></TableCell>
+                                  <TableCell className="text-sm text-muted-foreground">{formatDate(e.created_at)}</TableCell>
+                                  <TableCell className="text-right space-x-1">
+                                    <Button variant="outline" size="sm" className="gap-1 text-emerald-600" onClick={() => handleValidateDuplicate(e.id)}>
+                                      <CheckCircle className="h-3 w-3" /> Valider
+                                    </Button>
+                                    <Button variant="destructive" size="sm" className="gap-1" onClick={() => setConfirmDeleteEleve({ id: e.id, name: `${e.prenom} ${e.nom}` })}>
+                                      <Trash2 className="h-3 w-3" /> Supprimer
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      {/* Confirm delete duplicate dialog */}
+      <AlertDialog open={!!confirmDeleteEleve} onOpenChange={() => setConfirmDeleteEleve(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce doublon ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer <strong>{confirmDeleteEleve?.name}</strong> ? L'élève sera marqué comme supprimé (soft delete).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => confirmDeleteEleve && handleDeleteDuplicate(confirmDeleteEleve.id)}
+              disabled={!!deletingId}
+            >
+              {deletingId ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Connection detail dialog */}
       <Dialog open={!!connectionDetail} onOpenChange={() => setConnectionDetail(null)}>
