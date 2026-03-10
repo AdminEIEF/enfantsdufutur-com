@@ -2645,6 +2645,54 @@ export type Database = {
           },
         ]
       }
+      support_messages: {
+        Row: {
+          created_at: string
+          id: string
+          lu: boolean
+          message: string
+          replied_at: string | null
+          replied_by: string | null
+          reply: string | null
+          sender_email: string | null
+          sender_id: string
+          sender_name: string
+          sender_type: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lu?: boolean
+          message: string
+          replied_at?: string | null
+          replied_by?: string | null
+          reply?: string | null
+          sender_email?: string | null
+          sender_id: string
+          sender_name: string
+          sender_type?: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lu?: boolean
+          message?: string
+          replied_at?: string | null
+          replied_by?: string | null
+          reply?: string | null
+          sender_email?: string | null
+          sender_id?: string
+          sender_name?: string
+          sender_type?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tarifs: {
         Row: {
           categorie: string
