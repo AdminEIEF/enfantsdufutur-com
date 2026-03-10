@@ -20,6 +20,7 @@ interface RoleUser {
   email: string;
   display_name: string | null;
   roles: string[];
+  isOnline: boolean;
 }
 
 interface SupportMessage {
@@ -163,16 +164,17 @@ export default function SupervisionSupportTab() {
 
   const fetchRoleUsers = async () => {
     setLoadingUsers(true);
-    // Get all users with roles + their profile info
-    const { data: rolesData } = await supabase
-      .from('user_roles')
-      .select('user_id, role');
+    const [{ data: rolesData }, { data: connections }] = await Promise.all([
+      supabase.from('user_roles').select('user_id, role'),
+      supabase.from('active_connections').select('ref_id, type').eq('type', 'admin'),
+    ]);
     
     if (!rolesData || rolesData.length === 0) {
       setLoadingUsers(false);
       return;
     }
 
+    const onlineUserIds = new Set((connections || []).map(c => c.ref_id));
     const userIds = [...new Set(rolesData.map(r => r.user_id))];
     const { data: profiles } = await supabase
       .from('profiles')
@@ -188,12 +190,14 @@ export default function SupervisionSupportTab() {
           email: profile?.email || '',
           display_name: profile?.display_name || null,
           roles: [],
+          isOnline: onlineUserIds.has(r.user_id),
         };
       }
       usersMap[r.user_id].roles.push(r.role);
     }
-    // Exclude current supervisor
-    const list = Object.values(usersMap).filter(u => u.user_id !== user?.id);
+    const list = Object.values(usersMap)
+      .filter(u => u.user_id !== user?.id)
+      .sort((a, b) => (b.isOnline ? 1 : 0) - (a.isOnline ? 1 : 0));
     setRoleUsers(list);
     setLoadingUsers(false);
   };
@@ -503,8 +507,17 @@ export default function SupervisionSupportTab() {
                         selectedUserId === u.user_id ? 'bg-primary/10 border-l-2 border-primary' : ''
                       }`}
                     >
-                      <p className="text-sm font-medium">{u.display_name || u.email}</p>
-                      <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${u.isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/30'}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{u.display_name || u.email}</p>
+                          {u.display_name && <p className="text-[10px] text-muted-foreground truncate">{u.email}</p>}
+                        </div>
+                        <span className={`text-[10px] shrink-0 ${u.isOnline ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                          {u.isOnline ? 'En ligne' : 'Hors ligne'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5 flex-wrap ml-4.5">
                         {u.roles.map((r) => (
                           <Badge key={r} variant="outline" className="text-[10px] px-1.5 py-0">
                             {r}
