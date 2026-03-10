@@ -139,7 +139,7 @@ const navSections = [
 ];
 
 export function AppSidebar() {
-  const { hasAnyRole, signOut, user } = useAuth();
+  const { hasAnyRole, user } = useAuth();
   const { isInstallable, install } = usePWAInstall();
 
   return (
