@@ -197,7 +197,7 @@ export default function PlancheBadgesScolaires({ eleves, onClose, schoolName, sc
             <div className="contact-line">✉ eiefinfos@enfantsdufutur.com</div>
           </div>
           <div className="card-footer-bar">
-            <span>Carte obligatoire — www.enfantsdufutur.com</span>
+            <span>Carte obligatoire — Accès aux services scolaires — www.enfantsdufutur.com</span>
           </div>
         </div>
       </div>
