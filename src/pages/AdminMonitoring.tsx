@@ -954,6 +954,11 @@ export default function AdminMonitoring() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* === SUPPORT === */}
+        <TabsContent value="support">
+          <SupervisionSupportTab />
+        </TabsContent>
       </Tabs>
 
       {/* Confirm delete duplicate dialog */}
