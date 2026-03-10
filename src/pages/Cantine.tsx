@@ -328,16 +328,12 @@ export default function Cantine() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // ─── Filtered eleves ──────────────────────────────
-  const filtered = eleves.filter((e: any) =>
-    `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase())
-  );
-
   // ─── Stats ─────────────────────────────────────────
-  const totalInscrits = eleves.length;
+  const inscritsCantine = eleves.filter((e: any) => e.option_cantine);
+  const totalInscrits = inscritsCantine.length;
   const minPrix = plats.length > 0 ? Math.min(...plats.map(p => Number(p.prix))) : 1000;
-  const soldeFaible = eleves.filter((e: any) => Number(e.solde_cantine || 0) < minPrix).length;
-  const totalSolde = eleves.reduce((s: number, e: any) => s + Number(e.solde_cantine || 0), 0);
+  const soldeFaible = inscritsCantine.filter((e: any) => Number(e.solde_cantine || 0) < minPrix).length;
+  const totalSolde = inscritsCantine.reduce((s: number, e: any) => s + Number(e.solde_cantine || 0), 0);
   const caToday = repasToday.reduce((s, r: any) => s + Number(r.montant_debite || 0), 0);
 
   // ─── Inventaire du jour ────────────────────────────
