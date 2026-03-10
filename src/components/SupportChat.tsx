@@ -230,7 +230,7 @@ export function SupportChat() {
                   ))}
                 </div>
               )}
-            </ScrollArea>
+            </div>
 
             {/* Input */}
             <div className="border-t p-3 space-y-2">
