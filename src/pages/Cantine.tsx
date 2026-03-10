@@ -587,7 +587,7 @@ export default function Cantine() {
                     <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun élève inscrit à la cantine</TableCell></TableRow>
                   ) : filtered.map((e: any) => (
                     <TableRow key={e.id}>
-                      {isAdmin && <TableCell><Checkbox checked={selectedIds.has(e.id)} onCheckedChange={() => toggleSelect(e.id)} /></TableCell>}
+                      
                       <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
                       <TableCell>{e.classes?.nom || '—'}</TableCell>
                       <TableCell>
