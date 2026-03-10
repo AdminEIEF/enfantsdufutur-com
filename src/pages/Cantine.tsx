@@ -160,8 +160,6 @@ export default function Cantine() {
   const [selectedEleve, setSelectedEleve] = useState<any>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyEleveId, setHistoryEleveId] = useState<string | null>(null);
-  const [badgeOpen, setBadgeOpen] = useState(false);
-  const [badgeEleve, setBadgeEleve] = useState<any>(null);
   const [selectedPlatIds, setSelectedPlatIds] = useState<Record<string, number>>({});
   const [menuOpen, setMenuOpen] = useState(false);
   const [newPlat, setNewPlat] = useState({ nom: '', prix: '', stock: '' });
