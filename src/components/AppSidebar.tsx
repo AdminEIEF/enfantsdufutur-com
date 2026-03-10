@@ -1,6 +1,6 @@
 import {
   GraduationCap, Users, UserPlus, BookOpen, Calculator, AlertTriangle,
-  Settings, Bell, ScanLine, Library, BarChart3, LogOut,
+  Settings, Bell, ScanLine, Library, BarChart3,
   Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock, FileText, Shield, Bot
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
@@ -139,7 +139,7 @@ const navSections = [
 ];
 
 export function AppSidebar() {
-  const { hasAnyRole, signOut, user } = useAuth();
+  const { hasAnyRole, user } = useAuth();
   const { isInstallable, install } = usePWAInstall();
 
   return (
@@ -191,9 +191,12 @@ export function AppSidebar() {
             Installer l'Appli
           </Button>
         )}
-        <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground" onClick={signOut}>
-          <LogOut className="mr-2 h-4 w-4" />
-          Déconnexion
+        <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground" onClick={() => {
+          const chatBubble = document.querySelector('[data-ai-chat-trigger]') as HTMLButtonElement;
+          if (chatBubble) chatBubble.click();
+        }}>
+          <Bot className="mr-2 h-4 w-4" />
+          Assistance IA
         </Button>
       </SidebarFooter>
     </Sidebar>

@@ -6,6 +6,8 @@ import { SupportChat } from '@/components/SupportChat';
 import { AdminNotificationBell } from '@/components/AdminNotificationBell';
 import { useAuth, AppRole } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import schoolLogo from '@/assets/school-logo.png';
 
@@ -26,7 +28,7 @@ const roleMeta: Record<AppRole, { label: string; color: string }> = {
 };
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const { user, roles } = useAuth();
+  const { user, roles, signOut } = useAuth();
 
   return (
     <SidebarProvider>
@@ -59,6 +61,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </span>
             </div>
             <AdminNotificationBell />
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground h-8 gap-1.5" onClick={signOut}>
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Déconnexion</span>
+            </Button>
           </header>
           <div className="flex-1 p-6 overflow-auto">
             {children}

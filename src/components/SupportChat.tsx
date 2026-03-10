@@ -108,11 +108,11 @@ export function SupportChat() {
         <Button
           onClick={() => setOpen(!open)}
           size="icon"
-          className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 relative"
+          className="h-14 w-14 rounded-full shadow-lg bg-green-600 hover:bg-green-700 relative"
         >
           {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
           {unreadCount > 0 && !open && (
-            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-600 text-white text-xs flex items-center justify-center">
               {unreadCount}
             </span>
           )}

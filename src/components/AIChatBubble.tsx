@@ -197,6 +197,7 @@ export function AIChatBubble() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
+          data-ai-chat-trigger
           className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-primary text-primary-foreground rounded-full pl-4 pr-5 py-3 shadow-lg hover:shadow-xl transition-all hover:scale-105 group"
         >
           <Bot className="h-5 w-5" />
