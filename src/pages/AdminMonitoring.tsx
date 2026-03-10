@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Shield, ShieldOff, Wifi, WifiOff, Activity, Search, Eye, Ban, CheckCircle, Clock, Users, FileText, GraduationCap, Briefcase, UserCheck, LogOut, KeyRound, Copy, Loader2 } from 'lucide-react';
+import { Shield, ShieldOff, Wifi, WifiOff, Activity, Search, Eye, Ban, CheckCircle, Clock, Users, FileText, GraduationCap, Briefcase, UserCheck, LogOut, KeyRound, Copy, Loader2, AlertTriangle, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -96,6 +97,32 @@ export default function AdminMonitoring() {
   const [newPassword, setNewPassword] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Doublons state
+  interface DuplicateGroup {
+    key: string;
+    nom: string;
+    prenom: string;
+    classe_nom: string;
+    famille_nom: string;
+    eleves: Array<{
+      id: string;
+      nom: string;
+      prenom: string;
+      matricule: string | null;
+      classe_id: string | null;
+      classe_nom: string;
+      famille_id: string | null;
+      famille_nom: string;
+      date_naissance: string | null;
+      statut: string;
+      created_at: string;
+    }>;
+  }
+  const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
+  const [loadingDuplicates, setLoadingDuplicates] = useState(false);
+  const [confirmDeleteEleve, setConfirmDeleteEleve] = useState<{ id: string; name: string } | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   useEffect(() => {
     fetchAll();
   }, []);
@@ -143,6 +170,91 @@ export default function AdminMonitoring() {
       .from('profiles')
       .select('user_id, email, blocked, blocked_at, display_name');
     if (data) setUsers(data as ProfileUser[]);
+  };
+
+  const fetchDuplicates = async () => {
+    setLoadingDuplicates(true);
+    try {
+      // Fetch all active students with class and family info
+      const { data: eleves } = await supabase
+        .from('eleves')
+        .select('id, nom, prenom, matricule, classe_id, famille_id, date_naissance, statut, created_at')
+        .is('deleted_at', null)
+        .order('nom');
+
+      if (!eleves) return;
+
+      // Fetch classes and familles for display
+      const [{ data: classes }, { data: familles }] = await Promise.all([
+        supabase.from('classes').select('id, nom'),
+        supabase.from('familles').select('id, nom_famille'),
+      ]);
+      const classeMap = new Map((classes || []).map(c => [c.id, c.nom]));
+      const familleMap = new Map((familles || []).map(f => [f.id, f.nom_famille]));
+
+      // Group by normalized nom+prenom+classe_id+famille_id
+      const groups = new Map<string, typeof eleves>();
+      for (const e of eleves) {
+        const key = `${e.nom.trim().toLowerCase()}|${e.prenom.trim().toLowerCase()}|${e.classe_id || ''}|${e.famille_id || ''}`;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key)!.push(e);
+      }
+
+      // Filter only groups with duplicates
+      const dupGroups: DuplicateGroup[] = [];
+      groups.forEach((group, key) => {
+        if (group.length > 1) {
+          const first = group[0];
+          dupGroups.push({
+            key,
+            nom: first.nom,
+            prenom: first.prenom,
+            classe_nom: first.classe_id ? (classeMap.get(first.classe_id) || 'Inconnue') : 'Non assignée',
+            famille_nom: first.famille_id ? (familleMap.get(first.famille_id) || 'Inconnue') : 'Sans famille',
+            eleves: group.map(e => ({
+              ...e,
+              classe_nom: e.classe_id ? (classeMap.get(e.classe_id) || 'Inconnue') : 'Non assignée',
+              famille_nom: e.famille_id ? (familleMap.get(e.famille_id) || 'Inconnue') : 'Sans famille',
+            })),
+          });
+        }
+      });
+
+      setDuplicates(dupGroups);
+    } finally {
+      setLoadingDuplicates(false);
+    }
+  };
+
+  const handleDeleteDuplicate = async (eleveId: string) => {
+    setDeletingId(eleveId);
+    try {
+      const { error } = await supabase
+        .from('eleves')
+        .update({ deleted_at: new Date().toISOString(), statut: 'supprime' })
+        .eq('id', eleveId);
+      if (error) throw error;
+      toast.success('Doublon supprimé (soft delete)');
+      // Remove from local state
+      setDuplicates(prev => prev.map(g => ({
+        ...g,
+        eleves: g.eleves.filter(e => e.id !== eleveId),
+      })).filter(g => g.eleves.length > 1));
+      setConfirmDeleteEleve(null);
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur lors de la suppression');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleValidateDuplicate = (eleveId: string) => {
+    // Mark as validated by removing from duplicates display (they stay in DB as-is)
+    toast.success('Élève validé comme non-doublon');
+    setDuplicates(prev => prev.map(g => ({
+      ...g,
+      eleves: g.eleves.filter(e => e.id !== eleveId),
+    })).filter(g => g.eleves.length > 1));
   };
 
   // Realtime
@@ -448,6 +560,7 @@ export default function AdminMonitoring() {
           <TabsTrigger value="connected" className="gap-1"><Wifi className="h-4 w-4" /> Connectés</TabsTrigger>
           <TabsTrigger value="audit" className="gap-1"><Activity className="h-4 w-4" /> Journal d'audit</TabsTrigger>
           <TabsTrigger value="users" className="gap-1"><Users className="h-4 w-4" /> Gestion accès</TabsTrigger>
+          <TabsTrigger value="doublons" className="gap-1" onClick={() => { if (duplicates.length === 0) fetchDuplicates(); }}><AlertTriangle className="h-4 w-4" /> Doublons</TabsTrigger>
         </TabsList>
 
         {/* === CONNECTED USERS === */}
@@ -758,7 +871,111 @@ export default function AdminMonitoring() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* === DOUBLONS === */}
+        <TabsContent value="doublons">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  Détection des doublons élèves
+                  {duplicates.length > 0 && <Badge variant="destructive">{duplicates.length} groupe{duplicates.length > 1 ? 's' : ''}</Badge>}
+                </CardTitle>
+                <Button variant="outline" size="sm" onClick={fetchDuplicates} disabled={loadingDuplicates} className="gap-1">
+                  {loadingDuplicates ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                  Analyser
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">Élèves ayant le même nom, prénom, classe et famille</p>
+            </CardHeader>
+            <CardContent>
+              {loadingDuplicates ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : duplicates.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">Aucun doublon détecté ✅</p>
+              ) : (
+                <ScrollArea className="h-[500px]">
+                  <div className="space-y-4">
+                    {duplicates.map(group => (
+                      <Card key={group.key} className="border-amber-200 dark:border-amber-800">
+                        <CardHeader className="pb-2 pt-4">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="outline" className="gap-1 text-amber-700 dark:text-amber-400 border-amber-300">
+                              <Copy className="h-3 w-3" />
+                              {group.eleves.length} occurrences
+                            </Badge>
+                            <span className="font-semibold">{group.prenom} {group.nom}</span>
+                            <span className="text-sm text-muted-foreground">— {group.classe_nom} • {group.famille_nom}</span>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Matricule</TableHead>
+                                <TableHead>Nom Prénom</TableHead>
+                                <TableHead>Date naiss.</TableHead>
+                                <TableHead>Statut</TableHead>
+                                <TableHead>Créé le</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {group.eleves.map(e => (
+                                <TableRow key={e.id}>
+                                  <TableCell className="font-mono text-sm">{e.matricule || '—'}</TableCell>
+                                  <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
+                                  <TableCell className="text-sm">{e.date_naissance || '—'}</TableCell>
+                                  <TableCell><Badge variant="outline">{e.statut}</Badge></TableCell>
+                                  <TableCell className="text-sm text-muted-foreground">{formatDate(e.created_at)}</TableCell>
+                                  <TableCell className="text-right space-x-1">
+                                    <Button variant="outline" size="sm" className="gap-1 text-emerald-600" onClick={() => handleValidateDuplicate(e.id)}>
+                                      <CheckCircle className="h-3 w-3" /> Valider
+                                    </Button>
+                                    <Button variant="destructive" size="sm" className="gap-1" onClick={() => setConfirmDeleteEleve({ id: e.id, name: `${e.prenom} ${e.nom}` })}>
+                                      <Trash2 className="h-3 w-3" /> Supprimer
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      {/* Confirm delete duplicate dialog */}
+      <AlertDialog open={!!confirmDeleteEleve} onOpenChange={() => setConfirmDeleteEleve(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce doublon ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer <strong>{confirmDeleteEleve?.name}</strong> ? L'élève sera marqué comme supprimé (soft delete).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => confirmDeleteEleve && handleDeleteDuplicate(confirmDeleteEleve.id)}
+              disabled={!!deletingId}
+            >
+              {deletingId ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Connection detail dialog */}
       <Dialog open={!!connectionDetail} onOpenChange={() => setConnectionDetail(null)}>
