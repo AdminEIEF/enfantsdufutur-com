@@ -169,7 +169,7 @@ export default function Cantine() {
   const [scannerOpen, setScannerOpen] = useState(false);
   
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [plancheOpen, setPlancheOpen] = useState(false);
+  
   const [bordereauOpen, setBordereauOpen] = useState(false);
 
   const toggleSelect = (id: string) => {
