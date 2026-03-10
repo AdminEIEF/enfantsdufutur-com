@@ -254,12 +254,57 @@ export default function AdminMonitoring() {
   };
 
   const handleValidateDuplicate = (eleveId: string) => {
-    // Mark as validated by removing from duplicates display (they stay in DB as-is)
     toast.success('Élève validé comme non-doublon');
     setDuplicates(prev => prev.map(g => ({
       ...g,
       eleves: g.eleves.filter(e => e.id !== eleveId),
     })).filter(g => g.eleves.length > 1));
+    setSelectedDoublons(prev => { const n = new Set(prev); n.delete(eleveId); return n; });
+  };
+
+  const toggleDoublonSelection = (eleveId: string) => {
+    setSelectedDoublons(prev => {
+      const n = new Set(prev);
+      if (n.has(eleveId)) n.delete(eleveId);
+      else n.add(eleveId);
+      return n;
+    });
+  };
+
+  const canDeleteSelected = useMemo(() => {
+    if (selectedDoublons.size === 0) return false;
+    for (const group of duplicates) {
+      const selectedInGroup = group.eleves.filter(e => selectedDoublons.has(e.id));
+      if (selectedInGroup.length > 0 && selectedInGroup.length >= group.eleves.length) {
+        return false;
+      }
+    }
+    return true;
+  }, [selectedDoublons, duplicates]);
+
+  const handleBatchDelete = async () => {
+    setBatchDeleting(true);
+    try {
+      const ids = Array.from(selectedDoublons);
+      for (const id of ids) {
+        const { error } = await supabase
+          .from('eleves')
+          .update({ deleted_at: new Date().toISOString(), statut: 'supprime' })
+          .eq('id', id);
+        if (error) throw error;
+      }
+      toast.success(`${ids.length} doublon(s) supprimé(s)`);
+      setDuplicates(prev => prev.map(g => ({
+        ...g,
+        eleves: g.eleves.filter(e => !selectedDoublons.has(e.id)),
+      })).filter(g => g.eleves.length > 1));
+      setSelectedDoublons(new Set());
+      setConfirmBatchDelete(false);
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur lors de la suppression');
+    } finally {
+      setBatchDeleting(false);
+    }
   };
 
   // Realtime
