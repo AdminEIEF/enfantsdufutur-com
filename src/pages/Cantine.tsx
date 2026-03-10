@@ -939,24 +939,6 @@ export default function Cantine() {
       </Dialog>
 
 
-      {bordereauOpen && (
-        <BordereauRemiseCartes
-          eleves={
-            (eleves || [])
-              .filter((e: any) => selectedIds.has(e.id))
-              .map((e: any) => ({
-                id: e.id,
-                nom: e.nom,
-                prenom: e.prenom,
-                matricule: e.matricule,
-                classe: e.classes?.nom || '—',
-                option_cantine: e.option_cantine,
-                transport_zone: e.transport_zone,
-              }))
-          }
-          onClose={() => setBordereauOpen(false)}
-        />
-      )}
     </div>
   );
 }
