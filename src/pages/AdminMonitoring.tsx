@@ -985,6 +985,7 @@ export default function AdminMonitoring() {
                           <Table>
                             <TableHeader>
                               <TableRow>
+                                <TableHead className="w-10"></TableHead>
                                 <TableHead>Matricule</TableHead>
                                 <TableHead>Nom Prénom</TableHead>
                                 <TableHead>Date naiss.</TableHead>
@@ -994,8 +995,19 @@ export default function AdminMonitoring() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {group.eleves.map(e => (
-                                <TableRow key={e.id}>
+                              {group.eleves.map(e => {
+                                const isChecked = selectedDoublons.has(e.id);
+                                const wouldDeleteAll = group.eleves.filter(el => el.id !== e.id).every(el => selectedDoublons.has(el.id));
+                                const isLastUnchecked = !isChecked && wouldDeleteAll;
+                                return (
+                                <TableRow key={e.id} className={isChecked ? 'bg-destructive/5' : ''}>
+                                  <TableCell>
+                                    <Checkbox
+                                      checked={isChecked}
+                                      disabled={isLastUnchecked}
+                                      onCheckedChange={() => toggleDoublonSelection(e.id)}
+                                    />
+                                  </TableCell>
                                   <TableCell className="font-mono text-sm">{e.matricule || '—'}</TableCell>
                                   <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
                                   <TableCell className="text-sm">{e.date_naissance || '—'}</TableCell>
@@ -1004,9 +1016,6 @@ export default function AdminMonitoring() {
                                   <TableCell className="text-right space-x-1">
                                     <Button variant="outline" size="sm" className="gap-1 text-emerald-600" onClick={() => handleValidateDuplicate(e.id)}>
                                       <CheckCircle className="h-3 w-3" /> Valider
-                                    </Button>
-                                    <Button variant="destructive" size="sm" className="gap-1" onClick={() => setConfirmDeleteEleve({ id: e.id, name: `${e.prenom} ${e.nom}` })}>
-                                      <Trash2 className="h-3 w-3" /> Supprimer
                                     </Button>
                                   </TableCell>
                                 </TableRow>
