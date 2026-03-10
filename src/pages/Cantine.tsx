@@ -9,11 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ScanLine, Search, Utensils, Wallet, History, QrCode, Plus, AlertTriangle,
-  CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera, FileText, Printer
+  CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera, FileText
 } from 'lucide-react';
 import RapportJournalierPanel from '@/components/RapportJournalierPanel';
-import CarteCantine from '@/components/CarteCantine';
-import PlancheCarteCantine from '@/components/PlancheCarteCantine';
 import BordereauRemiseCartes from '@/components/BordereauRemiseCartes';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -169,9 +167,9 @@ export default function Cantine() {
   const [newPlat, setNewPlat] = useState({ nom: '', prix: '', stock: '' });
   const [activeTab, setActiveTab] = useState('vente');
   const [scannerOpen, setScannerOpen] = useState(false);
-  const [carteEleve, setCarteEleve] = useState<any>(null);
+  
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [plancheOpen, setPlancheOpen] = useState(false);
+  
   const [bordereauOpen, setBordereauOpen] = useState(false);
 
   const toggleSelect = (id: string) => {
@@ -588,9 +586,6 @@ export default function Cantine() {
             </div>
             {selectedIds.size > 0 && isAdmin && (
               <div className="flex gap-2">
-                <Button onClick={() => setPlancheOpen(true)} className="gap-2">
-                  <Printer className="h-4 w-4" /> Imprimer cartes ({selectedIds.size})
-                </Button>
                 <Button onClick={() => setBordereauOpen(true)} variant="outline" className="gap-2">
                   <FileText className="h-4 w-4" /> Bordereau ({selectedIds.size})
                 </Button>
@@ -649,11 +644,6 @@ export default function Cantine() {
                           <Button variant="ghost" size="sm" onClick={() => { setHistoryEleveId(e.id); setHistoryOpen(true); }}>
                             <History className="h-4 w-4" />
                           </Button>
-                          {isAdmin && (
-                            <Button variant="ghost" size="sm" onClick={() => setCarteEleve(e)} title="Carte cantine">
-                              <CreditCard className="h-4 w-4" />
-                            </Button>
-                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -978,51 +968,6 @@ export default function Cantine() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Carte Cantine */}
-      <Dialog open={!!carteEleve} onOpenChange={() => setCarteEleve(null)}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> Carte Cantine</DialogTitle></DialogHeader>
-          {carteEleve && (
-            <CarteCantine
-              nom={carteEleve.nom}
-              prenom={carteEleve.prenom}
-              matricule={carteEleve.matricule || '—'}
-              classe={carteEleve.classes?.nom || '—'}
-              photo_url={carteEleve.photo_url}
-              telephone_pere={carteEleve.familles?.telephone_pere}
-              telephone_mere={carteEleve.familles?.telephone_mere}
-              qrValue={JSON.stringify({
-                matricule: carteEleve.matricule || '',
-                nom: carteEleve.nom,
-                prenom: carteEleve.prenom,
-                classe: carteEleve.classes?.nom || '',
-                type: 'cantine',
-              })}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Planche A4 */}
-      {plancheOpen && (
-        <PlancheCarteCantine
-          eleves={
-            (eleves || [])
-              .filter((e: any) => selectedIds.has(e.id))
-              .map((e: any) => ({
-                id: e.id,
-                nom: e.nom,
-                prenom: e.prenom,
-                matricule: e.matricule,
-                classe: e.classes?.nom || '—',
-                photo_url: e.photo_url,
-                telephone_pere: e.familles?.telephone_pere,
-                telephone_mere: e.familles?.telephone_mere,
-              }))
-          }
-          onClose={() => setPlancheOpen(false)}
-        />
-      )}
 
       {bordereauOpen && (
         <BordereauRemiseCartes
