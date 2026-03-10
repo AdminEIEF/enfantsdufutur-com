@@ -161,6 +161,82 @@ export default function SupervisionSupportTab() {
     fetchMessages();
   };
 
+  const fetchRoleUsers = async () => {
+    setLoadingUsers(true);
+    // Get all users with roles + their profile info
+    const { data: rolesData } = await supabase
+      .from('user_roles')
+      .select('user_id, role');
+    
+    if (!rolesData || rolesData.length === 0) {
+      setLoadingUsers(false);
+      return;
+    }
+
+    const userIds = [...new Set(rolesData.map(r => r.user_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, email, display_name')
+      .in('user_id', userIds);
+
+    const usersMap: Record<string, RoleUser> = {};
+    for (const r of rolesData) {
+      if (!usersMap[r.user_id]) {
+        const profile = profiles?.find(p => p.user_id === r.user_id);
+        usersMap[r.user_id] = {
+          user_id: r.user_id,
+          email: profile?.email || '',
+          display_name: profile?.display_name || null,
+          roles: [],
+        };
+      }
+      usersMap[r.user_id].roles.push(r.role);
+    }
+    // Exclude current supervisor
+    const list = Object.values(usersMap).filter(u => u.user_id !== user?.id);
+    setRoleUsers(list);
+    setLoadingUsers(false);
+  };
+
+  const openNewMsgDialog = () => {
+    setNewMsgDialog(true);
+    setSelectedUserId('');
+    setNewMsgText('');
+    setUserSearch('');
+    fetchRoleUsers();
+  };
+
+  const handleSendNewMsg = async () => {
+    if (!selectedUserId || !newMsgText.trim() || !user) return;
+    setSendingNewMsg(true);
+    const targetUser = roleUsers.find(u => u.user_id === selectedUserId);
+    const { error } = await supabase.from('support_messages').insert({
+      sender_id: user.id,
+      sender_type: 'superviseur',
+      sender_name: 'Superviseur',
+      sender_email: user.email,
+      message: newMsgText.trim(),
+      target_user_id: selectedUserId,
+      statut: 'ouvert',
+    });
+    if (error) {
+      toast.error('Erreur lors de l\'envoi');
+    } else {
+      toast.success(`Message envoyé à ${targetUser?.display_name || targetUser?.email}`);
+      setNewMsgDialog(false);
+      fetchMessages();
+    }
+    setSendingNewMsg(false);
+  };
+
+  const filteredRoleUsers = roleUsers.filter(u => {
+    if (!userSearch) return true;
+    const s = userSearch.toLowerCase();
+    return (u.email?.toLowerCase().includes(s)) || 
+           (u.display_name?.toLowerCase().includes(s)) ||
+           u.roles.some(r => r.toLowerCase().includes(s));
+  });
+
   const filtered = messages.filter((m) => {
     const matchSearch = !search || 
       m.sender_name.toLowerCase().includes(search.toLowerCase()) ||
