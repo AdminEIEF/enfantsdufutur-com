@@ -282,9 +282,12 @@ export default function Eleves() {
 
   const completeDossiers = eleves.filter(isDossierComplete).length;
 
+  const searchTerms = searchLower.split(/\s+/).filter(t => t.length > 0);
+
   const filtered = eleves.filter((e: any) => {
-    // Search: name, matricule, phone
-    const basicMatch = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(searchLower);
+    // Search: name, matricule, phone — each word matches independently (OR between words)
+    const fullText = `${e.nom} ${e.prenom} ${e.matricule || ''} ${e.nom_prenom_pere || ''} ${e.nom_prenom_mere || ''}`.toLowerCase();
+    const basicMatch = searchTerms.length > 0 && searchTerms.some(term => fullText.includes(term));
     const telPere = e.familles?.telephone_pere || '';
     const telMere = e.familles?.telephone_mere || '';
     const phoneMatch = searchNorm.length >= 3 && (
