@@ -578,7 +578,7 @@ export default function SupervisionSupportTab() {
                           <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${u.isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/30'}`} />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{u.display_name || u.email}</p>
-                            {u.display_name && <p className="text-[10px] text-muted-foreground truncate">{u.email}</p>}
+                            <p className="text-[10px] text-muted-foreground truncate">{u.email}</p>
                           </div>
                           <span className={`text-[10px] shrink-0 ${u.isOnline ? 'text-emerald-600' : 'text-muted-foreground'}`}>
                             {u.isOnline ? 'En ligne' : 'Hors ligne'}
