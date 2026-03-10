@@ -1002,7 +1002,7 @@ export default function AdminMonitoring() {
                 <ScrollArea className="h-[500px]">
                   <div className="space-y-4">
                     {duplicates.map(group => {
-                      const flags = group.similarityFlags;
+                      const flags = group.similarityFlags || { sameFamille: false, sameClasse: false, similarClasse: false, sameDateNaissance: false, sameParents: false };
                       const confidenceScore = [flags.sameFamille, flags.sameClasse || flags.similarClasse, flags.sameDateNaissance, flags.sameParents].filter(Boolean).length;
                       const confidenceColor = confidenceScore >= 3 ? 'text-red-600' : confidenceScore >= 2 ? 'text-amber-600' : 'text-muted-foreground';
                       return (
