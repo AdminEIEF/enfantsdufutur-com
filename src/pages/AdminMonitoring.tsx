@@ -193,17 +193,16 @@ export default function AdminMonitoring() {
 
   const fetchDuplicates = async () => {
     setLoadingDuplicates(true);
+    setSelectedDoublons(new Set());
     try {
-      // Fetch all active students with class and family info
       const { data: eleves } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, classe_id, famille_id, date_naissance, statut, created_at')
+        .select('id, nom, prenom, matricule, classe_id, famille_id, date_naissance, statut, created_at, sexe, nom_prenom_pere, nom_prenom_mere, option_cantine, option_robotique, solde_cantine')
         .is('deleted_at', null)
         .order('nom');
 
       if (!eleves) return;
 
-      // Fetch classes and familles for display
       const [{ data: classes }, { data: familles }] = await Promise.all([
         supabase.from('classes').select('id, nom'),
         supabase.from('familles').select('id, nom_famille'),
@@ -211,7 +210,9 @@ export default function AdminMonitoring() {
       const classeMap = new Map((classes || []).map(c => [c.id, c.nom]));
       const familleMap = new Map((familles || []).map(f => [f.id, f.nom_famille]));
 
-      // Group by normalized nom+prenom+classe_id+famille_id
+      // Helper: extract base class name (e.g. "7E" from "7E A", "7E B")
+      const getClasseBase = (classeNom: string) => classeNom.replace(/\s+[A-Z]$/i, '').trim();
+
       const groups = new Map<string, typeof eleves>();
       for (const e of eleves) {
         const key = `${e.nom.trim().toLowerCase()}|${e.prenom.trim().toLowerCase()}`;
@@ -219,22 +220,39 @@ export default function AdminMonitoring() {
         groups.get(key)!.push(e);
       }
 
-      // Filter only groups with duplicates
       const dupGroups: DuplicateGroup[] = [];
       groups.forEach((group, key) => {
         if (group.length > 1) {
           const first = group[0];
+          const mappedEleves: DuplicateEleve[] = group.map(e => ({
+            ...e,
+            classe_nom: e.classe_id ? (classeMap.get(e.classe_id) || 'Inconnue') : 'Non assignée',
+            famille_nom: e.famille_id ? (familleMap.get(e.famille_id) || 'Inconnue') : 'Sans famille',
+          }));
+
+          // Compute similarity flags
+          const familleIds = new Set(group.map(e => e.famille_id).filter(Boolean));
+          const classeIds = new Set(group.map(e => e.classe_id).filter(Boolean));
+          const classeNoms = group.map(e => e.classe_id ? (classeMap.get(e.classe_id) || '') : '');
+          const classeBases = new Set(classeNoms.map(getClasseBase).filter(Boolean));
+          const dateNaissances = new Set(group.map(e => e.date_naissance).filter(Boolean));
+          const parents = group.map(e => `${(e.nom_prenom_pere || '').trim().toLowerCase()}|${(e.nom_prenom_mere || '').trim().toLowerCase()}`);
+          const uniqueParents = new Set(parents.filter(p => p !== '|'));
+
           dupGroups.push({
             key,
             nom: first.nom,
             prenom: first.prenom,
             classe_nom: first.classe_id ? (classeMap.get(first.classe_id) || 'Inconnue') : 'Non assignée',
             famille_nom: first.famille_id ? (familleMap.get(first.famille_id) || 'Inconnue') : 'Sans famille',
-            eleves: group.map(e => ({
-              ...e,
-              classe_nom: e.classe_id ? (classeMap.get(e.classe_id) || 'Inconnue') : 'Non assignée',
-              famille_nom: e.famille_id ? (familleMap.get(e.famille_id) || 'Inconnue') : 'Sans famille',
-            })),
+            similarityFlags: {
+              sameFamille: familleIds.size === 1 && familleIds.size > 0,
+              sameClasse: classeIds.size === 1 && classeIds.size > 0,
+              similarClasse: !!(classeBases.size === 1 && classeIds.size > 1), // e.g. 7E A + 7E B
+              sameDateNaissance: dateNaissances.size === 1 && dateNaissances.size > 0,
+              sameParents: uniqueParents.size === 1 && uniqueParents.size > 0,
+            },
+            eleves: mappedEleves,
           });
         }
       });
