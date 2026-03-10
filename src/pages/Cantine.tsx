@@ -168,24 +168,6 @@ export default function Cantine() {
   const [activeTab, setActiveTab] = useState('vente');
   const [scannerOpen, setScannerOpen] = useState(false);
   
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  
-  const [bordereauOpen, setBordereauOpen] = useState(false);
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-  const toggleAll = () => {
-    if (selectedIds.size === filtered.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filtered.map((e: any) => e.id)));
-    }
-  };
 
   const { data: repasHistory = [] } = useRepasHistory(historyEleveId);
   const { data: paiementsCantine = [] } = usePaiementsCantine(selectedEleve?.id || historyEleveId);
