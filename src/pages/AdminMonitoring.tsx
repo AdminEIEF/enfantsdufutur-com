@@ -322,6 +322,14 @@ export default function AdminMonitoring() {
   }, [selectedDoublons, duplicates]);
 
   const handleBatchDelete = async () => {
+    // Final safety check: ensure at least one member remains per group
+    for (const group of duplicates) {
+      const selectedInGroup = group.eleves.filter(e => selectedDoublons.has(e.id));
+      if (selectedInGroup.length >= group.eleves.length) {
+        toast.error(`Impossible : tous les élèves du groupe "${group.key}" sont sélectionnés. Gardez au moins un élève.`);
+        return;
+      }
+    }
     setBatchDeleting(true);
     try {
       const ids = Array.from(selectedDoublons);
@@ -332,7 +340,7 @@ export default function AdminMonitoring() {
           .eq('id', id);
         if (error) throw error;
       }
-      toast.success(`${ids.length} doublon(s) supprimé(s)`);
+      toast.success(`${ids.length} doublon(s) supprimé(s). Les autres élèves ont été conservés.`);
       setDuplicates(prev => prev.map(g => ({
         ...g,
         eleves: g.eleves.filter(e => !selectedDoublons.has(e.id)),
