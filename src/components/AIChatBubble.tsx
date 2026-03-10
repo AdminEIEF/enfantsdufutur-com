@@ -193,18 +193,12 @@ export function AIChatBubble() {
 
   return (
     <>
-      {/* Floating bubble */}
-      {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          data-ai-chat-trigger
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-primary text-primary-foreground rounded-full pl-4 pr-5 py-3 shadow-lg hover:shadow-xl transition-all hover:scale-105 group"
-        >
-          <Bot className="h-5 w-5" />
-          <span className="text-sm font-medium hidden sm:inline">Assistance E.I</span>
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full animate-pulse" />
-        </button>
-      )}
+      {/* Hidden trigger for sidebar */}
+      <button
+        data-ai-chat-trigger
+        onClick={() => setIsOpen(true)}
+        className="hidden"
+      />
 
       {/* Chat panel */}
       {isOpen && (
