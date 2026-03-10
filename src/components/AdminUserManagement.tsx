@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Loader2, Copy, CheckCircle2, Shield, Users, Eye, EyeOff, KeyRound } from 'lucide-react';
+import { UserPlus, Loader2, Copy, CheckCircle2, Shield, Users, Eye, EyeOff, KeyRound, Pencil, Save } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -55,6 +55,9 @@ export default function AdminUserManagement() {
   const [resettingPwd, setResettingPwd] = useState(false);
   const [resetPwd, setResetPwd] = useState('');
   const [showResetPwd, setShowResetPwd] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({ nom: '', prenom: '', email: '', role: '' });
   const [form, setForm] = useState({
     email: '',
     nom: '',
@@ -282,103 +285,184 @@ export default function AdminUserManagement() {
       </CardContent>
 
       {/* Detail dialog */}
-      <Dialog open={!!selectedUser} onOpenChange={(v) => { if (!v) { setSelectedUser(null); setResetPwd(''); setShowResetPwd(false); } }}>
+      <Dialog open={!!selectedUser} onOpenChange={(v) => { if (!v) { setSelectedUser(null); setResetPwd(''); setShowResetPwd(false); setEditing(false); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Détails de l'utilisateur</DialogTitle>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Détails de l'utilisateur</span>
+              {selectedUser && !editing && (
+                <Button variant="outline" size="sm" onClick={() => {
+                  setEditing(true);
+                  setEditForm({
+                    nom: selectedUser.nom || '',
+                    prenom: selectedUser.prenom || '',
+                    email: selectedUser.email || '',
+                    role: selectedUser.roles?.[0] || '',
+                  });
+                }}>
+                  <Pencil className="h-3.5 w-3.5 mr-1" /> Modifier
+                </Button>
+              )}
+            </DialogTitle>
           </DialogHeader>
           {selectedUser && (
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-                  {selectedUser.prenom?.[0]}{selectedUser.nom?.[0]}
-                </div>
-                <div>
-                  <p className="font-semibold text-lg">{selectedUser.prenom} {selectedUser.nom}</p>
-                  <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Rôle(s)</p>
-                  <div className="flex gap-1 flex-wrap mt-1">
-                    {selectedUser.roles?.length > 0 ? selectedUser.roles.map((r: string) => (
-                      <Badge key={r} variant="outline" className={ROLE_COLORS[r] || ''}>
-                        {ROLE_LABELS[r] || r}
-                      </Badge>
-                    )) : <span className="text-muted-foreground">Aucun</span>}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Statut</p>
-                  <div className="mt-1">
-                    {selectedUser.must_change_password ? (
-                      <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20">1ère connexion</Badge>
-                    ) : selectedUser.blocked ? (
-                      <Badge variant="destructive">Bloqué</Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20">Actif</Badge>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Créé le</p>
-                  <p className="mt-1">{selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleDateString('fr-FR') : '—'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">ID utilisateur</p>
-                  <p className="mt-1 font-mono text-xs truncate">{selectedUser.user_id || selectedUser.id}</p>
-                </div>
-              </div>
-              <div className="border-t pt-3 space-y-2">
-                <p className="text-sm text-muted-foreground font-medium">Mot de passe</p>
-                {resetPwd ? (
-                  <div className="bg-muted rounded-lg p-3 space-y-1">
-                    <p className="text-xs text-muted-foreground">Nouveau mot de passe temporaire :</p>
-                    <div className="flex items-center gap-2 justify-center">
-                      <code className="text-lg font-mono font-bold">
-                        {showResetPwd ? resetPwd : '••••••••••••'}
-                      </code>
-                      <Button variant="ghost" size="icon" onClick={() => setShowResetPwd(!showResetPwd)}>
-                        {showResetPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => { navigator.clipboard.writeText(resetPwd); toast.success('Copié !'); }}>
-                        <Copy className="h-4 w-4" />
-                      </Button>
+              {editing ? (
+                /* Edit mode */
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Prénom</Label>
+                      <Input value={editForm.prenom} onChange={e => setEditForm(f => ({ ...f, prenom: e.target.value }))} />
                     </div>
-                    <p className="text-xs text-muted-foreground text-center">L'utilisateur devra le changer à la prochaine connexion.</p>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Nom</Label>
+                      <Input value={editForm.nom} onChange={e => setEditForm(f => ({ ...f, nom: e.target.value }))} />
+                    </div>
                   </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    disabled={resettingPwd}
-                    onClick={async () => {
-                      setResettingPwd(true);
-                      const newPwd = generatePassword();
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Email</Label>
+                    <Input type="email" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Rôle</Label>
+                    <Select value={editForm.role} onValueChange={v => setEditForm(f => ({ ...f, role: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner un rôle" /></SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(ROLE_LABELS).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>{label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setEditing(false)}>Annuler</Button>
+                    <Button className="flex-1" disabled={saving || !editForm.nom || !editForm.prenom || !editForm.email || !editForm.role} onClick={async () => {
+                      setSaving(true);
                       try {
                         const { data, error } = await supabase.functions.invoke('admin-session-action', {
-                          body: { action: 'change_password', type: 'admin_user', ref_id: selectedUser.user_id, new_password: newPwd },
+                          body: {
+                            action: 'update_user',
+                            user_id: selectedUser.user_id,
+                            nom: editForm.nom,
+                            prenom: editForm.prenom,
+                            email: editForm.email,
+                            new_role: editForm.role,
+                            display_name: `${editForm.prenom} ${editForm.nom}`,
+                          },
                         });
                         if (error) throw error;
                         if (data?.error) throw new Error(data.error);
-                        setResetPwd(newPwd);
+                        toast.success('Utilisateur mis à jour');
                         queryClient.invalidateQueries({ queryKey: ['admin-users-list'] });
-                        toast.success('Mot de passe réinitialisé');
+                        setEditing(false);
+                        setSelectedUser(null);
                       } catch (err: any) {
-                        toast.error(err.message || 'Erreur');
+                        toast.error(err.message || 'Erreur lors de la mise à jour');
                       } finally {
-                        setResettingPwd(false);
+                        setSaving(false);
                       }
-                    }}
-                  >
-                    {resettingPwd ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <KeyRound className="h-4 w-4 mr-2" />}
-                    Réinitialiser le mot de passe
-                  </Button>
-                )}
-              </div>
-              <Button variant="outline" className="w-full" onClick={() => { setSelectedUser(null); setResetPwd(''); setShowResetPwd(false); }}>Fermer</Button>
+                    }}>
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+                      Enregistrer
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                /* View mode */
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                      {selectedUser.prenom?.[0]}{selectedUser.nom?.[0]}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-lg">{selectedUser.prenom} {selectedUser.nom}</p>
+                      <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Rôle(s)</p>
+                      <div className="flex gap-1 flex-wrap mt-1">
+                        {selectedUser.roles?.length > 0 ? selectedUser.roles.map((r: string) => (
+                          <Badge key={r} variant="outline" className={ROLE_COLORS[r] || ''}>
+                            {ROLE_LABELS[r] || r}
+                          </Badge>
+                        )) : <span className="text-muted-foreground">Aucun</span>}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Statut</p>
+                      <div className="mt-1">
+                        {selectedUser.must_change_password ? (
+                          <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20">1ère connexion</Badge>
+                        ) : selectedUser.blocked ? (
+                          <Badge variant="destructive">Bloqué</Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20">Actif</Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Créé le</p>
+                      <p className="mt-1">{selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleDateString('fr-FR') : '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">ID utilisateur</p>
+                      <p className="mt-1 font-mono text-xs truncate">{selectedUser.user_id || selectedUser.id}</p>
+                    </div>
+                  </div>
+                  <div className="border-t pt-3 space-y-2">
+                    <p className="text-sm text-muted-foreground font-medium">Mot de passe</p>
+                    {resetPwd ? (
+                      <div className="bg-muted rounded-lg p-3 space-y-1">
+                        <p className="text-xs text-muted-foreground">Nouveau mot de passe temporaire :</p>
+                        <div className="flex items-center gap-2 justify-center">
+                          <code className="text-lg font-mono font-bold">
+                            {showResetPwd ? resetPwd : '••••••••••••'}
+                          </code>
+                          <Button variant="ghost" size="icon" onClick={() => setShowResetPwd(!showResetPwd)}>
+                            {showResetPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => { navigator.clipboard.writeText(resetPwd); toast.success('Copié !'); }}>
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground text-center">L'utilisateur devra le changer à la prochaine connexion.</p>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        disabled={resettingPwd}
+                        onClick={async () => {
+                          setResettingPwd(true);
+                          const newPwd = generatePassword();
+                          try {
+                            const { data, error } = await supabase.functions.invoke('admin-session-action', {
+                              body: { action: 'change_password', type: 'admin_user', ref_id: selectedUser.user_id, new_password: newPwd },
+                            });
+                            if (error) throw error;
+                            if (data?.error) throw new Error(data.error);
+                            setResetPwd(newPwd);
+                            queryClient.invalidateQueries({ queryKey: ['admin-users-list'] });
+                            toast.success('Mot de passe réinitialisé');
+                          } catch (err: any) {
+                            toast.error(err.message || 'Erreur');
+                          } finally {
+                            setResettingPwd(false);
+                          }
+                        }}
+                      >
+                        {resettingPwd ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <KeyRound className="h-4 w-4 mr-2" />}
+                        Réinitialiser le mot de passe
+                      </Button>
+                    )}
+                  </div>
+                  <Button variant="outline" className="w-full" onClick={() => { setSelectedUser(null); setResetPwd(''); setShowResetPwd(false); }}>Fermer</Button>
+                </>
+              )}
             </div>
           )}
         </DialogContent>
