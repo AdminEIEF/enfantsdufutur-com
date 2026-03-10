@@ -832,30 +832,6 @@ export default function Cantine() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog badge QR */}
-      <Dialog open={badgeOpen} onOpenChange={setBadgeOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Badge Cantine</DialogTitle></DialogHeader>
-          {badgeEleve && (
-            <div className="flex flex-col items-center gap-4 py-4">
-              <div className="p-4 bg-white rounded-lg border">
-                <QRCodeSVG value={JSON.stringify({
-                  matricule: badgeEleve.matricule || '',
-                  nom: badgeEleve.nom,
-                  prenom: badgeEleve.prenom,
-                  classe: badgeEleve.classes?.nom || '',
-                  url: `${window.location.origin}/eleves?matricule=${encodeURIComponent(badgeEleve.matricule || badgeEleve.id)}`,
-                })} size={180} />
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-bold">{badgeEleve.prenom} {badgeEleve.nom}</p>
-                <p className="text-sm text-muted-foreground">{badgeEleve.classes?.nom} • {badgeEleve.matricule || '—'}</p>
-              </div>
-              <Button variant="outline" onClick={() => window.print()}>Imprimer le badge</Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
 
     </div>
