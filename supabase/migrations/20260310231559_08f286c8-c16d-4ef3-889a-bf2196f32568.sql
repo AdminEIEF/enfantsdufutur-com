@@ -1,0 +1,2 @@
+ALTER TABLE public.eleves DROP CONSTRAINT eleves_statut_check;
+ALTER TABLE public.eleves ADD CONSTRAINT eleves_statut_check CHECK (statut = ANY (ARRAY['inscrit'::text, 'pre_inscrit'::text, 'radie'::text, 'transfere'::text, 'abandon'::text, 'supprime'::text]));
