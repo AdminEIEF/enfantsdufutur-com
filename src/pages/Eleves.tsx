@@ -827,6 +827,12 @@ export default function Eleves() {
         }}>
           <Download className="h-4 w-4 mr-1" /> Exporter Excel
         </Button>
+        {elevesWithoutMatricule.length > 0 && (
+          <Button variant="outline" size="sm" onClick={generateMissingMatricules} disabled={generatingMatricules} className="gap-1.5">
+            <RefreshCw className={`h-4 w-4 ${generatingMatricules ? 'animate-spin' : ''}`} />
+            Générer matricules ({elevesWithoutMatricule.length})
+          </Button>
+        )}
         {selectedIds.size > 0 && (
           <Button size="sm" onClick={() => setShowPlanche(true)} className="gap-2">
             <FileDown className="h-4 w-4" /> Planches badges ({selectedIds.size})
