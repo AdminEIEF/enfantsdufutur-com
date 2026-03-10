@@ -172,6 +172,91 @@ export default function AdminMonitoring() {
     if (data) setUsers(data as ProfileUser[]);
   };
 
+  const fetchDuplicates = async () => {
+    setLoadingDuplicates(true);
+    try {
+      // Fetch all active students with class and family info
+      const { data: eleves } = await supabase
+        .from('eleves')
+        .select('id, nom, prenom, matricule, classe_id, famille_id, date_naissance, statut, created_at')
+        .is('deleted_at', null)
+        .order('nom');
+
+      if (!eleves) return;
+
+      // Fetch classes and familles for display
+      const [{ data: classes }, { data: familles }] = await Promise.all([
+        supabase.from('classes').select('id, nom'),
+        supabase.from('familles').select('id, nom_famille'),
+      ]);
+      const classeMap = new Map((classes || []).map(c => [c.id, c.nom]));
+      const familleMap = new Map((familles || []).map(f => [f.id, f.nom_famille]));
+
+      // Group by normalized nom+prenom+classe_id+famille_id
+      const groups = new Map<string, typeof eleves>();
+      for (const e of eleves) {
+        const key = `${e.nom.trim().toLowerCase()}|${e.prenom.trim().toLowerCase()}|${e.classe_id || ''}|${e.famille_id || ''}`;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key)!.push(e);
+      }
+
+      // Filter only groups with duplicates
+      const dupGroups: DuplicateGroup[] = [];
+      groups.forEach((group, key) => {
+        if (group.length > 1) {
+          const first = group[0];
+          dupGroups.push({
+            key,
+            nom: first.nom,
+            prenom: first.prenom,
+            classe_nom: first.classe_id ? (classeMap.get(first.classe_id) || 'Inconnue') : 'Non assignée',
+            famille_nom: first.famille_id ? (familleMap.get(first.famille_id) || 'Inconnue') : 'Sans famille',
+            eleves: group.map(e => ({
+              ...e,
+              classe_nom: e.classe_id ? (classeMap.get(e.classe_id) || 'Inconnue') : 'Non assignée',
+              famille_nom: e.famille_id ? (familleMap.get(e.famille_id) || 'Inconnue') : 'Sans famille',
+            })),
+          });
+        }
+      });
+
+      setDuplicates(dupGroups);
+    } finally {
+      setLoadingDuplicates(false);
+    }
+  };
+
+  const handleDeleteDuplicate = async (eleveId: string) => {
+    setDeletingId(eleveId);
+    try {
+      const { error } = await supabase
+        .from('eleves')
+        .update({ deleted_at: new Date().toISOString(), statut: 'supprime' })
+        .eq('id', eleveId);
+      if (error) throw error;
+      toast.success('Doublon supprimé (soft delete)');
+      // Remove from local state
+      setDuplicates(prev => prev.map(g => ({
+        ...g,
+        eleves: g.eleves.filter(e => e.id !== eleveId),
+      })).filter(g => g.eleves.length > 1));
+      setConfirmDeleteEleve(null);
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur lors de la suppression');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleValidateDuplicate = (eleveId: string) => {
+    // Mark as validated by removing from duplicates display (they stay in DB as-is)
+    toast.success('Élève validé comme non-doublon');
+    setDuplicates(prev => prev.map(g => ({
+      ...g,
+      eleves: g.eleves.filter(e => e.id !== eleveId),
+    })).filter(g => g.eleves.length > 1));
+  };
+
   // Realtime
   useEffect(() => {
     const ch1 = supabase.channel('audit-rt')
