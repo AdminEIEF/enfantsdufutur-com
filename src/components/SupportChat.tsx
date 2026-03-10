@@ -17,6 +17,9 @@ interface SupportMessage {
   reply: string | null;
   reply_image_url: string | null;
   sender_image_url: string | null;
+  sender_id: string;
+  sender_type: string;
+  target_user_id: string | null;
   statut: string;
   created_at: string;
   replied_at: string | null;
