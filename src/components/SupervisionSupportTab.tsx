@@ -507,8 +507,17 @@ export default function SupervisionSupportTab() {
                         selectedUserId === u.user_id ? 'bg-primary/10 border-l-2 border-primary' : ''
                       }`}
                     >
-                      <p className="text-sm font-medium">{u.display_name || u.email}</p>
-                      <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${u.isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/30'}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{u.display_name || u.email}</p>
+                          {u.display_name && <p className="text-[10px] text-muted-foreground truncate">{u.email}</p>}
+                        </div>
+                        <span className={`text-[10px] shrink-0 ${u.isOnline ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                          {u.isOnline ? 'En ligne' : 'Hors ligne'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5 flex-wrap ml-4.5">
                         {u.roles.map((r) => (
                           <Badge key={r} variant="outline" className="text-[10px] px-1.5 py-0">
                             {r}
