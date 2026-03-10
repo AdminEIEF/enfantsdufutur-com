@@ -69,14 +69,21 @@ export function SupportChat() {
   const fetchMessages = async () => {
     if (!user) return;
     setLoading(true);
+    // Fetch messages sent by user OR targeted at user
     const { data } = await supabase
       .from('support_messages')
-      .select('id, message, reply, reply_image_url, sender_image_url, statut, created_at, replied_at')
-      .eq('sender_id', user.id)
+      .select('id, message, reply, reply_image_url, sender_image_url, sender_id, sender_type, target_user_id, statut, created_at, replied_at')
+      .or(`sender_id.eq.${user.id},target_user_id.eq.${user.id}`)
       .order('created_at', { ascending: true });
     if (data) {
       setMessages(data as SupportMessage[]);
-      setUnreadCount(data.filter((m: any) => m.reply && !m.lu).length);
+      // Count unread: replies to my messages OR new messages from supervisor to me
+      const unread = data.filter((m: any) => {
+        if (m.sender_id === user.id && m.reply && !m.lu) return true;
+        if (m.target_user_id === user.id && m.sender_type === 'superviseur' && !m.lu) return true;
+        return false;
+      }).length;
+      setUnreadCount(unread);
     }
     setLoading(false);
   };
