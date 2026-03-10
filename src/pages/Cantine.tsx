@@ -312,19 +312,6 @@ export default function Cantine() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // ─── Generate QR ───────────────────────────────────
-  const generateQR = useMutation({
-    mutationFn: async (eleveId: string) => {
-      const qrValue = `CANTINE-${eleveId}`;
-      const { error } = await supabase.from('eleves').update({ qr_code: qrValue }).eq('id', eleveId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['eleves-cantine'] });
-      toast.success('QR Code généré');
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
 
   // ─── Stats ─────────────────────────────────────────
   const inscritsCantine = eleves.filter((e: any) => e.option_cantine);
