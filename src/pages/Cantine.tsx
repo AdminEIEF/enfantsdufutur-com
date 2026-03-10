@@ -12,6 +12,7 @@ import {
   CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera, FileText, Users, Search
 } from 'lucide-react';
 import RapportJournalierPanel from '@/components/RapportJournalierPanel';
+import CantineInscritsTab from '@/components/CantineInscritsTab';
 
 import QRScannerDialog from '@/components/QRScannerDialog';
 
