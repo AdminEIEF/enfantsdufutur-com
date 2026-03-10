@@ -97,6 +97,32 @@ export default function AdminMonitoring() {
   const [newPassword, setNewPassword] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Doublons state
+  interface DuplicateGroup {
+    key: string;
+    nom: string;
+    prenom: string;
+    classe_nom: string;
+    famille_nom: string;
+    eleves: Array<{
+      id: string;
+      nom: string;
+      prenom: string;
+      matricule: string | null;
+      classe_id: string | null;
+      classe_nom: string;
+      famille_id: string | null;
+      famille_nom: string;
+      date_naissance: string | null;
+      statut: string;
+      created_at: string;
+    }>;
+  }
+  const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
+  const [loadingDuplicates, setLoadingDuplicates] = useState(false);
+  const [confirmDeleteEleve, setConfirmDeleteEleve] = useState<{ id: string; name: string } | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   useEffect(() => {
     fetchAll();
   }, []);
