@@ -1,6 +1,6 @@
 import {
   GraduationCap, Users, UserPlus, BookOpen, Calculator, AlertTriangle,
-  Settings, Bell, ScanLine, Library, BarChart3, LogOut,
+  Settings, Bell, ScanLine, Library, BarChart3,
   Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock, FileText, Shield, Bot
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
