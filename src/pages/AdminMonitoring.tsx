@@ -100,25 +100,39 @@ export default function AdminMonitoring() {
   const [actionLoading, setActionLoading] = useState(false);
 
   // Doublons state
+  interface DuplicateEleve {
+    id: string;
+    nom: string;
+    prenom: string;
+    matricule: string | null;
+    classe_id: string | null;
+    classe_nom: string;
+    famille_id: string | null;
+    famille_nom: string;
+    date_naissance: string | null;
+    statut: string;
+    created_at: string;
+    sexe: string | null;
+    nom_prenom_pere: string | null;
+    nom_prenom_mere: string | null;
+    option_cantine: boolean | null;
+    option_robotique: boolean | null;
+    solde_cantine: number | null;
+  }
   interface DuplicateGroup {
     key: string;
     nom: string;
     prenom: string;
     classe_nom: string;
     famille_nom: string;
-    eleves: Array<{
-      id: string;
-      nom: string;
-      prenom: string;
-      matricule: string | null;
-      classe_id: string | null;
-      classe_nom: string;
-      famille_id: string | null;
-      famille_nom: string;
-      date_naissance: string | null;
-      statut: string;
-      created_at: string;
-    }>;
+    similarityFlags: {
+      sameFamille: boolean;
+      sameClasse: boolean;
+      similarClasse: boolean;
+      sameDateNaissance: boolean;
+      sameParents: boolean;
+    };
+    eleves: DuplicateEleve[];
   }
   const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
   const [loadingDuplicates, setLoadingDuplicates] = useState(false);
@@ -179,17 +193,16 @@ export default function AdminMonitoring() {
 
   const fetchDuplicates = async () => {
     setLoadingDuplicates(true);
+    setSelectedDoublons(new Set());
     try {
-      // Fetch all active students with class and family info
       const { data: eleves } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, classe_id, famille_id, date_naissance, statut, created_at')
+        .select('id, nom, prenom, matricule, classe_id, famille_id, date_naissance, statut, created_at, sexe, nom_prenom_pere, nom_prenom_mere, option_cantine, option_robotique, solde_cantine')
         .is('deleted_at', null)
         .order('nom');
 
       if (!eleves) return;
 
-      // Fetch classes and familles for display
       const [{ data: classes }, { data: familles }] = await Promise.all([
         supabase.from('classes').select('id, nom'),
         supabase.from('familles').select('id, nom_famille'),
@@ -197,7 +210,9 @@ export default function AdminMonitoring() {
       const classeMap = new Map((classes || []).map(c => [c.id, c.nom]));
       const familleMap = new Map((familles || []).map(f => [f.id, f.nom_famille]));
 
-      // Group by normalized nom+prenom+classe_id+famille_id
+      // Helper: extract base class name (e.g. "7E" from "7E A", "7E B")
+      const getClasseBase = (classeNom: string) => classeNom.replace(/\s+[A-Z]$/i, '').trim();
+
       const groups = new Map<string, typeof eleves>();
       for (const e of eleves) {
         const key = `${e.nom.trim().toLowerCase()}|${e.prenom.trim().toLowerCase()}`;
@@ -205,22 +220,39 @@ export default function AdminMonitoring() {
         groups.get(key)!.push(e);
       }
 
-      // Filter only groups with duplicates
       const dupGroups: DuplicateGroup[] = [];
       groups.forEach((group, key) => {
         if (group.length > 1) {
           const first = group[0];
+          const mappedEleves: DuplicateEleve[] = group.map(e => ({
+            ...e,
+            classe_nom: e.classe_id ? (classeMap.get(e.classe_id) || 'Inconnue') : 'Non assignée',
+            famille_nom: e.famille_id ? (familleMap.get(e.famille_id) || 'Inconnue') : 'Sans famille',
+          }));
+
+          // Compute similarity flags
+          const familleIds = new Set(group.map(e => e.famille_id).filter(Boolean));
+          const classeIds = new Set(group.map(e => e.classe_id).filter(Boolean));
+          const classeNoms = group.map(e => e.classe_id ? (classeMap.get(e.classe_id) || '') : '');
+          const classeBases = new Set(classeNoms.map(getClasseBase).filter(Boolean));
+          const dateNaissances = new Set(group.map(e => e.date_naissance).filter(Boolean));
+          const parents = group.map(e => `${(e.nom_prenom_pere || '').trim().toLowerCase()}|${(e.nom_prenom_mere || '').trim().toLowerCase()}`);
+          const uniqueParents = new Set(parents.filter(p => p !== '|'));
+
           dupGroups.push({
             key,
             nom: first.nom,
             prenom: first.prenom,
             classe_nom: first.classe_id ? (classeMap.get(first.classe_id) || 'Inconnue') : 'Non assignée',
             famille_nom: first.famille_id ? (familleMap.get(first.famille_id) || 'Inconnue') : 'Sans famille',
-            eleves: group.map(e => ({
-              ...e,
-              classe_nom: e.classe_id ? (classeMap.get(e.classe_id) || 'Inconnue') : 'Non assignée',
-              famille_nom: e.famille_id ? (familleMap.get(e.famille_id) || 'Inconnue') : 'Sans famille',
-            })),
+            similarityFlags: {
+              sameFamille: familleIds.size === 1 && familleIds.size > 0,
+              sameClasse: classeIds.size === 1 && classeIds.size > 0,
+              similarClasse: !!(classeBases.size === 1 && classeIds.size > 1), // e.g. 7E A + 7E B
+              sameDateNaissance: dateNaissances.size === 1 && dateNaissances.size > 0,
+              sameParents: uniqueParents.size === 1 && uniqueParents.size > 0,
+            },
+            eleves: mappedEleves,
           });
         }
       });
@@ -969,7 +1001,11 @@ export default function AdminMonitoring() {
               ) : (
                 <ScrollArea className="h-[500px]">
                   <div className="space-y-4">
-                    {duplicates.map(group => (
+                    {duplicates.map(group => {
+                      const flags = group.similarityFlags;
+                      const confidenceScore = [flags.sameFamille, flags.sameClasse || flags.similarClasse, flags.sameDateNaissance, flags.sameParents].filter(Boolean).length;
+                      const confidenceColor = confidenceScore >= 3 ? 'text-red-600' : confidenceScore >= 2 ? 'text-amber-600' : 'text-muted-foreground';
+                      return (
                       <Card key={group.key} className="border-amber-200 dark:border-amber-800">
                         <CardHeader className="pb-2 pt-4">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -978,55 +1014,99 @@ export default function AdminMonitoring() {
                               {group.eleves.length} occurrences
                             </Badge>
                             <span className="font-semibold">{group.prenom} {group.nom}</span>
-                            <span className="text-sm text-muted-foreground">— {group.classe_nom} • {group.famille_nom}</span>
+                          </div>
+                          {/* Similarity indicators */}
+                          <div className="flex items-center gap-2 flex-wrap mt-2">
+                            <span className={`text-xs font-medium ${confidenceColor}`}>
+                              Probabilité doublon : {confidenceScore >= 3 ? '🔴 Très élevée' : confidenceScore >= 2 ? '🟡 Élevée' : confidenceScore >= 1 ? '🟢 Moyenne' : '⚪ Faible'}
+                            </span>
+                            {flags.sameFamille && <Badge variant="secondary" className="text-xs">✅ Même famille</Badge>}
+                            {flags.sameClasse && <Badge variant="secondary" className="text-xs">✅ Même classe</Badge>}
+                            {flags.similarClasse && !flags.sameClasse && <Badge variant="secondary" className="text-xs">⚠️ Classes similaires (ex: 7E A / 7E B)</Badge>}
+                            {flags.sameDateNaissance && <Badge variant="secondary" className="text-xs">✅ Même date naissance</Badge>}
+                            {flags.sameParents && <Badge variant="secondary" className="text-xs">✅ Mêmes parents</Badge>}
                           </div>
                         </CardHeader>
                         <CardContent className="pt-0">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead className="w-10"></TableHead>
-                                <TableHead>Matricule</TableHead>
-                                <TableHead>Nom Prénom</TableHead>
-                                <TableHead>Date naiss.</TableHead>
-                                <TableHead>Statut</TableHead>
-                                <TableHead>Créé le</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {group.eleves.map(e => {
-                                const isChecked = selectedDoublons.has(e.id);
-                                const wouldDeleteAll = group.eleves.filter(el => el.id !== e.id).every(el => selectedDoublons.has(el.id));
-                                const isLastUnchecked = !isChecked && wouldDeleteAll;
-                                return (
-                                <TableRow key={e.id} className={isChecked ? 'bg-destructive/5' : ''}>
-                                  <TableCell>
+                          {/* Detailed comparison cards */}
+                          <div className="grid gap-3 mb-3">
+                            {group.eleves.map(e => {
+                              const isChecked = selectedDoublons.has(e.id);
+                              const wouldDeleteAll = group.eleves.filter(el => el.id !== e.id).every(el => selectedDoublons.has(el.id));
+                              const isLastUnchecked = !isChecked && wouldDeleteAll;
+                              return (
+                              <div key={e.id} className={`border rounded-lg p-3 ${isChecked ? 'bg-destructive/5 border-destructive/30' : 'border-border'}`}>
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex items-start gap-3 flex-1">
                                     <Checkbox
                                       checked={isChecked}
                                       disabled={isLastUnchecked}
                                       onCheckedChange={() => toggleDoublonSelection(e.id)}
+                                      className="mt-1"
                                     />
-                                  </TableCell>
-                                  <TableCell className="font-mono text-sm">{e.matricule || '—'}</TableCell>
-                                  <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
-                                  <TableCell className="text-sm">{e.date_naissance || '—'}</TableCell>
-                                  <TableCell><Badge variant="outline">{e.statut}</Badge></TableCell>
-                                  <TableCell className="text-sm text-muted-foreground">{formatDate(e.created_at)}</TableCell>
-                                  <TableCell className="text-right space-x-1">
-                                    <Button variant="outline" size="sm" className="gap-1 text-emerald-600" onClick={() => handleValidateDuplicate(e.id)}>
-                                      <CheckCircle className="h-3 w-3" /> Valider
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                                );
-                              })}
-
-                            </TableBody>
-                          </Table>
+                                    <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1 text-sm">
+                                      <div>
+                                        <span className="text-muted-foreground">Nom : </span>
+                                        <span className="font-medium">{e.prenom} {e.nom}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Matricule : </span>
+                                        <span className="font-mono">{e.matricule || '—'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Classe : </span>
+                                        <span className="font-medium">{e.classe_nom}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Famille : </span>
+                                        <span>{e.famille_nom}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Date naiss. : </span>
+                                        <span>{e.date_naissance || '—'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Sexe : </span>
+                                        <span>{e.sexe === 'M' ? 'Masculin' : e.sexe === 'F' ? 'Féminin' : '—'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Père : </span>
+                                        <span>{e.nom_prenom_pere || '—'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Mère : </span>
+                                        <span>{e.nom_prenom_mere || '—'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Statut : </span>
+                                        <Badge variant="outline" className="text-xs">{e.statut}</Badge>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Cantine : </span>
+                                        <span>{e.option_cantine ? `Oui (${e.solde_cantine ?? 0} GNF)` : 'Non'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Robotique : </span>
+                                        <span>{e.option_robotique ? 'Oui' : 'Non'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Créé le : </span>
+                                        <span>{formatDate(e.created_at)}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Button variant="outline" size="sm" className="gap-1 text-emerald-600 shrink-0" onClick={() => handleValidateDuplicate(e.id)}>
+                                    <CheckCircle className="h-3 w-3" /> Garder
+                                  </Button>
+                                </div>
+                              </div>
+                              );
+                            })}
+                          </div>
                         </CardContent>
                       </Card>
-                    ))}
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               )}
