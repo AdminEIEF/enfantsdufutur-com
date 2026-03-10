@@ -560,6 +560,7 @@ export default function AdminMonitoring() {
           <TabsTrigger value="connected" className="gap-1"><Wifi className="h-4 w-4" /> Connectés</TabsTrigger>
           <TabsTrigger value="audit" className="gap-1"><Activity className="h-4 w-4" /> Journal d'audit</TabsTrigger>
           <TabsTrigger value="users" className="gap-1"><Users className="h-4 w-4" /> Gestion accès</TabsTrigger>
+          <TabsTrigger value="doublons" className="gap-1" onClick={() => { if (duplicates.length === 0) fetchDuplicates(); }}><AlertTriangle className="h-4 w-4" /> Doublons</TabsTrigger>
         </TabsList>
 
         {/* === CONNECTED USERS === */}
