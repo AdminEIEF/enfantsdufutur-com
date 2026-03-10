@@ -20,6 +20,7 @@ interface RoleUser {
   email: string;
   display_name: string | null;
   roles: string[];
+  isOnline: boolean;
 }
 
 interface SupportMessage {
