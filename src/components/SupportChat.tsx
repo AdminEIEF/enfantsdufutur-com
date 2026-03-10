@@ -233,8 +233,36 @@ export function SupportChat() {
             </ScrollArea>
 
             {/* Input */}
-            <div className="border-t p-3">
+            <div className="border-t p-3 space-y-2">
+              {imagePreview && (
+                <div className="relative inline-block">
+                  <img src={imagePreview} alt="Aperçu" className="max-h-20 rounded border" />
+                  <button onClick={clearImage} className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
               <div className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageSelect(file);
+                    e.target.value = '';
+                  }}
+                />
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  size="icon"
+                  variant="outline"
+                  className="shrink-0 self-end"
+                  type="button"
+                >
+                  <ImagePlus className="h-4 w-4" />
+                </Button>
                 <Textarea
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
@@ -249,7 +277,7 @@ export function SupportChat() {
                 />
                 <Button
                   onClick={handleSend}
-                  disabled={!newMessage.trim() || sending}
+                  disabled={(!newMessage.trim() && !attachedImage) || sending}
                   size="icon"
                   className="shrink-0 self-end"
                 >
