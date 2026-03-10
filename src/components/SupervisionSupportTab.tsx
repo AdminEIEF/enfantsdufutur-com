@@ -323,17 +323,6 @@ export default function SupervisionSupportTab() {
             {/* Image upload section */}
             <div className="flex items-center gap-2">
               <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageSelect(file);
-                  e.target.value = '';
-                }}
-              />
-              <input
                 ref={cameraInputRef}
                 type="file"
                 accept="image/*"
@@ -345,9 +334,6 @@ export default function SupervisionSupportTab() {
                   e.target.value = '';
                 }}
               />
-              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                <ImagePlus className="h-4 w-4 mr-1" /> Image
-              </Button>
               <Button type="button" variant="outline" size="sm" onClick={() => cameraInputRef.current?.click()}>
                 <Camera className="h-4 w-4 mr-1" /> Capture
               </Button>
