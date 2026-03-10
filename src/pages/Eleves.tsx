@@ -309,6 +309,33 @@ export default function Eleves() {
   const totalFamille = eleves.filter((e: any) => !!e.famille_id).length;
   const totalIndividuel = eleves.filter((e: any) => !e.famille_id).length;
   const totalAbandons = eleves.filter((e: any) => e.statut === 'abandon').length;
+  const elevesWithoutMatricule = eleves.filter((e: any) => !e.matricule && e.statut === 'inscrit');
+
+  const [generatingMatricules, setGeneratingMatricules] = useState(false);
+
+  const generateMissingMatricules = async () => {
+    if (elevesWithoutMatricule.length === 0) return;
+    setGeneratingMatricules(true);
+    try {
+      const now = new Date();
+      const prefix = `EDU-${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const { count: existingCount } = await supabase.from('eleves').select('*', { count: 'exact', head: true }).like('matricule', `${prefix}%`);
+      let seqCounter = existingCount || 0;
+      let updated = 0;
+      for (const eleve of elevesWithoutMatricule) {
+        seqCounter++;
+        const matricule = `${prefix}-${String(seqCounter).padStart(4, '0')}`;
+        const { error } = await supabase.from('eleves').update({ matricule } as any).eq('id', eleve.id);
+        if (!error) updated++;
+      }
+      toast({ title: 'Matricules générés', description: `${updated} matricule(s) ajouté(s)` });
+      qc.invalidateQueries({ queryKey: ['eleves-full'] });
+    } catch (err: any) {
+      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+    } finally {
+      setGeneratingMatricules(false);
+    }
+  };
 
   // Camera & photo functions
   const startCamera = async () => {
