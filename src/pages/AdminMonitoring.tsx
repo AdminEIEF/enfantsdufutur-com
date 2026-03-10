@@ -100,25 +100,39 @@ export default function AdminMonitoring() {
   const [actionLoading, setActionLoading] = useState(false);
 
   // Doublons state
+  interface DuplicateEleve {
+    id: string;
+    nom: string;
+    prenom: string;
+    matricule: string | null;
+    classe_id: string | null;
+    classe_nom: string;
+    famille_id: string | null;
+    famille_nom: string;
+    date_naissance: string | null;
+    statut: string;
+    created_at: string;
+    sexe: string | null;
+    nom_prenom_pere: string | null;
+    nom_prenom_mere: string | null;
+    option_cantine: boolean | null;
+    option_robotique: boolean | null;
+    solde_cantine: number | null;
+  }
   interface DuplicateGroup {
     key: string;
     nom: string;
     prenom: string;
     classe_nom: string;
     famille_nom: string;
-    eleves: Array<{
-      id: string;
-      nom: string;
-      prenom: string;
-      matricule: string | null;
-      classe_id: string | null;
-      classe_nom: string;
-      famille_id: string | null;
-      famille_nom: string;
-      date_naissance: string | null;
-      statut: string;
-      created_at: string;
-    }>;
+    similarityFlags: {
+      sameFamille: boolean;
+      sameClasse: boolean;
+      similarClasse: boolean;
+      sameDateNaissance: boolean;
+      sameParents: boolean;
+    };
+    eleves: DuplicateEleve[];
   }
   const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
   const [loadingDuplicates, setLoadingDuplicates] = useState(false);
