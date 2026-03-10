@@ -761,6 +761,11 @@ export default function Cantine() {
           </Card>
         </TabsContent>
 
+        {/* ═══ TAB: INSCRITS CANTINE ═══ */}
+        <TabsContent value="inscrits" className="space-y-4">
+          <CantineInscritsTab eleves={eleves} />
+        </TabsContent>
+
         {/* ═══ TAB: RAPPORT JOURNALIER ═══ */}
         <TabsContent value="rapport" className="space-y-4">
           <RapportJournalierPanel service="Cantine" />
