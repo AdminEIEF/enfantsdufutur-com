@@ -693,7 +693,7 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher une famille par nom..."
+            placeholder="Rechercher par nom, enfant ou téléphone..."
             value={searchFamille}
             onChange={e => setSearchFamille(e.target.value)}
             className="pl-9 h-9"
