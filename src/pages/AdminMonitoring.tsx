@@ -1063,7 +1063,29 @@ export default function AdminMonitoring() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Connection detail dialog */}
+      {/* Confirm batch delete dialog */}
+      <AlertDialog open={confirmBatchDelete} onOpenChange={setConfirmBatchDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer {selectedDoublons.size} doublon(s) ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Les {selectedDoublons.size} élèves sélectionnés seront marqués comme supprimés (soft delete). Au moins un élève sera conservé dans chaque groupe.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleBatchDelete}
+              disabled={batchDeleting}
+            >
+              {batchDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />}
+              Supprimer {selectedDoublons.size}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={!!connectionDetail} onOpenChange={() => setConnectionDetail(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
