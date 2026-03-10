@@ -654,14 +654,38 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
     });
   }, [familles, eleves, paiements]);
 
+  const normalizePhone = (p: string) => (p || '').replace(/[\s\-\+]/g, '').replace(/^224/, '');
+
   const filteredFamilles = useMemo(() => {
     if (!searchFamille.trim()) return famillesAvecEnfants;
     const q = searchFamille.toLowerCase().trim();
+    const qPhone = normalizePhone(q);
     return famillesAvecEnfants.filter((f: any) =>
       f.nom_famille.toLowerCase().includes(q) ||
-      f.enfants.some((e: any) => `${e.prenom} ${e.nom}`.toLowerCase().includes(q))
+      f.enfants.some((e: any) => `${e.prenom} ${e.nom}`.toLowerCase().includes(q)) ||
+      (f.telephone_pere && normalizePhone(f.telephone_pere).includes(qPhone)) ||
+      (f.telephone_mere && normalizePhone(f.telephone_mere).includes(qPhone))
     );
   }, [famillesAvecEnfants, searchFamille]);
+
+  // Filtrage des familles dans le dialog de paiement
+  const [searchFamilleDialog, setSearchFamilleDialog] = useState('');
+  const filteredFamillesDialog = useMemo(() => {
+    if (!searchFamilleDialog.trim()) return famillesAvecEnfants;
+    const q = searchFamilleDialog.toLowerCase().trim();
+    const qPhone = normalizePhone(q);
+    return famillesAvecEnfants.filter((f: any) =>
+      f.nom_famille.toLowerCase().includes(q) ||
+      f.enfants.some((e: any) => `${e.prenom} ${e.nom}`.toLowerCase().includes(q)) ||
+      (f.telephone_pere && normalizePhone(f.telephone_pere).includes(qPhone)) ||
+      (f.telephone_mere && normalizePhone(f.telephone_mere).includes(qPhone))
+    );
+  }, [famillesAvecEnfants, searchFamilleDialog]);
+
+  const handleFamilleCardClick = (fId: string) => {
+    setFamilleId(fId);
+    setOpen(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -669,7 +693,7 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher une famille par nom..."
+            placeholder="Rechercher par nom, enfant ou téléphone..."
             value={searchFamille}
             onChange={e => setSearchFamille(e.target.value)}
             className="pl-9 h-9"
@@ -683,11 +707,20 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
             <div className="space-y-3">
               <div>
                 <Label>Famille *</Label>
+                <div className="relative mb-2">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher par nom ou téléphone..."
+                    value={searchFamilleDialog}
+                    onChange={e => setSearchFamilleDialog(e.target.value)}
+                    className="pl-9 h-9"
+                  />
+                </div>
                 <Select value={familleId} onValueChange={setFamilleId}>
                   <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                   <SelectContent>
-                    {famillesAvecEnfants.map((f: any) => (
-                      <SelectItem key={f.id} value={f.id}>👨‍👩‍👧‍👦 {f.nom_famille} ({f.enfants.length} enfants)</SelectItem>
+                    {filteredFamillesDialog.map((f: any) => (
+                      <SelectItem key={f.id} value={f.id}>👨‍👩‍👧‍👦 {f.nom_famille} ({f.enfants.length} enfants){f.telephone_pere ? ` — ${f.telephone_pere}` : ''}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -760,7 +793,7 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
       {/* Family accounts list */}
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {filteredFamilles.map((f: any) => (
-          <Card key={f.id} className={f.reste > 0 ? 'border-destructive/20' : 'border-green-300/50'}>
+          <Card key={f.id} className={`cursor-pointer hover:shadow-md transition-shadow ${f.reste > 0 ? 'border-destructive/20' : 'border-green-300/50'}`} onClick={() => handleFamilleCardClick(f.id)}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Users className="h-4 w-4" /> {f.nom_famille}
