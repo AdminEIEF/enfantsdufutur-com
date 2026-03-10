@@ -23,6 +23,7 @@ interface SupportMessage {
   sender_email: string | null;
   message: string;
   reply: string | null;
+  reply_image_url: string | null;
   replied_at: string | null;
   lu: boolean;
   statut: string;
