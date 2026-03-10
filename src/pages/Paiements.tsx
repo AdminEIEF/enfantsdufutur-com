@@ -793,7 +793,7 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
       {/* Family accounts list */}
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {filteredFamilles.map((f: any) => (
-          <Card key={f.id} className={f.reste > 0 ? 'border-destructive/20' : 'border-green-300/50'}>
+          <Card key={f.id} className={`cursor-pointer hover:shadow-md transition-shadow ${f.reste > 0 ? 'border-destructive/20' : 'border-green-300/50'}`} onClick={() => handleFamilleCardClick(f.id)}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Users className="h-4 w-4" /> {f.nom_famille}
