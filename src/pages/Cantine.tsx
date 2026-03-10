@@ -12,7 +12,7 @@ import {
   CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera, FileText
 } from 'lucide-react';
 import RapportJournalierPanel from '@/components/RapportJournalierPanel';
-import BordereauRemiseCartes from '@/components/BordereauRemiseCartes';
+
 import QRScannerDialog from '@/components/QRScannerDialog';
 
 import { supabase } from '@/integrations/supabase/client';
