@@ -1093,6 +1093,30 @@ export default function Eleves() {
                     <p className="text-xs text-muted-foreground">Cet élève apparaîtra dans le module Transport avec sa classe et sa zone.</p>
                   )}
                 </div>
+                <div className="border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                      <strong className="text-sm">Inscription Cantine</strong>
+                    </div>
+                    <Switch
+                      checked={!!selected.option_cantine}
+                      onCheckedChange={async (checked) => {
+                        const { error } = await supabase.from('eleves').update({ option_cantine: checked }).eq('id', selected.id);
+                        if (error) {
+                          toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+                        } else {
+                          toast({ title: checked ? 'Inscrit à la cantine' : 'Retiré de la cantine', description: `${selected.prenom} ${selected.nom} a été ${checked ? 'inscrit(e) à' : 'retiré(e) de'} la cantine.` });
+                          qc.invalidateQueries({ queryKey: ['eleves-full'] });
+                          setSelected({ ...selected, option_cantine: checked });
+                        }
+                      }}
+                    />
+                  </div>
+                  {selected.option_cantine && (
+                    <p className="text-xs text-muted-foreground">Solde cantine : <span className="font-semibold">{Number(selected.solde_cantine || 0).toLocaleString()} GNF</span></p>
+                  )}
+                </div>
               </TabsContent>
               <TabsContent value="famille" className="space-y-3 text-sm mt-3">
                 {selected.familles ? (
