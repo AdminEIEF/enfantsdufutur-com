@@ -210,30 +210,80 @@ export default function SupervisionSupportTab() {
 
   const openNewMsgDialog = () => {
     setNewMsgDialog(true);
-    setSelectedUserId('');
+    setSelectedUser(null);
     setNewMsgText('');
     setUserSearch('');
+    setChatMessages([]);
+    setNewMsgImage(null);
+    setNewMsgImagePreview(null);
     fetchRoleUsers();
   };
 
+  const selectUserForChat = async (u: RoleUser) => {
+    setSelectedUser(u);
+    setNewMsgText('');
+    setNewMsgImage(null);
+    setNewMsgImagePreview(null);
+    setLoadingChat(true);
+    // Fetch conversation history with this user
+    const { data } = await supabase
+      .from('support_messages')
+      .select('id, message, reply, reply_image_url, sender_image_url, sender_id, sender_type, target_user_id, statut, created_at, replied_at, sender_name')
+      .or(`and(sender_id.eq.${u.user_id},sender_type.neq.superviseur),and(target_user_id.eq.${u.user_id},sender_type.eq.superviseur)`)
+      .order('created_at', { ascending: true });
+    setChatMessages(data || []);
+    setLoadingChat(false);
+    setTimeout(() => {
+      if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }, 100);
+  };
+
+  const handleNewMsgImageSelect = (file: File) => {
+    if (!file.type.startsWith('image/')) { toast.error('Sélectionnez une image'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image trop volumineuse (max 5 Mo)'); return; }
+    setNewMsgImage(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setNewMsgImagePreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
   const handleSendNewMsg = async () => {
-    if (!selectedUserId || !newMsgText.trim() || !user) return;
+    if (!selectedUser || (!newMsgText.trim() && !newMsgImage) || !user) return;
     setSendingNewMsg(true);
-    const targetUser = roleUsers.find(u => u.user_id === selectedUserId);
+
+    let imageUrl: string | null = null;
+    if (newMsgImage) {
+      const ext = newMsgImage.name.split('.').pop();
+      const path = `messages/${user.id}_${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('support-images').upload(path, newMsgImage);
+      if (uploadError) {
+        toast.error("Erreur lors de l'upload de l'image");
+        setSendingNewMsg(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('support-images').getPublicUrl(path);
+      imageUrl = urlData.publicUrl;
+    }
+
     const { error } = await supabase.from('support_messages').insert({
       sender_id: user.id,
       sender_type: 'superviseur',
       sender_name: 'Superviseur',
       sender_email: user.email,
-      message: newMsgText.trim(),
-      target_user_id: selectedUserId,
+      message: newMsgText.trim() || '📷 Image',
+      target_user_id: selectedUser.user_id,
+      sender_image_url: imageUrl,
       statut: 'ouvert',
     });
     if (error) {
       toast.error('Erreur lors de l\'envoi');
     } else {
-      toast.success(`Message envoyé à ${targetUser?.display_name || targetUser?.email}`);
-      setNewMsgDialog(false);
+      toast.success(`Message envoyé à ${selectedUser.display_name || selectedUser.email}`);
+      setNewMsgText('');
+      setNewMsgImage(null);
+      setNewMsgImagePreview(null);
+      // Refresh chat
+      selectUserForChat(selectedUser);
       fetchMessages();
     }
     setSendingNewMsg(false);
