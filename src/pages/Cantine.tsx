@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  ScanLine, Search, Utensils, Wallet, History, QrCode, Plus, AlertTriangle,
+  ScanLine, Utensils, Wallet, History, Plus, AlertTriangle,
   CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera, FileText
 } from 'lucide-react';
 import RapportJournalierPanel from '@/components/RapportJournalierPanel';
@@ -19,7 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { QRCodeSVG } from 'qrcode.react';
+
 import {
   ChartContainer, ChartTooltip, ChartTooltipContent
 } from '@/components/ui/chart';
@@ -155,13 +155,11 @@ export default function Cantine() {
   const { data: plats = [] } = usePlatsCantine();
   const { data: repasToday = [] } = useRepasToday();
   const { data: repasWeek = [] } = useRepasWeek();
-  const [search, setSearch] = useState('');
+  
   const [scanInput, setScanInput] = useState('');
   const [selectedEleve, setSelectedEleve] = useState<any>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyEleveId, setHistoryEleveId] = useState<string | null>(null);
-  const [badgeOpen, setBadgeOpen] = useState(false);
-  const [badgeEleve, setBadgeEleve] = useState<any>(null);
   const [selectedPlatIds, setSelectedPlatIds] = useState<Record<string, number>>({});
   const [menuOpen, setMenuOpen] = useState(false);
   const [newPlat, setNewPlat] = useState({ nom: '', prix: '', stock: '' });
@@ -314,30 +312,13 @@ export default function Cantine() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // ─── Generate QR ───────────────────────────────────
-  const generateQR = useMutation({
-    mutationFn: async (eleveId: string) => {
-      const qrValue = `CANTINE-${eleveId}`;
-      const { error } = await supabase.from('eleves').update({ qr_code: qrValue }).eq('id', eleveId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['eleves-cantine'] });
-      toast.success('QR Code généré');
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  // ─── Filtered eleves ──────────────────────────────
-  const filtered = eleves.filter((e: any) =>
-    `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase())
-  );
 
   // ─── Stats ─────────────────────────────────────────
-  const totalInscrits = eleves.length;
+  const inscritsCantine = eleves.filter((e: any) => e.option_cantine);
+  const totalInscrits = inscritsCantine.length;
   const minPrix = plats.length > 0 ? Math.min(...plats.map(p => Number(p.prix))) : 1000;
-  const soldeFaible = eleves.filter((e: any) => Number(e.solde_cantine || 0) < minPrix).length;
-  const totalSolde = eleves.reduce((s: number, e: any) => s + Number(e.solde_cantine || 0), 0);
+  const soldeFaible = inscritsCantine.filter((e: any) => Number(e.solde_cantine || 0) < minPrix).length;
+  const totalSolde = inscritsCantine.reduce((s: number, e: any) => s + Number(e.solde_cantine || 0), 0);
   const caToday = repasToday.reduce((s, r: any) => s + Number(r.montant_debite || 0), 0);
 
   // ─── Inventaire du jour ────────────────────────────
@@ -560,68 +541,6 @@ export default function Cantine() {
             </CardContent>
           </Card>
 
-          {/* Liste élèves */}
-          <div className="flex items-center gap-3 justify-between">
-            <div className="relative max-w-sm flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
-            </div>
-          </div>
-
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Élève</TableHead>
-                    <TableHead>Classe</TableHead>
-                    <TableHead>Solde</TableHead>
-                    <TableHead>QR Code</TableHead>
-                    <TableHead className="w-32">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Chargement…</TableCell></TableRow>
-                  ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun élève inscrit à la cantine</TableCell></TableRow>
-                  ) : filtered.map((e: any) => (
-                    <TableRow key={e.id}>
-                      
-                      <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
-                      <TableCell>{e.classes?.nom || '—'}</TableCell>
-                      <TableCell>
-                        <Badge variant={Number(e.solde_cantine || 0) < minPrix ? 'destructive' : 'default'}>
-                          {Number(e.solde_cantine || 0).toLocaleString()} GNF
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {e.qr_code ? (
-                          <Button variant="ghost" size="sm" onClick={() => { setBadgeEleve(e); setBadgeOpen(true); }}>
-                            <QrCode className="h-4 w-4 mr-1" /> Voir
-                          </Button>
-                        ) : (
-                          <Button variant="outline" size="sm" onClick={() => generateQR.mutate(e.id)}>
-                            <Plus className="h-4 w-4 mr-1" /> Générer
-                          </Button>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => { setSelectedEleve(e); setSelectedPlatIds({}); }}>
-                            <Utensils className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => { setHistoryEleveId(e.id); setHistoryOpen(true); }}>
-                            <History className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* ═══ TAB: GESTION MENU ═══ */}
@@ -913,30 +832,6 @@ export default function Cantine() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog badge QR */}
-      <Dialog open={badgeOpen} onOpenChange={setBadgeOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Badge Cantine</DialogTitle></DialogHeader>
-          {badgeEleve && (
-            <div className="flex flex-col items-center gap-4 py-4">
-              <div className="p-4 bg-white rounded-lg border">
-                <QRCodeSVG value={JSON.stringify({
-                  matricule: badgeEleve.matricule || '',
-                  nom: badgeEleve.nom,
-                  prenom: badgeEleve.prenom,
-                  classe: badgeEleve.classes?.nom || '',
-                  url: `${window.location.origin}/eleves?matricule=${encodeURIComponent(badgeEleve.matricule || badgeEleve.id)}`,
-                })} size={180} />
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-bold">{badgeEleve.prenom} {badgeEleve.nom}</p>
-                <p className="text-sm text-muted-foreground">{badgeEleve.classes?.nom} • {badgeEleve.matricule || '—'}</p>
-              </div>
-              <Button variant="outline" onClick={() => window.print()}>Imprimer le badge</Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
 
     </div>
