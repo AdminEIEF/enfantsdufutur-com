@@ -15,6 +15,8 @@ interface SupportMessage {
   id: string;
   message: string;
   reply: string | null;
+  reply_image_url: string | null;
+  sender_image_url: string | null;
   statut: string;
   created_at: string;
   replied_at: string | null;
@@ -29,6 +31,9 @@ export function SupportChat() {
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [attachedImage, setAttachedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Don't show for superviseur (they have the tab in supervision)
   const isSuperviseur = hasRole('superviseur');
