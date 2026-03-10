@@ -155,7 +155,7 @@ export default function Cantine() {
   const { data: plats = [] } = usePlatsCantine();
   const { data: repasToday = [] } = useRepasToday();
   const { data: repasWeek = [] } = useRepasWeek();
-  const [search, setSearch] = useState('');
+  
   const [scanInput, setScanInput] = useState('');
   const [selectedEleve, setSelectedEleve] = useState<any>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
