@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ScanLine, Utensils, Wallet, History, Plus, AlertTriangle,
-  CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera, FileText
+  CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera, FileText, Users, Search
 } from 'lucide-react';
 import RapportJournalierPanel from '@/components/RapportJournalierPanel';
 
