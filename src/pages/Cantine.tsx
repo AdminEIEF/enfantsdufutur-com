@@ -9,9 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ScanLine, Utensils, Wallet, History, Plus, AlertTriangle,
-  CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera, FileText
+  CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera, FileText, Users, Search
 } from 'lucide-react';
 import RapportJournalierPanel from '@/components/RapportJournalierPanel';
+import CantineInscritsTab from '@/components/CantineInscritsTab';
 
 import QRScannerDialog from '@/components/QRScannerDialog';
 
@@ -43,7 +44,7 @@ function useElevesCantine() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, solde_cantine, option_cantine, qr_code, statut, photo_url, transport_zone, classes(nom), familles(telephone_pere, telephone_mere)')
+        .select('id, nom, prenom, matricule, solde_cantine, option_cantine, qr_code, statut, photo_url, transport_zone, classes(nom, niveaux(nom, cycles(nom))), familles(telephone_pere, telephone_mere)')
         .is('deleted_at', null)
         .order('nom');
       if (error) throw error;
@@ -428,6 +429,7 @@ export default function Cantine() {
           <TabsTrigger value="menu"><Package className="h-4 w-4 mr-1" /> Gestion Menu</TabsTrigger>
           <TabsTrigger value="inventaire"><CreditCard className="h-4 w-4 mr-1" /> Inventaire du Jour</TabsTrigger>
           <TabsTrigger value="stats"><BarChart3 className="h-4 w-4 mr-1" /> Statistiques</TabsTrigger>
+          <TabsTrigger value="inscrits"><Users className="h-4 w-4 mr-1" /> Inscrits Cantine</TabsTrigger>
           <TabsTrigger value="rapport"><FileText className="h-4 w-4 mr-1" /> Rapport Journalier</TabsTrigger>
         </TabsList>
 
@@ -758,6 +760,11 @@ export default function Cantine() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ═══ TAB: INSCRITS CANTINE ═══ */}
+        <TabsContent value="inscrits" className="space-y-4">
+          <CantineInscritsTab eleves={eleves} />
         </TabsContent>
 
         {/* ═══ TAB: RAPPORT JOURNALIER ═══ */}
