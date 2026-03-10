@@ -59,6 +59,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </span>
             </div>
             <AdminNotificationBell />
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground h-8 gap-1.5" onClick={signOut}>
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Déconnexion</span>
+            </Button>
           </header>
           <div className="flex-1 p-6 overflow-auto">
             {children}
