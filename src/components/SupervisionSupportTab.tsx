@@ -257,11 +257,14 @@ export default function SupervisionSupportTab() {
                       </TableCell>
                       <TableCell className="max-w-[300px]">
                         <p className="text-sm truncate">{msg.message}</p>
+                        {(msg as any).sender_image_url && (
+                          <a href={(msg as any).sender_image_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">📷 Image envoyée</a>
+                        )}
                         {msg.reply && (
                           <p className="text-xs text-emerald-600 mt-0.5 truncate">↳ {msg.reply}</p>
                         )}
                         {msg.reply_image_url && (
-                          <a href={msg.reply_image_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">📷 Image jointe</a>
+                          <a href={msg.reply_image_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">📷 Capture jointe</a>
                         )}
                       </TableCell>
                       <TableCell>
