@@ -73,13 +73,56 @@ export default function SupervisionSupportTab() {
     setLoading(false);
   };
 
+  const handleImageSelect = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Veuillez sélectionner une image');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image trop volumineuse (max 5 Mo)');
+      return;
+    }
+    setReplyImage(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setReplyImagePreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setReplyImage(null);
+    setReplyImagePreview(null);
+  };
+
   const handleReply = async () => {
-    if (!replyDialog || !replyText.trim() || !user) return;
+    if (!replyDialog || (!replyText.trim() && !replyImage) || !user) return;
     setReplying(true);
+
+    let imageUrl: string | null = null;
+
+    // Upload image if present
+    if (replyImage) {
+      setUploadingImage(true);
+      const ext = replyImage.name.split('.').pop();
+      const path = `replies/${replyDialog.id}_${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('support-images')
+        .upload(path, replyImage);
+      setUploadingImage(false);
+
+      if (uploadError) {
+        toast.error("Erreur lors de l'upload de l'image");
+        setReplying(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('support-images').getPublicUrl(path);
+      imageUrl = urlData.publicUrl;
+    }
+
     const { error } = await supabase
       .from('support_messages')
       .update({
-        reply: replyText.trim(),
+        reply: replyText.trim() || null,
+        reply_image_url: imageUrl,
         replied_by: user.id,
         replied_at: new Date().toISOString(),
         statut: 'resolu',
@@ -93,6 +136,7 @@ export default function SupervisionSupportTab() {
       toast.success('Réponse envoyée');
       setReplyDialog(null);
       setReplyText('');
+      clearImage();
       fetchMessages();
     }
     setReplying(false);
