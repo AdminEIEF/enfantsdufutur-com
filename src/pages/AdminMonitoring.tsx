@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { Shield, ShieldOff, Wifi, WifiOff, Activity, Search, Eye, Ban, CheckCircle, Clock, Users, FileText, GraduationCap, Briefcase, UserCheck, LogOut, KeyRound, Copy, Loader2, AlertTriangle, Trash2, MessageCircle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -123,6 +124,9 @@ export default function AdminMonitoring() {
   const [loadingDuplicates, setLoadingDuplicates] = useState(false);
   const [confirmDeleteEleve, setConfirmDeleteEleve] = useState<{ id: string; name: string } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedDoublons, setSelectedDoublons] = useState<Set<string>>(new Set());
+  const [confirmBatchDelete, setConfirmBatchDelete] = useState(false);
+  const [batchDeleting, setBatchDeleting] = useState(false);
 
   useEffect(() => {
     fetchAll();
@@ -250,12 +254,57 @@ export default function AdminMonitoring() {
   };
 
   const handleValidateDuplicate = (eleveId: string) => {
-    // Mark as validated by removing from duplicates display (they stay in DB as-is)
     toast.success('Élève validé comme non-doublon');
     setDuplicates(prev => prev.map(g => ({
       ...g,
       eleves: g.eleves.filter(e => e.id !== eleveId),
     })).filter(g => g.eleves.length > 1));
+    setSelectedDoublons(prev => { const n = new Set(prev); n.delete(eleveId); return n; });
+  };
+
+  const toggleDoublonSelection = (eleveId: string) => {
+    setSelectedDoublons(prev => {
+      const n = new Set(prev);
+      if (n.has(eleveId)) n.delete(eleveId);
+      else n.add(eleveId);
+      return n;
+    });
+  };
+
+  const canDeleteSelected = useMemo(() => {
+    if (selectedDoublons.size === 0) return false;
+    for (const group of duplicates) {
+      const selectedInGroup = group.eleves.filter(e => selectedDoublons.has(e.id));
+      if (selectedInGroup.length > 0 && selectedInGroup.length >= group.eleves.length) {
+        return false;
+      }
+    }
+    return true;
+  }, [selectedDoublons, duplicates]);
+
+  const handleBatchDelete = async () => {
+    setBatchDeleting(true);
+    try {
+      const ids = Array.from(selectedDoublons);
+      for (const id of ids) {
+        const { error } = await supabase
+          .from('eleves')
+          .update({ deleted_at: new Date().toISOString(), statut: 'supprime' })
+          .eq('id', id);
+        if (error) throw error;
+      }
+      toast.success(`${ids.length} doublon(s) supprimé(s)`);
+      setDuplicates(prev => prev.map(g => ({
+        ...g,
+        eleves: g.eleves.filter(e => !selectedDoublons.has(e.id)),
+      })).filter(g => g.eleves.length > 1));
+      setSelectedDoublons(new Set());
+      setConfirmBatchDelete(false);
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur lors de la suppression');
+    } finally {
+      setBatchDeleting(false);
+    }
   };
 
   // Realtime
@@ -884,12 +933,31 @@ export default function AdminMonitoring() {
                   Détection des doublons élèves
                   {duplicates.length > 0 && <Badge variant="destructive">{duplicates.length} groupe{duplicates.length > 1 ? 's' : ''}</Badge>}
                 </CardTitle>
-                <Button variant="outline" size="sm" onClick={fetchDuplicates} disabled={loadingDuplicates} className="gap-1">
-                  {loadingDuplicates ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                  Analyser
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={fetchDuplicates} disabled={loadingDuplicates} className="gap-1">
+                    {loadingDuplicates ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                    Analyser
+                  </Button>
+                  {selectedDoublons.size > 0 && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="gap-1"
+                      disabled={!canDeleteSelected}
+                      onClick={() => setConfirmBatchDelete(true)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Supprimer ({selectedDoublons.size})
+                    </Button>
+                  )}
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">Élèves ayant le même nom, prénom, classe et famille</p>
+              <p className="text-sm text-muted-foreground">
+                Élèves ayant le même nom, prénom, classe et famille.
+                {!canDeleteSelected && selectedDoublons.size > 0 && (
+                  <span className="text-destructive ml-1">⚠ Vous devez garder au moins un élève par groupe.</span>
+                )}
+              </p>
             </CardHeader>
             <CardContent>
               {loadingDuplicates ? (
@@ -917,6 +985,7 @@ export default function AdminMonitoring() {
                           <Table>
                             <TableHeader>
                               <TableRow>
+                                <TableHead className="w-10"></TableHead>
                                 <TableHead>Matricule</TableHead>
                                 <TableHead>Nom Prénom</TableHead>
                                 <TableHead>Date naiss.</TableHead>
@@ -926,8 +995,19 @@ export default function AdminMonitoring() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {group.eleves.map(e => (
-                                <TableRow key={e.id}>
+                              {group.eleves.map(e => {
+                                const isChecked = selectedDoublons.has(e.id);
+                                const wouldDeleteAll = group.eleves.filter(el => el.id !== e.id).every(el => selectedDoublons.has(el.id));
+                                const isLastUnchecked = !isChecked && wouldDeleteAll;
+                                return (
+                                <TableRow key={e.id} className={isChecked ? 'bg-destructive/5' : ''}>
+                                  <TableCell>
+                                    <Checkbox
+                                      checked={isChecked}
+                                      disabled={isLastUnchecked}
+                                      onCheckedChange={() => toggleDoublonSelection(e.id)}
+                                    />
+                                  </TableCell>
                                   <TableCell className="font-mono text-sm">{e.matricule || '—'}</TableCell>
                                   <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
                                   <TableCell className="text-sm">{e.date_naissance || '—'}</TableCell>
@@ -937,12 +1017,11 @@ export default function AdminMonitoring() {
                                     <Button variant="outline" size="sm" className="gap-1 text-emerald-600" onClick={() => handleValidateDuplicate(e.id)}>
                                       <CheckCircle className="h-3 w-3" /> Valider
                                     </Button>
-                                    <Button variant="destructive" size="sm" className="gap-1" onClick={() => setConfirmDeleteEleve({ id: e.id, name: `${e.prenom} ${e.nom}` })}>
-                                      <Trash2 className="h-3 w-3" /> Supprimer
-                                    </Button>
                                   </TableCell>
                                 </TableRow>
-                              ))}
+                                );
+                              })}
+
                             </TableBody>
                           </Table>
                         </CardContent>
@@ -984,7 +1063,29 @@ export default function AdminMonitoring() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Connection detail dialog */}
+      {/* Confirm batch delete dialog */}
+      <AlertDialog open={confirmBatchDelete} onOpenChange={setConfirmBatchDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer {selectedDoublons.size} doublon(s) ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Les {selectedDoublons.size} élèves sélectionnés seront marqués comme supprimés (soft delete). Au moins un élève sera conservé dans chaque groupe.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleBatchDelete}
+              disabled={batchDeleting}
+            >
+              {batchDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />}
+              Supprimer {selectedDoublons.size}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={!!connectionDetail} onOpenChange={() => setConnectionDetail(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
