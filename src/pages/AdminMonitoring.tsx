@@ -264,6 +264,13 @@ export default function AdminMonitoring() {
   };
 
   const handleDeleteDuplicate = async (eleveId: string) => {
+    // Safety: never delete if it's the last member of its group
+    const parentGroup = duplicates.find(g => g.eleves.some(e => e.id === eleveId));
+    if (parentGroup && parentGroup.eleves.length <= 1) {
+      toast.error('Impossible de supprimer le dernier élève du groupe. Au moins un doit être conservé.');
+      setConfirmDeleteEleve(null);
+      return;
+    }
     setDeletingId(eleveId);
     try {
       const { error } = await supabase
@@ -315,6 +322,14 @@ export default function AdminMonitoring() {
   }, [selectedDoublons, duplicates]);
 
   const handleBatchDelete = async () => {
+    // Final safety check: ensure at least one member remains per group
+    for (const group of duplicates) {
+      const selectedInGroup = group.eleves.filter(e => selectedDoublons.has(e.id));
+      if (selectedInGroup.length >= group.eleves.length) {
+        toast.error(`Impossible : tous les élèves du groupe "${group.key}" sont sélectionnés. Gardez au moins un élève.`);
+        return;
+      }
+    }
     setBatchDeleting(true);
     try {
       const ids = Array.from(selectedDoublons);
@@ -325,7 +340,7 @@ export default function AdminMonitoring() {
           .eq('id', id);
         if (error) throw error;
       }
-      toast.success(`${ids.length} doublon(s) supprimé(s)`);
+      toast.success(`${ids.length} doublon(s) supprimé(s). Les autres élèves ont été conservés.`);
       setDuplicates(prev => prev.map(g => ({
         ...g,
         eleves: g.eleves.filter(e => !selectedDoublons.has(e.id)),
