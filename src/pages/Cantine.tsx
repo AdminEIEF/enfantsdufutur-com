@@ -167,7 +167,7 @@ export default function Cantine() {
   const [newPlat, setNewPlat] = useState({ nom: '', prix: '', stock: '' });
   const [activeTab, setActiveTab] = useState('vente');
   const [scannerOpen, setScannerOpen] = useState(false);
-  const [carteEleve, setCarteEleve] = useState<any>(null);
+  
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [plancheOpen, setPlancheOpen] = useState(false);
   const [bordereauOpen, setBordereauOpen] = useState(false);
