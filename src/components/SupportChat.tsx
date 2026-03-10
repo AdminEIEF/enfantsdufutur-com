@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { MessageCircle, X, Send, Loader2, CheckCircle, Clock } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, CheckCircle, Clock, ImagePlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
