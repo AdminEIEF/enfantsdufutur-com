@@ -193,50 +193,75 @@ export function SupportChat() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {messages.map((msg) => (
-                    <div key={msg.id} className="space-y-1.5">
-                      {/* User message */}
-                      <div className="flex justify-end">
-                        <div className="bg-primary/10 text-foreground rounded-lg rounded-br-sm px-3 py-2 max-w-[85%] text-sm">
-                          <p className="whitespace-pre-wrap">{msg.message}</p>
-                          {msg.sender_image_url && (
-                            <a href={msg.sender_image_url} target="_blank" rel="noopener noreferrer">
-                              <img src={msg.sender_image_url} alt="Image jointe" className="max-h-32 rounded mt-1" />
-                            </a>
-                          )}
-                          <p className="text-[10px] text-muted-foreground mt-1 text-right">
-                            {format(new Date(msg.created_at), 'dd/MM HH:mm', { locale: fr })}
-                          </p>
-                        </div>
-                      </div>
-                      {/* Reply */}
-                      {(msg.reply || msg.reply_image_url) && (
-                        <div className="flex justify-start">
-                          <div className="bg-muted rounded-lg rounded-bl-sm px-3 py-2 max-w-[85%] text-sm">
-                            <p className="text-[10px] font-medium text-primary mb-0.5">Superviseur</p>
-                            {msg.reply && <p className="whitespace-pre-wrap">{msg.reply}</p>}
-                            {msg.reply_image_url && (
-                              <a href={msg.reply_image_url} target="_blank" rel="noopener noreferrer">
-                                <img src={msg.reply_image_url} alt="Image réponse" className="max-h-32 rounded mt-1" />
-                              </a>
-                            )}
-                            <p className="text-[10px] text-muted-foreground mt-1">
-                              {msg.replied_at && format(new Date(msg.replied_at), 'dd/MM HH:mm', { locale: fr })}
-                            </p>
+                  {messages.map((msg) => {
+                    const isFromSupervisor = msg.sender_type === 'superviseur' && msg.target_user_id === user?.id;
+                    const isMyMessage = msg.sender_id === user?.id;
+                    
+                    return (
+                      <div key={msg.id} className="space-y-1.5">
+                        {isFromSupervisor ? (
+                          /* Message from supervisor to this user */
+                          <div className="flex justify-start">
+                            <div className="bg-muted rounded-lg rounded-bl-sm px-3 py-2 max-w-[85%] text-sm">
+                              <p className="text-[10px] font-medium text-primary mb-0.5">Superviseur</p>
+                              <p className="whitespace-pre-wrap">{msg.message}</p>
+                              {msg.sender_image_url && (
+                                <a href={msg.sender_image_url} target="_blank" rel="noopener noreferrer">
+                                  <img src={msg.sender_image_url} alt="Image" className="max-h-32 rounded mt-1" />
+                                </a>
+                              )}
+                              <p className="text-[10px] text-muted-foreground mt-1">
+                                {format(new Date(msg.created_at), 'dd/MM HH:mm', { locale: fr })}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {/* Status */}
-                      {!msg.reply && (
-                        <div className="flex justify-end">
-                          <Badge variant="outline" className="text-[10px] gap-1">
-                            <Clock className="h-3 w-3" />
-                            En attente
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        ) : (
+                          <>
+                            {/* User message */}
+                            <div className="flex justify-end">
+                              <div className="bg-primary/10 text-foreground rounded-lg rounded-br-sm px-3 py-2 max-w-[85%] text-sm">
+                                <p className="whitespace-pre-wrap">{msg.message}</p>
+                                {msg.sender_image_url && (
+                                  <a href={msg.sender_image_url} target="_blank" rel="noopener noreferrer">
+                                    <img src={msg.sender_image_url} alt="Image jointe" className="max-h-32 rounded mt-1" />
+                                  </a>
+                                )}
+                                <p className="text-[10px] text-muted-foreground mt-1 text-right">
+                                  {format(new Date(msg.created_at), 'dd/MM HH:mm', { locale: fr })}
+                                </p>
+                              </div>
+                            </div>
+                            {/* Reply */}
+                            {(msg.reply || msg.reply_image_url) && (
+                              <div className="flex justify-start">
+                                <div className="bg-muted rounded-lg rounded-bl-sm px-3 py-2 max-w-[85%] text-sm">
+                                  <p className="text-[10px] font-medium text-primary mb-0.5">Superviseur</p>
+                                  {msg.reply && <p className="whitespace-pre-wrap">{msg.reply}</p>}
+                                  {msg.reply_image_url && (
+                                    <a href={msg.reply_image_url} target="_blank" rel="noopener noreferrer">
+                                      <img src={msg.reply_image_url} alt="Image réponse" className="max-h-32 rounded mt-1" />
+                                    </a>
+                                  )}
+                                  <p className="text-[10px] text-muted-foreground mt-1">
+                                    {msg.replied_at && format(new Date(msg.replied_at), 'dd/MM HH:mm', { locale: fr })}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            {/* Status */}
+                            {!msg.reply && !msg.reply_image_url && (
+                              <div className="flex justify-end">
+                                <Badge variant="outline" className="text-[10px] gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  En attente
+                                </Badge>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
