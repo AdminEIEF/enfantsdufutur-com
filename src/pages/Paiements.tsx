@@ -654,14 +654,38 @@ function PaiementFamillePanel({ eleves, paiements, familles }: { eleves: any[]; 
     });
   }, [familles, eleves, paiements]);
 
+  const normalizePhone = (p: string) => (p || '').replace(/[\s\-\+]/g, '').replace(/^224/, '');
+
   const filteredFamilles = useMemo(() => {
     if (!searchFamille.trim()) return famillesAvecEnfants;
     const q = searchFamille.toLowerCase().trim();
+    const qPhone = normalizePhone(q);
     return famillesAvecEnfants.filter((f: any) =>
       f.nom_famille.toLowerCase().includes(q) ||
-      f.enfants.some((e: any) => `${e.prenom} ${e.nom}`.toLowerCase().includes(q))
+      f.enfants.some((e: any) => `${e.prenom} ${e.nom}`.toLowerCase().includes(q)) ||
+      (f.telephone_pere && normalizePhone(f.telephone_pere).includes(qPhone)) ||
+      (f.telephone_mere && normalizePhone(f.telephone_mere).includes(qPhone))
     );
   }, [famillesAvecEnfants, searchFamille]);
+
+  // Filtrage des familles dans le dialog de paiement
+  const [searchFamilleDialog, setSearchFamilleDialog] = useState('');
+  const filteredFamillesDialog = useMemo(() => {
+    if (!searchFamilleDialog.trim()) return famillesAvecEnfants;
+    const q = searchFamilleDialog.toLowerCase().trim();
+    const qPhone = normalizePhone(q);
+    return famillesAvecEnfants.filter((f: any) =>
+      f.nom_famille.toLowerCase().includes(q) ||
+      f.enfants.some((e: any) => `${e.prenom} ${e.nom}`.toLowerCase().includes(q)) ||
+      (f.telephone_pere && normalizePhone(f.telephone_pere).includes(qPhone)) ||
+      (f.telephone_mere && normalizePhone(f.telephone_mere).includes(qPhone))
+    );
+  }, [famillesAvecEnfants, searchFamilleDialog]);
+
+  const handleFamilleCardClick = (fId: string) => {
+    setFamilleId(fId);
+    setOpen(true);
+  };
 
   return (
     <div className="space-y-4">
