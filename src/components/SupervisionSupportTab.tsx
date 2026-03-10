@@ -164,16 +164,17 @@ export default function SupervisionSupportTab() {
 
   const fetchRoleUsers = async () => {
     setLoadingUsers(true);
-    // Get all users with roles + their profile info
-    const { data: rolesData } = await supabase
-      .from('user_roles')
-      .select('user_id, role');
+    const [{ data: rolesData }, { data: connections }] = await Promise.all([
+      supabase.from('user_roles').select('user_id, role'),
+      supabase.from('active_connections').select('ref_id, type').eq('type', 'admin'),
+    ]);
     
     if (!rolesData || rolesData.length === 0) {
       setLoadingUsers(false);
       return;
     }
 
+    const onlineUserIds = new Set((connections || []).map(c => c.ref_id));
     const userIds = [...new Set(rolesData.map(r => r.user_id))];
     const { data: profiles } = await supabase
       .from('profiles')
@@ -189,12 +190,14 @@ export default function SupervisionSupportTab() {
           email: profile?.email || '',
           display_name: profile?.display_name || null,
           roles: [],
+          isOnline: onlineUserIds.has(r.user_id),
         };
       }
       usersMap[r.user_id].roles.push(r.role);
     }
-    // Exclude current supervisor
-    const list = Object.values(usersMap).filter(u => u.user_id !== user?.id);
+    const list = Object.values(usersMap)
+      .filter(u => u.user_id !== user?.id)
+      .sort((a, b) => (b.isOnline ? 1 : 0) - (a.isOnline ? 1 : 0));
     setRoleUsers(list);
     setLoadingUsers(false);
   };
