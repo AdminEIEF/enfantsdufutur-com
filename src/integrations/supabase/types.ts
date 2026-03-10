@@ -2654,6 +2654,7 @@ export type Database = {
           replied_at: string | null
           replied_by: string | null
           reply: string | null
+          reply_image_url: string | null
           sender_email: string | null
           sender_id: string
           sender_name: string
@@ -2669,6 +2670,7 @@ export type Database = {
           replied_at?: string | null
           replied_by?: string | null
           reply?: string | null
+          reply_image_url?: string | null
           sender_email?: string | null
           sender_id: string
           sender_name: string
@@ -2684,6 +2686,7 @@ export type Database = {
           replied_at?: string | null
           replied_by?: string | null
           reply?: string | null
+          reply_image_url?: string | null
           sender_email?: string | null
           sender_id?: string
           sender_name?: string

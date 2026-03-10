@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Search, MessageCircle, Send, Loader2, CheckCircle, Clock, AlertCircle, Eye } from 'lucide-react';
+import { Search, MessageCircle, Send, Loader2, CheckCircle, Clock, AlertCircle, Eye, ImagePlus, X, Camera } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -23,6 +23,7 @@ interface SupportMessage {
   sender_email: string | null;
   message: string;
   reply: string | null;
+  reply_image_url: string | null;
   replied_at: string | null;
   lu: boolean;
   statut: string;
@@ -44,6 +45,12 @@ export default function SupervisionSupportTab() {
   const [replyDialog, setReplyDialog] = useState<SupportMessage | null>(null);
   const [replyText, setReplyText] = useState('');
   const [replying, setReplying] = useState(false);
+  const [replyImage, setReplyImage] = useState<File | null>(null);
+  const [replyImagePreview, setReplyImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [capturing, setCapturing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchMessages();
@@ -66,13 +73,56 @@ export default function SupervisionSupportTab() {
     setLoading(false);
   };
 
+  const handleImageSelect = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Veuillez sélectionner une image');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image trop volumineuse (max 5 Mo)');
+      return;
+    }
+    setReplyImage(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setReplyImagePreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setReplyImage(null);
+    setReplyImagePreview(null);
+  };
+
   const handleReply = async () => {
-    if (!replyDialog || !replyText.trim() || !user) return;
+    if (!replyDialog || (!replyText.trim() && !replyImage) || !user) return;
     setReplying(true);
+
+    let imageUrl: string | null = null;
+
+    // Upload image if present
+    if (replyImage) {
+      setUploadingImage(true);
+      const ext = replyImage.name.split('.').pop();
+      const path = `replies/${replyDialog.id}_${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('support-images')
+        .upload(path, replyImage);
+      setUploadingImage(false);
+
+      if (uploadError) {
+        toast.error("Erreur lors de l'upload de l'image");
+        setReplying(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('support-images').getPublicUrl(path);
+      imageUrl = urlData.publicUrl;
+    }
+
     const { error } = await supabase
       .from('support_messages')
       .update({
-        reply: replyText.trim(),
+        reply: replyText.trim() || null,
+        reply_image_url: imageUrl,
         replied_by: user.id,
         replied_at: new Date().toISOString(),
         statut: 'resolu',
@@ -86,6 +136,7 @@ export default function SupervisionSupportTab() {
       toast.success('Réponse envoyée');
       setReplyDialog(null);
       setReplyText('');
+      clearImage();
       fetchMessages();
     }
     setReplying(false);
@@ -211,6 +262,9 @@ export default function SupervisionSupportTab() {
                         {msg.reply && (
                           <p className="text-xs text-emerald-600 mt-0.5 truncate">↳ {msg.reply}</p>
                         )}
+                        {msg.reply_image_url && (
+                          <a href={msg.reply_image_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">📷 Image jointe</a>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge className={`${cfg.color} border-0 gap-1`}>
@@ -228,7 +282,7 @@ export default function SupervisionSupportTab() {
                               <Clock className="h-3.5 w-3.5 mr-1" /> En cours
                             </Button>
                           )}
-                          <Button size="sm" onClick={() => { setReplyDialog(msg); setReplyText(msg.reply || ''); }}>
+                          <Button size="sm" onClick={() => { setReplyDialog(msg); setReplyText(msg.reply || ''); clearImage(); }}>
                             <Send className="h-3.5 w-3.5 mr-1" /> Répondre
                           </Button>
                         </div>
@@ -263,12 +317,61 @@ export default function SupervisionSupportTab() {
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               placeholder="Votre réponse..."
-              className="min-h-[120px]"
+              className="min-h-[100px]"
             />
+
+            {/* Image upload section */}
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageSelect(file);
+                  e.target.value = '';
+                }}
+              />
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageSelect(file);
+                  e.target.value = '';
+                }}
+              />
+              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                <ImagePlus className="h-4 w-4 mr-1" /> Image
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => cameraInputRef.current?.click()}>
+                <Camera className="h-4 w-4 mr-1" /> Capture
+              </Button>
+            </div>
+
+            {/* Image preview */}
+            {replyImagePreview && (
+              <div className="relative inline-block">
+                <img src={replyImagePreview} alt="Aperçu" className="max-h-40 rounded-lg border" />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                  onClick={clearImage}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReplyDialog(null)}>Annuler</Button>
-            <Button onClick={handleReply} disabled={!replyText.trim() || replying}>
+            <Button variant="outline" onClick={() => { setReplyDialog(null); clearImage(); }}>Annuler</Button>
+            <Button onClick={handleReply} disabled={(!replyText.trim() && !replyImage) || replying}>
               {replying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
               Envoyer la réponse
             </Button>
