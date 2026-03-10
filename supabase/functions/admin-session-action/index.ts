@@ -47,7 +47,8 @@ serve(async (req) => {
       });
     }
 
-    const { action, type, ref_id, connection_id, new_password } = await req.json();
+    const body = await req.json();
+    const { action, type, ref_id, connection_id, new_password } = body;
 
     // === FORCE DISCONNECT ===
     if (action === "disconnect") {
@@ -84,14 +85,12 @@ serve(async (req) => {
       }
 
       if (type === "eleve") {
-        // Update student password (trigger will hash it)
         const { error: updErr } = await supabaseAdmin
           .from("eleves")
           .update({ mot_de_passe_eleve: new_password })
           .eq("id", ref_id);
         if (updErr) throw updErr;
       } else if (type === "employe") {
-        // Update employee password (trigger will hash it)
         const { error: updErr } = await supabaseAdmin
           .from("employes")
           .update({ mot_de_passe: new_password })
@@ -104,12 +103,10 @@ serve(async (req) => {
           .eq("id", ref_id);
         if (updErr) throw updErr;
       } else if (type === "admin_user") {
-        // Reset Supabase auth user password
         const { error: updErr } = await supabaseAdmin.auth.admin.updateUserById(ref_id, {
           password: new_password,
         });
         if (updErr) throw updErr;
-        // Set must_change_password flag
         await supabaseAdmin
           .from("profiles")
           .update({ must_change_password: true })
@@ -125,12 +122,65 @@ serve(async (req) => {
       });
     }
 
+    // === UPDATE USER (name, email, role) ===
+    if (action === "update_user") {
+      const { user_id, nom, prenom, email, new_role, display_name } = body;
+      if (!user_id) {
+        return new Response(JSON.stringify({ error: "user_id requis" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Update email in auth if changed
+      if (email) {
+        const { error: authUpd } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
+          email,
+          email_confirm: true,
+        });
+        if (authUpd) throw authUpd;
+      }
+
+      // Update profile
+      const profileUpdate: Record<string, any> = {};
+      if (nom !== undefined) profileUpdate.nom = nom;
+      if (prenom !== undefined) profileUpdate.prenom = prenom;
+      if (email) profileUpdate.email = email;
+      if (display_name !== undefined) profileUpdate.display_name = display_name;
+
+      if (Object.keys(profileUpdate).length > 0) {
+        const { error: profErr } = await supabaseAdmin
+          .from("profiles")
+          .update(profileUpdate)
+          .eq("user_id", user_id);
+        if (profErr) throw profErr;
+      }
+
+      // Update role if provided
+      if (new_role) {
+        // Remove all existing roles
+        await supabaseAdmin
+          .from("user_roles")
+          .delete()
+          .eq("user_id", user_id);
+
+        // Insert new role
+        const { error: roleErr } = await supabaseAdmin
+          .from("user_roles")
+          .insert({ user_id, role: new_role });
+        if (roleErr) throw roleErr;
+      }
+
+      return new Response(JSON.stringify({ success: true, message: "Utilisateur mis à jour" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Action non reconnue" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("admin-session-action error:", e);
-    return new Response(JSON.stringify({ error: "Erreur serveur" }), {
+    return new Response(JSON.stringify({ error: e.message || "Erreur serveur" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
