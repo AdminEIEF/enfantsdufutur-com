@@ -49,7 +49,6 @@ export default function SupervisionSupportTab() {
   const [replyImagePreview, setReplyImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchMessages();
