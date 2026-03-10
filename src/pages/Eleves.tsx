@@ -124,6 +124,7 @@ export default function Eleves() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const cameraRef = useRef<HTMLVideoElement>(null);
+  const [generatingMatricules, setGeneratingMatricules] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const qc = useQueryClient();
