@@ -195,7 +195,7 @@ export default function AdminMonitoring() {
       // Group by normalized nom+prenom+classe_id+famille_id
       const groups = new Map<string, typeof eleves>();
       for (const e of eleves) {
-        const key = `${e.nom.trim().toLowerCase()}|${e.prenom.trim().toLowerCase()}|${e.classe_id || ''}|${e.famille_id || ''}`;
+        const key = `${e.nom.trim().toLowerCase()}|${e.prenom.trim().toLowerCase()}`;
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key)!.push(e);
       }
