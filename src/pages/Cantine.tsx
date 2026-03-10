@@ -586,9 +586,6 @@ export default function Cantine() {
             </div>
             {selectedIds.size > 0 && isAdmin && (
               <div className="flex gap-2">
-                <Button onClick={() => setPlancheOpen(true)} className="gap-2">
-                  <Printer className="h-4 w-4" /> Imprimer cartes ({selectedIds.size})
-                </Button>
                 <Button onClick={() => setBordereauOpen(true)} variant="outline" className="gap-2">
                   <FileText className="h-4 w-4" /> Bordereau ({selectedIds.size})
                 </Button>
