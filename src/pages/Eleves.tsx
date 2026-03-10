@@ -312,8 +312,6 @@ export default function Eleves() {
   const totalAbandons = eleves.filter((e: any) => e.statut === 'abandon').length;
   const elevesWithoutMatricule = eleves.filter((e: any) => !e.matricule && e.statut === 'inscrit');
 
-  const [generatingMatricules, setGeneratingMatricules] = useState(false);
-
   const generateMissingMatricules = async () => {
     if (elevesWithoutMatricule.length === 0) return;
     setGeneratingMatricules(true);
