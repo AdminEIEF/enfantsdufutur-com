@@ -12,8 +12,6 @@ import {
   CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera, FileText, Printer
 } from 'lucide-react';
 import RapportJournalierPanel from '@/components/RapportJournalierPanel';
-import CarteCantine from '@/components/CarteCantine';
-import PlancheCarteCantine from '@/components/PlancheCarteCantine';
 import BordereauRemiseCartes from '@/components/BordereauRemiseCartes';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { Checkbox } from '@/components/ui/checkbox';
