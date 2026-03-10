@@ -310,6 +310,9 @@ export default function SupervisionSupportTab() {
             <SelectItem value="resolu">Résolu</SelectItem>
           </SelectContent>
         </Select>
+        <Button onClick={openNewMsgDialog} className="gap-2">
+          <PenSquare className="h-4 w-4" /> Nouveau message
+        </Button>
       </div>
 
       {/* Table */}
