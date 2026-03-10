@@ -69,7 +69,7 @@ export function SupportChat() {
     setLoading(true);
     const { data } = await supabase
       .from('support_messages')
-      .select('id, message, reply, statut, created_at, replied_at')
+      .select('id, message, reply, reply_image_url, sender_image_url, statut, created_at, replied_at')
       .eq('sender_id', user.id)
       .order('created_at', { ascending: true });
     if (data) {
