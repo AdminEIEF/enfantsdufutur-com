@@ -262,6 +262,9 @@ export default function SupervisionSupportTab() {
                         {msg.reply && (
                           <p className="text-xs text-emerald-600 mt-0.5 truncate">↳ {msg.reply}</p>
                         )}
+                        {msg.reply_image_url && (
+                          <a href={msg.reply_image_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">📷 Image jointe</a>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge className={`${cfg.color} border-0 gap-1`}>
