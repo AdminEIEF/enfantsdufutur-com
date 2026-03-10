@@ -334,7 +334,7 @@ const PLANCHE_STYLES = `
     align-items: stretch;
   }
   .photo-frame {
-    width: 16mm; height: 20mm; border-radius: 1.5mm; overflow: hidden; flex-shrink: 0;
+    width: 17.8mm; height: 20.15mm; border-radius: 1.5mm; overflow: hidden; flex-shrink: 0;
     border: 0.3mm solid #1e8449; background: #f5f5f5;
   }
   .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
