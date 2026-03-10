@@ -573,11 +573,6 @@ export default function Cantine() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {isAdmin && (
-                      <TableHead className="w-10">
-                        <Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleAll} />
-                      </TableHead>
-                    )}
                     <TableHead>Élève</TableHead>
                     <TableHead>Classe</TableHead>
                     <TableHead>Solde</TableHead>
