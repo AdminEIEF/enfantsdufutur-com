@@ -12,9 +12,9 @@ import {
   CreditCard, CheckCircle, Package, BarChart3, TrendingUp, Minus, Camera, FileText
 } from 'lucide-react';
 import RapportJournalierPanel from '@/components/RapportJournalierPanel';
-import BordereauRemiseCartes from '@/components/BordereauRemiseCartes';
+
 import QRScannerDialog from '@/components/QRScannerDialog';
-import { Checkbox } from '@/components/ui/checkbox';
+
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -168,24 +168,6 @@ export default function Cantine() {
   const [activeTab, setActiveTab] = useState('vente');
   const [scannerOpen, setScannerOpen] = useState(false);
   
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  
-  const [bordereauOpen, setBordereauOpen] = useState(false);
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-  const toggleAll = () => {
-    if (selectedIds.size === filtered.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filtered.map((e: any) => e.id)));
-    }
-  };
 
   const { data: repasHistory = [] } = useRepasHistory(historyEleveId);
   const { data: paiementsCantine = [] } = usePaiementsCantine(selectedEleve?.id || historyEleveId);
@@ -584,13 +566,6 @@ export default function Cantine() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
             </div>
-            {selectedIds.size > 0 && isAdmin && (
-              <div className="flex gap-2">
-                <Button onClick={() => setBordereauOpen(true)} variant="outline" className="gap-2">
-                  <FileText className="h-4 w-4" /> Bordereau ({selectedIds.size})
-                </Button>
-              </div>
-            )}
           </div>
 
           <Card>
@@ -598,11 +573,6 @@ export default function Cantine() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {isAdmin && (
-                      <TableHead className="w-10">
-                        <Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleAll} />
-                      </TableHead>
-                    )}
                     <TableHead>Élève</TableHead>
                     <TableHead>Classe</TableHead>
                     <TableHead>Solde</TableHead>
@@ -617,7 +587,7 @@ export default function Cantine() {
                     <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun élève inscrit à la cantine</TableCell></TableRow>
                   ) : filtered.map((e: any) => (
                     <TableRow key={e.id}>
-                      {isAdmin && <TableCell><Checkbox checked={selectedIds.has(e.id)} onCheckedChange={() => toggleSelect(e.id)} /></TableCell>}
+                      
                       <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
                       <TableCell>{e.classes?.nom || '—'}</TableCell>
                       <TableCell>
@@ -969,24 +939,6 @@ export default function Cantine() {
       </Dialog>
 
 
-      {bordereauOpen && (
-        <BordereauRemiseCartes
-          eleves={
-            (eleves || [])
-              .filter((e: any) => selectedIds.has(e.id))
-              .map((e: any) => ({
-                id: e.id,
-                nom: e.nom,
-                prenom: e.prenom,
-                matricule: e.matricule,
-                classe: e.classes?.nom || '—',
-                option_cantine: e.option_cantine,
-                transport_zone: e.transport_zone,
-              }))
-          }
-          onClose={() => setBordereauOpen(false)}
-        />
-      )}
     </div>
   );
 }
