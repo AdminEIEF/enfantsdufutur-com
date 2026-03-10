@@ -264,6 +264,13 @@ export default function AdminMonitoring() {
   };
 
   const handleDeleteDuplicate = async (eleveId: string) => {
+    // Safety: never delete if it's the last member of its group
+    const parentGroup = duplicates.find(g => g.eleves.some(e => e.id === eleveId));
+    if (parentGroup && parentGroup.eleves.length <= 1) {
+      toast.error('Impossible de supprimer le dernier élève du groupe. Au moins un doit être conservé.');
+      setConfirmDeleteEleve(null);
+      return;
+    }
     setDeletingId(eleveId);
     try {
       const { error } = await supabase
