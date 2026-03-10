@@ -172,7 +172,7 @@ export function SupportChat() {
             </div>
 
             {/* Messages */}
-            <ScrollArea className="flex-1 max-h-[320px] p-3" ref={scrollRef}>
+            <div className="flex-1 overflow-y-auto max-h-[320px] p-3" ref={scrollRef}>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -230,7 +230,7 @@ export function SupportChat() {
                   ))}
                 </div>
               )}
-            </ScrollArea>
+            </div>
 
             {/* Input */}
             <div className="border-t p-3 space-y-2">
