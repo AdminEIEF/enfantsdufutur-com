@@ -43,7 +43,7 @@ function useElevesCantine() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, solde_cantine, option_cantine, qr_code, statut, photo_url, transport_zone, classes(nom), familles(telephone_pere, telephone_mere)')
+        .select('id, nom, prenom, matricule, solde_cantine, option_cantine, qr_code, statut, photo_url, transport_zone, classes(nom, niveaux(nom, cycles(nom))), familles(telephone_pere, telephone_mere)')
         .is('deleted_at', null)
         .order('nom');
       if (error) throw error;
