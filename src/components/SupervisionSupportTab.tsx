@@ -8,12 +8,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Search, MessageCircle, Send, Loader2, CheckCircle, Clock, AlertCircle, X, Camera } from 'lucide-react';
+import { Search, MessageCircle, Send, Loader2, CheckCircle, Clock, AlertCircle, X, Camera, PenSquare, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+interface RoleUser {
+  user_id: string;
+  email: string;
+  display_name: string | null;
+  roles: string[];
+}
 
 interface SupportMessage {
   id: string;
