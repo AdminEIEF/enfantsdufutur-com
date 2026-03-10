@@ -45,14 +45,13 @@ export function SupportChat() {
     if (!user || isSuperviseur) return;
     fetchMessages();
     
-    // Realtime subscription
+    // Realtime subscription for sent + received messages
     const channel = supabase
       .channel('support-messages-user')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'support_messages',
-        filter: `sender_id=eq.${user.id}`,
       }, () => {
         fetchMessages();
       })
