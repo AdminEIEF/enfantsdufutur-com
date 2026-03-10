@@ -933,12 +933,31 @@ export default function AdminMonitoring() {
                   Détection des doublons élèves
                   {duplicates.length > 0 && <Badge variant="destructive">{duplicates.length} groupe{duplicates.length > 1 ? 's' : ''}</Badge>}
                 </CardTitle>
-                <Button variant="outline" size="sm" onClick={fetchDuplicates} disabled={loadingDuplicates} className="gap-1">
-                  {loadingDuplicates ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                  Analyser
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={fetchDuplicates} disabled={loadingDuplicates} className="gap-1">
+                    {loadingDuplicates ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                    Analyser
+                  </Button>
+                  {selectedDoublons.size > 0 && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="gap-1"
+                      disabled={!canDeleteSelected}
+                      onClick={() => setConfirmBatchDelete(true)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Supprimer ({selectedDoublons.size})
+                    </Button>
+                  )}
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">Élèves ayant le même nom, prénom, classe et famille</p>
+              <p className="text-sm text-muted-foreground">
+                Élèves ayant le même nom, prénom, classe et famille.
+                {!canDeleteSelected && selectedDoublons.size > 0 && (
+                  <span className="text-destructive ml-1">⚠ Vous devez garder au moins un élève par groupe.</span>
+                )}
+              </p>
             </CardHeader>
             <CardContent>
               {loadingDuplicates ? (
