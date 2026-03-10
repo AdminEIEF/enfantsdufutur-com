@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState, useCallback } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { AIChatBubble } from '@/components/AIChatBubble';
@@ -10,6 +10,34 @@ import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import schoolLogo from '@/assets/school-logo.png';
+
+function LogoRefreshButton() {
+  const [spinning, setSpinning] = useState(false);
+
+  const handleClick = useCallback(() => {
+    setSpinning(true);
+    // Force reload after animation
+    setTimeout(() => {
+      window.location.reload();
+    }, 800);
+  }, []);
+
+  return (
+    <button
+      onClick={handleClick}
+      className="w-9 h-9 rounded-full border-2 border-primary/20 overflow-hidden bg-white shadow-sm shrink-0 cursor-pointer hover:border-primary/40 transition-colors"
+      title="Actualiser le système"
+    >
+      <motion.img
+        src={schoolLogo}
+        alt="Logo EIEF"
+        className="w-full h-full object-contain p-0.5"
+        animate={spinning ? { rotate: 360 } : { rotate: 0 }}
+        transition={spinning ? { duration: 0.8, ease: 'easeInOut' } : {}}
+      />
+    </button>
+  );
+}
 
 const roleMeta: Record<AppRole, { label: string; color: string }> = {
   superviseur: { label: 'Superviseur', color: 'bg-red-600 text-white' },
