@@ -124,6 +124,9 @@ export default function AdminMonitoring() {
   const [loadingDuplicates, setLoadingDuplicates] = useState(false);
   const [confirmDeleteEleve, setConfirmDeleteEleve] = useState<{ id: string; name: string } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedDoublons, setSelectedDoublons] = useState<Set<string>>(new Set());
+  const [confirmBatchDelete, setConfirmBatchDelete] = useState(false);
+  const [batchDeleting, setBatchDeleting] = useState(false);
 
   useEffect(() => {
     fetchAll();
