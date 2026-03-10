@@ -971,51 +971,6 @@ export default function Cantine() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Carte Cantine */}
-      <Dialog open={!!carteEleve} onOpenChange={() => setCarteEleve(null)}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> Carte Cantine</DialogTitle></DialogHeader>
-          {carteEleve && (
-            <CarteCantine
-              nom={carteEleve.nom}
-              prenom={carteEleve.prenom}
-              matricule={carteEleve.matricule || '—'}
-              classe={carteEleve.classes?.nom || '—'}
-              photo_url={carteEleve.photo_url}
-              telephone_pere={carteEleve.familles?.telephone_pere}
-              telephone_mere={carteEleve.familles?.telephone_mere}
-              qrValue={JSON.stringify({
-                matricule: carteEleve.matricule || '',
-                nom: carteEleve.nom,
-                prenom: carteEleve.prenom,
-                classe: carteEleve.classes?.nom || '',
-                type: 'cantine',
-              })}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Planche A4 */}
-      {plancheOpen && (
-        <PlancheCarteCantine
-          eleves={
-            (eleves || [])
-              .filter((e: any) => selectedIds.has(e.id))
-              .map((e: any) => ({
-                id: e.id,
-                nom: e.nom,
-                prenom: e.prenom,
-                matricule: e.matricule,
-                classe: e.classes?.nom || '—',
-                photo_url: e.photo_url,
-                telephone_pere: e.familles?.telephone_pere,
-                telephone_mere: e.familles?.telephone_mere,
-              }))
-          }
-          onClose={() => setPlancheOpen(false)}
-        />
-      )}
 
       {bordereauOpen && (
         <BordereauRemiseCartes
