@@ -317,12 +317,61 @@ export default function SupervisionSupportTab() {
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               placeholder="Votre réponse..."
-              className="min-h-[120px]"
+              className="min-h-[100px]"
             />
+
+            {/* Image upload section */}
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageSelect(file);
+                  e.target.value = '';
+                }}
+              />
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageSelect(file);
+                  e.target.value = '';
+                }}
+              />
+              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                <ImagePlus className="h-4 w-4 mr-1" /> Image
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => cameraInputRef.current?.click()}>
+                <Camera className="h-4 w-4 mr-1" /> Capture
+              </Button>
+            </div>
+
+            {/* Image preview */}
+            {replyImagePreview && (
+              <div className="relative inline-block">
+                <img src={replyImagePreview} alt="Aperçu" className="max-h-40 rounded-lg border" />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                  onClick={clearImage}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReplyDialog(null)}>Annuler</Button>
-            <Button onClick={handleReply} disabled={!replyText.trim() || replying}>
+            <Button variant="outline" onClick={() => { setReplyDialog(null); clearImage(); }}>Annuler</Button>
+            <Button onClick={handleReply} disabled={(!replyText.trim() && !replyImage) || replying}>
               {replying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
               Envoyer la réponse
             </Button>
