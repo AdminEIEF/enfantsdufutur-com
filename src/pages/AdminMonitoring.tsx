@@ -1001,7 +1001,11 @@ export default function AdminMonitoring() {
               ) : (
                 <ScrollArea className="h-[500px]">
                   <div className="space-y-4">
-                    {duplicates.map(group => (
+                    {duplicates.map(group => {
+                      const flags = group.similarityFlags;
+                      const confidenceScore = [flags.sameFamille, flags.sameClasse || flags.similarClasse, flags.sameDateNaissance, flags.sameParents].filter(Boolean).length;
+                      const confidenceColor = confidenceScore >= 3 ? 'text-red-600' : confidenceScore >= 2 ? 'text-amber-600' : 'text-muted-foreground';
+                      return (
                       <Card key={group.key} className="border-amber-200 dark:border-amber-800">
                         <CardHeader className="pb-2 pt-4">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -1010,55 +1014,99 @@ export default function AdminMonitoring() {
                               {group.eleves.length} occurrences
                             </Badge>
                             <span className="font-semibold">{group.prenom} {group.nom}</span>
-                            <span className="text-sm text-muted-foreground">— {group.classe_nom} • {group.famille_nom}</span>
+                          </div>
+                          {/* Similarity indicators */}
+                          <div className="flex items-center gap-2 flex-wrap mt-2">
+                            <span className={`text-xs font-medium ${confidenceColor}`}>
+                              Probabilité doublon : {confidenceScore >= 3 ? '🔴 Très élevée' : confidenceScore >= 2 ? '🟡 Élevée' : confidenceScore >= 1 ? '🟢 Moyenne' : '⚪ Faible'}
+                            </span>
+                            {flags.sameFamille && <Badge variant="secondary" className="text-xs">✅ Même famille</Badge>}
+                            {flags.sameClasse && <Badge variant="secondary" className="text-xs">✅ Même classe</Badge>}
+                            {flags.similarClasse && !flags.sameClasse && <Badge variant="secondary" className="text-xs">⚠️ Classes similaires (ex: 7E A / 7E B)</Badge>}
+                            {flags.sameDateNaissance && <Badge variant="secondary" className="text-xs">✅ Même date naissance</Badge>}
+                            {flags.sameParents && <Badge variant="secondary" className="text-xs">✅ Mêmes parents</Badge>}
                           </div>
                         </CardHeader>
                         <CardContent className="pt-0">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead className="w-10"></TableHead>
-                                <TableHead>Matricule</TableHead>
-                                <TableHead>Nom Prénom</TableHead>
-                                <TableHead>Date naiss.</TableHead>
-                                <TableHead>Statut</TableHead>
-                                <TableHead>Créé le</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {group.eleves.map(e => {
-                                const isChecked = selectedDoublons.has(e.id);
-                                const wouldDeleteAll = group.eleves.filter(el => el.id !== e.id).every(el => selectedDoublons.has(el.id));
-                                const isLastUnchecked = !isChecked && wouldDeleteAll;
-                                return (
-                                <TableRow key={e.id} className={isChecked ? 'bg-destructive/5' : ''}>
-                                  <TableCell>
+                          {/* Detailed comparison cards */}
+                          <div className="grid gap-3 mb-3">
+                            {group.eleves.map(e => {
+                              const isChecked = selectedDoublons.has(e.id);
+                              const wouldDeleteAll = group.eleves.filter(el => el.id !== e.id).every(el => selectedDoublons.has(el.id));
+                              const isLastUnchecked = !isChecked && wouldDeleteAll;
+                              return (
+                              <div key={e.id} className={`border rounded-lg p-3 ${isChecked ? 'bg-destructive/5 border-destructive/30' : 'border-border'}`}>
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex items-start gap-3 flex-1">
                                     <Checkbox
                                       checked={isChecked}
                                       disabled={isLastUnchecked}
                                       onCheckedChange={() => toggleDoublonSelection(e.id)}
+                                      className="mt-1"
                                     />
-                                  </TableCell>
-                                  <TableCell className="font-mono text-sm">{e.matricule || '—'}</TableCell>
-                                  <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
-                                  <TableCell className="text-sm">{e.date_naissance || '—'}</TableCell>
-                                  <TableCell><Badge variant="outline">{e.statut}</Badge></TableCell>
-                                  <TableCell className="text-sm text-muted-foreground">{formatDate(e.created_at)}</TableCell>
-                                  <TableCell className="text-right space-x-1">
-                                    <Button variant="outline" size="sm" className="gap-1 text-emerald-600" onClick={() => handleValidateDuplicate(e.id)}>
-                                      <CheckCircle className="h-3 w-3" /> Valider
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                                );
-                              })}
-
-                            </TableBody>
-                          </Table>
+                                    <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1 text-sm">
+                                      <div>
+                                        <span className="text-muted-foreground">Nom : </span>
+                                        <span className="font-medium">{e.prenom} {e.nom}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Matricule : </span>
+                                        <span className="font-mono">{e.matricule || '—'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Classe : </span>
+                                        <span className="font-medium">{e.classe_nom}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Famille : </span>
+                                        <span>{e.famille_nom}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Date naiss. : </span>
+                                        <span>{e.date_naissance || '—'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Sexe : </span>
+                                        <span>{e.sexe === 'M' ? 'Masculin' : e.sexe === 'F' ? 'Féminin' : '—'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Père : </span>
+                                        <span>{e.nom_prenom_pere || '—'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Mère : </span>
+                                        <span>{e.nom_prenom_mere || '—'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Statut : </span>
+                                        <Badge variant="outline" className="text-xs">{e.statut}</Badge>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Cantine : </span>
+                                        <span>{e.option_cantine ? `Oui (${e.solde_cantine ?? 0} GNF)` : 'Non'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Robotique : </span>
+                                        <span>{e.option_robotique ? 'Oui' : 'Non'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Créé le : </span>
+                                        <span>{formatDate(e.created_at)}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Button variant="outline" size="sm" className="gap-1 text-emerald-600 shrink-0" onClick={() => handleValidateDuplicate(e.id)}>
+                                    <CheckCircle className="h-3 w-3" /> Garder
+                                  </Button>
+                                </div>
+                              </div>
+                              );
+                            })}
+                          </div>
                         </CardContent>
                       </Card>
-                    ))}
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               )}
