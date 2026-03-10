@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Search, MessageCircle, Send, Loader2, CheckCircle, Clock, AlertCircle, Eye, ImagePlus, X, Camera } from 'lucide-react';
+import { Search, MessageCircle, Send, Loader2, CheckCircle, Clock, AlertCircle, X, Camera } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -48,8 +48,6 @@ export default function SupervisionSupportTab() {
   const [replyImage, setReplyImage] = useState<File | null>(null);
   const [replyImagePreview, setReplyImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [capturing, setCapturing] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -259,11 +257,14 @@ export default function SupervisionSupportTab() {
                       </TableCell>
                       <TableCell className="max-w-[300px]">
                         <p className="text-sm truncate">{msg.message}</p>
+                        {(msg as any).sender_image_url && (
+                          <a href={(msg as any).sender_image_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">📷 Image envoyée</a>
+                        )}
                         {msg.reply && (
                           <p className="text-xs text-emerald-600 mt-0.5 truncate">↳ {msg.reply}</p>
                         )}
                         {msg.reply_image_url && (
-                          <a href={msg.reply_image_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">📷 Image jointe</a>
+                          <a href={msg.reply_image_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">📷 Capture jointe</a>
                         )}
                       </TableCell>
                       <TableCell>
@@ -323,17 +324,6 @@ export default function SupervisionSupportTab() {
             {/* Image upload section */}
             <div className="flex items-center gap-2">
               <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageSelect(file);
-                  e.target.value = '';
-                }}
-              />
-              <input
                 ref={cameraInputRef}
                 type="file"
                 accept="image/*"
@@ -345,9 +335,6 @@ export default function SupervisionSupportTab() {
                   e.target.value = '';
                 }}
               />
-              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                <ImagePlus className="h-4 w-4 mr-1" /> Image
-              </Button>
               <Button type="button" variant="outline" size="sm" onClick={() => cameraInputRef.current?.click()}>
                 <Camera className="h-4 w-4 mr-1" /> Capture
               </Button>

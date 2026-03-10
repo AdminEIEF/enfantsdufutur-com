@@ -2657,6 +2657,7 @@ export type Database = {
           reply_image_url: string | null
           sender_email: string | null
           sender_id: string
+          sender_image_url: string | null
           sender_name: string
           sender_type: string
           statut: string
@@ -2673,6 +2674,7 @@ export type Database = {
           reply_image_url?: string | null
           sender_email?: string | null
           sender_id: string
+          sender_image_url?: string | null
           sender_name: string
           sender_type?: string
           statut?: string
@@ -2689,6 +2691,7 @@ export type Database = {
           reply_image_url?: string | null
           sender_email?: string | null
           sender_id?: string
+          sender_image_url?: string | null
           sender_name?: string
           sender_type?: string
           statut?: string

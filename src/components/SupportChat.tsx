@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { MessageCircle, X, Send, Loader2, CheckCircle, Clock } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, CheckCircle, Clock, ImagePlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,6 +15,8 @@ interface SupportMessage {
   id: string;
   message: string;
   reply: string | null;
+  reply_image_url: string | null;
+  sender_image_url: string | null;
   statut: string;
   created_at: string;
   replied_at: string | null;
@@ -29,6 +31,9 @@ export function SupportChat() {
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [attachedImage, setAttachedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Don't show for superviseur (they have the tab in supervision)
   const isSuperviseur = hasRole('superviseur');
@@ -64,7 +69,7 @@ export function SupportChat() {
     setLoading(true);
     const { data } = await supabase
       .from('support_messages')
-      .select('id, message, reply, statut, created_at, replied_at')
+      .select('id, message, reply, reply_image_url, sender_image_url, statut, created_at, replied_at')
       .eq('sender_id', user.id)
       .order('created_at', { ascending: true });
     if (data) {
@@ -74,20 +79,48 @@ export function SupportChat() {
     setLoading(false);
   };
 
+  const handleImageSelect = (file: File) => {
+    if (!file.type.startsWith('image/')) { toast.error('Sélectionnez une image'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image trop volumineuse (max 5 Mo)'); return; }
+    setAttachedImage(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setImagePreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => { setAttachedImage(null); setImagePreview(null); };
+
   const handleSend = async () => {
-    if (!newMessage.trim() || !user) return;
+    if ((!newMessage.trim() && !attachedImage) || !user) return;
     setSending(true);
+
+    let imageUrl: string | null = null;
+    if (attachedImage) {
+      const ext = attachedImage.name.split('.').pop();
+      const path = `messages/${user.id}_${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('support-images').upload(path, attachedImage);
+      if (uploadError) {
+        toast.error("Erreur lors de l'upload de l'image");
+        setSending(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('support-images').getPublicUrl(path);
+      imageUrl = urlData.publicUrl;
+    }
+
     const { error } = await supabase.from('support_messages').insert({
       sender_id: user.id,
       sender_type: 'admin',
       sender_name: user.email?.split('@')[0] || 'Utilisateur',
       sender_email: user.email,
-      message: newMessage.trim(),
+      message: newMessage.trim() || '📷 Image',
+      sender_image_url: imageUrl,
     });
     if (error) {
       toast.error('Erreur lors de l\'envoi');
     } else {
       setNewMessage('');
+      clearImage();
       toast.success('Message envoyé au superviseur');
       fetchMessages();
     }
@@ -157,17 +190,27 @@ export function SupportChat() {
                       <div className="flex justify-end">
                         <div className="bg-primary/10 text-foreground rounded-lg rounded-br-sm px-3 py-2 max-w-[85%] text-sm">
                           <p className="whitespace-pre-wrap">{msg.message}</p>
+                          {msg.sender_image_url && (
+                            <a href={msg.sender_image_url} target="_blank" rel="noopener noreferrer">
+                              <img src={msg.sender_image_url} alt="Image jointe" className="max-h-32 rounded mt-1" />
+                            </a>
+                          )}
                           <p className="text-[10px] text-muted-foreground mt-1 text-right">
                             {format(new Date(msg.created_at), 'dd/MM HH:mm', { locale: fr })}
                           </p>
                         </div>
                       </div>
                       {/* Reply */}
-                      {msg.reply && (
+                      {(msg.reply || msg.reply_image_url) && (
                         <div className="flex justify-start">
                           <div className="bg-muted rounded-lg rounded-bl-sm px-3 py-2 max-w-[85%] text-sm">
                             <p className="text-[10px] font-medium text-primary mb-0.5">Superviseur</p>
-                            <p className="whitespace-pre-wrap">{msg.reply}</p>
+                            {msg.reply && <p className="whitespace-pre-wrap">{msg.reply}</p>}
+                            {msg.reply_image_url && (
+                              <a href={msg.reply_image_url} target="_blank" rel="noopener noreferrer">
+                                <img src={msg.reply_image_url} alt="Image réponse" className="max-h-32 rounded mt-1" />
+                              </a>
+                            )}
                             <p className="text-[10px] text-muted-foreground mt-1">
                               {msg.replied_at && format(new Date(msg.replied_at), 'dd/MM HH:mm', { locale: fr })}
                             </p>
@@ -190,8 +233,36 @@ export function SupportChat() {
             </ScrollArea>
 
             {/* Input */}
-            <div className="border-t p-3">
+            <div className="border-t p-3 space-y-2">
+              {imagePreview && (
+                <div className="relative inline-block">
+                  <img src={imagePreview} alt="Aperçu" className="max-h-20 rounded border" />
+                  <button onClick={clearImage} className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
               <div className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageSelect(file);
+                    e.target.value = '';
+                  }}
+                />
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  size="icon"
+                  variant="outline"
+                  className="shrink-0 self-end"
+                  type="button"
+                >
+                  <ImagePlus className="h-4 w-4" />
+                </Button>
                 <Textarea
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
@@ -206,7 +277,7 @@ export function SupportChat() {
                 />
                 <Button
                   onClick={handleSend}
-                  disabled={!newMessage.trim() || sending}
+                  disabled={(!newMessage.trim() && !attachedImage) || sending}
                   size="icon"
                   className="shrink-0 self-end"
                 >
