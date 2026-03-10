@@ -79,20 +79,48 @@ export function SupportChat() {
     setLoading(false);
   };
 
+  const handleImageSelect = (file: File) => {
+    if (!file.type.startsWith('image/')) { toast.error('Sélectionnez une image'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image trop volumineuse (max 5 Mo)'); return; }
+    setAttachedImage(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setImagePreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => { setAttachedImage(null); setImagePreview(null); };
+
   const handleSend = async () => {
-    if (!newMessage.trim() || !user) return;
+    if ((!newMessage.trim() && !attachedImage) || !user) return;
     setSending(true);
+
+    let imageUrl: string | null = null;
+    if (attachedImage) {
+      const ext = attachedImage.name.split('.').pop();
+      const path = `messages/${user.id}_${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('support-images').upload(path, attachedImage);
+      if (uploadError) {
+        toast.error("Erreur lors de l'upload de l'image");
+        setSending(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('support-images').getPublicUrl(path);
+      imageUrl = urlData.publicUrl;
+    }
+
     const { error } = await supabase.from('support_messages').insert({
       sender_id: user.id,
       sender_type: 'admin',
       sender_name: user.email?.split('@')[0] || 'Utilisateur',
       sender_email: user.email,
-      message: newMessage.trim(),
+      message: newMessage.trim() || '📷 Image',
+      sender_image_url: imageUrl,
     });
     if (error) {
       toast.error('Erreur lors de l\'envoi');
     } else {
       setNewMessage('');
+      clearImage();
       toast.success('Message envoyé au superviseur');
       fetchMessages();
     }
