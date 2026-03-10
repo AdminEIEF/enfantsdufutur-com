@@ -282,7 +282,7 @@ export default function SupervisionSupportTab() {
                               <Clock className="h-3.5 w-3.5 mr-1" /> En cours
                             </Button>
                           )}
-                          <Button size="sm" onClick={() => { setReplyDialog(msg); setReplyText(msg.reply || ''); }}>
+                          <Button size="sm" onClick={() => { setReplyDialog(msg); setReplyText(msg.reply || ''); clearImage(); }}>
                             <Send className="h-3.5 w-3.5 mr-1" /> Répondre
                           </Button>
                         </div>
