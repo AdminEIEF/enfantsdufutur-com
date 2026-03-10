@@ -460,6 +460,80 @@ export default function SupervisionSupportTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* New Message Dialog */}
+      <Dialog open={newMsgDialog} onOpenChange={setNewMsgDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PenSquare className="h-5 w-5 text-primary" />
+              Écrire à un utilisateur
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {/* User search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher un utilisateur..."
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* User list */}
+            <ScrollArea className="max-h-[200px] border rounded-lg">
+              {loadingUsers ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : filteredRoleUsers.length === 0 ? (
+                <div className="text-center py-6 text-sm text-muted-foreground">
+                  <Users className="h-6 w-6 mx-auto mb-1 opacity-30" />
+                  Aucun utilisateur trouvé
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {filteredRoleUsers.map((u) => (
+                    <button
+                      key={u.user_id}
+                      onClick={() => setSelectedUserId(u.user_id)}
+                      className={`w-full text-left px-3 py-2 hover:bg-accent transition-colors ${
+                        selectedUserId === u.user_id ? 'bg-primary/10 border-l-2 border-primary' : ''
+                      }`}
+                    >
+                      <p className="text-sm font-medium">{u.display_name || u.email}</p>
+                      <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                        {u.roles.map((r) => (
+                          <Badge key={r} variant="outline" className="text-[10px] px-1.5 py-0">
+                            {r}
+                          </Badge>
+                        ))}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+
+            {/* Message */}
+            <Textarea
+              value={newMsgText}
+              onChange={(e) => setNewMsgText(e.target.value)}
+              placeholder="Votre message..."
+              className="min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewMsgDialog(false)}>Annuler</Button>
+            <Button onClick={handleSendNewMsg} disabled={!selectedUserId || !newMsgText.trim() || sendingNewMsg}>
+              {sendingNewMsg ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+              Envoyer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
