@@ -556,68 +556,6 @@ export default function Cantine() {
             </CardContent>
           </Card>
 
-          {/* Liste élèves */}
-          <div className="flex items-center gap-3 justify-between">
-            <div className="relative max-w-sm flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
-            </div>
-          </div>
-
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Élève</TableHead>
-                    <TableHead>Classe</TableHead>
-                    <TableHead>Solde</TableHead>
-                    <TableHead>QR Code</TableHead>
-                    <TableHead className="w-32">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Chargement…</TableCell></TableRow>
-                  ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun élève inscrit à la cantine</TableCell></TableRow>
-                  ) : filtered.map((e: any) => (
-                    <TableRow key={e.id}>
-                      
-                      <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
-                      <TableCell>{e.classes?.nom || '—'}</TableCell>
-                      <TableCell>
-                        <Badge variant={Number(e.solde_cantine || 0) < minPrix ? 'destructive' : 'default'}>
-                          {Number(e.solde_cantine || 0).toLocaleString()} GNF
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {e.qr_code ? (
-                          <Button variant="ghost" size="sm" onClick={() => { setBadgeEleve(e); setBadgeOpen(true); }}>
-                            <QrCode className="h-4 w-4 mr-1" /> Voir
-                          </Button>
-                        ) : (
-                          <Button variant="outline" size="sm" onClick={() => generateQR.mutate(e.id)}>
-                            <Plus className="h-4 w-4 mr-1" /> Générer
-                          </Button>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => { setSelectedEleve(e); setSelectedPlatIds({}); }}>
-                            <Utensils className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => { setHistoryEleveId(e.id); setHistoryOpen(true); }}>
-                            <History className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* ═══ TAB: GESTION MENU ═══ */}
