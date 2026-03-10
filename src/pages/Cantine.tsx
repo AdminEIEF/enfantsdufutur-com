@@ -647,11 +647,6 @@ export default function Cantine() {
                           <Button variant="ghost" size="sm" onClick={() => { setHistoryEleveId(e.id); setHistoryOpen(true); }}>
                             <History className="h-4 w-4" />
                           </Button>
-                          {isAdmin && (
-                            <Button variant="ghost" size="sm" onClick={() => setCarteEleve(e)} title="Carte cantine">
-                              <CreditCard className="h-4 w-4" />
-                            </Button>
-                          )}
                         </div>
                       </TableCell>
                     </TableRow>
