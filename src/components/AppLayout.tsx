@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { AIChatBubble } from '@/components/AIChatBubble';
+import { SupportChat } from '@/components/SupportChat';
 import { AdminNotificationBell } from '@/components/AdminNotificationBell';
 import { useAuth, AppRole } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
@@ -65,6 +66,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </main>
       </div>
       <AIChatBubble />
+      <SupportChat />
     </SidebarProvider>
   );
 }

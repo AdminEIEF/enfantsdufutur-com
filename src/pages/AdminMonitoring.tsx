@@ -9,13 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Shield, ShieldOff, Wifi, WifiOff, Activity, Search, Eye, Ban, CheckCircle, Clock, Users, FileText, GraduationCap, Briefcase, UserCheck, LogOut, KeyRound, Copy, Loader2, AlertTriangle, Trash2 } from 'lucide-react';
+import { Shield, ShieldOff, Wifi, WifiOff, Activity, Search, Eye, Ban, CheckCircle, Clock, Users, FileText, GraduationCap, Briefcase, UserCheck, LogOut, KeyRound, Copy, Loader2, AlertTriangle, Trash2, MessageCircle } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import SupervisionSupportTab from '@/components/SupervisionSupportTab';
 
 interface ActiveConnection {
   id: string;
@@ -561,6 +562,7 @@ export default function AdminMonitoring() {
           <TabsTrigger value="audit" className="gap-1"><Activity className="h-4 w-4" /> Journal d'audit</TabsTrigger>
           <TabsTrigger value="users" className="gap-1"><Users className="h-4 w-4" /> Gestion accès</TabsTrigger>
           <TabsTrigger value="doublons" className="gap-1" onClick={() => { if (duplicates.length === 0) fetchDuplicates(); }}><AlertTriangle className="h-4 w-4" /> Doublons</TabsTrigger>
+          <TabsTrigger value="support" className="gap-1"><MessageCircle className="h-4 w-4" /> Support</TabsTrigger>
         </TabsList>
 
         {/* === CONNECTED USERS === */}
@@ -951,6 +953,11 @@ export default function AdminMonitoring() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* === SUPPORT === */}
+        <TabsContent value="support">
+          <SupervisionSupportTab />
         </TabsContent>
       </Tabs>
 
