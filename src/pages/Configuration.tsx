@@ -459,9 +459,15 @@ function MatieresTab() {
   const [coefficient, setCoefficient] = useState(1);
   const [pole, setPole] = useState('');
   const [filterCycle, setFilterCycle] = useState('');
+  const [filterNiveau, setFilterNiveau] = useState('');
 
   const filteredNiveaux = niveaux?.filter((n: any) => !cycleId || n.cycle_id === cycleId) ?? [];
-  const filteredMatieres = matieres?.filter((m: any) => !filterCycle || m.cycle_id === filterCycle) ?? [];
+  const filterNiveauxList = niveaux?.filter((n: any) => !filterCycle || n.cycle_id === filterCycle) ?? [];
+  const filteredMatieres = matieres?.filter((m: any) => {
+    if (filterCycle && m.cycle_id !== filterCycle) return false;
+    if (filterNiveau && m.niveau_id !== filterNiveau) return false;
+    return true;
+  }) ?? [];
 
   const reset = () => { setEditId(null); setNom(''); setCycleId(''); setNiveauId(''); setCoefficient(1); setPole(''); setOpen(false); };
 
