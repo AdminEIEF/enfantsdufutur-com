@@ -214,6 +214,23 @@ export default function MesClasses() {
                                         variant="outline"
                                         size="sm"
                                         className="h-8 text-xs gap-1.5"
+                                        onClick={() => {
+                                          const data = getClassEleves(cls.id).map((e: any, i: number) => ({
+                                            'N°': i + 1,
+                                            'Nom': e.nom,
+                                            'Prénom': e.prenom,
+                                            'Matricule': e.matricule || '',
+                                            'Sexe': e.sexe || '',
+                                          }));
+                                          exportToExcel(data, `Liste_${cls.nom.replace(/\s+/g, '_')}`, cls.nom);
+                                        }}
+                                      >
+                                        <Download className="h-3.5 w-3.5" /> Excel
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 text-xs gap-1.5"
                                         onClick={() => toggleClassSort(cls.id)}
                                       >
                                         {(classSorts[cls.id] || 'nom') === 'nom' ? (
