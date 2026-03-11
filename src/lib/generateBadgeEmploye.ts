@@ -182,12 +182,19 @@ function drawSingleBadge(
   // === Category color ribbon at bottom ===
   const ribbonColor = categorieRibbonColor[emp.categorie] || [100, 100, 100];
   doc.setFillColor(ribbonColor[0], ribbonColor[1], ribbonColor[2]);
-  doc.rect(x, y + CARD_H - 6, CARD_W, 6, 'F');
+  doc.rect(x, y + CARD_H - 8, CARD_W, 8, 'F');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(4.5);
   doc.setTextColor(255, 255, 255);
-  doc.text((categorieLabel[emp.categorie] || emp.categorie).toUpperCase(), x + CARD_W / 2, y + CARD_H - 2, { align: 'center' });
+  doc.text((categorieLabel[emp.categorie] || emp.categorie).toUpperCase(), x + CARD_W / 2, y + CARD_H - 4.5, { align: 'center' });
+
+  // Phone number in ribbon
+  if (emp.telephone) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(3.5);
+    doc.text(`Tél: ${emp.telephone}`, x + CARD_W / 2, y + CARD_H - 1.5, { align: 'center' });
+  }
 
   // === Thin border ===
   doc.setDrawColor(200, 200, 210);
