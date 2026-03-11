@@ -403,6 +403,42 @@ export type Database = {
           },
         ]
       }
+      classe_matieres: {
+        Row: {
+          classe_id: string
+          created_at: string
+          id: string
+          matiere_id: string
+        }
+        Insert: {
+          classe_id: string
+          created_at?: string
+          id?: string
+          matiere_id: string
+        }
+        Update: {
+          classe_id?: string
+          created_at?: string
+          id?: string
+          matiere_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classe_matieres_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classe_matieres_matiere_id_fkey"
+            columns: ["matiere_id"]
+            isOneToOne: false
+            referencedRelation: "matieres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           capacite: number | null
