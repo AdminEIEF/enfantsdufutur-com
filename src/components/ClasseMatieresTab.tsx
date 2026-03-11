@@ -202,7 +202,7 @@ export default function ClasseMatieresTab() {
                 Enregistrer
               </Button>
               {!hasChanges && assignments.length > 0 && (
-                <span className="text-sm text-green-600 flex items-center gap-1">
+                <span className="text-sm text-primary flex items-center gap-1">
                   <CheckCircle2 className="h-4 w-4" /> À jour
                 </span>
               )}
