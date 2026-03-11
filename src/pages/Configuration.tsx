@@ -54,7 +54,7 @@ function useMatieres() {
   return useQuery({
     queryKey: ['matieres'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('matieres').select('*, cycles(nom), niveaux:niveau_id(nom)').order('nom');
+      const { data, error } = await supabase.from('matieres').select('*, cycles(nom), niveaux:niveau_id(nom)').order('ordre').order('created_at');
       if (error) throw error;
       return data;
     },
@@ -459,9 +459,15 @@ function MatieresTab() {
   const [coefficient, setCoefficient] = useState(1);
   const [pole, setPole] = useState('');
   const [filterCycle, setFilterCycle] = useState('');
+  const [filterNiveau, setFilterNiveau] = useState('');
 
   const filteredNiveaux = niveaux?.filter((n: any) => !cycleId || n.cycle_id === cycleId) ?? [];
-  const filteredMatieres = matieres?.filter((m: any) => !filterCycle || m.cycle_id === filterCycle) ?? [];
+  const filterNiveauxList = niveaux?.filter((n: any) => !filterCycle || n.cycle_id === filterCycle) ?? [];
+  const filteredMatieres = matieres?.filter((m: any) => {
+    if (filterCycle && m.cycle_id !== filterCycle) return false;
+    if (filterNiveau && m.niveau_id !== filterNiveau) return false;
+    return true;
+  }) ?? [];
 
   const reset = () => { setEditId(null); setNom(''); setCycleId(''); setNiveauId(''); setCoefficient(1); setPole(''); setOpen(false); };
 
@@ -473,6 +479,9 @@ function MatieresTab() {
         const { error } = await supabase.from('matieres').update(payload).eq('id', editId);
         if (error) throw error;
       } else {
+        // Auto-set ordre to next value
+        const { data: maxRow } = await supabase.from('matieres').select('ordre').order('ordre', { ascending: false }).limit(1).single();
+        payload.ordre = (maxRow?.ordre ?? 0) + 1;
         const { error } = await supabase.from('matieres').insert(payload);
         if (error) throw error;
       }
@@ -501,11 +510,18 @@ function MatieresTab() {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2"><BookOpen className="h-5 w-5" /> Matières</CardTitle>
         <div className="flex gap-2 items-center">
-          <Select value={filterCycle || '__all__'} onValueChange={(v) => setFilterCycle(v === '__all__' ? '' : v)}>
+          <Select value={filterCycle || '__all__'} onValueChange={(v) => { setFilterCycle(v === '__all__' ? '' : v); setFilterNiveau(''); }}>
             <SelectTrigger className="w-[180px]"><SelectValue placeholder="Tous les cycles" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">Tous les cycles</SelectItem>
               {cycles?.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={filterNiveau || '__all__'} onValueChange={(v) => setFilterNiveau(v === '__all__' ? '' : v)}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Tous les niveaux" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Tous les niveaux</SelectItem>
+              {filterNiveauxList.map((n: any) => <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>)}
             </SelectContent>
           </Select>
           <Button size="sm" onClick={() => { reset(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
