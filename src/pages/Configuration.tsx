@@ -1521,18 +1521,18 @@ export default function Configuration() {
         <Settings className="h-7 w-7 text-primary" /> Configuration
       </h1>
       <Tabs defaultValue="ecole">
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="ecole">🏫 École</TabsTrigger>
-          {canManageUsers && <TabsTrigger value="utilisateurs">👥 Utilisateurs</TabsTrigger>}
-          <TabsTrigger value="cycles">Cycles & Barèmes</TabsTrigger>
-          <TabsTrigger value="niveaux">Niveaux</TabsTrigger>
-          <TabsTrigger value="classes">Classes</TabsTrigger>
-          <TabsTrigger value="matieres">Matières</TabsTrigger>
-          <TabsTrigger value="classe-matieres">📚 Matières/Classe</TabsTrigger>
-          <TabsTrigger value="periodes">Périodes</TabsTrigger>
-          <TabsTrigger value="tranches">💳 Tranches</TabsTrigger>
-          <TabsTrigger value="transport">Transport</TabsTrigger>
-          <TabsTrigger value="corbeille">🗑️ Corbeille</TabsTrigger>
+        <TabsList className="h-auto w-full grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-1 p-1.5 bg-muted/50 rounded-lg">
+          <TabsTrigger value="ecole" className="text-xs sm:text-sm gap-1">🏫 École</TabsTrigger>
+          {canManageUsers && <TabsTrigger value="utilisateurs" className="text-xs sm:text-sm gap-1">👥 Utilisateurs</TabsTrigger>}
+          <TabsTrigger value="cycles" className="text-xs sm:text-sm gap-1">📏 Cycles</TabsTrigger>
+          <TabsTrigger value="niveaux" className="text-xs sm:text-sm gap-1">🎓 Niveaux</TabsTrigger>
+          <TabsTrigger value="classes" className="text-xs sm:text-sm gap-1">🏛️ Classes</TabsTrigger>
+          <TabsTrigger value="matieres" className="text-xs sm:text-sm gap-1">📖 Matières</TabsTrigger>
+          <TabsTrigger value="classe-matieres" className="text-xs sm:text-sm gap-1">📚 Mat./Classe</TabsTrigger>
+          <TabsTrigger value="periodes" className="text-xs sm:text-sm gap-1">📅 Périodes</TabsTrigger>
+          <TabsTrigger value="tranches" className="text-xs sm:text-sm gap-1">💳 Tranches</TabsTrigger>
+          <TabsTrigger value="transport" className="text-xs sm:text-sm gap-1">🚌 Transport</TabsTrigger>
+          <TabsTrigger value="corbeille" className="text-xs sm:text-sm gap-1">🗑️ Corbeille</TabsTrigger>
         </TabsList>
         <TabsContent value="ecole"><EcoleTab /></TabsContent>
         {canManageUsers && <TabsContent value="utilisateurs"><AdminUserManagement /></TabsContent>}
