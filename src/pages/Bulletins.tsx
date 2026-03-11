@@ -58,7 +58,7 @@ export default function Bulletins() {
     queryKey: ['matieres-bulletin', cycleId],
     queryFn: async () => {
       if (!cycleId) return [];
-      const { data, error } = await supabase.from('matieres').select('*').eq('cycle_id', cycleId).order('pole').order('nom');
+      const { data, error } = await supabase.from('matieres').select('*').eq('cycle_id', cycleId).order('ordre');
       if (error) throw error;
       return data;
     },

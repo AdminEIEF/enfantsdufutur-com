@@ -72,7 +72,7 @@ export default function CoursAdmin() {
   const { data: matieres = [] } = useQuery({
     queryKey: ['matieres'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('matieres').select('*').order('nom');
+      const { data, error } = await supabase.from('matieres').select('*').order('ordre');
       if (error) throw error;
       return data;
     },

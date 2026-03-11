@@ -63,7 +63,7 @@ export default function Notes() {
     queryKey: ['matieres', cycleId],
     enabled: !!cycleId,
     queryFn: async () => {
-      const { data, error } = await supabase.from('matieres').select('*').eq('cycle_id', cycleId).order('nom');
+      const { data, error } = await supabase.from('matieres').select('*').eq('cycle_id', cycleId).order('ordre');
       if (error) throw error;
       return data;
     },
