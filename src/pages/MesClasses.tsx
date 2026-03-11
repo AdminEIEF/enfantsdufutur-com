@@ -186,14 +186,28 @@ export default function MesClasses() {
                                       <span className="text-xs text-muted-foreground">/ {cls.capacite} places</span>
                                     )}
                                   </div>
-                                  <div className="relative w-56">
-                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                      placeholder="Filtrer nom / matricule..."
-                                      className="pl-8 h-9 text-sm"
-                                      value={classSearches[cls.id] || ''}
-                                      onChange={e => setClassSearch(cls.id, e.target.value)}
-                                    />
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-9 text-xs gap-1.5"
+                                      onClick={() => toggleClassSort(cls.id)}
+                                    >
+                                      {(classSorts[cls.id] || 'nom') === 'nom' ? (
+                                        <><ArrowDownAZ className="h-4 w-4" /> A→Z</>
+                                      ) : (
+                                        <><Hash className="h-4 w-4" /> Matricule</>
+                                      )}
+                                    </Button>
+                                    <div className="relative w-52">
+                                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                      <Input
+                                        placeholder="Filtrer nom / matricule..."
+                                        className="pl-8 h-9 text-sm"
+                                        value={classSearches[cls.id] || ''}
+                                        onChange={e => setClassSearch(cls.id, e.target.value)}
+                                      />
+                                    </div>
                                   </div>
                                 </div>
                                 {classEleves.length === 0 ? (
