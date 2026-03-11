@@ -1359,6 +1359,39 @@ export default function Eleves() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete dialog */}
+      <Dialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Trash2 className="h-5 w-5 text-destructive" /> Supprimer l'élève</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm">
+              Voulez-vous supprimer <strong>{deleteDialog?.prenom} {deleteDialog?.nom}</strong> ?
+            </p>
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <XCircle className="h-4 w-4 text-destructive mt-0.5" />
+              <p className="text-sm">
+                L'élève sera placé dans la corbeille. Vous pourrez le restaurer depuis la Configuration si nécessaire.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog(null)}>Annuler</Button>
+            <Button variant="destructive" onClick={async () => {
+              const { error } = await supabase.from('eleves').update({ deleted_at: new Date().toISOString() }).eq('id', deleteDialog.id);
+              if (error) {
+                toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+              } else {
+                toast({ title: 'Élève supprimé', description: `${deleteDialog.prenom} ${deleteDialog.nom} a été placé dans la corbeille.` });
+                qc.invalidateQueries({ queryKey: ['eleves-full'] });
+              }
+              setDeleteDialog(null);
+            }}>
+              <Trash2 className="mr-2 h-4 w-4" /> Confirmer la suppression
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Camera Dialog */}
       <Dialog open={cameraOpen} onOpenChange={v => { if (!v) stopCamera(); }}>
         <DialogContent className="max-w-sm">
