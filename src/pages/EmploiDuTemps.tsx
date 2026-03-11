@@ -74,7 +74,7 @@ export default function EmploiDuTemps() {
   const { data: matieres = [] } = useQuery({
     queryKey: ['edt-matieres'],
     queryFn: async () => {
-      const { data } = await supabase.from('matieres').select('id, nom').order('nom');
+      const { data } = await supabase.from('matieres').select('id, nom').order('ordre');
       return data || [];
     },
   });

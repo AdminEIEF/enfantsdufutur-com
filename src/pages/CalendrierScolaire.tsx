@@ -83,7 +83,7 @@ export default function CalendrierScolaire() {
   const { data: matieres = [] } = useQuery({
     queryKey: ['matieres-cal'],
     queryFn: async () => {
-      const { data } = await supabase.from('matieres').select('id, nom').order('nom');
+      const { data } = await supabase.from('matieres').select('id, nom').order('ordre');
       return data || [];
     },
   });

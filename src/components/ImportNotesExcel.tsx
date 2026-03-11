@@ -74,7 +74,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
     queryKey: ['matieres-import', cycleId, selectedNiveauId],
     enabled: !!cycleId,
     queryFn: async () => {
-      const { data, error } = await supabase.from('matieres').select('*').eq('cycle_id', cycleId).order('nom');
+      const { data, error } = await supabase.from('matieres').select('*').eq('cycle_id', cycleId).order('ordre');
       if (error) throw error;
       const all = data || [];
       if (selectedNiveauId) return all.filter((m: any) => !m.niveau_id || m.niveau_id === selectedNiveauId);
