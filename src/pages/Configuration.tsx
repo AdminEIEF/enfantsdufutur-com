@@ -510,11 +510,18 @@ function MatieresTab() {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2"><BookOpen className="h-5 w-5" /> Matières</CardTitle>
         <div className="flex gap-2 items-center">
-          <Select value={filterCycle || '__all__'} onValueChange={(v) => setFilterCycle(v === '__all__' ? '' : v)}>
+          <Select value={filterCycle || '__all__'} onValueChange={(v) => { setFilterCycle(v === '__all__' ? '' : v); setFilterNiveau(''); }}>
             <SelectTrigger className="w-[180px]"><SelectValue placeholder="Tous les cycles" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">Tous les cycles</SelectItem>
               {cycles?.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={filterNiveau || '__all__'} onValueChange={(v) => setFilterNiveau(v === '__all__' ? '' : v)}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Tous les niveaux" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Tous les niveaux</SelectItem>
+              {filterNiveauxList.map((n: any) => <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>)}
             </SelectContent>
           </Select>
           <Button size="sm" onClick={() => { reset(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
