@@ -112,11 +112,11 @@ function drawSingleBadge(
     doc.addImage(logoImg, 'PNG', logoX, logoY, logoSize, logoSize);
   }
 
-  // === School name ===
+  // === School name (BOLD UPPERCASE) ===
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(4.2);
   doc.setTextColor(255, 255, 255);
-  const nameLines = doc.splitTextToSize(schoolName, CARD_W - 4);
+  const nameLines = doc.splitTextToSize(schoolName.toUpperCase(), CARD_W - 4);
   const nameY = y + (logoImg ? 10.5 : 5);
   doc.text(nameLines, x + CARD_W / 2, nameY, { align: 'center' });
 
