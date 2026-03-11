@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { QRCodeCanvas } from 'qrcode.react';
-import { generateBadgeEmployePDF } from '@/lib/generateBadgeEmploye';
+import { generateBadgeEmployePDF, generatePlancheBadgesEmployesPDF } from '@/lib/generateBadgeEmploye';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
 
@@ -191,6 +192,7 @@ export default function Personnel() {
   const [viewCourrierAdmin, setViewCourrierAdmin] = useState<any>(null);
   const [refuseMotif, setRefuseMotif] = useState('');
   const [refuseTarget, setRefuseTarget] = useState<{ type: 'conge' | 'avance'; id: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
 
   // Form state for new employee
   const [form, setForm] = useState({
@@ -604,6 +606,28 @@ export default function Personnel() {
     });
   };
 
+  // Delete employee
+  const handleDeleteEmployee = async (emp: any) => {
+    const { error } = await supabase.from('employes').delete().eq('id', emp.id);
+    if (error) { toast({ title: 'Erreur', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: '🗑️ Employé supprimé', description: `${emp.prenom} ${emp.nom} a été supprimé.` });
+    setSelectedEmp(null);
+    setDeleteTarget(null);
+    qc.invalidateQueries({ queryKey: ['employes'] });
+  };
+
+  // Print badge planche A4
+  const handlePrintPlancheBadges = async () => {
+    const activeEmps = employes.filter((e: any) => e.statut === 'actif');
+    if (activeEmps.length === 0) { toast({ title: 'Aucun employé actif' }); return; }
+    const QRCode = await import('qrcode');
+    const qrMap: Record<string, string> = {};
+    for (const emp of activeEmps) {
+      qrMap[emp.matricule] = await QRCode.toDataURL(emp.matricule, { width: 200 });
+    }
+    await generatePlancheBadgesEmployesPDF(activeEmps, qrMap, schoolConfig?.nom, schoolConfig?.logo_url);
+  };
+
   // Print bulletin paie
   const handlePrintBulletin = (b: any) => {
     generateBulletinPaiePDF({
@@ -635,6 +659,9 @@ export default function Personnel() {
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => setScannerOpen(true)}>
             <ScanLine className="h-4 w-4 mr-1" /> Pointage QR
+          </Button>
+          <Button size="sm" variant="outline" onClick={handlePrintPlancheBadges}>
+            <Printer className="h-4 w-4 mr-1" /> Planches Badges A4
           </Button>
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger asChild>
@@ -1253,7 +1280,7 @@ export default function Personnel() {
                     const canvas = qrRef.current?.querySelector('canvas');
                     if (!canvas) return;
                     const qrDataUrl = (canvas as HTMLCanvasElement).toDataURL('image/png');
-                    generateBadgeEmployePDF(selectedEmp, qrDataUrl, schoolConfig?.nom);
+                    generateBadgeEmployePDF(selectedEmp, qrDataUrl, schoolConfig?.nom, schoolConfig?.logo_url);
                   }}>
                     <Printer className="h-4 w-4 mr-1" /> Imprimer Badge PVC
                   </Button>
@@ -1266,6 +1293,31 @@ export default function Personnel() {
                 <div className="border-t pt-3">
                   <h4 className="font-semibold mb-2 flex items-center gap-1"><Upload className="h-4 w-4" /> Documents</h4>
                   <EmployeeDocuments employeId={selectedEmp.id} />
+                </div>
+
+                {/* Delete employee */}
+                <div className="border-t pt-3">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="destructive" className="w-full">
+                        <Trash2 className="h-4 w-4 mr-1" /> Supprimer cet employé
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Êtes-vous sûr de vouloir supprimer <strong>{selectedEmp.prenom} {selectedEmp.nom}</strong> ({selectedEmp.matricule}) ? Cette action est irréversible.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteEmployee(selectedEmp)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Supprimer
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             </>
