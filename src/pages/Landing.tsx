@@ -350,17 +350,23 @@ export default function Landing() {
             <Link to="/parent">
               <Button size="lg" variant="secondary" className="text-base px-8">
                 Accéder à l'espace parent
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <motion.span
+                  animate={{ x: [0, 6, 0] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                  className="inline-flex ml-2"
+                >
+                  <ArrowRight className="h-5 w-5" />
+                </motion.span>
               </Button>
             </Link>
             <Link to="/employe">
-              <Button size="lg" variant="outline" className="text-base px-8 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+              <Button size="lg" className="text-base px-8 bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive))]/90 text-white border-0">
                 <Briefcase className="mr-2 h-5 w-5" />
                 Portail Employé
               </Button>
             </Link>
             <Link to="/download">
-              <Button size="lg" variant="outline" className="text-base px-8 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+              <Button size="lg" className="text-base px-8 bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))]/90 text-white border-0">
                 <Download className="mr-2 h-5 w-5" />
                 Installer l'Appli
               </Button>
