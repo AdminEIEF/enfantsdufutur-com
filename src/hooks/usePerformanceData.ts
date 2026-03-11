@@ -153,6 +153,7 @@ export function usePerformanceData(periodeId?: string) {
         id: eleve.id,
         nom: eleve.nom,
         prenom: eleve.prenom,
+        qr_code: eleve.qr_code || null,
         photo_url: eleve.photo_url,
         classe_nom: eleve.classes?.nom || '',
         niveau_nom: n.nom,
