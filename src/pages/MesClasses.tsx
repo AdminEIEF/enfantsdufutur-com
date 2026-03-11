@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Users, GraduationCap, ArrowDownAZ, Hash } from 'lucide-react';
+import { Search, Users, GraduationCap, ArrowDownAZ, Hash, Download } from 'lucide-react';
+import { exportToExcel } from '@/lib/excelUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { sortClasses } from '@/lib/utils';
@@ -209,6 +210,23 @@ export default function MesClasses() {
                                       {' • '}Filles : <span className="font-semibold text-pink-600">{stats.filles}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 text-xs gap-1.5"
+                                        onClick={() => {
+                                          const data = getClassEleves(cls.id).map((e: any, i: number) => ({
+                                            'N°': i + 1,
+                                            'Nom': e.nom,
+                                            'Prénom': e.prenom,
+                                            'Matricule': e.matricule || '',
+                                            'Sexe': e.sexe || '',
+                                          }));
+                                          exportToExcel(data, `Liste_${cls.nom.replace(/\s+/g, '_')}`, cls.nom);
+                                        }}
+                                      >
+                                        <Download className="h-3.5 w-3.5" /> Excel
+                                      </Button>
                                       <Button
                                         variant="outline"
                                         size="sm"
