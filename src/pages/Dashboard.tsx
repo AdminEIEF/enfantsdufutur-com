@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { DashboardImpayesSection } from '@/components/DashboardImpayesSection';
 import { DashboardRecouvrementSection } from '@/components/DashboardRecouvrementSection';
+import PerformanceExcellence from '@/components/PerformanceExcellence';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { toast } from 'sonner';
 
