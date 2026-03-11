@@ -660,6 +660,9 @@ export default function Personnel() {
           <Button size="sm" variant="outline" onClick={() => setScannerOpen(true)}>
             <ScanLine className="h-4 w-4 mr-1" /> Pointage QR
           </Button>
+          <Button size="sm" variant="outline" onClick={handlePrintPlancheBadges}>
+            <Printer className="h-4 w-4 mr-1" /> Planches Badges A4
+          </Button>
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger asChild>
               <Button size="sm"><UserPlus className="h-4 w-4 mr-1" /> Ajouter</Button>
