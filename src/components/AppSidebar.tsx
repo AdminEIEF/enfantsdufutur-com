@@ -37,6 +37,7 @@ const navSections = [
     label: 'Académique',
     roles: ['admin', 'service_info', 'coordinateur'] as const,
     items: [
+      { title: 'Mes Classes', url: '/mes-classes', icon: Users },
       { title: 'Saisie des notes', url: '/notes', icon: BookOpen },
       { title: 'Bulletins', url: '/bulletins', icon: Award },
       { title: 'Cours & Devoirs', url: '/cours-admin', icon: Video },
