@@ -40,11 +40,28 @@ export default function Landing() {
   };
   const { isInstallable, install } = usePWAInstall();
 
+  // Données dynamiques
+  const { data: dbStats } = useQuery({
+    queryKey: ['landing-stats'],
+    queryFn: async () => {
+      const [elevesRes, enseignantsRes] = await Promise.all([
+        supabase.from('eleves').select('id', { count: 'exact', head: true }).eq('statut', 'actif').is('deleted_at', null),
+        supabase.from('employes').select('id', { count: 'exact', head: true }).eq('categorie', 'enseignant').eq('statut', 'actif'),
+      ]);
+      return {
+        eleves: elevesRes.count ?? 0,
+        enseignants: enseignantsRes.count ?? 0,
+      };
+    },
+  });
+
+  const anneesExcellence = new Date().getFullYear() - 2020; // Fondée en 2020
+
   const stats = [
-    { label: 'Élèves inscrits', value: '500+', icon: Users },
-    { label: 'Années d\'excellence', value: '15+', icon: Award },
+    { label: 'Élèves inscrits', value: `${dbStats?.eleves ?? 0}`, icon: Users },
+    { label: "Années d'excellence", value: `${anneesExcellence}`, icon: Award },
     { label: 'Taux de réussite', value: '98%', icon: Star },
-    { label: 'Enseignants qualifiés', value: '40+', icon: BookOpen },
+    { label: 'Enseignants qualifiés', value: `${dbStats?.enseignants ?? 0}`, icon: BookOpen },
   ];
 
   const services = [
