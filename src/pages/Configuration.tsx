@@ -1521,19 +1521,45 @@ export default function Configuration() {
         <Settings className="h-7 w-7 text-primary" /> Configuration
       </h1>
       <Tabs defaultValue="ecole">
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="ecole">🏫 École</TabsTrigger>
-          {canManageUsers && <TabsTrigger value="utilisateurs">👥 Utilisateurs</TabsTrigger>}
-          <TabsTrigger value="cycles">Cycles & Barèmes</TabsTrigger>
-          <TabsTrigger value="niveaux">Niveaux</TabsTrigger>
-          <TabsTrigger value="classes">Classes</TabsTrigger>
-          <TabsTrigger value="matieres">Matières</TabsTrigger>
-          <TabsTrigger value="classe-matieres">📚 Matières/Classe</TabsTrigger>
-          <TabsTrigger value="periodes">Périodes</TabsTrigger>
-          <TabsTrigger value="tranches">💳 Tranches</TabsTrigger>
-          <TabsTrigger value="transport">Transport</TabsTrigger>
-          <TabsTrigger value="corbeille">🗑️ Corbeille</TabsTrigger>
-        </TabsList>
+        <div className="border rounded-lg p-1 bg-muted/30 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1">
+            <TabsTrigger value="ecole" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md text-xs sm:text-sm py-2 px-2 gap-1.5">
+              🏫 <span className="hidden sm:inline">École</span><span className="sm:hidden">École</span>
+            </TabsTrigger>
+            {canManageUsers && (
+              <TabsTrigger value="utilisateurs" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md text-xs sm:text-sm py-2 px-2 gap-1.5">
+                👥 <span>Utilisateurs</span>
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="cycles" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md text-xs sm:text-sm py-2 px-2 gap-1.5">
+              📏 <span>Cycles</span>
+            </TabsTrigger>
+            <TabsTrigger value="niveaux" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md text-xs sm:text-sm py-2 px-2 gap-1.5">
+              🎓 <span>Niveaux</span>
+            </TabsTrigger>
+            <TabsTrigger value="classes" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md text-xs sm:text-sm py-2 px-2 gap-1.5">
+              🏛️ <span>Classes</span>
+            </TabsTrigger>
+            <TabsTrigger value="matieres" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md text-xs sm:text-sm py-2 px-2 gap-1.5">
+              📖 <span>Matières</span>
+            </TabsTrigger>
+            <TabsTrigger value="classe-matieres" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md text-xs sm:text-sm py-2 px-2 gap-1.5">
+              📚 <span className="hidden md:inline">Matières/Classe</span><span className="md:hidden">Mat./Cl.</span>
+            </TabsTrigger>
+            <TabsTrigger value="periodes" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md text-xs sm:text-sm py-2 px-2 gap-1.5">
+              📅 <span>Périodes</span>
+            </TabsTrigger>
+            <TabsTrigger value="tranches" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md text-xs sm:text-sm py-2 px-2 gap-1.5">
+              💳 <span>Tranches</span>
+            </TabsTrigger>
+            <TabsTrigger value="transport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md text-xs sm:text-sm py-2 px-2 gap-1.5">
+              🚌 <span>Transport</span>
+            </TabsTrigger>
+            <TabsTrigger value="corbeille" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md text-xs sm:text-sm py-2 px-2 gap-1.5">
+              🗑️ <span>Corbeille</span>
+            </TabsTrigger>
+          </div>
+        </div>
         <TabsContent value="ecole"><EcoleTab /></TabsContent>
         {canManageUsers && <TabsContent value="utilisateurs"><AdminUserManagement /></TabsContent>}
         <TabsContent value="cycles"><CyclesTab /></TabsContent>
