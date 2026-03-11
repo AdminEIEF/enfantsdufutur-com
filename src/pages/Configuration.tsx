@@ -54,7 +54,7 @@ function useMatieres() {
   return useQuery({
     queryKey: ['matieres'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('matieres').select('*, cycles(nom), niveaux:niveau_id(nom)').order('nom');
+      const { data, error } = await supabase.from('matieres').select('*, cycles(nom), niveaux:niveau_id(nom)').order('ordre').order('created_at');
       if (error) throw error;
       return data;
     },
