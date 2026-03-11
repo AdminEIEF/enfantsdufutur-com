@@ -18,6 +18,7 @@ export default function MesClasses() {
   const [selectedCycle, setSelectedCycle] = useState('all');
   const [classSorts, setClassSorts] = useState<Record<string, 'nom' | 'matricule'>>({});
   const [classSearches, setClassSearches] = useState<Record<string, string>>({});
+  const { data: schoolConfig } = useSchoolConfig();
 
   const { data: eleves = [], isLoading } = useQuery({
     queryKey: ['mes-classes-eleves'],
