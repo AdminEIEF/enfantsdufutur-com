@@ -54,19 +54,14 @@ export async function exportToExcel(data: Record<string, any>[], filename: strin
 
     // Row 5: empty separator
     dataStartRow = 6;
-  }
 
-  // Set columns
-  worksheet.columns = keys.map(key => ({
-    header: key,
-    key,
-    width: Math.max(key.length, ...data.map(row => String(row[key] ?? '').length)) + 2,
-  }));
+    // Set column widths manually (don't use worksheet.columns which overwrites row 1)
+    keys.forEach((key, i) => {
+      const col = worksheet.getColumn(i + 1);
+      col.width = Math.max(key.length, ...data.map(row => String(row[key] ?? '').length)) + 2;
+    });
 
-  if (headerInfo) {
-    // Move auto-generated header row to dataStartRow
-    // Clear auto header at row 1 (columns setter puts headers at row 1)
-    // We need to re-add headers manually at dataStartRow
+    // Table header row at dataStartRow
     const headerRow = worksheet.getRow(dataStartRow);
     keys.forEach((key, i) => {
       const cell = headerRow.getCell(i + 1);
@@ -80,7 +75,7 @@ export async function exportToExcel(data: Record<string, any>[], filename: strin
     });
     headerRow.commit();
 
-    // Add data rows starting after header
+    // Data rows
     data.forEach((row, idx) => {
       const dataRow = worksheet.getRow(dataStartRow + 1 + idx);
       keys.forEach((key, i) => {
@@ -89,7 +84,12 @@ export async function exportToExcel(data: Record<string, any>[], filename: strin
       dataRow.commit();
     });
   } else {
-    // Simple mode: style header row
+    // Simple mode
+    worksheet.columns = keys.map(key => ({
+      header: key,
+      key,
+      width: Math.max(key.length, ...data.map(row => String(row[key] ?? '').length)) + 2,
+    }));
     const headerRow = worksheet.getRow(1);
     headerRow.font = { bold: true };
     data.forEach(row => worksheet.addRow(row));
