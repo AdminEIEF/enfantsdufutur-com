@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle, Camera, Upload, Bus, FileDown } from 'lucide-react';
+import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle, Camera, Upload, Bus, FileDown, Trash2 } from 'lucide-react';
 import PlancheBadgesScolaires from '@/components/PlancheBadgesScolaires';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
@@ -110,6 +110,7 @@ export default function Eleves() {
   const [editing, setEditing] = useState<any>(null);
   const [badgeEleve, setBadgeEleve] = useState<any>(null);
   const [abandonDialog, setAbandonDialog] = useState<any>(null);
+  const [deleteDialog, setDeleteDialog] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showPlanche, setShowPlanche] = useState(false);
   const [creatingFamille, setCreatingFamille] = useState(false);
@@ -909,6 +910,9 @@ export default function Eleves() {
                           <UserX className="h-4 w-4" />
                         </Button>
                       )}
+                      <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setDeleteDialog(e)} title="Supprimer l'élève">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -1350,6 +1354,39 @@ export default function Eleves() {
             <Button variant="outline" onClick={() => setAbandonDialog(null)}>Annuler</Button>
             <Button variant="destructive" onClick={handleAbandon}>
               <UserX className="mr-2 h-4 w-4" /> Confirmer l'abandon
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete dialog */}
+      <Dialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Trash2 className="h-5 w-5 text-destructive" /> Supprimer l'élève</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm">
+              Voulez-vous supprimer <strong>{deleteDialog?.prenom} {deleteDialog?.nom}</strong> ?
+            </p>
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <XCircle className="h-4 w-4 text-destructive mt-0.5" />
+              <p className="text-sm">
+                L'élève sera placé dans la corbeille. Vous pourrez le restaurer depuis la Configuration si nécessaire.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog(null)}>Annuler</Button>
+            <Button variant="destructive" onClick={async () => {
+              const { error } = await supabase.from('eleves').update({ deleted_at: new Date().toISOString() }).eq('id', deleteDialog.id);
+              if (error) {
+                toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+              } else {
+                toast({ title: 'Élève supprimé', description: `${deleteDialog.prenom} ${deleteDialog.nom} a été placé dans la corbeille.` });
+                qc.invalidateQueries({ queryKey: ['eleves-full'] });
+              }
+              setDeleteDialog(null);
+            }}>
+              <Trash2 className="mr-2 h-4 w-4" /> Confirmer la suppression
             </Button>
           </DialogFooter>
         </DialogContent>
