@@ -1508,6 +1508,7 @@ function EcoleTab() {
 
 // ─── Main Page ───────────────────────────────────────────
 import AdminUserManagement from '@/components/AdminUserManagement';
+import ClasseMatieresTab from '@/components/ClasseMatieresTab';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Configuration() {
@@ -1527,6 +1528,7 @@ export default function Configuration() {
           <TabsTrigger value="niveaux">Niveaux</TabsTrigger>
           <TabsTrigger value="classes">Classes</TabsTrigger>
           <TabsTrigger value="matieres">Matières</TabsTrigger>
+          <TabsTrigger value="classe-matieres">📚 Matières/Classe</TabsTrigger>
           <TabsTrigger value="periodes">Périodes</TabsTrigger>
           <TabsTrigger value="tranches">💳 Tranches</TabsTrigger>
           <TabsTrigger value="transport">Transport</TabsTrigger>
@@ -1538,6 +1540,7 @@ export default function Configuration() {
         <TabsContent value="niveaux"><NiveauxTab /></TabsContent>
         <TabsContent value="classes"><ClassesTab /></TabsContent>
         <TabsContent value="matieres"><MatieresTab /></TabsContent>
+        <TabsContent value="classe-matieres"><ClasseMatieresTab /></TabsContent>
         <TabsContent value="periodes"><PeriodesTab /></TabsContent>
         <TabsContent value="tranches"><TranchesTab /></TabsContent>
         <TabsContent value="transport"><ZonesTransportTab /></TabsContent>
