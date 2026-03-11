@@ -192,6 +192,7 @@ export default function Personnel() {
   const [viewCourrierAdmin, setViewCourrierAdmin] = useState<any>(null);
   const [refuseMotif, setRefuseMotif] = useState('');
   const [refuseTarget, setRefuseTarget] = useState<{ type: 'conge' | 'avance'; id: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
 
   // Form state for new employee
   const [form, setForm] = useState({
