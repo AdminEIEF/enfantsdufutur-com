@@ -14,9 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MesClasses() {
   const [selectedCycle, setSelectedCycle] = useState('all');
-  // Per-class sort: 'nom' (A-Z) or 'matricule'
   const [classSorts, setClassSorts] = useState<Record<string, 'nom' | 'matricule'>>({});
-  // Per-class search filters
   const [classSearches, setClassSearches] = useState<Record<string, string>>({});
 
   const { data: eleves = [], isLoading } = useQuery({
@@ -43,7 +41,6 @@ export default function MesClasses() {
     },
   });
 
-  // Build cycle list
   const cycles = useMemo(() => {
     const map = new Map<string, { id: string; nom: string; ordre: number }>();
     classes.forEach((c: any) => {
@@ -55,7 +52,6 @@ export default function MesClasses() {
     return Array.from(map.values()).sort((a, b) => a.ordre - b.ordre);
   }, [classes]);
 
-  // Count per cycle
   const cycleCounts = useMemo(() => {
     const counts: Record<string, number> = { all: eleves.length };
     eleves.forEach((e: any) => {
@@ -65,20 +61,17 @@ export default function MesClasses() {
     return counts;
   }, [eleves]);
 
-  // Filter eleves by cycle
   const filteredEleves = useMemo(() => {
     if (selectedCycle === 'all') return eleves;
     return eleves.filter((e: any) => e.classes?.niveaux?.cycles?.id === selectedCycle);
   }, [eleves, selectedCycle]);
 
-  // Group: cycle -> niveau -> classe
   const structure = useMemo(() => {
     const filteredClasses = selectedCycle === 'all'
       ? classes
       : classes.filter((c: any) => c.niveaux?.cycles?.id === selectedCycle);
 
     const niveauMap = new Map<string, { id: string; nom: string; ordre: number; classes: any[] }>();
-
     filteredClasses.forEach((c: any) => {
       const niv = c.niveaux;
       if (!niv) return;
@@ -87,11 +80,17 @@ export default function MesClasses() {
       }
       niveauMap.get(niv.id)!.classes.push(c);
     });
-
     return Array.from(niveauMap.values()).sort((a, b) => a.ordre - b.ordre);
   }, [classes, selectedCycle]);
 
-  // Get eleves for a class, filtered by per-class search
+  // Stats for a class
+  const getClassStats = (classeId: string) => {
+    const all = filteredEleves.filter((e: any) => e.classe_id === classeId);
+    const garcons = all.filter((e: any) => e.sexe === 'M').length;
+    const filles = all.filter((e: any) => e.sexe === 'F').length;
+    return { total: all.length, garcons, filles };
+  };
+
   const getClassEleves = (classeId: string) => {
     let classEleves = filteredEleves.filter((e: any) => e.classe_id === classeId);
     const search = (classSearches[classeId] || '').toLowerCase().trim();
@@ -137,13 +136,12 @@ export default function MesClasses() {
         <h1 className="text-2xl font-bold">Mes Classes</h1>
       </div>
 
-      {/* Cycle tabs */}
       <Tabs value={selectedCycle} onValueChange={setSelectedCycle}>
         <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
           <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
             <Users className="h-4 w-4 mr-1.5" />
             Tous
-            <Badge variant="secondary" className="ml-1.5 text-xs bg-primary/20 data-[state=active]:bg-primary-foreground/20">
+            <Badge variant="secondary" className="ml-1.5 text-xs bg-primary/20">
               {cycleCounts.all || 0}
             </Badge>
           </TabsTrigger>
@@ -157,111 +155,142 @@ export default function MesClasses() {
           ))}
         </TabsList>
 
-        {/* Content (same for all tabs, filtered by selectedCycle) */}
         {['all', ...cycles.map(c => c.id)].map(tabValue => (
           <TabsContent key={tabValue} value={tabValue} className="mt-4 space-y-4">
             {isLoading ? (
               <div className="space-y-4">
-                {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full" />)}
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
               </div>
             ) : structure.length === 0 ? (
               <Card><CardContent className="py-8 text-center text-muted-foreground">Aucune classe trouvée</CardContent></Card>
             ) : (
-              <Accordion type="multiple" defaultValue={structure.map(n => n.id)}>
+              /* Niveau accordion — collapsed by default, click to expand */
+              <Accordion type="multiple">
                 {structure.map(niveau => {
                   const niveauEleves = filteredEleves.filter((e: any) => e.classes?.niveaux?.id === niveau.id);
+                  const niveauG = niveauEleves.filter((e: any) => e.sexe === 'M').length;
+                  const niveauF = niveauEleves.filter((e: any) => e.sexe === 'F').length;
                   return (
                     <AccordionItem key={niveau.id} value={niveau.id} className="border rounded-lg mb-3 overflow-hidden">
                       <AccordionTrigger className="px-4 py-3 bg-muted/30 hover:bg-muted/50 hover:no-underline">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <GraduationCap className="h-5 w-5 text-primary" />
                           <span className="font-semibold">{niveau.nom}</span>
-                          <Badge variant="outline" className="ml-1">{niveauEleves.length} élèves</Badge>
+                          <Badge variant="outline">{niveauEleves.length} élèves</Badge>
+                          <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">♂ {niveauG}</Badge>
+                          <Badge className="bg-pink-100 text-pink-700 border-pink-200 text-xs">♀ {niveauF}</Badge>
+                          <span className="text-xs text-muted-foreground">({niveau.classes.length} classes)</span>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="p-0">
-                        <div className="divide-y">
+                      <AccordionContent className="p-2">
+                        {/* Classe accordion inside niveau */}
+                        <Accordion type="multiple">
                           {niveau.classes.map((cls: any) => {
-                            const classEleves = getClassEleves(cls.id);
-                            const totalInClass = filteredEleves.filter((e: any) => e.classe_id === cls.id).length;
+                            const stats = getClassStats(cls.id);
                             return (
-                              <div key={cls.id} className="p-4">
-                                <div className="flex items-center justify-between mb-3">
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="font-semibold text-base">{cls.nom}</h3>
-                                    <Badge className="bg-primary/10 text-primary border-primary/20">{totalInClass} élèves</Badge>
+                              <AccordionItem key={cls.id} value={cls.id} className="border rounded-md mb-2 overflow-hidden">
+                                <AccordionTrigger className="px-4 py-2.5 hover:bg-muted/30 hover:no-underline">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-medium">{cls.nom}</span>
+                                    <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">{stats.total} élèves</Badge>
+                                    <Badge className="bg-blue-50 text-blue-600 border-blue-200 text-xs">♂ {stats.garcons}</Badge>
+                                    <Badge className="bg-pink-50 text-pink-600 border-pink-200 text-xs">♀ {stats.filles}</Badge>
                                     {cls.capacite && (
                                       <span className="text-xs text-muted-foreground">/ {cls.capacite} places</span>
                                     )}
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-9 text-xs gap-1.5"
-                                      onClick={() => toggleClassSort(cls.id)}
-                                    >
-                                      {(classSorts[cls.id] || 'nom') === 'nom' ? (
-                                        <><ArrowDownAZ className="h-4 w-4" /> A→Z</>
-                                      ) : (
-                                        <><Hash className="h-4 w-4" /> Matricule</>
-                                      )}
-                                    </Button>
-                                    <div className="relative w-52">
-                                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                      <Input
-                                        placeholder="Filtrer nom / matricule..."
-                                        className="pl-8 h-9 text-sm"
-                                        value={classSearches[cls.id] || ''}
-                                        onChange={e => setClassSearch(cls.id, e.target.value)}
-                                      />
+                                </AccordionTrigger>
+                                <AccordionContent className="px-4 pb-4 pt-2">
+                                  {/* Toolbar */}
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="text-sm text-muted-foreground">
+                                      Effectif : <span className="font-semibold text-foreground">{stats.total}</span>
+                                      {' • '}Garçons : <span className="font-semibold text-blue-600">{stats.garcons}</span>
+                                      {' • '}Filles : <span className="font-semibold text-pink-600">{stats.filles}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 text-xs gap-1.5"
+                                        onClick={() => toggleClassSort(cls.id)}
+                                      >
+                                        {(classSorts[cls.id] || 'nom') === 'nom' ? (
+                                          <><ArrowDownAZ className="h-3.5 w-3.5" /> A→Z</>
+                                        ) : (
+                                          <><Hash className="h-3.5 w-3.5" /> Matricule</>
+                                        )}
+                                      </Button>
+                                      <div className="relative w-48">
+                                        <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
+                                        <Input
+                                          placeholder="Filtrer..."
+                                          className="pl-8 h-8 text-sm"
+                                          value={classSearches[cls.id] || ''}
+                                          onChange={e => setClassSearch(cls.id, e.target.value)}
+                                        />
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                                {classEleves.length === 0 ? (
-                                  <p className="text-sm text-muted-foreground py-2 text-center">
-                                    {totalInClass === 0 ? 'Aucun élève inscrit' : 'Aucun résultat'}
-                                  </p>
-                                ) : (
-                                  <div className="border rounded-md overflow-hidden">
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow className="bg-muted/20">
-                                          <TableHead className="w-10">#</TableHead>
-                                          <TableHead>Photo</TableHead>
-                                          <TableHead>Nom</TableHead>
-                                          <TableHead>Prénom</TableHead>
-                                          <TableHead>Matricule</TableHead>
-                                          <TableHead>Sexe</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {classEleves.map((eleve: any, idx: number) => (
-                                          <TableRow key={eleve.id}>
-                                            <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
-                                            <TableCell>
-                                              {eleve.photo_url ? (
-                                                <img src={eleve.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                                              ) : (
-                                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
-                                                  {eleve.prenom?.[0]}{eleve.nom?.[0]}
-                                                </div>
-                                              )}
-                                            </TableCell>
-                                            <TableCell className="font-medium">{eleve.nom}</TableCell>
-                                            <TableCell>{eleve.prenom}</TableCell>
-                                            <TableCell><Badge variant="outline" className="font-mono text-xs">{eleve.matricule || '—'}</Badge></TableCell>
-                                            <TableCell>{eleve.sexe === 'M' ? '♂' : eleve.sexe === 'F' ? '♀' : '—'}</TableCell>
-                                          </TableRow>
-                                        ))}
-                                      </TableBody>
-                                    </Table>
-                                  </div>
-                                )}
-                              </div>
+
+                                  {/* Student table */}
+                                  {(() => {
+                                    const classEleves = getClassEleves(cls.id);
+                                    if (classEleves.length === 0) {
+                                      return (
+                                        <p className="text-sm text-muted-foreground py-3 text-center">
+                                          {stats.total === 0 ? 'Aucun élève inscrit' : 'Aucun résultat'}
+                                        </p>
+                                      );
+                                    }
+                                    return (
+                                      <div className="border rounded-md overflow-hidden">
+                                        <Table>
+                                          <TableHeader>
+                                            <TableRow className="bg-muted/20">
+                                              <TableHead className="w-10">#</TableHead>
+                                              <TableHead>Photo</TableHead>
+                                              <TableHead>Nom</TableHead>
+                                              <TableHead>Prénom</TableHead>
+                                              <TableHead>Matricule</TableHead>
+                                              <TableHead>Sexe</TableHead>
+                                            </TableRow>
+                                          </TableHeader>
+                                          <TableBody>
+                                            {classEleves.map((eleve: any, idx: number) => (
+                                              <TableRow key={eleve.id}>
+                                                <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
+                                                <TableCell>
+                                                  {eleve.photo_url ? (
+                                                    <img src={eleve.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                                                  ) : (
+                                                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                                                      {eleve.prenom?.[0]}{eleve.nom?.[0]}
+                                                    </div>
+                                                  )}
+                                                </TableCell>
+                                                <TableCell className="font-medium">{eleve.nom}</TableCell>
+                                                <TableCell>{eleve.prenom}</TableCell>
+                                                <TableCell><Badge variant="outline" className="font-mono text-xs">{eleve.matricule || '—'}</Badge></TableCell>
+                                                <TableCell>
+                                                  {eleve.sexe === 'M' ? (
+                                                    <span className="text-blue-600">♂</span>
+                                                  ) : eleve.sexe === 'F' ? (
+                                                    <span className="text-pink-600">♀</span>
+                                                  ) : '—'}
+                                                </TableCell>
+                                              </TableRow>
+                                            ))}
+                                          </TableBody>
+                                        </Table>
+                                      </div>
+                                    );
+                                  })()}
+                                </AccordionContent>
+                              </AccordionItem>
                             );
                           })}
-                        </div>
+                        </Accordion>
                       </AccordionContent>
                     </AccordionItem>
                   );
