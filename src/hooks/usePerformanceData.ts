@@ -13,6 +13,10 @@ export interface MajorEleve {
   moyenne: number;
 }
 
+export interface TableauHonneurEleve extends MajorEleve {
+  seuil: number;
+}
+
 export interface NiveauPerformance {
   niveau_id: string;
   niveau_nom: string;
@@ -21,6 +25,13 @@ export interface NiveauPerformance {
   effectif: number;
   nb_reussite: number;
   taux_reussite: number;
+}
+
+function getSeuilByCycle(cycleName: string): number {
+  const lower = cycleName.toLowerCase();
+  if (lower.includes('primaire') || lower.includes('maternelle') || lower.includes('crèche') || lower.includes('creche')) return 8;
+  // Collège, Lycée
+  return 16;
 }
 
 export function usePerformanceData(periodeId?: string) {
@@ -130,7 +141,7 @@ export function usePerformanceData(periodeId?: string) {
   }
   const moyenneGenerale = totalCount > 0 ? Math.round((totalMoy / totalCount) * 100) / 100 : 0;
 
-  // Hall of Fame: best student per niveau
+  // Hall of Fame: best student per niveau (majors)
   const bestPerNiveau = new Map<string, { eleveId: string; moy: number }>();
   for (const [eleveId, { total, coefTotal }] of eleveMoyennes) {
     if (coefTotal === 0) continue;
@@ -162,11 +173,45 @@ export function usePerformanceData(periodeId?: string) {
       };
     });
 
+  // Tableau d'Honneur: ALL students meeting cycle-specific thresholds
+  const tableauHonneur: TableauHonneurEleve[] = [];
+  for (const [eleveId, { total, coefTotal }] of eleveMoyennes) {
+    if (coefTotal === 0) continue;
+    const moy = total / coefTotal;
+    const eleve = eleveMap.get(eleveId) as any;
+    if (!eleve?.classes?.niveaux) continue;
+    const cycleName = (eleve.classes.niveaux.cycles as any)?.nom || '';
+    const seuil = getSeuilByCycle(cycleName);
+    if (moy >= seuil) {
+      tableauHonneur.push({
+        id: eleve.id,
+        nom: eleve.nom,
+        prenom: eleve.prenom,
+        qr_code: eleve.qr_code || null,
+        photo_url: eleve.photo_url,
+        classe_nom: eleve.classes?.nom || '',
+        niveau_nom: eleve.classes.niveaux.nom || '',
+        cycle_nom: cycleName,
+        moyenne: Math.round(moy * 100) / 100,
+        seuil,
+      });
+    }
+  }
+  // Sort by moyenne descending
+  tableauHonneur.sort((a, b) => b.moyenne - a.moyenne);
+
+  // Get the selected periode name
+  const selectedPeriodeName = periodeId
+    ? periodes.find(p => p.id === periodeId)?.nom || ''
+    : '';
+
   return {
     periodes,
     niveauPerformances,
     moyenneGenerale,
     majors,
+    tableauHonneur,
+    selectedPeriodeName,
     isLoading,
     totalElevesNotes: totalCount,
   };
