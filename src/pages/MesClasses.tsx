@@ -93,18 +93,33 @@ export default function MesClasses() {
 
   // Get eleves for a class, filtered by per-class search
   const getClassEleves = (classeId: string) => {
-    const classEleves = filteredEleves.filter((e: any) => e.classe_id === classeId);
+    let classEleves = filteredEleves.filter((e: any) => e.classe_id === classeId);
     const search = (classSearches[classeId] || '').toLowerCase().trim();
-    if (!search) return classEleves;
-    const terms = search.split(/\s+/);
-    return classEleves.filter((e: any) => {
-      const text = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase();
-      return terms.some(t => text.includes(t));
+    if (search) {
+      const terms = search.split(/\s+/);
+      classEleves = classEleves.filter((e: any) => {
+        const text = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase();
+        return terms.some(t => text.includes(t));
+      });
+    }
+    const sortMode = classSorts[classeId] || 'nom';
+    return [...classEleves].sort((a: any, b: any) => {
+      if (sortMode === 'matricule') {
+        return (a.matricule || '').localeCompare(b.matricule || '', undefined, { numeric: true });
+      }
+      return `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`);
     });
   };
 
   const setClassSearch = (classeId: string, value: string) => {
     setClassSearches(prev => ({ ...prev, [classeId]: value }));
+  };
+
+  const toggleClassSort = (classeId: string) => {
+    setClassSorts(prev => ({
+      ...prev,
+      [classeId]: (prev[classeId] || 'nom') === 'nom' ? 'matricule' : 'nom',
+    }));
   };
 
   return (
