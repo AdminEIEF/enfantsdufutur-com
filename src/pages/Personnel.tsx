@@ -23,7 +23,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { QRCodeCanvas } from 'qrcode.react';
-import { generateBadgeEmployePDF } from '@/lib/generateBadgeEmploye';
+import { generateBadgeEmployePDF, generatePlancheBadgesEmployesPDF } from '@/lib/generateBadgeEmploye';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
 
