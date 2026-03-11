@@ -14,6 +14,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MesClasses() {
   const [selectedCycle, setSelectedCycle] = useState('all');
+  // Per-class sort: 'nom' (A-Z) or 'matricule'
+  const [classSorts, setClassSorts] = useState<Record<string, 'nom' | 'matricule'>>({});
   // Per-class search filters
   const [classSearches, setClassSearches] = useState<Record<string, string>>({});
 
