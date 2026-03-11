@@ -143,7 +143,7 @@ function AuthRoute() {
   }
   if (user) {
     if (roles.length === 1) {
-      if (roles[0] === 'superviseur') return <Navigate to="/supervision" replace />;
+      if (roles[0] === 'superviseur') return <Navigate to="/superviseur-dashboard" replace />;
       if (roles[0] === 'cantine') return <Navigate to="/cantine" replace />;
       if (roles[0] === 'boutique') return <Navigate to="/boutique" replace />;
       if (roles[0] === 'librairie') return <Navigate to="/librairie" replace />;
