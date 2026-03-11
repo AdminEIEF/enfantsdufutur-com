@@ -10,6 +10,7 @@ import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
 import { motion } from 'framer-motion';
+import PerformanceExcellence from '@/components/PerformanceExcellence';
 import heroImage from '@/assets/hero-school.jpg';
 import schoolAnglais from '@/assets/school-anglais.jpg';
 import schoolBepc from '@/assets/school-bepc.jpg';
