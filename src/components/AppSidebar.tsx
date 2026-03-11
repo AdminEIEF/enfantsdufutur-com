@@ -141,7 +141,7 @@ const navSections = [
   },
   {
     label: 'Administration',
-    roles: ['admin', 'superviseur'] as const,
+    roles: ['admin'] as const,
     items: [
       { title: 'Personnel', url: '/personnel', icon: Briefcase },
       { title: 'Traçabilité', url: '/tracabilite', icon: ClipboardList },
