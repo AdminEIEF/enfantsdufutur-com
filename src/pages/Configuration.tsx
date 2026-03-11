@@ -1539,6 +1539,7 @@ export default function Configuration() {
         <TabsContent value="niveaux"><NiveauxTab /></TabsContent>
         <TabsContent value="classes"><ClassesTab /></TabsContent>
         <TabsContent value="matieres"><MatieresTab /></TabsContent>
+        <TabsContent value="classe-matieres"><ClasseMatieresTab /></TabsContent>
         <TabsContent value="periodes"><PeriodesTab /></TabsContent>
         <TabsContent value="tranches"><TranchesTab /></TabsContent>
         <TabsContent value="transport"><ZonesTransportTab /></TabsContent>
