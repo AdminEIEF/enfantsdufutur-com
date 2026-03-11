@@ -12,11 +12,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { sortClasses } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
 export default function MesClasses() {
   const [selectedCycle, setSelectedCycle] = useState('all');
   const [classSorts, setClassSorts] = useState<Record<string, 'nom' | 'matricule'>>({});
   const [classSearches, setClassSearches] = useState<Record<string, string>>({});
+  const { data: schoolConfig } = useSchoolConfig();
 
   const { data: eleves = [], isLoading } = useQuery({
     queryKey: ['mes-classes-eleves'],
@@ -222,7 +224,15 @@ export default function MesClasses() {
                                             'Matricule': e.matricule || '',
                                             'Sexe': e.sexe || '',
                                           }));
-                                          exportToExcel(data, `Liste_${cls.nom.replace(/\s+/g, '_')}`, cls.nom);
+                                          const schoolName = schoolConfig?.nom || 'École Internationale Les Enfants du Futur';
+                                          exportToExcel(data, `Liste_${cls.nom.replace(/\s+/g, '_')}`, cls.nom, {
+                                            schoolName,
+                                            niveau: niveau.nom,
+                                            classe: cls.nom,
+                                            garcons: stats.garcons,
+                                            filles: stats.filles,
+                                            total: stats.total,
+                                          });
                                         }}
                                       >
                                         <Download className="h-3.5 w-3.5" /> Excel
