@@ -606,6 +606,28 @@ export default function Personnel() {
     });
   };
 
+  // Delete employee
+  const handleDeleteEmployee = async (emp: any) => {
+    const { error } = await supabase.from('employes').delete().eq('id', emp.id);
+    if (error) { toast({ title: 'Erreur', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: '🗑️ Employé supprimé', description: `${emp.prenom} ${emp.nom} a été supprimé.` });
+    setSelectedEmp(null);
+    setDeleteTarget(null);
+    qc.invalidateQueries({ queryKey: ['employes'] });
+  };
+
+  // Print badge planche A4
+  const handlePrintPlancheBadges = async () => {
+    const activeEmps = employes.filter((e: any) => e.statut === 'actif');
+    if (activeEmps.length === 0) { toast({ title: 'Aucun employé actif' }); return; }
+    const QRCode = await import('qrcode');
+    const qrMap: Record<string, string> = {};
+    for (const emp of activeEmps) {
+      qrMap[emp.matricule] = await QRCode.toDataURL(emp.matricule, { width: 200 });
+    }
+    await generatePlancheBadgesEmployesPDF(activeEmps, qrMap, schoolConfig?.nom, schoolConfig?.logo_url);
+  };
+
   // Print bulletin paie
   const handlePrintBulletin = (b: any) => {
     generateBulletinPaiePDF({
