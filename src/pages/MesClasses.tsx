@@ -105,9 +105,17 @@ export default function MesClasses() {
     const sortMode = classSorts[classeId] || 'nom';
     return [...classEleves].sort((a: any, b: any) => {
       if (sortMode === 'matricule') {
-        return (a.matricule || '').localeCompare(b.matricule || '', undefined, { numeric: true });
+        return (a.matricule || '').localeCompare(b.matricule || '', 'fr', { numeric: true });
       }
-      return `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`);
+      const nomA = (a.nom || '').toUpperCase();
+      const nomB = (b.nom || '').toUpperCase();
+      if (nomA < nomB) return -1;
+      if (nomA > nomB) return 1;
+      const prenomA = (a.prenom || '').toUpperCase();
+      const prenomB = (b.prenom || '').toUpperCase();
+      if (prenomA < prenomB) return -1;
+      if (prenomA > prenomB) return 1;
+      return 0;
     });
   };
 
