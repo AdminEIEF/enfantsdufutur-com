@@ -1508,6 +1508,7 @@ function EcoleTab() {
 
 // ─── Main Page ───────────────────────────────────────────
 import AdminUserManagement from '@/components/AdminUserManagement';
+import ClasseMatieresTab from '@/components/ClasseMatieresTab';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Configuration() {
