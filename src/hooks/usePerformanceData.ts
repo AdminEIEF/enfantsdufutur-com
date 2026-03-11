@@ -6,6 +6,7 @@ export interface MajorEleve {
   nom: string;
   prenom: string;
   photo_url: string | null;
+  qr_code: string | null;
   classe_nom: string;
   niveau_nom: string;
   cycle_nom: string;
