@@ -2,10 +2,11 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Users, GraduationCap } from 'lucide-react';
+import { Search, Users, GraduationCap, ArrowDownAZ, Hash } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { sortClasses } from '@/lib/utils';
@@ -13,6 +14,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MesClasses() {
   const [selectedCycle, setSelectedCycle] = useState('all');
+  // Per-class sort: 'nom' (A-Z) or 'matricule'
+  const [classSorts, setClassSorts] = useState<Record<string, 'nom' | 'matricule'>>({});
   // Per-class search filters
   const [classSearches, setClassSearches] = useState<Record<string, string>>({});
 
@@ -90,18 +93,33 @@ export default function MesClasses() {
 
   // Get eleves for a class, filtered by per-class search
   const getClassEleves = (classeId: string) => {
-    const classEleves = filteredEleves.filter((e: any) => e.classe_id === classeId);
+    let classEleves = filteredEleves.filter((e: any) => e.classe_id === classeId);
     const search = (classSearches[classeId] || '').toLowerCase().trim();
-    if (!search) return classEleves;
-    const terms = search.split(/\s+/);
-    return classEleves.filter((e: any) => {
-      const text = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase();
-      return terms.some(t => text.includes(t));
+    if (search) {
+      const terms = search.split(/\s+/);
+      classEleves = classEleves.filter((e: any) => {
+        const text = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase();
+        return terms.some(t => text.includes(t));
+      });
+    }
+    const sortMode = classSorts[classeId] || 'nom';
+    return [...classEleves].sort((a: any, b: any) => {
+      if (sortMode === 'matricule') {
+        return (a.matricule || '').localeCompare(b.matricule || '', undefined, { numeric: true });
+      }
+      return `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`);
     });
   };
 
   const setClassSearch = (classeId: string, value: string) => {
     setClassSearches(prev => ({ ...prev, [classeId]: value }));
+  };
+
+  const toggleClassSort = (classeId: string) => {
+    setClassSorts(prev => ({
+      ...prev,
+      [classeId]: (prev[classeId] || 'nom') === 'nom' ? 'matricule' : 'nom',
+    }));
   };
 
   return (
@@ -168,14 +186,28 @@ export default function MesClasses() {
                                       <span className="text-xs text-muted-foreground">/ {cls.capacite} places</span>
                                     )}
                                   </div>
-                                  <div className="relative w-56">
-                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                      placeholder="Filtrer nom / matricule..."
-                                      className="pl-8 h-9 text-sm"
-                                      value={classSearches[cls.id] || ''}
-                                      onChange={e => setClassSearch(cls.id, e.target.value)}
-                                    />
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-9 text-xs gap-1.5"
+                                      onClick={() => toggleClassSort(cls.id)}
+                                    >
+                                      {(classSorts[cls.id] || 'nom') === 'nom' ? (
+                                        <><ArrowDownAZ className="h-4 w-4" /> A→Z</>
+                                      ) : (
+                                        <><Hash className="h-4 w-4" /> Matricule</>
+                                      )}
+                                    </Button>
+                                    <div className="relative w-52">
+                                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                      <Input
+                                        placeholder="Filtrer nom / matricule..."
+                                        className="pl-8 h-9 text-sm"
+                                        value={classSearches[cls.id] || ''}
+                                        onChange={e => setClassSearch(cls.id, e.target.value)}
+                                      />
+                                    </div>
                                   </div>
                                 </div>
                                 {classEleves.length === 0 ? (
