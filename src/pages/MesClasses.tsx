@@ -234,7 +234,6 @@ export default function MesClasses() {
                                             total: stats.total,
                                           });
                                         }}
-                                        }}
                                       >
                                         <Download className="h-3.5 w-3.5" /> Excel
                                       </Button>
