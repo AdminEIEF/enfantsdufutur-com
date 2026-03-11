@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { sortClasses } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
 export default function MesClasses() {
   const [selectedCycle, setSelectedCycle] = useState('all');
