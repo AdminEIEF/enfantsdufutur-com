@@ -1280,7 +1280,7 @@ export default function Personnel() {
                     const canvas = qrRef.current?.querySelector('canvas');
                     if (!canvas) return;
                     const qrDataUrl = (canvas as HTMLCanvasElement).toDataURL('image/png');
-                    generateBadgeEmployePDF(selectedEmp, qrDataUrl, schoolConfig?.nom);
+                    generateBadgeEmployePDF(selectedEmp, qrDataUrl, schoolConfig?.nom, schoolConfig?.logo_url);
                   }}>
                     <Printer className="h-4 w-4 mr-1" /> Imprimer Badge PVC
                   </Button>
