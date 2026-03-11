@@ -1,7 +1,7 @@
 import {
   GraduationCap, Users, UserPlus, BookOpen, Calculator, AlertTriangle,
   Settings, Bell, ScanLine, Library, BarChart3,
-  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock, FileText, Shield, Bot
+  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock, FileText, Shield, Bot, Trophy
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -44,6 +44,7 @@ const navSections = [
       { title: 'Emploi du temps', url: '/emploi-du-temps', icon: Clock },
       { title: 'Calendrier', url: '/calendrier', icon: CalendarDays },
       { title: 'Orientation', url: '/orientation', icon: BarChart3 },
+      { title: 'Performance', url: '/performance', icon: Trophy },
     ],
   },
   {

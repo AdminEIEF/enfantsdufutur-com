@@ -10,7 +10,6 @@ import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
 import { motion } from 'framer-motion';
-import PerformanceExcellence from '@/components/PerformanceExcellence';
 import heroImage from '@/assets/hero-school.jpg';
 import schoolAnglais from '@/assets/school-anglais.jpg';
 import schoolBepc from '@/assets/school-bepc.jpg';
@@ -318,10 +317,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Performance & Excellence - Public */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-        <PerformanceExcellence isPublic />
-      </section>
 
       {/* CTA */}
       <section className="bg-primary text-primary-foreground">

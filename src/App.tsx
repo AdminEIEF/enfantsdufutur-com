@@ -71,6 +71,7 @@ import CoordinateurDocuments from "./pages/CoordinateurDocuments";
 import CoordinateurEleves from "./pages/CoordinateurEleves";
 import MesClasses from "./pages/MesClasses";
 import Robotique from "./pages/Robotique";
+import Performance from "./pages/Performance";
 import RobotiqueDashboard from "./pages/RobotiqueDashboard";
 import PointageEleves from "./pages/PointageEleves";
 import PointeurPointage from "./pages/PointeurPointage";
@@ -201,6 +202,7 @@ const App = () => (
             <Route path="/emploi-du-temps" element={<ProtectedRoute><EmploiDuTemps /></ProtectedRoute>} />
             <Route path="/mes-classes" element={<ProtectedRoute><MesClasses /></ProtectedRoute>} />
             <Route path="/orientation" element={<ProtectedRoute><Orientation /></ProtectedRoute>} />
+            <Route path="/performance" element={<ProtectedRoute><Performance /></ProtectedRoute>} />
             <Route path="/paiements" element={<ProtectedRoute><Paiements /></ProtectedRoute>} />
             <Route path="/depenses" element={<ProtectedRoute><Depenses /></ProtectedRoute>} />
             <Route path="/impayes" element={<ProtectedRoute><Impayes /></ProtectedRoute>} />
