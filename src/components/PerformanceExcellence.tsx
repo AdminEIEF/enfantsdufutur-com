@@ -4,12 +4,29 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, Star, TrendingUp, Users, Download, Award, Crown } from 'lucide-react';
+import { Trophy, Star, TrendingUp, Users, Download, Award, Crown, Printer, FileText } from 'lucide-react';
 import { usePerformanceData, type MajorEleve } from '@/hooks/usePerformanceData';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
+import { generateCertificatePDF, generateAllCertificatesPDF } from '@/lib/generateCertificatExcellence';
+import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 
-function MajorCard({ major, rank }: { major: MajorEleve; rank: number }) {
+function MajorCard({ major, rank, logoUrl }: { major: MajorEleve; rank: number; logoUrl: string | null }) {
   const isMajor = rank === 0;
+  const [printing, setPrinting] = useState(false);
+
+  const handlePrintCertificate = async () => {
+    setPrinting(true);
+    try {
+      await generateCertificatePDF(major, logoUrl);
+      toast.success(`Certificat généré pour ${major.prenom} ${major.nom}`);
+    } catch (err) {
+      toast.error('Erreur lors de la génération du certificat');
+    } finally {
+      setPrinting(false);
+    }
+  };
+
   return (
     <Card className={`relative overflow-hidden transition-all hover:shadow-xl ${isMajor ? 'ring-2 ring-[hsl(38,92%,50%)] shadow-lg' : 'border-border/60'}`}>
       {isMajor && (
@@ -17,7 +34,7 @@ function MajorCard({ major, rank }: { major: MajorEleve; rank: number }) {
           <Crown className="h-5 w-5 text-[hsl(38,92%,50%)]" />
         </div>
       )}
-      <CardContent className="flex flex-col items-center pt-6 pb-5 px-4">
+      <CardContent className="flex flex-col items-center pt-6 pb-4 px-4">
         {/* Photo */}
         <div className={`w-20 h-20 rounded-full overflow-hidden mb-3 border-[3px] ${isMajor ? 'border-[hsl(38,92%,50%)] shadow-[0_0_16px_hsl(38,92%,50%,0.3)]' : 'border-primary/30'} bg-muted flex items-center justify-center`}>
           {major.photo_url ? (
@@ -45,6 +62,17 @@ function MajorCard({ major, rank }: { major: MajorEleve; rank: number }) {
           </div>
           <div className="text-[10px] text-muted-foreground font-medium">/ 20</div>
         </div>
+        {/* Certificate button */}
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-3 w-full h-7 text-[10px] gap-1 border-[hsl(38,92%,50%)]/30 text-[hsl(38,92%,50%)] hover:bg-[hsl(38,92%,50%)]/10"
+          onClick={handlePrintCertificate}
+          disabled={printing}
+        >
+          <FileText className="h-3 w-3" />
+          {printing ? 'Génération...' : 'Certificat'}
+        </Button>
       </CardContent>
     </Card>
   );
@@ -53,7 +81,9 @@ function MajorCard({ major, rank }: { major: MajorEleve; rank: number }) {
 export default function PerformanceExcellence({ isPublic = false }: { isPublic?: boolean }) {
   const [selectedPeriode, setSelectedPeriode] = useState<string>('all');
   const [cycleFilter, setCycleFilter] = useState<string>('all');
+  const [printingAll, setPrintingAll] = useState(false);
   const hallRef = useRef<HTMLDivElement>(null);
+  const { data: schoolConfig } = useSchoolConfig();
 
   const { periodes, niveauPerformances, moyenneGenerale, majors, isLoading, totalElevesNotes } = usePerformanceData(
     selectedPeriode !== 'all' ? selectedPeriode : undefined
@@ -75,7 +105,6 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageW = doc.internal.pageSize.getWidth();
 
-    // Header
     doc.setFillColor(30, 58, 138);
     doc.rect(0, 0, pageW, 35, 'F');
     doc.setTextColor(255, 255, 255);
@@ -87,7 +116,6 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
     const periodeName = selectedPeriode === 'all' ? 'Toutes les périodes' : periodes.find(p => p.id === selectedPeriode)?.nom || '';
     doc.text(`${periodeName} — Moyenne Générale: ${moyenneGenerale.toFixed(2)} / 20`, pageW / 2, 26, { align: 'center' });
 
-    // Content
     doc.setTextColor(30, 30, 30);
     let y = 45;
     const colW = (pageW - 30) / 3;
@@ -95,47 +123,48 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
     sortedMajors.forEach((major, i) => {
       const col = i % 3;
       const x = 15 + col * colW;
-
       if (col === 0 && i > 0) y += 50;
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-      }
+      if (y > 270) { doc.addPage(); y = 20; }
 
-      // Card
       doc.setDrawColor(200, 170, 50);
       doc.setLineWidth(0.5);
       doc.roundedRect(x, y, colW - 5, 45, 3, 3);
-
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       doc.text(`${major.prenom} ${major.nom}`, x + (colW - 5) / 2, y + 12, { align: 'center' });
-
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
       doc.text(`${major.classe_nom} — ${major.niveau_nom}`, x + (colW - 5) / 2, y + 19, { align: 'center' });
-
       doc.setTextColor(30, 58, 138);
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.text(`${major.moyenne.toFixed(2)}`, x + (colW - 5) / 2, y + 32, { align: 'center' });
-
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.text('/ 20', x + (colW - 5) / 2 + 12, y + 32);
-
       doc.setTextColor(30, 30, 30);
     });
 
-    // Footer
     const lastPage = doc.internal.pages.length - 1;
     doc.setPage(lastPage);
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
     doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')} — EduGestion Pro`, pageW / 2, 290, { align: 'center' });
-
     doc.save('Tableau_Honneur_Majors.pdf');
+  };
+
+  const handlePrintAllCertificates = async () => {
+    if (sortedMajors.length === 0) return;
+    setPrintingAll(true);
+    try {
+      await generateAllCertificatesPDF(sortedMajors, schoolConfig?.logo_url || null);
+      toast.success(`${sortedMajors.length} certificats générés avec succès`);
+    } catch {
+      toast.error('Erreur lors de la génération des certificats');
+    } finally {
+      setPrintingAll(false);
+    }
   };
 
   if (isLoading) {
@@ -192,6 +221,17 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
               <Download className="mr-1.5 h-3.5 w-3.5" />
               PDF
             </Button>
+            {sortedMajors.length > 0 && (
+              <Button
+                size="sm"
+                onClick={handlePrintAllCertificates}
+                disabled={printingAll}
+                className="h-8 text-xs bg-[hsl(38,92%,50%)] hover:bg-[hsl(38,92%,45%)] text-white"
+              >
+                <Printer className="mr-1.5 h-3.5 w-3.5" />
+                {printingAll ? 'Génération...' : 'Tous les certificats'}
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -274,10 +314,7 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
                     </span>
                   </div>
                 </div>
-                <Progress
-                  value={n.taux_reussite}
-                  className="h-2.5"
-                />
+                <Progress value={n.taux_reussite} className="h-2.5" />
               </div>
             ))}
           </CardContent>
@@ -295,7 +332,7 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
             {sortedMajors.map((major, i) => (
-              <MajorCard key={major.id} major={major} rank={i} />
+              <MajorCard key={major.id} major={major} rank={i} logoUrl={schoolConfig?.logo_url || null} />
             ))}
           </div>
         </div>

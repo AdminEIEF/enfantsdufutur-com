@@ -6,6 +6,7 @@ export interface MajorEleve {
   nom: string;
   prenom: string;
   photo_url: string | null;
+  qr_code: string | null;
   classe_nom: string;
   niveau_nom: string;
   cycle_nom: string;
@@ -53,7 +54,7 @@ export function usePerformanceData(periodeId?: string) {
 
       const { data: eleves, error: elevesErr } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, photo_url, sexe, classe_id, classes(nom, niveau_id, niveaux:niveau_id(id, nom, cycle_id, cycles:cycle_id(nom)))')
+        .select('id, nom, prenom, photo_url, sexe, qr_code, classe_id, classes(nom, niveau_id, niveaux:niveau_id(id, nom, cycle_id, cycles:cycle_id(nom)))')
         .is('deleted_at', null)
         .eq('statut', 'inscrit');
       if (elevesErr) throw elevesErr;
@@ -152,6 +153,7 @@ export function usePerformanceData(periodeId?: string) {
         id: eleve.id,
         nom: eleve.nom,
         prenom: eleve.prenom,
+        qr_code: eleve.qr_code || null,
         photo_url: eleve.photo_url,
         classe_nom: eleve.classes?.nom || '',
         niveau_nom: n.nom,
