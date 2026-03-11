@@ -222,7 +222,16 @@ export default function MesClasses() {
                                             'Matricule': e.matricule || '',
                                             'Sexe': e.sexe || '',
                                           }));
-                                          exportToExcel(data, `Liste_${cls.nom.replace(/\s+/g, '_')}`, cls.nom);
+                                          const schoolName = schoolConfig?.nom || 'École Internationale Les Enfants du Futur';
+                                          exportToExcel(data, `Liste_${cls.nom.replace(/\s+/g, '_')}`, cls.nom, {
+                                            schoolName,
+                                            niveau: niveau.nom,
+                                            classe: cls.nom,
+                                            garcons: stats.garcons,
+                                            filles: stats.filles,
+                                            total: stats.total,
+                                          });
+                                        }}
                                         }}
                                       >
                                         <Download className="h-3.5 w-3.5" /> Excel
