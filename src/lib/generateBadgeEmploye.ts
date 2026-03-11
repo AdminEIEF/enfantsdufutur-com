@@ -91,22 +91,40 @@ function drawSingleBadge(
   }
   doc.restoreGraphicsState();
 
-  // === Top accent bar ===
-  doc.setFillColor(15, 60, 50);
-  doc.rect(x, y, CARD_W, 12, 'F');
+  // === Top accent bar — gradient vert clair + rouge ===
+  // Red-green gradient effect: left side green, right side red
+  doc.setFillColor(144, 190, 109); // Vert clair
+  doc.rect(x, y, CARD_W / 2, 14, 'F');
+  doc.setFillColor(200, 60, 60); // Rouge
+  doc.rect(x + CARD_W / 2, y, CARD_W / 2, 14, 'F');
+  // Blend strip in center
+  doc.setFillColor(172, 125, 84);
+  doc.rect(x + CARD_W / 2 - 3, y, 6, 14, 'F');
 
-  // === Logo ===
+  // === Logo with white background circle ===
   if (logoImg) {
-    const logoSize = 7;
-    doc.addImage(logoImg, 'PNG', x + (CARD_W - logoSize) / 2, y + 1, logoSize, logoSize);
+    const logoSize = 8;
+    const logoX = x + (CARD_W - logoSize) / 2;
+    const logoY = y + 1;
+    // White circle behind logo
+    doc.setFillColor(255, 255, 255);
+    doc.circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2 + 1, 'F');
+    doc.addImage(logoImg, 'PNG', logoX, logoY, logoSize, logoSize);
   }
 
   // === School name ===
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(4.5);
+  doc.setFontSize(4.2);
   doc.setTextColor(255, 255, 255);
   const nameLines = doc.splitTextToSize(schoolName, CARD_W - 4);
-  doc.text(nameLines, x + CARD_W / 2, y + (logoImg ? 9.5 : 6), { align: 'center' });
+  const nameY = y + (logoImg ? 10.5 : 5);
+  doc.text(nameLines, x + CARD_W / 2, nameY, { align: 'center' });
+
+  // === Slogan / Devise ===
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(3.5);
+  doc.setTextColor(255, 255, 230);
+  doc.text('« Faisons plus ! »', x + CARD_W / 2, nameY + 3, { align: 'center' });
 
   // === Photo ===
   const photoW = 22;
@@ -164,12 +182,19 @@ function drawSingleBadge(
   // === Category color ribbon at bottom ===
   const ribbonColor = categorieRibbonColor[emp.categorie] || [100, 100, 100];
   doc.setFillColor(ribbonColor[0], ribbonColor[1], ribbonColor[2]);
-  doc.rect(x, y + CARD_H - 6, CARD_W, 6, 'F');
+  doc.rect(x, y + CARD_H - 8, CARD_W, 8, 'F');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(4.5);
   doc.setTextColor(255, 255, 255);
-  doc.text((categorieLabel[emp.categorie] || emp.categorie).toUpperCase(), x + CARD_W / 2, y + CARD_H - 2, { align: 'center' });
+  doc.text((categorieLabel[emp.categorie] || emp.categorie).toUpperCase(), x + CARD_W / 2, y + CARD_H - 4.5, { align: 'center' });
+
+  // Phone number in ribbon
+  if (emp.telephone) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(3.5);
+    doc.text(`Tél: ${emp.telephone}`, x + CARD_W / 2, y + CARD_H - 1.5, { align: 'center' });
+  }
 
   // === Thin border ===
   doc.setDrawColor(200, 200, 210);
