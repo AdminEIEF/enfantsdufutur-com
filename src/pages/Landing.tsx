@@ -44,14 +44,8 @@ export default function Landing() {
   const { data: dbStats } = useQuery({
     queryKey: ['landing-stats'],
     queryFn: async () => {
-      const [elevesRes, enseignantsRes] = await Promise.all([
-        supabase.from('eleves').select('id', { count: 'exact', head: true }).eq('statut', 'actif').is('deleted_at', null),
-        supabase.from('employes').select('id', { count: 'exact', head: true }).eq('categorie', 'enseignant').eq('statut', 'actif'),
-      ]);
-      return {
-        eleves: elevesRes.count ?? 0,
-        enseignants: enseignantsRes.count ?? 0,
-      };
+      const { data } = await supabase.rpc('get_landing_stats');
+      return data as { eleves: number; enseignants: number } | null;
     },
   });
 
