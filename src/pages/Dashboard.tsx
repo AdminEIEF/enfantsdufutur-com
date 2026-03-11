@@ -799,9 +799,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Performance & Excellence */}
-      <PerformanceExcellence />
+    </div>
+  );
+}
     </div>
   );
 }
