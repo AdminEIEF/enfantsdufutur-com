@@ -15,8 +15,19 @@ import { Button } from '@/components/ui/button';
 
 const navSections = [
   {
+    label: 'Superviseur',
+    roles: ['superviseur'] as const,
+    items: [
+      { title: 'Tableau de bord', url: '/superviseur-dashboard', icon: Home },
+      { title: 'Personnel', url: '/personnel', icon: Briefcase },
+      { title: 'Pré-inscriptions', url: '/pre-inscriptions', icon: FileText },
+      { title: 'Supervision', url: '/supervision', icon: Shield },
+      { title: 'Configuration', url: '/configuration', icon: Settings },
+    ],
+  },
+  {
     label: 'Principal',
-    roles: ['admin', 'secretaire', 'service_info', 'comptable', 'superviseur'] as const,
+    roles: ['admin', 'secretaire', 'service_info', 'comptable'] as const,
     items: [
       { title: 'Tableau de bord', url: '/dashboard', icon: Home },
       { title: 'Notifications', url: '/notifications', icon: Bell },
