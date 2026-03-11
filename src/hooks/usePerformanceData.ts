@@ -54,7 +54,7 @@ export function usePerformanceData(periodeId?: string) {
 
       const { data: eleves, error: elevesErr } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, photo_url, sexe, classe_id, classes(nom, niveau_id, niveaux:niveau_id(id, nom, cycle_id, cycles:cycle_id(nom)))')
+        .select('id, nom, prenom, photo_url, sexe, qr_code, classe_id, classes(nom, niveau_id, niveaux:niveau_id(id, nom, cycle_id, cycles:cycle_id(nom)))')
         .is('deleted_at', null)
         .eq('statut', 'inscrit');
       if (elevesErr) throw elevesErr;
