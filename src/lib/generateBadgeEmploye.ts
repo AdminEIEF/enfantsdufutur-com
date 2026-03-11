@@ -175,9 +175,10 @@ function drawSingleBadge(
   doc.roundedRect(qrX - 1, qrY - 1, qrSize + 2, qrSize + 2, 1, 1, 'F');
   doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
 
-  doc.setFontSize(3.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(3.2);
   doc.setTextColor(140, 140, 155);
-  doc.text('Scanner pour vérification', x + CARD_W / 2, qrY + qrSize + 2.5, { align: 'center' });
+  doc.text('CARTE PERSONNEL — À PRÉSENTER À LA RENTRÉE', x + CARD_W / 2, qrY + qrSize + 2.5, { align: 'center' });
 
   // === Category color ribbon at bottom ===
   const ribbonColor = categorieRibbonColor[emp.categorie] || [100, 100, 100];
