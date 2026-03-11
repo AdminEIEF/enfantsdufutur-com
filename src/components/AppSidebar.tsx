@@ -44,6 +44,7 @@ const navSections = [
       { title: 'Emploi du temps', url: '/emploi-du-temps', icon: Clock },
       { title: 'Calendrier', url: '/calendrier', icon: CalendarDays },
       { title: 'Orientation', url: '/orientation', icon: BarChart3 },
+      { title: 'Performance', url: '/performance', icon: Trophy },
     ],
   },
   {
