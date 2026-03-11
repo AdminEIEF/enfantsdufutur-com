@@ -1527,6 +1527,7 @@ export default function Configuration() {
           <TabsTrigger value="niveaux">Niveaux</TabsTrigger>
           <TabsTrigger value="classes">Classes</TabsTrigger>
           <TabsTrigger value="matieres">Matières</TabsTrigger>
+          <TabsTrigger value="classe-matieres">📚 Matières/Classe</TabsTrigger>
           <TabsTrigger value="periodes">Périodes</TabsTrigger>
           <TabsTrigger value="tranches">💳 Tranches</TabsTrigger>
           <TabsTrigger value="transport">Transport</TabsTrigger>
