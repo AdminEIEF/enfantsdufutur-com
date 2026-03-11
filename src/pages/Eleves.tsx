@@ -110,6 +110,7 @@ export default function Eleves() {
   const [editing, setEditing] = useState<any>(null);
   const [badgeEleve, setBadgeEleve] = useState<any>(null);
   const [abandonDialog, setAbandonDialog] = useState<any>(null);
+  const [deleteDialog, setDeleteDialog] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showPlanche, setShowPlanche] = useState(false);
   const [creatingFamille, setCreatingFamille] = useState(false);
