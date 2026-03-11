@@ -1646,6 +1646,7 @@ export type Database = {
           id: string
           niveau_id: string | null
           nom: string
+          ordre: number
           pole: string | null
         }
         Insert: {
@@ -1655,6 +1656,7 @@ export type Database = {
           id?: string
           niveau_id?: string | null
           nom: string
+          ordre?: number
           pole?: string | null
         }
         Update: {
@@ -1664,6 +1666,7 @@ export type Database = {
           id?: string
           niveau_id?: string | null
           nom?: string
+          ordre?: number
           pole?: string | null
         }
         Relationships: [
