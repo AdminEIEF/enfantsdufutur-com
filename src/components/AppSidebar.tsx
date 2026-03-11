@@ -41,6 +41,7 @@ const navSections = [
       { title: 'Inscriptions', url: '/inscriptions', icon: UserPlus },
       { title: 'Familles', url: '/familles', icon: Users },
       { title: 'Élèves', url: '/eleves', icon: ClipboardList },
+      { title: 'Corbeille', url: '/corbeille', icon: Archive },
       { title: 'Réinscription', url: '/reinscription', icon: RefreshCw },
     ],
   },
