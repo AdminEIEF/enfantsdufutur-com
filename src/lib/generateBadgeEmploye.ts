@@ -83,21 +83,12 @@ function drawSingleBadge(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
   doc.setTextColor(100, 100, 120);
-  // Rotate text at center
-  const cx = x + CARD_W / 2;
-  const cy = y + CARD_H / 2;
-  const angle = -45;
-  const rad = (angle * Math.PI) / 180;
-  // Draw rotated text
   const textStr = 'PERSONNEL';
-  const cos = Math.cos(rad);
-  const sin = Math.sin(rad);
-  // Use transform matrix for rotation
-  doc.internal.write(
-    `q ${cos.toFixed(4)} ${sin.toFixed(4)} ${(-sin).toFixed(4)} ${cos.toFixed(4)} ${(cx * 2.835).toFixed(2)} ${((doc.internal.pageSize.getHeight() - cy) * 2.835).toFixed(2)} cm`
-  );
-  doc.text(textStr, 0, 0, { align: 'center' });
-  doc.internal.write('Q');
+  for (let wy = -10; wy < CARD_H + 10; wy += 18) {
+    for (let wx = -20; wx < CARD_W + 20; wx += 40) {
+      doc.text(textStr, x + wx, y + wy, { angle: 45 });
+    }
+  }
   doc.restoreGraphicsState();
 
   // === Top accent bar ===
