@@ -75,6 +75,7 @@ import Performance from "./pages/Performance";
 import RobotiqueDashboard from "./pages/RobotiqueDashboard";
 import PointageEleves from "./pages/PointageEleves";
 import PointeurPointage from "./pages/PointeurPointage";
+import SuperviseurDashboard from "./pages/SuperviseurDashboard";
 import StudentEcriture from "./pages/student/StudentEcriture";
 import StudentCalculMental from "./pages/student/StudentCalculMental";
 import StudentCultureGenerale from "./pages/student/StudentCultureGenerale";
