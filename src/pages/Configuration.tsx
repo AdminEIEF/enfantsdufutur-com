@@ -479,6 +479,9 @@ function MatieresTab() {
         const { error } = await supabase.from('matieres').update(payload).eq('id', editId);
         if (error) throw error;
       } else {
+        // Auto-set ordre to next value
+        const { data: maxRow } = await supabase.from('matieres').select('ordre').order('ordre', { ascending: false }).limit(1).single();
+        payload.ordre = (maxRow?.ordre ?? 0) + 1;
         const { error } = await supabase.from('matieres').insert(payload);
         if (error) throw error;
       }
