@@ -185,10 +185,20 @@ export default function CoordinateurPersonnel() {
             Gestion du personnel affecté aux cycles Maternelle et Primaire
           </p>
         </div>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" />Ajouter un employé</Button>
-          </DialogTrigger>
+        <div className="flex gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={handleExportExcel}>
+            <Download className="h-4 w-4 mr-1" /> Exporter Excel
+          </Button>
+          <label className="cursor-pointer">
+            <input type="file" className="hidden" accept=".xlsx,.xls" onChange={handleImportExcel} disabled={importLoading} />
+            <Button size="sm" variant="outline" asChild disabled={importLoading}>
+              <span>{importLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}Importer Excel</span>
+            </Button>
+          </label>
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="h-4 w-4 mr-2" />Ajouter</Button>
+            </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Nouvel employé</DialogTitle>
