@@ -25,7 +25,7 @@ export default function Bulletins() {
   const { data: classes = [] } = useQuery({
     queryKey: ['classes-bulletin'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('classes').select('*, niveaux:niveau_id(nom, ordre, cycle_id, frais_scolarite, cycles:cycle_id(nom, ordre))');
+      const { data, error } = await supabase.from('classes').select('*, niveaux:niveau_id(nom, ordre, cycle_id, frais_scolarite, cycles:cycle_id(nom, ordre, bareme))');
       if (error) throw error;
       return sortClasses(data || []);
     },
@@ -107,9 +107,8 @@ export default function Bulletins() {
     enabled: !!classeId && eleves.length > 0 && periodes.length > 0,
   });
 
-  const isPrimaire = selectedCl?.niveaux?.cycles?.nom?.includes('Primaire') || selectedCl?.niveaux?.cycles?.nom?.includes('Crèche') || selectedCl?.niveaux?.cycles?.nom?.includes('Maternelle');
-  const seuil = isPrimaire ? 6 : 12;
-  const bareme = isPrimaire ? 10 : 20;
+  const bareme = selectedCl?.niveaux?.cycles?.bareme ?? 20;
+  const seuil = bareme / 2;
 
   // Compute average for a given student and notes set
   const computeAverage = (eleveId: string, notesSet: any[]) => {
