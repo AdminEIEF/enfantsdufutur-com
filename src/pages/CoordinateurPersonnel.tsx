@@ -26,6 +26,7 @@ export default function CoordinateurPersonnel() {
   const [importLoading, setImportLoading] = useState(false);
   const [importPreview, setImportPreview] = useState<any[]>([]);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importCategorie, setImportCategorie] = useState('enseignant');
 
   const [form, setForm] = useState({
     nom: '', prenom: '', sexe: 'M', telephone: '', email: '',
