@@ -103,6 +103,10 @@ export default function CoordinateurPersonnel() {
     `${e.nom} ${e.prenom} ${e.matricule} ${e.poste}`.toLowerCase().includes(search.toLowerCase())
   );
 
+  const categorieLabel: Record<string, string> = {
+    enseignant: 'Enseignant', administration: 'Administration', administratif: 'Administratif', service: 'Service', direction: 'Direction',
+  };
+
   const categorieBadge = (cat: string) => {
     const colors: Record<string, string> = {
       enseignant: 'bg-blue-100 text-blue-800',
@@ -111,6 +115,62 @@ export default function CoordinateurPersonnel() {
       securite: 'bg-orange-100 text-orange-800',
     };
     return colors[cat] || 'bg-muted text-muted-foreground';
+  };
+
+  const handleExportExcel = async () => {
+    const data = filtered.map((e: any) => ({
+      'Matricule': e.matricule,
+      'Nom': e.nom,
+      'Prénom': e.prenom,
+      'Catégorie': categorieLabel[e.categorie] || e.categorie,
+      'Poste': e.poste || '',
+      'Téléphone': e.telephone || '',
+      'Statut': e.statut,
+    }));
+    await exportToExcel(data, 'personnel_primaire', 'Personnel');
+    toast({ title: '✅ Export Excel réussi' });
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportLoading(true);
+    try {
+      const rows = await readExcelFile(file);
+      if (rows.length === 0) { toast({ title: 'Fichier vide', variant: 'destructive' }); return; }
+
+      let added = 0;
+      for (const row of rows) {
+        const nom = row['Nom'] || row['nom'];
+        const prenom = row['Prénom'] || row['prenom'];
+        if (!nom || !prenom) continue;
+
+        const catRaw = (row['Catégorie'] || row['categorie'] || 'enseignant').toString().toLowerCase();
+        const catMap: Record<string, string> = { enseignant: 'enseignant', administratif: 'administratif', administration: 'administration', service: 'service', direction: 'direction' };
+        const categorie = catMap[catRaw] || 'enseignant';
+
+        const matricule = `EMP-${String(Math.floor(1000 + Math.random() * 9000))}`;
+        const { error } = await supabase.from('employes').insert({
+          matricule,
+          nom: nom as string,
+          prenom: prenom as string,
+          categorie: categorie as any,
+          poste: 'Enseignant',
+          telephone: (row['Téléphone'] || row['telephone'] || null) as string | null,
+          salaire_base: 0,
+          date_embauche: new Date().toISOString().slice(0, 10),
+        });
+        if (!error) added++;
+      }
+
+      toast({ title: `✅ ${added} employé(s) importé(s)`, description: 'Cliquez sur chaque nom pour compléter.' });
+      qc.invalidateQueries({ queryKey: ['coord-employes'] });
+    } catch (err: any) {
+      toast({ title: 'Erreur import', description: err.message, variant: 'destructive' });
+    } finally {
+      setImportLoading(false);
+      e.target.value = '';
+    }
   };
 
   return (
