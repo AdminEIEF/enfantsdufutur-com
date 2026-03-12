@@ -64,6 +64,28 @@ export default function AffectationsEnseignants({ primaryOnly = false }: Props) 
     },
   });
 
+  // Fetch classe_matieres to filter subjects per class
+  const { data: classeMatieres = [] } = useQuery({
+    queryKey: ['affect-classe-matieres'],
+    queryFn: async () => {
+      const { data } = await supabase.from('classe_matieres').select('classe_id, matiere_id');
+      return data || [];
+    },
+  });
+
+  // Filter matieres based on selected class
+  const filteredMatieres = form.classe_id
+    ? (() => {
+        const matiereIds = classeMatieres
+          .filter((cm: any) => cm.classe_id === form.classe_id)
+          .map((cm: any) => cm.matiere_id);
+        // If class has specific subjects assigned, filter; otherwise show all
+        return matiereIds.length > 0
+          ? matieres.filter((m: any) => matiereIds.includes(m.id))
+          : matieres;
+      })()
+    : matieres;
+
   // Fetch all assignments
   const { data: affectations = [], isLoading } = useQuery({
     queryKey: ['enseignant-classes'],
