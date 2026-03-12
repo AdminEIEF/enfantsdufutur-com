@@ -352,7 +352,7 @@ export default function AffectationsEnseignants({ primaryOnly = false }: Props) 
                 <SelectTrigger><SelectValue placeholder="Toutes matières" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">— Toutes matières —</SelectItem>
-                  {matieres.map((m: any) => (
+                  {filteredMatieres.map((m: any) => (
                     <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>
                   ))}
                 </SelectContent>
