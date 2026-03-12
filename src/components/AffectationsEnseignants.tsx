@@ -140,6 +140,16 @@ export default function AffectationsEnseignants({ primaryOnly = false }: Props) 
     ? affectations.filter((a: any) => a.employe_id === filterEnseignant)
     : affectations;
 
+  // Group by teacher
+  const grouped = filtered.reduce((acc: Record<string, { teacher: any; items: any[] }>, a: any) => {
+    const key = a.employe_id;
+    if (!acc[key]) {
+      acc[key] = { teacher: a.employes, items: [] };
+    }
+    acc[key].items.push(a);
+    return acc;
+  }, {});
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -161,79 +171,77 @@ export default function AffectationsEnseignants({ primaryOnly = false }: Props) 
         </Button>
       </div>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <GraduationCap className="h-4 w-4" />
-            Affectations enseignants — classes ({filtered.length})
-          </CardTitle>
-        </CardHeader>
-        <div className="overflow-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Enseignant</TableHead>
-                <TableHead>Classe</TableHead>
-                <TableHead>Matière</TableHead>
-                <TableHead className="w-24">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                  </TableCell>
-                </TableRow>
-              ) : filtered.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                    Aucune affectation
-                  </TableCell>
-                </TableRow>
-              ) : filtered.map((a: any) => (
-                <TableRow key={a.id}>
-                  <TableCell className="font-medium">
-                    {a.employes?.prenom} {a.employes?.nom}
-                    <span className="text-muted-foreground text-xs ml-1">({a.employes?.matricule})</span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className="text-xs">
-                      {(a.classes as any)?.niveaux?.nom} — {a.classes?.nom}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {a.matieres?.nom ? (
-                      <Badge variant="outline" className="text-xs">
-                        <BookOpen className="h-3 w-3 mr-1" /> {a.matieres.nom}
-                      </Badge>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Toutes matières</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(a)}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                        onClick={() => {
-                          if (confirm('Supprimer cette affectation ?')) deleteMutation.mutate(a.id);
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+      {isLoading ? (
+        <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+      ) : Object.keys(grouped).length === 0 ? (
+        <Card><CardContent className="py-8 text-center text-muted-foreground">Aucune affectation</CardContent></Card>
+      ) : (
+        <div className="space-y-2">
+          {Object.entries(grouped).map(([empId, { teacher, items }]: [string, any]) => (
+            <details key={empId} open className="group">
+              <summary className="cursor-pointer list-none flex items-center gap-2 py-2 px-2 hover:bg-accent/50 rounded-md transition-colors">
+                <span className="transition-transform group-open:rotate-90 text-muted-foreground">▶</span>
+                <GraduationCap className="h-4 w-4 text-primary" />
+                <span className="font-medium text-sm">{teacher?.prenom} {teacher?.nom}</span>
+                <span className="text-xs text-muted-foreground">({teacher?.matricule})</span>
+                <Badge variant="secondary" className="text-xs ml-auto">
+                  {items.length} affectation{items.length > 1 ? 's' : ''}
+                </Badge>
+              </summary>
+              <Card className="mt-1 mb-3">
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Classe</TableHead>
+                        <TableHead>Matière</TableHead>
+                        <TableHead className="w-24">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map((a: any) => (
+                        <TableRow key={a.id}>
+                          <TableCell>
+                            <Badge variant="secondary" className="text-xs">
+                              {(a.classes as any)?.niveaux?.nom} — {a.classes?.nom}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {a.matieres?.nom ? (
+                              <Badge variant="outline" className="text-xs">
+                                <BookOpen className="h-3 w-3 mr-1" /> {a.matieres.nom}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Toutes matières</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(a)}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                onClick={() => {
+                                  if (confirm('Supprimer cette affectation ?')) deleteMutation.mutate(a.id);
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </details>
+          ))}
         </div>
-      </Card>
+      )}
 
       {/* Dialog add/edit */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
