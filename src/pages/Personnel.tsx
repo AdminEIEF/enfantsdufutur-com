@@ -198,6 +198,7 @@ export default function Personnel() {
   const [importLoading, setImportLoading] = useState(false);
   const [importPreview, setImportPreview] = useState<any[]>([]);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importCategorie, setImportCategorie] = useState('enseignant');
   const [editForm, setEditForm] = useState<any>(null);
   const [editSaving, setEditSaving] = useState(false);
 
@@ -708,8 +709,7 @@ export default function Personnel() {
     let added = 0;
     try {
       for (const row of importPreview) {
-        const catMap: Record<string, string> = { enseignant: 'enseignant', administratif: 'administration', administration: 'administration', service: 'service', direction: 'direction' };
-        const categorie = catMap[row.categorie] || 'service';
+        const categorie = importCategorie;
 
         const prefixMap: Record<string, string> = { enseignant: 'ENS', administration: 'ADM', service: 'SRV', direction: 'DIR' };
         const prefix = prefixMap[categorie] || 'EMP';
@@ -1687,16 +1687,29 @@ export default function Personnel() {
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>📋 Prévisualisation de l'import ({importPreview.length} employés)</DialogTitle>
+            <DialogTitle>📋 Import du personnel ({importPreview.length} employés)</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Catégorie pour tous les employés importés</Label>
+              <Select value={importCategorie} onValueChange={setImportCategorie}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="enseignant">Enseignant</SelectItem>
+                  <SelectItem value="administration">Administration</SelectItem>
+                  <SelectItem value="service">Service</SelectItem>
+                  <SelectItem value="direction">Direction</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>#</TableHead>
                   <TableHead>Nom</TableHead>
                   <TableHead>Prénom</TableHead>
-                  <TableHead>Catégorie</TableHead>
                   <TableHead>Téléphone</TableHead>
                 </TableRow>
               </TableHeader>
@@ -1706,9 +1719,6 @@ export default function Personnel() {
                     <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell className="font-medium">{row.nom}</TableCell>
                     <TableCell>{row.prenom}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{row.categorie}</Badge>
-                    </TableCell>
                     <TableCell>{row.telephone || '—'}</TableCell>
                   </TableRow>
                 ))}
@@ -1720,7 +1730,7 @@ export default function Personnel() {
               </Button>
               <Button onClick={confirmImport} disabled={importLoading}>
                 {importLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                ✅ Confirmer l'import
+                ✅ Importer comme "{importCategorie}"
               </Button>
             </div>
           </div>
