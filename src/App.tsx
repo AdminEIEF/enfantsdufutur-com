@@ -155,6 +155,9 @@ function AuthRoute() {
       if (roles[0] === 'librairie') return <Navigate to="/librairie" replace />;
       if (roles[0] === 'robotique') return <Navigate to="/robotique-dashboard" replace />;
       if (roles[0] === 'pointeur') return <Navigate to="/pointeur-pointage" replace />;
+      if (roles[0] === 'comptable') return <Navigate to="/paiements" replace />;
+      if (roles[0] === 'chauffeur') return <Navigate to="/transport" replace />;
+      if (roles[0] === 'surveillant') return <Navigate to="/pointage-eleves" replace />;
     }
     return <Navigate to="/dashboard" replace />;
   }
