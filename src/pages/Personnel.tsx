@@ -709,8 +709,7 @@ export default function Personnel() {
     let added = 0;
     try {
       for (const row of importPreview) {
-        const catMap: Record<string, string> = { enseignant: 'enseignant', administratif: 'administration', administration: 'administration', service: 'service', direction: 'direction' };
-        const categorie = catMap[row.categorie] || 'service';
+        const categorie = importCategorie;
 
         const prefixMap: Record<string, string> = { enseignant: 'ENS', administration: 'ADM', service: 'SRV', direction: 'DIR' };
         const prefix = prefixMap[categorie] || 'EMP';
