@@ -120,14 +120,33 @@ export function readExcelFile(file: File): Promise<Record<string, any>[]> {
         const worksheet = workbook.worksheets[0];
         if (!worksheet) { resolve([]); return; }
 
+        // Find the header row (first row with at least 2 non-empty text cells)
+        let headerRowNumber = 0;
         const headers: string[] = [];
-        worksheet.getRow(1).eachCell((cell, colNumber) => {
-          headers[colNumber - 1] = String(cell.value ?? '');
+        
+        worksheet.eachRow((row, rowNumber) => {
+          if (headerRowNumber > 0) return;
+          const cellValues: string[] = [];
+          row.eachCell((cell) => {
+            const val = String(cell.value ?? '').trim();
+            if (val && val.length > 0 && isNaN(Number(val))) {
+              cellValues.push(val);
+            }
+          });
+          // Consider it a header row if it has at least 2 text cells
+          if (cellValues.length >= 2) {
+            headerRowNumber = rowNumber;
+            row.eachCell((cell, colNumber) => {
+              headers[colNumber - 1] = String(cell.value ?? '').trim();
+            });
+          }
         });
+
+        if (headerRowNumber === 0) { resolve([]); return; }
 
         const rows: Record<string, any>[] = [];
         worksheet.eachRow((row, rowNumber) => {
-          if (rowNumber === 1) return; // skip header
+          if (rowNumber <= headerRowNumber) return;
           const obj: Record<string, any> = {};
           row.eachCell((cell, colNumber) => {
             const key = headers[colNumber - 1];

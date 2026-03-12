@@ -142,15 +142,43 @@ export default function CoordinateurPersonnel() {
       const rows = await readExcelFile(file);
       if (rows.length === 0) { toast({ title: 'Fichier vide', variant: 'destructive' }); return; }
 
-      // Préparer la prévisualisation
-      const preview = rows.map((row, index) => ({
-        id: index,
-        nom: row['Nom'] || row['nom'] || '',
-        prenom: row['Prénom'] || row['prenom'] || '',
-        categorie: (row['Catégorie'] || row['categorie'] || 'enseignant').toString().toLowerCase().trim(),
-        telephone: row['Téléphone'] || row['telephone'] || '',
-      })).filter(r => r.nom && r.prenom);
+      const findCol = (row: Record<string, any>, patterns: string[]) => {
+        for (const key of Object.keys(row)) {
+          const k = key.toLowerCase().trim();
+          for (const p of patterns) {
+            if (k === p || k.includes(p)) return String(row[key] ?? '').trim();
+          }
+        }
+        return '';
+      };
 
+      const preview = rows.map((row, index) => {
+        let nom = findCol(row, ['nom']);
+        let prenom = findCol(row, ['prénom', 'prenom', 'prenoms', 'prénoms']);
+        const telephone = findCol(row, ['téléphone', 'telephone', 'tel', 'numéro', 'numero', 'contact', 'n°']);
+
+        if (!prenom && nom) {
+          const fullNameCol = findCol(row, ['nom et prenom', 'nom et prénom', 'nom & prenom', 'nom & prénom', 'nom complet']);
+          if (fullNameCol) {
+            const parts = fullNameCol.split(/\s+/);
+            nom = parts[0] || '';
+            prenom = parts.slice(1).join(' ') || '';
+          }
+        }
+        if (!prenom && nom && nom.includes(' ')) {
+          const parts = nom.split(/\s+/);
+          nom = parts[0];
+          prenom = parts.slice(1).join(' ');
+        }
+
+        return { id: index, nom, prenom, telephone };
+      }).filter(r => r.nom && r.prenom);
+
+      if (preview.length === 0) {
+        const cols = rows.length > 0 ? Object.keys(rows[0]).join(', ') : 'aucune';
+        toast({ title: 'Aucun employé valide trouvé', description: `Colonnes: ${cols}`, variant: 'destructive' });
+        return;
+      }
       setImportPreview(preview);
       setImportDialogOpen(true);
     } catch (err: any) {

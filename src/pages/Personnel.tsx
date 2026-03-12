@@ -685,15 +685,52 @@ export default function Personnel() {
       const rows = await readExcelFile(file);
       if (rows.length === 0) { toast({ title: 'Fichier vide', variant: 'destructive' }); setImportLoading(false); return; }
 
-      const preview = rows.map((row, index) => ({
-        id: index,
-        nom: row['Nom'] || row['nom'] || '',
-        prenom: row['Prénom'] || row['prenom'] || '',
-        categorie: (row['Catégorie'] || row['categorie'] || 'service').toString().toLowerCase().trim(),
-        telephone: row['Téléphone'] || row['telephone'] || '',
-      })).filter(r => r.nom && r.prenom);
+      // Debug: log detected columns
+      console.log('Excel columns detected:', Object.keys(rows[0]));
+      console.log('First row:', rows[0]);
 
-      if (preview.length === 0) { toast({ title: 'Aucun employé valide trouvé', variant: 'destructive' }); setImportLoading(false); return; }
+      // Flexible column matching
+      const findCol = (row: Record<string, any>, patterns: string[]) => {
+        for (const key of Object.keys(row)) {
+          const k = key.toLowerCase().trim();
+          for (const p of patterns) {
+            if (k === p || k.includes(p)) return String(row[key] ?? '').trim();
+          }
+        }
+        return '';
+      };
+
+      const preview = rows.map((row, index) => {
+        let nom = findCol(row, ['nom']);
+        let prenom = findCol(row, ['prénom', 'prenom', 'prenoms', 'prénoms']);
+        const telephone = findCol(row, ['téléphone', 'telephone', 'tel', 'numéro', 'numero', 'contact', 'n°']);
+
+        // If "Nom et Prénom" or "Nom & Prénom" in a single column
+        if (!prenom && nom) {
+          const fullNameCol = findCol(row, ['nom et prenom', 'nom et prénom', 'nom & prenom', 'nom & prénom', 'nom complet', 'nom_complet']);
+          if (fullNameCol) {
+            const parts = fullNameCol.split(/\s+/);
+            nom = parts[0] || '';
+            prenom = parts.slice(1).join(' ') || '';
+          }
+        }
+
+        // If still no prenom, try splitting nom (if it has spaces)
+        if (!prenom && nom && nom.includes(' ')) {
+          const parts = nom.split(/\s+/);
+          nom = parts[0];
+          prenom = parts.slice(1).join(' ');
+        }
+
+        return { id: index, nom, prenom, telephone };
+      }).filter(r => r.nom && r.prenom);
+
+      if (preview.length === 0) { 
+        const cols = rows.length > 0 ? Object.keys(rows[0]).join(', ') : 'aucune';
+        toast({ title: 'Aucun employé valide trouvé', description: `Colonnes détectées: ${cols}. Attendu: Nom, Prénom`, variant: 'destructive' }); 
+        setImportLoading(false); 
+        return; 
+      }
       setImportPreview(preview);
       setImportDialogOpen(true);
     } catch (err: any) {
