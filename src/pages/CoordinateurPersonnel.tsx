@@ -44,6 +44,7 @@ export default function CoordinateurPersonnel() {
       const { data, error } = await supabase
         .from('employes')
         .select('*, enseignant_classes(id, classe_id, matiere_id, classes(nom, niveaux(nom, cycles(nom))))')
+        .eq('categorie', 'enseignant')
         .order('nom');
       if (error) throw error;
       return data || [];
