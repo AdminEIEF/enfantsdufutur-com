@@ -141,24 +141,47 @@ export default function CoordinateurPersonnel() {
       const rows = await readExcelFile(file);
       if (rows.length === 0) { toast({ title: 'Fichier vide', variant: 'destructive' }); return; }
 
-      let added = 0;
-      for (const row of rows) {
-        const nom = row['Nom'] || row['nom'];
-        const prenom = row['Prénom'] || row['prenom'];
-        if (!nom || !prenom) continue;
+      // Préparer la prévisualisation
+      const preview = rows.map((row, index) => ({
+        id: index,
+        nom: row['Nom'] || row['nom'] || '',
+        prenom: row['Prénom'] || row['prenom'] || '',
+        categorie: (row['Catégorie'] || row['categorie'] || 'enseignant').toString().toLowerCase().trim(),
+        telephone: row['Téléphone'] || row['telephone'] || '',
+      })).filter(r => r.nom && r.prenom);
 
-        const catRaw = (row['Catégorie'] || row['categorie'] || 'enseignant').toString().toLowerCase().trim();
-        const catMap: Record<string, string> = { enseignant: 'enseignant', administratif: 'administration', administration: 'administration', service: 'service', direction: 'direction' };
-        const categorie = catMap[catRaw] || 'enseignant';
+      setImportPreview(preview);
+      setImportDialogOpen(true);
+    } catch (err: any) {
+      toast({ title: 'Erreur import', description: err.message, variant: 'destructive' });
+    } finally {
+      setImportLoading(false);
+      e.target.value = '';
+    }
+  };
+
+  const confirmImport = async () => {
+    setImportLoading(true);
+    let added = 0;
+    try {
+      for (const row of importPreview) {
+        const catMap: Record<string, string> = { 
+          enseignant: 'enseignant', 
+          administratif: 'administration', 
+          administration: 'administration', 
+          service: 'service', 
+          direction: 'direction' 
+        };
+        const categorie = catMap[row.categorie] || 'enseignant';
 
         const matricule = `EMP-${String(Math.floor(1000 + Math.random() * 9000))}`;
         const { error } = await supabase.from('employes').insert({
           matricule,
-          nom: nom as string,
-          prenom: prenom as string,
+          nom: row.nom,
+          prenom: row.prenom,
           categorie: categorie as any,
           poste: 'Enseignant',
-          telephone: (row['Téléphone'] || row['telephone'] || null) as string | null,
+          telephone: row.telephone || null,
           salaire_base: 0,
           date_embauche: new Date().toISOString().slice(0, 10),
         });
@@ -167,11 +190,12 @@ export default function CoordinateurPersonnel() {
 
       toast({ title: `✅ ${added} employé(s) importé(s)`, description: 'Cliquez sur chaque nom pour compléter.' });
       qc.invalidateQueries({ queryKey: ['coord-employes'] });
+      setImportDialogOpen(false);
+      setImportPreview([]);
     } catch (err: any) {
       toast({ title: 'Erreur import', description: err.message, variant: 'destructive' });
     } finally {
       setImportLoading(false);
-      e.target.value = '';
     }
   };
 
