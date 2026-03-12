@@ -523,6 +523,12 @@ export default function CoordinateurPersonnel() {
           </div>
         </DialogContent>
       </Dialog>
+        </TabsContent>
+
+        <TabsContent value="affectations">
+          <AffectationsEnseignants primaryOnly />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
