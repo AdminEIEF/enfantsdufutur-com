@@ -60,6 +60,15 @@ const navSections = [
     ],
   },
   {
+    label: 'Coordination',
+    roles: ['coordinateur'] as any,
+    items: [
+      { title: 'Tableau de bord', url: '/coordinateur-dashboard', icon: Home },
+      { title: 'Élèves inscrits', url: '/coordinateur-eleves', icon: ClipboardList },
+      { title: 'Documents coordinateur', url: '/coordinateur-documents', icon: FileText },
+    ],
+  },
+  {
     label: 'Académique',
     roles: ['coordinateur'] as any,
     items: [
