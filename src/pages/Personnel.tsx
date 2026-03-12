@@ -1333,12 +1333,24 @@ export default function Personnel() {
       </Tabs>
 
       {/* Employee detail dialog */}
-      <Dialog open={!!selectedEmp} onOpenChange={v => { if (!v) setSelectedEmp(null); }}>
+      <Dialog open={!!selectedEmp} onOpenChange={v => { if (!v) { setSelectedEmp(null); setEditForm(null); } }}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           {selectedEmp && (
             <>
               <DialogHeader>
-                <DialogTitle>{selectedEmp.prenom} {selectedEmp.nom}</DialogTitle>
+                <DialogTitle className="flex items-center justify-between">
+                  <span>{selectedEmp.prenom} {selectedEmp.nom}</span>
+                  {!editForm ? (
+                    <Button size="sm" variant="outline" onClick={() => setEditForm({
+                      nom: selectedEmp.nom, prenom: selectedEmp.prenom, sexe: selectedEmp.sexe || 'M',
+                      categorie: selectedEmp.categorie, poste: selectedEmp.poste || '', telephone: selectedEmp.telephone || '',
+                      email: selectedEmp.email || '', adresse: selectedEmp.adresse || '', salaire_base: String(selectedEmp.salaire_base || 0),
+                      date_embauche: selectedEmp.date_embauche || '', statut: selectedEmp.statut,
+                    })}>
+                      ✏️ Modifier
+                    </Button>
+                  ) : null}
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 text-sm">
                 {/* Photo */}
@@ -1355,18 +1367,94 @@ export default function Personnel() {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div><span className="text-muted-foreground">Matricule:</span> <span className="font-mono">{selectedEmp.matricule}</span></div>
-                  <div><span className="text-muted-foreground">Catégorie:</span> {categorieLabel[selectedEmp.categorie]}</div>
-                  <div><span className="text-muted-foreground">Poste:</span> {selectedEmp.poste || '—'}</div>
-                  <div><span className="text-muted-foreground">Sexe:</span> {selectedEmp.sexe || '—'}</div>
-                  <div><span className="text-muted-foreground">Téléphone:</span> {selectedEmp.telephone || '—'}</div>
-                  <div><span className="text-muted-foreground">Email:</span> {selectedEmp.email || '—'}</div>
-                  <div><span className="text-muted-foreground">Adresse:</span> {selectedEmp.adresse || '—'}</div>
-                  <div><span className="text-muted-foreground">Embauche:</span> {selectedEmp.date_embauche ? format(new Date(selectedEmp.date_embauche), 'dd/MM/yyyy') : '—'}</div>
-                  <div><span className="text-muted-foreground">Salaire:</span> <span className="font-bold">{Number(selectedEmp.salaire_base).toLocaleString()} GNF</span></div>
-                  <div><span className="text-muted-foreground">Statut:</span> <Badge variant={selectedEmp.statut === 'actif' ? 'default' : 'destructive'}>{selectedEmp.statut}</Badge></div>
-                </div>
+                {editForm ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1"><Label>Nom *</Label><Input value={editForm.nom} onChange={e => setEditForm((f: any) => ({ ...f, nom: e.target.value }))} /></div>
+                      <div className="space-y-1"><Label>Prénom *</Label><Input value={editForm.prenom} onChange={e => setEditForm((f: any) => ({ ...f, prenom: e.target.value }))} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1"><Label>Catégorie</Label>
+                        <Select value={editForm.categorie} onValueChange={v => setEditForm((f: any) => ({ ...f, categorie: v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="enseignant">Enseignant</SelectItem>
+                            <SelectItem value="administration">Administration</SelectItem>
+                            <SelectItem value="service">Service</SelectItem>
+                            <SelectItem value="direction">Direction</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1"><Label>Sexe</Label>
+                        <Select value={editForm.sexe} onValueChange={v => setEditForm((f: any) => ({ ...f, sexe: v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="M">Masculin</SelectItem>
+                            <SelectItem value="F">Féminin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1"><Label>Poste</Label><Input value={editForm.poste} onChange={e => setEditForm((f: any) => ({ ...f, poste: e.target.value }))} /></div>
+                      <div className="space-y-1"><Label>Téléphone</Label><Input value={editForm.telephone} onChange={e => setEditForm((f: any) => ({ ...f, telephone: e.target.value }))} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1"><Label>Email</Label><Input type="email" value={editForm.email} onChange={e => setEditForm((f: any) => ({ ...f, email: e.target.value }))} /></div>
+                      <div className="space-y-1"><Label>Salaire (GNF)</Label><Input type="number" value={editForm.salaire_base} onChange={e => setEditForm((f: any) => ({ ...f, salaire_base: e.target.value }))} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1"><Label>Date embauche</Label><Input type="date" value={editForm.date_embauche} onChange={e => setEditForm((f: any) => ({ ...f, date_embauche: e.target.value }))} /></div>
+                      <div className="space-y-1"><Label>Statut</Label>
+                        <Select value={editForm.statut} onValueChange={v => setEditForm((f: any) => ({ ...f, statut: v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="actif">Actif</SelectItem>
+                            <SelectItem value="inactif">Inactif</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-1"><Label>Adresse</Label><Input value={editForm.adresse} onChange={e => setEditForm((f: any) => ({ ...f, adresse: e.target.value }))} /></div>
+                    <div className="flex gap-2">
+                      <Button className="flex-1" disabled={editSaving} onClick={async () => {
+                        if (!editForm.nom || !editForm.prenom) { toast({ title: 'Nom et prénom obligatoires', variant: 'destructive' }); return; }
+                        setEditSaving(true);
+                        const { error } = await supabase.from('employes').update({
+                          nom: editForm.nom, prenom: editForm.prenom, sexe: editForm.sexe,
+                          categorie: editForm.categorie as any, poste: editForm.poste,
+                          telephone: editForm.telephone || null, email: editForm.email || null,
+                          adresse: editForm.adresse || null, salaire_base: Number(editForm.salaire_base) || 0,
+                          date_embauche: editForm.date_embauche || undefined, statut: editForm.statut,
+                        }).eq('id', selectedEmp.id);
+                        setEditSaving(false);
+                        if (error) { toast({ title: 'Erreur', description: error.message, variant: 'destructive' }); return; }
+                        toast({ title: '✅ Employé mis à jour' });
+                        const updated = { ...selectedEmp, ...editForm, salaire_base: Number(editForm.salaire_base) || 0 };
+                        setSelectedEmp(updated);
+                        setEditForm(null);
+                        qc.invalidateQueries({ queryKey: ['employes'] });
+                      }}>
+                        {editSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />}
+                        Valider les modifications
+                      </Button>
+                      <Button variant="outline" onClick={() => setEditForm(null)}>Annuler</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><span className="text-muted-foreground">Matricule:</span> <span className="font-mono">{selectedEmp.matricule}</span></div>
+                    <div><span className="text-muted-foreground">Catégorie:</span> {categorieLabel[selectedEmp.categorie]}</div>
+                    <div><span className="text-muted-foreground">Poste:</span> {selectedEmp.poste || '—'}</div>
+                    <div><span className="text-muted-foreground">Sexe:</span> {selectedEmp.sexe || '—'}</div>
+                    <div><span className="text-muted-foreground">Téléphone:</span> {selectedEmp.telephone || '—'}</div>
+                    <div><span className="text-muted-foreground">Email:</span> {selectedEmp.email || '—'}</div>
+                    <div><span className="text-muted-foreground">Adresse:</span> {selectedEmp.adresse || '—'}</div>
+                    <div><span className="text-muted-foreground">Embauche:</span> {selectedEmp.date_embauche ? format(new Date(selectedEmp.date_embauche), 'dd/MM/yyyy') : '—'}</div>
+                    <div><span className="text-muted-foreground">Salaire:</span> <span className="font-bold">{Number(selectedEmp.salaire_base).toLocaleString()} GNF</span></div>
+                    <div><span className="text-muted-foreground">Statut:</span> <Badge variant={selectedEmp.statut === 'actif' ? 'default' : 'destructive'}>{selectedEmp.statut}</Badge></div>
+                  </div>
+                )}
 
                 {/* Generate / Modify password */}
                 <div className="border-t pt-3 space-y-2">
