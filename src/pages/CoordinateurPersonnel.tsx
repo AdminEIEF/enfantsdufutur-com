@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Briefcase, Plus, Search, Loader2, Eye, Users, Phone, Mail, Upload, Download, X } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Briefcase, Plus, Search, Loader2, Eye, Users, Phone, Mail, Upload, Download, X, GraduationCap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { exportToExcel, readExcelFile } from '@/lib/excelUtils';
+import AffectationsEnseignants from '@/components/AffectationsEnseignants';
 
 export default function CoordinateurPersonnel() {
   const { toast } = useToast();
@@ -42,6 +44,7 @@ export default function CoordinateurPersonnel() {
       const { data, error } = await supabase
         .from('employes')
         .select('*, enseignant_classes(id, classe_id, matiere_id, classes(nom, niveaux(nom, cycles(nom))))')
+        .eq('categorie', 'enseignant')
         .order('nom');
       if (error) throw error;
       return data || [];
@@ -223,17 +226,24 @@ export default function CoordinateurPersonnel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Briefcase className="h-6 w-6 text-primary" />
-            Personnel Primaire & Maternelle
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gestion du personnel affecté aux cycles Maternelle et Primaire
-          </p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
+      <div>
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Briefcase className="h-6 w-6 text-primary" />
+          Enseignants — Primaire & Maternelle
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Gestion et affectation des enseignants aux classes Maternelle et Primaire
+        </p>
+      </div>
+
+      <Tabs defaultValue="liste" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="liste"><Users className="h-4 w-4 mr-1" /> Liste des enseignants</TabsTrigger>
+          <TabsTrigger value="affectations"><GraduationCap className="h-4 w-4 mr-1" /> Affectations</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="liste" className="space-y-4">
+        <div className="flex gap-2 flex-wrap justify-end">
           <Button size="sm" variant="outline" onClick={handleExportExcel}>
             <Download className="h-4 w-4 mr-1" /> Exporter Excel
           </Button>
@@ -295,7 +305,6 @@ export default function CoordinateurPersonnel() {
           </DialogContent>
         </Dialog>
         </div>
-      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -513,6 +522,12 @@ export default function CoordinateurPersonnel() {
           </div>
         </DialogContent>
       </Dialog>
+        </TabsContent>
+
+        <TabsContent value="affectations">
+          <AffectationsEnseignants primaryOnly />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

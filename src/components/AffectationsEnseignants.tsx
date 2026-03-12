@@ -12,7 +12,11 @@ import { toast } from 'sonner';
 import { sortClasses } from '@/lib/utils';
 import { Plus, Pencil, Trash2, Loader2, BookOpen, GraduationCap } from 'lucide-react';
 
-export default function AffectationsEnseignants() {
+interface Props {
+  primaryOnly?: boolean;
+}
+
+export default function AffectationsEnseignants({ primaryOnly = false }: Props) {
   const qc = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -35,12 +39,19 @@ export default function AffectationsEnseignants() {
 
   // Fetch classes
   const { data: classes = [] } = useQuery({
-    queryKey: ['affect-classes'],
+    queryKey: ['affect-classes', primaryOnly],
     queryFn: async () => {
       const { data } = await supabase
         .from('classes')
-        .select('id, nom, niveaux:niveau_id(nom, ordre, cycles:cycle_id(ordre))');
-      return sortClasses(data || []);
+        .select('id, nom, niveaux:niveau_id(nom, ordre, cycles:cycle_id(nom, ordre))');
+      let result = data || [];
+      if (primaryOnly) {
+        result = result.filter((c: any) => {
+          const cycleName = c.niveaux?.cycles?.nom?.toLowerCase() || '';
+          return cycleName.includes('maternelle') || cycleName.includes('primaire');
+        });
+      }
+      return sortClasses(result);
     },
   });
 
