@@ -412,13 +412,25 @@ export default function CoordinateurPersonnel() {
             <DialogTitle>📋 Prévisualisation de l'import ({importPreview.length} employés)</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Catégorie pour tous les employés importés</Label>
+              <Select value={importCategorie} onValueChange={setImportCategorie}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="enseignant">Enseignant</SelectItem>
+                  <SelectItem value="administration">Administration</SelectItem>
+                  <SelectItem value="service">Service</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>#</TableHead>
                   <TableHead>Nom</TableHead>
                   <TableHead>Prénom</TableHead>
-                  <TableHead>Catégorie</TableHead>
                   <TableHead>Téléphone</TableHead>
                 </TableRow>
               </TableHeader>
@@ -428,11 +440,6 @@ export default function CoordinateurPersonnel() {
                     <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell className="font-medium">{row.nom}</TableCell>
                     <TableCell>{row.prenom}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={categorieBadge(row.categorie)}>
-                        {row.categorie}
-                      </Badge>
-                    </TableCell>
                     <TableCell>{row.telephone || '—'}</TableCell>
                   </TableRow>
                 ))}
@@ -444,7 +451,7 @@ export default function CoordinateurPersonnel() {
               </Button>
               <Button onClick={confirmImport} disabled={importLoading}>
                 {importLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                ✅ Confirmer l'import
+                ✅ Importer comme "{importCategorie}"
               </Button>
             </div>
           </div>
