@@ -25,6 +25,8 @@ export default function CoordinateurPersonnel() {
   const [search, setSearch] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState<any>(null);
+  const [editEmp, setEditEmp] = useState<any>(null);
+  const [editSaving, setEditSaving] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importPreview, setImportPreview] = useState<any[]>([]);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
