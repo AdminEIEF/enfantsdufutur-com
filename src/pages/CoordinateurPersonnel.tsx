@@ -226,17 +226,24 @@ export default function CoordinateurPersonnel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Briefcase className="h-6 w-6 text-primary" />
-            Personnel Primaire & Maternelle
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gestion du personnel affecté aux cycles Maternelle et Primaire
-          </p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
+      <div>
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Briefcase className="h-6 w-6 text-primary" />
+          Enseignants — Primaire & Maternelle
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Gestion et affectation des enseignants aux classes Maternelle et Primaire
+        </p>
+      </div>
+
+      <Tabs defaultValue="liste" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="liste"><Users className="h-4 w-4 mr-1" /> Liste des enseignants</TabsTrigger>
+          <TabsTrigger value="affectations"><GraduationCap className="h-4 w-4 mr-1" /> Affectations</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="liste" className="space-y-4">
+        <div className="flex gap-2 flex-wrap justify-end">
           <Button size="sm" variant="outline" onClick={handleExportExcel}>
             <Download className="h-4 w-4 mr-1" /> Exporter Excel
           </Button>
