@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import {
   Briefcase, Plus, Search, Loader2, Clock, Calendar, DollarSign, FileText,
   Check, X, Eye, Trash2, Upload, UserPlus, Users, ScanLine, CreditCard, Printer,
-  Camera, Download, Key, Mail, Paperclip, BarChart3, MessageSquare, TrendingUp, TrendingDown, AlertTriangle, GraduationCap
+  Camera, Download, Key, Mail, Paperclip, BarChart3, MessageSquare, TrendingUp, TrendingDown, AlertTriangle, GraduationCap, FileSpreadsheet
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -26,6 +26,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { generateBadgeEmployePDF, generatePlancheBadgesEmployesPDF } from '@/lib/generateBadgeEmploye';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
+import { exportToExcel, readExcelFile } from '@/lib/excelUtils';
 
 import AffectationsEnseignants from '@/components/AffectationsEnseignants';
 
@@ -193,6 +194,8 @@ export default function Personnel() {
   const [refuseMotif, setRefuseMotif] = useState('');
   const [refuseTarget, setRefuseTarget] = useState<{ type: 'conge' | 'avance'; id: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [filterCategorie, setFilterCategorie] = useState<string>('all');
+  const [importLoading, setImportLoading] = useState(false);
 
   // Form state for new employee
   const [form, setForm] = useState({
@@ -327,7 +330,6 @@ export default function Personnel() {
       return data;
     },
   });
-
 
   const addEmployee = useMutation({
     mutationFn: async () => {
@@ -642,11 +644,83 @@ export default function Personnel() {
 
   const filtered = employes.filter((e: any) => {
     const q = search.toLowerCase();
-    return !q || e.nom.toLowerCase().includes(q) || e.prenom.toLowerCase().includes(q) || e.matricule.toLowerCase().includes(q);
+    const matchSearch = !q || e.nom.toLowerCase().includes(q) || e.prenom.toLowerCase().includes(q) || e.matricule.toLowerCase().includes(q);
+    const matchCat = filterCategorie === 'all' || e.categorie === filterCategorie;
+    return matchSearch && matchCat;
   });
 
   const categorieLabel: Record<string, string> = {
     enseignant: 'Enseignant', administration: 'Administration', service: 'Service', direction: 'Direction',
+  };
+
+  const handleExportExcel = async () => {
+    const dataToExport = filtered.map((e: any) => ({
+      'Matricule': e.matricule,
+      'Nom': e.nom,
+      'Prénom': e.prenom,
+      'Sexe': e.sexe || '',
+      'Catégorie': categorieLabel[e.categorie] || e.categorie,
+      'Poste': e.poste || '',
+      'Téléphone': e.telephone || '',
+      'Email': e.email || '',
+      'Salaire (GNF)': Number(e.salaire_base) || 0,
+      'Date embauche': e.date_embauche || '',
+      'Statut': e.statut,
+    }));
+    const suffix = filterCategorie !== 'all' ? `_${filterCategorie}` : '';
+    await exportToExcel(dataToExport, `personnel${suffix}`, 'Personnel');
+    toast({ title: '✅ Export Excel réussi' });
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportLoading(true);
+    try {
+      const rows = await readExcelFile(file);
+      if (rows.length === 0) { toast({ title: 'Fichier vide', variant: 'destructive' }); return; }
+      
+      let added = 0;
+      for (const row of rows) {
+        const nom = row['Nom'] || row['nom'];
+        const prenom = row['Prénom'] || row['prenom'];
+        if (!nom || !prenom) continue;
+        
+        const catRaw = (row['Catégorie'] || row['categorie'] || 'service').toString().toLowerCase();
+        const catMap: Record<string, string> = { 'enseignant': 'enseignant', 'administration': 'administration', 'service': 'service', 'direction': 'direction' };
+        const categorie = catMap[catRaw] || 'service';
+        
+        const prefixMap: Record<string, string> = { enseignant: 'ENS', administration: 'ADM', service: 'SRV', direction: 'DIR' };
+        const prefix = prefixMap[categorie] || 'EMP';
+        const { count } = await supabase.from('employes').select('id', { count: 'exact', head: true });
+        const num = String((count || 0) + 1).padStart(4, '0');
+        const matricule = `${prefix}-${num}`;
+        const autoPassword = (prenom as string).slice(0, 3).toLowerCase() + num + String(Math.floor(Math.random() * 100)).padStart(2, '0');
+
+        const { error } = await supabase.from('employes').insert({
+          matricule,
+          nom: nom as string,
+          prenom: prenom as string,
+          sexe: (row['Sexe'] || row['sexe'] || 'M') as string,
+          categorie: categorie as any,
+          poste: (row['Poste'] || row['poste'] || '') as string,
+          telephone: (row['Téléphone'] || row['telephone'] || null) as string | null,
+          email: (row['Email'] || row['email'] || null) as string | null,
+          salaire_base: Number(row['Salaire (GNF)'] || row['salaire_base'] || 0),
+          date_embauche: (row['Date embauche'] || row['date_embauche'] || new Date().toISOString().slice(0, 10)) as string,
+          mot_de_passe: autoPassword,
+        });
+        if (!error) added++;
+      }
+      
+      toast({ title: `✅ ${added} employé(s) importé(s)` });
+      qc.invalidateQueries({ queryKey: ['employes'] });
+    } catch (err: any) {
+      toast({ title: 'Erreur import', description: err.message, variant: 'destructive' });
+    } finally {
+      setImportLoading(false);
+      e.target.value = '';
+    }
   };
 
   return (
@@ -656,7 +730,16 @@ export default function Personnel() {
           <Briefcase className="h-7 w-7 text-primary" /> Personnel
           <Badge>{employes.length}</Badge>
         </h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={handleExportExcel}>
+            <Download className="h-4 w-4 mr-1" /> Exporter Excel
+          </Button>
+          <label className="cursor-pointer">
+            <input type="file" className="hidden" accept=".xlsx,.xls" onChange={handleImportExcel} disabled={importLoading} />
+            <Button size="sm" variant="outline" asChild disabled={importLoading}>
+              <span>{importLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}Importer Excel</span>
+            </Button>
+          </label>
           <Button size="sm" variant="outline" onClick={() => setScannerOpen(true)}>
             <ScanLine className="h-4 w-4 mr-1" /> Pointage QR
           </Button>
@@ -757,8 +840,29 @@ export default function Personnel() {
 
         {/* Employés */}
         <TabsContent value="employes" className="mt-4">
-          <div className="mb-4">
-            <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+          <div className="mb-4 flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+            <Select value={filterCategorie} onValueChange={setFilterCategorie}>
+              <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Toutes catégories" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes catégories</SelectItem>
+                <SelectItem value="enseignant">Enseignants</SelectItem>
+                <SelectItem value="administration">Administration</SelectItem>
+                <SelectItem value="service">Service</SelectItem>
+                <SelectItem value="direction">Direction</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="mb-3 flex gap-2 flex-wrap">
+            {['all', 'enseignant', 'administration', 'service', 'direction'].map(cat => {
+              const count = cat === 'all' ? employes.length : employes.filter((e: any) => e.categorie === cat).length;
+              const label = cat === 'all' ? 'Tous' : (categorieLabel[cat] || cat);
+              return (
+                <Badge key={cat} variant={filterCategorie === cat ? 'default' : 'outline'} className="cursor-pointer" onClick={() => setFilterCategorie(cat)}>
+                  {label} ({count})
+                </Badge>
+              );
+            })}
           </div>
           <Card>
             <div className="overflow-auto">
