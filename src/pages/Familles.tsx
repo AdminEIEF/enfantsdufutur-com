@@ -264,6 +264,41 @@ export default function Familles() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((f: any) => f.id)));
+    }
+  };
+
+  const bulkDeleteFamilles = useMutation({
+    mutationFn: async () => {
+      const ids = Array.from(selectedIds);
+      for (const id of ids) {
+        const { error: detachErr } = await supabase.from('eleves').update({ famille_id: null }).eq('famille_id', id);
+        if (detachErr) throw detachErr;
+        const { error } = await supabase.from('familles').delete().eq('id', id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['familles-with-children'] });
+      toast.success(`${selectedIds.size} famille(s) supprimée(s). Les élèves ont été conservés.`);
+      setSelectedIds(new Set());
+      setBulkDeleteConfirm(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   // Stats
   const totalFamilles = familles.length;
   const totalEnfants = familles.reduce((s: number, f: any) => s + (f.eleves?.length || 0), 0);
