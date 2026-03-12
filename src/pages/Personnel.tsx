@@ -840,8 +840,29 @@ export default function Personnel() {
 
         {/* Employés */}
         <TabsContent value="employes" className="mt-4">
-          <div className="mb-4">
-            <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+          <div className="mb-4 flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+            <Select value={filterCategorie} onValueChange={setFilterCategorie}>
+              <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Toutes catégories" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes catégories</SelectItem>
+                <SelectItem value="enseignant">Enseignants</SelectItem>
+                <SelectItem value="administration">Administration</SelectItem>
+                <SelectItem value="service">Service</SelectItem>
+                <SelectItem value="direction">Direction</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="mb-3 flex gap-2 flex-wrap">
+            {['all', 'enseignant', 'administration', 'service', 'direction'].map(cat => {
+              const count = cat === 'all' ? employes.length : employes.filter((e: any) => e.categorie === cat).length;
+              const label = cat === 'all' ? 'Tous' : (categorieLabel[cat] || cat);
+              return (
+                <Badge key={cat} variant={filterCategorie === cat ? 'default' : 'outline'} className="cursor-pointer" onClick={() => setFilterCategorie(cat)}>
+                  {label} ({count})
+                </Badge>
+              );
+            })}
           </div>
           <Card>
             <div className="overflow-auto">
