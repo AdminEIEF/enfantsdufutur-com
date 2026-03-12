@@ -202,7 +202,7 @@ export default function CoordinateurPersonnel() {
           nom: row.nom,
           prenom: row.prenom,
           categorie: categorie as any,
-          poste: 'Enseignant',
+          poste: row.poste || 'Enseignant',
           telephone: row.telephone || null,
           salaire_base: 0,
           date_embauche: new Date().toISOString().slice(0, 10),
