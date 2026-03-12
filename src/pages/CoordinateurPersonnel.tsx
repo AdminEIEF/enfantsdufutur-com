@@ -25,6 +25,8 @@ export default function CoordinateurPersonnel() {
   const [search, setSearch] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState<any>(null);
+  const [editEmp, setEditEmp] = useState<any>(null);
+  const [editSaving, setEditSaving] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importPreview, setImportPreview] = useState<any[]>([]);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -394,7 +396,15 @@ export default function CoordinateurPersonnel() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => setSelectedEmp(emp)}>
+                      <Button size="sm" variant="ghost" onClick={() => {
+                        setSelectedEmp(emp);
+                        setEditEmp({
+                          nom: emp.nom, prenom: emp.prenom, sexe: emp.sexe || 'M',
+                          telephone: emp.telephone || '', email: emp.email || '',
+                          poste: emp.poste || '', salaire_base: emp.salaire_base || 0,
+                          date_naissance: emp.date_naissance || '', date_embauche: emp.date_embauche || '',
+                        });
+                      }}>
                         <Eye className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -406,24 +416,83 @@ export default function CoordinateurPersonnel() {
         </CardContent>
       </Card>
 
-      {/* Detail dialog */}
-      <Dialog open={!!selectedEmp} onOpenChange={() => setSelectedEmp(null)}>
+      {/* Detail / Edit dialog */}
+      <Dialog open={!!selectedEmp} onOpenChange={() => { setSelectedEmp(null); setEditEmp(null); }}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Fiche employé — {selectedEmp?.prenom} {selectedEmp?.nom}</DialogTitle>
+            <DialogTitle>Fiche enseignant — {selectedEmp?.prenom} {selectedEmp?.nom}</DialogTitle>
           </DialogHeader>
-          {selectedEmp && (
+          {selectedEmp && editEmp && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><span className="text-muted-foreground">Matricule:</span> <strong>{selectedEmp.matricule}</strong></div>
-                <div><span className="text-muted-foreground">Sexe:</span> {selectedEmp.sexe}</div>
-                <div><span className="text-muted-foreground">Catégorie:</span> <Badge variant="outline" className={categorieBadge(selectedEmp.categorie)}>{selectedEmp.categorie}</Badge></div>
-                <div><span className="text-muted-foreground">Poste:</span> {selectedEmp.poste}</div>
-                <div><span className="text-muted-foreground">Téléphone:</span> {selectedEmp.telephone || '—'}</div>
-                <div><span className="text-muted-foreground">Email:</span> {selectedEmp.email || '—'}</div>
-                <div><span className="text-muted-foreground">Date embauche:</span> {selectedEmp.date_embauche ? format(new Date(selectedEmp.date_embauche), 'dd/MM/yyyy') : '—'}</div>
                 <div><span className="text-muted-foreground">Statut:</span> <Badge variant={selectedEmp.statut === 'actif' ? 'default' : 'secondary'}>{selectedEmp.statut}</Badge></div>
               </div>
+
+              {(selectedEmp.coord_edit_count ?? 0) >= 2 ? (
+                <div className="bg-accent/50 border border-border rounded-lg p-4 text-sm text-foreground">
+                  <p className="font-medium">⚠️ Limite de modifications atteinte</p>
+                  <p className="mt-1 text-muted-foreground">Vous avez déjà modifié cette fiche 2 fois. Pour toute modification supplémentaire, veuillez contacter l'administrateur.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Nom</Label><Input value={editEmp.nom} onChange={e => setEditEmp((f: any) => ({ ...f, nom: e.target.value }))} /></div>
+                    <div><Label>Prénom</Label><Input value={editEmp.prenom} onChange={e => setEditEmp((f: any) => ({ ...f, prenom: e.target.value }))} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Sexe</Label>
+                      <Select value={editEmp.sexe} onValueChange={v => setEditEmp((f: any) => ({ ...f, sexe: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="M">Masculin</SelectItem>
+                          <SelectItem value="F">Féminin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div><Label>Poste</Label><Input value={editEmp.poste} onChange={e => setEditEmp((f: any) => ({ ...f, poste: e.target.value }))} placeholder="Ex: Instituteur" /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Téléphone</Label><Input value={editEmp.telephone} onChange={e => setEditEmp((f: any) => ({ ...f, telephone: e.target.value }))} /></div>
+                    <div><Label>Email</Label><Input value={editEmp.email} onChange={e => setEditEmp((f: any) => ({ ...f, email: e.target.value }))} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Date de naissance</Label><Input type="date" value={editEmp.date_naissance} onChange={e => setEditEmp((f: any) => ({ ...f, date_naissance: e.target.value }))} /></div>
+                    <div><Label>Date d'embauche</Label><Input type="date" value={editEmp.date_embauche} onChange={e => setEditEmp((f: any) => ({ ...f, date_embauche: e.target.value }))} /></div>
+                  </div>
+                  <div><Label>Salaire de base (GNF)</Label><Input type="number" value={editEmp.salaire_base} onChange={e => setEditEmp((f: any) => ({ ...f, salaire_base: e.target.value }))} /></div>
+                  <p className="text-xs text-muted-foreground">Modifications restantes : {2 - (selectedEmp.coord_edit_count ?? 0)}/2</p>
+                  <Button className="w-full" disabled={editSaving} onClick={async () => {
+                    setEditSaving(true);
+                    try {
+                      const { error } = await supabase.from('employes').update({
+                        nom: editEmp.nom,
+                        prenom: editEmp.prenom,
+                        sexe: editEmp.sexe,
+                        telephone: editEmp.telephone || null,
+                        email: editEmp.email || null,
+                        poste: editEmp.poste,
+                        salaire_base: Number(editEmp.salaire_base) || 0,
+                        date_naissance: editEmp.date_naissance || null,
+                        date_embauche: editEmp.date_embauche || null,
+                        coord_edit_count: (selectedEmp.coord_edit_count ?? 0) + 1,
+                      } as any).eq('id', selectedEmp.id);
+                      if (error) throw error;
+                      toast({ title: '✅ Fiche mise à jour' });
+                      qc.invalidateQueries({ queryKey: ['coord-employes'] });
+                      setSelectedEmp(null);
+                      setEditEmp(null);
+                    } catch (err: any) {
+                      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+                    } finally {
+                      setEditSaving(false);
+                    }
+                  }}>
+                    {editSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Valider les modifications
+                  </Button>
+                </>
+              )}
 
               {selectedEmp.enseignant_classes?.length > 0 && (
                 <div>

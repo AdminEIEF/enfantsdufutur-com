@@ -1220,6 +1220,7 @@ export type Database = {
         Row: {
           adresse: string | null
           categorie: Database["public"]["Enums"]["categorie_employe"]
+          coord_edit_count: number
           created_at: string
           date_embauche: string
           date_fin_contrat: string | null
@@ -1241,6 +1242,7 @@ export type Database = {
         Insert: {
           adresse?: string | null
           categorie?: Database["public"]["Enums"]["categorie_employe"]
+          coord_edit_count?: number
           created_at?: string
           date_embauche?: string
           date_fin_contrat?: string | null
@@ -1262,6 +1264,7 @@ export type Database = {
         Update: {
           adresse?: string | null
           categorie?: Database["public"]["Enums"]["categorie_employe"]
+          coord_edit_count?: number
           created_at?: string
           date_embauche?: string
           date_fin_contrat?: string | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.employes ADD COLUMN IF NOT EXISTS coord_edit_count integer NOT NULL DEFAULT 0;
