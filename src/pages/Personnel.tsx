@@ -196,6 +196,8 @@ export default function Personnel() {
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [filterCategorie, setFilterCategorie] = useState<string>('all');
   const [importLoading, setImportLoading] = useState(false);
+  const [importPreview, setImportPreview] = useState<any[]>([]);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState<any>(null);
   const [editSaving, setEditSaving] = useState(false);
 
@@ -680,46 +682,64 @@ export default function Personnel() {
     setImportLoading(true);
     try {
       const rows = await readExcelFile(file);
-      if (rows.length === 0) { toast({ title: 'Fichier vide', variant: 'destructive' }); return; }
-      
-      let added = 0;
-      for (const row of rows) {
-        const nom = row['Nom'] || row['nom'];
-        const prenom = row['Prénom'] || row['prenom'];
-        if (!nom || !prenom) continue;
-        
-        const catRaw = (row['Catégorie'] || row['categorie'] || 'service').toString().toLowerCase();
-        const catMap: Record<string, string> = { 'enseignant': 'enseignant', 'administration': 'administration', 'service': 'service', 'direction': 'direction' };
-        const categorie = catMap[catRaw] || 'service';
-        
+      if (rows.length === 0) { toast({ title: 'Fichier vide', variant: 'destructive' }); setImportLoading(false); return; }
+
+      const preview = rows.map((row, index) => ({
+        id: index,
+        nom: row['Nom'] || row['nom'] || '',
+        prenom: row['Prénom'] || row['prenom'] || '',
+        categorie: (row['Catégorie'] || row['categorie'] || 'service').toString().toLowerCase().trim(),
+        telephone: row['Téléphone'] || row['telephone'] || '',
+      })).filter(r => r.nom && r.prenom);
+
+      if (preview.length === 0) { toast({ title: 'Aucun employé valide trouvé', variant: 'destructive' }); setImportLoading(false); return; }
+      setImportPreview(preview);
+      setImportDialogOpen(true);
+    } catch (err: any) {
+      toast({ title: 'Erreur import', description: err.message, variant: 'destructive' });
+    } finally {
+      setImportLoading(false);
+      e.target.value = '';
+    }
+  };
+
+  const confirmImport = async () => {
+    setImportLoading(true);
+    let added = 0;
+    try {
+      for (const row of importPreview) {
+        const catMap: Record<string, string> = { enseignant: 'enseignant', administratif: 'administration', administration: 'administration', service: 'service', direction: 'direction' };
+        const categorie = catMap[row.categorie] || 'service';
+
         const prefixMap: Record<string, string> = { enseignant: 'ENS', administration: 'ADM', service: 'SRV', direction: 'DIR' };
         const prefix = prefixMap[categorie] || 'EMP';
         const { count } = await supabase.from('employes').select('id', { count: 'exact', head: true });
-        const num = String((count || 0) + 1).padStart(4, '0');
+        const num = String((count || 0) + added + 1).padStart(4, '0');
         const matricule = `${prefix}-${num}`;
-        const autoPassword = (prenom as string).slice(0, 3).toLowerCase() + num + String(Math.floor(Math.random() * 100)).padStart(2, '0');
+        const autoPassword = row.prenom.slice(0, 3).toLowerCase() + num + String(Math.floor(Math.random() * 100)).padStart(2, '0');
 
         const { error } = await supabase.from('employes').insert({
           matricule,
-          nom: nom as string,
-          prenom: prenom as string,
+          nom: row.nom,
+          prenom: row.prenom,
           categorie: categorie as any,
           poste: '',
-          telephone: (row['Téléphone'] || row['telephone'] || null) as string | null,
+          telephone: row.telephone || null,
           salaire_base: 0,
           date_embauche: new Date().toISOString().slice(0, 10),
           mot_de_passe: autoPassword,
         });
         if (!error) added++;
       }
-      
+
       toast({ title: `✅ ${added} employé(s) importé(s)`, description: 'Cliquez sur chaque nom pour compléter les informations.' });
       qc.invalidateQueries({ queryKey: ['employes'] });
+      setImportDialogOpen(false);
+      setImportPreview([]);
     } catch (err: any) {
       toast({ title: 'Erreur import', description: err.message, variant: 'destructive' });
     } finally {
       setImportLoading(false);
-      e.target.value = '';
     }
   };
 
@@ -1660,6 +1680,50 @@ export default function Personnel() {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Preview Dialog */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>📋 Prévisualisation de l'import ({importPreview.length} employés)</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Prénom</TableHead>
+                  <TableHead>Catégorie</TableHead>
+                  <TableHead>Téléphone</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {importPreview.map((row, idx) => (
+                  <TableRow key={row.id}>
+                    <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
+                    <TableCell className="font-medium">{row.nom}</TableCell>
+                    <TableCell>{row.prenom}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{row.categorie}</Badge>
+                    </TableCell>
+                    <TableCell>{row.telephone || '—'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setImportDialogOpen(false)} disabled={importLoading}>
+                Annuler
+              </Button>
+              <Button onClick={confirmImport} disabled={importLoading}>
+                {importLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                ✅ Confirmer l'import
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
