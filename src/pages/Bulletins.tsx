@@ -25,7 +25,7 @@ export default function Bulletins() {
   const { data: classes = [] } = useQuery({
     queryKey: ['classes-bulletin'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('classes').select('*, niveaux:niveau_id(nom, ordre, cycle_id, frais_scolarite, cycles:cycle_id(nom, ordre))');
+      const { data, error } = await supabase.from('classes').select('*, niveaux:niveau_id(nom, ordre, cycle_id, frais_scolarite, cycles:cycle_id(nom, ordre, bareme))');
       if (error) throw error;
       return sortClasses(data || []);
     },
