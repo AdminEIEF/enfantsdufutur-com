@@ -67,6 +67,7 @@ import EmployeePointage from "./pages/employee/EmployeePointage";
 import EmployeeEvaluation from "./pages/employee/EmployeeEvaluation";
 import EmployeePlanning from "./pages/employee/EmployeePlanning";
 import AdminMonitoring from "./pages/AdminMonitoring";
+import CoordinateurDashboard from "./pages/CoordinateurDashboard";
 import CoordinateurDocuments from "./pages/CoordinateurDocuments";
 import CoordinateurEleves from "./pages/CoordinateurEleves";
 import MesClasses from "./pages/MesClasses";
