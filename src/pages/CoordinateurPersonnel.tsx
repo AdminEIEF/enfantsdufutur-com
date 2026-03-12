@@ -409,6 +409,8 @@ export default function CoordinateurPersonnel() {
             </div>
           )}
         </DialogContent>
+      </Dialog>
+
       {/* Import Preview Dialog */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
