@@ -357,10 +357,10 @@ export default function CoordinateurPersonnel() {
                   <TableHead>Nom & Prénom</TableHead>
                   <TableHead>Catégorie</TableHead>
                   <TableHead>Poste</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Classes affectées</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Actions</TableHead>
+                   <TableHead>Contact</TableHead>
+                   <TableHead>Classes</TableHead>
+                   <TableHead>Statut</TableHead>
+                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -378,18 +378,26 @@ export default function CoordinateurPersonnel() {
                         {emp.email && <div className="flex items-center gap-1"><Mail className="h-3 w-3" />{emp.email}</div>}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {emp.enseignant_classes?.map((ec: any) => (
-                          <Badge key={ec.id} variant="secondary" className="text-xs">
-                            {ec.classes?.nom}
-                          </Badge>
-                        ))}
-                        {(!emp.enseignant_classes || emp.enseignant_classes.length === 0) && (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
-                      </div>
-                    </TableCell>
+                     <TableCell>
+                       {emp.enseignant_classes?.length > 0 ? (
+                         <details className="cursor-pointer">
+                           <summary className="list-none">
+                             <Badge variant="secondary" className="text-xs cursor-pointer hover:bg-accent">
+                               {emp.enseignant_classes.length} classe{emp.enseignant_classes.length > 1 ? 's' : ''}
+                             </Badge>
+                           </summary>
+                           <div className="mt-1 space-y-0.5">
+                             {emp.enseignant_classes.map((ec: any) => (
+                               <div key={ec.id} className="text-xs text-muted-foreground">
+                                 • {ec.classes?.niveaux?.nom} — {ec.classes?.nom}
+                               </div>
+                             ))}
+                           </div>
+                         </details>
+                       ) : (
+                         <span className="text-xs text-muted-foreground">—</span>
+                       )}
+                     </TableCell>
                     <TableCell>
                       <Badge variant={emp.statut === 'actif' ? 'default' : 'secondary'}>
                         {emp.statut}
