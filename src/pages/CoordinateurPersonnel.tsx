@@ -430,9 +430,9 @@ export default function CoordinateurPersonnel() {
               </div>
 
               {(selectedEmp.coord_edit_count ?? 0) >= 2 ? (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+                <div className="bg-accent/50 border border-border rounded-lg p-4 text-sm text-foreground">
                   <p className="font-medium">⚠️ Limite de modifications atteinte</p>
-                  <p className="mt-1">Vous avez déjà modifié cette fiche 2 fois. Pour toute modification supplémentaire, veuillez contacter l'administrateur.</p>
+                  <p className="mt-1 text-muted-foreground">Vous avez déjà modifié cette fiche 2 fois. Pour toute modification supplémentaire, veuillez contacter l'administrateur.</p>
                 </div>
               ) : (
                 <>
