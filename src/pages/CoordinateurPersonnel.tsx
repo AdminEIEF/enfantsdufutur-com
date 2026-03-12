@@ -246,98 +246,80 @@ export default function CoordinateurPersonnel() {
         <Input className="pl-9" placeholder="Rechercher un employé..." value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
-      {/* Grouped by category - collapsible */}
+      {/* Each teacher collapsible */}
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">Aucun personnel trouvé</div>
-      ) : (() => {
-        const grouped = filtered.reduce((acc: Record<string, any[]>, emp: any) => {
-          const cat = emp.categorie || 'autre';
-          if (!acc[cat]) acc[cat] = [];
-          acc[cat].push(emp);
-          return acc;
-        }, {});
-        return Object.entries(grouped).map(([cat, emps]: [string, any[]]) => (
-          <details key={cat} open className="group">
-            <summary className="cursor-pointer list-none flex items-center gap-2 py-2 px-1 hover:bg-accent/50 rounded-md transition-colors">
-              <span className="transition-transform group-open:rotate-90 text-muted-foreground">▶</span>
-              <Badge variant="outline" className={categorieBadge(cat)}>{categorieLabel[cat] || cat}</Badge>
-              <span className="text-sm text-muted-foreground">({emps.length})</span>
-            </summary>
-            <Card className="mt-1 mb-4">
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Matricule</TableHead>
-                      <TableHead>Nom & Prénom</TableHead>
-                      <TableHead>Poste</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Classes</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {emps.map((emp: any) => (
-                      <TableRow key={emp.id}>
-                        <TableCell className="font-mono text-xs">{emp.matricule}</TableCell>
-                        <TableCell className="font-medium">{emp.prenom} {emp.nom}</TableCell>
-                        <TableCell className="text-sm">{emp.poste}</TableCell>
-                        <TableCell>
-                          <div className="text-xs space-y-0.5">
-                            {emp.telephone && <div className="flex items-center gap-1"><Phone className="h-3 w-3" />{emp.telephone}</div>}
-                            {emp.email && <div className="flex items-center gap-1"><Mail className="h-3 w-3" />{emp.email}</div>}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {emp.enseignant_classes?.length > 0 ? (
-                            <details className="cursor-pointer">
-                              <summary className="list-none">
-                                <Badge variant="secondary" className="text-xs cursor-pointer hover:bg-accent">
-                                  {emp.enseignant_classes.length} classe{emp.enseignant_classes.length > 1 ? 's' : ''}
-                                </Badge>
-                              </summary>
-                              <div className="mt-1 space-y-0.5">
-                                {emp.enseignant_classes.map((ec: any) => (
-                                  <div key={ec.id} className="text-xs text-muted-foreground">
-                                    • {ec.classes?.niveaux?.nom} — {ec.classes?.nom}
-                                  </div>
-                                ))}
-                              </div>
-                            </details>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                    <TableCell>
-                      <Badge variant={emp.statut === 'actif' ? 'default' : 'secondary'}>
-                        {emp.statut}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => {
-                        setSelectedEmp(emp);
-                        setEditEmp({
-                          nom: emp.nom, prenom: emp.prenom, sexe: emp.sexe || 'M',
-                          telephone: emp.telephone || '', email: emp.email || '',
-                          poste: emp.poste || '', salaire_base: emp.salaire_base || 0,
-                          date_naissance: emp.date_naissance || '', date_embauche: emp.date_embauche || '',
-                        });
-                      }}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                    </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </details>
-        ));
-      })()}
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((emp: any) => (
+            <details key={emp.id} className="group border rounded-lg overflow-hidden">
+              <summary className="cursor-pointer list-none flex items-center gap-3 py-3 px-4 hover:bg-accent/50 transition-colors">
+                <span className="transition-transform group-open:rotate-90 text-muted-foreground text-xs">▶</span>
+                <span className="font-mono text-xs text-muted-foreground">{emp.matricule}</span>
+                <span className="font-medium text-sm">{emp.prenom} {emp.nom}</span>
+                {emp.poste && <span className="text-xs text-muted-foreground hidden sm:inline">— {emp.poste}</span>}
+                <div className="ml-auto flex items-center gap-2">
+                  {emp.enseignant_classes?.length > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {emp.enseignant_classes.length} classe{emp.enseignant_classes.length > 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                  <Badge variant={emp.statut === 'actif' ? 'default' : 'secondary'} className="text-xs">
+                    {emp.statut}
+                  </Badge>
+                </div>
+              </summary>
+              <div className="border-t px-4 py-3 bg-muted/30 space-y-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground text-xs">Poste</span>
+                    <p className="font-medium">{emp.poste || '—'}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-xs">Catégorie</span>
+                    <p><Badge variant="outline" className={categorieBadge(emp.categorie)}>{emp.categorie}</Badge></p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-xs">Téléphone</span>
+                    <p className="font-medium">{emp.telephone || '—'}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-xs">Email</span>
+                    <p className="font-medium truncate">{emp.email || '—'}</p>
+                  </div>
+                </div>
+                {emp.enseignant_classes?.length > 0 && (
+                  <div>
+                    <span className="text-muted-foreground text-xs">Classes affectées</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {emp.enseignant_classes.map((ec: any) => (
+                        <Badge key={ec.id} variant="outline" className="text-xs">
+                          {ec.classes?.niveaux?.nom} — {ec.classes?.nom}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-end">
+                  <Button size="sm" variant="outline" onClick={() => {
+                    setSelectedEmp(emp);
+                    setEditEmp({
+                      nom: emp.nom, prenom: emp.prenom, sexe: emp.sexe || 'M',
+                      telephone: emp.telephone || '', email: emp.email || '',
+                      poste: emp.poste || '', salaire_base: emp.salaire_base || 0,
+                      date_naissance: emp.date_naissance || '', date_embauche: emp.date_embauche || '',
+                    });
+                  }}>
+                    <Eye className="h-4 w-4 mr-1" /> Modifier la fiche
+                  </Button>
+                </div>
+              </div>
+            </details>
+          ))}
+        </div>
+      )}
 
       {/* Detail / Edit dialog */}
       <Dialog open={!!selectedEmp} onOpenChange={() => { setSelectedEmp(null); setEditEmp(null); }}>
