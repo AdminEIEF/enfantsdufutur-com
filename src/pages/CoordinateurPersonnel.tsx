@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { exportToExcel, readExcelFile } from '@/lib/excelUtils';
+import { exportToExcel } from '@/lib/excelUtils';
 import AffectationsEnseignants from '@/components/AffectationsEnseignants';
 
 export default function CoordinateurPersonnel() {
