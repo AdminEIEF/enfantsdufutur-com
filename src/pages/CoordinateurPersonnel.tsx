@@ -396,7 +396,15 @@ export default function CoordinateurPersonnel() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => setSelectedEmp(emp)}>
+                      <Button size="sm" variant="ghost" onClick={() => {
+                        setSelectedEmp(emp);
+                        setEditEmp({
+                          nom: emp.nom, prenom: emp.prenom, sexe: emp.sexe || 'M',
+                          telephone: emp.telephone || '', email: emp.email || '',
+                          poste: emp.poste || '', salaire_base: emp.salaire_base || 0,
+                          date_naissance: emp.date_naissance || '', date_embauche: emp.date_embauche || '',
+                        });
+                      }}>
                         <Eye className="h-4 w-4" />
                       </Button>
                     </TableCell>
