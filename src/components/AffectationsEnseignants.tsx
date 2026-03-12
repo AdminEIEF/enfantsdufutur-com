@@ -336,7 +336,7 @@ export default function AffectationsEnseignants({ primaryOnly = false }: Props) 
             </div>
             <div className="space-y-1">
               <Label>Classe *</Label>
-              <Select value={form.classe_id || '__none__'} onValueChange={v => setForm(f => ({ ...f, classe_id: v === '__none__' ? '' : v }))}>
+              <Select value={form.classe_id || '__none__'} onValueChange={v => setForm(f => ({ ...f, classe_id: v === '__none__' ? '' : v, matiere_id: '' }))}>
                 <SelectTrigger><SelectValue placeholder="Choisir une classe" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">— Choisir —</SelectItem>
