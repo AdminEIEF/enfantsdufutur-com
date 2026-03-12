@@ -67,6 +67,7 @@ import EmployeePointage from "./pages/employee/EmployeePointage";
 import EmployeeEvaluation from "./pages/employee/EmployeeEvaluation";
 import EmployeePlanning from "./pages/employee/EmployeePlanning";
 import AdminMonitoring from "./pages/AdminMonitoring";
+import CoordinateurDashboard from "./pages/CoordinateurDashboard";
 import CoordinateurDocuments from "./pages/CoordinateurDocuments";
 import CoordinateurEleves from "./pages/CoordinateurEleves";
 import MesClasses from "./pages/MesClasses";
@@ -126,7 +127,7 @@ function RoleBasedRedirect() {
     if (roles[0] === 'cantine') return <Navigate to="/cantine" replace />;
     if (roles[0] === 'boutique') return <Navigate to="/boutique" replace />;
     if (roles[0] === 'librairie') return <Navigate to="/librairie" replace />;
-    if ((roles[0] as string) === 'coordinateur') return <Navigate to="/coordinateur-documents" replace />;
+    if ((roles[0] as string) === 'coordinateur') return <Navigate to="/coordinateur-dashboard" replace />;
     if (roles[0] === 'robotique') return <Navigate to="/robotique-dashboard" replace />;
     if (roles[0] === 'pointeur') return <Navigate to="/pointeur-pointage" replace />;
   }
@@ -220,6 +221,7 @@ const App = () => (
             <Route path="/tracabilite" element={<ProtectedRoute><Tracabilite /></ProtectedRoute>} />
             <Route path="/supervision" element={<ProtectedRoute><AdminMonitoring /></ProtectedRoute>} />
             <Route path="/superviseur-dashboard" element={<ProtectedRoute><SuperviseurDashboard /></ProtectedRoute>} />
+            <Route path="/coordinateur-dashboard" element={<ProtectedRoute><CoordinateurDashboard /></ProtectedRoute>} />
             <Route path="/coordinateur-documents" element={<ProtectedRoute><CoordinateurDocuments /></ProtectedRoute>} />
             <Route path="/coordinateur-eleves" element={<ProtectedRoute><CoordinateurEleves /></ProtectedRoute>} />
             <Route path="/robotique" element={<ProtectedRoute><Robotique /></ProtectedRoute>} />
