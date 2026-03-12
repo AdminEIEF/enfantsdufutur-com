@@ -355,10 +355,26 @@ export default function Familles() {
         </Card>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Rechercher une famille…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      {/* Search + Bulk actions */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Rechercher une famille…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        {filtered.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Checkbox
+              checked={selectedIds.size === filtered.length && filtered.length > 0}
+              onCheckedChange={toggleSelectAll}
+            />
+            <span className="text-sm text-muted-foreground">Tout sélectionner</span>
+          </div>
+        )}
+        {selectedIds.size > 0 && (
+          <Button variant="destructive" size="sm" onClick={() => setBulkDeleteConfirm(true)}>
+            <Trash2 className="h-4 w-4 mr-1" /> Supprimer {selectedIds.size} famille(s)
+          </Button>
+        )}
       </div>
 
       {/* Family Cards */}
@@ -368,14 +384,21 @@ export default function Familles() {
         ) : filtered.length === 0 ? (
           <p className="text-muted-foreground col-span-full text-center py-8">Aucune famille trouvée</p>
         ) : filtered.map((f: any) => (
-          <Card key={f.id} className="cursor-pointer hover:shadow-md transition-shadow group" onClick={() => setSelectedFamille(f)}>
+          <Card key={f.id} className={`cursor-pointer hover:shadow-md transition-shadow group ${selectedIds.has(f.id) ? 'ring-2 ring-primary' : ''}`}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{f.nom_famille}</CardTitle>
-                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={selectedIds.has(f.id)}
+                    onCheckedChange={() => toggleSelect(f.id)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <CardTitle className="text-lg cursor-pointer" onClick={() => setSelectedFamille(f)}>{f.nom_famille}</CardTitle>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={() => setSelectedFamille(f)} />
               </div>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm">
+            <CardContent className="space-y-2 text-sm" onClick={() => setSelectedFamille(f)}>
               {f.telephone_pere && <div className="flex items-center gap-2 text-muted-foreground"><Phone className="h-3 w-3" /> Père: {f.telephone_pere}</div>}
               {f.telephone_mere && <div className="flex items-center gap-2 text-muted-foreground"><Phone className="h-3 w-3" /> Mère: {f.telephone_mere}</div>}
               {f.email_parent && <div className="flex items-center gap-2 text-muted-foreground"><Mail className="h-3 w-3" /> {f.email_parent}</div>}
@@ -393,6 +416,24 @@ export default function Familles() {
           </Card>
         ))}
       </div>
+
+      {/* Bulk Delete Confirmation */}
+      <Dialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Vous allez supprimer <strong>{selectedIds.size} famille(s)</strong>. Les élèves rattachés seront conservés dans le système mais détachés de leur famille.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDeleteConfirm(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={() => bulkDeleteFamilles.mutate()} disabled={bulkDeleteFamilles.isPending}>
+              {bulkDeleteFamilles.isPending ? 'Suppression…' : 'Confirmer la suppression'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ─── Create/Edit Family Dialog ─── */}
       <Dialog open={formOpen} onOpenChange={(o) => { setFormOpen(o); if (!o) resetForm(); }}>
