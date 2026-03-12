@@ -26,6 +26,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { generateBadgeEmployePDF, generatePlancheBadgesEmployesPDF } from '@/lib/generateBadgeEmploye';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
+import { exportToExcel, readExcelFile } from '@/lib/excelUtils';
 
 import AffectationsEnseignants from '@/components/AffectationsEnseignants';
 
