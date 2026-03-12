@@ -7,13 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Briefcase, Plus, Search, Loader2, Eye, Users, Phone, Mail } from 'lucide-react';
+import { Briefcase, Plus, Search, Loader2, Eye, Users, Phone, Mail, Upload, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { exportToExcel, readExcelFile } from '@/lib/excelUtils';
 
 export default function CoordinateurPersonnel() {
   const { toast } = useToast();
@@ -22,6 +23,7 @@ export default function CoordinateurPersonnel() {
   const [search, setSearch] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState<any>(null);
+  const [importLoading, setImportLoading] = useState(false);
 
   const [form, setForm] = useState({
     nom: '', prenom: '', sexe: 'M', telephone: '', email: '',
@@ -101,6 +103,10 @@ export default function CoordinateurPersonnel() {
     `${e.nom} ${e.prenom} ${e.matricule} ${e.poste}`.toLowerCase().includes(search.toLowerCase())
   );
 
+  const categorieLabel: Record<string, string> = {
+    enseignant: 'Enseignant', administration: 'Administration', administratif: 'Administratif', service: 'Service', direction: 'Direction',
+  };
+
   const categorieBadge = (cat: string) => {
     const colors: Record<string, string> = {
       enseignant: 'bg-blue-100 text-blue-800',
@@ -109,6 +115,62 @@ export default function CoordinateurPersonnel() {
       securite: 'bg-orange-100 text-orange-800',
     };
     return colors[cat] || 'bg-muted text-muted-foreground';
+  };
+
+  const handleExportExcel = async () => {
+    const data = filtered.map((e: any) => ({
+      'Matricule': e.matricule,
+      'Nom': e.nom,
+      'Prénom': e.prenom,
+      'Catégorie': categorieLabel[e.categorie] || e.categorie,
+      'Poste': e.poste || '',
+      'Téléphone': e.telephone || '',
+      'Statut': e.statut,
+    }));
+    await exportToExcel(data, 'personnel_primaire', 'Personnel');
+    toast({ title: '✅ Export Excel réussi' });
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportLoading(true);
+    try {
+      const rows = await readExcelFile(file);
+      if (rows.length === 0) { toast({ title: 'Fichier vide', variant: 'destructive' }); return; }
+
+      let added = 0;
+      for (const row of rows) {
+        const nom = row['Nom'] || row['nom'];
+        const prenom = row['Prénom'] || row['prenom'];
+        if (!nom || !prenom) continue;
+
+        const catRaw = (row['Catégorie'] || row['categorie'] || 'enseignant').toString().toLowerCase();
+        const catMap: Record<string, string> = { enseignant: 'enseignant', administratif: 'administratif', administration: 'administration', service: 'service', direction: 'direction' };
+        const categorie = catMap[catRaw] || 'enseignant';
+
+        const matricule = `EMP-${String(Math.floor(1000 + Math.random() * 9000))}`;
+        const { error } = await supabase.from('employes').insert({
+          matricule,
+          nom: nom as string,
+          prenom: prenom as string,
+          categorie: categorie as any,
+          poste: 'Enseignant',
+          telephone: (row['Téléphone'] || row['telephone'] || null) as string | null,
+          salaire_base: 0,
+          date_embauche: new Date().toISOString().slice(0, 10),
+        });
+        if (!error) added++;
+      }
+
+      toast({ title: `✅ ${added} employé(s) importé(s)`, description: 'Cliquez sur chaque nom pour compléter.' });
+      qc.invalidateQueries({ queryKey: ['coord-employes'] });
+    } catch (err: any) {
+      toast({ title: 'Erreur import', description: err.message, variant: 'destructive' });
+    } finally {
+      setImportLoading(false);
+      e.target.value = '';
+    }
   };
 
   return (
@@ -123,10 +185,20 @@ export default function CoordinateurPersonnel() {
             Gestion du personnel affecté aux cycles Maternelle et Primaire
           </p>
         </div>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" />Ajouter un employé</Button>
-          </DialogTrigger>
+        <div className="flex gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={handleExportExcel}>
+            <Download className="h-4 w-4 mr-1" /> Exporter Excel
+          </Button>
+          <label className="cursor-pointer">
+            <input type="file" className="hidden" accept=".xlsx,.xls" onChange={handleImportExcel} disabled={importLoading} />
+            <Button size="sm" variant="outline" asChild disabled={importLoading}>
+              <span>{importLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}Importer Excel</span>
+            </Button>
+          </label>
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="h-4 w-4 mr-2" />Ajouter</Button>
+            </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Nouvel employé</DialogTitle>
@@ -174,6 +246,7 @@ export default function CoordinateurPersonnel() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Stats */}
