@@ -64,6 +64,7 @@ const navSections = [
     roles: ['coordinateur'] as any,
     items: [
       { title: 'Tableau de bord', url: '/coordinateur-dashboard', icon: Home },
+      { title: 'Personnel', url: '/coordinateur-personnel', icon: Briefcase },
       { title: 'Élèves inscrits', url: '/coordinateur-eleves', icon: ClipboardList },
       { title: 'Documents coordinateur', url: '/coordinateur-documents', icon: FileText },
     ],
