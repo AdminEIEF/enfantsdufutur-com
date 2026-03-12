@@ -644,11 +644,83 @@ export default function Personnel() {
 
   const filtered = employes.filter((e: any) => {
     const q = search.toLowerCase();
-    return !q || e.nom.toLowerCase().includes(q) || e.prenom.toLowerCase().includes(q) || e.matricule.toLowerCase().includes(q);
+    const matchSearch = !q || e.nom.toLowerCase().includes(q) || e.prenom.toLowerCase().includes(q) || e.matricule.toLowerCase().includes(q);
+    const matchCat = filterCategorie === 'all' || e.categorie === filterCategorie;
+    return matchSearch && matchCat;
   });
 
   const categorieLabel: Record<string, string> = {
     enseignant: 'Enseignant', administration: 'Administration', service: 'Service', direction: 'Direction',
+  };
+
+  const handleExportExcel = async () => {
+    const dataToExport = filtered.map((e: any) => ({
+      'Matricule': e.matricule,
+      'Nom': e.nom,
+      'Prénom': e.prenom,
+      'Sexe': e.sexe || '',
+      'Catégorie': categorieLabel[e.categorie] || e.categorie,
+      'Poste': e.poste || '',
+      'Téléphone': e.telephone || '',
+      'Email': e.email || '',
+      'Salaire (GNF)': Number(e.salaire_base) || 0,
+      'Date embauche': e.date_embauche || '',
+      'Statut': e.statut,
+    }));
+    const suffix = filterCategorie !== 'all' ? `_${filterCategorie}` : '';
+    await exportToExcel(dataToExport, `personnel${suffix}`, 'Personnel');
+    toast({ title: '✅ Export Excel réussi' });
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportLoading(true);
+    try {
+      const rows = await readExcelFile(file);
+      if (rows.length === 0) { toast({ title: 'Fichier vide', variant: 'destructive' }); return; }
+      
+      let added = 0;
+      for (const row of rows) {
+        const nom = row['Nom'] || row['nom'];
+        const prenom = row['Prénom'] || row['prenom'];
+        if (!nom || !prenom) continue;
+        
+        const catRaw = (row['Catégorie'] || row['categorie'] || 'service').toString().toLowerCase();
+        const catMap: Record<string, string> = { 'enseignant': 'enseignant', 'administration': 'administration', 'service': 'service', 'direction': 'direction' };
+        const categorie = catMap[catRaw] || 'service';
+        
+        const prefixMap: Record<string, string> = { enseignant: 'ENS', administration: 'ADM', service: 'SRV', direction: 'DIR' };
+        const prefix = prefixMap[categorie] || 'EMP';
+        const { count } = await supabase.from('employes').select('id', { count: 'exact', head: true });
+        const num = String((count || 0) + 1).padStart(4, '0');
+        const matricule = `${prefix}-${num}`;
+        const autoPassword = (prenom as string).slice(0, 3).toLowerCase() + num + String(Math.floor(Math.random() * 100)).padStart(2, '0');
+
+        const { error } = await supabase.from('employes').insert({
+          matricule,
+          nom: nom as string,
+          prenom: prenom as string,
+          sexe: (row['Sexe'] || row['sexe'] || 'M') as string,
+          categorie: categorie as any,
+          poste: (row['Poste'] || row['poste'] || '') as string,
+          telephone: (row['Téléphone'] || row['telephone'] || null) as string | null,
+          email: (row['Email'] || row['email'] || null) as string | null,
+          salaire_base: Number(row['Salaire (GNF)'] || row['salaire_base'] || 0),
+          date_embauche: (row['Date embauche'] || row['date_embauche'] || new Date().toISOString().slice(0, 10)) as string,
+          mot_de_passe: autoPassword,
+        });
+        if (!error) added++;
+      }
+      
+      toast({ title: `✅ ${added} employé(s) importé(s)` });
+      qc.invalidateQueries({ queryKey: ['employes'] });
+    } catch (err: any) {
+      toast({ title: 'Erreur import', description: err.message, variant: 'destructive' });
+    } finally {
+      setImportLoading(false);
+      e.target.value = '';
+    }
   };
 
   return (
