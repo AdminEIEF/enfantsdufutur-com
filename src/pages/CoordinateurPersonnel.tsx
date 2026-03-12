@@ -62,10 +62,10 @@ export default function CoordinateurPersonnel() {
         .select('id, nom, niveaux(nom, cycles(nom))')
         .order('nom');
       if (error) throw error;
-      // Filter to primary/maternelle on client side
+      // Filter to primary/maternelle/creche on client side
       return (data || []).filter((c: any) => {
         const cycleName = c.niveaux?.cycles?.nom?.toLowerCase() || '';
-        return cycleName.includes('maternelle') || cycleName.includes('primaire');
+        return cycleName.includes('maternelle') || cycleName.includes('primaire') || cycleName.includes('crèche');
       });
     },
   });
