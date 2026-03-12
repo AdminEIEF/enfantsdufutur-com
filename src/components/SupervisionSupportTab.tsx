@@ -126,8 +126,8 @@ export default function SupervisionSupportTab() {
           userEmail,
           lastMessage: msg.message,
           lastDate: msg.created_at,
-          unreadCount: (!msg.lu && msg.sender_type !== 'superviseur') ? 1 : 0,
-          openCount: msg.statut === 'ouvert' ? 1 : 0,
+          unreadCount: (!msg.lu && msg.sender_type !== 'superviseur' && msg.sender_id !== user?.id) ? 1 : 0,
+          openCount: (msg.statut === 'ouvert' && msg.sender_type !== 'superviseur' && msg.sender_id !== user?.id) ? 1 : 0,
           totalMessages: 1,
         });
       } else {
