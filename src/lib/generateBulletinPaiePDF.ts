@@ -37,281 +37,237 @@ function loadImage(url: string): Promise<HTMLImageElement> {
 
 const fmt = (n: number) => n.toLocaleString('fr-FR');
 
+// School brand colors (green & red from the logo)
+const GREEN: [number, number, number] = [0, 128, 58];
+const RED: [number, number, number] = [200, 30, 30];
+const DARK: [number, number, number] = [33, 33, 33];
+const GRAY: [number, number, number] = [120, 120, 120];
+const LIGHT_GRAY: [number, number, number] = [200, 200, 200];
+const WHITE: [number, number, number] = [255, 255, 255];
+const BG_LIGHT: [number, number, number] = [245, 248, 245];
+
 export async function generateBulletinPaiePDF(data: BulletinPaieData) {
   const pdf = new jsPDF('p', 'mm', 'a4');
   const w = 210;
-  const m = 16; // margin
-  const cw = w - m * 2; // content width
+  const m = 14;
+  const cw = w - m * 2;
   let y = m;
 
-  const slate900: [number, number, number] = [15, 23, 42];
-  const slate800: [number, number, number] = [30, 41, 59];
-  const slate600: [number, number, number] = [71, 85, 105];
-  const slate500: [number, number, number] = [100, 116, 139];
-  const slate400: [number, number, number] = [148, 163, 184];
-  const slate300: [number, number, number] = [203, 213, 225];
-  const slate200: [number, number, number] = [226, 232, 240];
-  const slate100: [number, number, number] = [241, 245, 249];
-  const slate50: [number, number, number] = [248, 250, 252];
-  const emerald600: [number, number, number] = [5, 150, 105];
-
-  const schoolName = (data.schoolName || 'GROUPE SCOLAIRE EXCELLENCE').toUpperCase();
-  const schoolCity = data.schoolCity || 'Quartier Almamya, Conakry, Guinée';
+  const schoolName = (data.schoolName || 'ECOLE INTERNATIONALE LES ENFANTS DU FUTUR').toUpperCase();
+  const schoolSub = data.schoolSubtitle || 'Enseignement Général et Technique';
+  const schoolCity = data.schoolCity || 'Conakry, Guinée';
   const periode = `${MOIS_NOMS[data.mois]} ${data.annee}`;
   const dateEdition = new Date().toLocaleDateString('fr-FR');
 
-  // ─── Logo ───
+  // ═══════════════════════════════════════════
+  // TOP GREEN BAR
+  // ═══════════════════════════════════════════
+  pdf.setFillColor(...GREEN);
+  pdf.rect(0, 0, w, 4, 'F');
+
+  y = 10;
+
+  // ═══════════════════════════════════════════
+  // HEADER: Logo + School Name
+  // ═══════════════════════════════════════════
+  let logoEndX = m;
   if (data.logoUrl) {
     try {
       const img = await loadImage(data.logoUrl);
-      const logoH = 14;
+      const logoH = 18;
       const logoW = (img.width / img.height) * logoH;
       pdf.addImage(img, 'PNG', m, y, logoW, logoH);
+      logoEndX = m + logoW + 4;
     } catch { /* skip */ }
   }
 
-  // ─── En-tête minimaliste ───
-  pdf.setTextColor(...slate900);
-  pdf.setFontSize(13);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(schoolName, m, y + 6);
+  pdf.setFontSize(14);
+  pdf.setTextColor(...GREEN);
+  pdf.text(schoolName, logoEndX, y + 7);
 
-  pdf.setFontSize(8);
   pdf.setFont('helvetica', 'normal');
-  pdf.setTextColor(...slate500);
-  pdf.text(schoolCity, m, y + 11);
-
-  pdf.setFontSize(6);
-  pdf.setTextColor(...slate400);
-  pdf.text('RCCM-GN-2022-B-12345', m, y + 15);
-
-  // Right: title
-  const rx = m + cw;
-  pdf.setTextColor(...slate900);
-  pdf.setFontSize(18);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('BULLETIN DE PAIE', rx, y + 6, { align: 'right' });
-
-  // Period badge
-  pdf.setFillColor(...slate100);
-  const periodText = `Période : ${periode}`;
-  const ptw = pdf.getTextWidth(periodText) + 8;
-  pdf.roundedRect(rx - ptw, y + 9, ptw, 7, 1.5, 1.5, 'F');
   pdf.setFontSize(8);
+  pdf.setTextColor(...GRAY);
+  pdf.text(schoolSub, logoEndX, y + 12);
+  pdf.text(schoolCity, logoEndX, y + 16);
+
+  y += 24;
+
+  // ═══════════════════════════════════════════
+  // TITLE
+  // ═══════════════════════════════════════════
+  pdf.setFillColor(...GREEN);
+  pdf.roundedRect(m, y, cw, 12, 2, 2, 'F');
   pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(...slate600);
-  pdf.text(periodText, rx - ptw + 4, y + 14);
+  pdf.setFontSize(13);
+  pdf.setTextColor(...WHITE);
+  pdf.text('BULLETIN DE PAIE', w / 2, y + 8.5, { align: 'center' });
 
-  y += 20;
+  y += 16;
 
-  // Thick separator
-  pdf.setDrawColor(...slate900);
-  pdf.setLineWidth(0.8);
-  pdf.line(m, y, m + cw, y);
+  // Period
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(10);
+  pdf.setTextColor(...DARK);
+  pdf.text(`Période : ${periode}`, m, y + 4);
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(8);
+  pdf.setTextColor(...GRAY);
+  pdf.text(`Édité le ${dateEdition}`, m + cw, y + 4, { align: 'right' });
 
   y += 10;
 
-  // ─── Employee Info ───
-  const halfW = cw / 2 - 4;
+  // ═══════════════════════════════════════════
+  // EMPLOYEE INFO BOX
+  // ═══════════════════════════════════════════
+  pdf.setFillColor(...BG_LIGHT);
+  pdf.setDrawColor(...GREEN);
+  pdf.setLineWidth(0.4);
+  pdf.roundedRect(m, y, cw, 24, 2, 2, 'FD');
 
-  // Left: Salarié
-  pdf.setFontSize(6.5);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(...slate400);
-  pdf.text('SALARIÉ', m + 4, y);
+  const infoCol1 = m + 5;
+  const infoCol2 = m + cw / 2 + 5;
+  let iy = y + 6;
 
-  pdf.setDrawColor(...slate200);
-  pdf.setLineWidth(0.2);
-  pdf.line(m + 18, y - 1.5, m + halfW, y - 1.5);
-
-  y += 5;
-  pdf.setFontSize(11);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(...slate900);
-  pdf.text(`${data.employe.prenom} ${data.employe.nom}`, m, y);
-
-  y += 5;
-  pdf.setFontSize(8);
-  pdf.setFont('helvetica', 'normal');
-  pdf.setTextColor(...slate600);
-  if (data.employe.poste) pdf.text(data.employe.poste, m, y);
-
-  y += 4;
-  pdf.setFontSize(7);
-  pdf.setFont('helvetica', 'italic');
-  pdf.setTextColor(...slate400);
-  pdf.text(`Matricule : ${data.employe.matricule}`, m, y);
-
-  // Right: Informations Contrat
-  const ry = y - 14;
-  const rcx = m + halfW + 8;
-
-  pdf.setFontSize(6.5);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(...slate400);
-  pdf.text('INFORMATIONS CONTRAT', rcx, ry);
-
-  pdf.setDrawColor(...slate200);
-  pdf.line(rcx + 38, ry - 1.5, m + cw, ry - 1.5);
-
-  // Grid 2x2
-  const gridData = [
-    { label: 'ANCIENNETÉ', value: data.employe.date_embauche || 'N/A' },
-    { label: 'CATÉGORIE', value: data.employe.categorie || 'N/A' },
-    { label: 'MODE PAIEMENT', value: 'Virement Bancaire' },
-    { label: "DATE D'ÉDITION", value: dateEdition },
-  ];
-
-  gridData.forEach((item, i) => {
-    const col = i % 2;
-    const row = Math.floor(i / 2);
-    const gx = rcx + col * 42;
-    const gy = ry + 5 + row * 10;
-
-    pdf.setFontSize(5.5);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(...slate400);
-    pdf.text(item.label, gx, gy);
-
-    pdf.setFontSize(7.5);
+  const drawInfo = (label: string, value: string, x: number, yy: number) => {
     pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(...slate800);
-    pdf.text(item.value, gx, gy + 4);
-  });
+    pdf.setFontSize(7);
+    pdf.setTextColor(...GRAY);
+    pdf.text(label, x, yy);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(9);
+    pdf.setTextColor(...DARK);
+    pdf.text(value, x, yy + 4.5);
+  };
 
-  y += 8;
+  drawInfo('Nom & Prénom', `${data.employe.prenom} ${data.employe.nom}`, infoCol1, iy);
+  drawInfo('Matricule', data.employe.matricule, infoCol2, iy);
+  iy += 12;
+  drawInfo('Poste', data.employe.poste || '—', infoCol1, iy);
+  drawInfo('Catégorie', data.employe.categorie || '—', infoCol2, iy);
 
-  // ─── Tableau des rubriques ───
-  const colPos = [m, m + cw * 0.50, m + cw * 0.60, m + cw * 0.75, m + cw * 0.88];
+  y += 28;
+
+  // ═══════════════════════════════════════════
+  // TABLE
+  // ═══════════════════════════════════════════
+  const tableX = m;
+  const colWidths = [cw * 0.55, cw * 0.22, cw * 0.23];
   const rowH = 9;
 
-  // Header row
-  pdf.setFillColor(...slate50);
-  pdf.rect(m, y, cw, rowH, 'F');
-  pdf.setDrawColor(...slate200);
-  pdf.setLineWidth(0.2);
-  pdf.line(m, y, m + cw, y);
-  pdf.line(m, y + rowH, m + cw, y + rowH);
-
-  pdf.setFontSize(6);
+  // Table header
+  pdf.setFillColor(...GREEN);
+  pdf.rect(tableX, y, cw, rowH, 'F');
   pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(...slate600);
-  pdf.text('LIBELLÉ DES RUBRIQUES', colPos[0] + 4, y + 6);
-  pdf.text('BASE', colPos[1] + 2, y + 6);
-  pdf.text('TAUX/PRIX', colPos[2] + 2, y + 6);
-  pdf.text('GAINS', colPos[3] + 2, y + 6);
-  pdf.text('RETENUES', colPos[4] + 2, y + 6);
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(...WHITE);
+  pdf.text('DÉSIGNATION', tableX + 4, y + 6);
+  pdf.text('GAINS', tableX + colWidths[0] + colWidths[1] / 2, y + 6, { align: 'center' });
+  pdf.text('RETENUES', tableX + colWidths[0] + colWidths[1] + colWidths[2] / 2, y + 6, { align: 'center' });
   y += rowH;
 
-  // Build rows
-  const details: { label: string; base: string; taux: number; gain: number; loss: number }[] = [];
-  details.push({ label: 'Salaire de base', base: '1', taux: data.salaire_brut, gain: data.salaire_brut, loss: 0 });
-  if (data.primes > 0) {
-    details.push({ label: 'Primes & Indemnités', base: '1', taux: data.primes, gain: data.primes, loss: 0 });
-  }
-  if (data.retenues > 0) {
-    details.push({ label: 'Retenues sur salaire', base: '1', taux: data.retenues, gain: 0, loss: data.retenues });
-  }
-  if (data.avances_deduites > 0) {
-    details.push({ label: 'Remboursement prêt / Avance', base: '1', taux: data.avances_deduites, gain: 0, loss: data.avances_deduites });
-  }
+  // Table rows
+  const rows: { label: string; gain: number; loss: number }[] = [
+    { label: 'Salaire de base', gain: data.salaire_brut, loss: 0 },
+  ];
+  if (data.primes > 0) rows.push({ label: 'Primes & Indemnités', gain: data.primes, loss: 0 });
+  if (data.retenues > 0) rows.push({ label: 'Retenues sur salaire', gain: 0, loss: data.retenues });
+  if (data.avances_deduites > 0) rows.push({ label: 'Remboursement avance', gain: 0, loss: data.avances_deduites });
 
-  details.forEach((item, i) => {
-    // Divider
-    if (i > 0) {
-      pdf.setDrawColor(...slate100);
-      pdf.setLineWidth(0.15);
-      pdf.line(m, y, m + cw, y);
+  rows.forEach((row, i) => {
+    const isAlt = i % 2 === 0;
+    if (isAlt) {
+      pdf.setFillColor(250, 250, 250);
+      pdf.rect(tableX, y, cw, rowH, 'F');
     }
 
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(7);
-    pdf.setTextColor(...slate800);
-    pdf.text(item.label.toUpperCase(), colPos[0] + 4, y + 6);
+    // Bottom border
+    pdf.setDrawColor(...LIGHT_GRAY);
+    pdf.setLineWidth(0.15);
+    pdf.line(tableX, y + rowH, tableX + cw, y + rowH);
 
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(7);
-    pdf.setTextColor(...slate500);
-    pdf.text(String(item.base), colPos[1] + 2, y + 6);
-    pdf.text(fmt(item.taux), colPos[2] + 2, y + 6);
+    pdf.setFontSize(8);
+    pdf.setTextColor(...DARK);
+    pdf.text(row.label, tableX + 4, y + 6);
 
     pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(...slate900);
-    if (item.gain > 0) {
-      pdf.text(fmt(item.gain), colPos[3] + 2, y + 6);
+    if (row.gain > 0) {
+      pdf.setTextColor(...GREEN);
+      pdf.text(`${fmt(row.gain)} GNF`, tableX + colWidths[0] + colWidths[1] / 2, y + 6, { align: 'center' });
     }
-    if (item.loss > 0) {
-      pdf.text(fmt(item.loss), colPos[4] + 2, y + 6);
+    if (row.loss > 0) {
+      pdf.setTextColor(...RED);
+      pdf.text(`-${fmt(row.loss)} GNF`, tableX + colWidths[0] + colWidths[1] + colWidths[2] / 2, y + 6, { align: 'center' });
     }
 
     y += rowH;
   });
 
-  y += 6;
+  // Totals row
+  y += 2;
+  pdf.setDrawColor(...GREEN);
+  pdf.setLineWidth(0.6);
+  pdf.line(tableX, y, tableX + cw, y);
+  y += 1;
 
-  // ─── Récapitulatif ───
-  // Top thick border
-  pdf.setDrawColor(...slate900);
-  pdf.setLineWidth(0.8);
-  pdf.line(m, y, m + cw, y);
-  y += 6;
+  pdf.setFillColor(240, 245, 240);
+  pdf.rect(tableX, y, cw, rowH + 1, 'F');
 
-  // Left: totals
-  const totalBrut = data.salaire_brut + data.primes;
+  const totalGains = data.salaire_brut + data.primes;
   const totalRetenues = data.retenues + data.avances_deduites;
 
-  pdf.setFontSize(7);
   pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(...slate400);
-  pdf.text('TOTAL DES GAINS BRUT', m, y + 2);
-  pdf.setTextColor(...slate800);
-  pdf.text(`${fmt(totalBrut)} GNF`, m + cw / 2 - 10, y + 2, { align: 'right' });
+  pdf.setFontSize(8);
+  pdf.setTextColor(...DARK);
+  pdf.text('TOTAUX', tableX + 4, y + 6.5);
+  pdf.setTextColor(...GREEN);
+  pdf.text(`${fmt(totalGains)} GNF`, tableX + colWidths[0] + colWidths[1] / 2, y + 6.5, { align: 'center' });
+  pdf.setTextColor(...RED);
+  pdf.text(`-${fmt(totalRetenues)} GNF`, tableX + colWidths[0] + colWidths[1] + colWidths[2] / 2, y + 6.5, { align: 'center' });
 
-  y += 7;
-  pdf.setTextColor(...slate400);
-  pdf.text('TOTAL DES PRÉLÈVEMENTS', m, y + 2);
-  pdf.setTextColor(...slate800);
-  pdf.text(`-${fmt(totalRetenues)} GNF`, m + cw / 2 - 10, y + 2, { align: 'right' });
+  y += rowH + 5;
 
-  // Right: Net box
-  const netBoxX = m + cw / 2 + 5;
-  const netBoxW = cw / 2 - 5;
-  const netBoxY = y - 9;
+  // ═══════════════════════════════════════════
+  // NET À PAYER BOX
+  // ═══════════════════════════════════════════
+  const netBoxW = 90;
+  const netBoxH = 20;
+  const netBoxX = m + cw - netBoxW;
 
-  pdf.setFillColor(...slate50);
-  pdf.setDrawColor(...slate200);
-  pdf.setLineWidth(0.3);
-  pdf.roundedRect(netBoxX, netBoxY, netBoxW, 18, 1, 1, 'FD');
+  pdf.setFillColor(...GREEN);
+  pdf.roundedRect(netBoxX, y, netBoxW, netBoxH, 3, 3, 'F');
 
-  pdf.setFontSize(6);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(...slate500);
-  pdf.text('NET À PAYER', netBoxX + 6, netBoxY + 7);
-
-  pdf.setFontSize(16);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(...slate900);
-  pdf.text(`${fmt(data.salaire_net)}`, netBoxX + netBoxW - 6, netBoxY + 14, { align: 'right' });
-
-  pdf.setFontSize(7);
   pdf.setFont('helvetica', 'normal');
-  pdf.text('GNF', netBoxX + netBoxW - 4, netBoxY + 7);
+  pdf.setFontSize(8);
+  pdf.setTextColor(...WHITE);
+  pdf.text('NET À PAYER', netBoxX + 8, y + 8);
 
-  y += 20;
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(18);
+  pdf.text(`${fmt(data.salaire_net)} GNF`, netBoxX + netBoxW - 8, y + 15, { align: 'right' });
 
-  // ─── Comment ───
+  y += netBoxH + 6;
+
+  // ═══════════════════════════════════════════
+  // COMMENT
+  // ═══════════════════════════════════════════
   if (data.commentaire) {
-    pdf.setTextColor(...slate400);
     pdf.setFont('helvetica', 'italic');
-    pdf.setFontSize(7);
-    pdf.text(`Note : ${data.commentaire}`, m, y);
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(...GRAY);
+    pdf.text(`Observation : ${data.commentaire}`, m, y);
     y += 8;
   }
 
-  // ─── QR Code + Bas de page ───
-  y += 10;
+  // ═══════════════════════════════════════════
+  // QR CODE + FOOTER
+  // ═══════════════════════════════════════════
+  y = Math.max(y, 220);
 
-  // QR Code
+  // QR Code of the employee
   try {
     const qrPayload = JSON.stringify({
       type: 'bulletin_paie',
@@ -320,46 +276,45 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData) {
       mois: data.mois,
       annee: data.annee,
       net: data.salaire_net,
-      hash: `BP-${data.employe.matricule}-${data.mois}-${data.annee}-${Date.now().toString(36)}`,
+      hash: `BP-${data.employe.matricule}-${data.mois}-${data.annee}`,
     });
 
     const { default: QRCode } = await import('qrcode');
-    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 200, margin: 1, color: { dark: '#0f172a', light: '#ffffff' } });
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 300, margin: 1, color: { dark: '#00803a', light: '#ffffff' } });
     const qrImg = await loadImage(qrDataUrl);
-    pdf.addImage(qrImg, 'PNG', m, y, 18, 18);
+    pdf.addImage(qrImg, 'PNG', m, y, 24, 24);
   } catch { /* skip */ }
 
   // Text next to QR
-  pdf.setFontSize(6.5);
-  pdf.setFont('helvetica', 'italic');
-  pdf.setTextColor(...slate400);
-  pdf.text(`Bulletin généré informatiquement le ${dateEdition}.`, m + 22, y + 6);
-  pdf.text('Conservez ce document pour vos archives RH.', m + 22, y + 10);
-
-  // Right: Signature & Cachet
-  pdf.setFontSize(5.5);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(...slate400);
-  pdf.text("SIGNATURE & CACHET DE L'ÉCOLE", m + cw - 2, y + 2, { align: 'right' });
-
-  // Underline for signature
-  pdf.setDrawColor(...slate300);
-  pdf.setLineWidth(0.2);
-  pdf.line(m + cw - 55, y + 4, m + cw, y + 4);
-
-  // Certified badge
-  pdf.setTextColor(...emerald600);
-  pdf.setFontSize(7);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('DOCUMENT CERTIFIÉ', m + cw - 2, y + 16, { align: 'right' });
-
-  // ─── Footer bar ───
-  pdf.setFillColor(...slate900);
-  pdf.rect(0, 287, w, 10, 'F');
-  pdf.setTextColor(...slate400);
-  pdf.setFontSize(6);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(`${schoolName} • Direction des Ressources Humaines`, w / 2, 293, { align: 'center' });
+  pdf.setFontSize(7);
+  pdf.setTextColor(...GRAY);
+  pdf.text(`Document généré le ${dateEdition}`, m + 28, y + 6);
+  pdf.text('Scannez le QR code pour vérifier l\'authenticité.', m + 28, y + 11);
+  pdf.text(`${data.employe.matricule} — ${data.employe.prenom} ${data.employe.nom}`, m + 28, y + 16);
+
+  // Signature zone
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(7);
+  pdf.setTextColor(...DARK);
+  pdf.text('Signature & Cachet', m + cw, y + 4, { align: 'right' });
+  pdf.setDrawColor(...LIGHT_GRAY);
+  pdf.setLineWidth(0.3);
+  pdf.line(m + cw - 50, y + 8, m + cw, y + 8);
+
+  // ═══════════════════════════════════════════
+  // BOTTOM BAR
+  // ═══════════════════════════════════════════
+  pdf.setFillColor(...GREEN);
+  pdf.rect(0, 289, w, 8, 'F');
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(6.5);
+  pdf.setTextColor(...WHITE);
+  pdf.text(`${schoolName}  •  Direction des Ressources Humaines  •  ${schoolCity}`, w / 2, 294, { align: 'center' });
+
+  // Red accent line
+  pdf.setFillColor(...RED);
+  pdf.rect(0, 288, w, 1, 'F');
 
   const filename = `bulletin_paie_${data.employe.matricule}_${MOIS_NOMS[data.mois]}_${data.annee}.pdf`;
   pdf.save(filename);
