@@ -1681,6 +1681,8 @@ export default function Personnel() {
             </>
           )}
         </DialogContent>
+      </Dialog>
+
       {/* Import Preview Dialog */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
