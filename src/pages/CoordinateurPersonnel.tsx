@@ -23,6 +23,7 @@ export default function CoordinateurPersonnel() {
   const [search, setSearch] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState<any>(null);
+  const [importLoading, setImportLoading] = useState(false);
 
   const [form, setForm] = useState({
     nom: '', prenom: '', sexe: 'M', telephone: '', email: '',
