@@ -132,7 +132,7 @@ export default function SupervisionSupportTab() {
         });
       } else {
         existing.totalMessages++;
-        if (!msg.lu && msg.sender_type !== 'superviseur') existing.unreadCount++;
+        if (!msg.lu && msg.sender_type !== 'superviseur' && msg.sender_id !== user?.id) existing.unreadCount++;
         if (msg.statut === 'ouvert') existing.openCount++;
         // Update name if we have a better one
         if (userName && existing.userName === 'Utilisateur') {
