@@ -701,19 +701,17 @@ export default function Personnel() {
           matricule,
           nom: nom as string,
           prenom: prenom as string,
-          sexe: (row['Sexe'] || row['sexe'] || 'M') as string,
           categorie: categorie as any,
-          poste: (row['Poste'] || row['poste'] || '') as string,
+          poste: '',
           telephone: (row['Téléphone'] || row['telephone'] || null) as string | null,
-          email: (row['Email'] || row['email'] || null) as string | null,
-          salaire_base: Number(row['Salaire (GNF)'] || row['salaire_base'] || 0),
-          date_embauche: (row['Date embauche'] || row['date_embauche'] || new Date().toISOString().slice(0, 10)) as string,
+          salaire_base: 0,
+          date_embauche: new Date().toISOString().slice(0, 10),
           mot_de_passe: autoPassword,
         });
         if (!error) added++;
       }
       
-      toast({ title: `✅ ${added} employé(s) importé(s)` });
+      toast({ title: `✅ ${added} employé(s) importé(s)`, description: 'Cliquez sur chaque nom pour compléter les informations.' });
       qc.invalidateQueries({ queryKey: ['employes'] });
     } catch (err: any) {
       toast({ title: 'Erreur import', description: err.message, variant: 'destructive' });
