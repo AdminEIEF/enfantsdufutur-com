@@ -231,10 +231,10 @@ export default function CoordinateurPersonnel() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Briefcase className="h-6 w-6 text-primary" />
-          Enseignants — Primaire & Maternelle
+          Enseignants — Crèche, Maternelle & Primaire
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Gestion et affectation des enseignants aux classes Maternelle et Primaire
+          Gestion et affectation des enseignants aux classes Crèche, Maternelle et Primaire
         </p>
       </div>
 
