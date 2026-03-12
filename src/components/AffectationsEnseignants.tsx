@@ -48,7 +48,7 @@ export default function AffectationsEnseignants({ primaryOnly = false }: Props) 
       if (primaryOnly) {
         result = result.filter((c: any) => {
           const cycleName = c.niveaux?.cycles?.nom?.toLowerCase() || '';
-          return cycleName.includes('maternelle') || cycleName.includes('primaire');
+          return cycleName.includes('maternelle') || cycleName.includes('primaire') || cycleName.includes('crèche');
         });
       }
       return sortClasses(result);

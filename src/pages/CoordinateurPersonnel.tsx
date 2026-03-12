@@ -62,10 +62,10 @@ export default function CoordinateurPersonnel() {
         .select('id, nom, niveaux(nom, cycles(nom))')
         .order('nom');
       if (error) throw error;
-      // Filter to primary/maternelle on client side
+      // Filter to primary/maternelle/creche on client side
       return (data || []).filter((c: any) => {
         const cycleName = c.niveaux?.cycles?.nom?.toLowerCase() || '';
-        return cycleName.includes('maternelle') || cycleName.includes('primaire');
+        return cycleName.includes('maternelle') || cycleName.includes('primaire') || cycleName.includes('crèche');
       });
     },
   });
@@ -231,10 +231,10 @@ export default function CoordinateurPersonnel() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Briefcase className="h-6 w-6 text-primary" />
-          Enseignants — Primaire & Maternelle
+          Enseignants — Crèche, Maternelle & Primaire
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Gestion et affectation des enseignants aux classes Maternelle et Primaire
+          Gestion et affectation des enseignants aux classes Crèche, Maternelle et Primaire
         </p>
       </div>
 
