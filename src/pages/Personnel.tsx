@@ -1722,52 +1722,80 @@ export default function Personnel() {
 
       {/* Import Preview Dialog */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>📋 Import du personnel ({importPreview.length} employés)</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label className="text-sm font-medium">Catégorie pour tous les employés importés</Label>
-              <Select value={importCategorie} onValueChange={setImportCategorie}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="enseignant">Enseignant</SelectItem>
-                  <SelectItem value="administration">Administration</SelectItem>
-                  <SelectItem value="service">Service</SelectItem>
-                  <SelectItem value="direction">Direction</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                <Label className="text-sm font-medium">Catégorie pour tous</Label>
+                <Select value={importCategorie} onValueChange={setImportCategorie}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="enseignant">Enseignant</SelectItem>
+                    <SelectItem value="administration">Administration</SelectItem>
+                    <SelectItem value="service">Service</SelectItem>
+                    <SelectItem value="direction">Direction</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => setImportPreview(p => [...p, { id: Date.now(), nom: '', prenom: '', telephone: '', poste: '' }])}>
+                <Plus className="h-4 w-4 mr-1" /> Ajouter une ligne
+              </Button>
             </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Prénom</TableHead>
-                  <TableHead>Téléphone</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {importPreview.map((row, idx) => (
-                  <TableRow key={row.id}>
-                    <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
-                    <TableCell className="font-medium">{row.nom}</TableCell>
-                    <TableCell>{row.prenom}</TableCell>
-                    <TableCell>{row.telephone || '—'}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <div className="flex gap-2 justify-end">
+
+            <details open>
+              <summary className="cursor-pointer select-none font-medium text-sm py-2 px-1 rounded hover:bg-muted flex items-center gap-1">
+                <span>📝 Liste des employés à importer ({importPreview.length})</span>
+              </summary>
+              <div className="mt-2 border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10">#</TableHead>
+                      <TableHead>Nom *</TableHead>
+                      <TableHead>Prénom *</TableHead>
+                      <TableHead>Téléphone</TableHead>
+                      <TableHead>Poste</TableHead>
+                      <TableHead className="w-10"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {importPreview.map((row, idx) => (
+                      <TableRow key={row.id}>
+                        <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
+                        <TableCell>
+                          <Input className="h-8 text-sm" value={row.nom} onChange={e => setImportPreview(p => p.map((r, i) => i === idx ? { ...r, nom: e.target.value } : r))} placeholder="Nom" />
+                        </TableCell>
+                        <TableCell>
+                          <Input className="h-8 text-sm" value={row.prenom} onChange={e => setImportPreview(p => p.map((r, i) => i === idx ? { ...r, prenom: e.target.value } : r))} placeholder="Prénom" />
+                        </TableCell>
+                        <TableCell>
+                          <Input className="h-8 text-sm" value={row.telephone || ''} onChange={e => setImportPreview(p => p.map((r, i) => i === idx ? { ...r, telephone: e.target.value } : r))} placeholder="Téléphone" />
+                        </TableCell>
+                        <TableCell>
+                          <Input className="h-8 text-sm" value={row.poste || ''} onChange={e => setImportPreview(p => p.map((r, i) => i === idx ? { ...r, poste: e.target.value } : r))} placeholder="Poste" />
+                        </TableCell>
+                        <TableCell>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setImportPreview(p => p.filter((_, i) => i !== idx))}>
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </details>
+
+            <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" onClick={() => setImportDialogOpen(false)} disabled={importLoading}>
                 Annuler
               </Button>
-              <Button onClick={confirmImport} disabled={importLoading}>
+              <Button onClick={confirmImport} disabled={importLoading || importPreview.filter(r => r.nom && r.prenom).length === 0}>
                 {importLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                ✅ Importer comme "{importCategorie}"
+                ✅ Valider l'import ({importPreview.filter(r => r.nom && r.prenom).length})
               </Button>
             </div>
           </div>
