@@ -157,7 +157,7 @@ export default function SupervisionSupportTab() {
     return c.userName.toLowerCase().includes(s) || c.userEmail.toLowerCase().includes(s);
   });
 
-  const openCount = messages.filter(m => m.statut === 'ouvert' && m.sender_type !== 'superviseur').length;
+  const openCount = messages.filter(m => !m.lu && m.sender_type !== 'superviseur' && m.sender_id !== user?.id).length;
   const enCoursCount = messages.filter(m => m.statut === 'en_cours').length;
 
   // Load conversation messages for a user
