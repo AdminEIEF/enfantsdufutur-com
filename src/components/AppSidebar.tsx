@@ -47,7 +47,7 @@ const navSections = [
   },
   {
     label: 'Académique',
-    roles: ['admin', 'service_info', 'coordinateur'] as const,
+    roles: ['admin', 'service_info'] as const,
     items: [
       { title: 'Mes Classes', url: '/mes-classes', icon: Users },
       { title: 'Saisie des notes', url: '/notes', icon: BookOpen },
@@ -57,6 +57,19 @@ const navSections = [
       { title: 'Calendrier', url: '/calendrier', icon: CalendarDays },
       { title: 'Orientation', url: '/orientation', icon: BarChart3 },
       { title: 'Performance', url: '/performance', icon: Trophy },
+    ],
+  },
+  {
+    label: 'Académique',
+    roles: ['coordinateur'] as any,
+    items: [
+      { title: 'Mes Classes', url: '/mes-classes', icon: Users },
+      { title: 'Saisie des notes', url: '/notes', icon: BookOpen },
+      { title: 'Bulletins', url: '/bulletins', icon: Award },
+      { title: 'Cours & Devoirs', url: '/cours-admin', icon: Video },
+      { title: 'Emploi du temps', url: '/emploi-du-temps', icon: Clock },
+      { title: 'Calendrier', url: '/calendrier', icon: CalendarDays },
+      { title: 'Orientation', url: '/orientation', icon: BarChart3 },
     ],
   },
   {
