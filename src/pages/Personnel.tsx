@@ -194,6 +194,8 @@ export default function Personnel() {
   const [refuseMotif, setRefuseMotif] = useState('');
   const [refuseTarget, setRefuseTarget] = useState<{ type: 'conge' | 'avance'; id: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [filterCategorie, setFilterCategorie] = useState<string>('all');
+  const [importLoading, setImportLoading] = useState(false);
 
   // Form state for new employee
   const [form, setForm] = useState({
