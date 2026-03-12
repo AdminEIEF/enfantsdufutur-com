@@ -126,13 +126,13 @@ export default function SupervisionSupportTab() {
           userEmail,
           lastMessage: msg.message,
           lastDate: msg.created_at,
-          unreadCount: (!msg.lu && msg.sender_type !== 'superviseur') ? 1 : 0,
-          openCount: msg.statut === 'ouvert' ? 1 : 0,
+          unreadCount: (!msg.lu && msg.sender_type !== 'superviseur' && msg.sender_id !== user?.id) ? 1 : 0,
+          openCount: (msg.statut === 'ouvert' && msg.sender_type !== 'superviseur' && msg.sender_id !== user?.id) ? 1 : 0,
           totalMessages: 1,
         });
       } else {
         existing.totalMessages++;
-        if (!msg.lu && msg.sender_type !== 'superviseur') existing.unreadCount++;
+        if (!msg.lu && msg.sender_type !== 'superviseur' && msg.sender_id !== user?.id) existing.unreadCount++;
         if (msg.statut === 'ouvert') existing.openCount++;
         // Update name if we have a better one
         if (userName && existing.userName === 'Utilisateur') {
@@ -157,7 +157,7 @@ export default function SupervisionSupportTab() {
     return c.userName.toLowerCase().includes(s) || c.userEmail.toLowerCase().includes(s);
   });
 
-  const openCount = messages.filter(m => m.statut === 'ouvert' && m.sender_type !== 'superviseur').length;
+  const openCount = messages.filter(m => !m.lu && m.sender_type !== 'superviseur' && m.sender_id !== user?.id).length;
   const enCoursCount = messages.filter(m => m.statut === 'en_cours').length;
 
   // Load conversation messages for a user
