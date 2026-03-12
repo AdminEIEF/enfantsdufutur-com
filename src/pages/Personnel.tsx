@@ -722,7 +722,7 @@ export default function Personnel() {
           prenom = parts.slice(1).join(' ');
         }
 
-        return { id: index, nom, prenom, telephone };
+        return { id: index, nom, prenom, telephone, poste: '' };
       }).filter(r => r.nom && r.prenom);
 
       if (preview.length === 0) { 
