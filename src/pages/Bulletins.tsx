@@ -107,9 +107,8 @@ export default function Bulletins() {
     enabled: !!classeId && eleves.length > 0 && periodes.length > 0,
   });
 
-  const isPrimaire = selectedCl?.niveaux?.cycles?.nom?.includes('Primaire') || selectedCl?.niveaux?.cycles?.nom?.includes('Crèche') || selectedCl?.niveaux?.cycles?.nom?.includes('Maternelle');
-  const seuil = isPrimaire ? 6 : 12;
-  const bareme = isPrimaire ? 10 : 20;
+  const bareme = selectedCl?.niveaux?.cycles?.bareme ?? 20;
+  const seuil = bareme / 2;
 
   // Compute average for a given student and notes set
   const computeAverage = (eleveId: string, notesSet: any[]) => {
