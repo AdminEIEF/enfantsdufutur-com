@@ -305,7 +305,6 @@ export default function CoordinateurPersonnel() {
           </DialogContent>
         </Dialog>
         </div>
-      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
