@@ -8,14 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Briefcase, Plus, Search, Loader2, Eye, Users, Phone, Mail, Upload, Download, X, GraduationCap } from 'lucide-react';
+import { Briefcase, Plus, Search, Loader2, Eye, Users, Phone, Mail, Download, GraduationCap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { exportToExcel, readExcelFile } from '@/lib/excelUtils';
+import { exportToExcel } from '@/lib/excelUtils';
 import AffectationsEnseignants from '@/components/AffectationsEnseignants';
 
 export default function CoordinateurPersonnel() {
@@ -27,10 +27,6 @@ export default function CoordinateurPersonnel() {
   const [selectedEmp, setSelectedEmp] = useState<any>(null);
   const [editEmp, setEditEmp] = useState<any>(null);
   const [editSaving, setEditSaving] = useState(false);
-  const [importLoading, setImportLoading] = useState(false);
-  const [importPreview, setImportPreview] = useState<any[]>([]);
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [importCategorie, setImportCategorie] = useState('enseignant');
 
   const [form, setForm] = useState({
     nom: '', prenom: '', sexe: 'M', telephone: '', email: '',
@@ -139,92 +135,6 @@ export default function CoordinateurPersonnel() {
     toast({ title: '✅ Export Excel réussi' });
   };
 
-  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImportLoading(true);
-    try {
-      const rows = await readExcelFile(file);
-      if (rows.length === 0) { toast({ title: 'Fichier vide', variant: 'destructive' }); return; }
-
-      const findCol = (row: Record<string, any>, patterns: string[]) => {
-        for (const key of Object.keys(row)) {
-          const k = key.toLowerCase().trim();
-          for (const p of patterns) {
-            if (k === p || k.includes(p)) return String(row[key] ?? '').trim();
-          }
-        }
-        return '';
-      };
-
-      const preview = rows.map((row, index) => {
-        let nom = findCol(row, ['nom']);
-        let prenom = findCol(row, ['prénom', 'prenom', 'prenoms', 'prénoms']);
-        const telephone = findCol(row, ['téléphone', 'telephone', 'tel', 'numéro', 'numero', 'contact', 'n°']);
-
-        if (!prenom && nom) {
-          const fullNameCol = findCol(row, ['nom et prenom', 'nom et prénom', 'nom & prenom', 'nom & prénom', 'nom complet']);
-          if (fullNameCol) {
-            const parts = fullNameCol.split(/\s+/);
-            nom = parts[0] || '';
-            prenom = parts.slice(1).join(' ') || '';
-          }
-        }
-        if (!prenom && nom && nom.includes(' ')) {
-          const parts = nom.split(/\s+/);
-          nom = parts[0];
-          prenom = parts.slice(1).join(' ');
-        }
-
-        return { id: index, nom, prenom, telephone, poste: '' };
-      }).filter(r => r.nom && r.prenom);
-
-      if (preview.length === 0) {
-        const cols = rows.length > 0 ? Object.keys(rows[0]).join(', ') : 'aucune';
-        toast({ title: 'Aucun employé valide trouvé', description: `Colonnes: ${cols}`, variant: 'destructive' });
-        return;
-      }
-      setImportPreview(preview);
-      setImportDialogOpen(true);
-    } catch (err: any) {
-      toast({ title: 'Erreur import', description: err.message, variant: 'destructive' });
-    } finally {
-      setImportLoading(false);
-      e.target.value = '';
-    }
-  };
-
-  const confirmImport = async () => {
-    setImportLoading(true);
-    let added = 0;
-    try {
-      for (const row of importPreview) {
-        const categorie = importCategorie;
-
-        const matricule = `EMP-${String(Math.floor(1000 + Math.random() * 9000))}`;
-        const { error } = await supabase.from('employes').insert({
-          matricule,
-          nom: row.nom,
-          prenom: row.prenom,
-          categorie: categorie as any,
-          poste: row.poste || 'Enseignant',
-          telephone: row.telephone || null,
-          salaire_base: 0,
-          date_embauche: new Date().toISOString().slice(0, 10),
-        });
-        if (!error) added++;
-      }
-
-      toast({ title: `✅ ${added} employé(s) importé(s)`, description: 'Cliquez sur chaque nom pour compléter.' });
-      qc.invalidateQueries({ queryKey: ['coord-employes'] });
-      setImportDialogOpen(false);
-      setImportPreview([]);
-    } catch (err: any) {
-      toast({ title: 'Erreur import', description: err.message, variant: 'destructive' });
-    } finally {
-      setImportLoading(false);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -249,12 +159,6 @@ export default function CoordinateurPersonnel() {
           <Button size="sm" variant="outline" onClick={handleExportExcel}>
             <Download className="h-4 w-4 mr-1" /> Exporter Excel
           </Button>
-          <label className="cursor-pointer">
-            <input type="file" className="hidden" accept=".xlsx,.xls" onChange={handleImportExcel} disabled={importLoading} />
-            <Button size="sm" variant="outline" asChild disabled={importLoading}>
-              <span>{importLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}Importer Excel</span>
-            </Button>
-          </label>
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger asChild>
               <Button><Plus className="h-4 w-4 mr-2" />Ajouter</Button>
@@ -530,86 +434,6 @@ export default function CoordinateurPersonnel() {
         </DialogContent>
       </Dialog>
 
-      {/* Import Preview Dialog */}
-      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>📋 Import du personnel ({importPreview.length} employés)</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-end gap-3">
-              <div className="flex-1">
-                <Label className="text-sm font-medium">Catégorie pour tous</Label>
-                <Select value={importCategorie} onValueChange={setImportCategorie}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="enseignant">Enseignant</SelectItem>
-                    <SelectItem value="administration">Administration</SelectItem>
-                    <SelectItem value="service">Service</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button size="sm" variant="outline" onClick={() => setImportPreview(p => [...p, { id: Date.now(), nom: '', prenom: '', telephone: '', poste: '' }])}>
-                <Plus className="h-4 w-4 mr-1" /> Ajouter une ligne
-              </Button>
-            </div>
-
-            <details open>
-              <summary className="cursor-pointer select-none font-medium text-sm py-2 px-1 rounded hover:bg-muted flex items-center gap-1">
-                <span>📝 Liste des employés à importer ({importPreview.length})</span>
-              </summary>
-              <div className="mt-2 border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-10">#</TableHead>
-                      <TableHead>Nom *</TableHead>
-                      <TableHead>Prénom *</TableHead>
-                      <TableHead>Téléphone</TableHead>
-                      <TableHead>Poste</TableHead>
-                      <TableHead className="w-10"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {importPreview.map((row, idx) => (
-                      <TableRow key={row.id}>
-                        <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
-                        <TableCell>
-                          <Input className="h-8 text-sm" value={row.nom} onChange={e => setImportPreview(p => p.map((r, i) => i === idx ? { ...r, nom: e.target.value } : r))} placeholder="Nom" />
-                        </TableCell>
-                        <TableCell>
-                          <Input className="h-8 text-sm" value={row.prenom} onChange={e => setImportPreview(p => p.map((r, i) => i === idx ? { ...r, prenom: e.target.value } : r))} placeholder="Prénom" />
-                        </TableCell>
-                        <TableCell>
-                          <Input className="h-8 text-sm" value={row.telephone || ''} onChange={e => setImportPreview(p => p.map((r, i) => i === idx ? { ...r, telephone: e.target.value } : r))} placeholder="Téléphone" />
-                        </TableCell>
-                        <TableCell>
-                          <Input className="h-8 text-sm" value={row.poste || ''} onChange={e => setImportPreview(p => p.map((r, i) => i === idx ? { ...r, poste: e.target.value } : r))} placeholder="Poste" />
-                        </TableCell>
-                        <TableCell>
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setImportPreview(p => p.filter((_, i) => i !== idx))}>
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </details>
-
-            <div className="flex gap-2 justify-end pt-2">
-              <Button variant="outline" onClick={() => setImportDialogOpen(false)} disabled={importLoading}>
-                Annuler
-              </Button>
-              <Button onClick={confirmImport} disabled={importLoading || importPreview.filter(r => r.nom && r.prenom).length === 0}>
-                {importLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                ✅ Valider l'import ({importPreview.filter(r => r.nom && r.prenom).length})
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
         </TabsContent>
 
         <TabsContent value="affectations">
