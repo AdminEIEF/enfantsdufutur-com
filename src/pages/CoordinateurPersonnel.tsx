@@ -342,62 +342,71 @@ export default function CoordinateurPersonnel() {
         <Input className="pl-9" placeholder="Rechercher un employé..." value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
-      {/* Table */}
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">Aucun personnel trouvé</div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Matricule</TableHead>
-                  <TableHead>Nom & Prénom</TableHead>
-                  <TableHead>Catégorie</TableHead>
-                  <TableHead>Poste</TableHead>
-                   <TableHead>Contact</TableHead>
-                   <TableHead>Classes</TableHead>
-                   <TableHead>Statut</TableHead>
-                   <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((emp: any) => (
-                  <TableRow key={emp.id}>
-                    <TableCell className="font-mono text-xs">{emp.matricule}</TableCell>
-                    <TableCell className="font-medium">{emp.prenom} {emp.nom}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={categorieBadge(emp.categorie)}>{emp.categorie}</Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">{emp.poste}</TableCell>
-                    <TableCell>
-                      <div className="text-xs space-y-0.5">
-                        {emp.telephone && <div className="flex items-center gap-1"><Phone className="h-3 w-3" />{emp.telephone}</div>}
-                        {emp.email && <div className="flex items-center gap-1"><Mail className="h-3 w-3" />{emp.email}</div>}
-                      </div>
-                    </TableCell>
-                     <TableCell>
-                       {emp.enseignant_classes?.length > 0 ? (
-                         <details className="cursor-pointer">
-                           <summary className="list-none">
-                             <Badge variant="secondary" className="text-xs cursor-pointer hover:bg-accent">
-                               {emp.enseignant_classes.length} classe{emp.enseignant_classes.length > 1 ? 's' : ''}
-                             </Badge>
-                           </summary>
-                           <div className="mt-1 space-y-0.5">
-                             {emp.enseignant_classes.map((ec: any) => (
-                               <div key={ec.id} className="text-xs text-muted-foreground">
-                                 • {ec.classes?.niveaux?.nom} — {ec.classes?.nom}
-                               </div>
-                             ))}
-                           </div>
-                         </details>
-                       ) : (
-                         <span className="text-xs text-muted-foreground">—</span>
-                       )}
-                     </TableCell>
+      {/* Grouped by category - collapsible */}
+      {isLoading ? (
+        <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">Aucun personnel trouvé</div>
+      ) : (() => {
+        const grouped = filtered.reduce((acc: Record<string, any[]>, emp: any) => {
+          const cat = emp.categorie || 'autre';
+          if (!acc[cat]) acc[cat] = [];
+          acc[cat].push(emp);
+          return acc;
+        }, {});
+        return Object.entries(grouped).map(([cat, emps]: [string, any[]]) => (
+          <details key={cat} open className="group">
+            <summary className="cursor-pointer list-none flex items-center gap-2 py-2 px-1 hover:bg-accent/50 rounded-md transition-colors">
+              <span className="transition-transform group-open:rotate-90 text-muted-foreground">▶</span>
+              <Badge variant="outline" className={categorieBadge(cat)}>{categorieLabel[cat] || cat}</Badge>
+              <span className="text-sm text-muted-foreground">({emps.length})</span>
+            </summary>
+            <Card className="mt-1 mb-4">
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Matricule</TableHead>
+                      <TableHead>Nom & Prénom</TableHead>
+                      <TableHead>Poste</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Classes</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {emps.map((emp: any) => (
+                      <TableRow key={emp.id}>
+                        <TableCell className="font-mono text-xs">{emp.matricule}</TableCell>
+                        <TableCell className="font-medium">{emp.prenom} {emp.nom}</TableCell>
+                        <TableCell className="text-sm">{emp.poste}</TableCell>
+                        <TableCell>
+                          <div className="text-xs space-y-0.5">
+                            {emp.telephone && <div className="flex items-center gap-1"><Phone className="h-3 w-3" />{emp.telephone}</div>}
+                            {emp.email && <div className="flex items-center gap-1"><Mail className="h-3 w-3" />{emp.email}</div>}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {emp.enseignant_classes?.length > 0 ? (
+                            <details className="cursor-pointer">
+                              <summary className="list-none">
+                                <Badge variant="secondary" className="text-xs cursor-pointer hover:bg-accent">
+                                  {emp.enseignant_classes.length} classe{emp.enseignant_classes.length > 1 ? 's' : ''}
+                                </Badge>
+                              </summary>
+                              <div className="mt-1 space-y-0.5">
+                                {emp.enseignant_classes.map((ec: any) => (
+                                  <div key={ec.id} className="text-xs text-muted-foreground">
+                                    • {ec.classes?.niveaux?.nom} — {ec.classes?.nom}
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                     <TableCell>
                       <Badge variant={emp.statut === 'actif' ? 'default' : 'secondary'}>
                         {emp.statut}
@@ -416,13 +425,15 @@ export default function CoordinateurPersonnel() {
                         <Eye className="h-4 w-4" />
                       </Button>
                     </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                    </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </details>
+        ));
+      })()}
 
       {/* Detail / Edit dialog */}
       <Dialog open={!!selectedEmp} onOpenChange={() => { setSelectedEmp(null); setEditEmp(null); }}>
