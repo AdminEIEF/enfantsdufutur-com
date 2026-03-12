@@ -730,7 +730,16 @@ export default function Personnel() {
           <Briefcase className="h-7 w-7 text-primary" /> Personnel
           <Badge>{employes.length}</Badge>
         </h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={handleExportExcel}>
+            <Download className="h-4 w-4 mr-1" /> Exporter Excel
+          </Button>
+          <label className="cursor-pointer">
+            <input type="file" className="hidden" accept=".xlsx,.xls" onChange={handleImportExcel} disabled={importLoading} />
+            <Button size="sm" variant="outline" asChild disabled={importLoading}>
+              <span>{importLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}Importer Excel</span>
+            </Button>
+          </label>
           <Button size="sm" variant="outline" onClick={() => setScannerOpen(true)}>
             <ScanLine className="h-4 w-4 mr-1" /> Pointage QR
           </Button>
