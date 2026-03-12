@@ -1681,6 +1681,48 @@ export default function Personnel() {
             </>
           )}
         </DialogContent>
+      {/* Import Preview Dialog */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>📋 Prévisualisation de l'import ({importPreview.length} employés)</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Prénom</TableHead>
+                  <TableHead>Catégorie</TableHead>
+                  <TableHead>Téléphone</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {importPreview.map((row, idx) => (
+                  <TableRow key={row.id}>
+                    <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
+                    <TableCell className="font-medium">{row.nom}</TableCell>
+                    <TableCell>{row.prenom}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{row.categorie}</Badge>
+                    </TableCell>
+                    <TableCell>{row.telephone || '—'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setImportDialogOpen(false)} disabled={importLoading}>
+                Annuler
+              </Button>
+              <Button onClick={confirmImport} disabled={importLoading}>
+                {importLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                ✅ Confirmer l'import
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
       </Dialog>
     </div>
   );
