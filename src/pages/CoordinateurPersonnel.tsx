@@ -246,6 +246,7 @@ export default function CoordinateurPersonnel() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Stats */}
