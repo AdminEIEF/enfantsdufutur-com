@@ -48,6 +48,8 @@ export default function Familles() {
   const { data: familles = [], isLoading } = useFamilles();
   const { data: allClasses = [] } = useClassesAll();
   const [search, setSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
 
   // Create/Edit family
   const [formOpen, setFormOpen] = useState(false);
