@@ -196,6 +196,8 @@ export default function Personnel() {
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [filterCategorie, setFilterCategorie] = useState<string>('all');
   const [importLoading, setImportLoading] = useState(false);
+  const [editForm, setEditForm] = useState<any>(null);
+  const [editSaving, setEditSaving] = useState(false);
 
   // Form state for new employee
   const [form, setForm] = useState({
