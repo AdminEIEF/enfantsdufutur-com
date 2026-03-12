@@ -145,8 +145,8 @@ export default function CoordinateurPersonnel() {
         const prenom = row['Prénom'] || row['prenom'];
         if (!nom || !prenom) continue;
 
-        const catRaw = (row['Catégorie'] || row['categorie'] || 'enseignant').toString().toLowerCase();
-        const catMap: Record<string, string> = { enseignant: 'enseignant', administratif: 'administratif', administration: 'administration', service: 'service', direction: 'direction' };
+        const catRaw = (row['Catégorie'] || row['categorie'] || 'enseignant').toString().toLowerCase().trim();
+        const catMap: Record<string, string> = { enseignant: 'enseignant', administratif: 'administration', administration: 'administration', service: 'service', direction: 'direction' };
         const categorie = catMap[catRaw] || 'enseignant';
 
         const matricule = `EMP-${String(Math.floor(1000 + Math.random() * 9000))}`;
