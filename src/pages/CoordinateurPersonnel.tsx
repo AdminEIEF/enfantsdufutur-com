@@ -357,10 +357,10 @@ export default function CoordinateurPersonnel() {
                   <TableHead>Nom & Prénom</TableHead>
                   <TableHead>Catégorie</TableHead>
                   <TableHead>Poste</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Classes affectées</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Actions</TableHead>
+                   <TableHead>Contact</TableHead>
+                   <TableHead>Classes</TableHead>
+                   <TableHead>Statut</TableHead>
+                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
