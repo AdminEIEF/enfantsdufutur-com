@@ -80,7 +80,7 @@ export default function BulletinScolaire({
   });
 
   return (
-    <div data-bulletin-a4 className="bg-white text-gray-900 font-sans" style={{ width: '210mm', minHeight: '297mm', margin: '0 auto', padding: '10mm', boxSizing: 'border-box' }}>
+    <div data-bulletin-a4 className="bg-white text-gray-900 font-sans" style={{ width: '210mm', maxHeight: '297mm', margin: '0 auto', padding: '8mm 10mm', boxSizing: 'border-box', overflow: 'hidden' }}>
       <style>{`
         @media print {
           @page { margin: 0; size: A4; }

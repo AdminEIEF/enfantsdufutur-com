@@ -30,24 +30,19 @@ export async function generateBulletinPDF(
   
   const pdf = new jsPDF('p', 'mm', 'a4');
   
-  // Scale image to fit A4
+  // Always fit on a single A4 page
   const imgWidth = pdfWidth;
   const imgHeight = (canvas.height * pdfWidth) / canvas.width;
   
   if (imgHeight <= pdfHeight) {
     pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
   } else {
-    // Multi-page if content overflows
-    let remainingHeight = canvas.height;
-    let position = 0;
-    const pageCanvasHeight = (canvas.width * pdfHeight) / pdfWidth;
-    
-    while (remainingHeight > 0) {
-      if (position > 0) pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, -(position * pdfWidth / canvas.width), imgWidth, imgHeight);
-      remainingHeight -= pageCanvasHeight;
-      position += pageCanvasHeight;
-    }
+    // Scale down to fit single page
+    const scale = pdfHeight / imgHeight;
+    const scaledWidth = imgWidth * scale;
+    const scaledHeight = pdfHeight;
+    const offsetX = (pdfWidth - scaledWidth) / 2;
+    pdf.addImage(imgData, 'PNG', offsetX, 0, scaledWidth, scaledHeight);
   }
   
   pdf.save(filename);
