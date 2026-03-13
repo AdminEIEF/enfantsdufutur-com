@@ -58,18 +58,18 @@ async function generateSingleTableauHonneur(
   }
 
   // === HEADER SECTION ===
-  let y = 22;
+  let y = 18;
 
   // REPUBLIQUE DE GUINEE
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.setFont('times', 'bold');
   doc.setTextColor(0, 0, 0);
   doc.text('REPUBLIQUE DE GUINEE', centerX, y, { align: 'center' });
 
   // Travail - Justice - Solidarité (colored)
-  y += 7;
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bolditalic');
+  y += 9;
+  doc.setFontSize(13);
+  doc.setFont('times', 'bolditalic');
   const tjsText = 'Travail - Justice - Solidarité';
   const tjsWidth = doc.getTextWidth(tjsText);
   const tjsStartX = centerX - tjsWidth / 2;
@@ -90,107 +90,109 @@ async function generateSingleTableauHonneur(
   doc.text('Solidarité', tjsStartX + w4, y);
 
   // MINISTERE
-  y += 8;
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
+  y += 10;
+  doc.setFontSize(11);
+  doc.setFont('times', 'bold');
   doc.setTextColor(0, 0, 0);
   doc.text("MINISTERE DE L'EDUCATION NATIONALE ET DE L'ALPHABETISATION", centerX, y, { align: 'center' });
 
   // School name
-  y += 6;
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
+  y += 8;
+  doc.setFontSize(18);
+  doc.setFont('times', 'bold');
   doc.setTextColor(0, 0, 139);
   doc.text(schoolConfig.nom.toUpperCase(), centerX, y, { align: 'center' });
 
   // Slogan
-  y += 6;
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bolditalic');
+  y += 8;
+  doc.setFontSize(14);
+  doc.setFont('times', 'bolditalic');
   doc.setTextColor(200, 170, 30);
   doc.text('Faisons plus!', centerX, y, { align: 'center' });
 
   // === MAIN TITLE ===
-  y += 14;
-  doc.setFontSize(30);
-  doc.setFont('helvetica', 'bold');
+  y += 18;
+  doc.setFontSize(36);
+  doc.setFont('times', 'bold');
   doc.setTextColor(0, 0, 139);
   doc.text("TABLEAU D'HONNEUR", centerX, y, { align: 'center' });
 
   // Double underline
   const titleWidth = doc.getTextWidth("TABLEAU D'HONNEUR");
   doc.setDrawColor(200, 170, 30);
-  doc.setLineWidth(1.2);
-  doc.line(centerX - titleWidth / 2, y + 3, centerX + titleWidth / 2, y + 3);
-  doc.setLineWidth(0.5);
-  doc.line(centerX - titleWidth / 2 + 5, y + 5.5, centerX + titleWidth / 2 - 5, y + 5.5);
-
-  // === BODY CONTENT ===
-  y += 18;
-  doc.setFontSize(13);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0);
-
-  // Student name line
-  const nomComplet = `${eleve.prenom} ${eleve.nom}`;
-  const label1 = `L'élève :  `;
-  const label1W = doc.getTextWidth(label1);
-  doc.text(label1, 40, y);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(206, 17, 38);
-  doc.text(nomComplet, 40 + label1W, y);
-
-  const afterName = label1W + doc.getTextWidth(nomComplet);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0);
-  doc.text(` , en classe de: `, 40 + afterName, y);
-
-  const afterClasse = afterName + doc.getTextWidth(` , en classe de: `);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 0, 139);
-  doc.text(eleve.classe_nom, 40 + afterClasse, y);
-
-  // Merit text
-  y += 12;
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0);
-  doc.text("A mérité d'être inscrit(e) au TABLEAU D'HONNEUR", 40, y);
-  y += 7;
-  doc.text("pour son travail, son assiduité et sa bonne conduite", 40, y);
-  y += 7;
-
-  // Period + average line
-  const periodeText = periodeName || 'la période';
-  const moyenneText = eleve.moyenne.toFixed(2);
-  doc.text('pendant la ', 40, y);
-  const pW = doc.getTextWidth('pendant la ');
-  doc.setFont('helvetica', 'bold');
-  doc.text(periodeText, 40 + pW, y);
-  const afterP = pW + doc.getTextWidth(periodeText);
-  doc.setFont('helvetica', 'normal');
-  doc.text(' période avec une moyenne de: ', 40 + afterP, y);
-  const afterM = afterP + doc.getTextWidth(' période avec une moyenne de: ');
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 0, 139);
-  doc.setFontSize(14);
-  doc.text(`${moyenneText} / ${eleve.seuil <= 10 ? '10' : '20'}.`, 40 + afterM, y);
-
-  // Closing text
-  y += 14;
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'bolditalic');
-  doc.setTextColor(0, 0, 0);
-  doc.text("En foi de quoi, nous délivrons ce tableau d'honneur pour servir", 40, y);
-  y += 7;
-  doc.text("et valoir ce que de droit.", 40, y);
-
-  // Decorative gold line
-  y += 5;
-  doc.setDrawColor(200, 170, 30);
+  doc.setLineWidth(1.5);
+  doc.line(centerX - titleWidth / 2, y + 4, centerX + titleWidth / 2, y + 4);
   doc.setLineWidth(0.8);
-  doc.line(40, y, pageW - 70, y);
+  doc.line(centerX - titleWidth / 2 + 8, y + 7, centerX + titleWidth / 2 - 8, y + 7);
+
+  // === BODY CONTENT (ALL CENTERED) ===
+  y += 22;
+  doc.setFontSize(15);
+  doc.setFont('times', 'normal');
+  doc.setTextColor(0, 0, 0);
+
+  // Student name line - centered
+  const nomComplet = `${eleve.prenom} ${eleve.nom}`;
+  const line1 = `L'élève : ${nomComplet} , en classe de ${eleve.classe_nom}`;
+  const line1Width = doc.getTextWidth(line1);
+  const line1X = centerX - line1Width / 2;
+  
+  // Draw with different styles for each part
+  doc.text("L'élève : ", line1X, y);
+  const part1W = doc.getTextWidth("L'élève : ");
+  
+  doc.setFont('times', 'bold');
+  doc.setTextColor(206, 17, 38);
+  doc.text(nomComplet, line1X + part1W, y);
+  const part2W = doc.getTextWidth(nomComplet);
+  
+  doc.setFont('times', 'normal');
+  doc.setTextColor(0, 0, 0);
+  doc.text(" , en classe de ", line1X + part1W + part2W, y);
+  const part3W = doc.getTextWidth(" , en classe de ");
+  
+  doc.setFont('times', 'bold');
+  doc.setTextColor(0, 0, 139);
+  doc.text(eleve.classe_nom, line1X + part1W + part2W + part3W, y);
+  doc.setTextColor(0, 0, 0);
+
+  // Merit text - centered
+  y += 14;
+  doc.setFontSize(16);
+  doc.setFont('times', 'bold');
+  doc.setTextColor(0, 0, 0);
+  const meritText = "A mérité d'être inscrit(e) au TABLEAU D'HONNEUR";
+  doc.text(meritText, centerX, y, { align: 'center' });
+  
+  y += 10;
+  doc.setFont('times', 'normal');
+  doc.setFontSize(14);
+  doc.text("pour son travail, son assiduité et sa bonne conduite", centerX, y, { align: 'center' });
+  
+  y += 10;
+  const periodeText = periodeName || 'la';
+  const moyenneText = eleve.moyenne.toFixed(2);
+  const periodeLine = `pendant la ${periodeText} période avec une moyenne de: `;
+  const periodeLineWidth = doc.getTextWidth(periodeLine);
+  const moyennePart = `${moyenneText} / ${eleve.seuil <= 10 ? '10' : '20'}.`;
+  const moyennePartWidth = doc.getTextWidth(moyennePart);
+  const totalWidth = periodeLineWidth + moyennePartWidth;
+  const startX = centerX - totalWidth / 2;
+  
+  doc.text(periodeLine, startX, y);
+  doc.setFont('times', 'bold');
+  doc.setTextColor(0, 0, 139);
+  doc.setFontSize(18);
+  doc.text(moyennePart, startX + periodeLineWidth, y);
+  doc.setTextColor(0, 0, 0);
+
+  // Closing text - centered
+  y += 16;
+  doc.setFontSize(14);
+  doc.setFont('times', 'bolditalic');
+  doc.text("En foi de quoi, nous délivrons ce tableau d'honneur pour servir", centerX, y, { align: 'center' });
+  y += 9;
+  doc.text("et valoir ce que de droit.", centerX, y, { align: 'center' });
 
   // === FOOTER ===
 
@@ -200,32 +202,32 @@ async function generateSingleTableauHonneur(
       ? `${baseUrl}/fiche-eleve/${eleve.qr_code}`
       : `${baseUrl}/fiche-eleve/${eleve.nom}-${eleve.prenom}`;
     const qrDataUrl = await QRCode.toDataURL(qrData, { width: 200, margin: 1 });
-    doc.addImage(qrDataUrl, 'PNG', 22, pageH - 48, 22, 22);
-    doc.setFontSize(6);
+    doc.addImage(qrDataUrl, 'PNG', 22, pageH - 52, 26, 26);
+    doc.setFontSize(7);
     doc.setTextColor(100, 100, 100);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Vérification', 33, pageH - 24, { align: 'center' });
+    doc.setFont('times', 'normal');
+    doc.text('Vérification', 35, pageH - 24, { align: 'center' });
   } catch { /* skip */ }
 
   // Directeur Général (centered)
   const dgLabel = 'Directeur Général';
-  doc.setFontSize(13);
-  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.setFont('times', 'bold');
   doc.setTextColor(0, 0, 139);
-  doc.text(dgLabel, centerX, pageH - 36, { align: 'center' });
+  doc.text(dgLabel, centerX, pageH - 42, { align: 'center' });
   doc.setDrawColor(0, 0, 139);
-  doc.setLineWidth(0.5);
+  doc.setLineWidth(0.6);
   const dgW = doc.getTextWidth(dgLabel);
-  doc.line(centerX - dgW / 2, pageH - 34, centerX + dgW / 2, pageH - 34);
+  doc.line(centerX - dgW / 2 - 10, pageH - 39, centerX + dgW / 2 + 10, pageH - 39);
 
   // Date
   const today = new Date().toLocaleDateString('fr-FR', {
     day: 'numeric', month: 'long', year: 'numeric'
   });
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(12);
+  doc.setFont('times', 'normal');
   doc.setTextColor(0, 0, 0);
-  doc.text(`Fait à ${schoolConfig.ville}, le ${today}`, centerX, pageH - 16, { align: 'center' });
+  doc.text(`Fait à ${schoolConfig.ville}, le ${today}`, centerX, pageH - 18, { align: 'center' });
 }
 
 function drawFallbackBorders(doc: jsPDF, pageW: number, pageH: number) {
