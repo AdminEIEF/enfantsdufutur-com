@@ -255,7 +255,7 @@ export default function Notes() {
               <label className="text-sm font-medium mb-1 block">Classe</label>
               <Select value={classeId} onValueChange={(v) => { setClasseId(v); setSelectedEleveId(null); }} disabled={!cycleId}>
                 <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
-                <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom} ({c.niveaux?.nom})</SelectItem>)}</SelectContent>
+                <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.niveaux?.nom} {c.nom}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
