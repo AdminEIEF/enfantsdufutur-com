@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateBonRecuperation } from '@/lib/generateBonRecuperation';
+import { SchoolWatermark } from '@/components/SchoolWatermark';
 import ParentEnfantCommandes from '@/components/parent/ParentEnfantCommandes';
 import ParentEnfantCantine from '@/components/parent/ParentEnfantCantine';
 import ParentEnfantFournitures from '@/components/parent/ParentEnfantFournitures';
