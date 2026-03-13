@@ -83,6 +83,7 @@ import StudentEcriture from "./pages/student/StudentEcriture";
 import StudentCalculMental from "./pages/student/StudentCalculMental";
 import StudentCultureGenerale from "./pages/student/StudentCultureGenerale";
 import StudentColoriage from "./pages/student/StudentColoriage";
+import StudentSerpentAlphabet from "./pages/student/StudentSerpentAlphabet";
 
 const queryClient = new QueryClient();
 
@@ -241,6 +242,7 @@ const App = () => (
             <Route path="/eleve/calcul" element={<StudentAuthProvider><StudentCalculMental /></StudentAuthProvider>} />
             <Route path="/eleve/culture" element={<StudentAuthProvider><StudentCultureGenerale /></StudentAuthProvider>} />
             <Route path="/eleve/coloriage" element={<StudentAuthProvider><StudentColoriage /></StudentAuthProvider>} />
+            <Route path="/eleve/serpent" element={<StudentAuthProvider><StudentSerpentAlphabet /></StudentAuthProvider>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
