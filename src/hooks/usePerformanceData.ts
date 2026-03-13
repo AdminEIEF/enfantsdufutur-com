@@ -72,7 +72,7 @@ export function usePerformanceData(periodeId?: string) {
 
       const { data: niveaux, error: nivErr } = await supabase
         .from('niveaux')
-        .select('id, nom, ordre, cycle_id, cycles:cycle_id(nom)')
+        .select('id, nom, ordre, cycle_id, cycles:cycle_id(nom, bareme)')
         .order('ordre');
       if (nivErr) throw nivErr;
 
