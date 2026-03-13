@@ -228,12 +228,30 @@ export default function BulletinScolaire({
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-8 mt-4">
+        <div className="grid grid-cols-3 gap-4 mt-4 items-end">
+          {/* QR Code - Espace Élève */}
+          <div className="flex flex-col items-center">
+            {eleve.matricule && (
+              <>
+                <QRCodeSVG
+                  value={`${window.location.origin}/eleve?matricule=${encodeURIComponent(eleve.matricule)}`}
+                  size={64}
+                  level="M"
+                  includeMargin={false}
+                />
+                <p className="text-[8px] text-gray-400 mt-1 text-center">Espace Élève</p>
+              </>
+            )}
+          </div>
+
+          {/* Signature Parents */}
           <div className="text-center">
             <p className="text-xs font-bold text-gray-700 mb-1">Signature des Parents</p>
             <div className="border-b border-dashed border-gray-400 h-10"></div>
             <p className="text-[10px] text-gray-400 mt-1">Lu et approuvé</p>
           </div>
+
+          {/* Signature Direction */}
           <div className="text-center">
             <p className="text-xs font-bold text-gray-700 mb-1">La Direction</p>
             <div className="border-b border-dashed border-gray-400 h-10"></div>
