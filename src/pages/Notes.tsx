@@ -297,6 +297,16 @@ export default function Notes() {
 
       {/* Student List */}
       {canShowList ? (
+        isSecondaire ? (
+          /* Mode par matière pour collège/lycée */
+          <SaisieNotesParMatiere
+            matieres={matieres}
+            eleves={eleves}
+            allNotesForPeriod={allNotesForPeriod}
+            periodeId={periodeId}
+            bareme={bareme}
+          />
+        ) : (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">
@@ -349,6 +359,7 @@ export default function Notes() {
             </Table>
           </CardContent>
         </Card>
+        )
       ) : (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
