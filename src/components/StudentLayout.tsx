@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Home, FileText, ClipboardList, Award, Bot, LogOut, CalendarDays, Star, PenTool, Calculator, GraduationCap, Palette, Bug, Languages, Gamepad2, X } from 'lucide-react';
+import { BookOpen, Home, FileText, ClipboardList, Award, Bot, LogOut, CalendarDays, Star, PenTool, Calculator, GraduationCap, Palette, Bug, Languages, Gamepad2, X, Pyramid } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { SchoolWatermark } from '@/components/SchoolWatermark';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const GAME_ITEMS = [
   { path: '/eleve/ecriture', icon: PenTool, label: 'Écriture', color: 'bg-pink-500', emoji: '✏️' },
   { path: '/eleve/calcul', icon: Calculator, label: 'Calcul', color: 'bg-orange-500', emoji: '🔢' },
+  { path: '/eleve/pyramide', icon: Pyramid, label: 'Pyramide', color: 'bg-amber-500', emoji: '🔺' },
   { path: '/eleve/culture', icon: GraduationCap, label: 'Culture', color: 'bg-purple-500', emoji: '🧠' },
   { path: '/eleve/coloriage', icon: Palette, label: 'Coloriage', color: 'bg-green-500', emoji: '🎨' },
   { path: '/eleve/serpent', icon: Bug, label: 'Serpent ABC', color: 'bg-teal-500', emoji: '🐍' },
