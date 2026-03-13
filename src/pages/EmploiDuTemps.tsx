@@ -70,8 +70,8 @@ export default function EmploiDuTemps() {
     },
   });
 
-  // Fetch matieres
-  const { data: matieres = [] } = useQuery({
+  // Fetch all matieres (for display)
+  const { data: allMatieres = [] } = useQuery({
     queryKey: ['edt-matieres'],
     queryFn: async () => {
       const { data } = await supabase.from('matieres').select('id, nom').order('ordre');
@@ -79,8 +79,29 @@ export default function EmploiDuTemps() {
     },
   });
 
-  // Fetch enseignants
-  const { data: enseignants = [] } = useQuery({
+  // Fetch classe_matieres for selected class
+  const { data: classeMatieres = [] } = useQuery({
+    queryKey: ['edt-classe-matieres', selectedClasseId],
+    queryFn: async () => {
+      if (!selectedClasseId) return [];
+      const { data } = await supabase
+        .from('classe_matieres')
+        .select('matiere_id')
+        .eq('classe_id', selectedClasseId);
+      return data || [];
+    },
+    enabled: !!selectedClasseId,
+  });
+
+  // Filtered matieres: only those assigned to the class (fallback to all if none configured)
+  const matieres = useMemo(() => {
+    if (!selectedClasseId || classeMatieres.length === 0) return allMatieres;
+    const ids = new Set(classeMatieres.map((cm: any) => cm.matiere_id));
+    return allMatieres.filter((m: any) => ids.has(m.id));
+  }, [allMatieres, classeMatieres, selectedClasseId]);
+
+  // Fetch all enseignants
+  const { data: allEnseignants = [] } = useQuery({
     queryKey: ['edt-enseignants'],
     queryFn: async () => {
       const { data } = await supabase
@@ -92,6 +113,13 @@ export default function EmploiDuTemps() {
       return data || [];
     },
   });
+
+  // Filtered enseignants: only those assigned to this class/niveau
+  const enseignants = useMemo(() => {
+    if (!selectedClasseId || affectations.length === 0) return allEnseignants;
+    const ids = new Set(affectations.map((a: any) => a.employe_id));
+    return allEnseignants.filter((e: any) => ids.has(e.id));
+  }, [allEnseignants, affectations, selectedClasseId]);
 
   // Fetch enseignant_classes for selected class (to auto-fill teacher)
   const { data: affectations = [] } = useQuery({
