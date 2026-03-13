@@ -93,6 +93,20 @@ export default function EmploiDuTemps() {
     enabled: !!selectedClasseId,
   });
 
+  // Fetch enseignant_classes for selected class (to auto-fill teacher)
+  const { data: affectations = [] } = useQuery({
+    queryKey: ['edt-affectations', selectedClasseId],
+    queryFn: async () => {
+      if (!selectedClasseId) return [];
+      const { data } = await supabase
+        .from('enseignant_classes')
+        .select('employe_id, matiere_id')
+        .eq('classe_id', selectedClasseId);
+      return data || [];
+    },
+    enabled: !!selectedClasseId,
+  });
+
   // Filtered matieres: only those assigned to the class (fallback to all if none configured)
   const matieres = useMemo(() => {
     if (!selectedClasseId || classeMatieres.length === 0) return allMatieres;
@@ -120,19 +134,6 @@ export default function EmploiDuTemps() {
     const ids = new Set(affectations.map((a: any) => a.employe_id));
     return allEnseignants.filter((e: any) => ids.has(e.id));
   }, [allEnseignants, affectations, selectedClasseId]);
-
-  // Fetch enseignant_classes for selected class (to auto-fill teacher)
-  const { data: affectations = [] } = useQuery({
-    queryKey: ['edt-affectations', selectedClasseId],
-    queryFn: async () => {
-      if (!selectedClasseId) return [];
-      const { data } = await supabase
-        .from('enseignant_classes')
-        .select('employe_id, matiere_id')
-        .eq('classe_id', selectedClasseId);
-      return data || [];
-    },
-    enabled: !!selectedClasseId,
   });
 
   // Fetch timetable for selected class
