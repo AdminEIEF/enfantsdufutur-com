@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
@@ -21,6 +21,7 @@ interface StudentPreview {
 export default function StudentLogin() {
   const { session, login, loading } = useStudentAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [matricule, setMatricule] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -29,6 +30,19 @@ export default function StudentLogin() {
   const [preview, setPreview] = useState<StudentPreview | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const initializedFromUrl = useRef(false);
+
+  // Pre-fill matricule from QR code URL param
+  useEffect(() => {
+    if (initializedFromUrl.current) return;
+    const mat = searchParams.get('matricule');
+    if (mat) {
+      const upper = mat.toUpperCase();
+      setMatricule(upper);
+      fetchPreview(upper);
+      initializedFromUrl.current = true;
+    }
+  }, [searchParams]);
 
   if (!loading && session) {
     navigate('/eleve/dashboard', { replace: true });
