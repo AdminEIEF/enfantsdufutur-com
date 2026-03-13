@@ -228,38 +228,51 @@ export default function CoordinateurPersonnel() {
         </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="text-2xl font-bold">{employes.length}</div>
-            <p className="text-xs text-muted-foreground">Total personnel</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="text-2xl font-bold">{employes.filter((e: any) => e.categorie === 'enseignant').length}</div>
-            <p className="text-xs text-muted-foreground">Enseignants</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="text-2xl font-bold text-green-600">{employes.filter((e: any) => e.statut === 'actif').length}</div>
-            <p className="text-xs text-muted-foreground">Actifs</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="text-2xl font-bold text-red-500">{employes.filter((e: any) => e.statut === 'inactif').length}</div>
-            <p className="text-xs text-muted-foreground">Inactifs</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="text-2xl font-bold text-orange-500">{employes.filter((e: any) => e.statut === 'en congé').length}</div>
-            <p className="text-xs text-muted-foreground">En congé</p>
-          </CardContent>
-        </Card>
-      </div>
+      {(() => {
+        const totalEnseignants = employes.filter((e: any) => e.categorie === 'enseignant').length;
+        const affectes = employes.filter((e: any) => e.categorie === 'enseignant' && e.enseignant_classes?.length > 0).length;
+        const nonAffectes = totalEnseignants - affectes;
+        return (
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <Card>
+              <CardContent className="pt-4 pb-3">
+                <div className="text-2xl font-bold">{employes.length}</div>
+                <p className="text-xs text-muted-foreground">Total personnel</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3">
+                <div className="text-2xl font-bold">{totalEnseignants}</div>
+                <p className="text-xs text-muted-foreground">Enseignants</p>
+              </CardContent>
+            </Card>
+            <Card className="border-green-200 bg-green-50/50">
+              <CardContent className="pt-4 pb-3">
+                <div className="text-2xl font-bold text-green-600">{affectes}</div>
+                <p className="text-xs text-green-700 font-medium">✅ Affectés</p>
+              </CardContent>
+            </Card>
+            <Card className="border-red-200 bg-red-50/50">
+              <CardContent className="pt-4 pb-3">
+                <div className="text-2xl font-bold text-red-600">{nonAffectes}</div>
+                <p className="text-xs text-red-700 font-medium">❌ Non affectés</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3">
+                <div className="text-2xl font-bold text-green-600">{employes.filter((e: any) => e.statut === 'actif').length}</div>
+                <p className="text-xs text-muted-foreground">Actifs</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3">
+                <div className="text-2xl font-bold text-orange-500">{employes.filter((e: any) => e.statut === 'en congé').length}</div>
+                <p className="text-xs text-muted-foreground">En congé</p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      })()}
 
       {/* Search */}
       <div className="relative max-w-md">
