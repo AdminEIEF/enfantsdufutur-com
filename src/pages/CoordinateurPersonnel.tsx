@@ -393,7 +393,8 @@ export default function CoordinateurPersonnel() {
                 </div>
               </div>
             </details>
-          ))}
+            );
+          })}
         </div>
       )}
 
