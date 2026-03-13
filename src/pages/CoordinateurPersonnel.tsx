@@ -228,7 +228,7 @@ export default function CoordinateurPersonnel() {
         </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-4 pb-3">
             <div className="text-2xl font-bold">{employes.length}</div>
@@ -243,8 +243,14 @@ export default function CoordinateurPersonnel() {
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
-            <div className="text-2xl font-bold">{employes.filter((e: any) => e.statut === 'actif').length}</div>
+            <div className="text-2xl font-bold text-green-600">{employes.filter((e: any) => e.statut === 'actif').length}</div>
             <p className="text-xs text-muted-foreground">Actifs</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <div className="text-2xl font-bold text-red-500">{employes.filter((e: any) => e.statut === 'inactif').length}</div>
+            <p className="text-xs text-muted-foreground">Inactifs</p>
           </CardContent>
         </Card>
         <Card>
