@@ -64,6 +64,20 @@ export default function BulletinScolaire({
   // Compute total coefficients and total sum
   const totalCoef = bulletinData.reduce((s, b) => s + b.coefficient, 0);
 
+  // Compute weighted average per period
+  const moyennesParPeriode = periodes.map((_, pIndex) => {
+    let sumWeighted = 0;
+    let sumCoef = 0;
+    for (const b of bulletinData) {
+      const n = b.notes[pIndex];
+      if (n !== null) {
+        sumWeighted += n * b.coefficient;
+        sumCoef += b.coefficient;
+      }
+    }
+    return sumCoef > 0 ? Math.round((sumWeighted / sumCoef) * 100) / 100 : null;
+  });
+
   return (
     <div data-bulletin-a4 className="bg-white text-gray-900 font-sans" style={{ width: '210mm', minHeight: '297mm', margin: '0 auto', padding: '10mm', boxSizing: 'border-box' }}>
       <style>{`
