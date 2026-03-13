@@ -248,6 +248,8 @@ async function generateSingleTableauHonneur(
 }
 
 function drawFallbackBorders(doc: jsPDF, pageW: number, pageH: number) {
+  const cx = pageW / 2;
+
   // Top-left flag triangles
   doc.setFillColor(206, 17, 38);
   doc.triangle(0, 0, 70, 0, 0, 60, 'F');
@@ -280,11 +282,7 @@ function drawFallbackBorders(doc: jsPDF, pageW: number, pageH: number) {
   doc.rect(pageW - 5, 0, 5, 5, 'F');
   doc.rect(0, pageH - 5, 5, 5, 'F');
   doc.setFillColor(200, 170, 30);
-  doc.rect(centerX(pageW) - 2.5, pageH - 5, 5, 5, 'F');
-}
-
-function centerX(pageW: number) {
-  return pageW / 2;
+  doc.rect(cx - 2.5, pageH - 5, 5, 5, 'F');
 }
 
 export async function generateTableauHonneurPDF(
