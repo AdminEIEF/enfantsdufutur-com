@@ -140,6 +140,7 @@ export default function Notes() {
 
   const selectedCycle = cycles.find((c: any) => c.id === cycleId);
   const bareme = selectedCycle?.bareme ?? 20;
+  const isSecondaire = bareme >= 20; // Collège/Lycée use subject-by-subject mode
 
   // When opening student dialog, load their notes into notesMap
   const selectedEleve = eleves.find((e: any) => e.id === selectedEleveId);
