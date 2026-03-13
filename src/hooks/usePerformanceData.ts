@@ -99,6 +99,13 @@ export function usePerformanceData(periodeId?: string) {
   // Build eleve map
   const eleveMap = new Map(eleves.map((e: any) => [e.id, e]));
 
+  // Build niveau -> bareme map for real passing thresholds
+  const niveauBaremeMap = new Map<string, number>();
+  for (const n of niveaux) {
+    const bareme = (n.cycles as any)?.bareme || 20;
+    niveauBaremeMap.set(n.id, bareme);
+  }
+
   // Build performance per niveau
   const niveauMap = new Map<string, { sum: number; count: number; reussite: number }>();
 
@@ -108,10 +115,12 @@ export function usePerformanceData(periodeId?: string) {
     const eleve = eleveMap.get(eleveId) as any;
     if (!eleve?.classes?.niveaux) continue;
     const niveauId = eleve.classes.niveaux.id;
+    const bareme = niveauBaremeMap.get(niveauId) || 20;
+    const seuilReussite = bareme / 2; // 5/10 for primaire, 10/20 for secondaire
     const prev = niveauMap.get(niveauId) || { sum: 0, count: 0, reussite: 0 };
     prev.sum += moy;
     prev.count += 1;
-    if (moy >= 10) prev.reussite += 1;
+    if (moy >= seuilReussite) prev.reussite += 1;
     niveauMap.set(niveauId, prev);
   }
 
