@@ -287,17 +287,24 @@ export default function CoordinateurPersonnel() {
         <div className="text-center py-12 text-muted-foreground">Aucun personnel trouvé</div>
       ) : (
         <div className="space-y-2">
-          {filtered.map((emp: any) => (
-            <details key={emp.id} className="group border rounded-lg overflow-hidden">
+          {filtered.map((emp: any) => {
+            const isAffecte = emp.enseignant_classes?.length > 0;
+            return (
+            <details key={emp.id} className={`group border rounded-lg overflow-hidden ${isAffecte ? 'border-green-300 bg-green-50/30' : 'border-red-300 bg-red-50/30'}`}>
               <summary className="cursor-pointer list-none flex items-center gap-3 py-3 px-4 hover:bg-accent/50 transition-colors">
+                <CircleDot className={`h-3.5 w-3.5 flex-shrink-0 ${isAffecte ? 'text-green-500' : 'text-red-500'}`} />
                 <span className="transition-transform group-open:rotate-90 text-muted-foreground text-xs">▶</span>
                 <span className="font-mono text-xs text-muted-foreground">{emp.matricule}</span>
                 <span className="font-medium text-sm">{emp.prenom} {emp.nom}</span>
                 {emp.poste && <span className="text-xs text-muted-foreground hidden sm:inline">— {emp.poste}</span>}
                 <div className="ml-auto flex items-center gap-2">
-                  {emp.enseignant_classes?.length > 0 && (
-                    <Badge variant="secondary" className="text-xs">
-                      {emp.enseignant_classes.length} classe{emp.enseignant_classes.length > 1 ? 's' : ''}
+                  {isAffecte ? (
+                    <Badge className="text-xs bg-green-100 text-green-800 border-green-300 hover:bg-green-100">
+                      ✅ {emp.enseignant_classes.length} classe{emp.enseignant_classes.length > 1 ? 's' : ''}
+                    </Badge>
+                  ) : (
+                    <Badge className="text-xs bg-red-100 text-red-800 border-red-300 hover:bg-red-100">
+                      ❌ Non affecté
                     </Badge>
                   )}
                   <Badge 
