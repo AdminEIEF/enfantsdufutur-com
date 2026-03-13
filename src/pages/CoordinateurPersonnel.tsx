@@ -249,8 +249,8 @@ export default function CoordinateurPersonnel() {
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
-            <div className="text-2xl font-bold">{employes.filter((e: any) => e.statut !== 'actif').length}</div>
-            <p className="text-xs text-muted-foreground">Inactifs</p>
+            <div className="text-2xl font-bold text-orange-500">{employes.filter((e: any) => e.statut === 'en congé').length}</div>
+            <p className="text-xs text-muted-foreground">En congé</p>
           </CardContent>
         </Card>
       </div>
