@@ -281,8 +281,11 @@ export default function CoordinateurPersonnel() {
                       {emp.enseignant_classes.length} classe{emp.enseignant_classes.length > 1 ? 's' : ''}
                     </Badge>
                   )}
-                  <Badge variant={emp.statut === 'actif' ? 'default' : 'secondary'} className="text-xs">
-                    {emp.statut}
+                  <Badge 
+                    variant={emp.statut === 'actif' ? 'default' : emp.statut === 'en congé' ? 'outline' : 'secondary'} 
+                    className={`text-xs ${emp.statut === 'en congé' ? 'border-orange-400 text-orange-600' : ''}`}
+                  >
+                    {emp.statut === 'en congé' ? '🏖️ En congé' : emp.statut}
                   </Badge>
                 </div>
               </summary>
