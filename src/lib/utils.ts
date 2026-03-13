@@ -22,9 +22,9 @@ export function sortClasses<T extends Record<string, any>>(classes: T[]): T[] {
     const ordreA = nA?.ordre ?? 0;
     const ordreB = nB?.ordre ?? 0;
     if (ordreA !== ordreB) return ordreA - ordreB;
-    // Class name alphabetical
+    // Class name with natural numeric sorting (e.g. 7E A before 10E B)
     const nomA = (a.nom || '').toLowerCase();
     const nomB = (b.nom || '').toLowerCase();
-    return nomA.localeCompare(nomB, 'fr');
+    return nomA.localeCompare(nomB, 'fr', { numeric: true });
   });
 }
