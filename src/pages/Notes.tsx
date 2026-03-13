@@ -59,6 +59,17 @@ export default function Notes() {
   const selectedClasse = classes.find((c: any) => c.id === classeId);
   const selectedNiveauId = selectedClasse?.niveaux?.id || null;
 
+  // Fetch classe_matieres for the selected class
+  const { data: classeMatieres = [] } = useQuery({
+    queryKey: ['classe-matieres', classeId],
+    enabled: !!classeId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('classe_matieres').select('matiere_id').eq('classe_id', classeId);
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: allMatieresCycle = [] } = useQuery({
     queryKey: ['matieres', cycleId],
     enabled: !!cycleId,
@@ -70,9 +81,15 @@ export default function Notes() {
   });
 
   const matieres = useMemo(() => {
+    // If classe_matieres are configured, use only those
+    if (classeId && classeMatieres.length > 0) {
+      const allowedIds = new Set(classeMatieres.map((cm: any) => cm.matiere_id));
+      return allMatieresCycle.filter((m: any) => allowedIds.has(m.id));
+    }
+    // Fallback: filter by niveau_id
     if (!selectedNiveauId) return allMatieresCycle;
     return allMatieresCycle.filter((m: any) => !m.niveau_id || m.niveau_id === selectedNiveauId);
-  }, [allMatieresCycle, selectedNiveauId]);
+  }, [allMatieresCycle, selectedNiveauId, classeId, classeMatieres]);
 
   const { data: eleves = [] } = useQuery({
     queryKey: ['eleves-classe', classeId],
