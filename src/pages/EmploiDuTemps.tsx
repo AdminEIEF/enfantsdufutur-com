@@ -134,7 +134,6 @@ export default function EmploiDuTemps() {
     const ids = new Set(affectations.map((a: any) => a.employe_id));
     return allEnseignants.filter((e: any) => ids.has(e.id));
   }, [allEnseignants, affectations, selectedClasseId]);
-  });
 
   // Fetch timetable for selected class
   const { data: slots = [] } = useQuery({
