@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const GAME_ITEMS = [
   { path: '/eleve/ecriture', icon: PenTool, label: 'Écriture', color: 'bg-pink-500', emoji: '✏️' },
   { path: '/eleve/calcul', icon: Calculator, label: 'Calcul', color: 'bg-orange-500', emoji: '🔢' },
+  { path: '/eleve/pyramide', icon: Pyramid, label: 'Pyramide', color: 'bg-amber-500', emoji: '🔺' },
   { path: '/eleve/culture', icon: GraduationCap, label: 'Culture', color: 'bg-purple-500', emoji: '🧠' },
   { path: '/eleve/coloriage', icon: Palette, label: 'Coloriage', color: 'bg-green-500', emoji: '🎨' },
   { path: '/eleve/serpent', icon: Bug, label: 'Serpent ABC', color: 'bg-teal-500', emoji: '🐍' },
