@@ -96,14 +96,8 @@ async function generateSingleTableauHonneur(
   doc.setTextColor(0, 0, 0);
   doc.text("MINISTERE DE L'EDUCATION NATIONALE ET DE L'ALPHABETISATION", centerX, y, { align: 'center' });
 
-  // Horizontal line
-  y += 4;
-  doc.setDrawColor(200, 170, 30);
-  doc.setLineWidth(0.6);
-  doc.line(50, y, pageW - 50, y);
-
   // School name
-  y += 9;
+  y += 6;
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 139);
@@ -213,15 +207,16 @@ async function generateSingleTableauHonneur(
     doc.text('Vérification', 33, pageH - 24, { align: 'center' });
   } catch { /* skip */ }
 
-  // Directeur Général (right side)
+  // Directeur Général (centered)
+  const dgLabel = 'Directeur Général';
   doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 139);
-  doc.text('Directeur Général', pageW - 40, pageH - 36, { align: 'right' });
+  doc.text(dgLabel, centerX, pageH - 36, { align: 'center' });
   doc.setDrawColor(0, 0, 139);
   doc.setLineWidth(0.5);
-  const dgW = doc.getTextWidth('Directeur Général');
-  doc.line(pageW - 40 - dgW, pageH - 34, pageW - 40, pageH - 34);
+  const dgW = doc.getTextWidth(dgLabel);
+  doc.line(centerX - dgW / 2, pageH - 34, centerX + dgW / 2, pageH - 34);
 
   // Date
   const today = new Date().toLocaleDateString('fr-FR', {
