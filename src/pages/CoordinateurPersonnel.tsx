@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Briefcase, Plus, Search, Loader2, Eye, Users, Phone, Mail, Download, GraduationCap } from 'lucide-react';
+import { Briefcase, Plus, Search, Loader2, Eye, Users, Phone, Mail, Download, GraduationCap, CircleDot } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -97,6 +97,21 @@ export default function CoordinateurPersonnel() {
       qc.invalidateQueries({ queryKey: ['coord-employes'] });
       setAddOpen(false);
       setForm({ nom: '', prenom: '', sexe: 'M', telephone: '', email: '', categorie: 'enseignant', poste: '', salaire_base: '', date_embauche: new Date().toISOString().slice(0, 10), date_naissance: '' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+    },
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, statut }: { id: string; statut: string }) => {
+      const { error } = await supabase.from('employes').update({ statut }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, { statut }) => {
+      const labels: Record<string, string> = { actif: 'Actif', inactif: 'Inactif', 'en congé': 'En congé' };
+      toast({ title: `✅ Statut mis à jour : ${labels[statut] || statut}` });
+      qc.invalidateQueries({ queryKey: ['coord-employes'] });
     },
     onError: (err: any) => {
       toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
@@ -234,8 +249,8 @@ export default function CoordinateurPersonnel() {
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
-            <div className="text-2xl font-bold">{employes.filter((e: any) => e.statut !== 'actif').length}</div>
-            <p className="text-xs text-muted-foreground">Inactifs</p>
+            <div className="text-2xl font-bold text-orange-500">{employes.filter((e: any) => e.statut === 'en congé').length}</div>
+            <p className="text-xs text-muted-foreground">En congé</p>
           </CardContent>
         </Card>
       </div>
@@ -266,8 +281,11 @@ export default function CoordinateurPersonnel() {
                       {emp.enseignant_classes.length} classe{emp.enseignant_classes.length > 1 ? 's' : ''}
                     </Badge>
                   )}
-                  <Badge variant={emp.statut === 'actif' ? 'default' : 'secondary'} className="text-xs">
-                    {emp.statut}
+                  <Badge 
+                    variant={emp.statut === 'actif' ? 'default' : emp.statut === 'en congé' ? 'outline' : 'secondary'} 
+                    className={`text-xs ${emp.statut === 'en congé' ? 'border-orange-400 text-orange-600' : ''}`}
+                  >
+                    {emp.statut === 'en congé' ? '🏖️ En congé' : emp.statut}
                   </Badge>
                 </div>
               </summary>
@@ -302,6 +320,38 @@ export default function CoordinateurPersonnel() {
                     </div>
                   </div>
                 )}
+                {/* Status change */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-muted-foreground font-medium mr-1">Changer le statut :</span>
+                  {['actif', 'inactif', 'en congé'].map((s) => {
+                    const isCurrentStatus = emp.statut === s;
+                    const labels: Record<string, string> = { actif: '✅ Actif', inactif: '⛔ Inactif', 'en congé': '🏖️ En congé' };
+                    const variants: Record<string, string> = { 
+                      actif: isCurrentStatus ? 'bg-green-100 border-green-400 text-green-700' : '', 
+                      inactif: isCurrentStatus ? 'bg-red-100 border-red-400 text-red-700' : '', 
+                      'en congé': isCurrentStatus ? 'bg-orange-100 border-orange-400 text-orange-700' : '' 
+                    };
+                    return (
+                      <Button
+                        key={s}
+                        size="sm"
+                        variant={isCurrentStatus ? 'outline' : 'ghost'}
+                        className={`text-xs ${variants[s]} ${isCurrentStatus ? 'pointer-events-none font-semibold' : ''}`}
+                        disabled={isCurrentStatus || statusMutation.isPending}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          statusMutation.mutate({ id: emp.id, statut: s });
+                        }}
+                      >
+                        {statusMutation.isPending && statusMutation.variables?.id === emp.id && statusMutation.variables?.statut === s 
+                          ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> 
+                          : null}
+                        {labels[s]}
+                      </Button>
+                    );
+                  })}
+                </div>
+
                 <div className="flex justify-end">
                   <Button size="sm" variant="outline" onClick={() => {
                     setSelectedEmp(emp);
