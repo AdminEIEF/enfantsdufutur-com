@@ -2,7 +2,7 @@ import { ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Home, FileText, ClipboardList, Award, Bot, LogOut, CalendarDays, Star, PenTool, Calculator, GraduationCap, Palette } from 'lucide-react';
+import { BookOpen, Home, FileText, ClipboardList, Award, Bot, LogOut, CalendarDays, Star, PenTool, Calculator, GraduationCap, Palette, Bug } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 const NAV_ITEMS = [
   { path: '/eleve/dashboard', icon: Home, label: 'Accueil' },
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { path: '/eleve/calcul', icon: Calculator, label: 'Calcul' },
   { path: '/eleve/culture', icon: GraduationCap, label: 'Culture' },
   { path: '/eleve/coloriage', icon: Palette, label: 'Coloriage' },
+  { path: '/eleve/serpent', icon: Bug, label: 'Serpent ABC' },
   { path: '/eleve/resultats', icon: Award, label: 'Résultats' },
 ];
 
