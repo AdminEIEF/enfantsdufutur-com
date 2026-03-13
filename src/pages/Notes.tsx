@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BookOpen, Save, CheckCircle, Circle, ChevronRight, AlertTriangle, Eye, EyeOff, FileSpreadsheet } from 'lucide-react';
 import ImportNotesExcel from '@/components/ImportNotesExcel';
+import SaisieNotesParMatiere from '@/components/SaisieNotesParMatiere';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -139,6 +140,7 @@ export default function Notes() {
 
   const selectedCycle = cycles.find((c: any) => c.id === cycleId);
   const bareme = selectedCycle?.bareme ?? 20;
+  const isSecondaire = bareme >= 20; // Collège/Lycée use subject-by-subject mode
 
   // When opening student dialog, load their notes into notesMap
   const selectedEleve = eleves.find((e: any) => e.id === selectedEleveId);
@@ -295,6 +297,16 @@ export default function Notes() {
 
       {/* Student List */}
       {canShowList ? (
+        isSecondaire ? (
+          /* Mode par matière pour collège/lycée */
+          <SaisieNotesParMatiere
+            matieres={matieres}
+            eleves={eleves}
+            allNotesForPeriod={allNotesForPeriod}
+            periodeId={periodeId}
+            bareme={bareme}
+          />
+        ) : (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">
@@ -347,6 +359,7 @@ export default function Notes() {
             </Table>
           </CardContent>
         </Card>
+        )
       ) : (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
