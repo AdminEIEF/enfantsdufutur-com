@@ -96,14 +96,8 @@ async function generateSingleTableauHonneur(
   doc.setTextColor(0, 0, 0);
   doc.text("MINISTERE DE L'EDUCATION NATIONALE ET DE L'ALPHABETISATION", centerX, y, { align: 'center' });
 
-  // Horizontal line
-  y += 4;
-  doc.setDrawColor(200, 170, 30);
-  doc.setLineWidth(0.6);
-  doc.line(50, y, pageW - 50, y);
-
   // School name
-  y += 9;
+  y += 6;
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 139);
