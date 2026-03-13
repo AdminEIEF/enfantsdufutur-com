@@ -228,38 +228,51 @@ export default function CoordinateurPersonnel() {
         </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="text-2xl font-bold">{employes.length}</div>
-            <p className="text-xs text-muted-foreground">Total personnel</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="text-2xl font-bold">{employes.filter((e: any) => e.categorie === 'enseignant').length}</div>
-            <p className="text-xs text-muted-foreground">Enseignants</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="text-2xl font-bold text-green-600">{employes.filter((e: any) => e.statut === 'actif').length}</div>
-            <p className="text-xs text-muted-foreground">Actifs</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="text-2xl font-bold text-red-500">{employes.filter((e: any) => e.statut === 'inactif').length}</div>
-            <p className="text-xs text-muted-foreground">Inactifs</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="text-2xl font-bold text-orange-500">{employes.filter((e: any) => e.statut === 'en congé').length}</div>
-            <p className="text-xs text-muted-foreground">En congé</p>
-          </CardContent>
-        </Card>
-      </div>
+      {(() => {
+        const totalEnseignants = employes.filter((e: any) => e.categorie === 'enseignant').length;
+        const affectes = employes.filter((e: any) => e.categorie === 'enseignant' && e.enseignant_classes?.length > 0).length;
+        const nonAffectes = totalEnseignants - affectes;
+        return (
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <Card>
+              <CardContent className="pt-4 pb-3">
+                <div className="text-2xl font-bold">{employes.length}</div>
+                <p className="text-xs text-muted-foreground">Total personnel</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3">
+                <div className="text-2xl font-bold">{totalEnseignants}</div>
+                <p className="text-xs text-muted-foreground">Enseignants</p>
+              </CardContent>
+            </Card>
+            <Card className="border-green-200 bg-green-50/50">
+              <CardContent className="pt-4 pb-3">
+                <div className="text-2xl font-bold text-green-600">{affectes}</div>
+                <p className="text-xs text-green-700 font-medium">✅ Affectés</p>
+              </CardContent>
+            </Card>
+            <Card className="border-red-200 bg-red-50/50">
+              <CardContent className="pt-4 pb-3">
+                <div className="text-2xl font-bold text-red-600">{nonAffectes}</div>
+                <p className="text-xs text-red-700 font-medium">❌ Non affectés</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3">
+                <div className="text-2xl font-bold text-green-600">{employes.filter((e: any) => e.statut === 'actif').length}</div>
+                <p className="text-xs text-muted-foreground">Actifs</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3">
+                <div className="text-2xl font-bold text-orange-500">{employes.filter((e: any) => e.statut === 'en congé').length}</div>
+                <p className="text-xs text-muted-foreground">En congé</p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      })()}
 
       {/* Search */}
       <div className="relative max-w-md">
@@ -274,17 +287,24 @@ export default function CoordinateurPersonnel() {
         <div className="text-center py-12 text-muted-foreground">Aucun personnel trouvé</div>
       ) : (
         <div className="space-y-2">
-          {filtered.map((emp: any) => (
-            <details key={emp.id} className="group border rounded-lg overflow-hidden">
+          {filtered.map((emp: any) => {
+            const isAffecte = emp.enseignant_classes?.length > 0;
+            return (
+            <details key={emp.id} className={`group border rounded-lg overflow-hidden ${isAffecte ? 'border-green-300 bg-green-50/30' : 'border-red-300 bg-red-50/30'}`}>
               <summary className="cursor-pointer list-none flex items-center gap-3 py-3 px-4 hover:bg-accent/50 transition-colors">
+                <CircleDot className={`h-3.5 w-3.5 flex-shrink-0 ${isAffecte ? 'text-green-500' : 'text-red-500'}`} />
                 <span className="transition-transform group-open:rotate-90 text-muted-foreground text-xs">▶</span>
                 <span className="font-mono text-xs text-muted-foreground">{emp.matricule}</span>
                 <span className="font-medium text-sm">{emp.prenom} {emp.nom}</span>
                 {emp.poste && <span className="text-xs text-muted-foreground hidden sm:inline">— {emp.poste}</span>}
                 <div className="ml-auto flex items-center gap-2">
-                  {emp.enseignant_classes?.length > 0 && (
-                    <Badge variant="secondary" className="text-xs">
-                      {emp.enseignant_classes.length} classe{emp.enseignant_classes.length > 1 ? 's' : ''}
+                  {isAffecte ? (
+                    <Badge className="text-xs bg-green-100 text-green-800 border-green-300 hover:bg-green-100">
+                      ✅ {emp.enseignant_classes.length} classe{emp.enseignant_classes.length > 1 ? 's' : ''}
+                    </Badge>
+                  ) : (
+                    <Badge className="text-xs bg-red-100 text-red-800 border-red-300 hover:bg-red-100">
+                      ❌ Non affecté
                     </Badge>
                   )}
                   <Badge 
@@ -373,7 +393,8 @@ export default function CoordinateurPersonnel() {
                 </div>
               </div>
             </details>
-          ))}
+            );
+          })}
         </div>
       )}
 
