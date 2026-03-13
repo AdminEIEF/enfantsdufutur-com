@@ -64,6 +64,20 @@ export default function BulletinScolaire({
   // Compute total coefficients and total sum
   const totalCoef = bulletinData.reduce((s, b) => s + b.coefficient, 0);
 
+  // Compute weighted average per period
+  const moyennesParPeriode = periodes.map((_, pIndex) => {
+    let sumWeighted = 0;
+    let sumCoef = 0;
+    for (const b of bulletinData) {
+      const n = b.notes[pIndex];
+      if (n !== null) {
+        sumWeighted += n * b.coefficient;
+        sumCoef += b.coefficient;
+      }
+    }
+    return sumCoef > 0 ? Math.round((sumWeighted / sumCoef) * 100) / 100 : null;
+  });
+
   return (
     <div data-bulletin-a4 className="bg-white text-gray-900 font-sans" style={{ width: '210mm', minHeight: '297mm', margin: '0 auto', padding: '10mm', boxSizing: 'border-box' }}>
       <style>{`
@@ -149,11 +163,15 @@ export default function BulletinScolaire({
           </tbody>
           <tfoot>
             <tr className="bg-emerald-50 font-bold">
-              <td className="border border-gray-300 px-2 py-1.5">TOTAL GÉNÉRAL</td>
+              <td className="border border-gray-300 px-2 py-1.5">MOYENNE GÉNÉRALE</td>
               <td className="border border-gray-300 px-1 py-1.5 text-center">{totalCoef}</td>
-              <td colSpan={periodes.length} className="border border-gray-300 px-1 py-1.5 text-center text-gray-500">SOMME DES PÉRIODES</td>
-              <td className="border border-gray-300 px-1 py-1.5 text-center text-emerald-700">
-                {moyenneFinale !== null ? (moyenneFinale * totalCoef).toFixed(0) : '—'}
+              {moyennesParPeriode.map((moy, i) => (
+                <td key={i} className={`border border-gray-300 px-1 py-1.5 text-center font-mono ${moy !== null && moy < seuil ? 'text-red-600' : 'text-emerald-700'}`}>
+                  {moy !== null ? moy.toFixed(2) : '—'}
+                </td>
+              ))}
+              <td className="border border-gray-300 px-1 py-1.5 text-center text-emerald-700 font-mono">
+                {moyenneFinale !== null ? moyenneFinale.toFixed(2) : '—'}
               </td>
               <td colSpan={2} className="border border-gray-300 px-1 py-1.5"></td>
             </tr>
