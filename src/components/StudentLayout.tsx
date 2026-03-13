@@ -54,7 +54,8 @@ export function StudentLayout({ children }: { children: ReactNode }) {
   const isGameRoute = GAME_ITEMS.some(g => location.pathname === g.path);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500/5 via-background to-indigo-500/5">
+    <div className="min-h-screen bg-gradient-to-br from-blue-500/5 via-background to-indigo-500/5 relative">
+      <SchoolWatermark />
       {/* Header */}
       <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b">
         <div className="max-w-4xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">

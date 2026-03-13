@@ -110,7 +110,8 @@ export default function ParentDashboard() {
   const handleLogout = () => { logout(); navigate('/parent', { replace: true }); };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 relative">
+      <SchoolWatermark />
       {/* Header */}
       <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b">
         <div className="max-w-4xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-1">
