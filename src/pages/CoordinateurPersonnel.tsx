@@ -103,6 +103,21 @@ export default function CoordinateurPersonnel() {
     },
   });
 
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, statut }: { id: string; statut: string }) => {
+      const { error } = await supabase.from('employes').update({ statut }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, { statut }) => {
+      const labels: Record<string, string> = { actif: 'Actif', inactif: 'Inactif', 'en congé': 'En congé' };
+      toast({ title: `✅ Statut mis à jour : ${labels[statut] || statut}` });
+      qc.invalidateQueries({ queryKey: ['coord-employes'] });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+    },
+  });
+
   const filtered = employes.filter((e: any) =>
     `${e.nom} ${e.prenom} ${e.matricule} ${e.poste}`.toLowerCase().includes(search.toLowerCase())
   );
