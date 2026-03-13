@@ -244,6 +244,7 @@ const App = () => (
             <Route path="/eleve/culture" element={<StudentAuthProvider><StudentCultureGenerale /></StudentAuthProvider>} />
             <Route path="/eleve/coloriage" element={<StudentAuthProvider><StudentColoriage /></StudentAuthProvider>} />
             <Route path="/eleve/serpent" element={<StudentAuthProvider><StudentSerpentAlphabet /></StudentAuthProvider>} />
+            <Route path="/eleve/anglais" element={<StudentAuthProvider><StudentAnglais /></StudentAuthProvider>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
