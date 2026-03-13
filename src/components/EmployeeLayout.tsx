@@ -4,6 +4,7 @@ import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Button } from '@/components/ui/button';
 import { Home, Calendar, FileText, BellRing, LogOut, Briefcase, Clock, Mail, CalendarDays, BarChart3 } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
+import { SchoolWatermark } from '@/components/SchoolWatermark';
 
 const NAV_ITEMS = [
   { path: '/employe/dashboard', icon: Home, label: 'Accueil' },
