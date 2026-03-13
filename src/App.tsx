@@ -82,6 +82,7 @@ import Corbeille from "./pages/Corbeille";
 import StudentEcriture from "./pages/student/StudentEcriture";
 import StudentCalculMental from "./pages/student/StudentCalculMental";
 import StudentCultureGenerale from "./pages/student/StudentCultureGenerale";
+import StudentColoriage from "./pages/student/StudentColoriage";
 
 const queryClient = new QueryClient();
 
