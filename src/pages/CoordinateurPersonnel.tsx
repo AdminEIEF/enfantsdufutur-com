@@ -320,6 +320,38 @@ export default function CoordinateurPersonnel() {
                     </div>
                   </div>
                 )}
+                {/* Status change */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-muted-foreground font-medium mr-1">Changer le statut :</span>
+                  {['actif', 'inactif', 'en congé'].map((s) => {
+                    const isCurrentStatus = emp.statut === s;
+                    const labels: Record<string, string> = { actif: '✅ Actif', inactif: '⛔ Inactif', 'en congé': '🏖️ En congé' };
+                    const variants: Record<string, string> = { 
+                      actif: isCurrentStatus ? 'bg-green-100 border-green-400 text-green-700' : '', 
+                      inactif: isCurrentStatus ? 'bg-red-100 border-red-400 text-red-700' : '', 
+                      'en congé': isCurrentStatus ? 'bg-orange-100 border-orange-400 text-orange-700' : '' 
+                    };
+                    return (
+                      <Button
+                        key={s}
+                        size="sm"
+                        variant={isCurrentStatus ? 'outline' : 'ghost'}
+                        className={`text-xs ${variants[s]} ${isCurrentStatus ? 'pointer-events-none font-semibold' : ''}`}
+                        disabled={isCurrentStatus || statusMutation.isPending}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          statusMutation.mutate({ id: emp.id, statut: s });
+                        }}
+                      >
+                        {statusMutation.isPending && statusMutation.variables?.id === emp.id && statusMutation.variables?.statut === s 
+                          ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> 
+                          : null}
+                        {labels[s]}
+                      </Button>
+                    );
+                  })}
+                </div>
+
                 <div className="flex justify-end">
                   <Button size="sm" variant="outline" onClick={() => {
                     setSelectedEmp(emp);
