@@ -228,7 +228,7 @@ export default function CoordinateurPersonnel() {
         </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-4 pb-3">
             <div className="text-2xl font-bold">{employes.length}</div>
