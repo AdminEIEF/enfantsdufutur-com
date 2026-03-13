@@ -38,6 +38,7 @@ async function generateSingleTableauHonneur(
   const centerX = pageW / 2;
 
   // === BACKGROUND IMAGE (full page) ===
+  // Le fond contient déjà les éléments décoratifs (bordures, drapeaux, médaille, couronne)
   if (bgBase64) {
     try {
       doc.addImage(bgBase64, 'JPEG', 0, 0, pageW, pageH);
@@ -47,21 +48,6 @@ async function generateSingleTableauHonneur(
     doc.setFillColor(255, 255, 255);
     doc.rect(0, 0, pageW, pageH, 'F');
     drawFallbackBorders(doc, pageW, pageH);
-  }
-
-  // === LAUREL WREATH WATERMARK (centered, semi-transparent via large size) ===
-  if (wreathBase64) {
-    try {
-      const wreathSize = 120;
-      doc.addImage(wreathBase64, 'PNG', centerX - wreathSize / 2, pageH / 2 - wreathSize / 2 + 5, wreathSize, wreathSize);
-    } catch { /* skip */ }
-  }
-
-  // === GOLD MEDAL (top-left, over flag triangle) ===
-  if (medalBase64) {
-    try {
-      doc.addImage(medalBase64, 'PNG', 8, 6, 28, 34);
-    } catch { /* skip */ }
   }
 
   // === SCHOOL LOGO (top right) ===
