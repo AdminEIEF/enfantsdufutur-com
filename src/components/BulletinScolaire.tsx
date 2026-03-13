@@ -1,5 +1,6 @@
 import { CheckSquare, Square, MapPin, University } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface BulletinNote {
   matiere: string;
