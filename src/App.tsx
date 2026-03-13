@@ -78,6 +78,7 @@ import RobotiqueDashboard from "./pages/RobotiqueDashboard";
 import PointageEleves from "./pages/PointageEleves";
 import PointeurPointage from "./pages/PointeurPointage";
 import SuperviseurDashboard from "./pages/SuperviseurDashboard";
+import ServiceInfoDashboard from "./pages/ServiceInfoDashboard";
 import Corbeille from "./pages/Corbeille";
 import StudentEcriture from "./pages/student/StudentEcriture";
 import StudentCalculMental from "./pages/student/StudentCalculMental";
@@ -138,6 +139,7 @@ function RoleBasedRedirect() {
     if (roles[0] === 'comptable') return <Navigate to="/paiements" replace />;
     if (roles[0] === 'chauffeur') return <Navigate to="/transport" replace />;
     if (roles[0] === 'surveillant') return <Navigate to="/pointage-eleves" replace />;
+    if (roles[0] === 'service_info') return <Navigate to="/service-info-dashboard" replace />;
   }
   return <Navigate to="/dashboard" replace />;
 }
@@ -162,6 +164,7 @@ function AuthRoute() {
       if (roles[0] === 'comptable') return <Navigate to="/paiements" replace />;
       if (roles[0] === 'chauffeur') return <Navigate to="/transport" replace />;
       if (roles[0] === 'surveillant') return <Navigate to="/pointage-eleves" replace />;
+      if (roles[0] === 'service_info') return <Navigate to="/service-info-dashboard" replace />;
     }
     return <Navigate to="/dashboard" replace />;
   }
@@ -231,6 +234,7 @@ const App = () => (
             <Route path="/boutique" element={<ProtectedRoute><Boutique /></ProtectedRoute>} />
             <Route path="/tracabilite" element={<ProtectedRoute><Tracabilite /></ProtectedRoute>} />
             <Route path="/supervision" element={<ProtectedRoute><AdminMonitoring /></ProtectedRoute>} />
+            <Route path="/service-info-dashboard" element={<ProtectedRoute><ServiceInfoDashboard /></ProtectedRoute>} />
             <Route path="/superviseur-dashboard" element={<ProtectedRoute><SuperviseurDashboard /></ProtectedRoute>} />
             <Route path="/coordinateur-dashboard" element={<ProtectedRoute><CoordinateurDashboard /></ProtectedRoute>} />
             <Route path="/coordinateur-documents" element={<ProtectedRoute><CoordinateurDocuments /></ProtectedRoute>} />

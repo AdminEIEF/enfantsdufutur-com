@@ -26,8 +26,16 @@ const navSections = [
     ],
   },
   {
+    label: 'Service Informatique',
+    roles: ['service_info'] as const,
+    items: [
+      { title: 'Tableau de bord', url: '/service-info-dashboard', icon: Home },
+      { title: 'Notifications', url: '/notifications', icon: Bell },
+    ],
+  },
+  {
     label: 'Principal',
-    roles: ['admin', 'secretaire', 'service_info', 'comptable'] as const,
+    roles: ['admin', 'secretaire', 'comptable'] as const,
     items: [
       { title: 'Tableau de bord', url: '/dashboard', icon: Home },
       { title: 'Notifications', url: '/notifications', icon: Bell },
