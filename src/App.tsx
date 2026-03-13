@@ -83,6 +83,7 @@ import StudentEcriture from "./pages/student/StudentEcriture";
 import StudentCalculMental from "./pages/student/StudentCalculMental";
 import StudentCultureGenerale from "./pages/student/StudentCultureGenerale";
 import StudentColoriage from "./pages/student/StudentColoriage";
+import StudentSerpentAlphabet from "./pages/student/StudentSerpentAlphabet";
 
 const queryClient = new QueryClient();
 
