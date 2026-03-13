@@ -4,6 +4,7 @@ import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Button } from '@/components/ui/button';
 import { Home, Calendar, FileText, BellRing, LogOut, Briefcase, Clock, Mail, CalendarDays, BarChart3 } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
+import { SchoolWatermark } from '@/components/SchoolWatermark';
 
 const NAV_ITEMS = [
   { path: '/employe/dashboard', icon: Home, label: 'Accueil' },
@@ -39,7 +40,8 @@ export function EmployeeLayout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-500/5 via-background to-teal-500/5">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-500/5 via-background to-teal-500/5 relative">
+      <SchoolWatermark />
       <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">

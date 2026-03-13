@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateBonRecuperation } from '@/lib/generateBonRecuperation';
+import { SchoolWatermark } from '@/components/SchoolWatermark';
 import ParentEnfantCommandes from '@/components/parent/ParentEnfantCommandes';
 import ParentEnfantCantine from '@/components/parent/ParentEnfantCantine';
 import ParentEnfantFournitures from '@/components/parent/ParentEnfantFournitures';
@@ -72,7 +73,8 @@ export default function ParentEnfant() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 relative">
+      <SchoolWatermark />
       {/* Header */}
       <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">

@@ -4,6 +4,7 @@ import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Home, FileText, ClipboardList, Award, Bot, LogOut, CalendarDays, Star, PenTool, Calculator, GraduationCap, Palette, Bug, Languages, Gamepad2, X } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
+import { SchoolWatermark } from '@/components/SchoolWatermark';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const GAME_ITEMS = [
@@ -53,7 +54,8 @@ export function StudentLayout({ children }: { children: ReactNode }) {
   const isGameRoute = GAME_ITEMS.some(g => location.pathname === g.path);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500/5 via-background to-indigo-500/5">
+    <div className="min-h-screen bg-gradient-to-br from-blue-500/5 via-background to-indigo-500/5 relative">
+      <SchoolWatermark />
       {/* Header */}
       <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b">
         <div className="max-w-4xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
