@@ -81,6 +81,10 @@ export default function Notes() {
     },
   });
 
+  const selectedCycle = cycles.find((c: any) => c.id === cycleId);
+  const bareme = selectedCycle?.bareme ?? 20;
+  const isSecondaire = bareme >= 20; // Collège/Lycée use subject-by-subject mode
+
   const matieres = useMemo(() => {
     // For Crèche/Primaire (non-secondaire): strictly use classe_matieres only
     if (classeId && classeMatieres.length > 0) {
