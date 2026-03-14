@@ -319,7 +319,7 @@ export default function Personnel() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('bulletins_paie')
-        .select('*, employes(nom, prenom, matricule)')
+        .select('*, employes(nom, prenom, matricule, poste, categorie, date_embauche)')
         .order('annee', { ascending: false })
         .order('mois', { ascending: false })
         .limit(100);
