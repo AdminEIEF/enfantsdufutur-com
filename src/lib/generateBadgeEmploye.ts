@@ -239,7 +239,7 @@ function drawSingleBadge(
   doc.setGState(new (doc as any).GState({ opacity: 1 }));
 
   // === "PERSONNEL AUTORISÉ" ===
-  const authY = qrY + qrSize + 2.5;
+  const authY = qrY + qrSize + 4.5;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(3.5);
   doc.setFillColor(GREEN.r, GREEN.g, GREEN.b);
