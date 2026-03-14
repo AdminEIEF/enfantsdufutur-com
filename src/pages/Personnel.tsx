@@ -257,19 +257,7 @@ export default function Personnel() {
     },
   });
 
-  // Fetch avances en attente
-  const { data: avancesEnAttente = [] } = useQuery({
-    queryKey: ['avances-attente'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('avances_salaire')
-        .select('*, employes(nom, prenom, matricule)')
-        .eq('statut', 'en_attente')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
+  
 
   // Fetch courriers
   const { data: courriers = [], refetch: refetchCourriers } = useQuery({
