@@ -589,7 +589,7 @@ export default function Personnel() {
     for (const emp of activeEmps) {
       qrMap[emp.matricule] = await QRCode.toDataURL(emp.matricule, { width: 200 });
     }
-    await generatePlancheBadgesEmployesPDF(activeEmps, qrMap, schoolConfig?.nom, schoolConfig?.logo_url);
+    await generatePlancheBadgesEmployesPDF(activeEmps, qrMap, schoolConfig?.nom, schoolConfig?.logo_url, { telephone: '625 00 00 00', adresse: schoolConfig?.ville || 'Conakry, Guinée' });
   };
 
   // Print bulletin paie
