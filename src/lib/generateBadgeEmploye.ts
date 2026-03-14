@@ -14,8 +14,8 @@ const CARD_W = 53.98; // mm (portrait)
 const CARD_H = 85.6;
 
 // Colors
-const NAVY = { r: 15, g: 23, b: 42 };       // bg-blue-900 equivalent
-const BLUE_ACCENT = { r: 29, g: 78, b: 216 }; // text-blue-700
+const NAVY = { r: 128, g: 0, b: 32 };       // Rouge bordeaux
+const BLUE_ACCENT = { r: 128, g: 0, b: 32 }; // Rouge bordeaux accent
 const GRAY_100 = { r: 243, g: 244, b: 246 };
 const GRAY_500 = { r: 107, g: 114, b: 128 };
 const GRAY_800 = { r: 31, g: 41, b: 55 };
@@ -252,12 +252,11 @@ function drawSingleBadge(
   doc.setTextColor(GRAY_500.r, GRAY_500.g, GRAY_500.b);
   doc.text('PERSONNEL AUTORISÉ', x + CARD_W / 2 + 1, authY, { align: 'center' });
 
-  // === Category color band at bottom ===
+  // === Footer band (dark green) ===
   const bandH = 2.5;
-  const catColor = getCategoryColor(emp.categorie);
-  doc.setFillColor(catColor.r, catColor.g, catColor.b);
+  const DARK_GREEN = { r: 0, g: 100, b: 0 };
+  doc.setFillColor(DARK_GREEN.r, DARK_GREEN.g, DARK_GREEN.b);
   doc.roundedRect(x, y + CARD_H - bandH, CARD_W, bandH, 0, 0, 'F');
-  // Round only bottom corners
   doc.roundedRect(x, y + CARD_H - bandH, CARD_W, bandH, 2, 2, 'F');
   doc.rect(x, y + CARD_H - bandH, CARD_W, bandH / 2, 'F');
 
