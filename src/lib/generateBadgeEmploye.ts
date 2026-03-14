@@ -199,13 +199,8 @@ function drawSingleBadge(
     doc.circle(holoCX, holoCY, holoR - i * 0.8, 'F');
   });
 
-  // Shimmer diagonal lines
-  doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
-  doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(0.12);
-  for (let sl = -holoR; sl < holoR; sl += 1.2) {
-    doc.line(holoCX + sl, holoCY - holoR, holoCX + sl + holoR, holoCY + holoR);
-  }
+
+
 
   // Outer ring border
   doc.setGState(new (doc as any).GState({ opacity: 0.3 }));
