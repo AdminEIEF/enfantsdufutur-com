@@ -108,7 +108,7 @@ function drawSingleBadge(
   // === "BADGE DU PERSONNEL" - separate RED (bordeaux) band ===
   const badgeBandY = y + headerH;
   const badgeBandH = 5;
-  doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.setFillColor(180, 140, 20);
   doc.rect(x, badgeBandY, CARD_W, badgeBandH, 'F');
   // Text in Times (serif) bold italic
   doc.setFont('times', 'bolditalic');
