@@ -106,6 +106,13 @@ function drawSingleBadge(
     doc.text(line.toUpperCase(), x + CARD_W / 2, schoolStartY + i * 2, { align: 'center' });
   });
 
+  // "BADGE DU PERSONNEL" subtitle
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(4);
+  doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
+  const badgeSubY = schoolStartY + schoolLines.length * 2 + 0.8;
+  doc.text('BADGE DU PERSONNEL', x + CARD_W / 2, badgeSubY, { align: 'center' });
+
   // === Photo (circular with white border) ===
   const photoR = 11; // radius
   const photoCX = x + CARD_W / 2;
