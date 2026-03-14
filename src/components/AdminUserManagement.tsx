@@ -26,6 +26,7 @@ const ROLE_LABELS: Record<string, string> = {
   chauffeur: 'Chauffeur de Bus',
   pointeur: 'Pointeur',
   surveillant: 'Surveillant',
+  tresorier: 'Trésorier',
 };
 
 const ROLE_COLORS: Record<string, string> = {
