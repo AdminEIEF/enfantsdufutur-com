@@ -1357,7 +1357,7 @@ export default function Personnel() {
                     const canvas = qrRef.current?.querySelector('canvas');
                     if (!canvas) return;
                     const qrDataUrl = (canvas as HTMLCanvasElement).toDataURL('image/png');
-                    generateBadgeEmployePDF(selectedEmp, qrDataUrl, schoolConfig?.nom, schoolConfig?.logo_url);
+                    generateBadgeEmployePDF(selectedEmp, qrDataUrl, schoolConfig?.nom, schoolConfig?.logo_url, { telephone: '625 00 00 00', adresse: schoolConfig?.ville || 'Conakry, Guinée' });
                   }}>
                     <Printer className="h-4 w-4 mr-1" /> Imprimer Badge PVC
                   </Button>
