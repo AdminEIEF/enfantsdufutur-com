@@ -192,7 +192,7 @@ export default function Personnel() {
   const [customPassword, setCustomPassword] = useState('');
   const [viewCourrierAdmin, setViewCourrierAdmin] = useState<any>(null);
   const [refuseMotif, setRefuseMotif] = useState('');
-  const [refuseTarget, setRefuseTarget] = useState<{ type: 'conge' | 'avance'; id: string } | null>(null);
+  const [refuseTarget, setRefuseTarget] = useState<{ type: 'conge'; id: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [filterCategorie, setFilterCategorie] = useState<string>('all');
   const [importLoading, setImportLoading] = useState(false);
