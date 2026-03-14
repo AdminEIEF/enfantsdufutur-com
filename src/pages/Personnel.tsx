@@ -879,7 +879,7 @@ export default function Personnel() {
         <Card><CardContent className="pt-4 text-center"><Users className="h-5 w-5 mx-auto mb-1 text-primary" /><div className="text-xl font-bold">{employes.filter((e: any) => e.statut === 'actif').length}</div><p className="text-xs text-muted-foreground">Actifs</p></CardContent></Card>
         <Card><CardContent className="pt-4 text-center"><Clock className="h-5 w-5 mx-auto mb-1 text-blue-500" /><div className="text-xl font-bold">{pointagesToday.length}</div><p className="text-xs text-muted-foreground">Pointages aujourd'hui</p></CardContent></Card>
         <Card><CardContent className="pt-4 text-center"><Calendar className="h-5 w-5 mx-auto mb-1 text-orange-500" /><div className="text-xl font-bold">{congesEnAttente.length}</div><p className="text-xs text-muted-foreground">Congés en attente</p></CardContent></Card>
-        <Card><CardContent className="pt-4 text-center"><DollarSign className="h-5 w-5 mx-auto mb-1 text-green-500" /><div className="text-xl font-bold">{avancesEnAttente.length}</div><p className="text-xs text-muted-foreground">Avances en attente</p></CardContent></Card>
+        
       </div>
 
       <Tabs defaultValue="employes">
