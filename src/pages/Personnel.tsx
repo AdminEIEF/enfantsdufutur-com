@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
-  Briefcase, Plus, Search, Loader2, Clock, Calendar, DollarSign, FileText,
+  Briefcase, Plus, Search, Loader2, Clock, Calendar, FileText,
   Check, X, Eye, Trash2, Upload, UserPlus, Users, ScanLine, CreditCard, Printer,
   Camera, Download, Key, Mail, Paperclip, BarChart3, MessageSquare, TrendingUp, TrendingDown, AlertTriangle, GraduationCap, FileSpreadsheet
 } from 'lucide-react';
@@ -192,7 +192,7 @@ export default function Personnel() {
   const [customPassword, setCustomPassword] = useState('');
   const [viewCourrierAdmin, setViewCourrierAdmin] = useState<any>(null);
   const [refuseMotif, setRefuseMotif] = useState('');
-  const [refuseTarget, setRefuseTarget] = useState<{ type: 'conge' | 'avance'; id: string } | null>(null);
+  const [refuseTarget, setRefuseTarget] = useState<{ type: 'conge'; id: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [filterCategorie, setFilterCategorie] = useState<string>('all');
   const [importLoading, setImportLoading] = useState(false);
@@ -257,19 +257,7 @@ export default function Personnel() {
     },
   });
 
-  // Fetch avances en attente
-  const { data: avancesEnAttente = [] } = useQuery({
-    queryKey: ['avances-attente'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('avances_salaire')
-        .select('*, employes(nom, prenom, matricule)')
-        .eq('statut', 'en_attente')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
+  
 
   // Fetch courriers
   const { data: courriers = [], refetch: refetchCourriers } = useQuery({
@@ -327,14 +315,7 @@ export default function Personnel() {
       return data;
     },
   });
-  const { data: allAvances = [] } = useQuery({
-    queryKey: ['all-avances'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('avances_salaire').select('*, employes(nom, prenom, matricule)').order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
+  
 
   const addEmployee = useMutation({
     mutationFn: async () => {
@@ -437,29 +418,7 @@ export default function Personnel() {
     qc.invalidateQueries({ queryKey: ['conges-attente'] });
   };
 
-  // Approve/reject avance
-  const handleAvance = async (id: string, statut: 'approuve' | 'refuse', motif?: string) => {
-    const avance = avancesEnAttente.find((a: any) => a.id === id);
-    await supabase.from('avances_salaire').update({
-      statut,
-      motif: statut === 'refuse' && motif ? motif : undefined,
-      traite_par: user?.id,
-      traite_at: new Date().toISOString(),
-    }).eq('id', id);
-    // Notify employee
-    if (avance?.employe_id) {
-      await supabase.from('employee_notifications').insert({
-        employe_id: avance.employe_id,
-        titre: statut === 'approuve' ? '✅ Avance approuvée' : '❌ Avance refusée',
-        message: statut === 'approuve'
-          ? `Votre demande d'avance de ${Number(avance.montant).toLocaleString()} GNF a été approuvée. Elle sera déduite de votre prochain bulletin de paie.`
-          : `Votre demande d'avance de ${Number(avance.montant).toLocaleString()} GNF a été refusée.${motif ? ' Motif: ' + motif : ''}`,
-        type: statut === 'approuve' ? 'info' : 'alerte',
-      });
-    }
-    toast({ title: statut === 'approuve' ? '✅ Avance approuvée' : '❌ Avance refusée' });
-    qc.invalidateQueries({ queryKey: ['avances-attente'] });
-  };
+  
 
   // Refuse with motif
   const confirmRefuse = async () => {
@@ -467,8 +426,6 @@ export default function Personnel() {
     if (!refuseMotif.trim()) { toast({ title: 'Motif obligatoire', variant: 'destructive' }); return; }
     if (refuseTarget.type === 'conge') {
       await handleConge(refuseTarget.id, 'refuse', refuseMotif);
-    } else {
-      await handleAvance(refuseTarget.id, 'refuse', refuseMotif);
     }
     setRefuseTarget(null);
     setRefuseMotif('');
@@ -879,7 +836,7 @@ export default function Personnel() {
         <Card><CardContent className="pt-4 text-center"><Users className="h-5 w-5 mx-auto mb-1 text-primary" /><div className="text-xl font-bold">{employes.filter((e: any) => e.statut === 'actif').length}</div><p className="text-xs text-muted-foreground">Actifs</p></CardContent></Card>
         <Card><CardContent className="pt-4 text-center"><Clock className="h-5 w-5 mx-auto mb-1 text-blue-500" /><div className="text-xl font-bold">{pointagesToday.length}</div><p className="text-xs text-muted-foreground">Pointages aujourd'hui</p></CardContent></Card>
         <Card><CardContent className="pt-4 text-center"><Calendar className="h-5 w-5 mx-auto mb-1 text-orange-500" /><div className="text-xl font-bold">{congesEnAttente.length}</div><p className="text-xs text-muted-foreground">Congés en attente</p></CardContent></Card>
-        <Card><CardContent className="pt-4 text-center"><DollarSign className="h-5 w-5 mx-auto mb-1 text-green-500" /><div className="text-xl font-bold">{avancesEnAttente.length}</div><p className="text-xs text-muted-foreground">Avances en attente</p></CardContent></Card>
+        
       </div>
 
       <Tabs defaultValue="employes">
@@ -887,7 +844,7 @@ export default function Personnel() {
           <TabsTrigger value="employes"><Users className="h-3.5 w-3.5 mr-1" />Employés</TabsTrigger>
           <TabsTrigger value="pointage"><Clock className="h-3.5 w-3.5 mr-1" />Pointage</TabsTrigger>
           <TabsTrigger value="conges"><Calendar className="h-3.5 w-3.5 mr-1" />Congés ({congesEnAttente.length})</TabsTrigger>
-          <TabsTrigger value="avances"><DollarSign className="h-3.5 w-3.5 mr-1" />Avances ({avancesEnAttente.length})</TabsTrigger>
+          
           <TabsTrigger value="paie"><FileText className="h-3.5 w-3.5 mr-1" />Paie</TabsTrigger>
           
           <TabsTrigger value="courriers"><Mail className="h-3.5 w-3.5 mr-1" />Courriers ({courriers.filter((c: any) => c.statut === 'non_lu').length})</TabsTrigger>
@@ -1030,84 +987,7 @@ export default function Personnel() {
           </Card>
         </TabsContent>
 
-        {/* Avances */}
-        <TabsContent value="avances" className="mt-4 space-y-4">
-          {/* En attente */}
-          <Card>
-            <CardHeader><CardTitle className="text-sm">Demandes d'avance en attente</CardTitle></CardHeader>
-            <div className="overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employé</TableHead>
-                    <TableHead>Montant</TableHead>
-                    <TableHead>Motif</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {avancesEnAttente.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucune demande</TableCell></TableRow>
-                  ) : avancesEnAttente.map((a: any) => (
-                    <TableRow key={a.id}>
-                      <TableCell className="font-medium">{a.employes?.prenom} {a.employes?.nom}</TableCell>
-                      <TableCell className="font-bold">{Number(a.montant).toLocaleString()} GNF</TableCell>
-                      <TableCell className="text-sm max-w-32 truncate">{a.motif || '—'}</TableCell>
-                      <TableCell className="text-sm">{format(new Date(a.created_at), 'dd/MM/yyyy')}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => handleAvance(a.id, 'approuve')}><Check className="h-3.5 w-3.5 text-green-600" /></Button>
-                          <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => { setRefuseTarget({ type: 'avance', id: a.id }); setRefuseMotif(''); }}><X className="h-3.5 w-3.5 text-red-600" /></Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </Card>
-
-          {/* Historique & suivi remboursement */}
-          <Card>
-            <CardHeader><CardTitle className="text-sm">Suivi des avances approuvées</CardTitle></CardHeader>
-            <div className="overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employé</TableHead>
-                    <TableHead>Montant</TableHead>
-                    <TableHead>Remboursé</TableHead>
-                    <TableHead>Restant</TableHead>
-                    <TableHead>Mois déduction</TableHead>
-                    <TableHead>Statut</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {allAvances.filter((a: any) => a.statut === 'approuve' || a.statut === 'rembourse').length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucune avance approuvée</TableCell></TableRow>
-                  ) : allAvances.filter((a: any) => a.statut === 'approuve' || a.statut === 'rembourse').map((a: any) => {
-                    const restant = Number(a.montant) - Number(a.montant_rembourse);
-                    return (
-                      <TableRow key={a.id}>
-                        <TableCell className="font-medium">{a.employes?.prenom} {a.employes?.nom}</TableCell>
-                        <TableCell>{Number(a.montant).toLocaleString()} GNF</TableCell>
-                        <TableCell className="text-emerald-600">{Number(a.montant_rembourse).toLocaleString()} GNF</TableCell>
-                        <TableCell className={`font-bold ${restant > 0 ? 'text-destructive' : 'text-emerald-600'}`}>{restant.toLocaleString()} GNF</TableCell>
-                        <TableCell className="text-sm">{a.mois_remboursement || '—'}</TableCell>
-                        <TableCell>
-                          <Badge variant={a.statut === 'rembourse' ? 'default' : 'secondary'}>
-                            {a.statut === 'rembourse' ? 'Remboursé' : 'En cours'}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </Card>
-        </TabsContent>
+        
 
         {/* Paie */}
         <TabsContent value="paie" className="mt-4 space-y-4">

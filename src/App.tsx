@@ -82,6 +82,7 @@ import ServiceInfoDashboard from "./pages/ServiceInfoDashboard";
 import Corbeille from "./pages/Corbeille";
 import TresorierDashboard from "./pages/TresorierDashboard";
 import TresorierGestionSalaires from "./pages/TresorierGestionSalaires";
+import TresorierAvances from "./pages/TresorierAvances";
 import StudentEcriture from "./pages/student/StudentEcriture";
 import StudentCalculMental from "./pages/student/StudentCalculMental";
 import StudentCultureGenerale from "./pages/student/StudentCultureGenerale";
@@ -250,6 +251,7 @@ const App = () => (
             <Route path="/pointeur-pointage" element={<ProtectedRoute><PointeurPointage /></ProtectedRoute>} />
             <Route path="/tresorier-dashboard" element={<ProtectedRoute><TresorierDashboard /></ProtectedRoute>} />
             <Route path="/tresorier-salaires" element={<ProtectedRoute><TresorierGestionSalaires /></ProtectedRoute>} />
+            <Route path="/tresorier-avances" element={<ProtectedRoute><TresorierAvances /></ProtectedRoute>} />
             <Route path="/eleve/ecriture" element={<StudentAuthProvider><StudentEcriture /></StudentAuthProvider>} />
             <Route path="/eleve/calcul" element={<StudentAuthProvider><StudentCalculMental /></StudentAuthProvider>} />
             <Route path="/eleve/culture" element={<StudentAuthProvider><StudentCultureGenerale /></StudentAuthProvider>} />
