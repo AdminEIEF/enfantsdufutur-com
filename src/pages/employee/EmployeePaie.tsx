@@ -7,6 +7,7 @@ import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Loader2, FileText, DollarSign, Download } from 'lucide-react';
 import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
 
+const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
 function fmtNum(n: number): string {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
