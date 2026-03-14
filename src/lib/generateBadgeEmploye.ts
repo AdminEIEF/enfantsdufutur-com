@@ -253,22 +253,26 @@ function drawSingleBadge(
   doc.text('PERSONNEL AUTORISÉ', x + CARD_W / 2 + 1, authY, { align: 'center' });
 
   // === Footer band (dark green) ===
-  const bandH = 2.5;
+  const bandH = 5;
   const DARK_GREEN = { r: 0, g: 100, b: 0 };
   doc.setFillColor(DARK_GREEN.r, DARK_GREEN.g, DARK_GREEN.b);
   doc.roundedRect(x, y + CARD_H - bandH, CARD_W, bandH, 0, 0, 'F');
   doc.roundedRect(x, y + CARD_H - bandH, CARD_W, bandH, 2, 2, 'F');
   doc.rect(x, y + CARD_H - bandH, CARD_W, bandH / 2, 'F');
 
-  // === Contact info on the band ===
-  const tel = contactInfo?.telephone || '';
-  if (tel) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(3);
-    doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
-    doc.text(tel, x + CARD_W / 2, y + CARD_H - 0.8, { align: 'center' });
+  // === Employee phone + school website on footer ===
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(3.2);
+  doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
+  const empTel = emp.telephone || '';
+  const siteWeb = contactInfo?.web || '';
+  if (empTel) {
+    doc.text(empTel, x + CARD_W / 2, y + CARD_H - 2.8, { align: 'center' });
   }
-
+  if (siteWeb) {
+    doc.setFontSize(2.8);
+    doc.text(siteWeb, x + CARD_W / 2, y + CARD_H - 1, { align: 'center' });
+  }
   // === Outer border ===
   doc.setDrawColor(220, 220, 230);
   doc.setLineWidth(0.15);
