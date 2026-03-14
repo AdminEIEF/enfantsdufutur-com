@@ -144,7 +144,7 @@ export default function EmployeePaie() {
                       {b.retenues > 0 && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Retenues</span>
-                          <span className="text-red-600">-{Number(b.retenues).toLocaleString()}</span>
+                          <span className="text-red-600">-{fmtNum(Number(b.retenues))}</span>
                         </div>
                       )}
                       {b.avances_deduites > 0 && (
