@@ -66,53 +66,52 @@ function drawSingleBadge(
   }
 
   // === Photo dans le cadre vert du haut ===
-  // Le cadre vert va de ~17% à ~55% de la hauteur du badge
-  const photoW = 27;
-  const photoH = 27;
+  const photoW = 26;
+  const photoH = 26;
   const photoX = x + (CARD_W - photoW) / 2;
-  const photoY = y + 16;
+  const photoY = y + 14.5;
 
   if (photoImg) {
     doc.addImage(photoImg, 'JPEG', photoX, photoY, photoW, photoH);
   }
 
-  // === Nom et prénom (zone blanche sous la photo, ~56-62%) ===
-  const nameY = y + 47;
+  // === Nom et prénom (gros, rouge, sous la photo ~50%) ===
+  const nameY = y + 46;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
+  doc.setFontSize(9);
   doc.setTextColor(200, 16, 46);
   const fullName = `${emp.prenom} ${emp.nom}`.toUpperCase();
-  const nameLines = doc.splitTextToSize(fullName, CARD_W - 8);
+  const nameLines = doc.splitTextToSize(fullName, CARD_W - 6);
   doc.text(nameLines, x + CARD_W / 2, nameY, { align: 'center' });
 
-  // === Fonction (sous le nom, ~63%) ===
-  const fonctionY = nameY + nameLines.length * 3.2 + 0.5;
+  // === Fonction (italique, sous le nom ~55%) ===
+  const fonctionY = nameY + nameLines.length * 4 + 1;
   doc.setFont('helvetica', 'bolditalic');
-  doc.setFontSize(5.5);
+  doc.setFontSize(8);
   doc.setTextColor(40, 40, 50);
   doc.text(emp.poste || emp.categorie, x + CARD_W / 2, fonctionY, { align: 'center' });
 
-  // === Matricule (sur la barre tricolore rouge/vert, ~68%) ===
-  const matY = y + 59;
+  // === Matricule (sur la barre tricolore ~62%) ===
+  const matY = y + 58;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
+  doc.setFontSize(8);
   doc.setTextColor(255, 255, 255);
   doc.text(emp.matricule, x + CARD_W / 2, matY, { align: 'center' });
 
-  // === QR Code (dans le cadre blanc du bas, ~74-90%) ===
-  const qrSize = 13;
+  // === QR Code (cadre blanc du bas ~66-84%) ===
+  const qrSize = 15;
   const qrX = x + (CARD_W - qrSize) / 2;
-  const qrY = y + 63;
+  const qrY = y + 61;
   doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
 
-  // === Contact & Web (bandeau rouge/vert du bas, ~94%) ===
+  // === Contact & Web (bandeau du bas ~94%) ===
   const tel = contactInfo?.telephone || '';
   const web = contactInfo?.web || '';
-  const footerY = y + CARD_H - 3.5;
+  const footerY = y + CARD_H - 3;
 
   if (tel || web) {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(3.5);
+    doc.setFontSize(6);
     doc.setTextColor(255, 255, 255);
     if (tel && web) {
       doc.text(`${tel} | ${web}`, x + CARD_W / 2, footerY, { align: 'center' });
