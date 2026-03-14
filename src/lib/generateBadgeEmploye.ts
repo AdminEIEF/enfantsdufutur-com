@@ -76,8 +76,7 @@ function drawSingleBadge(
 
   // === Header (Dark charcoal) - logo LEFT + school name RIGHT ===
   const headerH = 14;
-  const DARK_HEADER = { r: 45, g: 45, b: 48 };
-  doc.setFillColor(DARK_HEADER.r, DARK_HEADER.g, DARK_HEADER.b);
+  doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
   doc.roundedRect(x, y, CARD_W, headerH, 2, 2, 'F');
   doc.rect(x, y + headerH - 2, CARD_W, 2, 'F');
 
@@ -109,7 +108,7 @@ function drawSingleBadge(
   // === "BADGE DU PERSONNEL" - separate RED (bordeaux) band ===
   const badgeBandY = y + headerH;
   const badgeBandH = 5;
-  doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.setFillColor(180, 140, 20);
   doc.rect(x, badgeBandY, CARD_W, badgeBandH, 'F');
   // Text in Times (serif) bold italic
   doc.setFont('times', 'bolditalic');
