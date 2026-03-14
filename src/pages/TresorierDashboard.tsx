@@ -100,6 +100,7 @@ export default function TresorierDashboard() {
 
     const signatureData = hasEmpSignature ? empCanvasRef.current?.toDataURL('image/png') : null;
 
+    // 1) Record payment in paiements_tresorier
     const { error } = await supabase.from('paiements_tresorier').insert({
       employe_id: emp.id,
       montant: emp.salaire_base,
@@ -111,10 +112,70 @@ export default function TresorierDashboard() {
 
     if (error) {
       toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Paiement enregistré', description: `${emp.prenom} ${emp.nom} a été payé et a signé.` });
-      fetchData();
+      setPaying(null);
+      setSignDialog(null);
+      return;
     }
+
+    // 2) Auto-generate bulletin de paie for this employee
+    // Check pending avances to auto-deduct
+    const { data: pendingAvances } = await supabase
+      .from('avances_salaire')
+      .select('id, montant, montant_rembourse')
+      .eq('employe_id', emp.id)
+      .eq('statut', 'approuve');
+
+    let totalAvancesDeduites = 0;
+    const avancesToUpdate: { id: string; deduction: number }[] = [];
+
+    if (pendingAvances && pendingAvances.length > 0) {
+      for (const av of pendingAvances) {
+        const remaining = Number(av.montant) - Number(av.montant_rembourse);
+        if (remaining > 0) {
+          totalAvancesDeduites += remaining;
+          avancesToUpdate.push({ id: av.id, deduction: remaining });
+        }
+      }
+    }
+
+    const salaireNet = emp.salaire_base - totalAvancesDeduites;
+
+    await supabase.from('bulletins_paie').upsert({
+      employe_id: emp.id,
+      mois: currentMonth,
+      annee: currentYear,
+      salaire_brut: emp.salaire_base,
+      retenues: 0,
+      avances_deduites: totalAvancesDeduites,
+      primes: 0,
+      salaire_net: salaireNet,
+      commentaire: null,
+      genere_par: user?.id,
+    } as any, { onConflict: 'employe_id,mois,annee' });
+
+    // Update avance remboursements
+    for (const av of avancesToUpdate) {
+      const { data: avData } = await supabase.from('avances_salaire').select('montant, montant_rembourse').eq('id', av.id).single();
+      if (avData) {
+        const newRembourse = Number(avData.montant_rembourse) + av.deduction;
+        await supabase.from('avances_salaire').update({
+          montant_rembourse: newRembourse,
+          mois_remboursement: `${currentMonth}/${currentYear}`,
+          statut: newRembourse >= Number(avData.montant) ? 'rembourse' : 'approuve',
+        }).eq('id', av.id);
+      }
+    }
+
+    // 3) Notify employee
+    await supabase.from('employee_notifications').insert({
+      employe_id: emp.id,
+      titre: '💰 Bulletin de paie disponible',
+      message: `Votre bulletin de paie est disponible. Salaire net: ${fmtNum(salaireNet)} GNF.${totalAvancesDeduites > 0 ? ` (Avances déduites: ${fmtNum(totalAvancesDeduites)} GNF)` : ''}`,
+      type: 'info',
+    });
+
+    toast({ title: 'Paiement enregistré', description: `${emp.prenom} ${emp.nom} a été payé. Bulletin généré automatiquement.` });
+    fetchData();
     setPaying(null);
     setSignDialog(null);
   };
@@ -133,7 +194,14 @@ export default function TresorierDashboard() {
   const soldeRestant = totalBudget - totalPaye;
   const nbPaye = filtered.filter(e => isPaid(e.id)).length;
 
-  // Canvas drawing helpers
+  // Per-category stats
+  const categoryStats = CATEGORIES.filter(c => c.value !== 'all').map(cat => {
+    const catEmployes = employes.filter(e => e.categorie === cat.value);
+    const catPaid = catEmployes.filter(e => isPaid(e.id));
+    return { label: cat.label, total: catEmployes.length, paid: catPaid.length };
+  }).filter(c => c.total > 0);
+
+
   const getPos = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
     if ('touches' in e) return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
@@ -289,7 +357,27 @@ export default function TresorierDashboard() {
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Per-category breakdown */}
+      {categoryStats.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {categoryStats.map(cs => (
+            <Card key={cs.label} className="border">
+              <CardContent className="pt-4 pb-3 text-center">
+                <p className="text-xs font-medium text-muted-foreground mb-1">{cs.label}</p>
+                <p className="text-lg font-bold">
+                  <span className="text-emerald-600">{cs.paid}</span>
+                  <span className="text-muted-foreground"> / {cs.total}</span>
+                </p>
+                <div className="w-full bg-muted rounded-full h-1.5 mt-2">
+                  <div className="bg-emerald-500 h-1.5 rounded-full transition-all" style={{ width: `${cs.total > 0 ? (cs.paid / cs.total) * 100 : 0}%` }} />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+
       <Card>
         <CardContent className="pt-5">
           <div className="flex flex-col sm:flex-row gap-3">

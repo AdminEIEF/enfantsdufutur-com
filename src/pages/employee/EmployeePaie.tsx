@@ -9,6 +9,11 @@ import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
+function fmtNum(n: number): string {
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
+
 export default function EmployeePaie() {
   const { session } = useEmployeeAuth();
   const [data, setData] = useState<any>(null);
@@ -69,7 +74,7 @@ export default function EmployeePaie() {
               <DollarSign className="h-6 w-6 text-emerald-600" />
               <div>
                 <p className="text-sm text-muted-foreground">Salaire de base mensuel</p>
-                <p className="text-xl font-bold">{Number(session.employe.salaire_base).toLocaleString()} GNF</p>
+                <p className="text-xl font-bold">{fmtNum(Number(session.employe.salaire_base))} GNF</p>
               </div>
             </CardContent>
           </Card>
@@ -89,12 +94,12 @@ export default function EmployeePaie() {
                     return (
                       <div key={a.id} className="flex items-center justify-between text-sm border rounded px-3 py-2">
                         <div>
-                          <p className="font-medium">{Number(a.montant).toLocaleString()} GNF</p>
+                          <p className="font-medium">{fmtNum(Number(a.montant))} GNF</p>
                           {a.motif && <p className="text-xs text-muted-foreground">{a.motif}</p>}
                         </div>
                         <div className="text-right">
                           <p className="text-xs text-muted-foreground">Restant dû</p>
-                          <p className="font-bold text-orange-600">{restant.toLocaleString()} GNF</p>
+                          <p className="font-bold text-orange-600">{fmtNum(restant)} GNF</p>
                           <p className="text-[10px] text-muted-foreground">Prélevé auto. sur salaire</p>
                         </div>
                       </div>
@@ -119,7 +124,7 @@ export default function EmployeePaie() {
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold">{MOIS_NOMS[b.mois]} {b.annee}</h3>
                       <div className="flex items-center gap-2">
-                        <Badge className="bg-emerald-500">{Number(b.salaire_net).toLocaleString()} GNF</Badge>
+                        <Badge className="bg-emerald-500">{fmtNum(Number(b.salaire_net))} GNF</Badge>
                         <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => handleDownload(b)} title="Télécharger PDF">
                           <Download className="h-3.5 w-3.5" />
                         </Button>
@@ -128,24 +133,24 @@ export default function EmployeePaie() {
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Salaire brut</span>
-                        <span>{Number(b.salaire_brut).toLocaleString()}</span>
+                        <span>{fmtNum(Number(b.salaire_brut))}</span>
                       </div>
                       {b.primes > 0 && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Primes</span>
-                          <span className="text-green-600">+{Number(b.primes).toLocaleString()}</span>
+                          <span className="text-green-600">+{fmtNum(Number(b.primes))}</span>
                         </div>
                       )}
                       {b.retenues > 0 && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Retenues</span>
-                          <span className="text-red-600">-{Number(b.retenues).toLocaleString()}</span>
+                          <span className="text-red-600">-{fmtNum(Number(b.retenues))}</span>
                         </div>
                       )}
                       {b.avances_deduites > 0 && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Avances déduites</span>
-                          <span className="text-orange-600">-{Number(b.avances_deduites).toLocaleString()}</span>
+                          <span className="text-orange-600">-{fmtNum(Number(b.avances_deduites))}</span>
                         </div>
                       )}
                     </div>

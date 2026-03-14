@@ -35,7 +35,7 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-const fmt = (n: number) => n.toLocaleString('fr-FR');
+const fmt = (n: number) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 // School brand colors (green & red from the logo)
 const GREEN: [number, number, number] = [0, 128, 58];

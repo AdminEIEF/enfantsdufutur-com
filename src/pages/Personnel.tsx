@@ -1111,59 +1111,7 @@ export default function Personnel() {
 
         {/* Paie */}
         <TabsContent value="paie" className="mt-4 space-y-4">
-          <div className="flex justify-end">
-            <Dialog open={paieOpen} onOpenChange={setPaieOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm"><FileText className="h-4 w-4 mr-1" /> Générer un bulletin</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Générer un bulletin de paie</DialogTitle></DialogHeader>
-                <div className="space-y-3">
-                  <div className="space-y-1"><Label>Employé *</Label>
-                    <Select value={paieForm.employe_id} onValueChange={async (v) => {
-                      const emp = employes.find((e: any) => e.id === v);
-                      // Auto-calculate pending avances for this employee
-                      const pendingAv = allAvances
-                        .filter((a: any) => a.employe_id === v && a.statut === 'approuve')
-                        .reduce((s: number, a: any) => s + (Number(a.montant) - Number(a.montant_rembourse)), 0);
-                      setPaieForm(f => ({ ...f, employe_id: v, salaire_brut: Number(emp?.salaire_base || 0), avances_deduites: Math.max(0, pendingAv) }));
-                    }}>
-                      <SelectTrigger><SelectValue placeholder="Sélectionner..." /></SelectTrigger>
-                      <SelectContent>
-                        {employes.filter((e: any) => e.statut === 'actif').map((e: any) => (
-                          <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom} ({e.matricule})</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1"><Label>Mois</Label>
-                      <Select value={String(paieForm.mois)} onValueChange={v => setPaieForm(f => ({ ...f, mois: Number(v) }))}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {MOIS_NOMS.slice(1).map((m, i) => <SelectItem key={i + 1} value={String(i + 1)}>{m}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1"><Label>Année</Label><Input type="number" value={paieForm.annee} onChange={e => setPaieForm(f => ({ ...f, annee: Number(e.target.value) }))} /></div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1"><Label>Salaire brut</Label><Input type="number" value={paieForm.salaire_brut} onChange={e => setPaieForm(f => ({ ...f, salaire_brut: Number(e.target.value) }))} /></div>
-                    <div className="space-y-1"><Label>Primes</Label><Input type="number" value={paieForm.primes} onChange={e => setPaieForm(f => ({ ...f, primes: Number(e.target.value) }))} /></div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1"><Label>Retenues</Label><Input type="number" value={paieForm.retenues} onChange={e => setPaieForm(f => ({ ...f, retenues: Number(e.target.value) }))} /></div>
-                    <div className="space-y-1"><Label>Avances déduites</Label><Input type="number" value={paieForm.avances_deduites} onChange={e => setPaieForm(f => ({ ...f, avances_deduites: Number(e.target.value) }))} /></div>
-                  </div>
-                  <div className="space-y-1"><Label>Commentaire</Label><Input value={paieForm.commentaire} onChange={e => setPaieForm(f => ({ ...f, commentaire: e.target.value }))} /></div>
-                  <div className="text-sm font-bold text-right">
-                    Net: {(paieForm.salaire_brut + paieForm.primes - paieForm.retenues - paieForm.avances_deduites).toLocaleString()} GNF
-                  </div>
-                  <Button className="w-full" onClick={generateBulletin}>Générer le bulletin</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <p className="text-sm text-muted-foreground">Les bulletins de paie sont générés automatiquement par le Trésorier lors du paiement des salaires.</p>
 
           <Card>
             <div className="overflow-auto">
@@ -1185,7 +1133,7 @@ export default function Personnel() {
                     <TableRow key={b.id}>
                       <TableCell className="font-medium">{b.employes?.prenom} {b.employes?.nom}</TableCell>
                       <TableCell>{MOIS_NOMS[b.mois]} {b.annee}</TableCell>
-                      <TableCell>{Number(b.salaire_brut).toLocaleString()}</TableCell>
+                      <TableCell>{Number(b.salaire_brut).toLocaleString()} GNF</TableCell>
                       <TableCell className="font-bold">{Number(b.salaire_net).toLocaleString()} GNF</TableCell>
                       <TableCell className="text-sm">{format(new Date(b.created_at), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>
