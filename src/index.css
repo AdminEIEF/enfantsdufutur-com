@@ -124,3 +124,22 @@
     font-family: 'Space Grotesk', sans-serif;
   }
 }
+
+@keyframes hologram {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.hologram-effect {
+  background: linear-gradient(135deg, 
+    rgba(255,255,255,0) 0%, 
+    rgba(255,255,255,0.8) 50%, 
+    rgba(255,255,255,0) 100%),
+    linear-gradient(45deg, #b2f5ea, #bee3f8, #fed7e2, #faf089);
+  background-size: 200% 200%;
+  animation: hologram 3s infinite linear;
+  mask-image: url('https://cdn-icons-png.flaticon.com/512/121/121114.png');
+  mask-size: contain;
+  mask-repeat: no-repeat;
+}
