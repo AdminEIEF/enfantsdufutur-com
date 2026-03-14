@@ -315,14 +315,7 @@ export default function Personnel() {
       return data;
     },
   });
-  const { data: allAvances = [] } = useQuery({
-    queryKey: ['all-avances'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('avances_salaire').select('*, employes(nom, prenom, matricule)').order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
+  
 
   const addEmployee = useMutation({
     mutationFn: async () => {
