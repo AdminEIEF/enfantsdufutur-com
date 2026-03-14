@@ -133,7 +133,7 @@ export default function EmployeePaie() {
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Salaire brut</span>
-                        <span>{Number(b.salaire_brut).toLocaleString()}</span>
+                        <span>{fmtNum(Number(b.salaire_brut))}</span>
                       </div>
                       {b.primes > 0 && (
                         <div className="flex justify-between">
