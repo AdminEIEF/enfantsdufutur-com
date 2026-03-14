@@ -177,6 +177,7 @@ const navSections = [
     items: [
       { title: 'Tableau de bord', url: '/tresorier-dashboard', icon: Wallet },
       { title: 'Gestion Salaires', url: '/tresorier-salaires', icon: Banknote },
+      { title: 'Gestion Avances', url: '/tresorier-avances', icon: DollarSign },
     ],
   },
   {
