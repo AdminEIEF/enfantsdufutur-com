@@ -74,49 +74,56 @@ function drawSingleBadge(
   }
   doc.setGState(new (doc as any).GState({ opacity: 1 }));
 
-  // === Header (Navy blue) ===
-  const headerH = 14;
+  // === Header (Bordeaux) - school name only ===
+  const headerH = 13;
   doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
   doc.roundedRect(x, y, CARD_W, headerH, 2, 2, 'F');
-  // Square off bottom corners
   doc.rect(x, y + headerH - 2, CARD_W, 2, 'F');
 
-  // Logo circle in header - centered and properly sized
-  const logoCircleR = 4.5;
+  // Logo circle in header
+  const logoCircleR = 4;
   const logoCX = x + CARD_W / 2;
-  const logoCY = y + 5;
-  // White circle background for logo
+  const logoCY = y + 4.5;
   doc.setFillColor(WHITE.r, WHITE.g, WHITE.b);
   doc.circle(logoCX, logoCY, logoCircleR, 'F');
 
   if (logoImg) {
-    // Fit logo inside circle with padding
     const logoSize = logoCircleR * 1.7;
     doc.addImage(logoImg, 'PNG', logoCX - logoSize / 2, logoCY - logoSize / 2, logoSize, logoSize);
   }
 
-  // School name below logo
+  // School name
   const displayName = schoolName || 'LES ÉCOLES INTERNATIONALES\nENFANTS DU FUTUR';
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(4.5);
+  doc.setFontSize(4.2);
   doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
   const schoolLines = displayName.split('\n');
-  const schoolStartY = y + 11;
+  const schoolStartY = y + 10.5;
   schoolLines.forEach((line, i) => {
-    doc.text(line.toUpperCase(), x + CARD_W / 2, schoolStartY + i * 2, { align: 'center' });
+    doc.text(line.toUpperCase(), x + CARD_W / 2, schoolStartY + i * 1.8, { align: 'center' });
   });
 
-  // "BADGE DU PERSONNEL" subtitle
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(4);
+  // === "BADGE DU PERSONNEL" - separate golden band ===
+  const badgeBandY = y + headerH;
+  const badgeBandH = 4.5;
+  // Gold/amber background
+  doc.setFillColor(180, 140, 20);
+  doc.rect(x, badgeBandY, CARD_W, badgeBandH, 'F');
+  // Thin borders top & bottom
+  doc.setDrawColor(210, 170, 50);
+  doc.setLineWidth(0.15);
+  doc.line(x, badgeBandY, x + CARD_W, badgeBandY);
+  doc.line(x, badgeBandY + badgeBandH, x + CARD_W, badgeBandY + badgeBandH);
+  // Text in Times (serif) italic for rare/elegant style
+  doc.setFont('times', 'bolditalic');
+  doc.setFontSize(5.5);
   doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
-  const badgeSubY = schoolStartY + schoolLines.length * 2 + 0.8;
-  doc.text('BADGE DU PERSONNEL', x + CARD_W / 2, badgeSubY, { align: 'center' });
+  doc.text('BADGE DU PERSONNEL', x + CARD_W / 2, badgeBandY + 3.2, { align: 'center' });
 
   // === Photo (circular with white border) ===
-  const photoR = 11; // radius
+  const photoR = 11;
   const photoCX = x + CARD_W / 2;
-  const photoCY = y + headerH + photoR + 3;
+  const photoCY = y + headerH + badgeBandH + photoR + 2;
 
   // White border circle
   doc.setFillColor(WHITE.r, WHITE.g, WHITE.b);
