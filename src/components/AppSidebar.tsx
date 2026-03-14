@@ -12,6 +12,7 @@ import {
   SidebarHeader, SidebarFooter, SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const navSections = [
   {
