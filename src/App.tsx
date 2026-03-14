@@ -141,6 +141,7 @@ function RoleBasedRedirect() {
     if (roles[0] === 'chauffeur') return <Navigate to="/transport" replace />;
     if (roles[0] === 'surveillant') return <Navigate to="/pointage-eleves" replace />;
     if (roles[0] === 'service_info') return <Navigate to="/service-info-dashboard" replace />;
+    if ((roles[0] as string) === 'tresorier') return <Navigate to="/tresorier-dashboard" replace />;
   }
   return <Navigate to="/dashboard" replace />;
 }
