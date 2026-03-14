@@ -81,27 +81,29 @@ function drawSingleBadge(
   // Square off bottom corners
   doc.rect(x, y + headerH - 2, CARD_W, 2, 'F');
 
-  // Logo circle in header
-  const logoCircleR = 5;
+  // Logo circle in header - centered and properly sized
+  const logoCircleR = 4.5;
   const logoCX = x + CARD_W / 2;
-  const logoCY = y + 4.5;
+  const logoCY = y + 5;
+  // White circle background for logo
   doc.setFillColor(WHITE.r, WHITE.g, WHITE.b);
   doc.circle(logoCX, logoCY, logoCircleR, 'F');
 
   if (logoImg) {
-    const logoSize = 8;
+    // Fit logo inside circle with padding
+    const logoSize = logoCircleR * 1.7;
     doc.addImage(logoImg, 'PNG', logoCX - logoSize / 2, logoCY - logoSize / 2, logoSize, logoSize);
   }
 
-  // School name
-  const displayName = schoolName || 'ECOLE INTERNATIONALE\nLES ENFANTS DU FUTUR';
+  // School name below logo
+  const displayName = schoolName || 'LES ÉCOLES INTERNATIONALES\nENFANTS DU FUTUR';
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5);
+  doc.setFontSize(4.5);
   doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
   const schoolLines = displayName.split('\n');
   const schoolStartY = y + 11;
   schoolLines.forEach((line, i) => {
-    doc.text(line.toUpperCase(), x + CARD_W / 2, schoolStartY + i * 2.2, { align: 'center' });
+    doc.text(line.toUpperCase(), x + CARD_W / 2, schoolStartY + i * 2, { align: 'center' });
   });
 
   // === Photo (circular with white border) ===
@@ -169,6 +171,61 @@ function drawSingleBadge(
   doc.setLineWidth(0.2);
   doc.rect(qrX - 0.8, qrY - 0.8, qrSize + 1.6, qrSize + 1.6, 'D');
   doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+
+  // === Hologram security seal ===
+  const holoR = 6;
+  const holoCX = x + CARD_W - holoR - 3;
+  const holoCY = qrY + qrSize / 2;
+  
+  // Multi-layer hologram effect (simulated iridescent seal)
+  const holoColors = [
+    { r: 178, g: 245, b: 234, a: 0.15 },  // teal
+    { r: 190, g: 227, b: 248, a: 0.15 },  // light blue  
+    { r: 254, g: 215, b: 226, a: 0.12 },  // pink
+    { r: 250, g: 240, b: 137, a: 0.10 },  // yellow
+  ];
+  
+  // Outer ring
+  doc.setGState(new (doc as any).GState({ opacity: 0.3 }));
+  doc.setDrawColor(180, 220, 240);
+  doc.setLineWidth(0.3);
+  doc.circle(holoCX, holoCY, holoR + 0.5, 'D');
+  
+  // Concentric colored rings for hologram effect
+  holoColors.forEach((c, i) => {
+    doc.setGState(new (doc as any).GState({ opacity: c.a + 0.05 }));
+    doc.setFillColor(c.r, c.g, c.b);
+    const r = holoR - i * 1.2;
+    if (r > 0) doc.circle(holoCX, holoCY, r, 'F');
+  });
+  
+  // Inner white core
+  doc.setGState(new (doc as any).GState({ opacity: 0.6 }));
+  doc.setFillColor(WHITE.r, WHITE.g, WHITE.b);
+  doc.circle(holoCX, holoCY, 2.5, 'F');
+  
+  // Star/check mark in center
+  doc.setGState(new (doc as any).GState({ opacity: 0.8 }));
+  doc.setFontSize(3.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(GREEN.r, GREEN.g, GREEN.b);
+  doc.text('✓', holoCX, holoCY + 1, { align: 'center' });
+  
+  // Diagonal shimmer lines across hologram
+  doc.setGState(new (doc as any).GState({ opacity: 0.12 }));
+  doc.setDrawColor(255, 255, 255);
+  doc.setLineWidth(0.15);
+  for (let sl = -holoR; sl < holoR; sl += 1.5) {
+    doc.line(holoCX + sl, holoCY - holoR, holoCX + sl + holoR, holoCY + holoR);
+  }
+  
+  // "AUTHENTIQUE" micro-text around seal
+  doc.setGState(new (doc as any).GState({ opacity: 0.4 }));
+  doc.setFontSize(2);
+  doc.setTextColor(GRAY_500.r, GRAY_500.g, GRAY_500.b);
+  doc.text('AUTHENTIQUE', holoCX, holoCY + holoR + 1.5, { align: 'center' });
+  
+  doc.setGState(new (doc as any).GState({ opacity: 1 }));
 
   // === "PERSONNEL AUTORISÉ" ===
   const authY = qrY + qrSize + 2.5;
