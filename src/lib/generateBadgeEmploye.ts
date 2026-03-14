@@ -74,16 +74,17 @@ function drawSingleBadge(
   }
   doc.setGState(new (doc as any).GState({ opacity: 1 }));
 
-  // === Header (Bordeaux) - school name only ===
-  const headerH = 13;
-  doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
+  // === Header (Dark charcoal) - logo LEFT + school name RIGHT ===
+  const headerH = 14;
+  const DARK_HEADER = { r: 45, g: 45, b: 48 };
+  doc.setFillColor(DARK_HEADER.r, DARK_HEADER.g, DARK_HEADER.b);
   doc.roundedRect(x, y, CARD_W, headerH, 2, 2, 'F');
   doc.rect(x, y + headerH - 2, CARD_W, 2, 'F');
 
-  // Logo circle in header
-  const logoCircleR = 4;
-  const logoCX = x + CARD_W / 2;
-  const logoCY = y + 4.5;
+  // Logo on LEFT side
+  const logoCircleR = 5;
+  const logoCX = x + logoCircleR + 2;
+  const logoCY = y + headerH / 2;
   doc.setFillColor(WHITE.r, WHITE.g, WHITE.b);
   doc.circle(logoCX, logoCY, logoCircleR, 'F');
 
@@ -92,33 +93,29 @@ function drawSingleBadge(
     doc.addImage(logoImg, 'PNG', logoCX - logoSize / 2, logoCY - logoSize / 2, logoSize, logoSize);
   }
 
-  // School name
-  const displayName = schoolName || 'LES ÉCOLES INTERNATIONALES\nENFANTS DU FUTUR';
+  // School name on RIGHT side
+  const displayName = schoolName || 'ECOLE INTERNATIONALE\nLES ENFANTS DU FUTUR';
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(4.2);
+  doc.setFontSize(4.5);
   doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
   const schoolLines = displayName.split('\n');
-  const schoolStartY = y + 10.5;
+  const textBlockX = logoCX + logoCircleR + 2;
+  const textBlockCenterX = textBlockX + (CARD_W - textBlockX + x) / 2;
+  const schoolStartY = y + headerH / 2 - ((schoolLines.length - 1) * 2.2) / 2 + 0.5;
   schoolLines.forEach((line, i) => {
-    doc.text(line.toUpperCase(), x + CARD_W / 2, schoolStartY + i * 1.8, { align: 'center' });
+    doc.text(line.toUpperCase(), textBlockCenterX, schoolStartY + i * 2.2, { align: 'center' });
   });
 
-  // === "BADGE DU PERSONNEL" - separate golden band ===
+  // === "BADGE DU PERSONNEL" - separate RED (bordeaux) band ===
   const badgeBandY = y + headerH;
-  const badgeBandH = 4.5;
-  // Gold/amber background
-  doc.setFillColor(180, 140, 20);
+  const badgeBandH = 5;
+  doc.setFillColor(NAVY.r, NAVY.g, NAVY.b);
   doc.rect(x, badgeBandY, CARD_W, badgeBandH, 'F');
-  // Thin borders top & bottom
-  doc.setDrawColor(210, 170, 50);
-  doc.setLineWidth(0.15);
-  doc.line(x, badgeBandY, x + CARD_W, badgeBandY);
-  doc.line(x, badgeBandY + badgeBandH, x + CARD_W, badgeBandY + badgeBandH);
-  // Text in Times (serif) italic for rare/elegant style
+  // Text in Times (serif) bold italic
   doc.setFont('times', 'bolditalic');
-  doc.setFontSize(5.5);
+  doc.setFontSize(6);
   doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
-  doc.text('BADGE DU PERSONNEL', x + CARD_W / 2, badgeBandY + 3.2, { align: 'center' });
+  doc.text('BADGE DU PERSONNEL', x + CARD_W / 2, badgeBandY + 3.5, { align: 'center' });
 
   // === Photo (circular with white border) ===
   const photoR = 11;
