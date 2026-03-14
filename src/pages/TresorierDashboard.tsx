@@ -194,7 +194,14 @@ export default function TresorierDashboard() {
   const soldeRestant = totalBudget - totalPaye;
   const nbPaye = filtered.filter(e => isPaid(e.id)).length;
 
-  // Canvas drawing helpers
+  // Per-category stats
+  const categoryStats = CATEGORIES.filter(c => c.value !== 'all').map(cat => {
+    const catEmployes = employes.filter(e => e.categorie === cat.value);
+    const catPaid = catEmployes.filter(e => isPaid(e.id));
+    return { label: cat.label, total: catEmployes.length, paid: catPaid.length };
+  }).filter(c => c.total > 0);
+
+
   const getPos = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
     if ('touches' in e) return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
