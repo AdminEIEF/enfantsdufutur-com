@@ -418,29 +418,7 @@ export default function Personnel() {
     qc.invalidateQueries({ queryKey: ['conges-attente'] });
   };
 
-  // Approve/reject avance
-  const handleAvance = async (id: string, statut: 'approuve' | 'refuse', motif?: string) => {
-    const avance = avancesEnAttente.find((a: any) => a.id === id);
-    await supabase.from('avances_salaire').update({
-      statut,
-      motif: statut === 'refuse' && motif ? motif : undefined,
-      traite_par: user?.id,
-      traite_at: new Date().toISOString(),
-    }).eq('id', id);
-    // Notify employee
-    if (avance?.employe_id) {
-      await supabase.from('employee_notifications').insert({
-        employe_id: avance.employe_id,
-        titre: statut === 'approuve' ? '✅ Avance approuvée' : '❌ Avance refusée',
-        message: statut === 'approuve'
-          ? `Votre demande d'avance de ${Number(avance.montant).toLocaleString()} GNF a été approuvée. Elle sera déduite de votre prochain bulletin de paie.`
-          : `Votre demande d'avance de ${Number(avance.montant).toLocaleString()} GNF a été refusée.${motif ? ' Motif: ' + motif : ''}`,
-        type: statut === 'approuve' ? 'info' : 'alerte',
-      });
-    }
-    toast({ title: statut === 'approuve' ? '✅ Avance approuvée' : '❌ Avance refusée' });
-    qc.invalidateQueries({ queryKey: ['avances-attente'] });
-  };
+  
 
   // Refuse with motif
   const confirmRefuse = async () => {
