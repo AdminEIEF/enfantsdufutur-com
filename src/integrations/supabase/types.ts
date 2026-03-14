@@ -2043,6 +2043,7 @@ export type Database = {
           mois: number
           montant: number
           paye_par: string | null
+          signature_employe: string | null
           statut: string
         }
         Insert: {
@@ -2054,6 +2055,7 @@ export type Database = {
           mois: number
           montant?: number
           paye_par?: string | null
+          signature_employe?: string | null
           statut?: string
         }
         Update: {
@@ -2065,6 +2067,7 @@ export type Database = {
           mois?: number
           montant?: number
           paye_par?: string | null
+          signature_employe?: string | null
           statut?: string
         }
         Relationships: [

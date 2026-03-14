@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Wallet, Banknote, CalendarCheck, PenTool, FileText, Loader2, Check, Search, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,6 +41,11 @@ interface PaiementRecord {
   date_paiement: string;
   mois: number;
   annee: number;
+  signature_employe?: string | null;
+}
+
+function fmtNum(n: number): string {
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
 export default function TresorierDashboard() {
@@ -52,8 +58,12 @@ export default function TresorierDashboard() {
   const [currentMonth] = useState(new Date().getMonth() + 1);
   const [currentYear] = useState(new Date().getFullYear());
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const empCanvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
+  const [isEmpDrawing, setIsEmpDrawing] = useState(false);
+  const [hasEmpSignature, setHasEmpSignature] = useState(false);
+  const [signDialog, setSignDialog] = useState<Employe | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -70,25 +80,47 @@ export default function TresorierDashboard() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handlePay = async (emp: Employe) => {
+  // Open signature dialog for employee before paying
+  const openPayDialog = (emp: Employe) => {
+    setSignDialog(emp);
+    setHasEmpSignature(false);
+    setTimeout(() => {
+      const canvas = empCanvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }, 100);
+  };
+
+  const handleConfirmPay = async () => {
+    if (!signDialog) return;
+    const emp = signDialog;
     setPaying(emp.id);
+
+    const signatureData = hasEmpSignature ? empCanvasRef.current?.toDataURL('image/png') : null;
+
     const { error } = await supabase.from('paiements_tresorier').insert({
       employe_id: emp.id,
       montant: emp.salaire_base,
       mois: currentMonth,
       annee: currentYear,
       paye_par: user?.id,
+      signature_employe: signatureData,
     } as any);
+
     if (error) {
       toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Paiement enregistré', description: `${emp.prenom} ${emp.nom} a été payé.` });
+      toast({ title: 'Paiement enregistré', description: `${emp.prenom} ${emp.nom} a été payé et a signé.` });
       fetchData();
     }
     setPaying(null);
+    setSignDialog(null);
   };
 
   const isPaid = (empId: string) => paiements.some(p => p.employe_id === empId);
+  const hasSigned = (empId: string) => paiements.some(p => p.employe_id === empId && p.signature_employe);
 
   const filtered = employes.filter(e => {
     const matchCat = categorie === 'all' || e.categorie === categorie;
@@ -101,7 +133,14 @@ export default function TresorierDashboard() {
   const soldeRestant = totalBudget - totalPaye;
   const nbPaye = filtered.filter(e => isPaid(e.id)).length;
 
-  // Canvas signature logic
+  // Canvas drawing helpers
+  const getPos = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
+    const rect = canvas.getBoundingClientRect();
+    if ('touches' in e) return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+    return { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY };
+  };
+
+  // Treasurer signature
   const startDraw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -109,38 +148,62 @@ export default function TresorierDashboard() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.beginPath();
-    const rect = canvas.getBoundingClientRect();
-    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.nativeEvent.offsetX;
-    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.nativeEvent.offsetY;
-    ctx.moveTo(x, y);
+    const pos = getPos(e, canvas);
+    ctx.moveTo(pos.x, pos.y);
   };
-
   const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.nativeEvent.offsetX;
-    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.nativeEvent.offsetY;
+    const pos = getPos(e, canvas);
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
     ctx.strokeStyle = '#1a1a2e';
-    ctx.lineTo(x, y);
+    ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
     setHasSignature(true);
   };
-
   const stopDraw = () => setIsDrawing(false);
-
   const clearSignature = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+    setHasSignature(false);
+  };
+
+  // Employee signature
+  const startEmpDraw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = empCanvasRef.current;
+    if (!canvas) return;
+    setIsEmpDrawing(true);
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setHasSignature(false);
+    ctx.beginPath();
+    const pos = getPos(e, canvas);
+    ctx.moveTo(pos.x, pos.y);
+  };
+  const drawEmp = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isEmpDrawing) return;
+    const canvas = empCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const pos = getPos(e, canvas);
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#1a1a2e';
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    setHasEmpSignature(true);
+  };
+  const stopEmpDraw = () => setIsEmpDrawing(false);
+  const clearEmpSignature = () => {
+    const canvas = empCanvasRef.current;
+    if (!canvas) return;
+    canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+    setHasEmpSignature(false);
   };
 
   const handleGeneratePDF = () => {
@@ -154,6 +217,7 @@ export default function TresorierDashboard() {
         categorie: e.categorie,
         montant: e.salaire_base,
         datePaiement: p?.date_paiement || new Date().toISOString(),
+        signatureEmploye: p?.signature_employe || undefined,
       };
     });
     generateRegistrePaiePDF(paidEmployees, currentMonth, currentYear, signatureDataUrl);
@@ -183,7 +247,7 @@ export default function TresorierDashboard() {
               <Banknote className="h-8 w-8 text-emerald-600" />
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Budget Réel</p>
-                <p className="text-xl font-bold">{totalBudget.toLocaleString()} GNF</p>
+                <p className="text-xl font-bold">{fmtNum(totalBudget)} GNF</p>
               </div>
             </div>
           </CardContent>
@@ -194,7 +258,7 @@ export default function TresorierDashboard() {
               <CalendarCheck className="h-8 w-8 text-blue-600" />
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Montant Payé</p>
-                <p className="text-xl font-bold text-emerald-600">{totalPaye.toLocaleString()} GNF</p>
+                <p className="text-xl font-bold text-emerald-600">{fmtNum(totalPaye)} GNF</p>
               </div>
             </div>
           </CardContent>
@@ -206,7 +270,7 @@ export default function TresorierDashboard() {
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Solde Restant</p>
                 <p className={`text-xl font-bold ${soldeRestant > 0 ? 'text-destructive' : 'text-emerald-600'}`}>
-                  {soldeRestant.toLocaleString()} GNF
+                  {fmtNum(soldeRestant)} GNF
                 </p>
               </div>
             </div>
@@ -267,6 +331,7 @@ export default function TresorierDashboard() {
             <TableBody>
               {filtered.map(emp => {
                 const paid = isPaid(emp.id);
+                const signed = hasSigned(emp.id);
                 const paiement = paiements.find(p => p.employe_id === emp.id);
                 return (
                   <TableRow key={emp.id} className={paid ? 'bg-emerald-50/50 dark:bg-emerald-950/10' : ''}>
@@ -275,12 +340,19 @@ export default function TresorierDashboard() {
                     <TableCell>
                       <Badge variant="outline" className="capitalize">{emp.categorie}</Badge>
                     </TableCell>
-                    <TableCell className="text-right font-mono">{emp.salaire_base.toLocaleString()} GNF</TableCell>
+                    <TableCell className="text-right font-mono">{fmtNum(emp.salaire_base)} GNF</TableCell>
                     <TableCell>
                       {paid ? (
-                        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                          <Check className="h-3 w-3 mr-1" /> Payé
-                        </Badge>
+                        <div className="flex flex-col gap-1">
+                          <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                            <Check className="h-3 w-3 mr-1" /> Payé
+                          </Badge>
+                          {signed && (
+                            <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-700">
+                              <PenTool className="h-2.5 w-2.5 mr-1" /> Signé
+                            </Badge>
+                          )}
+                        </div>
                       ) : (
                         <Badge variant="destructive">En attente</Badge>
                       )}
@@ -293,7 +365,7 @@ export default function TresorierDashboard() {
                       ) : (
                         <Button
                           size="sm"
-                          onClick={() => handlePay(emp)}
+                          onClick={() => openPayDialog(emp)}
                           disabled={paying === emp.id}
                           className="bg-emerald-600 hover:bg-emerald-700"
                         >
@@ -350,6 +422,56 @@ export default function TresorierDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Employee Signature Dialog */}
+      <Dialog open={!!signDialog} onOpenChange={(open) => { if (!open) setSignDialog(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PenTool className="h-5 w-5" /> Signature de l'employé
+            </DialogTitle>
+          </DialogHeader>
+          {signDialog && (
+            <div className="space-y-4">
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="font-semibold">{signDialog.prenom} {signDialog.nom}</p>
+                <p className="text-sm text-muted-foreground">{signDialog.poste} — {signDialog.categorie}</p>
+                <p className="text-lg font-bold mt-1">{fmtNum(signDialog.salaire_base)} GNF</p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                L'employé doit signer ci-dessous comme preuve de réception du paiement :
+              </p>
+              <div className="border-2 border-dashed rounded-lg p-1 bg-white">
+                <canvas
+                  ref={empCanvasRef}
+                  width={380}
+                  height={120}
+                  className="cursor-crosshair touch-none w-full"
+                  onMouseDown={startEmpDraw}
+                  onMouseMove={drawEmp}
+                  onMouseUp={stopEmpDraw}
+                  onMouseLeave={stopEmpDraw}
+                  onTouchStart={startEmpDraw}
+                  onTouchMove={drawEmp}
+                  onTouchEnd={stopEmpDraw}
+                />
+              </div>
+              <Button variant="ghost" size="sm" onClick={clearEmpSignature}>Effacer</Button>
+            </div>
+          )}
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setSignDialog(null)}>Annuler</Button>
+            <Button
+              onClick={handleConfirmPay}
+              disabled={paying !== null}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {paying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+              Confirmer le paiement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

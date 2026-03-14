@@ -1,0 +1,1 @@
+ALTER TABLE public.paiements_tresorier ADD COLUMN IF NOT EXISTS signature_employe text;
