@@ -66,17 +66,18 @@ function drawSingleBadge(
   }
 
   // === Photo dans le cadre vert du haut ===
-  const photoW = 25;
-  const photoH = 29;
+  // Le cadre vert va de ~17% à ~55% de la hauteur du badge
+  const photoW = 27;
+  const photoH = 27;
   const photoX = x + (CARD_W - photoW) / 2;
-  const photoY = y + 20.5;
+  const photoY = y + 16;
 
   if (photoImg) {
     doc.addImage(photoImg, 'JPEG', photoX, photoY, photoW, photoH);
   }
 
-  // === Nom et prénom (sous la photo, sur fond blanc) ===
-  const nameY = y + 53;
+  // === Nom et prénom (zone blanche sous la photo, ~56-62%) ===
+  const nameY = y + 47;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
   doc.setTextColor(200, 16, 46);
@@ -84,33 +85,33 @@ function drawSingleBadge(
   const nameLines = doc.splitTextToSize(fullName, CARD_W - 8);
   doc.text(nameLines, x + CARD_W / 2, nameY, { align: 'center' });
 
-  // === Fonction (sous le nom) ===
+  // === Fonction (sous le nom, ~63%) ===
   const fonctionY = nameY + nameLines.length * 3.2 + 0.5;
   doc.setFont('helvetica', 'bolditalic');
-  doc.setFontSize(6);
+  doc.setFontSize(5.5);
   doc.setTextColor(40, 40, 50);
   doc.text(emp.poste || emp.categorie, x + CARD_W / 2, fonctionY, { align: 'center' });
 
-  // === Matricule (sur la barre tricolore rouge/vert) ===
-  const matY = y + 63;
+  // === Matricule (sur la barre tricolore rouge/vert, ~68%) ===
+  const matY = y + 59;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
+  doc.setFontSize(6.5);
   doc.setTextColor(255, 255, 255);
   doc.text(emp.matricule, x + CARD_W / 2, matY, { align: 'center' });
 
-  // === QR Code (dans le cadre blanc du bas) ===
-  const qrSize = 14;
+  // === QR Code (dans le cadre blanc du bas, ~74-90%) ===
+  const qrSize = 13;
   const qrX = x + (CARD_W - qrSize) / 2;
-  const qrY = y + 68;
+  const qrY = y + 63;
   doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
 
-  // === Contact & Web (bandeau du bas) ===
+  // === Contact & Web (bandeau rouge/vert du bas, ~94%) ===
   const tel = contactInfo?.telephone || '';
   const web = contactInfo?.web || '';
-  const footerY = y + CARD_H - 4;
+  const footerY = y + CARD_H - 3.5;
 
   if (tel || web) {
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(3.5);
     doc.setTextColor(255, 255, 255);
     if (tel && web) {
