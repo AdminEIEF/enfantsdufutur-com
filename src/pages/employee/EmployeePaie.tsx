@@ -150,7 +150,7 @@ export default function EmployeePaie() {
                       {b.avances_deduites > 0 && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Avances déduites</span>
-                          <span className="text-orange-600">-{Number(b.avances_deduites).toLocaleString()}</span>
+                          <span className="text-orange-600">-{fmtNum(Number(b.avances_deduites))}</span>
                         </div>
                       )}
                     </div>
