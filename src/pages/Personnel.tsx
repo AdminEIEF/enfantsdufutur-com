@@ -426,8 +426,6 @@ export default function Personnel() {
     if (!refuseMotif.trim()) { toast({ title: 'Motif obligatoire', variant: 'destructive' }); return; }
     if (refuseTarget.type === 'conge') {
       await handleConge(refuseTarget.id, 'refuse', refuseMotif);
-    } else {
-      await handleAvance(refuseTarget.id, 'refuse', refuseMotif);
     }
     setRefuseTarget(null);
     setRefuseMotif('');
