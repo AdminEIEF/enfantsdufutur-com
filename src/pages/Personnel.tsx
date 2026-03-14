@@ -589,7 +589,7 @@ export default function Personnel() {
     for (const emp of activeEmps) {
       qrMap[emp.matricule] = await QRCode.toDataURL(emp.matricule, { width: 200 });
     }
-    await generatePlancheBadgesEmployesPDF(activeEmps, qrMap, schoolConfig?.nom, schoolConfig?.logo_url);
+    await generatePlancheBadgesEmployesPDF(activeEmps, qrMap, schoolConfig?.nom, schoolConfig?.logo_url, { telephone: '625 00 00 00', adresse: schoolConfig?.ville || 'Conakry, Guinée' });
   };
 
   // Print bulletin paie
@@ -1357,7 +1357,7 @@ export default function Personnel() {
                     const canvas = qrRef.current?.querySelector('canvas');
                     if (!canvas) return;
                     const qrDataUrl = (canvas as HTMLCanvasElement).toDataURL('image/png');
-                    generateBadgeEmployePDF(selectedEmp, qrDataUrl, schoolConfig?.nom, schoolConfig?.logo_url);
+                    generateBadgeEmployePDF(selectedEmp, qrDataUrl, schoolConfig?.nom, schoolConfig?.logo_url, { telephone: '625 00 00 00', adresse: schoolConfig?.ville || 'Conakry, Guinée' });
                   }}>
                     <Printer className="h-4 w-4 mr-1" /> Imprimer Badge PVC
                   </Button>
