@@ -191,16 +191,7 @@ export async function generatePlancheBadgesEmployesPDF(
 
       drawSingleBadge(doc, emp, qr, templateImg, ox, oy, photoImg, contactInfo);
 
-      // Cut marks
-      const markLen = 4;
-      doc.line(ox - 2, oy, ox - 2 - markLen, oy);
-      doc.line(ox, oy - 2, ox, oy - 2 - markLen);
-      doc.line(ox + CARD_W + 2, oy, ox + CARD_W + 2 + markLen, oy);
-      doc.line(ox + CARD_W, oy - 2, ox + CARD_W, oy - 2 - markLen);
-      doc.line(ox - 2, oy + CARD_H, ox - 2 - markLen, oy + CARD_H);
-      doc.line(ox, oy + CARD_H + 2, ox, oy + CARD_H + 2 + markLen);
-      doc.line(ox + CARD_W + 2, oy + CARD_H, ox + CARD_W + 2 + markLen, oy + CARD_H);
-      doc.line(ox + CARD_W, oy + CARD_H + 2, ox + CARD_W, oy + CARD_H + 2 + markLen);
+      // Pas de cut marks - le template a déjà les repères visuels
     }
   }
 
