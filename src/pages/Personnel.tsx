@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import {
   Briefcase, Plus, Search, Loader2, Clock, Calendar, FileText,
   Check, X, Eye, Trash2, Upload, UserPlus, Users, ScanLine, CreditCard, Printer,
-  Camera, Download, Key, Mail, Paperclip, BarChart3, MessageSquare, TrendingUp, TrendingDown, AlertTriangle, GraduationCap, FileSpreadsheet
+  Camera, Download, Key, Mail, Paperclip, BarChart3, MessageSquare, TrendingUp, TrendingDown, AlertTriangle, GraduationCap, FileSpreadsheet, ChevronDown
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
