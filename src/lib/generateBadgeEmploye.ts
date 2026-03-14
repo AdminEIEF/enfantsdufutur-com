@@ -13,20 +13,6 @@ interface EmployeeBadgeData {
 const CARD_W = 53.98; // mm (portrait)
 const CARD_H = 85.6;
 
-const categorieLabel: Record<string, string> = {
-  enseignant: 'Enseignant',
-  administration: 'Administration',
-  service: 'Service',
-  direction: 'Direction',
-};
-
-const categorieRibbonColor: Record<string, [number, number, number]> = {
-  enseignant: [37, 99, 235],
-  administration: [220, 38, 38],
-  service: [22, 163, 74],
-  direction: [147, 51, 234],
-};
-
 async function loadImage(url: string): Promise<HTMLImageElement | null> {
   try {
     const img = new Image();
@@ -45,6 +31,7 @@ async function loadImage(url: string): Promise<HTMLImageElement | null> {
 interface ContactInfo {
   telephone?: string;
   adresse?: string;
+  web?: string;
 }
 
 function drawSingleBadge(
@@ -61,208 +48,208 @@ function drawSingleBadge(
   const x = offsetX;
   const y = offsetY;
 
-  // === Background ===
+  // === White background ===
   doc.setFillColor(255, 255, 255);
   doc.rect(x, y, CARD_W, CARD_H, 'F');
 
-  // === Decorative circles (subtle) ===
-  doc.saveGraphicsState();
-  const gState = (doc as any).GState;
-  if (gState) {
-    doc.setGState(new gState({ opacity: 0.04 }));
-  }
-  doc.setFillColor(30, 132, 73);
-  doc.circle(x + CARD_W + 5, y + CARD_H - 20, 18, 'F');
-  doc.setFillColor(192, 57, 43);
-  doc.circle(x - 5, y + CARD_H - 5, 12, 'F');
-  doc.restoreGraphicsState();
+  // === TOP BANNER — Tall red/green with yellow accent ===
+  const bannerH = 22;
 
-  // === Top banner — Red/Green gradient like student badges ===
-  const bannerH = 18;
-  // Left half red, right half green with blend
-  doc.setFillColor(192, 57, 43); // #c0392b
-  doc.rect(x, y, CARD_W * 0.4, bannerH, 'F');
-  doc.setFillColor(169, 50, 38); // #a93226
-  doc.rect(x + CARD_W * 0.4, y, CARD_W * 0.15, bannerH, 'F');
-  doc.setFillColor(30, 132, 73); // #1e8449
-  doc.rect(x + CARD_W * 0.55, y, CARD_W * 0.2, bannerH, 'F');
-  doc.setFillColor(25, 111, 61); // #196f3d
-  doc.rect(x + CARD_W * 0.75, y, CARD_W * 0.25, bannerH, 'F');
+  // Red section (left ~60%)
+  doc.setFillColor(200, 16, 46); // vibrant red
+  doc.rect(x, y, CARD_W * 0.55, bannerH, 'F');
 
-  // Banner pattern overlay (diagonal lines)
-  doc.saveGraphicsState();
-  if (gState) {
-    doc.setGState(new gState({ opacity: 0.06 }));
-  }
-  doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(0.3);
-  for (let i = -20; i < CARD_W + 20; i += 4) {
-    doc.line(x + i, y, x + i + bannerH, y + bannerH);
-  }
-  doc.restoreGraphicsState();
+  // Yellow thin stripe
+  doc.setFillColor(255, 206, 0);
+  doc.rect(x + CARD_W * 0.55, y, CARD_W * 0.04, bannerH, 'F');
 
-  // Curved bottom edge of banner
-  doc.setFillColor(30, 132, 73);
-  doc.saveGraphicsState();
-  if (gState) {
-    doc.setGState(new gState({ opacity: 0.9 }));
-  }
-  // Simple arc effect with ellipse-like shape
-  const arcH = 3;
-  doc.setFillColor(192, 57, 43);
-  doc.rect(x, y + bannerH, CARD_W * 0.45, arcH / 2, 'F');
-  doc.setFillColor(30, 132, 73);
-  doc.rect(x + CARD_W * 0.45, y + bannerH, CARD_W * 0.55, arcH / 2, 'F');
-  doc.restoreGraphicsState();
+  // Green section (right ~40%)
+  doc.setFillColor(0, 130, 60); // vibrant green
+  doc.rect(x + CARD_W * 0.59, y, CARD_W * 0.41, bannerH, 'F');
 
-  // === Logo with white circle background ===
-  const logoSize = 11;
-  const logoX = x + 3;
-  const logoCenterY = y + bannerH / 2;
-  // White circle
+  // === Logo circle (white background) ===
+  const logoCircleR = 7.5;
+  const logoCX = x + logoCircleR + 2;
+  const logoCY = y + bannerH / 2;
   doc.setFillColor(255, 255, 255);
-  doc.circle(logoX + logoSize / 2, logoCenterY, logoSize / 2 + 1.2, 'F');
-  // Border
-  doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(0.5);
-  doc.circle(logoX + logoSize / 2, logoCenterY, logoSize / 2 + 1.2, 'S');
+  doc.circle(logoCX, logoCY, logoCircleR, 'F');
 
   if (logoImg) {
-    doc.addImage(logoImg, 'PNG', logoX + 0.5, logoCenterY - logoSize / 2 + 0.5, logoSize - 1, logoSize - 1);
+    const logoS = logoCircleR * 1.6;
+    doc.addImage(logoImg, 'PNG', logoCX - logoS / 2, logoCY - logoS / 2, logoS, logoS);
   }
 
-  // === School name (WHITE, BOLD, UPPERCASE) ===
+  // === School name (white, bold, uppercase, right of logo) ===
+  const nameStartX = logoCX + logoCircleR + 2;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(5.5);
+  doc.setTextColor(255, 255, 255);
+  const nameMaxW = CARD_W - (nameStartX - x) - 2;
+  const nameLines = doc.splitTextToSize(schoolName.toUpperCase(), nameMaxW);
+  const nameBlockH = nameLines.length * 3;
+  const nameStartY = y + (bannerH - nameBlockH) / 2 + 2.5;
+  doc.text(nameLines, nameStartX, nameStartY);
+
+  // === "FAISONS PLUS !" motto under logo area ===
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(3.2);
+  doc.setTextColor(255, 255, 255);
+  doc.text('FAISONS PLUS !', logoCX, logoCY + logoCircleR - 1.5, { align: 'center' });
+
+  // === "CARTE DU PERSONNEL" ribbon ===
+  const ribbonY = y + bannerH + 1;
+  const ribbonH = 5.5;
+  // Background: gradient-like red-yellow-green
+  doc.setFillColor(200, 16, 46);
+  doc.rect(x + 4, ribbonY, CARD_W * 0.35, ribbonH, 'F');
+  doc.setFillColor(255, 206, 0);
+  doc.rect(x + 4 + CARD_W * 0.35, ribbonY, CARD_W * 0.15, ribbonH, 'F');
+  doc.setFillColor(0, 130, 60);
+  doc.rect(x + 4 + CARD_W * 0.5, ribbonY, CARD_W * 0.35, ribbonH, 'F');
+
+  // White rounded inner label
+  const labelPadX = 3;
+  const labelInnerW = CARD_W - 8 - labelPadX * 2;
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(x + 4 + labelPadX, ribbonY + 0.8, labelInnerW, ribbonH - 1.6, 1.5, 1.5, 'F');
+
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(4.5);
-  doc.setTextColor(255, 255, 255);
-  const nameLines = doc.splitTextToSize(schoolName.toUpperCase(), CARD_W - logoSize - 8);
-  doc.text(nameLines, x + logoSize + 5, y + bannerH / 2 - 1, { align: 'left', baseline: 'middle' });
+  doc.setTextColor(0, 130, 60);
+  doc.text('CARTE DU PERSONNEL', x + CARD_W / 2, ribbonY + ribbonH / 2 + 1.2, { align: 'center' });
 
-  // === "CARTE DU PERSONNEL" label ===
-  doc.saveGraphicsState();
+  // === Watermark (subtle school name behind photo area) ===
+  const gState = (doc as any).GState;
   if (gState) {
-    doc.setGState(new gState({ opacity: 0.85 }));
+    doc.saveGraphicsState();
+    doc.setGState(new gState({ opacity: 0.04 }));
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(200, 16, 46);
+    const wmLines = doc.splitTextToSize(schoolName.toUpperCase(), CARD_W - 6);
+    for (let wi = 0; wi < 3; wi++) {
+      doc.text(wmLines, x + CARD_W / 2, y + 35 + wi * 15, { align: 'center' });
+    }
+    // "FAISONS PLUS !" watermark
+    doc.setFontSize(9);
+    doc.setTextColor(0, 130, 60);
+    doc.text('FAISONS PLUS !', x + CARD_W / 2, y + 62, { align: 'center' });
+    doc.restoreGraphicsState();
   }
-  doc.setFillColor(255, 255, 255);
-  const labelW = 28;
-  const labelH = 4.5;
-  const labelX = x + (CARD_W - labelW) / 2;
-  const labelY = y + bannerH - 1;
-  doc.roundedRect(labelX, labelY, labelW, labelH, 1.5, 1.5, 'F');
-  doc.restoreGraphicsState();
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(3.8);
-  doc.setTextColor(30, 132, 73);
-  doc.text('CARTE DU PERSONNEL', x + CARD_W / 2, labelY + 3, { align: 'center' });
 
   // === Photo ===
-  const photoW = 22;
-  const photoH = 26;
+  const photoW = 24;
+  const photoH = 28;
   const photoX = x + (CARD_W - photoW) / 2;
-  const photoY = y + bannerH + arcH + 3;
+  const photoY = ribbonY + ribbonH + 2;
 
-  // Photo border (green tint like student badges)
-  doc.setDrawColor(30, 132, 73);
-  doc.setLineWidth(0.4);
-  doc.roundedRect(photoX - 0.5, photoY - 0.5, photoW + 1, photoH + 1, 1.5, 1.5, 'S');
+  // Green border
+  doc.setDrawColor(0, 130, 60);
+  doc.setLineWidth(0.6);
+  doc.roundedRect(photoX - 0.8, photoY - 0.8, photoW + 1.6, photoH + 1.6, 2, 2, 'S');
 
+  // Photo placeholder
   doc.setFillColor(245, 245, 245);
-  doc.roundedRect(photoX, photoY, photoW, photoH, 1, 1, 'F');
+  doc.roundedRect(photoX, photoY, photoW, photoH, 1.5, 1.5, 'F');
 
   if (photoImg) {
     doc.addImage(photoImg, 'JPEG', photoX, photoY, photoW, photoH);
   } else {
-    doc.setFontSize(16);
+    doc.setFontSize(18);
     doc.setTextColor(180, 180, 190);
     doc.text(`${emp.prenom[0]}${emp.nom[0]}`, photoX + photoW / 2, photoY + photoH / 2 + 3, { align: 'center' });
   }
 
   // === Name ===
-  const infoY = photoY + photoH + 4;
+  const infoY = photoY + photoH + 3.5;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setTextColor(26, 26, 46);
-  doc.text(`${emp.prenom} ${emp.nom}`.toUpperCase(), x + CARD_W / 2, infoY, { align: 'center' });
+  const fullName = `${emp.prenom} ${emp.nom}`.toUpperCase();
+  const nameTextLines = doc.splitTextToSize(fullName, CARD_W - 6);
+  doc.text(nameTextLines, x + CARD_W / 2, infoY, { align: 'center' });
 
   // === Poste ===
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(5.5);
-  doc.setTextColor(100, 100, 120);
-  doc.text(emp.poste || categorieLabel[emp.categorie] || emp.categorie, x + CARD_W / 2, infoY + 4, { align: 'center' });
-
-  // === Matricule box (gradient style like student badge) ===
-  const matBoxW = 30;
-  const matBoxH = 6;
-  const matBoxX = x + (CARD_W - matBoxW) / 2;
-  const matBoxY = infoY + 7;
-  // Red-green gradient box
-  doc.setFillColor(192, 57, 43);
-  doc.roundedRect(matBoxX, matBoxY, matBoxW / 2, matBoxH, 1, 1, 'F');
-  doc.setFillColor(30, 132, 73);
-  doc.roundedRect(matBoxX + matBoxW / 2 - 1, matBoxY, matBoxW / 2 + 1, matBoxH, 1, 1, 'F');
-  // Fill the center gap
-  doc.setFillColor(100, 80, 58);
-  doc.rect(matBoxX + matBoxW / 2 - 1, matBoxY, 2, matBoxH, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(3);
-  doc.setTextColor(255, 255, 255);
-  doc.text('N°', matBoxX + 3, matBoxY + 3.5, { align: 'center' });
-  doc.setFontSize(6);
-  doc.text(emp.matricule, matBoxX + matBoxW / 2, matBoxY + 4, { align: 'center' });
-
-  // === QR Code ===
-  const qrSize = 11;
-  const qrX = x + (CARD_W - qrSize) / 2;
-  const qrY = matBoxY + matBoxH + 2;
-  doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(30, 132, 73);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(qrX - 1, qrY - 1, qrSize + 2, qrSize + 2, 1, 1, 'FD');
-  doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
-
-  // === Contact info at bottom ===
-  const contactY = qrY + qrSize + 2.5;
-  const tel = contactInfo?.telephone || '';
-  const addr = contactInfo?.adresse || '';
-
+  const posteY = infoY + nameTextLines.length * 3.5;
   doc.setFont('helvetica', 'italic');
-  doc.setFontSize(3);
-  doc.setTextColor(120, 120, 130);
-  doc.text('En cas de perte, veuillez contacter :', x + CARD_W / 2, contactY, { align: 'center' });
+  doc.setFontSize(5.5);
+  doc.setTextColor(80, 80, 90);
+  doc.text(emp.poste || emp.categorie, x + CARD_W / 2, posteY, { align: 'center' });
 
-  if (tel) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(3.2);
-    doc.setTextColor(80, 80, 90);
-    doc.text(`Tél: ${tel}`, x + CARD_W / 2, contactY + 3, { align: 'center' });
-  }
+  // === Matricule box ===
+  const matBoxW = 28;
+  const matBoxH = 5.5;
+  const matBoxX = x + (CARD_W - matBoxW) / 2;
+  const matBoxY = posteY + 3;
 
-  if (addr) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(2.8);
-    doc.setTextColor(100, 100, 110);
-    const addrLines = doc.splitTextToSize(addr, CARD_W - 6);
-    doc.text(addrLines, x + CARD_W / 2, contactY + (tel ? 5.5 : 3), { align: 'center' });
-  }
-
-  // === Footer bar — Red/Green gradient like student badges ===
-  const footerH = 5;
-  doc.setFillColor(192, 57, 43);
-  doc.rect(x, y + CARD_H - footerH, CARD_W * 0.35, footerH, 'F');
-  doc.setFillColor(169, 50, 38);
-  doc.rect(x + CARD_W * 0.35, y + CARD_H - footerH, CARD_W * 0.15, footerH, 'F');
-  doc.setFillColor(30, 132, 73);
-  doc.rect(x + CARD_W * 0.5, y + CARD_H - footerH, CARD_W * 0.25, footerH, 'F');
-  doc.setFillColor(25, 111, 61);
-  doc.rect(x + CARD_W * 0.75, y + CARD_H - footerH, CARD_W * 0.25, footerH, 'F');
+  // Red left half
+  doc.setFillColor(200, 16, 46);
+  doc.roundedRect(matBoxX, matBoxY, matBoxW * 0.3, matBoxH, 1, 1, 'F');
+  // Yellow stripe
+  doc.setFillColor(255, 206, 0);
+  doc.rect(matBoxX + matBoxW * 0.3, matBoxY, matBoxW * 0.05, matBoxH, 'F');
+  // Green right part
+  doc.setFillColor(0, 130, 60);
+  doc.roundedRect(matBoxX + matBoxW * 0.35 - 0.5, matBoxY, matBoxW * 0.65 + 0.5, matBoxH, 1, 1, 'F');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(3.5);
   doc.setTextColor(255, 255, 255);
-  doc.text((categorieLabel[emp.categorie] || emp.categorie).toUpperCase(), x + CARD_W / 2, y + CARD_H - 1.5, { align: 'center' });
+  doc.text('N°', matBoxX + matBoxW * 0.15, matBoxY + 3.5, { align: 'center' });
+  doc.setFontSize(6);
+  doc.text(emp.matricule, matBoxX + matBoxW * 0.67, matBoxY + 3.8, { align: 'center' });
 
-  // === Thin border ===
+  // === QR Code ===
+  const qrSize = 12;
+  const qrX = x + (CARD_W - qrSize) / 2;
+  const qrY = matBoxY + matBoxH + 2;
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(0, 130, 60);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(qrX - 1, qrY - 1, qrSize + 2, qrSize + 2, 1, 1, 'FD');
+  doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+
+  // === Footer bar — Red/Yellow/Green ===
+  const footerH = 7;
+  const footerY = y + CARD_H - footerH;
+
+  // Yellow left accent line
+  doc.setFillColor(255, 206, 0);
+  doc.rect(x, footerY, 1.5, footerH, 'F');
+
+  // Red section
+  doc.setFillColor(200, 16, 46);
+  doc.rect(x + 1.5, footerY, CARD_W * 0.45, footerH, 'F');
+
+  // Yellow stripe
+  doc.setFillColor(255, 206, 0);
+  doc.rect(x + 1.5 + CARD_W * 0.45, footerY, CARD_W * 0.04, footerH, 'F');
+
+  // Green section
+  doc.setFillColor(0, 130, 60);
+  doc.rect(x + 1.5 + CARD_W * 0.49, footerY, CARD_W * 0.51 - 1.5, footerH, 'F');
+
+  // Contact info in footer
+  const tel = contactInfo?.telephone || '';
+  const web = contactInfo?.web || '';
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(3);
+  doc.setTextColor(255, 255, 255);
+
+  if (tel) {
+    doc.text(`Contact: ${tel}`, x + 3, footerY + 3, { align: 'left' });
+  } else {
+    doc.text('Contact:', x + 3, footerY + 3, { align: 'left' });
+  }
+
+  if (web) {
+    doc.text(`web: ${web}`, x + 3, footerY + 5.5, { align: 'left' });
+  } else {
+    doc.text('web:', x + 3, footerY + 5.5, { align: 'left' });
+  }
+
+  // === Thin outer border ===
   doc.setDrawColor(200, 200, 210);
   doc.setLineWidth(0.2);
   doc.rect(x, y, CARD_W, CARD_H);
