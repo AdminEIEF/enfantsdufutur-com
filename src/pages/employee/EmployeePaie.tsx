@@ -99,7 +99,7 @@ export default function EmployeePaie() {
                         </div>
                         <div className="text-right">
                           <p className="text-xs text-muted-foreground">Restant dû</p>
-                          <p className="font-bold text-orange-600">{restant.toLocaleString()} GNF</p>
+                          <p className="font-bold text-orange-600">{fmtNum(restant)} GNF</p>
                           <p className="text-[10px] text-muted-foreground">Prélevé auto. sur salaire</p>
                         </div>
                       </div>
