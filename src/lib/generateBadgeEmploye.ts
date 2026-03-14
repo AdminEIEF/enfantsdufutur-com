@@ -65,26 +65,18 @@ function drawSingleBadge(
     doc.rect(x, y, CARD_W, CARD_H, 'F');
   }
 
-  // === Photo ===
-  // Position calibrated to the template image placeholder
-  const photoW = 23;
-  const photoH = 26;
+  // === Photo dans le cadre vert du haut ===
+  const photoW = 25;
+  const photoH = 29;
   const photoX = x + (CARD_W - photoW) / 2;
-  const photoY = y + 24.5;
+  const photoY = y + 20.5;
 
   if (photoImg) {
     doc.addImage(photoImg, 'JPEG', photoX, photoY, photoW, photoH);
-  } else {
-    // Initials placeholder (semi-transparent so template shows through)
-    doc.setFillColor(245, 245, 245);
-    doc.rect(photoX, photoY, photoW, photoH, 'F');
-    doc.setFontSize(16);
-    doc.setTextColor(180, 180, 190);
-    doc.text(`${emp.prenom[0]}${emp.nom[0]}`, photoX + photoW / 2, photoY + photoH / 2 + 3, { align: 'center' });
   }
 
-  // === Nom et prénom (red, bold) ===
-  const nameY = y + 55;
+  // === Nom et prénom (sous la photo, sur fond blanc) ===
+  const nameY = y + 53;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
   doc.setTextColor(200, 16, 46);
@@ -92,49 +84,43 @@ function drawSingleBadge(
   const nameLines = doc.splitTextToSize(fullName, CARD_W - 8);
   doc.text(nameLines, x + CARD_W / 2, nameY, { align: 'center' });
 
-  // === Fonction (dark, italic) ===
-  const fonctionY = nameY + nameLines.length * 3.2 + 1;
+  // === Fonction (sous le nom) ===
+  const fonctionY = nameY + nameLines.length * 3.2 + 0.5;
   doc.setFont('helvetica', 'bolditalic');
-  doc.setFontSize(5.5);
+  doc.setFontSize(6);
   doc.setTextColor(40, 40, 50);
   doc.text(emp.poste || emp.categorie, x + CARD_W / 2, fonctionY, { align: 'center' });
 
-  // === Matricule (white text on the green/red bar area) ===
-  const matY = fonctionY + 5.5;
+  // === Matricule (sur la barre tricolore rouge/vert) ===
+  const matY = y + 63;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
+  doc.setFontSize(7);
   doc.setTextColor(255, 255, 255);
   doc.text(emp.matricule, x + CARD_W / 2, matY, { align: 'center' });
 
-  // === QR Code ===
-  const qrSize = 12;
+  // === QR Code (dans le cadre blanc du bas) ===
+  const qrSize = 14;
   const qrX = x + (CARD_W - qrSize) / 2;
-  const qrY = matY + 3;
-  // White background for QR
-  doc.setFillColor(255, 255, 255);
-  doc.rect(qrX - 0.5, qrY - 0.5, qrSize + 1, qrSize + 1, 'F');
+  const qrY = y + 68;
   doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
 
-  // === Contact & Web in footer ===
+  // === Contact & Web (bandeau du bas) ===
   const tel = contactInfo?.telephone || '';
   const web = contactInfo?.web || '';
-  const footerY = y + CARD_H - 5.5;
+  const footerY = y + CARD_H - 4;
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(3);
-  doc.setTextColor(255, 255, 255);
-
-  if (tel) {
-    doc.text(`Contact: ${tel}`, x + 2, footerY + 1.5);
+  if (tel || web) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(3.5);
+    doc.setTextColor(255, 255, 255);
+    if (tel && web) {
+      doc.text(`${tel} | ${web}`, x + CARD_W / 2, footerY, { align: 'center' });
+    } else if (tel) {
+      doc.text(tel, x + CARD_W / 2, footerY, { align: 'center' });
+    } else if (web) {
+      doc.text(web, x + CARD_W / 2, footerY, { align: 'center' });
+    }
   }
-  if (web) {
-    doc.text(`web: ${web}`, x + 2, footerY + 3.5);
-  }
-
-  // === Thin outer border ===
-  doc.setDrawColor(200, 200, 210);
-  doc.setLineWidth(0.15);
-  doc.rect(x, y, CARD_W, CARD_H);
 }
 
 export async function generateBadgeEmployePDF(
@@ -205,16 +191,7 @@ export async function generatePlancheBadgesEmployesPDF(
 
       drawSingleBadge(doc, emp, qr, templateImg, ox, oy, photoImg, contactInfo);
 
-      // Cut marks
-      const markLen = 4;
-      doc.line(ox - 2, oy, ox - 2 - markLen, oy);
-      doc.line(ox, oy - 2, ox, oy - 2 - markLen);
-      doc.line(ox + CARD_W + 2, oy, ox + CARD_W + 2 + markLen, oy);
-      doc.line(ox + CARD_W, oy - 2, ox + CARD_W, oy - 2 - markLen);
-      doc.line(ox - 2, oy + CARD_H, ox - 2 - markLen, oy + CARD_H);
-      doc.line(ox, oy + CARD_H + 2, ox, oy + CARD_H + 2 + markLen);
-      doc.line(ox + CARD_W + 2, oy + CARD_H, ox + CARD_W + 2 + markLen, oy + CARD_H);
-      doc.line(ox + CARD_W, oy + CARD_H + 2, ox + CARD_W, oy + CARD_H + 2 + markLen);
+      // Pas de cut marks - le template a déjà les repères visuels
     }
   }
 
