@@ -357,7 +357,27 @@ export default function TresorierDashboard() {
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Per-category breakdown */}
+      {categoryStats.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {categoryStats.map(cs => (
+            <Card key={cs.label} className="border">
+              <CardContent className="pt-4 pb-3 text-center">
+                <p className="text-xs font-medium text-muted-foreground mb-1">{cs.label}</p>
+                <p className="text-lg font-bold">
+                  <span className="text-emerald-600">{cs.paid}</span>
+                  <span className="text-muted-foreground"> / {cs.total}</span>
+                </p>
+                <div className="w-full bg-muted rounded-full h-1.5 mt-2">
+                  <div className="bg-emerald-500 h-1.5 rounded-full transition-all" style={{ width: `${cs.total > 0 ? (cs.paid / cs.total) * 100 : 0}%` }} />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+
       <Card>
         <CardContent className="pt-5">
           <div className="flex flex-col sm:flex-row gap-3">
