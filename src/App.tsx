@@ -82,6 +82,7 @@ import ServiceInfoDashboard from "./pages/ServiceInfoDashboard";
 import Corbeille from "./pages/Corbeille";
 import TresorierDashboard from "./pages/TresorierDashboard";
 import TresorierGestionSalaires from "./pages/TresorierGestionSalaires";
+import TresorierAvances from "./pages/TresorierAvances";
 import StudentEcriture from "./pages/student/StudentEcriture";
 import StudentCalculMental from "./pages/student/StudentCalculMental";
 import StudentCultureGenerale from "./pages/student/StudentCultureGenerale";
