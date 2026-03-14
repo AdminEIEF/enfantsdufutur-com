@@ -81,16 +81,24 @@ export default function Notes() {
     },
   });
 
+  const selectedCycle = cycles.find((c: any) => c.id === cycleId);
+  const bareme = selectedCycle?.bareme ?? 20;
+  const isSecondaire = bareme >= 20; // Collège/Lycée use subject-by-subject mode
+
   const matieres = useMemo(() => {
-    // If classe_matieres are configured, use only those
+    // For Crèche/Primaire (non-secondaire): strictly use classe_matieres only
     if (classeId && classeMatieres.length > 0) {
       const allowedIds = new Set(classeMatieres.map((cm: any) => cm.matiere_id));
       return allMatieresCycle.filter((m: any) => allowedIds.has(m.id));
     }
-    // Fallback: filter by niveau_id
+    // For non-secondaire cycles, if no classe_matieres configured, return empty (strict)
+    if (classeId && !isSecondaire) {
+      return [];
+    }
+    // Fallback for secondaire: filter by niveau_id
     if (!selectedNiveauId) return allMatieresCycle;
     return allMatieresCycle.filter((m: any) => !m.niveau_id || m.niveau_id === selectedNiveauId);
-  }, [allMatieresCycle, selectedNiveauId, classeId, classeMatieres]);
+  }, [allMatieresCycle, selectedNiveauId, classeId, classeMatieres, isSecondaire]);
 
   const { data: eleves = [] } = useQuery({
     queryKey: ['eleves-classe', classeId],
@@ -138,9 +146,7 @@ export default function Notes() {
     return map;
   }, [eleves, allNotesForPeriod, matieres]);
 
-  const selectedCycle = cycles.find((c: any) => c.id === cycleId);
-  const bareme = selectedCycle?.bareme ?? 20;
-  const isSecondaire = bareme >= 20; // Collège/Lycée use subject-by-subject mode
+  // selectedCycle, bareme, isSecondaire moved above matieres useMemo
 
   // When opening student dialog, load their notes into notesMap
   const selectedEleve = eleves.find((e: any) => e.id === selectedEleveId);
@@ -366,7 +372,7 @@ export default function Notes() {
             {!cycleId ? 'Sélectionnez un cycle pour commencer' :
              !classeId ? 'Sélectionnez une classe' :
              !periodeId ? 'Sélectionnez une période' :
-             matieres.length === 0 ? 'Aucune matière configurée pour ce niveau' :
+             matieres.length === 0 ? 'Aucune matière assignée à cette classe. Configurez les matières dans Configuration > Classes.' :
              'Aucun élève inscrit dans cette classe'}
           </CardContent>
         </Card>
