@@ -106,6 +106,13 @@ function drawSingleBadge(
     doc.text(line.toUpperCase(), x + CARD_W / 2, schoolStartY + i * 2, { align: 'center' });
   });
 
+  // "BADGE DU PERSONNEL" subtitle
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(4);
+  doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
+  const badgeSubY = schoolStartY + schoolLines.length * 2 + 0.8;
+  doc.text('BADGE DU PERSONNEL', x + CARD_W / 2, badgeSubY, { align: 'center' });
+
   // === Photo (circular with white border) ===
   const photoR = 11; // radius
   const photoCX = x + CARD_W / 2;
@@ -162,14 +169,14 @@ function drawSingleBadge(
   doc.setTextColor(GRAY_500.r, GRAY_500.g, GRAY_500.b);
   doc.text(matText, x + CARD_W / 2, matY, { align: 'center' });
 
-  // === QR Code ===
-  const qrSize = 13;
+  // === QR Code (large for reliable scanning) ===
+  const qrSize = 18;
   const qrX = x + (CARD_W - qrSize) / 2;
-  const qrY = matY + 3;
+  const qrY = matY + 2.5;
   // Border around QR
   doc.setDrawColor(220, 220, 230);
   doc.setLineWidth(0.2);
-  doc.rect(qrX - 0.8, qrY - 0.8, qrSize + 1.6, qrSize + 1.6, 'D');
+  doc.rect(qrX - 1, qrY - 1, qrSize + 2, qrSize + 2, 'D');
   doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
 
   // === Hologram Security Seal (top-right of photo area) ===
