@@ -94,15 +94,23 @@ function drawSingleBadge(
 
   // School name on RIGHT side
   const displayName = schoolName || 'ECOLE INTERNATIONALE\nLES ENFANTS DU FUTUR';
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(4.5);
   doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
   const schoolLines = displayName.split('\n');
   const textBlockX = logoCX + logoCircleR + 2;
   const textBlockCenterX = textBlockX + (CARD_W - textBlockX + x) / 2;
-  const schoolStartY = y + headerH / 2 - ((schoolLines.length - 1) * 2.2) / 2 + 0.5;
+  // First line bigger, second line slightly smaller
+  const lineConfigs = [
+    { size: 4.8, weight: 'bold' as const },
+    { size: 4.0, weight: 'bold' as const },
+  ];
+  const lineSpacing = 2.5;
+  const totalH = (schoolLines.length - 1) * lineSpacing;
+  const startY = y + headerH / 2 - totalH / 2 + 0.8;
   schoolLines.forEach((line, i) => {
-    doc.text(line.toUpperCase(), textBlockCenterX, schoolStartY + i * 2.2, { align: 'center' });
+    const cfg = lineConfigs[i] || lineConfigs[lineConfigs.length - 1];
+    doc.setFont('helvetica', cfg.weight);
+    doc.setFontSize(cfg.size);
+    doc.text(line.toUpperCase(), textBlockCenterX, startY + i * lineSpacing, { align: 'center' });
   });
 
   // === "BADGE DU PERSONNEL" - separate RED (bordeaux) band ===
