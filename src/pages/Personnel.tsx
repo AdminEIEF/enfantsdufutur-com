@@ -879,38 +879,53 @@ export default function Personnel() {
               );
             })}
           </div>
-          <Card>
-            <div className="overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Matricule</TableHead>
-                    <TableHead>Nom & Prénom</TableHead>
-                    <TableHead>Catégorie</TableHead>
-                    <TableHead>Poste</TableHead>
-                    <TableHead>Salaire</TableHead>
-                    <TableHead>Statut</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
-                  ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun employé</TableCell></TableRow>
-                  ) : filtered.map((emp: any) => (
-                    <TableRow key={emp.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedEmp(emp)}>
-                      <TableCell className="font-mono text-xs">{emp.matricule}</TableCell>
-                      <TableCell className="font-medium">{emp.prenom} {emp.nom}</TableCell>
-                      <TableCell><Badge variant="secondary" className="text-xs">{categorieLabel[emp.categorie] || emp.categorie}</Badge></TableCell>
-                      <TableCell className="text-sm">{emp.poste}</TableCell>
-                      <TableCell className="text-sm">{Number(emp.salaire_base).toLocaleString()} GNF</TableCell>
-                      <TableCell><Badge variant={emp.statut === 'actif' ? 'default' : 'destructive'}>{emp.statut}</Badge></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </Card>
+          <Collapsible defaultOpen>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors">
+                  <CardTitle className="text-base flex items-center justify-between">
+                    <span className="flex items-center gap-2"><Users className="h-4 w-4" /> Liste du personnel</span>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{filtered.length} employé(s)</Badge>
+                      <ChevronDown className="h-4 w-4 transition-transform group-data-[state=closed]:rotate-[-90deg]" />
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Matricule</TableHead>
+                        <TableHead>Nom & Prénom</TableHead>
+                        <TableHead>Catégorie</TableHead>
+                        <TableHead>Poste</TableHead>
+                        <TableHead>Salaire</TableHead>
+                        <TableHead>Statut</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {isLoading ? (
+                        <TableRow><TableCell colSpan={6} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
+                      ) : filtered.length === 0 ? (
+                        <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun employé</TableCell></TableRow>
+                      ) : filtered.map((emp: any) => (
+                        <TableRow key={emp.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedEmp(emp)}>
+                          <TableCell className="font-mono text-xs">{emp.matricule}</TableCell>
+                          <TableCell className="font-medium">{emp.prenom} {emp.nom}</TableCell>
+                          <TableCell><Badge variant="secondary" className="text-xs">{categorieLabel[emp.categorie] || emp.categorie}</Badge></TableCell>
+                          <TableCell className="text-sm">{emp.poste}</TableCell>
+                          <TableCell className="text-sm">{Number(emp.salaire_base).toLocaleString()} GNF</TableCell>
+                          <TableCell><Badge variant={emp.statut === 'actif' ? 'default' : 'destructive'}>{emp.statut}</Badge></TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
         </TabsContent>
 
         {/* Pointage */}
