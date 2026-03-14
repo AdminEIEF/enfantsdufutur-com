@@ -81,27 +81,29 @@ function drawSingleBadge(
   // Square off bottom corners
   doc.rect(x, y + headerH - 2, CARD_W, 2, 'F');
 
-  // Logo circle in header
-  const logoCircleR = 5;
+  // Logo circle in header - centered and properly sized
+  const logoCircleR = 4.5;
   const logoCX = x + CARD_W / 2;
-  const logoCY = y + 4.5;
+  const logoCY = y + 5;
+  // White circle background for logo
   doc.setFillColor(WHITE.r, WHITE.g, WHITE.b);
   doc.circle(logoCX, logoCY, logoCircleR, 'F');
 
   if (logoImg) {
-    const logoSize = 8;
+    // Fit logo inside circle with padding
+    const logoSize = logoCircleR * 1.7;
     doc.addImage(logoImg, 'PNG', logoCX - logoSize / 2, logoCY - logoSize / 2, logoSize, logoSize);
   }
 
-  // School name
-  const displayName = schoolName || 'ECOLE INTERNATIONALE\nLES ENFANTS DU FUTUR';
+  // School name below logo
+  const displayName = schoolName || 'LES ÉCOLES INTERNATIONALES\nENFANTS DU FUTUR';
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5);
+  doc.setFontSize(4.5);
   doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
   const schoolLines = displayName.split('\n');
   const schoolStartY = y + 11;
   schoolLines.forEach((line, i) => {
-    doc.text(line.toUpperCase(), x + CARD_W / 2, schoolStartY + i * 2.2, { align: 'center' });
+    doc.text(line.toUpperCase(), x + CARD_W / 2, schoolStartY + i * 2, { align: 'center' });
   });
 
   // === Photo (circular with white border) ===
