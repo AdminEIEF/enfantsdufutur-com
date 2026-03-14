@@ -14,8 +14,8 @@ const CARD_W = 53.98; // mm (portrait)
 const CARD_H = 85.6;
 
 // Colors
-const NAVY = { r: 15, g: 23, b: 42 };       // bg-blue-900 equivalent
-const BLUE_ACCENT = { r: 29, g: 78, b: 216 }; // text-blue-700
+const NAVY = { r: 128, g: 0, b: 32 };       // Rouge bordeaux
+const BLUE_ACCENT = { r: 128, g: 0, b: 32 }; // Rouge bordeaux accent
 const GRAY_100 = { r: 243, g: 244, b: 246 };
 const GRAY_500 = { r: 107, g: 114, b: 128 };
 const GRAY_800 = { r: 31, g: 41, b: 55 };
