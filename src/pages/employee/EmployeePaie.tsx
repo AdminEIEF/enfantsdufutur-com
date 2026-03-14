@@ -74,7 +74,7 @@ export default function EmployeePaie() {
               <DollarSign className="h-6 w-6 text-emerald-600" />
               <div>
                 <p className="text-sm text-muted-foreground">Salaire de base mensuel</p>
-                <p className="text-xl font-bold">{Number(session.employe.salaire_base).toLocaleString()} GNF</p>
+                <p className="text-xl font-bold">{fmtNum(Number(session.employe.salaire_base))} GNF</p>
               </div>
             </CardContent>
           </Card>
