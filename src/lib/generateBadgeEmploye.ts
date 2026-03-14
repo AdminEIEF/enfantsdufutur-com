@@ -432,7 +432,6 @@ export async function generatePlancheBadgesEmployesPDF(
 
   for (let page = 0; page < totalPages; page++) {
     // === RECTO PAGE ===
-    if (page > 0 || false) doc.addPage();
     if (page > 0) doc.addPage();
 
     const pageEmps = employes.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
