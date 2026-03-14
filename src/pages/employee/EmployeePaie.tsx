@@ -138,7 +138,7 @@ export default function EmployeePaie() {
                       {b.primes > 0 && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Primes</span>
-                          <span className="text-green-600">+{Number(b.primes).toLocaleString()}</span>
+                          <span className="text-green-600">+{fmtNum(Number(b.primes))}</span>
                         </div>
                       )}
                       {b.retenues > 0 && (
