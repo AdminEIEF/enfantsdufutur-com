@@ -100,6 +100,7 @@ export default function TresorierDashboard() {
 
     const signatureData = hasEmpSignature ? empCanvasRef.current?.toDataURL('image/png') : null;
 
+    // 1) Record payment in paiements_tresorier
     const { error } = await supabase.from('paiements_tresorier').insert({
       employe_id: emp.id,
       montant: emp.salaire_base,
@@ -111,10 +112,70 @@ export default function TresorierDashboard() {
 
     if (error) {
       toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Paiement enregistré', description: `${emp.prenom} ${emp.nom} a été payé et a signé.` });
-      fetchData();
+      setPaying(null);
+      setSignDialog(null);
+      return;
     }
+
+    // 2) Auto-generate bulletin de paie for this employee
+    // Check pending avances to auto-deduct
+    const { data: pendingAvances } = await supabase
+      .from('avances_salaire')
+      .select('id, montant, montant_rembourse')
+      .eq('employe_id', emp.id)
+      .eq('statut', 'approuve');
+
+    let totalAvancesDeduites = 0;
+    const avancesToUpdate: { id: string; deduction: number }[] = [];
+
+    if (pendingAvances && pendingAvances.length > 0) {
+      for (const av of pendingAvances) {
+        const remaining = Number(av.montant) - Number(av.montant_rembourse);
+        if (remaining > 0) {
+          totalAvancesDeduites += remaining;
+          avancesToUpdate.push({ id: av.id, deduction: remaining });
+        }
+      }
+    }
+
+    const salaireNet = emp.salaire_base - totalAvancesDeduites;
+
+    await supabase.from('bulletins_paie').upsert({
+      employe_id: emp.id,
+      mois: currentMonth,
+      annee: currentYear,
+      salaire_brut: emp.salaire_base,
+      retenues: 0,
+      avances_deduites: totalAvancesDeduites,
+      primes: 0,
+      salaire_net: salaireNet,
+      commentaire: null,
+      genere_par: user?.id,
+    } as any, { onConflict: 'employe_id,mois,annee' });
+
+    // Update avance remboursements
+    for (const av of avancesToUpdate) {
+      const { data: avData } = await supabase.from('avances_salaire').select('montant, montant_rembourse').eq('id', av.id).single();
+      if (avData) {
+        const newRembourse = Number(avData.montant_rembourse) + av.deduction;
+        await supabase.from('avances_salaire').update({
+          montant_rembourse: newRembourse,
+          mois_remboursement: `${currentMonth}/${currentYear}`,
+          statut: newRembourse >= Number(avData.montant) ? 'rembourse' : 'approuve',
+        }).eq('id', av.id);
+      }
+    }
+
+    // 3) Notify employee
+    await supabase.from('employee_notifications').insert({
+      employe_id: emp.id,
+      titre: '💰 Bulletin de paie disponible',
+      message: `Votre bulletin de paie est disponible. Salaire net: ${fmtNum(salaireNet)} GNF.${totalAvancesDeduites > 0 ? ` (Avances déduites: ${fmtNum(totalAvancesDeduites)} GNF)` : ''}`,
+      type: 'info',
+    });
+
+    toast({ title: 'Paiement enregistré', description: `${emp.prenom} ${emp.nom} a été payé. Bulletin généré automatiquement.` });
+    fetchData();
     setPaying(null);
     setSignDialog(null);
   };
