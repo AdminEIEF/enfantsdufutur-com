@@ -172,73 +172,75 @@ function drawSingleBadge(
   doc.rect(qrX - 0.8, qrY - 0.8, qrSize + 1.6, qrSize + 1.6, 'D');
   doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
 
-  // === Hologram security seal ===
-  const holoR = 6;
-  const holoCX = x + CARD_W - holoR - 3;
-  const holoCY = qrY + qrSize / 2;
-  
-  // Multi-layer hologram effect (simulated iridescent seal)
-  const holoColors = [
-    { r: 178, g: 245, b: 234, a: 0.15 },  // teal
-    { r: 190, g: 227, b: 248, a: 0.15 },  // light blue  
-    { r: 254, g: 215, b: 226, a: 0.12 },  // pink
-    { r: 250, g: 240, b: 137, a: 0.10 },  // yellow
+  // === Hologram Security Seal (top-right of photo area) ===
+  const holoR = 5.5;
+  const holoCX = x + CARD_W - holoR - 2.5;
+  const holoCY = y + headerH + 5;
+
+  // Outer iridescent ring layers
+  const iridescent = [
+    { r: 178, g: 245, b: 234 },  // teal
+    { r: 190, g: 227, b: 248 },  // light blue
+    { r: 254, g: 215, b: 226 },  // pink
+    { r: 250, g: 240, b: 137 },  // yellow
   ];
-  
-  // Outer ring
-  doc.setGState(new (doc as any).GState({ opacity: 0.3 }));
-  doc.setDrawColor(180, 220, 240);
-  doc.setLineWidth(0.3);
-  doc.circle(holoCX, holoCY, holoR + 0.5, 'D');
-  
-  // Concentric colored rings for hologram effect
-  holoColors.forEach((c, i) => {
-    doc.setGState(new (doc as any).GState({ opacity: c.a + 0.05 }));
+
+  // Base circle with gradient-like layers
+  iridescent.forEach((c, i) => {
+    doc.setGState(new (doc as any).GState({ opacity: 0.18 - i * 0.03 }));
     doc.setFillColor(c.r, c.g, c.b);
-    const r = holoR - i * 1.2;
-    if (r > 0) doc.circle(holoCX, holoCY, r, 'F');
+    doc.circle(holoCX, holoCY, holoR - i * 0.8, 'F');
   });
-  
-  // Inner white core
-  doc.setGState(new (doc as any).GState({ opacity: 0.6 }));
-  doc.setFillColor(WHITE.r, WHITE.g, WHITE.b);
-  doc.circle(holoCX, holoCY, 2.5, 'F');
-  
-  // Star/check mark in center
-  doc.setGState(new (doc as any).GState({ opacity: 0.8 }));
-  doc.setFontSize(3.5);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(GREEN.r, GREEN.g, GREEN.b);
-  doc.text('✓', holoCX, holoCY + 1, { align: 'center' });
-  
-  // Diagonal shimmer lines across hologram
-  doc.setGState(new (doc as any).GState({ opacity: 0.12 }));
+
+  // Shimmer diagonal lines
+  doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
   doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(0.15);
-  for (let sl = -holoR; sl < holoR; sl += 1.5) {
+  doc.setLineWidth(0.12);
+  for (let sl = -holoR; sl < holoR; sl += 1.2) {
     doc.line(holoCX + sl, holoCY - holoR, holoCX + sl + holoR, holoCY + holoR);
   }
-  
-  // "AUTHENTIQUE" micro-text around seal
-  doc.setGState(new (doc as any).GState({ opacity: 0.4 }));
-  doc.setFontSize(2);
-  doc.setTextColor(GRAY_500.r, GRAY_500.g, GRAY_500.b);
-  doc.text('AUTHENTIQUE', holoCX, holoCY + holoR + 1.5, { align: 'center' });
-  
+
+  // Outer ring border
+  doc.setGState(new (doc as any).GState({ opacity: 0.3 }));
+  doc.setDrawColor(200, 220, 240);
+  doc.setLineWidth(0.25);
+  doc.circle(holoCX, holoCY, holoR, 'D');
+
+  // Inner spinning ring (dashed effect)
+  doc.setGState(new (doc as any).GState({ opacity: 0.2 }));
+  doc.setDrawColor(255, 255, 255);
+  doc.setLineWidth(0.15);
+  doc.circle(holoCX, holoCY, holoR - 1.2, 'D');
+
+  // Shield icon center - white bg
+  doc.setGState(new (doc as any).GState({ opacity: 0.7 }));
+  doc.setFillColor(WHITE.r, WHITE.g, WHITE.b);
+  doc.circle(holoCX, holoCY, 2.2, 'F');
+
+  // Shield checkmark
+  doc.setGState(new (doc as any).GState({ opacity: 0.5 }));
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(4);
+  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.text('✓', holoCX, holoCY + 1, { align: 'center' });
+
+  // "OFFICIAL" micro-text below shield
+  doc.setFontSize(1.8);
+  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.text('OFFICIAL', holoCX, holoCY + 3, { align: 'center' });
+
   doc.setGState(new (doc as any).GState({ opacity: 1 }));
 
   // === "PERSONNEL AUTORISÉ" ===
   const authY = qrY + qrSize + 2.5;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(3.5);
-  // Shield icon (small green circle)
   doc.setFillColor(GREEN.r, GREEN.g, GREEN.b);
   const shieldX = x + CARD_W / 2 - 9;
   doc.circle(shieldX, authY - 0.5, 1, 'F');
   doc.setFontSize(2);
   doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
   doc.text('✓', shieldX, authY, { align: 'center' });
-  // Text
   doc.setFontSize(3.5);
   doc.setTextColor(GRAY_500.r, GRAY_500.g, GRAY_500.b);
   doc.text('PERSONNEL AUTORISÉ', x + CARD_W / 2 + 1, authY, { align: 'center' });
