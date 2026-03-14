@@ -1,7 +1,7 @@
 import {
   GraduationCap, Users, UserPlus, BookOpen, Calculator, AlertTriangle,
   Settings, Bell, ScanLine, Library, BarChart3,
-  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock, FileText, Shield, Bot, Trophy, Archive, Wallet
+  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock, FileText, Shield, Bot, Trophy, Archive, Wallet, Banknote
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -176,6 +176,7 @@ const navSections = [
     roles: ['tresorier'] as any,
     items: [
       { title: 'Tableau de bord', url: '/tresorier-dashboard', icon: Wallet },
+      { title: 'Gestion Salaires', url: '/tresorier-salaires', icon: Banknote },
     ],
   },
   {
