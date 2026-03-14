@@ -94,7 +94,7 @@ export default function EmployeePaie() {
                     return (
                       <div key={a.id} className="flex items-center justify-between text-sm border rounded px-3 py-2">
                         <div>
-                          <p className="font-medium">{Number(a.montant).toLocaleString()} GNF</p>
+                          <p className="font-medium">{fmtNum(Number(a.montant))} GNF</p>
                           {a.motif && <p className="text-xs text-muted-foreground">{a.motif}</p>}
                         </div>
                         <div className="text-right">
