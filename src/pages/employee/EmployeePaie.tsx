@@ -124,7 +124,7 @@ export default function EmployeePaie() {
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold">{MOIS_NOMS[b.mois]} {b.annee}</h3>
                       <div className="flex items-center gap-2">
-                        <Badge className="bg-emerald-500">{Number(b.salaire_net).toLocaleString()} GNF</Badge>
+                        <Badge className="bg-emerald-500">{fmtNum(Number(b.salaire_net))} GNF</Badge>
                         <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => handleDownload(b)} title="Télécharger PDF">
                           <Download className="h-3.5 w-3.5" />
                         </Button>
