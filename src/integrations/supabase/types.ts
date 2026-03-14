@@ -2033,6 +2033,50 @@ export type Database = {
           },
         ]
       }
+      paiements_tresorier: {
+        Row: {
+          annee: number
+          created_at: string
+          date_paiement: string
+          employe_id: string
+          id: string
+          mois: number
+          montant: number
+          paye_par: string | null
+          statut: string
+        }
+        Insert: {
+          annee: number
+          created_at?: string
+          date_paiement?: string
+          employe_id: string
+          id?: string
+          mois: number
+          montant?: number
+          paye_par?: string | null
+          statut?: string
+        }
+        Update: {
+          annee?: number
+          created_at?: string
+          date_paiement?: string
+          employe_id?: string
+          id?: string
+          mois?: number
+          montant?: number
+          paye_par?: string | null
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paiements_tresorier_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parametres: {
         Row: {
           cle: string
@@ -3125,6 +3169,7 @@ export type Database = {
         | "chauffeur"
         | "surveillant"
         | "pointeur"
+        | "tresorier"
       categorie_employe:
         | "enseignant"
         | "administration"
@@ -3271,6 +3316,7 @@ export const Constants = {
         "chauffeur",
         "surveillant",
         "pointeur",
+        "tresorier",
       ],
       categorie_employe: [
         "enseignant",

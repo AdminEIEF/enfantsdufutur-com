@@ -53,6 +53,7 @@ const roleMeta: Record<AppRole, { label: string; color: string }> = {
   chauffeur: { label: 'Chauffeur', color: 'bg-teal-600 text-white' },
   pointeur: { label: 'Pointeur', color: 'bg-sky-600 text-white' },
   surveillant: { label: 'Surveillant', color: 'bg-slate-600 text-white' },
+  tresorier: { label: 'Trésorier', color: 'bg-emerald-700 text-white' },
 };
 
 export function AppLayout({ children }: { children: ReactNode }) {

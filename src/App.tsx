@@ -80,6 +80,7 @@ import PointeurPointage from "./pages/PointeurPointage";
 import SuperviseurDashboard from "./pages/SuperviseurDashboard";
 import ServiceInfoDashboard from "./pages/ServiceInfoDashboard";
 import Corbeille from "./pages/Corbeille";
+import TresorierDashboard from "./pages/TresorierDashboard";
 import StudentEcriture from "./pages/student/StudentEcriture";
 import StudentCalculMental from "./pages/student/StudentCalculMental";
 import StudentCultureGenerale from "./pages/student/StudentCultureGenerale";
@@ -140,6 +141,7 @@ function RoleBasedRedirect() {
     if (roles[0] === 'chauffeur') return <Navigate to="/transport" replace />;
     if (roles[0] === 'surveillant') return <Navigate to="/pointage-eleves" replace />;
     if (roles[0] === 'service_info') return <Navigate to="/service-info-dashboard" replace />;
+    if ((roles[0] as string) === 'tresorier') return <Navigate to="/tresorier-dashboard" replace />;
   }
   return <Navigate to="/dashboard" replace />;
 }
@@ -165,6 +167,7 @@ function AuthRoute() {
       if (roles[0] === 'chauffeur') return <Navigate to="/transport" replace />;
       if (roles[0] === 'surveillant') return <Navigate to="/pointage-eleves" replace />;
       if (roles[0] === 'service_info') return <Navigate to="/service-info-dashboard" replace />;
+      if ((roles[0] as string) === 'tresorier') return <Navigate to="/tresorier-dashboard" replace />;
     }
     return <Navigate to="/dashboard" replace />;
   }
@@ -244,6 +247,7 @@ const App = () => (
             <Route path="/robotique-dashboard" element={<ProtectedRoute><RobotiqueDashboard /></ProtectedRoute>} />
             <Route path="/pointage-eleves" element={<ProtectedRoute><PointageEleves /></ProtectedRoute>} />
             <Route path="/pointeur-pointage" element={<ProtectedRoute><PointeurPointage /></ProtectedRoute>} />
+            <Route path="/tresorier-dashboard" element={<ProtectedRoute><TresorierDashboard /></ProtectedRoute>} />
             <Route path="/eleve/ecriture" element={<StudentAuthProvider><StudentEcriture /></StudentAuthProvider>} />
             <Route path="/eleve/calcul" element={<StudentAuthProvider><StudentCalculMental /></StudentAuthProvider>} />
             <Route path="/eleve/culture" element={<StudentAuthProvider><StudentCultureGenerale /></StudentAuthProvider>} />

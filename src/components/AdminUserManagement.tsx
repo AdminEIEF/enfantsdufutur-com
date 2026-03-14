@@ -26,6 +26,7 @@ const ROLE_LABELS: Record<string, string> = {
   chauffeur: 'Chauffeur de Bus',
   pointeur: 'Pointeur',
   surveillant: 'Surveillant',
+  tresorier: 'Trésorier',
 };
 
 const ROLE_COLORS: Record<string, string> = {
@@ -42,6 +43,7 @@ const ROLE_COLORS: Record<string, string> = {
   chauffeur: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
   pointeur: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
   surveillant: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+  tresorier: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
 };
 
 export default function AdminUserManagement() {
