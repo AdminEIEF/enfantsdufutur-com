@@ -172,6 +172,13 @@ const navSections = [
     ],
   },
   {
+    label: 'Trésorerie',
+    roles: ['tresorier'] as any,
+    items: [
+      { title: 'Tableau de bord', url: '/tresorier-dashboard', icon: Wallet },
+    ],
+  },
+  {
     label: 'Administration',
     roles: ['admin'] as const,
     items: [
