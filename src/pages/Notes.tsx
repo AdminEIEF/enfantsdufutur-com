@@ -372,7 +372,7 @@ export default function Notes() {
             {!cycleId ? 'Sélectionnez un cycle pour commencer' :
              !classeId ? 'Sélectionnez une classe' :
              !periodeId ? 'Sélectionnez une période' :
-             matieres.length === 0 ? 'Aucune matière configurée pour ce niveau' :
+             matieres.length === 0 ? 'Aucune matière assignée à cette classe. Configurez les matières dans Configuration > Classes.' :
              'Aucun élève inscrit dans cette classe'}
           </CardContent>
         </Card>
