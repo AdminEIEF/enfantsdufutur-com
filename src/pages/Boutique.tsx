@@ -1232,6 +1232,14 @@ export default function Boutique() {
     },
   });
 
+  const handleBarcodeScan = useCallback((m: string) => {
+    const found = eleves.find((e: any) => e.matricule === m || e.id === m);
+    if (found) { setSelectedEleve(found); setSearchEleve(`${found.prenom} ${found.nom}`); }
+    else toast.error('Élève introuvable');
+  }, [eleves]);
+
+  useBarcodeScanner({ onScan: handleBarcodeScan });
+
   const filteredEleves = useMemo(() => {
     if (!searchEleve.trim()) return [];
     const q = searchEleve.toLowerCase();
