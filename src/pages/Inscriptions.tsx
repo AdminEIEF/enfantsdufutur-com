@@ -30,6 +30,8 @@ export default function Inscriptions() {
   const [inscriptionMode, setInscriptionMode] = useState<'individuel' | 'famille'>('individuel');
   const [search, setSearch] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
+  const handleBarcodeScan = useCallback((m: string) => setSearch(m), []);
+  useBarcodeScanner({ onScan: handleBarcodeScan });
   const [showComplete, setShowComplete] = useState(false);
   const [selectedCycle, setSelectedCycle] = useState<string>('all');
   const [selectedClasse, setSelectedClasse] = useState<string>('all');
