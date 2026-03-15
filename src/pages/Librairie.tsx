@@ -1071,12 +1071,11 @@ export default function Librairie() {
   const { data: allArticles = [] } = useArticles();
   const { data: allEleves = [] } = useElevesLibrairie();
 
-  // Barcode scanner support (flasheur) - logs scanned matricule to console for sub-tabs to pick up
-  // Since sub-components manage their own selectedEleve, we broadcast via a custom event
+  // Barcode scanner support (flasheur) - find student and show toast
   const handleBarcodeScan = useCallback((m: string) => {
     const found = allEleves.find((e: any) => e.matricule === m || e.id === m);
     if (found) {
-      window.dispatchEvent(new CustomEvent('barcode-scan-eleve', { detail: { matricule: m, eleve: found } }));
+      toast.success(`Élève trouvé : ${found.prenom} ${found.nom} (${found.matricule})`);
     } else {
       toast.error('Élève introuvable');
     }
