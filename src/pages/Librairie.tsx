@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1068,6 +1069,19 @@ function GestionCommandesLibrairiePanel() {
 export default function Librairie() {
   const { data: ventes = [] } = useVentes();
   const { data: allArticles = [] } = useArticles();
+  const { data: allEleves = [] } = useElevesLibrairie();
+
+  // Barcode scanner support (flasheur) - find student and show toast
+  const handleBarcodeScan = useCallback((m: string) => {
+    const found = allEleves.find((e: any) => e.matricule === m || e.id === m);
+    if (found) {
+      toast.success(`Élève trouvé : ${found.prenom} ${found.nom} (${found.matricule})`);
+    } else {
+      toast.error('Élève introuvable');
+    }
+  }, [allEleves]);
+
+  useBarcodeScanner({ onScan: handleBarcodeScan });
 
   const totalArticles = allArticles.length;
   const totalValeur = allArticles.reduce((s: number, a: any) => s + Number(a.prix) * a.stock, 0);

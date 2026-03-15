@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -168,6 +169,8 @@ export default function ValidationTransportBus() {
       handleManualValidation(text.trim());
     }
   };
+
+  useBarcodeScanner({ onScan: handleScan });
 
   const handleManualValidation = async (matricule: string) => {
     if (!matricule) return;

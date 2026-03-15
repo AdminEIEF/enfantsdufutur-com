@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -1231,6 +1232,14 @@ export default function Boutique() {
       return data;
     },
   });
+
+  const handleBarcodeScan = useCallback((m: string) => {
+    const found = eleves.find((e: any) => e.matricule === m || e.id === m);
+    if (found) { setSelectedEleve(found); setSearchEleve(`${found.prenom} ${found.nom}`); }
+    else toast.error('Élève introuvable');
+  }, [eleves]);
+
+  useBarcodeScanner({ onScan: handleBarcodeScan });
 
   const filteredEleves = useMemo(() => {
     if (!searchEleve.trim()) return [];

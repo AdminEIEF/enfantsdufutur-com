@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -394,6 +395,8 @@ export default function Personnel() {
     qc.invalidateQueries({ queryKey: ['pointages-today'] });
     setScannerOpen(false);
   };
+
+  useBarcodeScanner({ onScan: handleScanPointage });
 
   // Approve/reject congé
   const handleConge = async (id: string, statut: 'approuve' | 'refuse', motif?: string) => {

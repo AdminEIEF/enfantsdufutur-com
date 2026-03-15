@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +30,8 @@ export default function Inscriptions() {
   const [inscriptionMode, setInscriptionMode] = useState<'individuel' | 'famille'>('individuel');
   const [search, setSearch] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
+  const handleBarcodeScan = useCallback((m: string) => setSearch(m), []);
+  useBarcodeScanner({ onScan: handleBarcodeScan });
   const [showComplete, setShowComplete] = useState(false);
   const [selectedCycle, setSelectedCycle] = useState<string>('all');
   const [selectedClasse, setSelectedClasse] = useState<string>('all');

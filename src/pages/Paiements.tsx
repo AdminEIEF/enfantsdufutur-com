@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -141,6 +142,8 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
       toast({ title: 'Élève non trouvé', description: `Aucun élève avec le code "${code}"`, variant: 'destructive' });
     }
   };
+
+  useBarcodeScanner({ onScan: handleQRScan });
 
   const selectedEleve = eleves.find((e: any) => e.id === eleveId);
   const niveauIdForTranches = selectedEleve?.classes?.niveau_id || null;

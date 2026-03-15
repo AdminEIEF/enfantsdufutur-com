@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -207,6 +208,8 @@ export default function Cantine() {
   const handleQRScan = (matricule: string) => {
     findEleve(matricule);
   };
+
+  useBarcodeScanner({ onScan: handleQRScan });
 
   // ─── Ajouter un plat ──────────────────────────────
   const addPlat = useMutation({
