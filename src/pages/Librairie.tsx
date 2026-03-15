@@ -1069,6 +1069,20 @@ function GestionCommandesLibrairiePanel() {
 export default function Librairie() {
   const { data: ventes = [] } = useVentes();
   const { data: allArticles = [] } = useArticles();
+  const { data: allEleves = [] } = useElevesLibrairie();
+
+  // Barcode scanner support (flasheur) - logs scanned matricule to console for sub-tabs to pick up
+  // Since sub-components manage their own selectedEleve, we broadcast via a custom event
+  const handleBarcodeScan = useCallback((m: string) => {
+    const found = allEleves.find((e: any) => e.matricule === m || e.id === m);
+    if (found) {
+      window.dispatchEvent(new CustomEvent('barcode-scan-eleve', { detail: { matricule: m, eleve: found } }));
+    } else {
+      toast.error('Élève introuvable');
+    }
+  }, [allEleves]);
+
+  useBarcodeScanner({ onScan: handleBarcodeScan });
 
   const totalArticles = allArticles.length;
   const totalValeur = allArticles.reduce((s: number, a: any) => s + Number(a.prix) * a.stock, 0);
