@@ -205,9 +205,9 @@ export default function Cantine() {
     setScanInput('');
   };
 
-  const handleQRScan = useCallback((matricule: string) => {
+  const handleQRScan = (matricule: string) => {
     findEleve(matricule);
-  }, [findEleve]);
+  };
 
   useBarcodeScanner({ onScan: handleQRScan });
 
