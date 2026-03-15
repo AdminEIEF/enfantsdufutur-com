@@ -396,6 +396,8 @@ export default function Personnel() {
     setScannerOpen(false);
   };
 
+  useBarcodeScanner({ onScan: handleScanPointage });
+
   // Approve/reject congé
   const handleConge = async (id: string, statut: 'approuve' | 'refuse', motif?: string) => {
     const conge = congesEnAttente.find((c: any) => c.id === id);
