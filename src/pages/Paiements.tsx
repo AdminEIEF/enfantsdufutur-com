@@ -143,6 +143,8 @@ function PaiementIndividuelPanel({ eleves, paiements, articles, familles }: { el
     }
   };
 
+  useBarcodeScanner({ onScan: handleQRScan });
+
   const selectedEleve = eleves.find((e: any) => e.id === eleveId);
   const niveauIdForTranches = selectedEleve?.classes?.niveau_id || null;
   const TRANCHES = useMemo(() => getTranchesForNiveau(allTranchesConfig, niveauIdForTranches), [allTranchesConfig, niveauIdForTranches]);

@@ -170,6 +170,8 @@ export default function ValidationTransportBus() {
     }
   };
 
+  useBarcodeScanner({ onScan: handleScan });
+
   const handleManualValidation = async (matricule: string) => {
     if (!matricule) return;
     const { data: eleve } = await supabase

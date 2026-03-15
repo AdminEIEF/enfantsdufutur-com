@@ -205,9 +205,11 @@ export default function Cantine() {
     setScanInput('');
   };
 
-  const handleQRScan = (matricule: string) => {
+  const handleQRScan = useCallback((matricule: string) => {
     findEleve(matricule);
-  };
+  }, [findEleve]);
+
+  useBarcodeScanner({ onScan: handleQRScan });
 
   // ─── Ajouter un plat ──────────────────────────────
   const addPlat = useMutation({
