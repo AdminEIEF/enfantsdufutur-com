@@ -355,8 +355,6 @@ export default function Personnel() {
     onError: (err: any) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
   });
 
-  useBarcodeScanner({ onScan: handleScanPointage });
-
   // QR Scan pointage
   const handleScanPointage = async (matricule: string) => {
     const emp = employes.find((e: any) => e.matricule === matricule);
