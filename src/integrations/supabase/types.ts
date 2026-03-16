@@ -3178,6 +3178,14 @@ export type Database = {
         | "administration"
         | "service"
         | "direction"
+        | "hygiene"
+        | "securite_primaire"
+        | "securite_lycee"
+        | "chauffeur"
+        | "infirmiere"
+        | "librairie"
+        | "cantine"
+        | "surveillant"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3326,6 +3334,14 @@ export const Constants = {
         "administration",
         "service",
         "direction",
+        "hygiene",
+        "securite_primaire",
+        "securite_lycee",
+        "chauffeur",
+        "infirmiere",
+        "librairie",
+        "cantine",
+        "surveillant",
       ],
     },
   },

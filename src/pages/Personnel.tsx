@@ -617,6 +617,8 @@ export default function Personnel() {
 
   const categorieLabel: Record<string, string> = {
     enseignant: 'Enseignant', administration: 'Administration', service: 'Service', direction: 'Direction',
+    hygiene: 'Service Hygiène', securite_primaire: 'Sécurité Primaire', securite_lycee: 'Sécurité Lycée',
+    chauffeur: 'Chauffeur', infirmiere: 'Infirmière', librairie: 'Librairie', cantine: 'Cantine', surveillant: 'Surveillant',
   };
 
   const handleExportExcel = async () => {
@@ -868,11 +870,19 @@ export default function Personnel() {
                 <SelectItem value="administration">Administration</SelectItem>
                 <SelectItem value="service">Service</SelectItem>
                 <SelectItem value="direction">Direction</SelectItem>
+                <SelectItem value="hygiene">Service Hygiène</SelectItem>
+                <SelectItem value="securite_primaire">Sécurité Primaire</SelectItem>
+                <SelectItem value="securite_lycee">Sécurité Lycée</SelectItem>
+                <SelectItem value="chauffeur">Chauffeur</SelectItem>
+                <SelectItem value="infirmiere">Infirmière</SelectItem>
+                <SelectItem value="librairie">Librairie</SelectItem>
+                <SelectItem value="cantine">Cantine</SelectItem>
+                <SelectItem value="surveillant">Surveillant</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="mb-3 flex gap-2 flex-wrap">
-            {['all', 'enseignant', 'administration', 'service', 'direction'].map(cat => {
+            {['all', 'enseignant', 'administration', 'service', 'direction', 'hygiene', 'securite_primaire', 'securite_lycee', 'chauffeur', 'infirmiere', 'librairie', 'cantine', 'surveillant'].map(cat => {
               const count = cat === 'all' ? employes.length : employes.filter((e: any) => e.categorie === cat).length;
               const label = cat === 'all' ? 'Tous' : (categorieLabel[cat] || cat);
               return (
