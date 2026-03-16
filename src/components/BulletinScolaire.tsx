@@ -53,6 +53,7 @@ interface BulletinScolaireProps {
   previousPeriodsNotes?: PeriodNoteByMatiere[];
   moyenneAnnuelle?: number | null;
   moyenneClasse?: number | null;
+  rangAnnuel?: number | null;
 }
 
 const getMention = (moyenne: number | null, bareme: number): string | null => {
