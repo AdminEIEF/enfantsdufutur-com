@@ -45,7 +45,7 @@ export default function Bulletins() {
     queryKey: ['eleves-classe', classeId],
     queryFn: async () => {
       if (!classeId) return [];
-      const { data, error } = await supabase.from('eleves').select('id, nom, prenom, matricule, date_naissance, sexe').eq('classe_id', classeId).order('nom');
+      const { data, error } = await supabase.from('eleves').select('id, nom, prenom, matricule, date_naissance, sexe, photo_url').eq('classe_id', classeId).order('nom');
       if (error) throw error;
       return data;
     },
