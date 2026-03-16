@@ -633,15 +633,23 @@ export default function Personnel() {
   const filtered = employes.filter((e: any) => {
     const q = search.toLowerCase();
     const matchSearch = !q || e.nom.toLowerCase().includes(q) || e.prenom.toLowerCase().includes(q) || e.matricule.toLowerCase().includes(q);
-    const matchCat = filterCategorie === 'all' || e.categorie === filterCategorie;
+    const effectiveCat = e.categorie === 'enseignant' 
+      ? (e.matricule?.startsWith('ENP') ? 'enseignant_primaire' : 'enseignant_secondaire')
+      : e.categorie;
+    const matchCat = filterCategorie === 'all' || effectiveCat === filterCategorie;
     return matchSearch && matchCat;
   });
 
   const categorieLabel: Record<string, string> = {
+    enseignant_primaire: 'Enseignant Primaire', enseignant_secondaire: 'Enseignant Secondaire',
     enseignant: 'Enseignant', administration: 'Administration', service: 'Service', direction: 'Direction',
     hygiene: 'Service Hygiène', securite_primaire: 'Sécurité Primaire', securite_lycee: 'Sécurité Lycée',
     chauffeur: 'Chauffeur', infirmiere: 'Infirmière', librairie: 'Librairie', cantine: 'Cantine', surveillant: 'Surveillant',
   };
+
+  const getEffectiveCat = (e: any) => e.categorie === 'enseignant' 
+    ? (e.matricule?.startsWith('ENP') ? 'enseignant_primaire' : 'enseignant_secondaire')
+    : e.categorie;
 
   const handleExportExcel = async () => {
     const dataToExport = filtered.map((e: any) => ({
@@ -649,7 +657,7 @@ export default function Personnel() {
       'Nom': e.nom,
       'Prénom': e.prenom,
       'Sexe': e.sexe || '',
-      'Catégorie': categorieLabel[e.categorie] || e.categorie,
+      'Catégorie': categorieLabel[getEffectiveCat(e)] || e.categorie,
       'Poste': e.poste || '',
       'Téléphone': e.telephone || '',
       'Email': e.email || '',
@@ -934,7 +942,8 @@ export default function Personnel() {
               <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Toutes catégories" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Toutes catégories</SelectItem>
-                <SelectItem value="enseignant">Enseignants</SelectItem>
+                <SelectItem value="enseignant_primaire">Enseignants Primaire</SelectItem>
+                <SelectItem value="enseignant_secondaire">Enseignants Secondaire</SelectItem>
                 <SelectItem value="administration">Administration</SelectItem>
                 <SelectItem value="service">Service</SelectItem>
                 <SelectItem value="direction">Direction</SelectItem>
@@ -950,8 +959,8 @@ export default function Personnel() {
             </Select>
           </div>
           <div className="mb-3 flex gap-2 flex-wrap">
-            {['all', 'enseignant', 'administration', 'service', 'direction', 'hygiene', 'securite_primaire', 'securite_lycee', 'chauffeur', 'infirmiere', 'librairie', 'cantine', 'surveillant'].map(cat => {
-              const count = cat === 'all' ? employes.length : employes.filter((e: any) => e.categorie === cat).length;
+            {['all', 'enseignant_primaire', 'enseignant_secondaire', 'administration', 'service', 'direction', 'hygiene', 'securite_primaire', 'securite_lycee', 'chauffeur', 'infirmiere', 'librairie', 'cantine', 'surveillant'].map(cat => {
+              const count = cat === 'all' ? employes.length : employes.filter((e: any) => getEffectiveCat(e) === cat).length;
               const label = cat === 'all' ? 'Tous' : (categorieLabel[cat] || cat);
               return (
                 <Badge key={cat} variant={filterCategorie === cat ? 'default' : 'outline'} className="cursor-pointer" onClick={() => setFilterCategorie(cat)}>
@@ -995,7 +1004,7 @@ export default function Personnel() {
                         <TableRow key={emp.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedEmp(emp)}>
                           <TableCell className="font-mono text-xs">{emp.matricule}</TableCell>
                           <TableCell className="font-medium">{emp.prenom} {emp.nom}</TableCell>
-                          <TableCell><Badge variant="secondary" className="text-xs">{categorieLabel[emp.categorie] || emp.categorie}</Badge></TableCell>
+                          <TableCell><Badge variant="secondary" className="text-xs">{categorieLabel[getEffectiveCat(emp)] || emp.categorie}</Badge></TableCell>
                           <TableCell className="text-sm">{emp.poste}</TableCell>
                           <TableCell className="text-sm">{Number(emp.salaire_base).toLocaleString()} GNF</TableCell>
                           <TableCell><Badge variant={emp.statut === 'actif' ? 'default' : 'destructive'}>{emp.statut}</Badge></TableCell>
@@ -1426,7 +1435,7 @@ export default function Personnel() {
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
                     <div><span className="text-muted-foreground">Matricule:</span> <span className="font-mono">{selectedEmp.matricule}</span></div>
-                    <div><span className="text-muted-foreground">Catégorie:</span> {categorieLabel[selectedEmp.categorie]}</div>
+                    <div><span className="text-muted-foreground">Catégorie:</span> {categorieLabel[getEffectiveCat(selectedEmp)]}</div>
                     <div><span className="text-muted-foreground">Poste:</span> {selectedEmp.poste || '—'}</div>
                     <div><span className="text-muted-foreground">Sexe:</span> {selectedEmp.sexe || '—'}</div>
                     <div><span className="text-muted-foreground">Téléphone:</span> {selectedEmp.telephone || '—'}</div>
