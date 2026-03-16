@@ -51,8 +51,6 @@ interface BulletinScolaireProps {
   schoolLogoUrl?: string | null;
   isFinalPeriod?: boolean;
   previousPeriodsNotes?: PeriodNoteByMatiere[];
-  moyenneAnnuelle?: number | null;
-  moyenneClasse?: number | null;
   rangAnnuel?: number | null;
 }
 
