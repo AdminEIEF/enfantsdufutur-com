@@ -412,9 +412,7 @@ export default function Bulletins() {
                    .filter((p: any) => p.ordre <= currentOrdre)
                     .sort((a: any, b: any) => a.ordre - b.ordre)
                     .map((p: any) => {
-                      const pNotes = p.id === periodeId
-                        ? allClassNotes
-                        : allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                      const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
                       const pAvg = computeAverage(selectedEleve, pNotes);
                       // Compute rank for this period
                       const pAvgs = eleves.map((e: any) => ({
@@ -637,9 +635,7 @@ export default function Bulletins() {
                   .filter((p: any) => p.ordre <= currentOrdre)
                   .sort((a: any, b: any) => a.ordre - b.ordre)
                   .map((p: any) => {
-                    const pNotes = p.id === periodeId
-                      ? allClassNotes
-                      : allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                    const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
                     const pAvg = computeAverage(selectedEleve, pNotes);
                     const pAvgs = eleves.map((e: any) => ({
                       id: e.id,
@@ -669,7 +665,7 @@ export default function Bulletins() {
                   .filter((p: any) => p.ordre <= currentOrdre)
                   .sort((a: any, b: any) => a.ordre - b.ordre)
                   .map((p: any) => {
-                    const pNotes = p.id === periodeId ? allClassNotes : allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                    const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
                     const avgs = eleves.map((e: any) => computeAverage(e.id, pNotes)).filter((a): a is number => a !== null);
                     return avgs.length > 0 ? avgs.reduce((a, b) => a + b, 0) / avgs.length : null;
                   });
@@ -748,10 +744,8 @@ export default function Bulletins() {
                   .filter((p: any) => p.ordre <= currentOrdre)
                   .sort((a: any, b: any) => a.ordre - b.ordre)
                   .map((p: any) => {
-                    const pNotes = p.id === periodeId
-                      ? allClassNotes.filter((n: any) => n.eleve_id === selectedEleve)
-                      : allAnnualNotes.filter((n: any) => n.periode_id === p.id && n.eleve_id === selectedEleve);
-                    const avg = computeAverage(selectedEleve, p.id === periodeId ? allClassNotes : allAnnualNotes.filter((n: any) => n.periode_id === p.id));
+                    const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                    const avg = computeAverage(selectedEleve, pNotes);
                     return { periode: p.nom, moyenne: avg };
                   })
                   .filter(d => d.moyenne !== null);
