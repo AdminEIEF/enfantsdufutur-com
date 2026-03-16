@@ -227,9 +227,6 @@ export default function BulletinScolaire({
                   <td style={{ ...cellCenter, fontWeight: 600 }}>
                     {total !== null ? total.toFixed(2) : '—'}
                   </td>
-                  {isFinalPeriod && (
-                    <td style={{ ...cellCenter }}>{b.rang || '—'}</td>
-                  )}
                   <td style={{ padding: '2px 5px', textAlign: 'center', verticalAlign: 'middle', color: '#6b7280', fontStyle: 'italic', fontSize: '8px' }}>{b.appreciation || '—'}</td>
                 </tr>
               );
