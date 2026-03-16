@@ -250,7 +250,7 @@ export default function Bulletins() {
   const major = rankings.length > 0 && rankings[0].moyenne !== null ? rankings[0] : null;
 
   const eleve = eleves.find((e: any) => e.id === selectedEleve);
-  const periode = periodes.find((p: any) => p.id === periodeId);
+  // periode already declared above
 
   const getAppreciation = (note: number | null) => {
     if (note === null) return null;
