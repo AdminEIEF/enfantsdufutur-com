@@ -333,9 +333,19 @@ export default function TresorierGestionSalaires() {
 
   return (
     <div className="space-y-6 p-2 sm:p-4">
-      <div className="flex items-center gap-3">
-        <Banknote className="h-7 w-7 text-emerald-600" />
-        <h1 className="text-2xl font-bold">{filterMode ? filterMode.label : 'Gestion Salaires'} — {format(new Date(), 'MMMM yyyy', { locale: fr })}</h1>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-3">
+          <Banknote className="h-7 w-7 text-emerald-600" />
+          <h1 className="text-2xl font-bold">{filterMode ? filterMode.label : 'Gestion Salaires'} — {format(new Date(), 'MMMM yyyy', { locale: fr })}</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handlePrintListe}>
+            <Printer className="h-4 w-4 mr-1" /> Imprimer
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownloadListe}>
+            <Download className="h-4 w-4 mr-1" /> Télécharger PDF
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
