@@ -1004,7 +1004,7 @@ export default function Personnel() {
                         <TableRow key={emp.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedEmp(emp)}>
                           <TableCell className="font-mono text-xs">{emp.matricule}</TableCell>
                           <TableCell className="font-medium">{emp.prenom} {emp.nom}</TableCell>
-                          <TableCell><Badge variant="secondary" className="text-xs">{categorieLabel[emp.categorie] || emp.categorie}</Badge></TableCell>
+                          <TableCell><Badge variant="secondary" className="text-xs">{categorieLabel[getEffectiveCat(emp)] || emp.categorie}</Badge></TableCell>
                           <TableCell className="text-sm">{emp.poste}</TableCell>
                           <TableCell className="text-sm">{Number(emp.salaire_base).toLocaleString()} GNF</TableCell>
                           <TableCell><Badge variant={emp.statut === 'actif' ? 'default' : 'destructive'}>{emp.statut}</Badge></TableCell>
