@@ -91,15 +91,15 @@ export default function Bulletins() {
 
   // All period notes for annual average (paginated to avoid 1000-row limit)
   const { data: allAnnualNotes = [] } = useQuery({
-    queryKey: ['notes-annuelles-classe', classeId],
+    queryKey: ['notes-annuelles-classe', classeId, periodeId],
     queryFn: async () => {
       if (!classeId) return [];
       const eleveIds = eleves.map((e: any) => e.id);
-      const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage).map((p: any) => p.id);
-      if (eleveIds.length === 0 || regularPeriodes.length === 0) return [];
-      // Fetch per period to avoid 1000-row limit
+      const otherPeriodes = periodes.filter((p: any) => !p.est_rattrapage && p.id !== periodeId).map((p: any) => p.id);
+      if (eleveIds.length === 0 || otherPeriodes.length === 0) return [];
+      // Fetch per period to avoid 1000-row limit (skip current period, we use allClassNotes for it)
       const allNotes: any[] = [];
-      for (const pId of regularPeriodes) {
+      for (const pId of otherPeriodes) {
         const { data, error } = await supabase
           .from('notes')
           .select('*, matieres(nom, coefficient, pole)')
@@ -110,8 +110,13 @@ export default function Bulletins() {
       }
       return allNotes;
     },
-    enabled: !!classeId && eleves.length > 0 && periodes.length > 0,
+    enabled: !!classeId && !!periodeId && eleves.length > 0 && periodes.length > 0,
   });
+
+  // Merged notes: allAnnualNotes (other periods) + allClassNotes (current period) = complete year data
+  const mergedAllNotes = useMemo(() => {
+    return [...allAnnualNotes, ...allClassNotes];
+  }, [allAnnualNotes, allClassNotes]);
 
   const bareme = selectedCl?.niveaux?.cycles?.bareme ?? 20;
   const seuil = bareme / 2;
@@ -134,6 +139,7 @@ export default function Bulletins() {
     [periodes]
   );
 
+  // Get notes for a specific period: current period from allClassNotes (fresh), others from allAnnualNotes
   const getNotesForPeriod = (targetPeriodeId: string) => (
     targetPeriodeId === periodeId
       ? allClassNotes
