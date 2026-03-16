@@ -205,17 +205,17 @@ export default function BulletinScolaire({
         <table style={{ fontSize: '9.5px' }}>
           <thead>
             <tr style={{ backgroundColor: '#047857', color: 'white' }}>
-              <th style={{ padding: '4px 4px', textAlign: 'left', fontWeight: 700, verticalAlign: 'middle', whiteSpace: 'nowrap' }}>Matière</th>
-              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '22px', fontSize: '9px', verticalAlign: 'middle' }}>Coef</th>
+              <th style={{ padding: '3px 3px', textAlign: 'left', fontWeight: 700, verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Matière</th>
+              <th style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '24px', fontSize: '8px', verticalAlign: 'middle' }}>Coef</th>
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
-                <th key={pp.periodeName} style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '42px', fontSize: '11px', verticalAlign: 'middle' }}>{pp.periodeName}</th>
+                <th key={pp.periodeName} style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '40px', fontSize: '8.5px', verticalAlign: 'middle' }}>{pp.periodeName}</th>
               ))}
-              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '55px', verticalAlign: 'middle' }}>Moyenne</th>
-              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '58px', verticalAlign: 'middle' }}>Moy×Coef</th>
+              <th style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '50px', verticalAlign: 'middle' }}>Moyenne</th>
+              <th style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '54px', verticalAlign: 'middle' }}>Moy×Coef</th>
               {isFinalPeriod && (
-                <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '30px', verticalAlign: 'middle' }}>Rang</th>
+                <th style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '28px', verticalAlign: 'middle' }}>Rang</th>
               )}
-              <th style={{ padding: '4px 4px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>Appréciation</th>
+              <th style={{ padding: '3px 3px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>Appréciation</th>
             </tr>
           </thead>
           <tbody>
