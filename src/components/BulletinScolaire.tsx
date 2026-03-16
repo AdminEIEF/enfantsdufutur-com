@@ -86,6 +86,7 @@ export default function BulletinScolaire({
   plusForte = null,
   plusFaible = null,
   moyenneAnnuelle = null,
+  moyenneClasse = null,
   bareme,
   seuil,
   previousPeriods,
