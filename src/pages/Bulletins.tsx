@@ -243,11 +243,10 @@ export default function Bulletins() {
 
   // Annual ranking based on moyenneAnnuelleSimple (average of period averages)
   const annualRankings = useMemo(() => {
-    const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
     const avgs = eleves.map((e: any) => {
       const periodAverages: number[] = [];
       regularPeriodes.forEach((p: any) => {
-        const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id && n.eleve_id === e.id);
+        const pNotes = getNotesForPeriod(p.id).filter((n: any) => n.eleve_id === e.id);
         const avg = computeAverage(e.id, pNotes);
         if (avg !== null) periodAverages.push(avg);
       });
@@ -262,7 +261,7 @@ export default function Bulletins() {
       if (a.moyenne !== lastAvg) { rank = i + 1; lastAvg = a.moyenne; }
       return { ...a, rang: a.moyenne !== null ? rank : null };
     });
-  }, [eleves, allAnnualNotes, periodes]);
+  }, [eleves, allAnnualNotes, allClassNotes, periodeId, regularPeriodes]);
   const annualRank = annualRankings.find(r => r.id === selectedEleve);
 
   // Major of class
