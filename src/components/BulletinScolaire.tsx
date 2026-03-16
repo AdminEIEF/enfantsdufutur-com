@@ -254,7 +254,7 @@ export default function BulletinScolaire({
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
                 <td key={pp.periodeName} style={{ ...cellCenter }}></td>
               ))}
-              <td style={{ ...cellCenter, fontWeight: 800, fontSize: '9.5px', color: moyennePeriode !== null && moyennePeriode < seuil ? '#dc2626' : '#047857' }}>
+              <td style={{ ...cellCenter, fontWeight: 800, fontSize: '11px', color: moyennePeriode !== null && moyennePeriode < seuil ? '#dc2626' : '#047857' }}>
                 {(() => {
                   const sommeMoyennes = bulletinData.reduce((s, b) => s + (b.note !== null ? b.note : 0), 0);
                   const hasNotes = bulletinData.some(b => b.note !== null);
