@@ -137,7 +137,7 @@ export default function BulletinScolaire({
           [data-bulletin-a4] { width: 210mm !important; max-height: 297mm !important; padding: 5mm 7mm !important; }
           [data-bulletin-a4] * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
-        [data-bulletin-a4] table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+        [data-bulletin-a4] table { border-collapse: collapse; width: 100%; table-layout: auto; }
         [data-bulletin-a4] th, [data-bulletin-a4] td { border: 1px solid #c9cdd3; vertical-align: middle; }
       `}</style>
 
@@ -194,7 +194,7 @@ export default function BulletinScolaire({
         <table style={{ fontSize: '9px' }}>
           <thead>
             <tr style={{ backgroundColor: '#047857', color: 'white' }}>
-              <th style={{ padding: '4px 4px', textAlign: 'left', fontWeight: 700, verticalAlign: 'middle', width: '90px', maxWidth: '90px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>Matière</th>
+              <th style={{ padding: '4px 4px', textAlign: 'left', fontWeight: 700, verticalAlign: 'middle', whiteSpace: 'nowrap' }}>Matière</th>
               <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '28px', verticalAlign: 'middle' }}>Coef</th>
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
                 <th key={pp.periodeName} style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '38px', fontSize: '8px', verticalAlign: 'middle' }}>{pp.periodeName}</th>
@@ -213,7 +213,7 @@ export default function BulletinScolaire({
               const total = b.note !== null ? b.note * b.coefficient : null;
               return (
                 <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', height: '20px' }}>
-                  <td style={{ padding: '2px 4px', fontWeight: 500, verticalAlign: 'middle', fontSize: '8.5px', maxWidth: '90px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{b.matiere}</td>
+                  <td style={{ padding: '2px 4px', fontWeight: 500, verticalAlign: 'middle', fontSize: '8.5px', whiteSpace: 'nowrap' }}>{b.matiere}</td>
                   <td style={{ ...cellCenter, color: '#6b7280', fontWeight: 600 }}>{b.coefficient}</td>
                   {isFinalPeriod && previousPeriodsNotes.map((pp) => {
                     const prevNote = pp.notesByMatiere[b.matiere] ?? null;
