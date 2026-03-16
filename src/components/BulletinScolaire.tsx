@@ -373,7 +373,7 @@ export default function BulletinScolaire({
             {eleve.matricule && (
               <>
                 <QRCodeSVG
-                  value={`${window.location.origin}/eleve?matricule=${encodeURIComponent(eleve.matricule)}`}
+                  value="https://enfantsdufutur.com/"
                   size={44}
                   level="M"
                   includeMargin={false}
