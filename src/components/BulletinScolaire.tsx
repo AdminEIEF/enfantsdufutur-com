@@ -153,7 +153,7 @@ export default function BulletinScolaire({
         <div style={{ fontSize: '8px', color: '#6b7280', fontStyle: 'italic', marginTop: '1px' }}>Travail - Justice - Solidarité</div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2.5px solid #047857', paddingBottom: '5px', marginBottom: '5px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2.5px solid #047857', paddingBottom: '5px', marginBottom: '5px', position: 'relative' }}>
         {/* Logo à gauche */}
         <div style={{ flexShrink: 0 }}>
           {schoolLogoUrl ? (
