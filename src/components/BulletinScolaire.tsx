@@ -69,11 +69,13 @@ const getMention = (moyenne: number | null, bareme: number): string | null => {
 };
 
 const cellCenter: React.CSSProperties = {
-  padding: '3px 4px',
+  padding: '2px 3px',
   textAlign: 'center',
   verticalAlign: 'middle',
   fontFamily: "'JetBrains Mono', 'Courier New', monospace",
-  fontSize: '12.5px',
+  fontSize: '10.5px',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
 };
 
 export default function BulletinScolaire({
@@ -208,8 +210,8 @@ export default function BulletinScolaire({
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
                 <th key={pp.periodeName} style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '42px', fontSize: '11px', verticalAlign: 'middle' }}>{pp.periodeName}</th>
               ))}
-              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '50px', verticalAlign: 'middle' }}>Moyenne</th>
-              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '54px', verticalAlign: 'middle' }}>Moy×Coef</th>
+              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '55px', verticalAlign: 'middle' }}>Moyenne</th>
+              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '58px', verticalAlign: 'middle' }}>Moy×Coef</th>
               {isFinalPeriod && (
                 <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '30px', verticalAlign: 'middle' }}>Rang</th>
               )}
@@ -228,7 +230,7 @@ export default function BulletinScolaire({
                     const prevNote = pp.notesByMatiere[b.matiere] ?? null;
                     const prevBelowAvg = prevNote !== null && prevNote < seuil;
                     return (
-                      <td key={pp.periodeName} style={{ ...cellCenter, fontSize: '11.5px', color: prevBelowAvg ? '#dc2626' : '#374151' }}>
+                      <td key={pp.periodeName} style={{ ...cellCenter, fontSize: '10px', color: prevBelowAvg ? '#dc2626' : '#374151' }}>
                         {prevNote !== null ? prevNote.toFixed(2) : '—'}
                       </td>
                     );
