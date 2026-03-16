@@ -311,9 +311,9 @@ export default function BulletinScolaire({
 
         {/* Récapitulatif périodes précédentes */}
         <div style={{ border: '1px solid #e2e8f0', borderRadius: '5px', padding: '6px' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, color: '#047857', marginBottom: '3px', textAlign: 'center' }}>Récapitulatif des évaluations</div>
+          <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#047857', marginBottom: '3px', textAlign: 'center' }}>Récapitulatif des évaluations</div>
           {previousPeriods.length > 0 ? (
-            <table style={{ fontSize: '9.5px' }}>
+            <table style={{ fontSize: '11px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#f1f5f9' }}>
                   <th style={{ padding: '2px 4px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle' }}>Évaluation</th>
