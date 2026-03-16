@@ -343,7 +343,7 @@ export default function Personnel() {
   const addEmployee = useMutation({
     mutationFn: async () => {
       if (!form.nom || !form.prenom) throw new Error('Nom et prénom obligatoires');
-      const prefixMap: Record<string, string> = { enseignant_primaire: 'ENP', enseignant_secondaire: 'ENS', administration: 'ADM', service: 'SRV', direction: 'DIR', hygiene: 'HYG', securite_primaire: 'SCP', securite_lycee: 'SCL', chauffeur: 'CHF', infirmiere: 'INF', librairie: 'LIB', cantine: 'CAN', surveillant: 'SUR' };
+      const prefixMap: Record<string, string> = { enseignant_primaire: 'ENP', enseignant_secondaire: 'ESC', administration: 'ADM', service: 'SRV', direction: 'DIR', hygiene: 'HYG', securite_primaire: 'SCP', securite_lycee: 'SCL', chauffeur: 'CHF', infirmiere: 'INF', librairie: 'LIB', cantine: 'CAN', surveillant: 'SUR' };
       const prefix = prefixMap[form.categorie] || 'EMP';
       const { count } = await supabase.from('employes').select('id', { count: 'exact', head: true });
       const num = String((count || 0) + 1).padStart(4, '0');
@@ -634,7 +634,7 @@ export default function Personnel() {
     const q = search.toLowerCase();
     const matchSearch = !q || e.nom.toLowerCase().includes(q) || e.prenom.toLowerCase().includes(q) || e.matricule.toLowerCase().includes(q);
     const effectiveCat = e.categorie === 'enseignant' 
-      ? (e.matricule?.startsWith('ENP') ? 'enseignant_primaire' : 'enseignant_secondaire')
+      ? (e.matricule?.startsWith('ESC') ? 'enseignant_secondaire' : 'enseignant_primaire')
       : e.categorie;
     const matchCat = filterCategorie === 'all' || effectiveCat === filterCategorie;
     return matchSearch && matchCat;
@@ -648,7 +648,7 @@ export default function Personnel() {
   };
 
   const getEffectiveCat = (e: any) => e.categorie === 'enseignant' 
-    ? (e.matricule?.startsWith('ENP') ? 'enseignant_primaire' : 'enseignant_secondaire')
+    ? (e.matricule?.startsWith('ESC') ? 'enseignant_secondaire' : 'enseignant_primaire')
     : e.categorie;
 
   const handleExportExcel = async () => {
