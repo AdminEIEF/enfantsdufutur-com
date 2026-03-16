@@ -350,10 +350,11 @@ export default function Personnel() {
       const matricule = `${prefix}-${num}`;
       const autoPassword = form.prenom.slice(0, 3).toLowerCase() + num + String(Math.floor(Math.random() * 100)).padStart(2, '0');
 
+      const dbCategorie = (form.categorie === 'enseignant_primaire' || form.categorie === 'enseignant_secondaire') ? 'enseignant' : form.categorie;
       const { data: inserted, error } = await supabase.from('employes').insert({
         matricule, nom: form.nom, prenom: form.prenom, sexe: form.sexe,
         telephone: form.telephone || null, email: form.email || null,
-        adresse: form.adresse || null, categorie: form.categorie as any,
+        adresse: form.adresse || null, categorie: dbCategorie as any,
         poste: form.poste, salaire_base: Number(form.salaire_base) || 0,
         date_embauche: form.date_embauche, mot_de_passe: autoPassword,
       }).select('id').single();
