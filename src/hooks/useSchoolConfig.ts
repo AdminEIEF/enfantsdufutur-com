@@ -5,6 +5,7 @@ export interface SchoolConfig {
   nom: string;
   soustitre: string;
   ville: string;
+  telephone: string;
   logo_url: string | null;
 }
 
@@ -12,6 +13,7 @@ const DEFAULT_CONFIG: SchoolConfig = {
   nom: 'Ecole Internationale Les Enfants du Futur',
   soustitre: 'Enseignement Général et Technique',
   ville: 'Conakry, Guinée',
+  telephone: '',
   logo_url: null,
 };
 
@@ -31,6 +33,7 @@ export function useSchoolConfig() {
         nom: val.nom || DEFAULT_CONFIG.nom,
         soustitre: val.soustitre || DEFAULT_CONFIG.soustitre,
         ville: val.ville || DEFAULT_CONFIG.ville,
+        telephone: val.telephone || DEFAULT_CONFIG.telephone,
         logo_url: val.logo_url || null,
       } as SchoolConfig;
     },
