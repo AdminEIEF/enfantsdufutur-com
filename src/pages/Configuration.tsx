@@ -1484,6 +1484,10 @@ function EcoleTab() {
             <Input value={ville} onChange={e => setVille(e.target.value)} placeholder="Ex: Conakry, Guinée" />
           </div>
           <div>
+            <Label>Téléphone</Label>
+            <Input value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="Ex: +224 XXX XXX XXX" />
+          </div>
+          <div className="md:col-span-2">
             <Label>URL du logo (alternative)</Label>
             <Input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." className="text-xs" />
           </div>
