@@ -599,10 +599,12 @@ export default function Bulletins() {
                 const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
                 const currentOrdre = periode?.ordre ?? 0;
                 const prevPeriods = regularPeriodes
-                  .filter((p: any) => p.ordre < currentOrdre)
+                  .filter((p: any) => p.ordre <= currentOrdre)
                   .sort((a: any, b: any) => a.ordre - b.ordre)
                   .map((p: any) => {
-                    const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                    const pNotes = p.id === periodeId
+                      ? allClassNotes
+                      : allAnnualNotes.filter((n: any) => n.periode_id === p.id);
                     const pAvg = computeAverage(selectedEleve, pNotes);
                     const pAvgs = eleves.map((e: any) => ({
                       id: e.id,
@@ -627,10 +629,75 @@ export default function Bulletins() {
                     }
                     return { periodeName: p.nom, moyenne: pAvg, rang: studentRank?.rang ?? null, effectif: eleves.length, mention };
                   });
+                // Compute class average for each period
+                const moyenneClasseParPeriode = regularPeriodes
+                  .filter((p: any) => p.ordre <= currentOrdre)
+                  .sort((a: any, b: any) => a.ordre - b.ordre)
+                  .map((p: any) => {
+                    const pNotes = p.id === periodeId ? allClassNotes : allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                    const avgs = eleves.map((e: any) => computeAverage(e.id, pNotes)).filter((a): a is number => a !== null);
+                    return avgs.length > 0 ? avgs.reduce((a, b) => a + b, 0) / avgs.length : null;
+                  });
                 return prevPeriods.length > 0 ? (
                   <Card className="mt-4">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Récapitulatif des évaluations précédentes</CardTitle>
+                      <CardTitle className="text-sm">Récapitulatif des évaluations</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/50">
+                            <TableHead>Évaluation</TableHead>
+                            <TableHead className="text-center">Moyenne</TableHead>
+                            <TableHead className="text-center">Moy. Classe</TableHead>
+                            <TableHead className="text-center">Rang</TableHead>
+                            <TableHead className="text-center">Mention</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {prevPeriods.map((pp, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell className="font-medium">{pp.periodeName}</TableCell>
+                              <TableCell className={`text-center font-mono font-bold ${pp.moyenne !== null && pp.moyenne < seuil ? 'text-destructive' : ''}`}>
+                                {pp.moyenne !== null ? `${pp.moyenne.toFixed(2)}/${bareme}` : '—'}
+                              </TableCell>
+                              <TableCell className="text-center font-mono text-muted-foreground">
+                                {moyenneClasseParPeriode[idx] !== null ? `${moyenneClasseParPeriode[idx]!.toFixed(2)}/${bareme}` : '—'}
+                              </TableCell>
+                              <TableCell className="text-center font-mono">
+                                {pp.rang !== null ? `${pp.rang}e/${pp.effectif}` : '—'}
+                              </TableCell>
+                              <TableCell className="text-center italic">
+                                {pp.mention || '—'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {/* Ligne Moyenne Annuelle */}
+                          {prevPeriods.length > 1 && (
+                            <TableRow className="bg-primary/5 font-bold">
+                              <TableCell className="font-bold">Moyenne Annuelle</TableCell>
+                              <TableCell className={`text-center font-mono font-bold ${moyenneAnnuelleSimple !== null && moyenneAnnuelleSimple < seuil ? 'text-destructive' : 'text-accent'}`}>
+                                {moyenneAnnuelleSimple !== null ? `${moyenneAnnuelleSimple.toFixed(2)}/${bareme}` : '—'}
+                              </TableCell>
+                              <TableCell className="text-center font-mono text-muted-foreground">
+                                {moyenneClasse !== null ? `${moyenneClasse.toFixed(2)}/${bareme}` : '—'}
+                              </TableCell>
+                              <TableCell className="text-center font-mono">
+                                {annualRank?.rang !== null ? `${annualRank?.rang}e/${totalClasseEleves}` : '—'}
+                              </TableCell>
+                              <TableCell className="text-center italic">
+                                {moyenneAnnuelleSimple !== null ? (() => {
+                                  const ratio = moyenneAnnuelleSimple / bareme;
+                                  if (ratio >= 0.85) return 'Excellent';
+                                  if (ratio >= 0.70) return 'Très Bien';
+                                  if (ratio >= 0.60) return 'Bien';
+                                  if (ratio >= 0.50) return 'Assez Bien';
+                                  if (ratio >= 0.40) return 'Passable';
+                                  return 'Insuffisant';
+                                })() : '—'}
+                              </TableCell>
+                            </TableRow>
+                          )}
                     </CardHeader>
                     <CardContent className="p-0">
                       <Table>
