@@ -163,7 +163,7 @@ export default function BulletinScolaire({
           </tbody>
           <tfoot>
             <tr className="bg-emerald-50 font-bold">
-              <td className="border border-gray-300 px-2 py-1.5">MOYENNE GÉNÉRALE</td>
+              <td className="border border-gray-300 px-2 py-1.5">TOTAL DES POINTS</td>
               <td className="border border-gray-300 px-1 py-1.5 text-center">{totalCoef}</td>
               <td className={`border border-gray-300 px-1 py-1.5 text-center font-mono ${moyennePeriode !== null && moyennePeriode < seuil ? 'text-red-600' : 'text-emerald-700'}`}>
                 {moyennePeriode !== null ? moyennePeriode.toFixed(2) : '—'}
