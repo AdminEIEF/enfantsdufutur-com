@@ -446,6 +446,8 @@ export default function Bulletins() {
                       return { periodeName: p.nom, notesByMatiere };
                     });
                 })()}
+                moyenneAnnuelle={moyenneAnnuelleSimple}
+                moyenneClasse={moyenneClasse}
               />
             </div>
           ) : (
