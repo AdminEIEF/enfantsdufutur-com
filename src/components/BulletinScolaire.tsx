@@ -340,7 +340,7 @@ export default function BulletinScolaire({
               </tbody>
             </table>
           ) : (
-            <div style={{ fontSize: '9px', color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>Première évaluation — aucun historique</div>
+            <div style={{ fontSize: '8px', color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>Première évaluation — aucun historique</div>
           )}
         </div>
       </div>
