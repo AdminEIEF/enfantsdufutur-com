@@ -633,15 +633,23 @@ export default function Personnel() {
   const filtered = employes.filter((e: any) => {
     const q = search.toLowerCase();
     const matchSearch = !q || e.nom.toLowerCase().includes(q) || e.prenom.toLowerCase().includes(q) || e.matricule.toLowerCase().includes(q);
-    const matchCat = filterCategorie === 'all' || e.categorie === filterCategorie;
+    const effectiveCat = e.categorie === 'enseignant' 
+      ? (e.matricule?.startsWith('ENP') ? 'enseignant_primaire' : 'enseignant_secondaire')
+      : e.categorie;
+    const matchCat = filterCategorie === 'all' || effectiveCat === filterCategorie;
     return matchSearch && matchCat;
   });
 
   const categorieLabel: Record<string, string> = {
+    enseignant_primaire: 'Enseignant Primaire', enseignant_secondaire: 'Enseignant Secondaire',
     enseignant: 'Enseignant', administration: 'Administration', service: 'Service', direction: 'Direction',
     hygiene: 'Service Hygiène', securite_primaire: 'Sécurité Primaire', securite_lycee: 'Sécurité Lycée',
     chauffeur: 'Chauffeur', infirmiere: 'Infirmière', librairie: 'Librairie', cantine: 'Cantine', surveillant: 'Surveillant',
   };
+
+  const getEffectiveCat = (e: any) => e.categorie === 'enseignant' 
+    ? (e.matricule?.startsWith('ENP') ? 'enseignant_primaire' : 'enseignant_secondaire')
+    : e.categorie;
 
   const handleExportExcel = async () => {
     const dataToExport = filtered.map((e: any) => ({
