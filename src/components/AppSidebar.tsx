@@ -280,7 +280,7 @@ export function AppSidebar() {
           const chatBubble = document.querySelector('[data-ai-chat-trigger]') as HTMLButtonElement;
           if (chatBubble) chatBubble.click();
         }}>
-          <Bot className="mr-2 h-4 w-4" />
+          <Sparkles className="mr-2 h-4 w-4" />
           Assistance IA
         </Button>
       </SidebarFooter>
