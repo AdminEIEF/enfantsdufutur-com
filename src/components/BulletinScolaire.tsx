@@ -148,37 +148,35 @@ export default function BulletinScolaire({
 
       {/* ── En-tête ── */}
       {/* République de Guinée - centré au-dessus */}
-      <div style={{ textAlign: 'center', marginBottom: '4px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '3px' }}>
         <div style={{ fontSize: '10px', fontWeight: 800, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>République de Guinée</div>
         <div style={{ fontSize: '8px', color: '#6b7280', fontStyle: 'italic', marginTop: '1px' }}>Travail - Justice - Solidarité</div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2.5px solid #047857', paddingBottom: '5px', marginBottom: '5px' }}>
-        {/* Logo + Nom école */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Logo seul à gauche */}
+        <div style={{ flexShrink: 0 }}>
           {schoolLogoUrl ? (
-            <img src={schoolLogoUrl} alt="Logo" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} crossOrigin="anonymous" />
+            <img src={schoolLogoUrl} alt="Logo" style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover' }} crossOrigin="anonymous" />
           ) : (
-            <div style={{ width: '48px', height: '48px', backgroundColor: '#047857', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <University style={{ width: '24px', height: '24px', color: 'white' }} />
+            <div style={{ width: '52px', height: '52px', backgroundColor: '#047857', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <University style={{ width: '26px', height: '26px', color: 'white' }} />
             </div>
           )}
-          <div>
-            <div style={{ fontSize: '13px', fontWeight: 800, color: '#064e3b', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{schoolName}</div>
-            <div style={{ fontSize: '8.5px', color: '#6b7280', marginTop: '1px' }}>{schoolSubtitle}</div>
-            <div style={{ fontSize: '7.5px', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '1px' }}>
-              <MapPin style={{ width: '8px', height: '8px' }} /> {schoolCity}
-            </div>
-            {schoolPhone && (
-              <div style={{ fontSize: '7.5px', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '1px' }}>
-                📞 {schoolPhone}
-              </div>
-            )}
+        </div>
+
+        {/* Nom école + slogan + adresse + téléphone - centré */}
+        <div style={{ textAlign: 'center', flex: 1 }}>
+          <div style={{ fontSize: '13px', fontWeight: 800, color: '#064e3b', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{schoolName}</div>
+          <div style={{ fontSize: '8.5px', color: '#6b7280', fontStyle: 'italic', marginTop: '1px' }}>{schoolSubtitle}</div>
+          <div style={{ fontSize: '7.5px', color: '#9ca3af', marginTop: '1px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+            <MapPin style={{ width: '8px', height: '8px' }} /> {schoolCity}
+            {schoolPhone && <span style={{ marginLeft: '6px' }}>📞 {schoolPhone}</span>}
           </div>
         </div>
 
-        {/* Titre bulletin */}
-        <div style={{ textAlign: 'center' }}>
+        {/* Titre bulletin à droite */}
+        <div style={{ textAlign: 'center', flexShrink: 0 }}>
           <div style={{ fontSize: '12px', fontWeight: 800, color: '#047857', letterSpacing: '0.05em' }}>{isFinalPeriod ? "BULLETIN DE NOTES DE FIN D'ANNÉE" : 'BULLETIN DE NOTES'}</div>
           <div style={{ backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '4px', padding: '2px 12px', marginTop: '3px' }}>
             <div style={{ fontSize: '8.5px', color: '#047857', fontWeight: 600 }}>Année : {anneeScolaire} — {periodeName}</div>
