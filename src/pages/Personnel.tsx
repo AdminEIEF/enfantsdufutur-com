@@ -830,7 +830,7 @@ export default function Personnel() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label>Niveau *</Label>
-                      <Select value={form.niveau_enseignant} onValueChange={v => setForm(f => ({ ...f, niveau_enseignant: v, poste: '' }))}>
+                      <Select value={form.niveau_enseignant} onValueChange={v => setForm(f => ({ ...f, niveau_enseignant: v, poste: '', matieres_selection: [] as string[] }))}>
                         <SelectTrigger><SelectValue placeholder="Choisir un niveau" /></SelectTrigger>
                         <SelectContent>
                           {cycles.filter((c: any) => {
