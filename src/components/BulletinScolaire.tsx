@@ -73,7 +73,7 @@ const cellCenter: React.CSSProperties = {
   textAlign: 'center',
   verticalAlign: 'middle',
   fontFamily: "'JetBrains Mono', 'Courier New', monospace",
-  fontSize: '10.5px',
+  fontSize: '12.5px',
 };
 
 export default function BulletinScolaire({
@@ -121,7 +121,7 @@ export default function BulletinScolaire({
         padding: '5mm 7mm',
         boxSizing: 'border-box',
         fontFamily: "'Inter', 'Segoe UI', Arial, sans-serif",
-        fontSize: '10.5px',
+        fontSize: '12.5px',
         lineHeight: '1.3',
         color: '#1a1a1a',
         backgroundColor: '#ffffff',
@@ -153,17 +153,17 @@ export default function BulletinScolaire({
             </div>
           )}
           <div>
-            <div style={{ fontSize: '13px', fontWeight: 800, color: '#064e3b', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{schoolName}</div>
-            <div style={{ fontSize: '8.5px', color: '#6b7280', marginTop: '1px' }}>{schoolSubtitle}</div>
-            <div style={{ fontSize: '7.5px', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '1px' }}>
-              <MapPin style={{ width: '8px', height: '8px' }} /> {schoolCity}
+            <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#064e3b', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{schoolName}</div>
+            <div style={{ fontSize: '9.5px', color: '#6b7280', marginTop: '1px' }}>{schoolSubtitle}</div>
+            <div style={{ fontSize: '8.5px', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '1px' }}>
+              <MapPin style={{ width: '9px', height: '9px' }} /> {schoolCity}
             </div>
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '13px', fontWeight: 800, color: '#047857', letterSpacing: '0.05em' }}>{isFinalPeriod ? "BULLETIN DE NOTES DE FIN D'ANNÉE" : 'BULLETIN DE NOTES'}</div>
+          <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#047857', letterSpacing: '0.05em' }}>{isFinalPeriod ? "BULLETIN DE NOTES DE FIN D'ANNÉE" : 'BULLETIN DE NOTES'}</div>
           <div style={{ backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '4px', padding: '2px 12px', marginTop: '3px' }}>
-            <div style={{ fontSize: '8.5px', color: '#047857', fontWeight: 600 }}>Année : {anneeScolaire} — {periodeName}</div>
+            <div style={{ fontSize: '9.5px', color: '#047857', fontWeight: 600 }}>Année : {anneeScolaire} — {periodeName}</div>
           </div>
         </div>
       </div>
@@ -174,11 +174,11 @@ export default function BulletinScolaire({
         {eleve.photo_url ? (
           <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} crossOrigin="anonymous" style={{ width: '42px', height: '52px', objectFit: 'cover', borderRadius: '3px', border: '1px solid #cbd5e1', flexShrink: 0 }} />
         ) : (
-          <div style={{ width: '42px', height: '52px', backgroundColor: '#e2e8f0', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', color: '#94a3b8', fontWeight: 700, flexShrink: 0, border: '1px solid #cbd5e1' }}>
+          <div style={{ width: '42px', height: '52px', backgroundColor: '#e2e8f0', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', color: '#94a3b8', fontWeight: 700, flexShrink: 0, border: '1px solid #cbd5e1' }}>
             {eleve.prenom?.charAt(0)}{eleve.nom?.charAt(0)}
           </div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px 20px', fontSize: '10px', flex: 1 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px 20px', fontSize: '11.5px', flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span style={{ color: '#6b7280', fontWeight: 500, minWidth: '75px' }}>Nom & Prénom :</span>
             <strong>{eleve.prenom} {eleve.nom}</strong>
@@ -200,13 +200,13 @@ export default function BulletinScolaire({
 
       {/* ── Tableau des notes ── */}
       <div style={{ marginBottom: '3px' }}>
-        <table style={{ fontSize: '10px' }}>
+        <table style={{ fontSize: '11.5px' }}>
           <thead>
             <tr style={{ backgroundColor: '#047857', color: 'white' }}>
               <th style={{ padding: '4px 4px', textAlign: 'left', fontWeight: 700, verticalAlign: 'middle', whiteSpace: 'nowrap' }}>Matière</th>
               <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '28px', verticalAlign: 'middle' }}>Coef</th>
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
-                <th key={pp.periodeName} style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '38px', fontSize: '9px', verticalAlign: 'middle' }}>{pp.periodeName}</th>
+                <th key={pp.periodeName} style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '38px', fontSize: '10px', verticalAlign: 'middle' }}>{pp.periodeName}</th>
               ))}
               <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '50px', verticalAlign: 'middle' }}>Moyenne</th>
               <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '54px', verticalAlign: 'middle' }}>Moy×Coef</th>
@@ -222,13 +222,13 @@ export default function BulletinScolaire({
               const total = b.note !== null ? b.note * b.coefficient : null;
               return (
                 <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', height: '20px' }}>
-                  <td style={{ padding: '2px 4px', fontWeight: 500, verticalAlign: 'middle', fontSize: '9.5px', whiteSpace: 'nowrap' }}>{b.matiere}</td>
+                  <td style={{ padding: '2px 4px', fontWeight: 500, verticalAlign: 'middle', fontSize: '11px', whiteSpace: 'nowrap' }}>{b.matiere}</td>
                   <td style={{ ...cellCenter, color: '#6b7280', fontWeight: 600 }}>{b.coefficient}</td>
                   {isFinalPeriod && previousPeriodsNotes.map((pp) => {
                     const prevNote = pp.notesByMatiere[b.matiere] ?? null;
                     const prevBelowAvg = prevNote !== null && prevNote < seuil;
                     return (
-                      <td key={pp.periodeName} style={{ ...cellCenter, fontSize: '9px', color: prevBelowAvg ? '#dc2626' : '#374151' }}>
+                      <td key={pp.periodeName} style={{ ...cellCenter, fontSize: '10px', color: prevBelowAvg ? '#dc2626' : '#374151' }}>
                         {prevNote !== null ? prevNote.toFixed(2) : '—'}
                       </td>
                     );
@@ -242,19 +242,19 @@ export default function BulletinScolaire({
                   {isFinalPeriod && (
                     <td style={{ ...cellCenter }}>{b.rang || '—'}</td>
                   )}
-                  <td style={{ padding: '2px 4px', textAlign: 'center', verticalAlign: 'middle', color: '#6b7280', fontStyle: 'italic', fontSize: '9.5px' }}>{b.appreciation || '—'}</td>
+                  <td style={{ padding: '2px 4px', textAlign: 'center', verticalAlign: 'middle', color: '#6b7280', fontStyle: 'italic', fontSize: '11px' }}>{b.appreciation || '—'}</td>
                 </tr>
               );
             })}
           </tbody>
           <tfoot>
             <tr style={{ backgroundColor: '#ecfdf5', fontWeight: 700, height: '22px' }}>
-              <td style={{ padding: '3px 5px', verticalAlign: 'middle', fontSize: '10px' }}>TOTAL DES POINTS</td>
+              <td style={{ padding: '3px 5px', verticalAlign: 'middle', fontSize: '11.5px' }}>TOTAL DES POINTS</td>
               <td style={{ ...cellCenter, fontWeight: 700 }}>{totalCoef}</td>
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
                 <td key={pp.periodeName} style={{ ...cellCenter }}></td>
               ))}
-              <td style={{ ...cellCenter, fontWeight: 800, fontSize: '9.5px', color: moyennePeriode !== null && moyennePeriode < seuil ? '#dc2626' : '#047857' }}>
+              <td style={{ ...cellCenter, fontWeight: 800, fontSize: '11px', color: moyennePeriode !== null && moyennePeriode < seuil ? '#dc2626' : '#047857' }}>
                 {(() => {
                   const sommeMoyennes = bulletinData.reduce((s, b) => s + (b.note !== null ? b.note : 0), 0);
                   const hasNotes = bulletinData.some(b => b.note !== null);
@@ -283,12 +283,12 @@ export default function BulletinScolaire({
             backgroundColor: isAdmis ? '#ecfdf5' : '#fef2f2',
             border: `1.5px solid ${isAdmis ? '#a7f3d0' : '#fecaca'}`,
           }}>
-            <div style={{ fontSize: '7.5px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Moyenne {periodeName}</div>
-            <div style={{ fontSize: '18px', fontWeight: 900, color: isAdmis ? '#047857' : '#dc2626', lineHeight: '1.2' }}>
+            <div style={{ fontSize: '8.5px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Moyenne {periodeName}</div>
+            <div style={{ fontSize: '20px', fontWeight: 900, color: isAdmis ? '#047857' : '#dc2626', lineHeight: '1.2' }}>
               {moyennePeriode !== null ? `${moyennePeriode.toFixed(2)} / ${bareme}` : '—'}
             </div>
           </div>
-          <div style={{ fontSize: '9.5px', color: '#374151' }}>
+          <div style={{ fontSize: '11px', color: '#374151' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
               <span><strong>Rang :</strong> {rang !== null ? `${rang}ᵉ / ${effectif}` : '—'}</span>
               <span><strong>Mention :</strong> {mention || '—'}</span>
@@ -311,9 +311,9 @@ export default function BulletinScolaire({
 
         {/* Récapitulatif périodes précédentes */}
         <div style={{ border: '1px solid #e2e8f0', borderRadius: '5px', padding: '6px' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, color: '#047857', marginBottom: '3px', textAlign: 'center' }}>Récapitulatif des évaluations</div>
+          <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#047857', marginBottom: '3px', textAlign: 'center' }}>Récapitulatif des évaluations</div>
           {previousPeriods.length > 0 ? (
-            <table style={{ fontSize: '9.5px' }}>
+            <table style={{ fontSize: '11px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#f1f5f9' }}>
                   <th style={{ padding: '2px 4px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle' }}>Évaluation</th>
@@ -329,7 +329,7 @@ export default function BulletinScolaire({
                     <td style={{ padding: '2px 3px', textAlign: 'center', fontFamily: 'monospace', fontWeight: 700, verticalAlign: 'middle', color: pp.moyenne !== null && pp.moyenne < seuil ? '#dc2626' : '#047857' }}>
                       {pp.moyenne !== null ? `${pp.moyenne.toFixed(2)}/${bareme}` : '—'}
                     </td>
-                    <td style={{ padding: '2px 3px', textAlign: 'center', fontStyle: 'italic', verticalAlign: 'middle', fontSize: '8px' }}>{pp.mention || '—'}</td>
+                    <td style={{ padding: '2px 3px', textAlign: 'center', fontStyle: 'italic', verticalAlign: 'middle', fontSize: '9px' }}>{pp.mention || '—'}</td>
                     <td style={{ padding: '2px 3px', textAlign: 'center', fontFamily: 'monospace', verticalAlign: 'middle' }}>
                       {pp.rang !== null ? `${pp.rang}ᵉ/${pp.effectif}` : '—'}
                     </td>
@@ -338,7 +338,7 @@ export default function BulletinScolaire({
               </tbody>
             </table>
           ) : (
-            <div style={{ fontSize: '8px', color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>Première évaluation — aucun historique</div>
+            <div style={{ fontSize: '9px', color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>Première évaluation — aucun historique</div>
           )}
         </div>
       </div>
@@ -346,18 +346,18 @@ export default function BulletinScolaire({
       {/* ── Graphique d'évolution ── */}
       {chartData.length > 0 && (
         <div style={{ border: '1px solid #e2e8f0', borderRadius: '5px', padding: '4px 6px', marginBottom: '3px' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, color: '#047857', marginBottom: '2px', textAlign: 'center' }}>Évolution des moyennes</div>
+          <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#047857', marginBottom: '2px', textAlign: 'center' }}>Évolution des moyennes</div>
           <div style={{ width: '100%', height: '80px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 4, right: 12, left: -5, bottom: 2 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="periode" tick={{ fontSize: 7, fill: '#6b7280' }} />
-                <YAxis domain={[0, bareme]} tick={{ fontSize: 7, fill: '#6b7280' }} width={22} />
+                <XAxis dataKey="periode" tick={{ fontSize: 8, fill: '#6b7280' }} />
+                <YAxis domain={[0, bareme]} tick={{ fontSize: 8, fill: '#6b7280' }} width={22} />
                 <Tooltip
                   formatter={(value: number) => [`${value.toFixed(2)}/${bareme}`, 'Moyenne']}
-                  contentStyle={{ fontSize: 9, borderRadius: 4, padding: '3px 6px' }}
+                  contentStyle={{ fontSize: 10, borderRadius: 4, padding: '3px 6px' }}
                 />
-                <ReferenceLine y={seuil} stroke="#ef4444" strokeDasharray="3 3" label={{ value: `Seuil (${seuil})`, fontSize: 7, fill: '#ef4444' }} />
+                <ReferenceLine y={seuil} stroke="#ef4444" strokeDasharray="3 3" label={{ value: `Seuil (${seuil})`, fontSize: 8, fill: '#ef4444' }} />
                 <Line
                   type="monotone"
                   dataKey="moyenne"
@@ -375,15 +375,15 @@ export default function BulletinScolaire({
       {/* ── Pied de page : Décision & Signatures ── */}
       <div style={{ borderTop: '2px solid #047857', paddingTop: '5px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '6px' }}>
-          <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#374151' }}>DÉCISION :</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10px' }}>
-            {isAdmis ? <CheckSquare style={{ width: '11px', height: '11px', color: '#047857' }} /> : <Square style={{ width: '11px', height: '11px', color: '#9ca3af' }} />} Admis
+          <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#374151' }}>DÉCISION :</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11.5px' }}>
+            {isAdmis ? <CheckSquare style={{ width: '12px', height: '12px', color: '#047857' }} /> : <Square style={{ width: '12px', height: '12px', color: '#9ca3af' }} />} Admis
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10px' }}>
-            {isRedouble ? <CheckSquare style={{ width: '11px', height: '11px', color: '#dc2626' }} /> : <Square style={{ width: '11px', height: '11px', color: '#9ca3af' }} />} Redouble
+          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11.5px' }}>
+            {isRedouble ? <CheckSquare style={{ width: '12px', height: '12px', color: '#dc2626' }} /> : <Square style={{ width: '12px', height: '12px', color: '#9ca3af' }} />} Redouble
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10px' }}>
-            <Square style={{ width: '11px', height: '11px', color: '#9ca3af' }} /> Exclu
+          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11.5px' }}>
+            <Square style={{ width: '12px', height: '12px', color: '#9ca3af' }} /> Exclu
           </span>
         </div>
 
@@ -398,27 +398,27 @@ export default function BulletinScolaire({
                   level="M"
                   includeMargin={false}
                 />
-                <div style={{ fontSize: '6.5px', color: '#9ca3af', marginTop: '1px', textAlign: 'center' }}>Espace Élève</div>
+                <div style={{ fontSize: '7.5px', color: '#9ca3af', marginTop: '1px', textAlign: 'center' }}>Espace Élève</div>
               </>
             )}
           </div>
 
           {/* Signature Parents */}
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '10px', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Signature des Parents</div>
+            <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Signature des Parents</div>
             <div style={{ borderBottom: '1px dashed #9ca3af', height: '24px' }}></div>
-            <div style={{ fontSize: '7px', color: '#9ca3af', marginTop: '2px' }}>Lu et approuvé</div>
+            <div style={{ fontSize: '8px', color: '#9ca3af', marginTop: '2px' }}>Lu et approuvé</div>
           </div>
 
           {/* Signature Direction */}
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '10px', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>La Direction</div>
+            <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>La Direction</div>
             <div style={{ borderBottom: '1px dashed #9ca3af', height: '24px' }}></div>
-            <div style={{ fontSize: '7px', color: '#9ca3af', marginTop: '2px' }}>Cachet obligatoire</div>
+            <div style={{ fontSize: '8px', color: '#9ca3af', marginTop: '2px' }}>Cachet obligatoire</div>
           </div>
         </div>
 
-        <div style={{ fontSize: '7px', color: '#d1d5db', textAlign: 'center', marginTop: '5px' }}>
+        <div style={{ fontSize: '8px', color: '#d1d5db', textAlign: 'center', marginTop: '5px' }}>
           EduGestion Pro — Bulletin généré le {new Date().toLocaleDateString('fr-FR')}
         </div>
       </div>
