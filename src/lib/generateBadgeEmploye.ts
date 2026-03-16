@@ -118,8 +118,8 @@ function drawSingleBadge(
   const badgeBandH = 5;
   doc.setFillColor(180, 140, 20);
   doc.rect(x, badgeBandY, CARD_W, badgeBandH, 'F');
-  // Text in Times (serif) bold italic
-  doc.setFont('times', 'bolditalic');
+  // Text in Arial Bold (helvetica bold)
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(6);
   doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
   doc.text('BADGE DU PERSONNEL', x + CARD_W / 2, badgeBandY + 3.5, { align: 'center' });
