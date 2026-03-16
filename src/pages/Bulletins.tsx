@@ -189,10 +189,30 @@ export default function Bulletins() {
   const totalPoints = bulletinData.reduce((s, b) => s + (b.total || 0), 0);
   const moyennePeriode = totalCoef > 0 && bulletinData.some(b => b.note !== null) ? (totalPoints / totalCoef) : null;
 
-  // Annual average
+  // Annual average (weighted across all notes)
   const moyenneAnnuelle = useMemo(() => {
     return computeAverage(selectedEleve, allAnnualNotes);
   }, [selectedEleve, allAnnualNotes]);
+
+  // Moyenne annuelle simple: average of period averages (sum / nb periods)
+  const moyenneAnnuelleSimple = useMemo(() => {
+    const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
+    const periodAverages: number[] = [];
+    regularPeriodes.forEach((p: any) => {
+      const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+      const avg = computeAverage(selectedEleve, pNotes);
+      if (avg !== null) periodAverages.push(avg);
+    });
+    if (periodAverages.length === 0) return null;
+    return periodAverages.reduce((a, b) => a + b, 0) / periodAverages.length;
+  }, [selectedEleve, allAnnualNotes, periodes]);
+
+  // Moyenne de la classe: average of all students' current period averages
+  const moyenneClasse = useMemo(() => {
+    const avgs = eleves.map((e: any) => computeAverage(e.id, allClassNotes)).filter((a): a is number => a !== null);
+    if (avgs.length === 0) return null;
+    return avgs.reduce((a, b) => a + b, 0) / avgs.length;
+  }, [eleves, allClassNotes]);
 
   // Annual ranking
   const annualRankings = useMemo(() => {
