@@ -129,6 +129,17 @@ export default function Bulletins() {
     return totalC > 0 ? totalW / totalC : null;
   };
 
+  const regularPeriodes = useMemo(
+    () => periodes.filter((p: any) => !p.est_rattrapage),
+    [periodes]
+  );
+
+  const getNotesForPeriod = (targetPeriodeId: string) => (
+    targetPeriodeId === periodeId
+      ? allClassNotes
+      : allAnnualNotes.filter((n: any) => n.periode_id === targetPeriodeId)
+  );
+
   // Rankings for current period
   const rankings = useMemo(() => {
     const avgs = eleves.map((e: any) => ({
@@ -406,13 +417,12 @@ export default function Bulletins() {
                 bareme={bareme}
                 seuil={seuil}
                 previousPeriods={(() => {
-                  const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
                   const currentOrdre = periode?.ordre ?? 0;
                   return regularPeriodes
                    .filter((p: any) => p.ordre <= currentOrdre)
                     .sort((a: any, b: any) => a.ordre - b.ordre)
                     .map((p: any) => {
-                      const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                      const pNotes = getNotesForPeriod(p.id);
                       const pAvg = computeAverage(selectedEleve, pNotes);
                       // Compute rank for this period
                       const pAvgs = eleves.map((e: any) => ({
@@ -453,15 +463,12 @@ export default function Bulletins() {
                 schoolLogoUrl={schoolConfig?.logo_url}
                 isFinalPeriod={periode?.nom === 'P5'}
                 previousPeriodsNotes={(() => {
-                  const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
                   const currentOrdre = periode?.ordre ?? 0;
                   return regularPeriodes
                    .filter((p: any) => p.ordre <= currentOrdre)
                     .sort((a: any, b: any) => a.ordre - b.ordre)
                     .map((p: any) => {
-                      const pNotes = p.id === periodeId
-                        ? allClassNotes.filter((n: any) => n.eleve_id === selectedEleve)
-                        : allAnnualNotes.filter((n: any) => n.periode_id === p.id && n.eleve_id === selectedEleve);
+                      const pNotes = getNotesForPeriod(p.id).filter((n: any) => n.eleve_id === selectedEleve);
                       const notesByMatiere: Record<string, number | null> = {};
                       matieres.forEach((m: any) => {
                         const found = pNotes.find((n: any) => n.matiere_id === m.id);
@@ -629,13 +636,12 @@ export default function Bulletins() {
 
               {/* Récapitulatif des évaluations précédentes */}
               {(() => {
-                const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
                 const currentOrdre = periode?.ordre ?? 0;
                 const prevPeriods = regularPeriodes
                   .filter((p: any) => p.ordre <= currentOrdre)
                   .sort((a: any, b: any) => a.ordre - b.ordre)
                   .map((p: any) => {
-                    const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                    const pNotes = getNotesForPeriod(p.id);
                     const pAvg = computeAverage(selectedEleve, pNotes);
                     const pAvgs = eleves.map((e: any) => ({
                       id: e.id,
@@ -665,7 +671,7 @@ export default function Bulletins() {
                   .filter((p: any) => p.ordre <= currentOrdre)
                   .sort((a: any, b: any) => a.ordre - b.ordre)
                   .map((p: any) => {
-                    const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                    const pNotes = getNotesForPeriod(p.id);
                     const avgs = eleves.map((e: any) => computeAverage(e.id, pNotes)).filter((a): a is number => a !== null);
                     return avgs.length > 0 ? avgs.reduce((a, b) => a + b, 0) / avgs.length : null;
                   });
