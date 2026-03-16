@@ -18,6 +18,11 @@ interface PreviousPeriodSummary {
   mention: string | null;
 }
 
+interface PeriodNoteByMatiere {
+  periodeName: string;
+  notesByMatiere: Record<string, number | null>;
+}
+
 interface BulletinScolaireProps {
   eleve: {
     nom: string;
@@ -43,6 +48,8 @@ interface BulletinScolaireProps {
   schoolSubtitle?: string;
   schoolCity?: string;
   schoolLogoUrl?: string | null;
+  isFinalPeriod?: boolean;
+  previousPeriodsNotes?: PeriodNoteByMatiere[];
 }
 
 const getMention = (moyenne: number | null, bareme: number): string | null => {
