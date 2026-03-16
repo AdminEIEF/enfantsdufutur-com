@@ -388,7 +388,10 @@ export default function BulletinScolaire({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '6px' }}>
           <span style={{ fontSize: '10px', fontWeight: 700, color: '#374151' }}>DÉCISION :</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9.5px' }}>
-            {isAdmis ? <CheckSquare style={{ width: '11px', height: '11px', color: '#047857' }} /> : <Square style={{ width: '11px', height: '11px', color: '#9ca3af' }} />} Admis
+            {isAdmis ? <CheckSquare style={{ width: '11px', height: '11px', color: '#047857' }} /> : <Square style={{ width: '11px', height: '11px', color: '#9ca3af' }} />} Admis(e)
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9.5px' }}>
+            <Square style={{ width: '11px', height: '11px', color: '#9ca3af' }} /> Session
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9.5px' }}>
             {isRedouble ? <CheckSquare style={{ width: '11px', height: '11px', color: '#dc2626' }} /> : <Square style={{ width: '11px', height: '11px', color: '#9ca3af' }} />} Redouble
