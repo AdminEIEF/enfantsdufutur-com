@@ -648,7 +648,7 @@ export default function Personnel() {
   };
 
   const getEffectiveCat = (e: any) => e.categorie === 'enseignant' 
-    ? (e.matricule?.startsWith('ENP') ? 'enseignant_primaire' : 'enseignant_secondaire')
+    ? (e.matricule?.startsWith('ESC') ? 'enseignant_secondaire' : 'enseignant_primaire')
     : e.categorie;
 
   const handleExportExcel = async () => {
