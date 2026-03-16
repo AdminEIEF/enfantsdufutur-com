@@ -636,13 +636,12 @@ export default function Bulletins() {
 
               {/* Récapitulatif des évaluations précédentes */}
               {(() => {
-                const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
                 const currentOrdre = periode?.ordre ?? 0;
                 const prevPeriods = regularPeriodes
                   .filter((p: any) => p.ordre <= currentOrdre)
                   .sort((a: any, b: any) => a.ordre - b.ordre)
                   .map((p: any) => {
-                    const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                    const pNotes = getNotesForPeriod(p.id);
                     const pAvg = computeAverage(selectedEleve, pNotes);
                     const pAvgs = eleves.map((e: any) => ({
                       id: e.id,
@@ -672,7 +671,7 @@ export default function Bulletins() {
                   .filter((p: any) => p.ordre <= currentOrdre)
                   .sort((a: any, b: any) => a.ordre - b.ordre)
                   .map((p: any) => {
-                    const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                    const pNotes = getNotesForPeriod(p.id);
                     const avgs = eleves.map((e: any) => computeAverage(e.id, pNotes)).filter((a): a is number => a !== null);
                     return avgs.length > 0 ? avgs.reduce((a, b) => a + b, 0) / avgs.length : null;
                   });
