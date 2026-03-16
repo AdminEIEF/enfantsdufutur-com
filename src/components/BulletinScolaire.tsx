@@ -112,8 +112,7 @@ export default function BulletinScolaire({
         <div className="text-right">
           <h2 className="text-lg font-bold text-emerald-700 tracking-wide">BULLETIN DE NOTES</h2>
           <div className="bg-emerald-50 border border-emerald-200 rounded px-3 py-1 mt-1">
-            <p className="text-xs text-emerald-700 font-medium">Année : {anneeScolaire}</p>
-            <p className="text-xs text-emerald-600 font-bold">{periodeName}</p>
+            <p className="text-xs text-emerald-700 font-medium">Année : {anneeScolaire} — {periodeName}</p>
           </div>
         </div>
       </div>
