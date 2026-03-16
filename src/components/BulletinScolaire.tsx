@@ -223,7 +223,7 @@ export default function BulletinScolaire({
               return (
                 <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', height: '20px' }}>
                   <td style={{ padding: '2px 4px', fontWeight: 500, verticalAlign: 'middle', fontSize: '11px', whiteSpace: 'nowrap' }}>{b.matiere}</td>
-                  <td style={{ ...cellCenter, color: '#6b7280', fontWeight: 600 }}>{b.coefficient}</td>
+                  <td style={{ ...cellCenter, color: '#6b7280', fontWeight: 600, fontSize: '9px' }}>{b.coefficient}</td>
                   {isFinalPeriod && previousPeriodsNotes.map((pp) => {
                     const prevNote = pp.notesByMatiere[b.matiere] ?? null;
                     const prevBelowAvg = prevNote !== null && prevNote < seuil;
