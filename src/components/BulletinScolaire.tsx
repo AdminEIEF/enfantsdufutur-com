@@ -6,7 +6,6 @@ interface BulletinNote {
   pole: string | null;
   coefficient: number;
   note: number | null;
-  notesByPeriod?: (number | null)[];
   rang: string | null;
   appreciation: string | null;
 }
@@ -44,7 +43,6 @@ interface BulletinScolaireProps {
   schoolSubtitle?: string;
   schoolCity?: string;
   schoolLogoUrl?: string | null;
-  periodeNames?: string[];
 }
 
 const getMention = (moyenne: number | null, bareme: number): string | null => {
@@ -77,7 +75,6 @@ export default function BulletinScolaire({
   schoolSubtitle = 'Enseignement Général et Technique',
   schoolCity = 'Conakry, Guinée',
   schoolLogoUrl,
-  periodeNames = [],
 }: BulletinScolaireProps) {
   const isP5 = periodeName?.toUpperCase() === 'P5';
   const isAdmis = moyennePeriode !== null && moyennePeriode >= seuil;
@@ -85,7 +82,6 @@ export default function BulletinScolaire({
   const isRedouble = moyennePeriode !== null && !isAdmis && !isSession;
   const totalCoef = bulletinData.reduce((s, b) => s + b.coefficient, 0);
   const mention = getMention(moyennePeriode, bareme);
-  const hasMultiplePeriods = periodeNames.length > 0 && bulletinData.some(b => b.notesByPeriod && b.notesByPeriod.length > 0);
 
   return (
     <div data-bulletin-a4 className="bg-white text-gray-900 font-sans" style={{ width: '210mm', maxHeight: '297mm', margin: '0 auto', padding: '8mm 10mm', boxSizing: 'border-box', overflow: 'hidden' }}>
@@ -137,22 +133,17 @@ export default function BulletinScolaire({
         </div>
       </div>
 
-      {/* Tableau des notes avec colonnes P1-P5 */}
+      {/* Tableau des notes — période sélectionnée uniquement */}
       <div className="mb-3">
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr className="bg-emerald-700 text-white">
               <th className="border border-emerald-600 px-2 py-1.5 text-left font-semibold">Matière</th>
-              <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-8">Coef</th>
-              {hasMultiplePeriods && periodeNames.map((pName) => (
-                <th key={pName} className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-12">{pName}</th>
-              ))}
-              <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-14">
-                {isP5 ? 'Moy' : `Note/${bareme}`}
-              </th>
-              <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-14">Total</th>
-              <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-8">Rg</th>
-              <th className="border border-emerald-600 px-1 py-1.5 text-left font-semibold">Appréciation</th>
+              <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-10">Coef</th>
+              <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-16">Note/{bareme}</th>
+              <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-16">Total</th>
+              <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-10">Rang</th>
+              <th className="border border-emerald-600 px-2 py-1.5 text-left font-semibold">Appréciation</th>
             </tr>
           </thead>
           <tbody>
@@ -163,14 +154,6 @@ export default function BulletinScolaire({
                 <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                   <td className="border border-gray-200 px-2 py-1 font-medium">{b.matiere}</td>
                   <td className="border border-gray-200 px-1 py-1 text-center text-gray-600">{b.coefficient}</td>
-                  {hasMultiplePeriods && b.notesByPeriod?.map((pNote, pi) => {
-                    const pBelowAvg = pNote !== null && pNote < seuil;
-                    return (
-                      <td key={pi} className={`border border-gray-200 px-1 py-1 text-center font-mono text-[10px] ${pBelowAvg ? 'text-red-600' : 'text-gray-700'}`}>
-                        {pNote !== null ? pNote.toFixed(1) : '—'}
-                      </td>
-                    );
-                  })}
                   <td className={`border border-gray-200 px-1 py-1 text-center font-mono font-bold ${isBelowAvg ? 'text-red-600 bg-red-50' : 'text-emerald-700 bg-emerald-50'}`}>
                     {b.note !== null ? b.note.toFixed(2) : '—'}
                   </td>
@@ -178,7 +161,7 @@ export default function BulletinScolaire({
                     {total !== null ? total.toFixed(2) : '—'}
                   </td>
                   <td className="border border-gray-200 px-1 py-1 text-center font-mono">{b.rang || '—'}</td>
-                  <td className="border border-gray-200 px-1 py-1 text-gray-600 italic text-[10px]">{b.appreciation || '—'}</td>
+                  <td className="border border-gray-200 px-2 py-1 text-gray-600 italic">{b.appreciation || '—'}</td>
                 </tr>
               );
             })}
@@ -187,9 +170,6 @@ export default function BulletinScolaire({
             <tr className="bg-emerald-50 font-bold">
               <td className="border border-gray-300 px-2 py-1.5">TOTAL DES POINTS</td>
               <td className="border border-gray-300 px-1 py-1.5 text-center">{totalCoef}</td>
-              {hasMultiplePeriods && periodeNames.map((_, pi) => (
-                <td key={pi} className="border border-gray-300 px-1 py-1.5"></td>
-              ))}
               <td className={`border border-gray-300 px-1 py-1.5 text-center font-mono ${moyennePeriode !== null && moyennePeriode < seuil ? 'text-red-600' : 'text-emerald-700'}`}>
                 {moyennePeriode !== null ? moyennePeriode.toFixed(2) : '—'}
               </td>
