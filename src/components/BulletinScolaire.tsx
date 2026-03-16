@@ -41,6 +41,7 @@ interface BulletinScolaireProps {
   plusForte: number | null;
   plusFaible: number | null;
   moyenneAnnuelle: number | null;
+  moyenneClasse: number | null;
   bareme: number;
   seuil: number;
   previousPeriods: PreviousPeriodSummary[];
