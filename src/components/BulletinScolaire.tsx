@@ -38,8 +38,6 @@ interface BulletinScolaireProps {
   bulletinData: BulletinNote[];
   moyennePeriode: number | null;
   rang: number | null;
-  plusForte: number | null;
-  plusFaible: number | null;
   bareme: number;
   seuil: number;
   previousPeriods: PreviousPeriodSummary[];
@@ -81,8 +79,6 @@ export default function BulletinScolaire({
   bulletinData,
   moyennePeriode,
   rang,
-  plusForte,
-  plusFaible,
   bareme,
   seuil,
   previousPeriods,
@@ -279,10 +275,6 @@ export default function BulletinScolaire({
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
               <span><strong>Rang :</strong> {rang !== null ? `${rang}ᵉ / ${effectif}` : '—'}</span>
               <span><strong>Mention :</strong> {mention || '—'}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-              <span><strong>+ forte :</strong> {plusForte !== null ? plusForte.toFixed(2) : '—'}</span>
-              <span><strong>+ faible :</strong> {plusFaible !== null ? plusFaible.toFixed(2) : '—'}</span>
             </div>
             {rangAnnuel !== null && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>

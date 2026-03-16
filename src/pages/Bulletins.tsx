@@ -397,8 +397,6 @@ export default function Bulletins() {
                 }))}
                 moyennePeriode={moyennePeriode}
                 rang={currentRanking?.rang ?? null}
-                plusForte={rankings.length > 0 && rankings[0].moyenne !== null ? rankings[0].moyenne : null}
-                plusFaible={rankings.length > 0 && rankings[rankings.length - 1].moyenne !== null ? rankings[rankings.length - 1].moyenne : null}
                 bareme={bareme}
                 seuil={seuil}
                 previousPeriods={(() => {
