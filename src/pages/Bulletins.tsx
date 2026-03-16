@@ -45,7 +45,7 @@ export default function Bulletins() {
     queryKey: ['eleves-classe', classeId],
     queryFn: async () => {
       if (!classeId) return [];
-      const { data, error } = await supabase.from('eleves').select('id, nom, prenom, matricule, date_naissance, sexe').eq('classe_id', classeId).order('nom');
+      const { data, error } = await supabase.from('eleves').select('id, nom, prenom, matricule, date_naissance, sexe, photo_url').eq('classe_id', classeId).order('nom');
       if (error) throw error;
       return data;
     },
@@ -404,6 +404,7 @@ export default function Bulletins() {
                   matricule: eleve?.matricule || null,
                   sexe: eleve?.sexe || null,
                   date_naissance: eleve?.date_naissance || null,
+                  photo_url: eleve?.photo_url || null,
                 }}
                 classe={`${selectedCl?.niveaux?.nom || ''} — ${selectedCl?.nom || ''}`}
                 effectif={totalClasseEleves}
