@@ -139,13 +139,18 @@ export default function BulletinScolaire({
       {/* Tableau des notes — période sélectionnée uniquement */}
       <div className="mb-3">
         <table className="w-full border-collapse text-xs">
-          <thead>
+           <thead>
             <tr className="bg-emerald-700 text-white">
               <th className="border border-emerald-600 px-2 py-1.5 text-left font-semibold">Matière</th>
               <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-10">Coef</th>
+              {isFinalPeriod && previousPeriodsNotes.map((pp) => (
+                <th key={pp.periodeName} className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-12">{pp.periodeName}</th>
+              ))}
               <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-16">Moyenne</th>
               <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-16">Moyenne Coeff</th>
-              <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-10">Rang</th>
+              {isFinalPeriod && (
+                <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-10">Rang</th>
+              )}
               <th className="border border-emerald-600 px-2 py-1.5 text-left font-semibold">Appréciation</th>
             </tr>
           </thead>
@@ -157,13 +162,24 @@ export default function BulletinScolaire({
                 <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                   <td className="border border-gray-200 px-2 py-1 font-medium">{b.matiere}</td>
                   <td className="border border-gray-200 px-1 py-1 text-center text-gray-600">{b.coefficient}</td>
+                  {isFinalPeriod && previousPeriodsNotes.map((pp) => {
+                    const prevNote = pp.notesByMatiere[b.matiere] ?? null;
+                    const prevBelowAvg = prevNote !== null && prevNote < seuil;
+                    return (
+                      <td key={pp.periodeName} className={`border border-gray-200 px-1 py-1 text-center font-mono text-[10px] ${prevBelowAvg ? 'text-red-600' : 'text-gray-700'}`}>
+                        {prevNote !== null ? prevNote.toFixed(2) : '—'}
+                      </td>
+                    );
+                  })}
                   <td className={`border border-gray-200 px-1 py-1 text-center font-mono font-bold ${isBelowAvg ? 'text-red-600 bg-red-50' : 'text-emerald-700 bg-emerald-50'}`}>
                     {b.note !== null ? b.note.toFixed(2) : '—'}
                   </td>
                   <td className="border border-gray-200 px-1 py-1 text-center font-mono">
                     {total !== null ? total.toFixed(2) : '—'}
                   </td>
-                  <td className="border border-gray-200 px-1 py-1 text-center font-mono">{b.rang || '—'}</td>
+                  {isFinalPeriod && (
+                    <td className="border border-gray-200 px-1 py-1 text-center font-mono">{b.rang || '—'}</td>
+                  )}
                   <td className="border border-gray-200 px-2 py-1 text-gray-600 italic">{b.appreciation || '—'}</td>
                 </tr>
               );
@@ -173,13 +189,19 @@ export default function BulletinScolaire({
             <tr className="bg-emerald-50 font-bold">
               <td className="border border-gray-300 px-2 py-1.5">TOTAL DES POINTS</td>
               <td className="border border-gray-300 px-1 py-1.5 text-center">{totalCoef}</td>
+              {isFinalPeriod && previousPeriodsNotes.map((pp) => (
+                <td key={pp.periodeName} className="border border-gray-300 px-1 py-1.5"></td>
+              ))}
               <td className={`border border-gray-300 px-1 py-1.5 text-center font-mono ${moyennePeriode !== null && moyennePeriode < seuil ? 'text-red-600' : 'text-emerald-700'}`}>
                 {moyennePeriode !== null ? moyennePeriode.toFixed(2) : '—'}
               </td>
               <td className="border border-gray-300 px-1 py-1.5 text-center font-mono">
                 {moyennePeriode !== null ? (moyennePeriode * totalCoef).toFixed(2) : '—'}
               </td>
-              <td colSpan={2} className="border border-gray-300 px-1 py-1.5"></td>
+              {isFinalPeriod && (
+                <td className="border border-gray-300 px-1 py-1.5"></td>
+              )}
+              <td className="border border-gray-300 px-1 py-1.5"></td>
             </tr>
           </tfoot>
         </table>
