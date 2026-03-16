@@ -231,19 +231,28 @@ export default function Bulletins() {
     return avgs.reduce((a, b) => a + b, 0) / avgs.length;
   }, [eleves, allClassNotes]);
 
-  // Annual ranking
+  // Annual ranking based on moyenneAnnuelleSimple (average of period averages)
   const annualRankings = useMemo(() => {
-    const avgs = eleves.map((e: any) => ({
-      id: e.id,
-      moyenne: computeAverage(e.id, allAnnualNotes),
-    }));
+    const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
+    const avgs = eleves.map((e: any) => {
+      const periodAverages: number[] = [];
+      regularPeriodes.forEach((p: any) => {
+        const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id && n.eleve_id === e.id);
+        const avg = computeAverage(e.id, pNotes);
+        if (avg !== null) periodAverages.push(avg);
+      });
+      const moyenne = periodAverages.length > 0
+        ? periodAverages.reduce((a, b) => a + b, 0) / periodAverages.length
+        : null;
+      return { id: e.id, moyenne };
+    });
     avgs.sort((a, b) => (b.moyenne ?? -1) - (a.moyenne ?? -1));
     let rank = 0, lastAvg: number | null = null;
     return avgs.map((a, i) => {
       if (a.moyenne !== lastAvg) { rank = i + 1; lastAvg = a.moyenne; }
       return { ...a, rang: a.moyenne !== null ? rank : null };
     });
-  }, [eleves, allAnnualNotes]);
+  }, [eleves, allAnnualNotes, periodes]);
   const annualRank = annualRankings.find(r => r.id === selectedEleve);
 
   // Major of class
@@ -465,6 +474,7 @@ export default function Bulletins() {
                 })()}
                 moyenneAnnuelle={isP5 ? moyenneAnnuelleSimple : null}
                 moyenneClasse={isP5 ? moyenneClasse : null}
+                rangAnnuel={isP5 ? (annualRank?.rang ?? null) : null}
               />
             </div>
           ) : (

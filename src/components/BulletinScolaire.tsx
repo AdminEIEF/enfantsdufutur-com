@@ -53,6 +53,7 @@ interface BulletinScolaireProps {
   previousPeriodsNotes?: PeriodNoteByMatiere[];
   moyenneAnnuelle?: number | null;
   moyenneClasse?: number | null;
+  rangAnnuel?: number | null;
 }
 
 const getMention = (moyenne: number | null, bareme: number): string | null => {
@@ -97,6 +98,7 @@ export default function BulletinScolaire({
   previousPeriodsNotes = [],
   moyenneAnnuelle = null,
   moyenneClasse = null,
+  rangAnnuel = null,
 }: BulletinScolaireProps) {
   const isAdmis = moyennePeriode !== null && moyennePeriode >= seuil;
   const isRedouble = moyennePeriode !== null && !isAdmis;
@@ -289,6 +291,7 @@ export default function BulletinScolaire({
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span><strong>Moy. annuelle :</strong> <span style={{ color: moyenneAnnuelle !== null && moyenneAnnuelle >= seuil ? '#047857' : '#dc2626', fontWeight: 700 }}>{moyenneAnnuelle !== null ? `${moyenneAnnuelle.toFixed(2)}/${bareme}` : '—'}</span></span>
               <span><strong>Moy. classe :</strong> <span style={{ fontWeight: 700 }}>{moyenneClasse !== null ? `${moyenneClasse.toFixed(2)}/${bareme}` : '—'}</span></span>
+              {rangAnnuel !== null && <span><strong>Rang :</strong> <span style={{ fontWeight: 700 }}>{rangAnnuel}ᵉ / {effectif}</span></span>}
             </div>
           </div>
         </div>
