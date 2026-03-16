@@ -225,9 +225,7 @@ export default function Bulletins() {
     if (!selectedEleve) return null;
     return computeAverage(selectedEleve, allClassNotes);
   }, [selectedEleve, allClassNotes]);
-  const moyennePeriode = isP5
-    ? (totalCoef > 0 && bulletinData.some(b => b.note !== null) ? (totalPoints / totalCoef) : null)
-    : moyennePeriodeReelle;
+  const moyennePeriode = moyennePeriodeReelle;
 
 
   // Annual ranking based on moyenneAnnuelleSimple (average of period averages)
