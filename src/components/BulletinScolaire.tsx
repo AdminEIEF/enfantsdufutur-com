@@ -194,7 +194,7 @@ export default function BulletinScolaire({
         <table style={{ fontSize: '9px' }}>
           <thead>
             <tr style={{ backgroundColor: '#047857', color: 'white' }}>
-              <th style={{ padding: '4px 4px', textAlign: 'left', fontWeight: 700, verticalAlign: 'middle', width: '90px', maxWidth: '90px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>Matière</th>
+              <th style={{ padding: '4px 4px', textAlign: 'left', fontWeight: 700, verticalAlign: 'middle', whiteSpace: 'nowrap' }}>Matière</th>
               <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '28px', verticalAlign: 'middle' }}>Coef</th>
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
                 <th key={pp.periodeName} style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '38px', fontSize: '8px', verticalAlign: 'middle' }}>{pp.periodeName}</th>
