@@ -411,6 +411,9 @@ export default function Bulletins() {
                 }))}
                 moyennePeriode={moyennePeriode}
                 rang={currentRanking?.rang ?? null}
+                plusForte={plusForte}
+                plusFaible={plusFaible}
+                moyenneAnnuelle={moyenneAnnuelle}
                 bareme={bareme}
                 seuil={seuil}
                 previousPeriods={(() => {
