@@ -291,18 +291,39 @@ export default function BulletinScolaire({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '3px' }}>
         {/* Résumé période */}
         <div style={{ border: '1px solid #e2e8f0', borderRadius: '5px', padding: '6px' }}>
-          <div style={{
-            textAlign: 'center',
-            marginBottom: '5px',
-            padding: '5px',
-            borderRadius: '5px',
-            backgroundColor: isAdmis ? '#ecfdf5' : '#fef2f2',
-            border: `1.5px solid ${isAdmis ? '#a7f3d0' : '#fecaca'}`,
-          }}>
-            <div style={{ fontSize: '7.5px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Moyenne {periodeName}</div>
-            <div style={{ fontSize: '18px', fontWeight: 900, color: isAdmis ? '#047857' : '#dc2626', lineHeight: '1.2' }}>
-              {moyennePeriode !== null ? `${moyennePeriode.toFixed(2)} / ${bareme}` : '—'}
+          {/* Moyenne P5 + Moyenne Annuelle côte à côte */}
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '5px' }}>
+            <div style={{
+              textAlign: 'center',
+              padding: '5px',
+              borderRadius: '5px',
+              backgroundColor: isAdmis ? '#ecfdf5' : '#fef2f2',
+              border: `1.5px solid ${isAdmis ? '#a7f3d0' : '#fecaca'}`,
+              flex: 1,
+            }}>
+              <div style={{ fontSize: '7.5px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Moyenne {periodeName}</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: isAdmis ? '#047857' : '#dc2626', lineHeight: '1.2' }}>
+                {moyennePeriode !== null ? `${moyennePeriode.toFixed(2)} / ${bareme}` : '—'}
+              </div>
             </div>
+            {isFinalPeriod && moyenneAnnuelle !== null && (
+              <div style={{
+                textAlign: 'center',
+                padding: '5px',
+                borderRadius: '5px',
+                backgroundColor: moyenneAnnuelle >= seuil ? '#ecfdf5' : '#fef2f2',
+                border: `1.5px solid ${moyenneAnnuelle >= seuil ? '#a7f3d0' : '#fecaca'}`,
+                flex: 1,
+              }}>
+                <div style={{ fontSize: '7.5px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Moyenne Annuelle</div>
+                <div style={{ fontSize: '18px', fontWeight: 900, color: moyenneAnnuelle >= seuil ? '#047857' : '#dc2626', lineHeight: '1.2' }}>
+                  {moyenneAnnuelle.toFixed(2)} / {bareme}
+                </div>
+                {rangAnnuel !== null && (
+                  <div style={{ fontSize: '7.5px', color: '#6b7280', marginTop: '1px' }}>Rang : {rangAnnuel}ᵉ / {effectif}</div>
+                )}
+              </div>
+            )}
           </div>
           <div style={{ fontSize: '9px', color: '#374151' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
@@ -316,7 +337,7 @@ export default function BulletinScolaire({
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
               <span><strong>Moy. classe :</strong> <span style={{ color: '#047857', fontWeight: 700 }}>{moyenneClasse !== null ? `${moyenneClasse.toFixed(2)}/${bareme}` : '—'}</span></span>
             </div>
-            {moyenneAnnuelle !== null && (
+            {!isFinalPeriod && moyenneAnnuelle !== null && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
                 <span><strong>Moy. annuelle :</strong> <span style={{ color: moyenneAnnuelle >= seuil ? '#047857' : '#dc2626', fontWeight: 700 }}>{moyenneAnnuelle.toFixed(2)}/{bareme}</span></span>
                 {rangAnnuel !== null && <span><strong>Rang annuel :</strong> <span style={{ fontWeight: 700 }}>{rangAnnuel}ᵉ / {effectif}</span></span>}
