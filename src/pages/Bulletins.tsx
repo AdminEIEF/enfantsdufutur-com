@@ -199,7 +199,7 @@ export default function Bulletins() {
       if (isP5) {
         const periodNotes: number[] = [];
         regularPeriodes.forEach((p: any) => {
-          const pNotes = allAnnualNotes.filter((an: any) => an.periode_id === p.id && an.eleve_id === selectedEleve && an.matiere_id === m.id);
+          const pNotes = getNotesForPeriod(p.id).filter((an: any) => an.eleve_id === selectedEleve && an.matiere_id === m.id);
           const found = pNotes.length > 0 ? pNotes[0] : null;
           if (found?.note != null) periodNotes.push(Number(found.note));
         });
