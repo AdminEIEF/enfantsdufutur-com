@@ -95,6 +95,8 @@ export default function BulletinScolaire({
   schoolLogoUrl,
   isFinalPeriod = false,
   previousPeriodsNotes = [],
+  moyenneAnnuelle = null,
+  moyenneClasse = null,
 }: BulletinScolaireProps) {
   const isAdmis = moyennePeriode !== null && moyennePeriode >= seuil;
   const isRedouble = moyennePeriode !== null && !isAdmis;
