@@ -408,8 +408,8 @@ export default function Bulletins() {
                   pole: b.pole,
                   coefficient: b.coefficient,
                   note: b.note,
-                  rang: null,
-                  appreciation: b.note !== null ? getAppreciation(b.note)?.text || null : null,
+                   rang: matiereRanks[b.matiere] ?? null,
+                   appreciation: b.note !== null ? getAppreciation(b.note)?.text || null : null,
                 }))}
                 moyennePeriode={moyennePeriode}
                 rang={currentRanking?.rang ?? null}
