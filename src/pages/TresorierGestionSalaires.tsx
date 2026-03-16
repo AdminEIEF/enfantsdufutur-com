@@ -17,19 +17,24 @@ import { generateRegistrePaiePDF } from '@/lib/generateRegistrePaiePDF';
 
 const CATEGORIES = [
   { value: 'all', label: 'Toutes les catégories' },
-  { value: 'enseignant', label: 'Professeurs' },
-  { value: 'administration', label: 'Administration' },
-  { value: 'service', label: 'Service' },
-  { value: 'direction', label: 'Direction' },
-  { value: 'hygiene', label: 'Service Hygiène' },
-  { value: 'securite_primaire', label: 'Sécurité Primaire' },
-  { value: 'securite_lycee', label: 'Sécurité Lycée' },
-  { value: 'chauffeur', label: 'Chauffeur' },
-  { value: 'infirmiere', label: 'Infirmière' },
-  { value: 'librairie', label: 'Librairie' },
-  { value: 'cantine', label: 'Cantine' },
-  { value: 'surveillant', label: 'Surveillant' },
+  { value: 'enseignant_primaire', label: '👨‍🏫 Enseignant Primaire' },
+  { value: 'enseignant_secondaire', label: '👨‍🏫 Enseignant Secondaire' },
+  { value: 'administration', label: '🏢 Administration' },
+  { value: 'service', label: '🔧 Service' },
+  { value: 'direction', label: '👔 Direction' },
+  { value: 'hygiene', label: '🧹 Service Hygiène' },
+  { value: 'securite_primaire', label: '🛡️ Sécurité Primaire' },
+  { value: 'securite_lycee', label: '🛡️ Sécurité Lycée' },
+  { value: 'chauffeur', label: '🚗 Chauffeur' },
+  { value: 'infirmiere', label: '🏥 Infirmière' },
+  { value: 'librairie', label: '📚 Librairie' },
+  { value: 'cantine', label: '🍽️ Cantine' },
+  { value: 'surveillant', label: '👁️ Surveillant' },
 ];
+
+const getEffectiveCat = (e: Employe) => e.categorie === 'enseignant'
+  ? ((e as any).matricule?.startsWith('ESC') ? 'enseignant_secondaire' : 'enseignant_primaire')
+  : e.categorie;
 
 interface Employe {
   id: string;
