@@ -227,29 +227,6 @@ export default function Bulletins() {
   }, [selectedEleve, allClassNotes]);
   const moyennePeriode = totalCoef > 0 && bulletinData.some(b => b.note !== null) ? (totalPoints / totalCoef) : null;
 
-  // Annual average (weighted across all notes)
-  const moyenneAnnuelle = useMemo(() => {
-    return computeAverage(selectedEleve, mergedAllNotes);
-  }, [selectedEleve, mergedAllNotes]);
-
-  // Moyenne annuelle simple: average of period averages (sum / nb periods)
-  const moyenneAnnuelleSimple = useMemo(() => {
-    const periodAverages: number[] = [];
-    regularPeriodes.forEach((p: any) => {
-      const pNotes = getNotesForPeriod(p.id);
-      const avg = computeAverage(selectedEleve, pNotes);
-      if (avg !== null) periodAverages.push(avg);
-    });
-    if (periodAverages.length === 0) return null;
-    return periodAverages.reduce((a, b) => a + b, 0) / periodAverages.length;
-  }, [selectedEleve, allAnnualNotes, allClassNotes, periodeId, regularPeriodes]);
-
-  // Moyenne de la classe: average of all students' current period averages
-  const moyenneClasse = useMemo(() => {
-    const avgs = eleves.map((e: any) => computeAverage(e.id, allClassNotes)).filter((a): a is number => a !== null);
-    if (avgs.length === 0) return null;
-    return avgs.reduce((a, b) => a + b, 0) / avgs.length;
-  }, [eleves, allClassNotes]);
 
   // Annual ranking based on moyenneAnnuelleSimple (average of period averages)
   const annualRankings = useMemo(() => {
@@ -485,8 +462,6 @@ export default function Bulletins() {
                       return { periodeName: p.nom, notesByMatiere };
                     });
                 })()}
-                moyenneAnnuelle={isP5 ? moyenneAnnuelleSimple : null}
-                moyenneClasse={isP5 ? moyenneClasse : null}
                 rangAnnuel={isP5 ? (annualRank?.rang ?? null) : null}
               />
             </div>
@@ -599,26 +574,6 @@ export default function Bulletins() {
                 {isP5 && (
                   <Card>
                     <CardContent className="pt-4 pb-4 text-center">
-                      <p className="text-xs text-muted-foreground">Moy. annuelle</p>
-                      <p className={`text-2xl font-bold ${moyenneAnnuelleSimple !== null && moyenneAnnuelleSimple >= seuil ? 'text-accent' : 'text-destructive'}`}>
-                        {moyenneAnnuelleSimple !== null ? `${moyenneAnnuelleSimple.toFixed(2)}/${bareme}` : '—'}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-                {isP5 && (
-                  <Card>
-                    <CardContent className="pt-4 pb-4 text-center">
-                      <p className="text-xs text-muted-foreground">Moy. de la classe</p>
-                      <p className={`text-2xl font-bold ${moyenneClasse !== null && moyenneClasse >= seuil ? 'text-accent' : 'text-destructive'}`}>
-                        {moyenneClasse !== null ? `${moyenneClasse.toFixed(2)}/${bareme}` : '—'}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-                {isP5 && (
-                  <Card>
-                    <CardContent className="pt-4 pb-4 text-center">
                       <p className="text-xs text-muted-foreground">Rang annuel</p>
                       <p className="text-2xl font-bold flex items-center justify-center gap-1">
                         {annualRank?.rang !== null ? (
@@ -674,15 +629,6 @@ export default function Bulletins() {
                     }
                     return { periodeName: p.nom, moyenne: pAvg, rang: studentRank?.rang ?? null, effectif: eleves.length, mention };
                   });
-                // Compute class average for each period
-                const moyenneClasseParPeriode = regularPeriodes
-                  .filter((p: any) => p.ordre <= currentOrdre)
-                  .sort((a: any, b: any) => a.ordre - b.ordre)
-                  .map((p: any) => {
-                    const pNotes = getNotesForPeriod(p.id);
-                    const avgs = eleves.map((e: any) => computeAverage(e.id, pNotes)).filter((a): a is number => a !== null);
-                    return avgs.length > 0 ? avgs.reduce((a, b) => a + b, 0) / avgs.length : null;
-                  });
                 return prevPeriods.length > 0 ? (
                   <Card className="mt-4">
                     <CardHeader className="pb-2">
@@ -694,7 +640,6 @@ export default function Bulletins() {
                           <TableRow className="bg-muted/50">
                             <TableHead>Évaluation</TableHead>
                             <TableHead className="text-center">Moyenne</TableHead>
-                            <TableHead className="text-center">Moy. Classe</TableHead>
                             <TableHead className="text-center">Rang</TableHead>
                             <TableHead className="text-center">Mention</TableHead>
                           </TableRow>
@@ -706,9 +651,6 @@ export default function Bulletins() {
                               <TableCell className={`text-center font-mono font-bold ${pp.moyenne !== null && pp.moyenne < seuil ? 'text-destructive' : ''}`}>
                                 {pp.moyenne !== null ? `${pp.moyenne.toFixed(2)}/${bareme}` : '—'}
                               </TableCell>
-                              <TableCell className="text-center font-mono text-muted-foreground">
-                                {moyenneClasseParPeriode[idx] !== null ? `${moyenneClasseParPeriode[idx]!.toFixed(2)}/${bareme}` : '—'}
-                              </TableCell>
                               <TableCell className="text-center font-mono">
                                 {pp.rang !== null ? `${pp.rang}e/${pp.effectif}` : '—'}
                               </TableCell>
@@ -717,32 +659,6 @@ export default function Bulletins() {
                               </TableCell>
                             </TableRow>
                           ))}
-                          {/* Ligne Moyenne Annuelle */}
-                          {isP5 && prevPeriods.length > 1 && (
-                            <TableRow className="bg-primary/5 font-bold">
-                              <TableCell className="font-bold">Moyenne Annuelle</TableCell>
-                              <TableCell className={`text-center font-mono font-bold ${moyenneAnnuelleSimple !== null && moyenneAnnuelleSimple < seuil ? 'text-destructive' : 'text-accent'}`}>
-                                {moyenneAnnuelleSimple !== null ? `${moyenneAnnuelleSimple.toFixed(2)}/${bareme}` : '—'}
-                              </TableCell>
-                              <TableCell className="text-center font-mono text-muted-foreground">
-                                {moyenneClasse !== null ? `${moyenneClasse.toFixed(2)}/${bareme}` : '—'}
-                              </TableCell>
-                              <TableCell className="text-center font-mono">
-                                {annualRank?.rang !== null ? `${annualRank?.rang}e/${totalClasseEleves}` : '—'}
-                              </TableCell>
-                              <TableCell className="text-center italic">
-                                {moyenneAnnuelleSimple !== null ? (() => {
-                                  const ratio = moyenneAnnuelleSimple / bareme;
-                                  if (ratio >= 0.85) return 'Excellent';
-                                  if (ratio >= 0.70) return 'Très Bien';
-                                  if (ratio >= 0.60) return 'Bien';
-                                  if (ratio >= 0.50) return 'Assez Bien';
-                                  if (ratio >= 0.40) return 'Passable';
-                                  return 'Insuffisant';
-                                })() : '—'}
-                              </TableCell>
-                            </TableRow>
-                          )}
                         </TableBody>
                       </Table>
                     </CardContent>
