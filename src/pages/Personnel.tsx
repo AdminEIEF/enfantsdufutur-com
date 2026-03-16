@@ -259,7 +259,18 @@ export default function Personnel() {
     },
   });
 
-  
+  // Fetch matieres with cycles for enseignant poste
+  const { data: matieresWithCycles = [] } = useQuery({
+    queryKey: ['matieres-cycles-for-personnel'],
+    queryFn: async () => {
+      const { data: matieres, error } = await supabase
+        .from('matieres')
+        .select('id, nom, cycle_id, cycles(id, nom)')
+        .order('ordre');
+      if (error) throw error;
+      return matieres || [];
+    },
+  });
 
   // Fetch courriers
   const { data: courriers = [], refetch: refetchCourriers } = useQuery({
