@@ -657,7 +657,7 @@ export default function Personnel() {
       'Nom': e.nom,
       'Prénom': e.prenom,
       'Sexe': e.sexe || '',
-      'Catégorie': categorieLabel[e.categorie] || e.categorie,
+      'Catégorie': categorieLabel[getEffectiveCat(e)] || e.categorie,
       'Poste': e.poste || '',
       'Téléphone': e.telephone || '',
       'Email': e.email || '',
