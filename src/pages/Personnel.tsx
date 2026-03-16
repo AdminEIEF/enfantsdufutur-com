@@ -827,10 +827,10 @@ export default function Personnel() {
                   </div>
                 </div>
                 {(form.categorie === 'enseignant_primaire' || form.categorie === 'enseignant_secondaire') && (
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label>Niveau *</Label>
-                      <Select value={form.niveau_enseignant} onValueChange={v => setForm(f => ({ ...f, niveau_enseignant: v, poste: '', matieres_selection: [] as string[] }))}>
+                      <Select value={form.niveau_enseignant} onValueChange={v => setForm(f => ({ ...f, niveau_enseignant: v, poste: '' }))}>
                         <SelectTrigger><SelectValue placeholder="Choisir un niveau" /></SelectTrigger>
                         <SelectContent>
                           {cycles.filter((c: any) => {
@@ -845,11 +845,11 @@ export default function Personnel() {
                       </Select>
                     </div>
                     <div className="space-y-1">
-                      <Label>Matière(s) enseignée(s) *</Label>
+                      <Label>Matière(s) *</Label>
                       {!form.niveau_enseignant ? (
-                        <p className="text-xs text-muted-foreground py-2">Sélectionnez un niveau d'abord</p>
+                        <p className="text-xs text-muted-foreground py-2">Sélectionnez un niveau</p>
                       ) : (
-                        <div className="border rounded-md p-2 max-h-40 overflow-y-auto space-y-1">
+                        <div className="border rounded-md p-1.5 max-h-32 overflow-y-auto space-y-0.5">
                           {matieresWithCycles
                             .filter((m: any) => m.cycle_id === form.niveau_enseignant)
                             .filter((m: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.nom === m.nom) === i)
@@ -857,29 +857,19 @@ export default function Personnel() {
                               const val = `Professeur de ${m.nom}`;
                               const selected = form.poste.split(' / ').includes(val);
                               return (
-                                <label key={m.id} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent/50 cursor-pointer text-sm">
-                                  <input
-                                    type="checkbox"
-                                    checked={selected}
-                                    onChange={() => {
-                                      setForm(f => {
-                                        const current = f.poste ? f.poste.split(' / ').filter(Boolean) : [];
-                                        const updated = selected
-                                          ? current.filter(v => v !== val)
-                                          : [...current, val];
-                                        return { ...f, poste: updated.join(' / ') };
-                                      });
-                                    }}
-                                    className="rounded border-input"
-                                  />
+                                <label key={m.id} className="flex items-center gap-2 px-1.5 py-0.5 rounded hover:bg-accent/50 cursor-pointer text-xs">
+                                  <input type="checkbox" checked={selected} onChange={() => {
+                                    setForm(f => {
+                                      const current = f.poste ? f.poste.split(' / ').filter(Boolean) : [];
+                                      const updated = selected ? current.filter(v => v !== val) : [...current, val];
+                                      return { ...f, poste: updated.join(' / ') };
+                                    });
+                                  }} className="rounded border-input h-3.5 w-3.5" />
                                   {m.nom}
                                 </label>
                               );
                             })}
                         </div>
-                      )}
-                      {form.poste && (
-                        <p className="text-[10px] text-muted-foreground mt-1">{form.poste}</p>
                       )}
                     </div>
                   </div>
