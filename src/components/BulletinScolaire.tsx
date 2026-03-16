@@ -77,9 +77,12 @@ export default function BulletinScolaire({
   schoolSubtitle = 'Enseignement Général et Technique',
   schoolCity = 'Conakry, Guinée',
   schoolLogoUrl,
+  isFinalPeriod = false,
+  moyenneClasse,
 }: BulletinScolaireProps) {
   const isAdmis = moyennePeriode !== null && moyennePeriode >= seuil;
-  const isRedouble = moyennePeriode !== null && !isAdmis;
+  const isSession = moyennePeriode !== null && !isAdmis && moyenneClasse !== null && moyennePeriode < moyenneClasse;
+  const isRedouble = moyennePeriode !== null && !isAdmis && !isSession;
   const totalCoef = bulletinData.reduce((s, b) => s + b.coefficient, 0);
   const mention = getMention(moyennePeriode, bareme);
 
