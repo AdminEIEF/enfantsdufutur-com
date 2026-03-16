@@ -337,7 +337,7 @@ export default function BulletinScolaire({
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
               <span><strong>Moy. classe :</strong> <span style={{ color: '#047857', fontWeight: 700 }}>{moyenneClasse !== null ? `${moyenneClasse.toFixed(2)}/${bareme}` : '—'}</span></span>
             </div>
-            {moyenneAnnuelle !== null && (
+            {!isFinalPeriod && moyenneAnnuelle !== null && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
                 <span><strong>Moy. annuelle :</strong> <span style={{ color: moyenneAnnuelle >= seuil ? '#047857' : '#dc2626', fontWeight: 700 }}>{moyenneAnnuelle.toFixed(2)}/{bareme}</span></span>
                 {rangAnnuel !== null && <span><strong>Rang annuel :</strong> <span style={{ fontWeight: 700 }}>{rangAnnuel}ᵉ / {effectif}</span></span>}
