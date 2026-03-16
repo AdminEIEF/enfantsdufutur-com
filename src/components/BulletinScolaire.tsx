@@ -43,6 +43,8 @@ interface BulletinScolaireProps {
   schoolSubtitle?: string;
   schoolCity?: string;
   schoolLogoUrl?: string | null;
+  isFinalPeriod?: boolean;
+  moyenneClasse?: number | null;
 }
 
 const getMention = (moyenne: number | null, bareme: number): string | null => {
