@@ -165,6 +165,27 @@ export default function Bulletins() {
     );
   }, [allClassNotes]);
 
+  // Per-matière rank for selected student within class
+  const matiereRanks = useMemo(() => {
+    const ranks: Record<string, number | null> = {};
+    matieres.forEach((m: any) => {
+      const studentNotesList = eleves.map((e: any) => {
+        const n = allClassNotes.find((note: any) => note.eleve_id === e.id && note.matiere_id === m.id);
+        return { id: e.id, note: n?.note != null ? Number(n.note) : null };
+      }).filter(s => s.note !== null) as { id: string; note: number }[];
+      
+      studentNotesList.sort((a, b) => b.note - a.note);
+      let rank = 0, lastNote: number | null = null;
+      const ranked = studentNotesList.map((s, i) => {
+        if (s.note !== lastNote) { rank = i + 1; lastNote = s.note; }
+        return { ...s, rang: rank };
+      });
+      const found = ranked.find(r => r.id === selectedEleve);
+      ranks[m.nom] = found?.rang ?? null;
+    });
+    return ranks;
+  }, [matieres, eleves, allClassNotes, selectedEleve]);
+
   const periode = periodes.find((p: any) => p.id === periodeId);
   const isP5 = periode?.nom === 'P5';
 
@@ -387,8 +408,8 @@ export default function Bulletins() {
                   pole: b.pole,
                   coefficient: b.coefficient,
                   note: b.note,
-                  rang: null,
-                  appreciation: b.note !== null ? getAppreciation(b.note)?.text || null : null,
+                   rang: matiereRanks[b.matiere] !== null ? `${matiereRanks[b.matiere]}ᵉ/${totalClasseEleves}` : null,
+                   appreciation: b.note !== null ? getAppreciation(b.note)?.text || null : null,
                 }))}
                 moyennePeriode={moyennePeriode}
                 rang={currentRanking?.rang ?? null}
