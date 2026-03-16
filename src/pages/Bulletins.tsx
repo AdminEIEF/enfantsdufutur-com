@@ -651,9 +651,6 @@ export default function Bulletins() {
                               <TableCell className={`text-center font-mono font-bold ${pp.moyenne !== null && pp.moyenne < seuil ? 'text-destructive' : ''}`}>
                                 {pp.moyenne !== null ? `${pp.moyenne.toFixed(2)}/${bareme}` : '—'}
                               </TableCell>
-                              <TableCell className="text-center font-mono text-muted-foreground">
-                                {moyenneClasseParPeriode[idx] !== null ? `${moyenneClasseParPeriode[idx]!.toFixed(2)}/${bareme}` : '—'}
-                              </TableCell>
                               <TableCell className="text-center font-mono">
                                 {pp.rang !== null ? `${pp.rang}e/${pp.effectif}` : '—'}
                               </TableCell>
