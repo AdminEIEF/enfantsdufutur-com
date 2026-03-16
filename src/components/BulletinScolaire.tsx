@@ -82,6 +82,8 @@ export default function BulletinScolaire({
   schoolSubtitle = 'Enseignement Général et Technique',
   schoolCity = 'Conakry, Guinée',
   schoolLogoUrl,
+  isFinalPeriod = false,
+  previousPeriodsNotes = [],
 }: BulletinScolaireProps) {
   const isAdmis = moyennePeriode !== null && moyennePeriode >= seuil;
   const isRedouble = moyennePeriode !== null && !isAdmis;
