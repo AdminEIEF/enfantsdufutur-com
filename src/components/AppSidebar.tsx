@@ -178,6 +178,9 @@ const navSections = [
     items: [
       { title: 'Tableau de bord', url: '/tresorier-dashboard', icon: Wallet },
       { title: 'Gestion Salaires', url: '/tresorier-salaires', icon: Banknote },
+      { title: 'Salaire Secondaire', url: '/tresorier-salaires?mode=secondaire', icon: BookOpen },
+      { title: 'Salaire Primaire', url: '/tresorier-salaires?mode=primaire', icon: GradCap },
+      { title: 'Salaire Soutien', url: '/tresorier-salaires?mode=soutien', icon: Wrench },
       { title: 'Gestion Avances', url: '/tresorier-avances', icon: DollarSign },
     ],
   },
