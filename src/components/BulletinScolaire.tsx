@@ -160,7 +160,7 @@ export default function BulletinScolaire({
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '13px', fontWeight: 800, color: '#047857', letterSpacing: '0.05em' }}>BULLETIN DE NOTES</div>
+          <div style={{ fontSize: '13px', fontWeight: 800, color: '#047857', letterSpacing: '0.05em' }}>{isFinalPeriod ? "BULLETIN DE NOTES DE FIN D'ANNÉE" : 'BULLETIN DE NOTES'}</div>
           <div style={{ backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '4px', padding: '2px 12px', marginTop: '3px' }}>
             <div style={{ fontSize: '8.5px', color: '#047857', fontWeight: 600 }}>Année : {anneeScolaire} — {periodeName}</div>
           </div>
@@ -201,6 +201,9 @@ export default function BulletinScolaire({
               ))}
               <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '46px', verticalAlign: 'middle' }}>Moyenne</th>
               <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '50px', verticalAlign: 'middle' }}>Moy×Coef</th>
+              {isFinalPeriod && (
+                <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '30px', verticalAlign: 'middle' }}>Rang</th>
+              )}
               <th style={{ padding: '4px 5px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>Appréciation</th>
             </tr>
           </thead>
@@ -227,6 +230,9 @@ export default function BulletinScolaire({
                   <td style={{ ...cellCenter, fontWeight: 600 }}>
                     {total !== null ? total.toFixed(2) : '—'}
                   </td>
+                  {isFinalPeriod && (
+                    <td style={{ ...cellCenter }}>{b.rang || '—'}</td>
+                  )}
                   <td style={{ padding: '2px 5px', textAlign: 'center', verticalAlign: 'middle', color: '#6b7280', fontStyle: 'italic', fontSize: '8px' }}>{b.appreciation || '—'}</td>
                 </tr>
               );
@@ -249,6 +255,7 @@ export default function BulletinScolaire({
               <td style={{ ...cellCenter, fontWeight: 700 }}>
                 {moyennePeriode !== null ? (moyennePeriode * totalCoef).toFixed(2) : '—'}
               </td>
+              {isFinalPeriod && <td style={{ ...cellCenter }}></td>}
               <td style={{ padding: '3px 5px', verticalAlign: 'middle' }}></td>
             </tr>
           </tfoot>
