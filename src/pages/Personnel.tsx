@@ -259,7 +259,18 @@ export default function Personnel() {
     },
   });
 
-  
+  // Fetch matieres with cycles for enseignant poste
+  const { data: matieresWithCycles = [] } = useQuery({
+    queryKey: ['matieres-cycles-for-personnel'],
+    queryFn: async () => {
+      const { data: matieres, error } = await supabase
+        .from('matieres')
+        .select('id, nom, cycle_id, cycles(id, nom)')
+        .order('ordre');
+      if (error) throw error;
+      return matieres || [];
+    },
+  });
 
   // Fetch courriers
   const { data: courriers = [], refetch: refetchCourriers } = useQuery({
@@ -775,7 +786,7 @@ export default function Personnel() {
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-3">
                   <div className="space-y-1"><Label>Catégorie *</Label>
-                    <Select value={form.categorie} onValueChange={v => setForm(f => ({ ...f, categorie: v }))}>
+                    <Select value={form.categorie} onValueChange={v => setForm(f => ({ ...f, categorie: v, poste: '' }))}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="enseignant">Enseignant</SelectItem>
@@ -800,7 +811,36 @@ export default function Personnel() {
                   <div className="space-y-1"><Label>Prénom *</Label><Input value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1"><Label>Poste</Label><Input value={form.poste} onChange={e => setForm(f => ({ ...f, poste: e.target.value }))} placeholder="Ex: Prof de Maths" /></div>
+                  {form.categorie === 'enseignant' ? (
+                    <div className="space-y-1">
+                      <Label>Professeur de *</Label>
+                      <Select value={form.poste} onValueChange={v => setForm(f => ({ ...f, poste: v }))}>
+                        <SelectTrigger><SelectValue placeholder="Choisir une matière" /></SelectTrigger>
+                        <SelectContent>
+                          {(() => {
+                            const grouped: Record<string, { id: string; nom: string }[]> = {};
+                            matieresWithCycles.forEach((m: any) => {
+                              const cycleName = m.cycles?.nom || 'Autre';
+                              if (!grouped[cycleName]) grouped[cycleName] = [];
+                              if (!grouped[cycleName].find((x: any) => x.nom === m.nom)) {
+                                grouped[cycleName].push({ id: m.id, nom: m.nom });
+                              }
+                            });
+                            return Object.entries(grouped).map(([cycle, mats]) => (
+                              <div key={cycle}>
+                                <p className="px-2 py-1 text-xs font-semibold text-muted-foreground">{cycle}</p>
+                                {mats.map(m => (
+                                  <SelectItem key={m.id} value={`Professeur de ${m.nom}`}>{m.nom}</SelectItem>
+                                ))}
+                              </div>
+                            ));
+                          })()}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="space-y-1"><Label>Poste</Label><Input value={form.poste} onChange={e => setForm(f => ({ ...f, poste: e.target.value }))} placeholder="Ex: Secrétaire" /></div>
+                  )}
                   <div className="space-y-1"><Label>Sexe</Label>
                     <Select value={form.sexe} onValueChange={v => setForm(f => ({ ...f, sexe: v }))}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
@@ -820,20 +860,21 @@ export default function Personnel() {
                   <div className="space-y-1"><Label>Date d'embauche</Label><Input type="date" value={form.date_embauche} onChange={e => setForm(f => ({ ...f, date_embauche: e.target.value }))} /></div>
                 </div>
                 <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5">🔐 Le mot de passe sera généré automatiquement et affiché après création.</p>
-                <div className="space-y-1"><Label>Adresse</Label><Input value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))} /></div>
-                {/* Photo by camera */}
-                <div className="space-y-1">
-                  <Label>Photo (caméra)</Label>
-                  {capturedPhoto && cameraTarget === 'add' ? (
-                    <div className="flex items-center gap-2">
-                      <img src={capturedPhoto} alt="Photo" className="w-16 h-16 rounded-full object-cover border" />
-                      <Button size="sm" variant="outline" onClick={() => setCapturedPhoto(null)}>Reprendre</Button>
-                    </div>
-                  ) : (
-                    <Button size="sm" variant="outline" className="w-full" onClick={() => startCamera('add')}>
-                      <Camera className="h-4 w-4 mr-1" /> Prendre une photo
-                    </Button>
-                  )}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1"><Label>Adresse</Label><Input value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))} /></div>
+                  <div className="space-y-1">
+                    <Label>Photo (caméra)</Label>
+                    {capturedPhoto && cameraTarget === 'add' ? (
+                      <div className="flex items-center gap-2">
+                        <img src={capturedPhoto} alt="Photo" className="w-16 h-16 rounded-full object-cover border" />
+                        <Button size="sm" variant="outline" onClick={() => setCapturedPhoto(null)}>Reprendre</Button>
+                      </div>
+                    ) : (
+                      <Button size="sm" variant="outline" className="w-full" onClick={() => startCamera('add')}>
+                        <Camera className="h-4 w-4 mr-1" /> Prendre une photo
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <Button className="w-full" onClick={() => addEmployee.mutate()} disabled={addEmployee.isPending}>
                   {addEmployee.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
