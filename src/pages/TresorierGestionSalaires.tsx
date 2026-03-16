@@ -192,7 +192,8 @@ export default function TresorierGestionSalaires() {
   const hasSigned = (empId: string) => paiements.some(p => p.employe_id === empId && p.signature_employe);
 
   const filtered = employes.filter(e => {
-    const matchCat = categorie === 'all' || e.categorie === categorie;
+    const effCat = getEffectiveCat(e);
+    const matchCat = categorie === 'all' || effCat === categorie;
     const matchSearch = `${e.nom} ${e.prenom} ${e.poste}`.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
   });
