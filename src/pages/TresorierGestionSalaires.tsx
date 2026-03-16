@@ -295,6 +295,34 @@ export default function TresorierGestionSalaires() {
     toast({ title: 'PDF généré', description: 'Le registre de paie a été téléchargé.' });
   };
 
+  const getListePDFOptions = () => {
+    const catLabel = categorie !== 'all'
+      ? CATEGORIES.find(c => c.value === categorie)?.label || categorie
+      : filterMode ? filterMode.label : 'Tout le personnel';
+    return {
+      title: catLabel,
+      schoolName: schoolConfig?.nom || 'Ecole Internationale Les Enfants du Futur',
+      logoUrl: schoolConfig?.logo_url,
+      employes: filtered.map(e => ({
+        nom: e.nom,
+        prenom: e.prenom,
+        poste: e.poste,
+        salaire_base: e.salaire_base,
+        matricule: e.matricule,
+      })),
+      mois: format(new Date(), 'MMMM yyyy', { locale: fr }),
+    };
+  };
+
+  const handleDownloadListe = () => {
+    downloadListePersonnelPDF(getListePDFOptions());
+    toast({ title: 'PDF téléchargé', description: 'La liste du personnel a été générée.' });
+  };
+
+  const handlePrintListe = () => {
+    printListePersonnelPDF(getListePDFOptions());
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
