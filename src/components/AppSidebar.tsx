@@ -1,7 +1,7 @@
 import {
-  GraduationCap, Users, UserPlus, BookOpen, Calculator, AlertTriangle,
-  Settings, Bell, ScanLine, Library, BarChart3,
-  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock, FileText, Shield, Bot, Trophy, Archive, Wallet, Banknote, DollarSign, ChevronDown, GraduationCap as GradCap, Wrench
+  GraduationCap, UsersRound, UserRoundPlus, BookOpenText, Calculator, TriangleAlert,
+  Cog, BellRing, QrCode, LibraryBig, ChartColumnStacked,
+  LayoutDashboard, Landmark, ClipboardCheck, Medal, RotateCcw, BusFront, Store, Download, TvMinimalPlay, BriefcaseBusiness, CalendarRange, Timer, FileCheck2, ShieldCheck, Sparkles, Trophy, Trash2, WalletCards, HandCoins, CircleDollarSign, ChevronDown, GraduationCap as GradCap, Wrench
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Link, useLocation } from 'react-router-dom';
@@ -20,52 +20,52 @@ const navSections = [
     label: 'Superviseur',
     roles: ['superviseur'] as const,
     items: [
-      { title: 'Tableau de bord', url: '/superviseur-dashboard', icon: Home },
-      { title: 'Personnel', url: '/personnel', icon: Briefcase },
-      { title: 'Pré-inscriptions', url: '/pre-inscriptions', icon: FileText },
-      { title: 'Supervision', url: '/supervision', icon: Shield },
-      { title: 'Configuration', url: '/configuration', icon: Settings },
+      { title: 'Tableau de bord', url: '/superviseur-dashboard', icon: LayoutDashboard },
+      { title: 'Personnel', url: '/personnel', icon: BriefcaseBusiness },
+      { title: 'Pré-inscriptions', url: '/pre-inscriptions', icon: FileCheck2 },
+      { title: 'Supervision', url: '/supervision', icon: ShieldCheck },
+      { title: 'Configuration', url: '/configuration', icon: Cog },
     ],
   },
   {
     label: 'Service Informatique',
     roles: ['service_info'] as const,
     items: [
-      { title: 'Tableau de bord', url: '/service-info-dashboard', icon: Home },
-      { title: 'Notifications', url: '/notifications', icon: Bell },
+      { title: 'Tableau de bord', url: '/service-info-dashboard', icon: LayoutDashboard },
+      { title: 'Notifications', url: '/notifications', icon: BellRing },
     ],
   },
   {
     label: 'Principal',
     roles: ['admin', 'secretaire', 'comptable'] as const,
     items: [
-      { title: 'Tableau de bord', url: '/dashboard', icon: Home },
-      { title: 'Notifications', url: '/notifications', icon: Bell },
+      { title: 'Tableau de bord', url: '/dashboard', icon: LayoutDashboard },
+      { title: 'Notifications', url: '/notifications', icon: BellRing },
     ],
   },
   {
     label: 'Scolarité',
     roles: ['admin', 'secretaire'] as const,
     items: [
-      { title: 'Pré-inscriptions', url: '/pre-inscriptions', icon: FileText },
-      { title: 'Inscriptions', url: '/inscriptions', icon: UserPlus },
-      { title: 'Familles', url: '/familles', icon: Users },
-      { title: 'Élèves', url: '/eleves', icon: ClipboardList },
-      { title: 'Corbeille', url: '/corbeille', icon: Archive },
-      { title: 'Réinscription', url: '/reinscription', icon: RefreshCw },
+      { title: 'Pré-inscriptions', url: '/pre-inscriptions', icon: FileCheck2 },
+      { title: 'Inscriptions', url: '/inscriptions', icon: UserRoundPlus },
+      { title: 'Familles', url: '/familles', icon: UsersRound },
+      { title: 'Élèves', url: '/eleves', icon: ClipboardCheck },
+      { title: 'Corbeille', url: '/corbeille', icon: Trash2 },
+      { title: 'Réinscription', url: '/reinscription', icon: RotateCcw },
     ],
   },
   {
     label: 'Académique',
     roles: ['admin', 'service_info'] as const,
     items: [
-      { title: 'Mes Classes', url: '/mes-classes', icon: Users },
-      { title: 'Saisie des notes', url: '/notes', icon: BookOpen },
-      { title: 'Bulletins', url: '/bulletins', icon: Award },
-      { title: 'Cours & Devoirs', url: '/cours-admin', icon: Video },
-      { title: 'Emploi du temps', url: '/emploi-du-temps', icon: Clock },
-      { title: 'Calendrier', url: '/calendrier', icon: CalendarDays },
-      { title: 'Orientation', url: '/orientation', icon: BarChart3 },
+      { title: 'Mes Classes', url: '/mes-classes', icon: UsersRound },
+      { title: 'Saisie des notes', url: '/notes', icon: BookOpenText },
+      { title: 'Bulletins', url: '/bulletins', icon: Medal },
+      { title: 'Cours & Devoirs', url: '/cours-admin', icon: TvMinimalPlay },
+      { title: 'Emploi du temps', url: '/emploi-du-temps', icon: Timer },
+      { title: 'Calendrier', url: '/calendrier', icon: CalendarRange },
+      { title: 'Orientation', url: '/orientation', icon: ChartColumnStacked },
       { title: 'Performance', url: '/performance', icon: Trophy },
     ],
   },
@@ -73,126 +73,126 @@ const navSections = [
     label: 'Coordination',
     roles: ['coordinateur'] as any,
     items: [
-      { title: 'Tableau de bord', url: '/coordinateur-dashboard', icon: Home },
-      { title: 'Personnel', url: '/coordinateur-personnel', icon: Briefcase },
-      { title: 'Élèves inscrits', url: '/coordinateur-eleves', icon: ClipboardList },
-      { title: 'Documents coordinateur', url: '/coordinateur-documents', icon: FileText },
+      { title: 'Tableau de bord', url: '/coordinateur-dashboard', icon: LayoutDashboard },
+      { title: 'Personnel', url: '/coordinateur-personnel', icon: BriefcaseBusiness },
+      { title: 'Élèves inscrits', url: '/coordinateur-eleves', icon: ClipboardCheck },
+      { title: 'Documents coordinateur', url: '/coordinateur-documents', icon: FileCheck2 },
     ],
   },
   {
     label: 'Académique',
     roles: ['coordinateur'] as any,
     items: [
-      { title: 'Mes Classes', url: '/mes-classes', icon: Users },
-      { title: 'Saisie des notes', url: '/notes', icon: BookOpen },
-      { title: 'Bulletins', url: '/bulletins', icon: Award },
-      { title: 'Cours & Devoirs', url: '/cours-admin', icon: Video },
-      { title: 'Emploi du temps', url: '/emploi-du-temps', icon: Clock },
-      { title: 'Calendrier', url: '/calendrier', icon: CalendarDays },
-      { title: 'Orientation', url: '/orientation', icon: BarChart3 },
+      { title: 'Mes Classes', url: '/mes-classes', icon: UsersRound },
+      { title: 'Saisie des notes', url: '/notes', icon: BookOpenText },
+      { title: 'Bulletins', url: '/bulletins', icon: Medal },
+      { title: 'Cours & Devoirs', url: '/cours-admin', icon: TvMinimalPlay },
+      { title: 'Emploi du temps', url: '/emploi-du-temps', icon: Timer },
+      { title: 'Calendrier', url: '/calendrier', icon: CalendarRange },
+      { title: 'Orientation', url: '/orientation', icon: ChartColumnStacked },
     ],
   },
   {
     label: 'Finances',
     roles: ['admin', 'comptable'] as const,
     items: [
-      { title: 'Paiements', url: '/paiements', icon: CreditCard },
+      { title: 'Paiements', url: '/paiements', icon: Landmark },
       { title: 'Dépenses', url: '/depenses', icon: Calculator },
-      { title: 'Impayés', url: '/impayes', icon: AlertTriangle },
-      { title: 'Tableau financier', url: '/finances', icon: BarChart3 },
+      { title: 'Impayés', url: '/impayes', icon: TriangleAlert },
+      { title: 'Tableau financier', url: '/finances', icon: ChartColumnStacked },
     ],
   },
   {
     label: 'Cantine',
     roles: ['admin', 'cantine', 'secretaire', 'comptable'] as const,
     items: [
-      { title: 'Cantine & QR', url: '/cantine', icon: ScanLine },
+      { title: 'Cantine & QR', url: '/cantine', icon: QrCode },
     ],
   },
   {
     label: 'Services',
     roles: ['admin', 'secretaire', 'chauffeur'] as const,
     items: [
-      { title: 'Transport', url: '/transport', icon: Bus },
+      { title: 'Transport', url: '/transport', icon: BusFront },
     ],
   },
   {
     label: 'Librairie',
     roles: ['admin', 'librairie', 'secretaire'] as const,
     items: [
-      { title: 'Librairie', url: '/librairie', icon: BookOpen },
+      { title: 'Librairie', url: '/librairie', icon: BookOpenText },
     ],
   },
   {
     label: 'Bibliothèque',
     roles: ['admin', 'secretaire'] as const,
     items: [
-      { title: 'Bibliothèque', url: '/bibliotheque', icon: Library },
+      { title: 'Bibliothèque', url: '/bibliotheque', icon: LibraryBig },
     ],
   },
   {
     label: 'Boutique',
     roles: ['admin', 'boutique'] as const,
     items: [
-      { title: 'Boutique', url: '/boutique', icon: ShoppingBag },
+      { title: 'Boutique', url: '/boutique', icon: Store },
     ],
   },
   {
     label: 'Surveillance',
     roles: ['admin', 'secretaire', 'surveillant'] as const,
     items: [
-      { title: 'Pointage Élèves', url: '/pointage-eleves', icon: ScanLine },
+      { title: 'Pointage Élèves', url: '/pointage-eleves', icon: QrCode },
     ],
   },
   {
     label: 'Pointage',
     roles: ['pointeur'] as any,
     items: [
-      { title: 'Pointage Élèves', url: '/pointeur-pointage', icon: ScanLine },
+      { title: 'Pointage Élèves', url: '/pointeur-pointage', icon: QrCode },
     ],
   },
   {
     label: 'Scolarité - Coordination',
     roles: ['admin', 'secretaire'] as any,
     items: [
-      { title: 'Élèves inscrits', url: '/coordinateur-eleves', icon: ClipboardList },
-      { title: 'Documents coordinateur', url: '/coordinateur-documents', icon: FileText },
+      { title: 'Élèves inscrits', url: '/coordinateur-eleves', icon: ClipboardCheck },
+      { title: 'Documents coordinateur', url: '/coordinateur-documents', icon: FileCheck2 },
     ],
   },
   {
     label: 'Robotique',
     roles: ['admin', 'secretaire'] as any,
     items: [
-      { title: 'Gestion Robotique', url: '/robotique', icon: Bot },
+      { title: 'Gestion Robotique', url: '/robotique', icon: Sparkles },
     ],
   },
   {
     label: 'Robotique',
     roles: ['robotique'] as any,
     items: [
-      { title: 'Dashboard Robotique', url: '/robotique-dashboard', icon: Bot },
+      { title: 'Dashboard Robotique', url: '/robotique-dashboard', icon: Sparkles },
     ],
   },
   {
     label: 'Trésorerie',
     roles: ['tresorier'] as any,
     items: [
-      { title: 'Tableau de bord', url: '/tresorier-dashboard', icon: Wallet },
-      { title: 'Gestion Salaires', url: '/tresorier-salaires', icon: Banknote },
-      { title: 'Salaire Secondaire', url: '/tresorier-salaires?mode=secondaire', icon: BookOpen },
+      { title: 'Tableau de bord', url: '/tresorier-dashboard', icon: WalletCards },
+      { title: 'Gestion Salaires', url: '/tresorier-salaires', icon: HandCoins },
+      { title: 'Salaire Secondaire', url: '/tresorier-salaires?mode=secondaire', icon: BookOpenText },
       { title: 'Salaire Primaire', url: '/tresorier-salaires?mode=primaire', icon: GradCap },
       { title: 'Salaire Soutien', url: '/tresorier-salaires?mode=soutien', icon: Wrench },
-      { title: 'Gestion Avances', url: '/tresorier-avances', icon: DollarSign },
+      { title: 'Gestion Avances', url: '/tresorier-avances', icon: CircleDollarSign },
     ],
   },
   {
     label: 'Administration',
     roles: ['admin'] as const,
     items: [
-      { title: 'Personnel', url: '/personnel', icon: Briefcase },
-      { title: 'Traçabilité', url: '/tracabilite', icon: ClipboardList },
-      { title: 'Supervision', url: '/supervision', icon: Shield },
-      { title: 'Configuration', url: '/configuration', icon: Settings },
+      { title: 'Personnel', url: '/personnel', icon: BriefcaseBusiness },
+      { title: 'Traçabilité', url: '/tracabilite', icon: ClipboardCheck },
+      { title: 'Supervision', url: '/supervision', icon: ShieldCheck },
+      { title: 'Configuration', url: '/configuration', icon: Cog },
     ],
   },
 ];
@@ -280,7 +280,7 @@ export function AppSidebar() {
           const chatBubble = document.querySelector('[data-ai-chat-trigger]') as HTMLButtonElement;
           if (chatBubble) chatBubble.click();
         }}>
-          <Bot className="mr-2 h-4 w-4" />
+          <Sparkles className="mr-2 h-4 w-4" />
           Assistance IA
         </Button>
       </SidebarFooter>
