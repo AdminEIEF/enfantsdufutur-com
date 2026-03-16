@@ -1501,6 +1501,7 @@ function EcoleTab() {
             <p className="font-bold text-primary">{nom}</p>
             {soustitre && <p className="text-xs text-muted-foreground italic">{soustitre}</p>}
             {ville && <p className="text-xs text-muted-foreground">{ville}</p>}
+            {telephone && <p className="text-xs text-muted-foreground">📞 {telephone}</p>}
           </div>
         )}
 
