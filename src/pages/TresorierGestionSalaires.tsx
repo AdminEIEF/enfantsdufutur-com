@@ -42,6 +42,7 @@ interface Employe {
   prenom: string;
   poste: string;
   categorie: string;
+  matricule: string;
   salaire_base: number;
   statut: string;
 }
