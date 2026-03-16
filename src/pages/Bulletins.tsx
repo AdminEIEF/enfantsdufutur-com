@@ -469,6 +469,7 @@ export default function Bulletins() {
                 schoolName={schoolConfig?.nom}
                 schoolSubtitle={schoolConfig?.soustitre}
                 schoolCity={schoolConfig?.ville}
+                schoolPhone={schoolConfig?.telephone}
                 schoolLogoUrl={schoolConfig?.logo_url}
                 isFinalPeriod={periode?.nom === 'P5'}
                 previousPeriodsNotes={(() => {

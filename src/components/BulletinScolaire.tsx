@@ -51,6 +51,7 @@ interface BulletinScolaireProps {
   schoolName?: string;
   schoolSubtitle?: string;
   schoolCity?: string;
+  schoolPhone?: string;
   schoolLogoUrl?: string | null;
   isFinalPeriod?: boolean;
   previousPeriodsNotes?: PeriodNoteByMatiere[];
@@ -98,6 +99,7 @@ export default function BulletinScolaire({
   schoolName = 'Ecole Internationale Les Enfants du Futur',
   schoolSubtitle = 'Enseignement Général et Technique',
   schoolCity = 'Conakry, Guinée',
+  schoolPhone = '',
   schoolLogoUrl,
   isFinalPeriod = false,
   previousPeriodsNotes = [],
@@ -145,15 +147,15 @@ export default function BulletinScolaire({
       `}</style>
 
       {/* ── En-tête ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2.5px solid #047857', paddingBottom: '5px', marginBottom: '5px' }}>
-        {/* République de Guinée */}
-        <div style={{ textAlign: 'center', minWidth: '130px' }}>
-          <div style={{ fontSize: '10px', fontWeight: 800, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.03em' }}>République de Guinée</div>
-          <div style={{ fontSize: '8px', color: '#6b7280', fontStyle: 'italic', marginTop: '1px' }}>Travail - Justice - Solidarité</div>
-        </div>
+      {/* République de Guinée - centré au-dessus */}
+      <div style={{ textAlign: 'center', marginBottom: '4px' }}>
+        <div style={{ fontSize: '10px', fontWeight: 800, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>République de Guinée</div>
+        <div style={{ fontSize: '8px', color: '#6b7280', fontStyle: 'italic', marginTop: '1px' }}>Travail - Justice - Solidarité</div>
+      </div>
 
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2.5px solid #047857', paddingBottom: '5px', marginBottom: '5px' }}>
         {/* Logo + Nom école */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {schoolLogoUrl ? (
             <img src={schoolLogoUrl} alt="Logo" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} crossOrigin="anonymous" />
           ) : (
@@ -167,11 +169,16 @@ export default function BulletinScolaire({
             <div style={{ fontSize: '7.5px', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '1px' }}>
               <MapPin style={{ width: '8px', height: '8px' }} /> {schoolCity}
             </div>
+            {schoolPhone && (
+              <div style={{ fontSize: '7.5px', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '1px' }}>
+                📞 {schoolPhone}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Titre bulletin */}
-        <div style={{ textAlign: 'center', minWidth: '160px' }}>
+        <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '12px', fontWeight: 800, color: '#047857', letterSpacing: '0.05em' }}>{isFinalPeriod ? "BULLETIN DE NOTES DE FIN D'ANNÉE" : 'BULLETIN DE NOTES'}</div>
           <div style={{ backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '4px', padding: '2px 12px', marginTop: '3px' }}>
             <div style={{ fontSize: '8.5px', color: '#047857', fontWeight: 600 }}>Année : {anneeScolaire} — {periodeName}</div>
