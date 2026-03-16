@@ -959,8 +959,8 @@ export default function Personnel() {
             </Select>
           </div>
           <div className="mb-3 flex gap-2 flex-wrap">
-            {['all', 'enseignant', 'administration', 'service', 'direction', 'hygiene', 'securite_primaire', 'securite_lycee', 'chauffeur', 'infirmiere', 'librairie', 'cantine', 'surveillant'].map(cat => {
-              const count = cat === 'all' ? employes.length : employes.filter((e: any) => e.categorie === cat).length;
+            {['all', 'enseignant_primaire', 'enseignant_secondaire', 'administration', 'service', 'direction', 'hygiene', 'securite_primaire', 'securite_lycee', 'chauffeur', 'infirmiere', 'librairie', 'cantine', 'surveillant'].map(cat => {
+              const count = cat === 'all' ? employes.length : employes.filter((e: any) => getEffectiveCat(e) === cat).length;
               const label = cat === 'all' ? 'Tous' : (categorieLabel[cat] || cat);
               return (
                 <Badge key={cat} variant={filterCategorie === cat ? 'default' : 'outline'} className="cursor-pointer" onClick={() => setFilterCategorie(cat)}>
