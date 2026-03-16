@@ -155,10 +155,10 @@ export default function BulletinScolaire({
             </div>
           )}
           <div>
-            <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#064e3b', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{schoolName}</div>
-            <div style={{ fontSize: '9.5px', color: '#6b7280', marginTop: '1px' }}>{schoolSubtitle}</div>
-            <div style={{ fontSize: '8.5px', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '1px' }}>
-              <MapPin style={{ width: '9px', height: '9px' }} /> {schoolCity}
+            <div style={{ fontSize: '13px', fontWeight: 800, color: '#064e3b', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{schoolName}</div>
+            <div style={{ fontSize: '8.5px', color: '#6b7280', marginTop: '1px' }}>{schoolSubtitle}</div>
+            <div style={{ fontSize: '7.5px', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '1px' }}>
+              <MapPin style={{ width: '8px', height: '8px' }} /> {schoolCity}
             </div>
           </div>
         </div>
