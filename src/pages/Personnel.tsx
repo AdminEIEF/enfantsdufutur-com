@@ -882,7 +882,7 @@ export default function Personnel() {
             </Select>
           </div>
           <div className="mb-3 flex gap-2 flex-wrap">
-            {['all', 'enseignant', 'administration', 'service', 'direction'].map(cat => {
+            {['all', 'enseignant', 'administration', 'service', 'direction', 'hygiene', 'securite_primaire', 'securite_lycee', 'chauffeur', 'infirmiere', 'librairie', 'cantine', 'surveillant'].map(cat => {
               const count = cat === 'all' ? employes.length : employes.filter((e: any) => e.categorie === cat).length;
               const label = cat === 'all' ? 'Tous' : (categorieLabel[cat] || cat);
               return (

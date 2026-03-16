@@ -18,11 +18,17 @@ import { generateRegistrePaiePDF } from '@/lib/generateRegistrePaiePDF';
 const CATEGORIES = [
   { value: 'all', label: 'Toutes les catégories' },
   { value: 'enseignant', label: 'Professeurs' },
-  { value: 'chauffeur', label: 'Chauffeurs' },
   { value: 'administration', label: 'Administration' },
-  { value: 'securite', label: 'Sécurité' },
-  { value: 'technique', label: 'Technique' },
-  { value: 'cuisine', label: 'Cuisine' },
+  { value: 'service', label: 'Service' },
+  { value: 'direction', label: 'Direction' },
+  { value: 'hygiene', label: 'Service Hygiène' },
+  { value: 'securite_primaire', label: 'Sécurité Primaire' },
+  { value: 'securite_lycee', label: 'Sécurité Lycée' },
+  { value: 'chauffeur', label: 'Chauffeur' },
+  { value: 'infirmiere', label: 'Infirmière' },
+  { value: 'librairie', label: 'Librairie' },
+  { value: 'cantine', label: 'Cantine' },
+  { value: 'surveillant', label: 'Surveillant' },
 ];
 
 interface Employe {
