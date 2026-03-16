@@ -77,6 +77,7 @@ const cellCenter: React.CSSProperties = {
   fontSize: '9.5px',
   whiteSpace: 'nowrap',
   overflow: 'hidden',
+  lineHeight: '20px',
 };
 
 export default function BulletinScolaire({
