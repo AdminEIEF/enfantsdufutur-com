@@ -38,6 +38,9 @@ interface BulletinScolaireProps {
   bulletinData: BulletinNote[];
   moyennePeriode: number | null;
   rang: number | null;
+  plusForte: number | null;
+  plusFaible: number | null;
+  moyenneAnnuelle: number | null;
   bareme: number;
   seuil: number;
   previousPeriods: PreviousPeriodSummary[];
@@ -79,6 +82,9 @@ export default function BulletinScolaire({
   bulletinData,
   moyennePeriode,
   rang,
+  plusForte = null,
+  plusFaible = null,
+  moyenneAnnuelle = null,
   bareme,
   seuil,
   previousPeriods,
@@ -276,11 +282,14 @@ export default function BulletinScolaire({
               <span><strong>Rang :</strong> {rang !== null ? `${rang}ᵉ / ${effectif}` : '—'}</span>
               <span><strong>Mention :</strong> {mention || '—'}</span>
             </div>
-            {rangAnnuel !== null && (
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span><strong>Rang annuel :</strong> <span style={{ fontWeight: 700 }}>{rangAnnuel}ᵉ / {effectif}</span></span>
-              </div>
-            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+              <span><strong>+ forte :</strong> {plusForte !== null ? plusForte.toFixed(2) : '—'}</span>
+              <span><strong>+ faible :</strong> {plusFaible !== null ? plusFaible.toFixed(2) : '—'}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+              <span><strong>Moy. annuelle :</strong> <span style={{ color: moyenneAnnuelle !== null && moyenneAnnuelle >= seuil ? '#047857' : '#dc2626', fontWeight: 700 }}>{moyenneAnnuelle !== null ? `${moyenneAnnuelle.toFixed(2)}/${bareme}` : '—'}</span></span>
+              {rangAnnuel !== null && <span><strong>Rang annuel :</strong> <span style={{ fontWeight: 700 }}>{rangAnnuel}ᵉ / {effectif}</span></span>}
+            </div>
           </div>
         </div>
 
