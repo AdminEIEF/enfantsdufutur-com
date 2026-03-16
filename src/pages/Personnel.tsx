@@ -797,10 +797,11 @@ export default function Personnel() {
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-3">
                   <div className="space-y-1"><Label>Catégorie *</Label>
-                    <Select value={form.categorie} onValueChange={v => setForm(f => ({ ...f, categorie: v, poste: '' }))}>
+                    <Select value={form.categorie} onValueChange={v => setForm(f => ({ ...f, categorie: v, poste: '', niveau_enseignant: '' }))}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="enseignant">Enseignant</SelectItem>
+                        <SelectItem value="enseignant_primaire">Enseignant Primaire (Crèche/Maternelle/Primaire)</SelectItem>
+                        <SelectItem value="enseignant_secondaire">Enseignant Secondaire (Collège/Lycée)</SelectItem>
                         <SelectItem value="administration">Administration</SelectItem>
                         <SelectItem value="service">Service</SelectItem>
                         <SelectItem value="direction">Direction</SelectItem>
