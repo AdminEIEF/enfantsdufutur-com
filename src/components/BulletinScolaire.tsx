@@ -203,9 +203,11 @@ export default function BulletinScolaire({
           </div>
         </div>
 
-        {/* Tableau récap des périodes précédentes */}
+        {/* Tableau récap des périodes */}
         <div className="border border-gray-200 rounded-lg p-3">
-          <h3 className="text-xs font-bold text-emerald-700 mb-2">Récapitulatif des évaluations précédentes</h3>
+          <h3 className="text-xs font-bold text-emerald-700 mb-2">
+            {isP5 ? 'Récapitulatif de toutes les évaluations' : 'Récapitulatif des évaluations précédentes'}
+          </h3>
           {previousPeriods.length > 0 ? (
             <table className="w-full border-collapse text-xs">
               <thead>
