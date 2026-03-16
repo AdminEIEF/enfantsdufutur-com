@@ -69,11 +69,11 @@ const getMention = (moyenne: number | null, bareme: number): string | null => {
 };
 
 const cellCenter: React.CSSProperties = {
-  padding: '2px 3px',
+  padding: '2px 2px',
   textAlign: 'center',
   verticalAlign: 'middle',
   fontFamily: "'JetBrains Mono', 'Courier New', monospace",
-  fontSize: '10.5px',
+  fontSize: '9.5px',
   whiteSpace: 'nowrap',
   overflow: 'hidden',
 };
