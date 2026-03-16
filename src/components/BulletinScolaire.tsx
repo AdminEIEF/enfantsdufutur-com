@@ -357,7 +357,7 @@ export default function BulletinScolaire({
                   formatter={(value: number) => [`${value.toFixed(2)}/${bareme}`, 'Moyenne']}
                   contentStyle={{ fontSize: 10, borderRadius: 4, padding: '3px 6px' }}
                 />
-                <ReferenceLine y={seuil} stroke="#ef4444" strokeDasharray="3 3" label={{ value: `Seuil (${seuil})`, fontSize: 7, fill: '#ef4444' }} />
+                <ReferenceLine y={seuil} stroke="#ef4444" strokeDasharray="3 3" label={{ value: `Seuil (${seuil})`, fontSize: 8, fill: '#ef4444' }} />
                 <Line
                   type="monotone"
                   dataKey="moyenne"
