@@ -204,9 +204,9 @@ export default function BulletinScolaire({
           <thead>
             <tr style={{ backgroundColor: '#047857', color: 'white' }}>
               <th style={{ padding: '4px 4px', textAlign: 'left', fontWeight: 700, verticalAlign: 'middle', whiteSpace: 'nowrap' }}>Matière</th>
-              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '28px', verticalAlign: 'middle' }}>Coef</th>
+              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '22px', fontSize: '9px', verticalAlign: 'middle' }}>Coef</th>
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
-                <th key={pp.periodeName} style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '38px', fontSize: '10px', verticalAlign: 'middle' }}>{pp.periodeName}</th>
+                <th key={pp.periodeName} style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '42px', fontSize: '11px', verticalAlign: 'middle' }}>{pp.periodeName}</th>
               ))}
               <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '50px', verticalAlign: 'middle' }}>Moyenne</th>
               <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '54px', verticalAlign: 'middle' }}>Moy×Coef</th>
@@ -223,12 +223,12 @@ export default function BulletinScolaire({
               return (
                 <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', height: '20px' }}>
                   <td style={{ padding: '2px 4px', fontWeight: 500, verticalAlign: 'middle', fontSize: '11px', whiteSpace: 'nowrap' }}>{b.matiere}</td>
-                  <td style={{ ...cellCenter, color: '#6b7280', fontWeight: 600 }}>{b.coefficient}</td>
+                  <td style={{ ...cellCenter, color: '#6b7280', fontWeight: 600, fontSize: '9px' }}>{b.coefficient}</td>
                   {isFinalPeriod && previousPeriodsNotes.map((pp) => {
                     const prevNote = pp.notesByMatiere[b.matiere] ?? null;
                     const prevBelowAvg = prevNote !== null && prevNote < seuil;
                     return (
-                      <td key={pp.periodeName} style={{ ...cellCenter, fontSize: '10px', color: prevBelowAvg ? '#dc2626' : '#374151' }}>
+                      <td key={pp.periodeName} style={{ ...cellCenter, fontSize: '11.5px', color: prevBelowAvg ? '#dc2626' : '#374151' }}>
                         {prevNote !== null ? prevNote.toFixed(2) : '—'}
                       </td>
                     );
