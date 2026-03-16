@@ -1416,7 +1416,7 @@ function EcoleTab() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const valeur = { nom, soustitre, ville, logo_url: logoUrl || null };
+      const valeur = { nom, soustitre, ville, telephone, logo_url: logoUrl || null };
       if (config?.id) {
         const { error } = await supabase.from('parametres').update({ valeur: valeur as any }).eq('id', config.id);
         if (error) throw error;
