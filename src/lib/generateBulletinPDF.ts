@@ -19,20 +19,29 @@ export async function generateBulletinPDF(
   a4Container.style.transformOrigin = 'top left';
 
   const canvas = await html2canvas(a4Container, {
-    scale: 3, // Higher resolution for crisp text
+    scale: 3,
     useCORS: true,
     allowTaint: true,
     backgroundColor: '#ffffff',
-    width: a4Container.scrollWidth,
-    height: a4Container.scrollHeight,
     logging: false,
     imageTimeout: 15000,
     onclone: (clonedDoc) => {
-      // Ensure fonts are rendered in the clone
       const clonedElement = clonedDoc.querySelector('[data-bulletin-a4]') as HTMLElement;
       if (clonedElement) {
         clonedElement.style.transform = 'none';
-        clonedElement.style.width = '210mm';
+        clonedElement.style.width = '794px'; // 210mm ≈ 794px at 96dpi
+        clonedElement.style.maxWidth = '794px';
+        clonedElement.style.overflow = 'hidden';
+        // Force all tables to fixed layout
+        clonedElement.querySelectorAll('table').forEach((t: HTMLElement) => {
+          t.style.tableLayout = 'fixed';
+          t.style.width = '100%';
+        });
+        // Prevent any cell from overflowing
+        clonedElement.querySelectorAll('td, th').forEach((c: HTMLElement) => {
+          c.style.overflow = 'hidden';
+          c.style.textOverflow = 'ellipsis';
+        });
       }
     },
   });
