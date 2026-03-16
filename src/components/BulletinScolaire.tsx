@@ -285,12 +285,12 @@ export default function BulletinScolaire({
             backgroundColor: isAdmis ? '#ecfdf5' : '#fef2f2',
             border: `1.5px solid ${isAdmis ? '#a7f3d0' : '#fecaca'}`,
           }}>
-            <div style={{ fontSize: '8.5px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Moyenne {periodeName}</div>
-            <div style={{ fontSize: '20px', fontWeight: 900, color: isAdmis ? '#047857' : '#dc2626', lineHeight: '1.2' }}>
+            <div style={{ fontSize: '7.5px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Moyenne {periodeName}</div>
+            <div style={{ fontSize: '18px', fontWeight: 900, color: isAdmis ? '#047857' : '#dc2626', lineHeight: '1.2' }}>
               {moyennePeriode !== null ? `${moyennePeriode.toFixed(2)} / ${bareme}` : '—'}
             </div>
           </div>
-          <div style={{ fontSize: '11px', color: '#374151' }}>
+          <div style={{ fontSize: '9px', color: '#374151' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
               <span><strong>Rang :</strong> {rang !== null ? `${rang}ᵉ / ${effectif}` : '—'}</span>
               <span><strong>Mention :</strong> {mention || '—'}</span>
