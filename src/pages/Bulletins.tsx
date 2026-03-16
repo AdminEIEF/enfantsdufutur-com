@@ -88,7 +88,7 @@ export default function Bulletins() {
     return allClassNotes.filter((n: any) => n.eleve_id === selectedEleve);
   }, [allClassNotes, selectedEleve]);
 
-  // All period notes for annual average
+  // All period notes for annual average (paginated to avoid 1000-row limit)
   const { data: allAnnualNotes = [] } = useQuery({
     queryKey: ['notes-annuelles-classe', classeId],
     queryFn: async () => {
@@ -96,13 +96,18 @@ export default function Bulletins() {
       const eleveIds = eleves.map((e: any) => e.id);
       const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage).map((p: any) => p.id);
       if (eleveIds.length === 0 || regularPeriodes.length === 0) return [];
-      const { data, error } = await supabase
-        .from('notes')
-        .select('*, matieres(nom, coefficient, pole)')
-        .in('eleve_id', eleveIds)
-        .in('periode_id', regularPeriodes);
-      if (error) throw error;
-      return data;
+      // Fetch per period to avoid 1000-row limit
+      const allNotes: any[] = [];
+      for (const pId of regularPeriodes) {
+        const { data, error } = await supabase
+          .from('notes')
+          .select('*, matieres(nom, coefficient, pole)')
+          .in('eleve_id', eleveIds)
+          .eq('periode_id', pId);
+        if (error) throw error;
+        if (data) allNotes.push(...data);
+      }
+      return allNotes;
     },
     enabled: !!classeId && eleves.length > 0 && periodes.length > 0,
   });
