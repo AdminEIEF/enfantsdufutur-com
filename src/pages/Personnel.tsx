@@ -361,7 +361,7 @@ export default function Personnel() {
       setGeneratedPassword(result?.autoPassword || null);
       qc.invalidateQueries({ queryKey: ['employes'] });
       setAddOpen(false);
-      setForm({ nom: '', prenom: '', sexe: 'M', telephone: '', email: '', adresse: '', categorie: 'service', poste: '', salaire_base: '', date_embauche: new Date().toISOString().slice(0, 10) });
+      setForm({ nom: '', prenom: '', sexe: 'M', telephone: '', email: '', adresse: '', categorie: 'service', poste: '', salaire_base: '', date_embauche: new Date().toISOString().slice(0, 10), niveau_enseignant: '' });
     },
     onError: (err: any) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
   });
