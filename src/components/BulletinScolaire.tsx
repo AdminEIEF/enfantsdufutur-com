@@ -165,8 +165,8 @@ export default function BulletinScolaire({
           )}
         </div>
 
-        {/* Nom école + slogan + adresse + téléphone - centré */}
-        <div style={{ textAlign: 'center', flex: 1 }}>
+        {/* Nom école + slogan + adresse + téléphone - centré absolu */}
+        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}>
           <div style={{ fontSize: '13px', fontWeight: 800, color: '#064e3b', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{schoolName}</div>
           <div style={{ fontSize: '8.5px', color: '#6b7280', fontStyle: 'italic', marginTop: '1px' }}>{schoolSubtitle}</div>
           <div style={{ fontSize: '7.5px', color: '#9ca3af', marginTop: '1px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
