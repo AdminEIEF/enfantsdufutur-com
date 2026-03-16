@@ -51,6 +51,8 @@ interface BulletinScolaireProps {
   schoolLogoUrl?: string | null;
   isFinalPeriod?: boolean;
   previousPeriodsNotes?: PeriodNoteByMatiere[];
+  moyenneAnnuelle?: number | null;
+  moyenneClasse?: number | null;
 }
 
 const getMention = (moyenne: number | null, bareme: number): string | null => {
