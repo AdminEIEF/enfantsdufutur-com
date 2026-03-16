@@ -532,10 +532,10 @@ export default function Bulletins() {
               </Card>
 
               {/* Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-4">
                 <Card className="border-primary/40">
                   <CardContent className="pt-4 pb-4 text-center">
-                    <p className="text-xs text-muted-foreground">Moyenne période</p>
+                    <p className="text-xs text-muted-foreground">Moyenne {periode?.nom}</p>
                     <p className={`text-2xl font-bold ${moyennePeriode !== null && moyennePeriode >= seuil ? 'text-accent' : 'text-destructive'}`}>
                       {moyennePeriode !== null ? `${moyennePeriode.toFixed(2)}/${bareme}` : '—'}
                     </p>
@@ -557,8 +557,28 @@ export default function Bulletins() {
                 <Card>
                   <CardContent className="pt-4 pb-4 text-center">
                     <p className="text-xs text-muted-foreground">Moy. annuelle</p>
-                    <p className={`text-2xl font-bold ${moyenneAnnuelle !== null && moyenneAnnuelle >= seuil ? 'text-accent' : 'text-destructive'}`}>
-                      {moyenneAnnuelle !== null ? `${moyenneAnnuelle.toFixed(2)}/${bareme}` : '—'}
+                    <p className={`text-2xl font-bold ${moyenneAnnuelleSimple !== null && moyenneAnnuelleSimple >= seuil ? 'text-accent' : 'text-destructive'}`}>
+                      {moyenneAnnuelleSimple !== null ? `${moyenneAnnuelleSimple.toFixed(2)}/${bareme}` : '—'}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <p className="text-xs text-muted-foreground">Moy. de la classe</p>
+                    <p className={`text-2xl font-bold ${moyenneClasse !== null && moyenneClasse >= seuil ? 'text-accent' : 'text-destructive'}`}>
+                      {moyenneClasse !== null ? `${moyenneClasse.toFixed(2)}/${bareme}` : '—'}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <p className="text-xs text-muted-foreground">Rang annuel</p>
+                    <p className="text-2xl font-bold flex items-center justify-center gap-1">
+                      {annualRank?.rang !== null ? (
+                        <>
+                          {annualRank?.rang}<sup>e</sup> / {totalClasseEleves}
+                        </>
+                      ) : '—'}
                     </p>
                   </CardContent>
                 </Card>
