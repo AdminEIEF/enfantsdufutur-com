@@ -154,13 +154,13 @@ export default function BulletinScolaire({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2.5px solid #047857', paddingBottom: '5px', marginBottom: '5px' }}>
-        {/* Logo agrandi à gauche */}
+        {/* Logo à gauche */}
         <div style={{ flexShrink: 0 }}>
           {schoolLogoUrl ? (
-            <img src={schoolLogoUrl} alt="Logo" style={{ width: '62px', height: '62px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #a7f3d0' }} crossOrigin="anonymous" />
+            <img src={schoolLogoUrl} alt="Logo" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} crossOrigin="anonymous" />
           ) : (
-            <div style={{ width: '62px', height: '62px', backgroundColor: '#047857', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <University style={{ width: '30px', height: '30px', color: 'white' }} />
+            <div style={{ width: '48px', height: '48px', backgroundColor: '#047857', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <University style={{ width: '24px', height: '24px', color: 'white' }} />
             </div>
           )}
         </div>
