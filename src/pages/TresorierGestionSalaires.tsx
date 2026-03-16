@@ -203,6 +203,8 @@ export default function TresorierGestionSalaires() {
 
   const filtered = employes.filter(e => {
     const effCat = getEffectiveCat(e);
+    // If a filter mode is active, only show those categories
+    if (filterMode && !filterMode.cats.includes(effCat)) return false;
     const matchCat = categorie === 'all' || effCat === categorie;
     const matchSearch = `${e.nom} ${e.prenom} ${e.poste}`.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
