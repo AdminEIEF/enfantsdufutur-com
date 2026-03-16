@@ -429,12 +429,12 @@ export default function BulletinScolaire({
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', alignItems: 'end' }}>
           {/* QR Code */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '8px' }}>
             {eleve.matricule && (
               <>
                 <QRCodeSVG
                   value="https://enfantsdufutur.com/"
-                  size={44}
+                  size={56}
                   level="M"
                   includeMargin={false}
                 />
