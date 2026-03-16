@@ -408,7 +408,7 @@ export default function Bulletins() {
                   pole: b.pole,
                   coefficient: b.coefficient,
                   note: b.note,
-                   rang: matiereRanks[b.matiere] ?? null,
+                   rang: matiereRanks[b.matiere] !== null ? `${matiereRanks[b.matiere]}ᵉ/${totalClasseEleves}` : null,
                    appreciation: b.note !== null ? getAppreciation(b.note)?.text || null : null,
                 }))}
                 moyennePeriode={moyennePeriode}
