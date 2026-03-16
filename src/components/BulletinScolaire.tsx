@@ -289,9 +289,14 @@ export default function BulletinScolaire({
               <span><strong>+ faible :</strong> {plusFaible !== null ? plusFaible.toFixed(2) : '—'}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-              <span><strong>Moy. annuelle :</strong> <span style={{ color: moyenneAnnuelle !== null && moyenneAnnuelle >= seuil ? '#047857' : '#dc2626', fontWeight: 700 }}>{moyenneAnnuelle !== null ? `${moyenneAnnuelle.toFixed(2)}/${bareme}` : '—'}</span></span>
-              {rangAnnuel !== null && <span><strong>Rang annuel :</strong> <span style={{ fontWeight: 700 }}>{rangAnnuel}ᵉ / {effectif}</span></span>}
+              <span><strong>Moy. classe :</strong> <span style={{ color: '#047857', fontWeight: 700 }}>{moyenneClasse !== null ? `${moyenneClasse.toFixed(2)}/${bareme}` : '—'}</span></span>
             </div>
+            {moyenneAnnuelle !== null && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                <span><strong>Moy. annuelle :</strong> <span style={{ color: moyenneAnnuelle >= seuil ? '#047857' : '#dc2626', fontWeight: 700 }}>{moyenneAnnuelle.toFixed(2)}/{bareme}</span></span>
+                {rangAnnuel !== null && <span><strong>Rang annuel :</strong> <span style={{ fontWeight: 700 }}>{rangAnnuel}ᵉ / {effectif}</span></span>}
+              </div>
+            )}
           </div>
         </div>
 

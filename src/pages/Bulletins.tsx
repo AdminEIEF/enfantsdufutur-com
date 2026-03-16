@@ -485,7 +485,7 @@ export default function Bulletins() {
                       return { periodeName: p.nom, notesByMatiere };
                     });
                 })()}
-                rangAnnuel={annualRank?.rang ?? null}
+                rangAnnuel={isP5 ? (annualRank?.rang ?? null) : null}
               />
             </div>
           ) : (
