@@ -432,10 +432,12 @@ export default function Bulletins() {
                   const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
                   const currentOrdre = periode?.ordre ?? 0;
                   return regularPeriodes
-                    .filter((p: any) => p.ordre < currentOrdre)
+                   .filter((p: any) => p.ordre <= currentOrdre)
                     .sort((a: any, b: any) => a.ordre - b.ordre)
                     .map((p: any) => {
-                      const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id && n.eleve_id === selectedEleve);
+                      const pNotes = p.id === periodeId
+                        ? allClassNotes.filter((n: any) => n.eleve_id === selectedEleve)
+                        : allAnnualNotes.filter((n: any) => n.periode_id === p.id && n.eleve_id === selectedEleve);
                       const notesByMatiere: Record<string, number | null> = {};
                       matieres.forEach((m: any) => {
                         const found = pNotes.find((n: any) => n.matiere_id === m.id);
