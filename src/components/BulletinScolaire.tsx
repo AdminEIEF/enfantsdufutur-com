@@ -213,7 +213,7 @@ export default function BulletinScolaire({
               const total = b.note !== null ? b.note * b.coefficient : null;
               return (
                 <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', height: '20px' }}>
-                  <td style={{ padding: '2px 4px', fontWeight: 500, verticalAlign: 'middle', fontSize: '8.5px', maxWidth: '90px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{b.matiere}</td>
+                  <td style={{ padding: '2px 4px', fontWeight: 500, verticalAlign: 'middle', fontSize: '8.5px', whiteSpace: 'nowrap' }}>{b.matiere}</td>
                   <td style={{ ...cellCenter, color: '#6b7280', fontWeight: 600 }}>{b.coefficient}</td>
                   {isFinalPeriod && previousPeriodsNotes.map((pp) => {
                     const prevNote = pp.notesByMatiere[b.matiere] ?? null;
