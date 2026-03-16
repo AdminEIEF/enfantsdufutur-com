@@ -620,6 +620,44 @@ export default function Bulletins() {
                 ) : null;
               })()}
 
+              {/* Graphique d'évolution des moyennes */}
+              {(() => {
+                const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
+                const currentOrdre = periode?.ordre ?? 0;
+                const chartData = regularPeriodes
+                  .filter((p: any) => p.ordre <= currentOrdre)
+                  .sort((a: any, b: any) => a.ordre - b.ordre)
+                  .map((p: any) => {
+                    const pNotes = p.id === periodeId
+                      ? allClassNotes.filter((n: any) => n.eleve_id === selectedEleve)
+                      : allAnnualNotes.filter((n: any) => n.periode_id === p.id && n.eleve_id === selectedEleve);
+                    const avg = computeAverage(selectedEleve, p.id === periodeId ? allClassNotes : allAnnualNotes.filter((n: any) => n.periode_id === p.id));
+                    return { periode: p.nom, moyenne: avg };
+                  })
+                  .filter(d => d.moyenne !== null);
+                return chartData.length > 0 ? (
+                  <Card className="mt-4">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Évolution des moyennes</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div style={{ width: '100%', height: 200 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="periode" tick={{ fontSize: 12 }} />
+                            <YAxis domain={[0, bareme]} tick={{ fontSize: 12 }} width={35} />
+                            <Tooltip formatter={(value: number) => [`${value.toFixed(2)}/${bareme}`, 'Moyenne']} />
+                            <ReferenceLine y={seuil} stroke="hsl(var(--destructive))" strokeDasharray="3 3" label={{ value: `Seuil (${seuil})`, fontSize: 10, fill: 'hsl(var(--destructive))' }} />
+                            <Line type="monotone" dataKey="moyenne" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 5, fill: 'hsl(var(--primary))' }} activeDot={{ r: 7 }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : null;
+              })()}
+
               {/* Major info */}
               {major && (
                 <Card className="mt-4 border-secondary/30 bg-secondary/5">
