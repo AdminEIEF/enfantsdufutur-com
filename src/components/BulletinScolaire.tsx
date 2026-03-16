@@ -398,7 +398,7 @@ export default function BulletinScolaire({
                   level="M"
                   includeMargin={false}
                 />
-                <div style={{ fontSize: '6.5px', color: '#9ca3af', marginTop: '1px', textAlign: 'center' }}>Espace Élève</div>
+                <div style={{ fontSize: '7.5px', color: '#9ca3af', marginTop: '1px', textAlign: 'center' }}>Espace Élève</div>
               </>
             )}
           </div>
