@@ -186,10 +186,14 @@ export default function BulletinScolaire({
             </p>
           </div>
           <div className="text-xs space-y-1 text-gray-700">
-            <p><span className="font-medium">Mention :</span> <strong>{mention || '—'}</strong></p>
-            <p><span className="font-medium">Rang :</span> <strong>{rang !== null ? `${rang}e / ${effectif}` : '—'}</strong></p>
-            <p><span className="font-medium">Plus faible moyenne :</span> {plusFaible !== null ? plusFaible.toFixed(2) : '—'}</p>
-            <p><span className="font-medium">Plus forte moyenne :</span> {plusForte !== null ? plusForte.toFixed(2) : '—'}</p>
+            <div className="flex justify-between">
+              <p><span className="font-medium">Mention :</span> <strong>{mention || '—'}</strong></p>
+              <p><span className="font-medium">Rang :</span> <strong>{rang !== null ? `${rang}e / ${effectif}` : '—'}</strong></p>
+            </div>
+            <div className="flex justify-between">
+              <p><span className="font-medium">Plus forte moyenne :</span> {plusForte !== null ? plusForte.toFixed(2) : '—'}</p>
+              <p><span className="font-medium">Plus faible moyenne :</span> {plusFaible !== null ? plusFaible.toFixed(2) : '—'}</p>
+            </div>
           </div>
         </div>
 
