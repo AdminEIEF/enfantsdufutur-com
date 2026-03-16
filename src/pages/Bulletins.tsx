@@ -474,6 +474,7 @@ export default function Bulletins() {
                 })()}
                 moyenneAnnuelle={isP5 ? moyenneAnnuelleSimple : null}
                 moyenneClasse={isP5 ? moyenneClasse : null}
+                rangAnnuel={isP5 ? (annualRank?.rang ?? null) : null}
               />
             </div>
           ) : (
