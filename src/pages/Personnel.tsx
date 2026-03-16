@@ -259,6 +259,16 @@ export default function Personnel() {
     },
   });
 
+  // Fetch cycles for enseignant niveau selection
+  const { data: cycles = [] } = useQuery({
+    queryKey: ['cycles-for-personnel'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('cycles').select('id, nom').order('ordre');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Fetch matieres with cycles for enseignant poste
   const { data: matieresWithCycles = [] } = useQuery({
     queryKey: ['matieres-cycles-for-personnel'],
