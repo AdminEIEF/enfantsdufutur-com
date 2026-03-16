@@ -249,7 +249,6 @@ export default function BulletinScolaire({
               <td style={{ ...cellCenter, fontWeight: 700 }}>
                 {moyennePeriode !== null ? (moyennePeriode * totalCoef).toFixed(2) : '—'}
               </td>
-              {isFinalPeriod && <td style={{ ...cellCenter }}></td>}
               <td style={{ padding: '3px 5px', verticalAlign: 'middle' }}></td>
             </tr>
           </tfoot>
