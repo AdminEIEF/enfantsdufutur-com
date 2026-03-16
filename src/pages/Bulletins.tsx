@@ -338,29 +338,61 @@ export default function Bulletins() {
                 }}
                 classe={`${selectedCl?.niveaux?.nom || ''} — ${selectedCl?.nom || ''}`}
                 effectif={totalClasseEleves}
-                periodes={periodes.filter((p: any) => !p.est_rattrapage).map((p: any) => ({ nom: p.nom, id: p.id }))}
+                periodeName={periode?.nom || ''}
                 bulletinData={bulletinData.map(b => ({
                   matiere: b.matiere,
                   pole: b.pole,
                   coefficient: b.coefficient,
-                  notes: periodes.filter((p: any) => !p.est_rattrapage).map((p: any) => {
-                    const n = allAnnualNotes.find((note: any) => note.matiere_id === matieres.find((m: any) => m.nom === b.matiere)?.id && note.periode_id === p.id && note.eleve_id === selectedEleve);
-                    return n?.note != null ? Number(n.note) : null;
-                  }),
-                  noteFinale: b.note,
+                  note: b.note,
                   rang: null,
                   appreciation: b.note !== null ? getAppreciation(b.note)?.text || null : null,
                 }))}
-                moyenneFinale={moyennePeriode}
+                moyennePeriode={moyennePeriode}
                 rang={currentRanking?.rang ?? null}
                 plusForte={rankings.length > 0 && rankings[0].moyenne !== null ? rankings[0].moyenne : null}
                 plusFaible={rankings.length > 0 && rankings[rankings.length - 1].moyenne !== null ? rankings[rankings.length - 1].moyenne : null}
                 bareme={bareme}
                 seuil={seuil}
-                chartData={periodes.filter((p: any) => !p.est_rattrapage).map((p: any) => {
-                  const avg = computeAverage(selectedEleve, allAnnualNotes.filter((n: any) => n.periode_id === p.id));
-                  return { name: p.nom, note: avg ?? 0 };
-                })}
+                previousPeriods={(() => {
+                  const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
+                  const currentOrdre = periode?.ordre ?? 0;
+                  return regularPeriodes
+                    .filter((p: any) => p.ordre < currentOrdre)
+                    .sort((a: any, b: any) => a.ordre - b.ordre)
+                    .map((p: any) => {
+                      const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                      const pAvg = computeAverage(selectedEleve, pNotes);
+                      // Compute rank for this previous period
+                      const pAvgs = eleves.map((e: any) => ({
+                        id: e.id,
+                        moyenne: computeAverage(e.id, pNotes),
+                      }));
+                      pAvgs.sort((a: any, b: any) => (b.moyenne ?? -1) - (a.moyenne ?? -1));
+                      let pRank = 0, pLast: number | null = null;
+                      const pRanked = pAvgs.map((a: any, i: number) => {
+                        if (a.moyenne !== pLast) { pRank = i + 1; pLast = a.moyenne; }
+                        return { ...a, rang: a.moyenne !== null ? pRank : null };
+                      });
+                      const studentRank = pRanked.find((r: any) => r.id === selectedEleve);
+                      const ratio = pAvg !== null ? pAvg / bareme : null;
+                      let mention: string | null = null;
+                      if (ratio !== null) {
+                        if (ratio >= 0.85) mention = 'Excellent';
+                        else if (ratio >= 0.70) mention = 'Très Bien';
+                        else if (ratio >= 0.60) mention = 'Bien';
+                        else if (ratio >= 0.50) mention = 'Assez Bien';
+                        else if (ratio >= 0.40) mention = 'Passable';
+                        else mention = 'Insuffisant';
+                      }
+                      return {
+                        periodeName: p.nom,
+                        moyenne: pAvg,
+                        rang: studentRank?.rang ?? null,
+                        effectif: eleves.length,
+                        mention,
+                      };
+                    });
+                })()}
                 cycleName={selectedCl?.niveaux?.cycles?.nom}
                 anneeScolaire={periode?.annee_scolaire}
                 schoolName={schoolConfig?.nom}
