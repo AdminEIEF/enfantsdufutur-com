@@ -1,9 +1,10 @@
 import {
   GraduationCap, Users, UserPlus, BookOpen, Calculator, AlertTriangle,
   Settings, Bell, ScanLine, Library, BarChart3,
-  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock, FileText, Shield, Bot, Trophy, Archive, Wallet, Banknote, DollarSign, ChevronDown
+  Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock, FileText, Shield, Bot, Trophy, Archive, Wallet, Banknote, DollarSign, ChevronDown, GraduationCap as GradCap, Wrench
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import {
@@ -178,6 +179,9 @@ const navSections = [
     items: [
       { title: 'Tableau de bord', url: '/tresorier-dashboard', icon: Wallet },
       { title: 'Gestion Salaires', url: '/tresorier-salaires', icon: Banknote },
+      { title: 'Salaire Secondaire', url: '/tresorier-salaires?mode=secondaire', icon: BookOpen },
+      { title: 'Salaire Primaire', url: '/tresorier-salaires?mode=primaire', icon: GradCap },
+      { title: 'Salaire Soutien', url: '/tresorier-salaires?mode=soutien', icon: Wrench },
       { title: 'Gestion Avances', url: '/tresorier-avances', icon: DollarSign },
     ],
   },
@@ -196,6 +200,7 @@ const navSections = [
 export function AppSidebar() {
   const { hasAnyRole, user } = useAuth();
   const { isInstallable, install } = usePWAInstall();
+  const location = useLocation();
 
   return (
     <Sidebar>
@@ -226,16 +231,32 @@ export function AppSidebar() {
                 <CollapsibleContent>
                   <SidebarGroupContent>
                     <SidebarMenu>
-                      {section.items.map((item) => (
-                        <SidebarMenuItem key={item.title}>
-                          <SidebarMenuButton asChild>
-                            <NavLink to={item.url} end className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
-                              <item.icon className="mr-2 h-4 w-4" />
-                              <span>{item.title}</span>
-                            </NavLink>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
+                      {section.items.map((item) => {
+                        const hasQuery = item.url.includes('?');
+                        if (hasQuery) {
+                          const isActive = location.pathname + location.search === item.url;
+                          return (
+                            <SidebarMenuItem key={item.title}>
+                              <SidebarMenuButton asChild>
+                                <Link to={item.url} className={`hover:bg-sidebar-accent/50 flex items-center gap-2 px-2 py-1.5 rounded-md text-sm ${isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : ''}`}>
+                                  <item.icon className="mr-2 h-4 w-4" />
+                                  <span>{item.title}</span>
+                                </Link>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          );
+                        }
+                        return (
+                          <SidebarMenuItem key={item.title}>
+                            <SidebarMenuButton asChild>
+                              <NavLink to={item.url} end className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
+                                <item.icon className="mr-2 h-4 w-4" />
+                                <span>{item.title}</span>
+                              </NavLink>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
                     </SidebarMenu>
                   </SidebarGroupContent>
                 </CollapsibleContent>

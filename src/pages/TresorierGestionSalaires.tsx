@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -61,7 +62,16 @@ function fmtNum(n: number): string {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
+const FILTER_MODES: Record<string, { label: string; cats: string[] }> = {
+  secondaire: { label: 'Salaires — Enseignants Secondaire', cats: ['enseignant_secondaire'] },
+  primaire: { label: 'Salaires — Enseignants Primaire', cats: ['enseignant_primaire'] },
+  soutien: { label: 'Salaires — Service de soutien', cats: ['hygiene', 'securite_primaire', 'securite_lycee', 'chauffeur', 'infirmiere', 'cantine', 'librairie'] },
+};
+
 export default function TresorierGestionSalaires() {
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode') || '';
+  const filterMode = FILTER_MODES[mode] || null;
   const [employes, setEmployes] = useState<Employe[]>([]);
   const [paiements, setPaiements] = useState<PaiementRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -193,6 +203,8 @@ export default function TresorierGestionSalaires() {
 
   const filtered = employes.filter(e => {
     const effCat = getEffectiveCat(e);
+    // If a filter mode is active, only show those categories
+    if (filterMode && !filterMode.cats.includes(effCat)) return false;
     const matchCat = categorie === 'all' || effCat === categorie;
     const matchSearch = `${e.nom} ${e.prenom} ${e.poste}`.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
@@ -292,7 +304,7 @@ export default function TresorierGestionSalaires() {
     <div className="space-y-6 p-2 sm:p-4">
       <div className="flex items-center gap-3">
         <Banknote className="h-7 w-7 text-emerald-600" />
-        <h1 className="text-2xl font-bold">Gestion Salaires — {format(new Date(), 'MMMM yyyy', { locale: fr })}</h1>
+        <h1 className="text-2xl font-bold">{filterMode ? filterMode.label : 'Gestion Salaires'} — {format(new Date(), 'MMMM yyyy', { locale: fr })}</h1>
       </div>
 
       {/* Filters */}
