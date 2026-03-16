@@ -436,7 +436,7 @@ export default function Bulletins() {
                     <TableHeader>
                       <TableRow className="bg-muted/50">
                         <TableHead>Matière</TableHead>
-                        <TableHead className="text-center w-20">{periode?.nom}/{bareme}</TableHead>
+                        <TableHead className="text-center w-20">{periode?.nom}</TableHead>
                         <TableHead className="text-center w-16">Coef</TableHead>
                         <TableHead className="text-center w-20">Total</TableHead>
                         <TableHead className="text-center w-16">Min</TableHead>
