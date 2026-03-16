@@ -134,8 +134,8 @@ export default function BulletinScolaire({
             <tr className="bg-emerald-700 text-white">
               <th className="border border-emerald-600 px-2 py-1.5 text-left font-semibold">Matière</th>
               <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-10">Coef</th>
-              <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-16">{periodeName}</th>
-              <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-16">Total</th>
+              <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-16">Moyenne</th>
+              <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-16">Moyenne Coeff</th>
               <th className="border border-emerald-600 px-1 py-1.5 text-center font-semibold w-10">Rang</th>
               <th className="border border-emerald-600 px-2 py-1.5 text-left font-semibold">Appréciation</th>
             </tr>
