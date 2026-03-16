@@ -353,7 +353,7 @@ export default function TresorierGestionSalaires() {
                         <TableCell className="font-medium">{emp.prenom} {emp.nom}</TableCell>
                         <TableCell>{emp.poste}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="capitalize">{emp.categorie}</Badge>
+                          <Badge variant="outline" className="capitalize">{CATEGORIES.find(c => c.value === getEffectiveCat(emp))?.label || emp.categorie}</Badge>
                         </TableCell>
                         <TableCell className="text-right font-mono">{fmtNum(emp.salaire_base)} GNF</TableCell>
                         <TableCell>
