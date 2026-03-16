@@ -231,6 +231,13 @@ export default function Bulletins() {
   const plusForte = rankings.length > 0 && rankings[0].moyenne !== null ? rankings[0].moyenne : null;
   const plusFaible = rankings.length > 0 && rankings[rankings.length - 1].moyenne !== null ? rankings[rankings.length - 1].moyenne : null;
 
+  // Moyenne de la classe (somme des moyennes / nombre d'élèves)
+  const moyenneClasse = useMemo(() => {
+    const avgs = eleves.map((e: any) => computeAverage(e.id, allClassNotes)).filter((a): a is number => a !== null);
+    if (avgs.length === 0) return null;
+    return avgs.reduce((a, b) => a + b, 0) / avgs.length;
+  }, [eleves, allClassNotes]);
+
   // Moyenne annuelle simple: average of period averages
   const moyenneAnnuelle = useMemo(() => {
     const periodAverages: number[] = [];
