@@ -129,6 +129,17 @@ export default function Bulletins() {
     return totalC > 0 ? totalW / totalC : null;
   };
 
+  const regularPeriodes = useMemo(
+    () => periodes.filter((p: any) => !p.est_rattrapage),
+    [periodes]
+  );
+
+  const getNotesForPeriod = (targetPeriodeId: string) => (
+    targetPeriodeId === periodeId
+      ? allClassNotes
+      : allAnnualNotes.filter((n: any) => n.periode_id === targetPeriodeId)
+  );
+
   // Rankings for current period
   const rankings = useMemo(() => {
     const avgs = eleves.map((e: any) => ({
