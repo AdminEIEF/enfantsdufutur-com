@@ -244,7 +244,11 @@ export default function BulletinScolaire({
                 <td key={pp.periodeName} style={{ ...cellCenter }}></td>
               ))}
               <td style={{ ...cellCenter, fontWeight: 800, fontSize: '9.5px', color: moyennePeriode !== null && moyennePeriode < seuil ? '#dc2626' : '#047857' }}>
-                {moyennePeriode !== null ? moyennePeriode.toFixed(2) : '—'}
+                {(() => {
+                  const sommeMoyennes = bulletinData.reduce((s, b) => s + (b.note !== null ? b.note : 0), 0);
+                  const hasNotes = bulletinData.some(b => b.note !== null);
+                  return hasNotes ? sommeMoyennes.toFixed(2) : '—';
+                })()}
               </td>
               <td style={{ ...cellCenter, fontWeight: 700 }}>
                 {moyennePeriode !== null ? (moyennePeriode * totalCoef).toFixed(2) : '—'}
