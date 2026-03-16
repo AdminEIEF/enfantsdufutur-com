@@ -1,5 +1,6 @@
 import { CheckSquare, Square, MapPin, University } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 interface BulletinNote {
   matiere: string;
@@ -264,6 +265,44 @@ export default function BulletinScolaire({
         </div>
       </div>
 
+      {/* Graphique d'évolution des moyennes */}
+      {(() => {
+        const chartData = [
+          ...previousPeriods.map(pp => ({
+            periode: pp.periodeName,
+            moyenne: pp.moyenne,
+          })),
+          { periode: periodeName, moyenne: moyennePeriode },
+        ].filter(d => d.moyenne !== null);
+
+        return chartData.length > 0 ? (
+          <div className="mb-3 border border-gray-200 rounded-lg p-2">
+            <h3 className="text-xs font-bold text-emerald-700 mb-1">Évolution des moyennes</h3>
+            <div style={{ width: '100%', height: 120 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="periode" tick={{ fontSize: 10 }} />
+                  <YAxis domain={[0, bareme]} tick={{ fontSize: 10 }} width={30} />
+                  <Tooltip
+                    formatter={(value: number) => [`${value.toFixed(2)}/${bareme}`, 'Moyenne']}
+                    contentStyle={{ fontSize: 11 }}
+                  />
+                  <ReferenceLine y={seuil} stroke="#ef4444" strokeDasharray="3 3" label={{ value: `Seuil (${seuil})`, fontSize: 9, fill: '#ef4444' }} />
+                  <Line
+                    type="monotone"
+                    dataKey="moyenne"
+                    stroke="#059669"
+                    strokeWidth={2}
+                    dot={{ r: 4, fill: '#059669' }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        ) : null;
+      })()}
       {/* Pied de page : Décision & Signatures */}
       <div className="border-t-2 border-emerald-600 pt-2">
         <div className="flex items-center gap-4 mb-3">
