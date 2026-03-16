@@ -404,6 +404,7 @@ export default function Bulletins() {
                   matricule: eleve?.matricule || null,
                   sexe: eleve?.sexe || null,
                   date_naissance: eleve?.date_naissance || null,
+                  photo_url: eleve?.photo_url || null,
                 }}
                 classe={`${selectedCl?.niveaux?.nom || ''} — ${selectedCl?.nom || ''}`}
                 effectif={totalClasseEleves}

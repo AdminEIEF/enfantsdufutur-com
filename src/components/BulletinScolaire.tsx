@@ -169,8 +169,16 @@ export default function BulletinScolaire({
       </div>
 
       {/* ── Infos Élève ── */}
-      <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '5px', padding: '4px 10px', marginBottom: '4px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px 20px', fontSize: '9px' }}>
+      <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '5px', padding: '4px 10px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Photo élève */}
+        {eleve.photo_url ? (
+          <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} crossOrigin="anonymous" style={{ width: '42px', height: '52px', objectFit: 'cover', borderRadius: '3px', border: '1px solid #cbd5e1', flexShrink: 0 }} />
+        ) : (
+          <div style={{ width: '42px', height: '52px', backgroundColor: '#e2e8f0', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', color: '#94a3b8', fontWeight: 700, flexShrink: 0, border: '1px solid #cbd5e1' }}>
+            {eleve.prenom?.charAt(0)}{eleve.nom?.charAt(0)}
+          </div>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px 20px', fontSize: '9px', flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span style={{ color: '#6b7280', fontWeight: 500, minWidth: '75px' }}>Nom & Prénom :</span>
             <strong>{eleve.prenom} {eleve.nom}</strong>
