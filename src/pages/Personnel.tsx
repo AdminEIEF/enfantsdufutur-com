@@ -860,19 +860,19 @@ export default function Personnel() {
                   <div className="space-y-1"><Label>Date d'embauche</Label><Input type="date" value={form.date_embauche} onChange={e => setForm(f => ({ ...f, date_embauche: e.target.value }))} /></div>
                 </div>
                 <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5">🔐 Le mot de passe sera généré automatiquement et affiché après création.</p>
-                <div className="space-y-1"><Label>Adresse</Label><Input value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))} /></div>
-                {/* Photo by camera */}
-                <div className="space-y-1">
-                  <Label>Photo (caméra)</Label>
-                  {capturedPhoto && cameraTarget === 'add' ? (
-                    <div className="flex items-center gap-2">
-                      <img src={capturedPhoto} alt="Photo" className="w-16 h-16 rounded-full object-cover border" />
-                      <Button size="sm" variant="outline" onClick={() => setCapturedPhoto(null)}>Reprendre</Button>
-                    </div>
-                  ) : (
-                    <Button size="sm" variant="outline" className="w-full" onClick={() => startCamera('add')}>
-                      <Camera className="h-4 w-4 mr-1" /> Prendre une photo
-                    </Button>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1"><Label>Adresse</Label><Input value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))} /></div>
+                  <div className="space-y-1">
+                    <Label>Photo (caméra)</Label>
+                    {capturedPhoto && cameraTarget === 'add' ? (
+                      <div className="flex items-center gap-2">
+                        <img src={capturedPhoto} alt="Photo" className="w-16 h-16 rounded-full object-cover border" />
+                        <Button size="sm" variant="outline" onClick={() => setCapturedPhoto(null)}>Reprendre</Button>
+                      </div>
+                    ) : (
+                      <Button size="sm" variant="outline" className="w-full" onClick={() => startCamera('add')}>
+                        <Camera className="h-4 w-4 mr-1" /> Prendre une photo
+                      </Button>
                   )}
                 </div>
                 <Button className="w-full" onClick={() => addEmployee.mutate()} disabled={addEmployee.isPending}>
