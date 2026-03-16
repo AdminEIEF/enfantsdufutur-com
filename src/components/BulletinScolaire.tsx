@@ -199,9 +199,7 @@ export default function BulletinScolaire({
               ))}
               <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '46px', verticalAlign: 'middle' }}>Moyenne</th>
               <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '50px', verticalAlign: 'middle' }}>Moy×Coef</th>
-              {isFinalPeriod && (
-                <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '30px', verticalAlign: 'middle' }}>Rang</th>
-              )}
+              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '30px', verticalAlign: 'middle' }}>Rang</th>
               <th style={{ padding: '4px 5px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>Appréciation</th>
             </tr>
           </thead>
