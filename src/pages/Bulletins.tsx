@@ -417,13 +417,12 @@ export default function Bulletins() {
                 bareme={bareme}
                 seuil={seuil}
                 previousPeriods={(() => {
-                  const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
                   const currentOrdre = periode?.ordre ?? 0;
                   return regularPeriodes
                    .filter((p: any) => p.ordre <= currentOrdre)
                     .sort((a: any, b: any) => a.ordre - b.ordre)
                     .map((p: any) => {
-                      const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                      const pNotes = getNotesForPeriod(p.id);
                       const pAvg = computeAverage(selectedEleve, pNotes);
                       // Compute rank for this period
                       const pAvgs = eleves.map((e: any) => ({
