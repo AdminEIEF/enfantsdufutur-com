@@ -202,8 +202,8 @@ export default function BulletinScolaire({
                 <tr className="bg-gray-100">
                   <th className="border border-gray-200 px-2 py-1 text-left font-semibold">Évaluation</th>
                   <th className="border border-gray-200 px-1 py-1 text-center font-semibold">Moyenne</th>
-                  <th className="border border-gray-200 px-1 py-1 text-center font-semibold">Rang</th>
                   <th className="border border-gray-200 px-1 py-1 text-center font-semibold">Mention</th>
+                  <th className="border border-gray-200 px-1 py-1 text-center font-semibold">Rang</th>
                 </tr>
               </thead>
               <tbody>
@@ -213,11 +213,11 @@ export default function BulletinScolaire({
                     <td className={`border border-gray-200 px-1 py-1 text-center font-mono font-bold ${pp.moyenne !== null && pp.moyenne < seuil ? 'text-red-600' : 'text-emerald-700'}`}>
                       {pp.moyenne !== null ? `${pp.moyenne.toFixed(2)}/${bareme}` : '—'}
                     </td>
-                    <td className="border border-gray-200 px-1 py-1 text-center font-mono">
-                      {pp.rang !== null ? `${pp.rang}e/${pp.effectif}` : '—'}
-                    </td>
                     <td className="border border-gray-200 px-1 py-1 text-center italic">
                       {pp.mention || '—'}
+                    </td>
+                    <td className="border border-gray-200 px-1 py-1 text-center font-mono">
+                      {pp.rang !== null ? `${pp.rang}e/${pp.effectif}` : '—'}
                     </td>
                   </tr>
                 ))}
