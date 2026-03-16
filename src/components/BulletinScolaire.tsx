@@ -420,7 +420,7 @@ export default function BulletinScolaire({
           </div>
         </div>
 
-        <div style={{ fontSize: '8px', color: '#d1d5db', textAlign: 'center', marginTop: '5px' }}>
+        <div style={{ fontSize: '7px', color: '#d1d5db', textAlign: 'center', marginTop: '5px' }}>
           EduGestion Pro — Bulletin généré le {new Date().toLocaleDateString('fr-FR')}
         </div>
       </div>
