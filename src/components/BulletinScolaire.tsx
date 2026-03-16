@@ -329,7 +329,7 @@ export default function BulletinScolaire({
                     <td style={{ padding: '2px 3px', textAlign: 'center', fontFamily: 'monospace', fontWeight: 700, verticalAlign: 'middle', color: pp.moyenne !== null && pp.moyenne < seuil ? '#dc2626' : '#047857' }}>
                       {pp.moyenne !== null ? `${pp.moyenne.toFixed(2)}/${bareme}` : '—'}
                     </td>
-                    <td style={{ padding: '2px 3px', textAlign: 'center', fontStyle: 'italic', verticalAlign: 'middle', fontSize: '8px' }}>{pp.mention || '—'}</td>
+                    <td style={{ padding: '2px 3px', textAlign: 'center', fontStyle: 'italic', verticalAlign: 'middle', fontSize: '9px' }}>{pp.mention || '—'}</td>
                     <td style={{ padding: '2px 3px', textAlign: 'center', fontFamily: 'monospace', verticalAlign: 'middle' }}>
                       {pp.rang !== null ? `${pp.rang}ᵉ/${pp.effectif}` : '—'}
                     </td>
