@@ -404,6 +404,11 @@ export default function Bulletins() {
                 schoolSubtitle={schoolConfig?.soustitre}
                 schoolCity={schoolConfig?.ville}
                 schoolLogoUrl={schoolConfig?.logo_url}
+                isFinalPeriod={periode?.ordre === 5}
+                moyenneClasse={(() => {
+                  const validAvgs = rankings.filter(r => r.moyenne !== null).map(r => r.moyenne as number);
+                  return validAvgs.length > 0 ? validAvgs.reduce((a, b) => a + b, 0) / validAvgs.length : null;
+                })()}
               />
             </div>
           ) : (
