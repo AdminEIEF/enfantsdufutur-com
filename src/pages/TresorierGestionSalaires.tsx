@@ -17,18 +17,19 @@ import { generateRegistrePaiePDF } from '@/lib/generateRegistrePaiePDF';
 
 const CATEGORIES = [
   { value: 'all', label: 'Toutes les catégories' },
-  { value: 'enseignant', label: 'Professeurs' },
-  { value: 'administration', label: 'Administration' },
-  { value: 'service', label: 'Service' },
-  { value: 'direction', label: 'Direction' },
-  { value: 'hygiene', label: 'Service Hygiène' },
-  { value: 'securite_primaire', label: 'Sécurité Primaire' },
-  { value: 'securite_lycee', label: 'Sécurité Lycée' },
-  { value: 'chauffeur', label: 'Chauffeur' },
-  { value: 'infirmiere', label: 'Infirmière' },
-  { value: 'librairie', label: 'Librairie' },
-  { value: 'cantine', label: 'Cantine' },
-  { value: 'surveillant', label: 'Surveillant' },
+  { value: 'enseignant_primaire', label: '👨‍🏫 Enseignant Primaire' },
+  { value: 'enseignant_secondaire', label: '👨‍🏫 Enseignant Secondaire' },
+  { value: 'administration', label: '🏢 Administration' },
+  { value: 'service', label: '🔧 Service' },
+  { value: 'direction', label: '👔 Direction' },
+  { value: 'hygiene', label: '🧹 Service Hygiène' },
+  { value: 'securite_primaire', label: '🛡️ Sécurité Primaire' },
+  { value: 'securite_lycee', label: '🛡️ Sécurité Lycée' },
+  { value: 'chauffeur', label: '🚗 Chauffeur' },
+  { value: 'infirmiere', label: '🏥 Infirmière' },
+  { value: 'librairie', label: '📚 Librairie' },
+  { value: 'cantine', label: '🍽️ Cantine' },
+  { value: 'surveillant', label: '👁️ Surveillant' },
 ];
 
 interface Employe {
@@ -37,9 +38,14 @@ interface Employe {
   prenom: string;
   poste: string;
   categorie: string;
+  matricule: string;
   salaire_base: number;
   statut: string;
 }
+
+const getEffectiveCat = (e: Employe) => e.categorie === 'enseignant'
+  ? (e.matricule?.startsWith('ESC') ? 'enseignant_secondaire' : 'enseignant_primaire')
+  : e.categorie;
 
 interface PaiementRecord {
   id: string;
@@ -77,7 +83,7 @@ export default function TresorierGestionSalaires() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const [empRes, paiRes] = await Promise.all([
-      supabase.from('employes').select('id, nom, prenom, poste, categorie, salaire_base, statut').eq('statut', 'actif'),
+      supabase.from('employes').select('id, nom, prenom, poste, categorie, matricule, salaire_base, statut').eq('statut', 'actif'),
       supabase.from('paiements_tresorier').select('*').eq('mois', currentMonth).eq('annee', currentYear),
     ]);
     if (empRes.data) setEmployes(empRes.data);
@@ -186,7 +192,8 @@ export default function TresorierGestionSalaires() {
   const hasSigned = (empId: string) => paiements.some(p => p.employe_id === empId && p.signature_employe);
 
   const filtered = employes.filter(e => {
-    const matchCat = categorie === 'all' || e.categorie === categorie;
+    const effCat = getEffectiveCat(e);
+    const matchCat = categorie === 'all' || effCat === categorie;
     const matchSearch = `${e.nom} ${e.prenom} ${e.poste}`.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
   });
@@ -346,7 +353,7 @@ export default function TresorierGestionSalaires() {
                         <TableCell className="font-medium">{emp.prenom} {emp.nom}</TableCell>
                         <TableCell>{emp.poste}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="capitalize">{emp.categorie}</Badge>
+                          <Badge variant="outline" className="capitalize">{CATEGORIES.find(c => c.value === getEffectiveCat(emp))?.label || emp.categorie}</Badge>
                         </TableCell>
                         <TableCell className="text-right font-mono">{fmtNum(emp.salaire_base)} GNF</TableCell>
                         <TableCell>
@@ -445,7 +452,7 @@ export default function TresorierGestionSalaires() {
             <div className="space-y-4">
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="font-semibold">{signDialog.prenom} {signDialog.nom}</p>
-                <p className="text-sm text-muted-foreground">{signDialog.poste} — {signDialog.categorie}</p>
+                <p className="text-sm text-muted-foreground">{signDialog.poste} — {CATEGORIES.find(c => c.value === getEffectiveCat(signDialog))?.label || signDialog.categorie}</p>
                 <p className="text-lg font-bold mt-1">{fmtNum(signDialog.salaire_base)} GNF</p>
               </div>
               <p className="text-sm text-muted-foreground">
