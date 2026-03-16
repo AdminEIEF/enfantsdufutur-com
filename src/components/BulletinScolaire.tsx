@@ -180,7 +180,7 @@ export default function BulletinScolaire({
             {eleve.prenom?.charAt(0)}{eleve.nom?.charAt(0)}
           </div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px 20px', fontSize: '11.5px', flex: 1 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px 20px', fontSize: '9.5px', flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span style={{ color: '#6b7280', fontWeight: 500, minWidth: '75px' }}>Nom & Prénom :</span>
             <strong>{eleve.prenom} {eleve.nom}</strong>
