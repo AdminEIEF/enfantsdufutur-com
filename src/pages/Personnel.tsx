@@ -1435,7 +1435,7 @@ export default function Personnel() {
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
                     <div><span className="text-muted-foreground">Matricule:</span> <span className="font-mono">{selectedEmp.matricule}</span></div>
-                    <div><span className="text-muted-foreground">Catégorie:</span> {categorieLabel[selectedEmp.categorie]}</div>
+                    <div><span className="text-muted-foreground">Catégorie:</span> {categorieLabel[getEffectiveCat(selectedEmp)]}</div>
                     <div><span className="text-muted-foreground">Poste:</span> {selectedEmp.poste || '—'}</div>
                     <div><span className="text-muted-foreground">Sexe:</span> {selectedEmp.sexe || '—'}</div>
                     <div><span className="text-muted-foreground">Téléphone:</span> {selectedEmp.telephone || '—'}</div>
