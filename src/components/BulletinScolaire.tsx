@@ -146,7 +146,14 @@ export default function BulletinScolaire({
 
       {/* ── En-tête ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2.5px solid #047857', paddingBottom: '5px', marginBottom: '5px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* République de Guinée */}
+        <div style={{ textAlign: 'center', minWidth: '130px' }}>
+          <div style={{ fontSize: '10px', fontWeight: 800, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: '0.03em' }}>République de Guinée</div>
+          <div style={{ fontSize: '8px', color: '#6b7280', fontStyle: 'italic', marginTop: '1px' }}>Travail - Justice - Solidarité</div>
+        </div>
+
+        {/* Logo + Nom école */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', flex: 1 }}>
           {schoolLogoUrl ? (
             <img src={schoolLogoUrl} alt="Logo" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} crossOrigin="anonymous" />
           ) : (
@@ -162,8 +169,10 @@ export default function BulletinScolaire({
             </div>
           </div>
         </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '13px', fontWeight: 800, color: '#047857', letterSpacing: '0.05em' }}>{isFinalPeriod ? "BULLETIN DE NOTES DE FIN D'ANNÉE" : 'BULLETIN DE NOTES'}</div>
+
+        {/* Titre bulletin */}
+        <div style={{ textAlign: 'center', minWidth: '160px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 800, color: '#047857', letterSpacing: '0.05em' }}>{isFinalPeriod ? "BULLETIN DE NOTES DE FIN D'ANNÉE" : 'BULLETIN DE NOTES'}</div>
           <div style={{ backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '4px', padding: '2px 12px', marginTop: '3px' }}>
             <div style={{ fontSize: '8.5px', color: '#047857', fontWeight: 600 }}>Année : {anneeScolaire} — {periodeName}</div>
           </div>
@@ -379,7 +388,10 @@ export default function BulletinScolaire({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '6px' }}>
           <span style={{ fontSize: '10px', fontWeight: 700, color: '#374151' }}>DÉCISION :</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9.5px' }}>
-            {isAdmis ? <CheckSquare style={{ width: '11px', height: '11px', color: '#047857' }} /> : <Square style={{ width: '11px', height: '11px', color: '#9ca3af' }} />} Admis
+            {isAdmis ? <CheckSquare style={{ width: '11px', height: '11px', color: '#047857' }} /> : <Square style={{ width: '11px', height: '11px', color: '#9ca3af' }} />} Admis(e)
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9.5px' }}>
+            <Square style={{ width: '11px', height: '11px', color: '#9ca3af' }} /> Session
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9.5px' }}>
             {isRedouble ? <CheckSquare style={{ width: '11px', height: '11px', color: '#dc2626' }} /> : <Square style={{ width: '11px', height: '11px', color: '#9ca3af' }} />} Redouble
