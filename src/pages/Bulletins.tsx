@@ -165,6 +165,7 @@ export default function Bulletins() {
     );
   }, [allClassNotes]);
 
+  const periode = periodes.find((p: any) => p.id === periodeId);
   const isP5 = periode?.nom === 'P5';
 
   // Bulletin data for selected student
