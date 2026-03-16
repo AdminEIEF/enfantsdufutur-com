@@ -221,6 +221,10 @@ export default function Bulletins() {
 
   const totalCoef = bulletinData.reduce((s, b) => s + b.coefficient, 0);
   const totalPoints = bulletinData.reduce((s, b) => s + (b.total || 0), 0);
+  const moyennePeriodeReelle = useMemo(() => {
+    if (!selectedEleve) return null;
+    return computeAverage(selectedEleve, allClassNotes);
+  }, [selectedEleve, allClassNotes]);
   const moyennePeriode = totalCoef > 0 && bulletinData.some(b => b.note !== null) ? (totalPoints / totalCoef) : null;
 
   // Annual average (weighted across all notes)
@@ -754,7 +758,7 @@ export default function Bulletins() {
                   .filter((p: any) => p.ordre <= currentOrdre)
                   .sort((a: any, b: any) => a.ordre - b.ordre)
                   .map((p: any) => {
-                    const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                    const pNotes = getNotesForPeriod(p.id);
                     const avg = computeAverage(selectedEleve, pNotes);
                     return { periode: p.nom, moyenne: avg };
                   })
