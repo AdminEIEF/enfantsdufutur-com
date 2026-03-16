@@ -845,18 +845,42 @@ export default function Personnel() {
                       </Select>
                     </div>
                     <div className="space-y-1">
-                      <Label>Professeur de *</Label>
-                      <Select value={form.poste} onValueChange={v => setForm(f => ({ ...f, poste: v }))} disabled={!form.niveau_enseignant}>
-                        <SelectTrigger><SelectValue placeholder={form.niveau_enseignant ? 'Choisir une matière' : 'Sélectionnez un niveau d\'abord'} /></SelectTrigger>
-                        <SelectContent>
+                      <Label>Matière(s) enseignée(s) *</Label>
+                      {!form.niveau_enseignant ? (
+                        <p className="text-xs text-muted-foreground py-2">Sélectionnez un niveau d'abord</p>
+                      ) : (
+                        <div className="border rounded-md p-2 max-h-40 overflow-y-auto space-y-1">
                           {matieresWithCycles
                             .filter((m: any) => m.cycle_id === form.niveau_enseignant)
                             .filter((m: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.nom === m.nom) === i)
-                            .map((m: any) => (
-                              <SelectItem key={m.id} value={`Professeur de ${m.nom}`}>{m.nom}</SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                            .map((m: any) => {
+                              const val = `Professeur de ${m.nom}`;
+                              const selected = form.poste.split(' / ').includes(val);
+                              return (
+                                <label key={m.id} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent/50 cursor-pointer text-sm">
+                                  <input
+                                    type="checkbox"
+                                    checked={selected}
+                                    onChange={() => {
+                                      setForm(f => {
+                                        const current = f.poste ? f.poste.split(' / ').filter(Boolean) : [];
+                                        const updated = selected
+                                          ? current.filter(v => v !== val)
+                                          : [...current, val];
+                                        return { ...f, poste: updated.join(' / ') };
+                                      });
+                                    }}
+                                    className="rounded border-input"
+                                  />
+                                  {m.nom}
+                                </label>
+                              );
+                            })}
+                        </div>
+                      )}
+                      {form.poste && (
+                        <p className="text-[10px] text-muted-foreground mt-1">{form.poste}</p>
+                      )}
                     </div>
                   </div>
                 )}
