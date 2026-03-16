@@ -88,7 +88,7 @@ export default function Bulletins() {
     return allClassNotes.filter((n: any) => n.eleve_id === selectedEleve);
   }, [allClassNotes, selectedEleve]);
 
-  // All period notes for annual average
+  // All period notes for annual average (paginated to avoid 1000-row limit)
   const { data: allAnnualNotes = [] } = useQuery({
     queryKey: ['notes-annuelles-classe', classeId],
     queryFn: async () => {
@@ -96,13 +96,18 @@ export default function Bulletins() {
       const eleveIds = eleves.map((e: any) => e.id);
       const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage).map((p: any) => p.id);
       if (eleveIds.length === 0 || regularPeriodes.length === 0) return [];
-      const { data, error } = await supabase
-        .from('notes')
-        .select('*, matieres(nom, coefficient, pole)')
-        .in('eleve_id', eleveIds)
-        .in('periode_id', regularPeriodes);
-      if (error) throw error;
-      return data;
+      // Fetch per period to avoid 1000-row limit
+      const allNotes: any[] = [];
+      for (const pId of regularPeriodes) {
+        const { data, error } = await supabase
+          .from('notes')
+          .select('*, matieres(nom, coefficient, pole)')
+          .in('eleve_id', eleveIds)
+          .eq('periode_id', pId);
+        if (error) throw error;
+        if (data) allNotes.push(...data);
+      }
+      return allNotes;
     },
     enabled: !!classeId && eleves.length > 0 && periodes.length > 0,
   });
@@ -526,6 +531,76 @@ export default function Bulletins() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Récapitulatif des évaluations précédentes */}
+              {(() => {
+                const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
+                const currentOrdre = periode?.ordre ?? 0;
+                const prevPeriods = regularPeriodes
+                  .filter((p: any) => p.ordre < currentOrdre)
+                  .sort((a: any, b: any) => a.ordre - b.ordre)
+                  .map((p: any) => {
+                    const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                    const pAvg = computeAverage(selectedEleve, pNotes);
+                    const pAvgs = eleves.map((e: any) => ({
+                      id: e.id,
+                      moyenne: computeAverage(e.id, pNotes),
+                    }));
+                    pAvgs.sort((a: any, b: any) => (b.moyenne ?? -1) - (a.moyenne ?? -1));
+                    let pRank = 0, pLast: number | null = null;
+                    const pRanked = pAvgs.map((a: any, i: number) => {
+                      if (a.moyenne !== pLast) { pRank = i + 1; pLast = a.moyenne; }
+                      return { ...a, rang: a.moyenne !== null ? pRank : null };
+                    });
+                    const studentRank = pRanked.find((r: any) => r.id === selectedEleve);
+                    const ratio = pAvg !== null ? pAvg / bareme : null;
+                    let mention: string | null = null;
+                    if (ratio !== null) {
+                      if (ratio >= 0.85) mention = 'Excellent';
+                      else if (ratio >= 0.70) mention = 'Très Bien';
+                      else if (ratio >= 0.60) mention = 'Bien';
+                      else if (ratio >= 0.50) mention = 'Assez Bien';
+                      else if (ratio >= 0.40) mention = 'Passable';
+                      else mention = 'Insuffisant';
+                    }
+                    return { periodeName: p.nom, moyenne: pAvg, rang: studentRank?.rang ?? null, effectif: eleves.length, mention };
+                  });
+                return prevPeriods.length > 0 ? (
+                  <Card className="mt-4">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Récapitulatif des évaluations précédentes</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/50">
+                            <TableHead>Évaluation</TableHead>
+                            <TableHead className="text-center">Moyenne</TableHead>
+                            <TableHead className="text-center">Rang</TableHead>
+                            <TableHead className="text-center">Mention</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {prevPeriods.map((pp, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell className="font-medium">{pp.periodeName}</TableCell>
+                              <TableCell className={`text-center font-mono font-bold ${pp.moyenne !== null && pp.moyenne < seuil ? 'text-destructive' : ''}`}>
+                                {pp.moyenne !== null ? `${pp.moyenne.toFixed(2)}/${bareme}` : '—'}
+                              </TableCell>
+                              <TableCell className="text-center font-mono">
+                                {pp.rang !== null ? `${pp.rang}e/${pp.effectif}` : '—'}
+                              </TableCell>
+                              <TableCell className="text-center italic">
+                                {pp.mention || '—'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                ) : null;
+              })()}
 
               {/* Major info */}
               {major && (
