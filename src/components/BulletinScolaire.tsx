@@ -353,22 +353,22 @@ export default function BulletinScolaire({
           {previousPeriods.length > 0 ? (
             <table style={{ fontSize: '9px' }}>
               <thead>
-                <tr style={{ backgroundColor: '#f1f5f9' }}>
-                  <th style={{ padding: '2px 4px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle' }}>Évaluation</th>
-                  <th style={{ padding: '2px 3px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle' }}>Moyenne</th>
-                  <th style={{ padding: '2px 3px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle' }}>Mention</th>
-                  <th style={{ padding: '2px 3px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle' }}>Rang</th>
+                <tr style={{ backgroundColor: '#f1f5f9', height: '22px' }}>
+                  <th style={{ padding: '2px 4px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '22px' }}>Évaluation</th>
+                  <th style={{ padding: '2px 3px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '22px' }}>Moyenne</th>
+                  <th style={{ padding: '2px 3px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '22px' }}>Mention</th>
+                  <th style={{ padding: '2px 3px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '22px' }}>Rang</th>
                 </tr>
               </thead>
               <tbody>
                 {previousPeriods.map((pp, idx) => (
-                  <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
-                    <td style={{ padding: '2px 4px', textAlign: 'center', fontWeight: 500, verticalAlign: 'middle' }}>{pp.periodeName}</td>
-                    <td style={{ padding: '2px 3px', textAlign: 'center', fontFamily: 'monospace', fontWeight: 700, verticalAlign: 'middle', color: pp.moyenne !== null && pp.moyenne < seuil ? '#dc2626' : '#047857' }}>
+                  <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc', height: '20px' }}>
+                    <td style={{ padding: '2px 4px', textAlign: 'center', fontWeight: 500, verticalAlign: 'middle', lineHeight: '20px' }}>{pp.periodeName}</td>
+                    <td style={{ padding: '2px 3px', textAlign: 'center', fontFamily: 'monospace', fontWeight: 700, verticalAlign: 'middle', lineHeight: '20px', color: pp.moyenne !== null && pp.moyenne < seuil ? '#dc2626' : '#047857' }}>
                       {pp.moyenne !== null ? `${pp.moyenne.toFixed(2)}/${bareme}` : '—'}
                     </td>
-                    <td style={{ padding: '2px 3px', textAlign: 'center', fontStyle: 'italic', verticalAlign: 'middle', fontSize: '8px' }}>{pp.mention || '—'}</td>
-                    <td style={{ padding: '2px 3px', textAlign: 'center', fontFamily: 'monospace', verticalAlign: 'middle' }}>
+                    <td style={{ padding: '2px 3px', textAlign: 'center', fontStyle: 'italic', verticalAlign: 'middle', fontSize: '8px', lineHeight: '20px' }}>{pp.mention || '—'}</td>
+                    <td style={{ padding: '2px 3px', textAlign: 'center', fontFamily: 'monospace', verticalAlign: 'middle', lineHeight: '20px' }}>
                       {pp.rang !== null ? `${pp.rang}ᵉ/${pp.effectif}` : '—'}
                     </td>
                   </tr>
