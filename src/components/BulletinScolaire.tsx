@@ -110,7 +110,7 @@ export default function BulletinScolaire({
           </div>
         </div>
         <div className="text-right">
-          <h2 className="text-lg font-bold text-emerald-700 tracking-wide">BULLETIN SCOLAIRE</h2>
+          <h2 className="text-lg font-bold text-emerald-700 tracking-wide">BULLETIN DE NOTES</h2>
           <div className="bg-emerald-50 border border-emerald-200 rounded px-3 py-1 mt-1">
             <p className="text-xs text-emerald-700 font-medium">Année : {anneeScolaire}</p>
             <p className="text-xs text-emerald-600 font-bold">{periodeName}</p>
@@ -163,7 +163,7 @@ export default function BulletinScolaire({
           </tbody>
           <tfoot>
             <tr className="bg-emerald-50 font-bold">
-              <td className="border border-gray-300 px-2 py-1.5">MOYENNE GÉNÉRALE</td>
+              <td className="border border-gray-300 px-2 py-1.5">TOTAL DES POINTS</td>
               <td className="border border-gray-300 px-1 py-1.5 text-center">{totalCoef}</td>
               <td className={`border border-gray-300 px-1 py-1.5 text-center font-mono ${moyennePeriode !== null && moyennePeriode < seuil ? 'text-red-600' : 'text-emerald-700'}`}>
                 {moyennePeriode !== null ? moyennePeriode.toFixed(2) : '—'}
