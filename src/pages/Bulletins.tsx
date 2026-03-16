@@ -659,32 +659,6 @@ export default function Bulletins() {
                               </TableCell>
                             </TableRow>
                           ))}
-                          {/* Ligne Moyenne Annuelle */}
-                          {isP5 && prevPeriods.length > 1 && (
-                            <TableRow className="bg-primary/5 font-bold">
-                              <TableCell className="font-bold">Moyenne Annuelle</TableCell>
-                              <TableCell className={`text-center font-mono font-bold ${moyenneAnnuelleSimple !== null && moyenneAnnuelleSimple < seuil ? 'text-destructive' : 'text-accent'}`}>
-                                {moyenneAnnuelleSimple !== null ? `${moyenneAnnuelleSimple.toFixed(2)}/${bareme}` : '—'}
-                              </TableCell>
-                              <TableCell className="text-center font-mono text-muted-foreground">
-                                {moyenneClasse !== null ? `${moyenneClasse.toFixed(2)}/${bareme}` : '—'}
-                              </TableCell>
-                              <TableCell className="text-center font-mono">
-                                {annualRank?.rang !== null ? `${annualRank?.rang}e/${totalClasseEleves}` : '—'}
-                              </TableCell>
-                              <TableCell className="text-center italic">
-                                {moyenneAnnuelleSimple !== null ? (() => {
-                                  const ratio = moyenneAnnuelleSimple / bareme;
-                                  if (ratio >= 0.85) return 'Excellent';
-                                  if (ratio >= 0.70) return 'Très Bien';
-                                  if (ratio >= 0.60) return 'Bien';
-                                  if (ratio >= 0.50) return 'Assez Bien';
-                                  if (ratio >= 0.40) return 'Passable';
-                                  return 'Insuffisant';
-                                })() : '—'}
-                              </TableCell>
-                            </TableRow>
-                          )}
                         </TableBody>
                       </Table>
                     </CardContent>
