@@ -815,7 +815,7 @@ export default function Personnel() {
                         <SelectItem value="surveillant">Surveillant</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-[10px] text-muted-foreground">Le matricule sera généré automatiquement (ex: ENS-0001)</p>
+                    <p className="text-[10px] text-muted-foreground">Le matricule sera généré automatiquement (ex: ENP-0001 ou ENS-0001)</p>
                   </div>
                 </div>
                 {(form.categorie === 'enseignant_primaire' || form.categorie === 'enseignant_secondaire') && (
