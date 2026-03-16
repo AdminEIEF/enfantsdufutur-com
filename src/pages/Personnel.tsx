@@ -617,6 +617,8 @@ export default function Personnel() {
 
   const categorieLabel: Record<string, string> = {
     enseignant: 'Enseignant', administration: 'Administration', service: 'Service', direction: 'Direction',
+    hygiene: 'Service Hygiène', securite_primaire: 'Sécurité Primaire', securite_lycee: 'Sécurité Lycée',
+    chauffeur: 'Chauffeur', infirmiere: 'Infirmière', librairie: 'Librairie', cantine: 'Cantine', surveillant: 'Surveillant',
   };
 
   const handleExportExcel = async () => {
