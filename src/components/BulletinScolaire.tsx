@@ -76,8 +76,10 @@ export default function BulletinScolaire({
   schoolCity = 'Conakry, Guinée',
   schoolLogoUrl,
 }: BulletinScolaireProps) {
+  const isP5 = periodeName?.toUpperCase() === 'P5';
   const isAdmis = moyennePeriode !== null && moyennePeriode >= seuil;
-  const isRedouble = moyennePeriode !== null && !isAdmis;
+  const isSession = moyennePeriode !== null && !isAdmis && moyennePeriode >= (seuil * 0.8);
+  const isRedouble = moyennePeriode !== null && !isAdmis && !isSession;
   const totalCoef = bulletinData.reduce((s, b) => s + b.coefficient, 0);
   const mention = getMention(moyennePeriode, bareme);
 
