@@ -191,20 +191,20 @@ export default function BulletinScolaire({
 
       {/* ── Tableau des notes ── */}
       <div style={{ marginBottom: '3px' }}>
-        <table style={{ fontSize: '8.5px' }}>
+        <table style={{ fontSize: '9px' }}>
           <thead>
             <tr style={{ backgroundColor: '#047857', color: 'white' }}>
-              <th style={{ padding: '4px 5px', textAlign: 'left', fontWeight: 700, verticalAlign: 'middle' }}>Matière</th>
-              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '30px', verticalAlign: 'middle' }}>Coef</th>
+              <th style={{ padding: '4px 4px', textAlign: 'left', fontWeight: 700, verticalAlign: 'middle', width: '90px', maxWidth: '90px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>Matière</th>
+              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '28px', verticalAlign: 'middle' }}>Coef</th>
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
-                <th key={pp.periodeName} style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '36px', fontSize: '7.5px', verticalAlign: 'middle' }}>{pp.periodeName}</th>
+                <th key={pp.periodeName} style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '38px', fontSize: '8px', verticalAlign: 'middle' }}>{pp.periodeName}</th>
               ))}
-              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '46px', verticalAlign: 'middle' }}>Moyenne</th>
-              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '50px', verticalAlign: 'middle' }}>Moy×Coef</th>
+              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '50px', verticalAlign: 'middle' }}>Moyenne</th>
+              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '54px', verticalAlign: 'middle' }}>Moy×Coef</th>
               {isFinalPeriod && (
                 <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '30px', verticalAlign: 'middle' }}>Rang</th>
               )}
-              <th style={{ padding: '4px 5px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>Appréciation</th>
+              <th style={{ padding: '4px 4px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>Appréciation</th>
             </tr>
           </thead>
           <tbody>
@@ -213,7 +213,7 @@ export default function BulletinScolaire({
               const total = b.note !== null ? b.note * b.coefficient : null;
               return (
                 <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', height: '20px' }}>
-                  <td style={{ padding: '2px 5px', fontWeight: 500, verticalAlign: 'middle', fontSize: '8.5px' }}>{b.matiere}</td>
+                  <td style={{ padding: '2px 4px', fontWeight: 500, verticalAlign: 'middle', fontSize: '8.5px', maxWidth: '90px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{b.matiere}</td>
                   <td style={{ ...cellCenter, color: '#6b7280', fontWeight: 600 }}>{b.coefficient}</td>
                   {isFinalPeriod && previousPeriodsNotes.map((pp) => {
                     const prevNote = pp.notesByMatiere[b.matiere] ?? null;
