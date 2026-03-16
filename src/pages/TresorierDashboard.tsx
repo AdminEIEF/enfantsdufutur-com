@@ -7,19 +7,24 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const CATEGORIES = [
-  { value: 'enseignant', label: 'Professeurs' },
-  { value: 'administration', label: 'Administration' },
-  { value: 'service', label: 'Service' },
-  { value: 'direction', label: 'Direction' },
-  { value: 'hygiene', label: 'Service Hygiène' },
-  { value: 'securite_primaire', label: 'Sécurité Primaire' },
-  { value: 'securite_lycee', label: 'Sécurité Lycée' },
-  { value: 'chauffeur', label: 'Chauffeur' },
-  { value: 'infirmiere', label: 'Infirmière' },
-  { value: 'librairie', label: 'Librairie' },
-  { value: 'cantine', label: 'Cantine' },
-  { value: 'surveillant', label: 'Surveillant' },
+  { value: 'enseignant_primaire', label: '👨‍🏫 Ens. Primaire' },
+  { value: 'enseignant_secondaire', label: '👨‍🏫 Ens. Secondaire' },
+  { value: 'administration', label: '🏢 Administration' },
+  { value: 'service', label: '🔧 Service' },
+  { value: 'direction', label: '👔 Direction' },
+  { value: 'hygiene', label: '🧹 Hygiène' },
+  { value: 'securite_primaire', label: '🛡️ Sécu. Primaire' },
+  { value: 'securite_lycee', label: '🛡️ Sécu. Lycée' },
+  { value: 'chauffeur', label: '🚗 Chauffeur' },
+  { value: 'infirmiere', label: '🏥 Infirmière' },
+  { value: 'librairie', label: '📚 Librairie' },
+  { value: 'cantine', label: '🍽️ Cantine' },
+  { value: 'surveillant', label: '👁️ Surveillant' },
 ];
+
+const getEffectiveCat = (e: any) => e.categorie === 'enseignant'
+  ? (e.matricule?.startsWith('ESC') ? 'enseignant_secondaire' : 'enseignant_primaire')
+  : e.categorie;
 
 function fmtNum(n: number): string {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
@@ -36,7 +41,7 @@ export default function TresorierDashboard() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const [empRes, paiRes] = await Promise.all([
-      supabase.from('employes').select('id, nom, prenom, poste, categorie, salaire_base, statut').eq('statut', 'actif'),
+      supabase.from('employes').select('id, nom, prenom, poste, categorie, matricule, salaire_base, statut').eq('statut', 'actif'),
       supabase.from('paiements_tresorier').select('id, employe_id, montant, mois, annee').eq('mois', currentMonth).eq('annee', currentYear),
     ]);
     if (empRes.data) setEmployes(empRes.data);
@@ -54,7 +59,7 @@ export default function TresorierDashboard() {
   const nbPaye = employes.filter(e => isPaid(e.id)).length;
 
   const categoryStats = CATEGORIES.map(cat => {
-    const catEmp = employes.filter(e => e.categorie === cat.value);
+    const catEmp = employes.filter(e => getEffectiveCat(e) === cat.value);
     const catPaid = catEmp.filter(e => isPaid(e.id));
     return { label: cat.label, total: catEmp.length, paid: catPaid.length };
   }).filter(c => c.total > 0);
