@@ -227,7 +227,21 @@ export default function Bulletins() {
   }, [selectedEleve, allClassNotes]);
   const moyennePeriode = moyennePeriodeReelle;
 
+  // Plus forte et plus faible moyenne de la classe (période courante)
+  const plusForte = rankings.length > 0 && rankings[0].moyenne !== null ? rankings[0].moyenne : null;
+  const plusFaible = rankings.length > 0 && rankings[rankings.length - 1].moyenne !== null ? rankings[rankings.length - 1].moyenne : null;
 
+  // Moyenne annuelle simple: average of period averages
+  const moyenneAnnuelle = useMemo(() => {
+    const periodAverages: number[] = [];
+    regularPeriodes.forEach((p: any) => {
+      const pNotes = getNotesForPeriod(p.id);
+      const avg = computeAverage(selectedEleve, pNotes);
+      if (avg !== null) periodAverages.push(avg);
+    });
+    if (periodAverages.length === 0) return null;
+    return periodAverages.reduce((a, b) => a + b, 0) / periodAverages.length;
+  }, [selectedEleve, allAnnualNotes, allClassNotes, periodeId, regularPeriodes]);
   // Annual ranking based on moyenneAnnuelleSimple (average of period averages)
   const annualRankings = useMemo(() => {
     const avgs = eleves.map((e: any) => {
