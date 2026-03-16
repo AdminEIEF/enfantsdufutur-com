@@ -10,19 +10,38 @@ export async function generateBulletinPDF(
     throw new Error('Élément bulletin introuvable');
   }
 
-  // Find the actual A4 container inside
   const a4Container = element.querySelector('[data-bulletin-a4]') as HTMLElement || element;
 
+  // Temporarily ensure crisp rendering
+  const originalTransform = a4Container.style.transform;
+  const originalTransformOrigin = a4Container.style.transformOrigin;
+  a4Container.style.transform = 'none';
+  a4Container.style.transformOrigin = 'top left';
+
   const canvas = await html2canvas(a4Container, {
-    scale: 2,
+    scale: 3, // Higher resolution for crisp text
     useCORS: true,
     allowTaint: true,
     backgroundColor: '#ffffff',
     width: a4Container.scrollWidth,
     height: a4Container.scrollHeight,
+    logging: false,
+    imageTimeout: 15000,
+    onclone: (clonedDoc) => {
+      // Ensure fonts are rendered in the clone
+      const clonedElement = clonedDoc.querySelector('[data-bulletin-a4]') as HTMLElement;
+      if (clonedElement) {
+        clonedElement.style.transform = 'none';
+        clonedElement.style.width = '210mm';
+      }
+    },
   });
 
-  const imgData = canvas.toDataURL('image/png');
+  // Restore original styles
+  a4Container.style.transform = originalTransform;
+  a4Container.style.transformOrigin = originalTransformOrigin;
+
+  const imgData = canvas.toDataURL('image/png', 1.0);
   
   // A4 dimensions in mm
   const pdfWidth = 210;
@@ -30,19 +49,19 @@ export async function generateBulletinPDF(
   
   const pdf = new jsPDF('p', 'mm', 'a4');
   
-  // Always fit on a single A4 page
   const imgWidth = pdfWidth;
   const imgHeight = (canvas.height * pdfWidth) / canvas.width;
   
   if (imgHeight <= pdfHeight) {
-    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+    // Fits on one page — center vertically
+    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight, undefined, 'FAST');
   } else {
     // Scale down to fit single page
     const scale = pdfHeight / imgHeight;
     const scaledWidth = imgWidth * scale;
     const scaledHeight = pdfHeight;
     const offsetX = (pdfWidth - scaledWidth) / 2;
-    pdf.addImage(imgData, 'PNG', offsetX, 0, scaledWidth, scaledHeight);
+    pdf.addImage(imgData, 'PNG', offsetX, 0, scaledWidth, scaledHeight, undefined, 'FAST');
   }
   
   pdf.save(filename);
