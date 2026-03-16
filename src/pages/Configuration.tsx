@@ -1369,6 +1369,7 @@ function EcoleTab() {
   const [nom, setNom] = useState('Ecole Internationale Les Enfants du Futur');
   const [soustitre, setSoustitre] = useState('Enseignement Général et Technique');
   const [ville, setVille] = useState('Conakry, Guinée');
+  const [telephone, setTelephone] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
