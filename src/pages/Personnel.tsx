@@ -873,7 +873,8 @@ export default function Personnel() {
                       <Button size="sm" variant="outline" className="w-full" onClick={() => startCamera('add')}>
                         <Camera className="h-4 w-4 mr-1" /> Prendre une photo
                       </Button>
-                  )}
+                    )}
+                  </div>
                 </div>
                 <Button className="w-full" onClick={() => addEmployee.mutate()} disabled={addEmployee.isPending}>
                   {addEmployee.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
