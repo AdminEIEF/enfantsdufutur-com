@@ -640,7 +640,6 @@ export default function Bulletins() {
                           <TableRow className="bg-muted/50">
                             <TableHead>Évaluation</TableHead>
                             <TableHead className="text-center">Moyenne</TableHead>
-                            <TableHead className="text-center">Moy. Classe</TableHead>
                             <TableHead className="text-center">Rang</TableHead>
                             <TableHead className="text-center">Mention</TableHead>
                           </TableRow>
