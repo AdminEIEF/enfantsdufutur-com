@@ -165,25 +165,41 @@ export default function Bulletins() {
     );
   }, [allClassNotes]);
 
+  const isP5 = periode?.nom === 'P5';
+
   // Bulletin data for selected student
   const bulletinData = useMemo(() => {
+    const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
     return matieres.map((m: any) => {
       const n = studentNotes.find((note: any) => note.matiere_id === m.id);
       const noteVal = n?.note != null ? Number(n.note) : null;
       const coef = Number(m.coefficient) || 1;
       const stats = classMatiereStats[m.id];
+
+      // In P5, compute annual average per matière (sum of period notes / nb periods with notes)
+      let displayNote = noteVal;
+      if (isP5) {
+        const periodNotes: number[] = [];
+        regularPeriodes.forEach((p: any) => {
+          const pNotes = allAnnualNotes.filter((an: any) => an.periode_id === p.id && an.eleve_id === selectedEleve && an.matiere_id === m.id);
+          const found = pNotes.length > 0 ? pNotes[0] : null;
+          if (found?.note != null) periodNotes.push(Number(found.note));
+        });
+        displayNote = periodNotes.length > 0 ? periodNotes.reduce((a, b) => a + b, 0) / periodNotes.length : null;
+      }
+
       return {
         matiere: m.nom,
         pole: m.pole,
-        note: noteVal,
+        note: displayNote,
         coefficient: coef,
-        total: noteVal !== null ? noteVal * coef : null,
+        total: displayNote !== null ? displayNote * coef : null,
         classeMin: stats?.min ?? null,
         classeMax: stats?.max ?? null,
         classeAvg: stats?.avg ?? null,
       };
     });
-  }, [matieres, studentNotes, classMatiereStats]);
+  }, [matieres, studentNotes, classMatiereStats, isP5, allAnnualNotes, periodes, selectedEleve]);
 
   const totalCoef = bulletinData.reduce((s, b) => s + b.coefficient, 0);
   const totalPoints = bulletinData.reduce((s, b) => s + (b.total || 0), 0);
