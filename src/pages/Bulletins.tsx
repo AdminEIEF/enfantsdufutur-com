@@ -165,25 +165,42 @@ export default function Bulletins() {
     );
   }, [allClassNotes]);
 
+  const periode = periodes.find((p: any) => p.id === periodeId);
+  const isP5 = periode?.nom === 'P5';
+
   // Bulletin data for selected student
   const bulletinData = useMemo(() => {
+    const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
     return matieres.map((m: any) => {
       const n = studentNotes.find((note: any) => note.matiere_id === m.id);
       const noteVal = n?.note != null ? Number(n.note) : null;
       const coef = Number(m.coefficient) || 1;
       const stats = classMatiereStats[m.id];
+
+      // In P5, compute annual average per matière (sum of period notes / nb periods with notes)
+      let displayNote = noteVal;
+      if (isP5) {
+        const periodNotes: number[] = [];
+        regularPeriodes.forEach((p: any) => {
+          const pNotes = allAnnualNotes.filter((an: any) => an.periode_id === p.id && an.eleve_id === selectedEleve && an.matiere_id === m.id);
+          const found = pNotes.length > 0 ? pNotes[0] : null;
+          if (found?.note != null) periodNotes.push(Number(found.note));
+        });
+        displayNote = periodNotes.length > 0 ? periodNotes.reduce((a, b) => a + b, 0) / periodNotes.length : null;
+      }
+
       return {
         matiere: m.nom,
         pole: m.pole,
-        note: noteVal,
+        note: displayNote,
         coefficient: coef,
-        total: noteVal !== null ? noteVal * coef : null,
+        total: displayNote !== null ? displayNote * coef : null,
         classeMin: stats?.min ?? null,
         classeMax: stats?.max ?? null,
         classeAvg: stats?.avg ?? null,
       };
     });
-  }, [matieres, studentNotes, classMatiereStats]);
+  }, [matieres, studentNotes, classMatiereStats, isP5, allAnnualNotes, periodes, selectedEleve]);
 
   const totalCoef = bulletinData.reduce((s, b) => s + b.coefficient, 0);
   const totalPoints = bulletinData.reduce((s, b) => s + (b.total || 0), 0);
@@ -233,7 +250,7 @@ export default function Bulletins() {
   const major = rankings.length > 0 && rankings[0].moyenne !== null ? rankings[0] : null;
 
   const eleve = eleves.find((e: any) => e.id === selectedEleve);
-  const periode = periodes.find((p: any) => p.id === periodeId);
+  // periode already declared above
 
   const getAppreciation = (note: number | null) => {
     if (note === null) return null;
@@ -446,8 +463,8 @@ export default function Bulletins() {
                       return { periodeName: p.nom, notesByMatiere };
                     });
                 })()}
-                moyenneAnnuelle={moyenneAnnuelleSimple}
-                moyenneClasse={moyenneClasse}
+                moyenneAnnuelle={isP5 ? moyenneAnnuelleSimple : null}
+                moyenneClasse={isP5 ? moyenneClasse : null}
               />
             </div>
           ) : (
@@ -534,7 +551,7 @@ export default function Bulletins() {
               </Card>
 
               {/* Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-4">
+              <div className={`grid grid-cols-2 md:grid-cols-3 ${isP5 ? 'lg:grid-cols-6' : 'lg:grid-cols-3'} gap-4 mt-4`}>
                 <Card className="border-primary/40">
                   <CardContent className="pt-4 pb-4 text-center">
                     <p className="text-xs text-muted-foreground">Moyenne {periode?.nom}</p>
@@ -556,34 +573,40 @@ export default function Bulletins() {
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-4 text-center">
-                    <p className="text-xs text-muted-foreground">Moy. annuelle</p>
-                    <p className={`text-2xl font-bold ${moyenneAnnuelleSimple !== null && moyenneAnnuelleSimple >= seuil ? 'text-accent' : 'text-destructive'}`}>
-                      {moyenneAnnuelleSimple !== null ? `${moyenneAnnuelleSimple.toFixed(2)}/${bareme}` : '—'}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-4 text-center">
-                    <p className="text-xs text-muted-foreground">Moy. de la classe</p>
-                    <p className={`text-2xl font-bold ${moyenneClasse !== null && moyenneClasse >= seuil ? 'text-accent' : 'text-destructive'}`}>
-                      {moyenneClasse !== null ? `${moyenneClasse.toFixed(2)}/${bareme}` : '—'}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-4 text-center">
-                    <p className="text-xs text-muted-foreground">Rang annuel</p>
-                    <p className="text-2xl font-bold flex items-center justify-center gap-1">
-                      {annualRank?.rang !== null ? (
-                        <>
-                          {annualRank?.rang}<sup>e</sup> / {totalClasseEleves}
-                        </>
-                      ) : '—'}
-                    </p>
-                  </CardContent>
-                </Card>
+                {isP5 && (
+                  <Card>
+                    <CardContent className="pt-4 pb-4 text-center">
+                      <p className="text-xs text-muted-foreground">Moy. annuelle</p>
+                      <p className={`text-2xl font-bold ${moyenneAnnuelleSimple !== null && moyenneAnnuelleSimple >= seuil ? 'text-accent' : 'text-destructive'}`}>
+                        {moyenneAnnuelleSimple !== null ? `${moyenneAnnuelleSimple.toFixed(2)}/${bareme}` : '—'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+                {isP5 && (
+                  <Card>
+                    <CardContent className="pt-4 pb-4 text-center">
+                      <p className="text-xs text-muted-foreground">Moy. de la classe</p>
+                      <p className={`text-2xl font-bold ${moyenneClasse !== null && moyenneClasse >= seuil ? 'text-accent' : 'text-destructive'}`}>
+                        {moyenneClasse !== null ? `${moyenneClasse.toFixed(2)}/${bareme}` : '—'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+                {isP5 && (
+                  <Card>
+                    <CardContent className="pt-4 pb-4 text-center">
+                      <p className="text-xs text-muted-foreground">Rang annuel</p>
+                      <p className="text-2xl font-bold flex items-center justify-center gap-1">
+                        {annualRank?.rang !== null ? (
+                          <>
+                            {annualRank?.rang}<sup>e</sup> / {totalClasseEleves}
+                          </>
+                        ) : '—'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
                 <Card>
                   <CardContent className="pt-4 pb-4 text-center">
                     <p className="text-xs text-muted-foreground">Décision</p>
@@ -675,7 +698,7 @@ export default function Bulletins() {
                             </TableRow>
                           ))}
                           {/* Ligne Moyenne Annuelle */}
-                          {prevPeriods.length > 1 && (
+                          {isP5 && prevPeriods.length > 1 && (
                             <TableRow className="bg-primary/5 font-bold">
                               <TableCell className="font-bold">Moyenne Annuelle</TableCell>
                               <TableCell className={`text-center font-mono font-bold ${moyenneAnnuelleSimple !== null && moyenneAnnuelleSimple < seuil ? 'text-destructive' : 'text-accent'}`}>
