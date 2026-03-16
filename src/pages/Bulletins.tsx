@@ -344,14 +344,25 @@ export default function Bulletins() {
                 classe={`${selectedCl?.niveaux?.nom || ''} — ${selectedCl?.nom || ''}`}
                 effectif={totalClasseEleves}
                 periodeName={periode?.nom || ''}
-                bulletinData={bulletinData.map(b => ({
-                  matiere: b.matiere,
-                  pole: b.pole,
-                  coefficient: b.coefficient,
-                  note: b.note,
-                  rang: null,
-                  appreciation: b.note !== null ? getAppreciation(b.note)?.text || null : null,
-                }))}
+                periodeNames={periodes.filter((p: any) => !p.est_rattrapage).sort((a: any, b: any) => a.ordre - b.ordre).map((p: any) => p.nom)}
+                bulletinData={bulletinData.map(b => {
+                  const regularPds = periodes.filter((p: any) => !p.est_rattrapage).sort((a: any, b: any) => a.ordre - b.ordre);
+                  const notesByPeriod = regularPds.map((p: any) => {
+                    const mat = matieres.find((m: any) => m.nom === b.matiere);
+                    if (!mat) return null;
+                    const found = allAnnualNotes.find((n: any) => n.eleve_id === selectedEleve && n.matiere_id === mat.id && n.periode_id === p.id);
+                    return found?.note != null ? Number(found.note) : null;
+                  });
+                  return {
+                    matiere: b.matiere,
+                    pole: b.pole,
+                    coefficient: b.coefficient,
+                    note: b.note,
+                    notesByPeriod,
+                    rang: null,
+                    appreciation: b.note !== null ? getAppreciation(b.note)?.text || null : null,
+                  };
+                })}
                 moyennePeriode={moyennePeriode}
                 rang={currentRanking?.rang ?? null}
                 plusForte={rankings.length > 0 && rankings[0].moyenne !== null ? rankings[0].moyenne : null}
