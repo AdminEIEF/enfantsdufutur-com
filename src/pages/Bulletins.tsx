@@ -758,7 +758,7 @@ export default function Bulletins() {
                   .filter((p: any) => p.ordre <= currentOrdre)
                   .sort((a: any, b: any) => a.ordre - b.ordre)
                   .map((p: any) => {
-                    const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                    const pNotes = getNotesForPeriod(p.id);
                     const avg = computeAverage(selectedEleve, pNotes);
                     return { periode: p.nom, moyenne: avg };
                   })

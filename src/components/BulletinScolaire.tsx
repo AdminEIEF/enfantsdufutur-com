@@ -105,10 +105,10 @@ export default function BulletinScolaire({
   const totalCoef = bulletinData.reduce((s, b) => s + b.coefficient, 0);
   const mention = getMention(moyennePeriode, bareme);
 
-  const chartData = [
-    ...previousPeriods.map(pp => ({ periode: pp.periodeName, moyenne: pp.moyenne })),
-    { periode: periodeName, moyenne: moyennePeriode },
-  ].filter(d => d.moyenne !== null);
+  const chartData = (previousPeriods.length > 0
+    ? previousPeriods.map(pp => ({ periode: pp.periodeName, moyenne: pp.moyenne }))
+    : [{ periode: periodeName, moyenne: moyennePeriode }]
+  ).filter(d => d.moyenne !== null);
 
   return (
     <div
