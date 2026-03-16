@@ -361,8 +361,9 @@ export default function Bulletins() {
                 previousPeriods={(() => {
                   const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
                   const currentOrdre = periode?.ordre ?? 0;
+                  const isP5 = periode?.nom?.toUpperCase() === 'P5';
                   return regularPeriodes
-                    .filter((p: any) => p.ordre < currentOrdre)
+                    .filter((p: any) => isP5 ? true : p.ordre < currentOrdre)
                     .sort((a: any, b: any) => a.ordre - b.ordre)
                     .map((p: any) => {
                       const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
