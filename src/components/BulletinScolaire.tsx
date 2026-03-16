@@ -220,7 +220,7 @@ export default function BulletinScolaire({
         <table style={{ fontSize: '9.5px' }} cellPadding={0} cellSpacing={0}>
           <thead>
             <tr style={{ backgroundColor: '#047857', color: 'white' }}>
-              <th style={{ padding: '3px 3px', textAlign: 'left', fontWeight: 700, verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Matière</th>
+              <th style={{ padding: '3px 3px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Matière</th>
               <th style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '24px', fontSize: '8px', verticalAlign: 'middle' }}>Coef</th>
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
                 <th key={pp.periodeName} style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '40px', fontSize: '8.5px', verticalAlign: 'middle' }}>{pp.periodeName}</th>
