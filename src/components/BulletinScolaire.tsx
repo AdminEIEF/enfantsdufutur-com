@@ -288,7 +288,7 @@ export default function BulletinScolaire({
               {moyennePeriode !== null ? `${moyennePeriode.toFixed(2)} / ${bareme}` : '—'}
             </div>
           </div>
-          <div style={{ fontSize: '9.5px', color: '#374151' }}>
+          <div style={{ fontSize: '11px', color: '#374151' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
               <span><strong>Rang :</strong> {rang !== null ? `${rang}ᵉ / ${effectif}` : '—'}</span>
               <span><strong>Mention :</strong> {mention || '—'}</span>
