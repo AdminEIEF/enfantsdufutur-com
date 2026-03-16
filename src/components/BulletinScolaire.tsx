@@ -224,13 +224,13 @@ export default function BulletinScolaire({
               const total = b.note !== null ? b.note * b.coefficient : null;
               return (
                 <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', height: '20px' }}>
-                  <td style={{ padding: '2px 4px', fontWeight: 500, verticalAlign: 'middle', fontSize: '11px', whiteSpace: 'nowrap' }}>{b.matiere}</td>
-                  <td style={{ ...cellCenter, color: '#6b7280', fontWeight: 600, fontSize: '9px' }}>{b.coefficient}</td>
+                  <td style={{ padding: '2px 3px', fontWeight: 500, verticalAlign: 'middle', fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.matiere}</td>
+                  <td style={{ ...cellCenter, color: '#6b7280', fontWeight: 600, fontSize: '8px' }}>{b.coefficient}</td>
                   {isFinalPeriod && previousPeriodsNotes.map((pp) => {
                     const prevNote = pp.notesByMatiere[b.matiere] ?? null;
                     const prevBelowAvg = prevNote !== null && prevNote < seuil;
                     return (
-                      <td key={pp.periodeName} style={{ ...cellCenter, fontSize: '10px', color: prevBelowAvg ? '#dc2626' : '#374151' }}>
+                      <td key={pp.periodeName} style={{ ...cellCenter, fontSize: '9px', color: prevBelowAvg ? '#dc2626' : '#374151' }}>
                         {prevNote !== null ? prevNote.toFixed(2) : '—'}
                       </td>
                     );
@@ -244,7 +244,7 @@ export default function BulletinScolaire({
                   {isFinalPeriod && (
                     <td style={{ ...cellCenter }}>{b.rang || '—'}</td>
                   )}
-                  <td style={{ padding: '2px 4px', textAlign: 'center', verticalAlign: 'middle', color: '#6b7280', fontStyle: 'italic', fontSize: '11px' }}>{b.appreciation || '—'}</td>
+                  <td style={{ padding: '2px 3px', textAlign: 'center', verticalAlign: 'middle', color: '#6b7280', fontStyle: 'italic', fontSize: '8.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.appreciation || '—'}</td>
                 </tr>
               );
             })}
