@@ -187,8 +187,8 @@ export default function BulletinScolaire({
           </div>
           <div className="text-xs space-y-1 text-gray-700">
             <div className="flex justify-between">
-              <p><span className="font-medium">Mention :</span> <strong>{mention || '—'}</strong></p>
               <p><span className="font-medium">Rang :</span> <strong>{rang !== null ? `${rang}e / ${effectif}` : '—'}</strong></p>
+              <p><span className="font-medium">Mention :</span> <strong>{mention || '—'}</strong></p>
             </div>
             <div className="flex justify-between">
               <p><span className="font-medium">Plus forte moyenne :</span> {plusForte !== null ? plusForte.toFixed(2) : '—'}</p>
