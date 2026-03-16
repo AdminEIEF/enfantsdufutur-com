@@ -186,7 +186,7 @@ export default function BulletinScolaire({
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div className="border border-gray-200 rounded-lg p-3 flex flex-col justify-center">
           <div className={`text-center mb-2 p-2 rounded-lg ${isAdmis ? 'bg-emerald-50 border border-emerald-300' : 'bg-red-50 border border-red-300'}`}>
-            <span className="text-[10px] text-gray-500">Moyenne {periodeName} :</span>
+            <span className="text-[10px] text-gray-500">{isP5 ? 'Moyenne Générale Annuelle' : `Moyenne ${periodeName}`} :</span>
             <p className={`text-2xl font-black ${isAdmis ? 'text-emerald-700' : 'text-red-600'}`}>
               {moyennePeriode !== null ? `${moyennePeriode.toFixed(2)} / ${bareme}` : '—'}
             </p>
