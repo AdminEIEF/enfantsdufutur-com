@@ -224,16 +224,15 @@ export default function Bulletins() {
 
   // Moyenne annuelle simple: average of period averages (sum / nb periods)
   const moyenneAnnuelleSimple = useMemo(() => {
-    const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
     const periodAverages: number[] = [];
     regularPeriodes.forEach((p: any) => {
-      const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+      const pNotes = getNotesForPeriod(p.id);
       const avg = computeAverage(selectedEleve, pNotes);
       if (avg !== null) periodAverages.push(avg);
     });
     if (periodAverages.length === 0) return null;
     return periodAverages.reduce((a, b) => a + b, 0) / periodAverages.length;
-  }, [selectedEleve, allAnnualNotes, periodes]);
+  }, [selectedEleve, allAnnualNotes, allClassNotes, periodeId, regularPeriodes]);
 
   // Moyenne de la classe: average of all students' current period averages
   const moyenneClasse = useMemo(() => {
