@@ -375,14 +375,14 @@ export default function BulletinScolaire({
       {/* ── Pied de page : Décision & Signatures ── */}
       <div style={{ borderTop: '2px solid #047857', paddingTop: '5px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '6px' }}>
-          <span style={{ fontSize: '9.5px', fontWeight: 700, color: '#374151' }}>DÉCISION :</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9px' }}>
+          <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#374151' }}>DÉCISION :</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10px' }}>
             {isAdmis ? <CheckSquare style={{ width: '11px', height: '11px', color: '#047857' }} /> : <Square style={{ width: '11px', height: '11px', color: '#9ca3af' }} />} Admis
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9px' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10px' }}>
             {isRedouble ? <CheckSquare style={{ width: '11px', height: '11px', color: '#dc2626' }} /> : <Square style={{ width: '11px', height: '11px', color: '#9ca3af' }} />} Redouble
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9px' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10px' }}>
             <Square style={{ width: '11px', height: '11px', color: '#9ca3af' }} /> Exclu
           </span>
         </div>
