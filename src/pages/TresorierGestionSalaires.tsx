@@ -83,7 +83,7 @@ export default function TresorierGestionSalaires() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const [empRes, paiRes] = await Promise.all([
-      supabase.from('employes').select('id, nom, prenom, poste, categorie, salaire_base, statut').eq('statut', 'actif'),
+      supabase.from('employes').select('id, nom, prenom, poste, categorie, matricule, salaire_base, statut').eq('statut', 'actif'),
       supabase.from('paiements_tresorier').select('*').eq('mois', currentMonth).eq('annee', currentYear),
     ]);
     if (empRes.data) setEmployes(empRes.data);
