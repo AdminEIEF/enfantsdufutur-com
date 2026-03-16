@@ -463,8 +463,8 @@ export default function Bulletins() {
                       return { periodeName: p.nom, notesByMatiere };
                     });
                 })()}
-                moyenneAnnuelle={moyenneAnnuelleSimple}
-                moyenneClasse={moyenneClasse}
+                moyenneAnnuelle={isP5 ? moyenneAnnuelleSimple : null}
+                moyenneClasse={isP5 ? moyenneClasse : null}
               />
             </div>
           ) : (
