@@ -343,7 +343,7 @@ export default function Personnel() {
   const addEmployee = useMutation({
     mutationFn: async () => {
       if (!form.nom || !form.prenom) throw new Error('Nom et prénom obligatoires');
-      const prefixMap: Record<string, string> = { enseignant_primaire: 'ENP', enseignant_secondaire: 'ENS', administration: 'ADM', service: 'SRV', direction: 'DIR', hygiene: 'HYG', securite_primaire: 'SCP', securite_lycee: 'SCL', chauffeur: 'CHF', infirmiere: 'INF', librairie: 'LIB', cantine: 'CAN', surveillant: 'SUR' };
+      const prefixMap: Record<string, string> = { enseignant_primaire: 'ENP', enseignant_secondaire: 'ESC', administration: 'ADM', service: 'SRV', direction: 'DIR', hygiene: 'HYG', securite_primaire: 'SCP', securite_lycee: 'SCL', chauffeur: 'CHF', infirmiere: 'INF', librairie: 'LIB', cantine: 'CAN', surveillant: 'SUR' };
       const prefix = prefixMap[form.categorie] || 'EMP';
       const { count } = await supabase.from('employes').select('id', { count: 'exact', head: true });
       const num = String((count || 0) + 1).padStart(4, '0');
