@@ -355,7 +355,7 @@ export default function BulletinScolaire({
                 <YAxis domain={[0, bareme]} tick={{ fontSize: 8, fill: '#6b7280' }} width={22} />
                 <Tooltip
                   formatter={(value: number) => [`${value.toFixed(2)}/${bareme}`, 'Moyenne']}
-                  contentStyle={{ fontSize: 9, borderRadius: 4, padding: '3px 6px' }}
+                  contentStyle={{ fontSize: 10, borderRadius: 4, padding: '3px 6px' }}
                 />
                 <ReferenceLine y={seuil} stroke="#ef4444" strokeDasharray="3 3" label={{ value: `Seuil (${seuil})`, fontSize: 7, fill: '#ef4444' }} />
                 <Line
