@@ -405,9 +405,9 @@ export default function BulletinScolaire({
 
           {/* Signature Parents */}
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '10px', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Signature des Parents</div>
+            <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#374151', marginBottom: '3px' }}>Signature des Parents</div>
             <div style={{ borderBottom: '1px dashed #9ca3af', height: '24px' }}></div>
-            <div style={{ fontSize: '7px', color: '#9ca3af', marginTop: '2px' }}>Lu et approuvé</div>
+            <div style={{ fontSize: '8px', color: '#9ca3af', marginTop: '2px' }}>Lu et approuvé</div>
           </div>
 
           {/* Signature Direction */}
