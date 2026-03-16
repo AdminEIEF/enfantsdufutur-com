@@ -32,10 +32,6 @@ const CATEGORIES = [
   { value: 'surveillant', label: '👁️ Surveillant' },
 ];
 
-const getEffectiveCat = (e: Employe) => e.categorie === 'enseignant'
-  ? ((e as any).matricule?.startsWith('ESC') ? 'enseignant_secondaire' : 'enseignant_primaire')
-  : e.categorie;
-
 interface Employe {
   id: string;
   nom: string;
@@ -46,6 +42,10 @@ interface Employe {
   salaire_base: number;
   statut: string;
 }
+
+const getEffectiveCat = (e: Employe) => e.categorie === 'enseignant'
+  ? (e.matricule?.startsWith('ESC') ? 'enseignant_secondaire' : 'enseignant_primaire')
+  : e.categorie;
 
 interface PaiementRecord {
   id: string;
