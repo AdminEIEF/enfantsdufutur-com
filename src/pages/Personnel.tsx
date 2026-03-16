@@ -634,7 +634,7 @@ export default function Personnel() {
     const q = search.toLowerCase();
     const matchSearch = !q || e.nom.toLowerCase().includes(q) || e.prenom.toLowerCase().includes(q) || e.matricule.toLowerCase().includes(q);
     const effectiveCat = e.categorie === 'enseignant' 
-      ? (e.matricule?.startsWith('ENP') ? 'enseignant_primaire' : 'enseignant_secondaire')
+      ? (e.matricule?.startsWith('ESC') ? 'enseignant_secondaire' : 'enseignant_primaire')
       : e.categorie;
     const matchCat = filterCategorie === 'all' || effectiveCat === filterCategorie;
     return matchSearch && matchCat;
