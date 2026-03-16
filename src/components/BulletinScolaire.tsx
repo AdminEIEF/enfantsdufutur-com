@@ -210,8 +210,8 @@ export default function BulletinScolaire({
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
                 <th key={pp.periodeName} style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '42px', fontSize: '11px', verticalAlign: 'middle' }}>{pp.periodeName}</th>
               ))}
-              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '50px', verticalAlign: 'middle' }}>Moyenne</th>
-              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '54px', verticalAlign: 'middle' }}>Moy×Coef</th>
+              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '55px', verticalAlign: 'middle' }}>Moyenne</th>
+              <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '58px', verticalAlign: 'middle' }}>Moy×Coef</th>
               {isFinalPeriod && (
                 <th style={{ padding: '4px 2px', textAlign: 'center', fontWeight: 700, width: '30px', verticalAlign: 'middle' }}>Rang</th>
               )}
