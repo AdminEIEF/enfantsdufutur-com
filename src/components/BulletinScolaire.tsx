@@ -177,7 +177,7 @@ export default function BulletinScolaire({
 
         {/* Titre bulletin à droite */}
         <div style={{ textAlign: 'center', flexShrink: 0 }}>
-          <div style={{ fontSize: '12px', fontWeight: 800, color: '#047857', letterSpacing: '0.05em' }}>{isFinalPeriod ? "BULLETIN DE NOTES DE FIN D'ANNÉE" : 'BULLETIN DE NOTES'}</div>
+          <div style={{ fontSize: isFinalPeriod ? '9px' : '12px', fontWeight: 800, color: '#047857', letterSpacing: '0.05em' }}>{isFinalPeriod ? "BULLETIN DE NOTES DE FIN D'ANNÉE" : 'BULLETIN DE NOTES'}</div>
           <div style={{ backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '4px', padding: '2px 12px', marginTop: '3px' }}>
             <div style={{ fontSize: '8.5px', color: '#047857', fontWeight: 600 }}>Année : {anneeScolaire} — {periodeName}</div>
           </div>
