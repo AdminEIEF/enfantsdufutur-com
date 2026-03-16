@@ -31,6 +31,7 @@ interface BulletinScolaireProps {
     matricule: string | null;
     sexe: string | null;
     date_naissance: string | null;
+    photo_url: string | null;
   };
   classe: string;
   effectif: number;
