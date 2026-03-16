@@ -1389,6 +1389,7 @@ function EcoleTab() {
       if (val?.nom) setNom(val.nom);
       if (val?.soustitre) setSoustitre(val.soustitre);
       if (val?.ville) setVille(val.ville);
+      if (val?.telephone) setTelephone(val.telephone);
       if (val?.logo_url) setLogoUrl(val.logo_url);
       setLoaded(true);
     }
