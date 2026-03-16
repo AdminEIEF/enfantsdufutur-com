@@ -217,7 +217,7 @@ export default function Bulletins() {
         classeAvg: stats?.avg ?? null,
       };
     });
-  }, [matieres, studentNotes, classMatiereStats, isP5, allAnnualNotes, periodes, selectedEleve]);
+  }, [matieres, studentNotes, classMatiereStats, isP5, mergedAllNotes, periodes, selectedEleve]);
 
   const totalCoef = bulletinData.reduce((s, b) => s + b.coefficient, 0);
   const totalPoints = bulletinData.reduce((s, b) => s + (b.total || 0), 0);
@@ -225,8 +225,8 @@ export default function Bulletins() {
 
   // Annual average (weighted across all notes)
   const moyenneAnnuelle = useMemo(() => {
-    return computeAverage(selectedEleve, allAnnualNotes);
-  }, [selectedEleve, allAnnualNotes]);
+    return computeAverage(selectedEleve, mergedAllNotes);
+  }, [selectedEleve, mergedAllNotes]);
 
   // Moyenne annuelle simple: average of period averages (sum / nb periods)
   const moyenneAnnuelleSimple = useMemo(() => {
