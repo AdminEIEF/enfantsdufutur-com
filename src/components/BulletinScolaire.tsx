@@ -112,9 +112,13 @@ export default function BulletinScolaire({
           </div>
         </div>
         <div className="text-right">
-          <h2 className="text-lg font-bold text-emerald-700 tracking-wide">BULLETIN DE NOTES</h2>
+          <h2 className="text-lg font-bold text-emerald-700 tracking-wide">
+            {isP5 ? "BULLETIN DE FIN D'ANNÉE" : 'BULLETIN DE NOTES'}
+          </h2>
           <div className="bg-emerald-50 border border-emerald-200 rounded px-3 py-1 mt-1">
-            <p className="text-xs text-emerald-700 font-medium">Année : {anneeScolaire} — {periodeName}</p>
+            <p className="text-xs text-emerald-700 font-medium">
+              Année : {anneeScolaire}{isP5 ? '' : ` — ${periodeName}`}
+            </p>
           </div>
         </div>
       </div>
@@ -182,7 +186,7 @@ export default function BulletinScolaire({
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div className="border border-gray-200 rounded-lg p-3 flex flex-col justify-center">
           <div className={`text-center mb-2 p-2 rounded-lg ${isAdmis ? 'bg-emerald-50 border border-emerald-300' : 'bg-red-50 border border-red-300'}`}>
-            <span className="text-[10px] text-gray-500">Moyenne {periodeName} :</span>
+            <span className="text-[10px] text-gray-500">{isP5 ? 'Moyenne Générale Annuelle' : `Moyenne ${periodeName}`} :</span>
             <p className={`text-2xl font-black ${isAdmis ? 'text-emerald-700' : 'text-red-600'}`}>
               {moyennePeriode !== null ? `${moyennePeriode.toFixed(2)} / ${bareme}` : '—'}
             </p>
@@ -199,9 +203,11 @@ export default function BulletinScolaire({
           </div>
         </div>
 
-        {/* Tableau récap des périodes précédentes */}
+        {/* Tableau récap des périodes */}
         <div className="border border-gray-200 rounded-lg p-3">
-          <h3 className="text-xs font-bold text-emerald-700 mb-2">Récapitulatif des évaluations précédentes</h3>
+          <h3 className="text-xs font-bold text-emerald-700 mb-2">
+            {isP5 ? 'Récapitulatif de toutes les évaluations' : 'Récapitulatif des évaluations précédentes'}
+          </h3>
           {previousPeriods.length > 0 ? (
             <table className="w-full border-collapse text-xs">
               <thead>
