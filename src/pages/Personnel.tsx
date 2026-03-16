@@ -322,7 +322,7 @@ export default function Personnel() {
   const addEmployee = useMutation({
     mutationFn: async () => {
       if (!form.nom || !form.prenom) throw new Error('Nom et prénom obligatoires');
-      const prefixMap: Record<string, string> = { enseignant: 'ENS', administration: 'ADM', service: 'SRV', direction: 'DIR' };
+      const prefixMap: Record<string, string> = { enseignant: 'ENS', administration: 'ADM', service: 'SRV', direction: 'DIR', hygiene: 'HYG', securite_primaire: 'SCP', securite_lycee: 'SCL', chauffeur: 'CHF', infirmiere: 'INF', librairie: 'LIB', cantine: 'CAN', surveillant: 'SUR' };
       const prefix = prefixMap[form.categorie] || 'EMP';
       const { count } = await supabase.from('employes').select('id', { count: 'exact', head: true });
       const num = String((count || 0) + 1).padStart(4, '0');
@@ -782,6 +782,14 @@ export default function Personnel() {
                         <SelectItem value="administration">Administration</SelectItem>
                         <SelectItem value="service">Service</SelectItem>
                         <SelectItem value="direction">Direction</SelectItem>
+                        <SelectItem value="hygiene">Service Hygiène</SelectItem>
+                        <SelectItem value="securite_primaire">Sécurité Primaire</SelectItem>
+                        <SelectItem value="securite_lycee">Sécurité Lycée</SelectItem>
+                        <SelectItem value="chauffeur">Chauffeur</SelectItem>
+                        <SelectItem value="infirmiere">Infirmière</SelectItem>
+                        <SelectItem value="librairie">Librairie</SelectItem>
+                        <SelectItem value="cantine">Cantine</SelectItem>
+                        <SelectItem value="surveillant">Surveillant</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-[10px] text-muted-foreground">Le matricule sera généré automatiquement (ex: ENS-0001)</p>
