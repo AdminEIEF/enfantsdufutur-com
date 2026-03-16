@@ -818,14 +818,19 @@ export default function Personnel() {
                     <p className="text-[10px] text-muted-foreground">Le matricule sera généré automatiquement (ex: ENS-0001)</p>
                   </div>
                 </div>
-                {form.categorie === 'enseignant' && (
+                {(form.categorie === 'enseignant_primaire' || form.categorie === 'enseignant_secondaire') && (
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label>Niveau *</Label>
                       <Select value={form.niveau_enseignant} onValueChange={v => setForm(f => ({ ...f, niveau_enseignant: v, poste: '' }))}>
                         <SelectTrigger><SelectValue placeholder="Choisir un niveau" /></SelectTrigger>
                         <SelectContent>
-                          {cycles.filter((c: any) => ['Collège', 'Lycée'].includes(c.nom)).map((c: any) => (
+                          {cycles.filter((c: any) => {
+                            if (form.categorie === 'enseignant_primaire') {
+                              return ['Crèche', 'Maternelle', 'Primaire'].some(n => c.nom.toLowerCase().includes(n.toLowerCase()));
+                            }
+                            return ['Collège', 'Lycée'].includes(c.nom);
+                          }).map((c: any) => (
                             <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
                           ))}
                         </SelectContent>
