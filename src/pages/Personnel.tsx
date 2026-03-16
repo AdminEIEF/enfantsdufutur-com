@@ -343,17 +343,18 @@ export default function Personnel() {
   const addEmployee = useMutation({
     mutationFn: async () => {
       if (!form.nom || !form.prenom) throw new Error('Nom et prénom obligatoires');
-      const prefixMap: Record<string, string> = { enseignant: 'ENS', administration: 'ADM', service: 'SRV', direction: 'DIR', hygiene: 'HYG', securite_primaire: 'SCP', securite_lycee: 'SCL', chauffeur: 'CHF', infirmiere: 'INF', librairie: 'LIB', cantine: 'CAN', surveillant: 'SUR' };
+      const prefixMap: Record<string, string> = { enseignant_primaire: 'ENP', enseignant_secondaire: 'ENS', administration: 'ADM', service: 'SRV', direction: 'DIR', hygiene: 'HYG', securite_primaire: 'SCP', securite_lycee: 'SCL', chauffeur: 'CHF', infirmiere: 'INF', librairie: 'LIB', cantine: 'CAN', surveillant: 'SUR' };
       const prefix = prefixMap[form.categorie] || 'EMP';
       const { count } = await supabase.from('employes').select('id', { count: 'exact', head: true });
       const num = String((count || 0) + 1).padStart(4, '0');
       const matricule = `${prefix}-${num}`;
       const autoPassword = form.prenom.slice(0, 3).toLowerCase() + num + String(Math.floor(Math.random() * 100)).padStart(2, '0');
 
+      const dbCategorie = (form.categorie === 'enseignant_primaire' || form.categorie === 'enseignant_secondaire') ? 'enseignant' : form.categorie;
       const { data: inserted, error } = await supabase.from('employes').insert({
         matricule, nom: form.nom, prenom: form.prenom, sexe: form.sexe,
         telephone: form.telephone || null, email: form.email || null,
-        adresse: form.adresse || null, categorie: form.categorie as any,
+        adresse: form.adresse || null, categorie: dbCategorie as any,
         poste: form.poste, salaire_base: Number(form.salaire_base) || 0,
         date_embauche: form.date_embauche, mot_de_passe: autoPassword,
       }).select('id').single();
@@ -796,10 +797,11 @@ export default function Personnel() {
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-3">
                   <div className="space-y-1"><Label>Catégorie *</Label>
-                    <Select value={form.categorie} onValueChange={v => setForm(f => ({ ...f, categorie: v, poste: '' }))}>
+                    <Select value={form.categorie} onValueChange={v => setForm(f => ({ ...f, categorie: v, poste: '', niveau_enseignant: '' }))}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="enseignant">Enseignant</SelectItem>
+                        <SelectItem value="enseignant_primaire">Enseignant Primaire (Crèche/Maternelle/Primaire)</SelectItem>
+                        <SelectItem value="enseignant_secondaire">Enseignant Secondaire (Collège/Lycée)</SelectItem>
                         <SelectItem value="administration">Administration</SelectItem>
                         <SelectItem value="service">Service</SelectItem>
                         <SelectItem value="direction">Direction</SelectItem>
@@ -813,17 +815,22 @@ export default function Personnel() {
                         <SelectItem value="surveillant">Surveillant</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-[10px] text-muted-foreground">Le matricule sera généré automatiquement (ex: ENS-0001)</p>
+                    <p className="text-[10px] text-muted-foreground">Le matricule sera généré automatiquement (ex: ENP-0001 ou ENS-0001)</p>
                   </div>
                 </div>
-                {form.categorie === 'enseignant' && (
+                {(form.categorie === 'enseignant_primaire' || form.categorie === 'enseignant_secondaire') && (
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label>Niveau *</Label>
                       <Select value={form.niveau_enseignant} onValueChange={v => setForm(f => ({ ...f, niveau_enseignant: v, poste: '' }))}>
                         <SelectTrigger><SelectValue placeholder="Choisir un niveau" /></SelectTrigger>
                         <SelectContent>
-                          {cycles.filter((c: any) => ['Collège', 'Lycée'].includes(c.nom)).map((c: any) => (
+                          {cycles.filter((c: any) => {
+                            if (form.categorie === 'enseignant_primaire') {
+                              return ['Crèche', 'Maternelle', 'Primaire'].some(n => c.nom.toLowerCase().includes(n.toLowerCase()));
+                            }
+                            return ['Collège', 'Lycée'].includes(c.nom);
+                          }).map((c: any) => (
                             <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
                           ))}
                         </SelectContent>
@@ -850,7 +857,7 @@ export default function Personnel() {
                   <div className="space-y-1"><Label>Prénom *</Label><Input value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {form.categorie !== 'enseignant' && (
+                  {form.categorie !== 'enseignant_primaire' && form.categorie !== 'enseignant_secondaire' && (
                     <div className="space-y-1"><Label>Poste</Label><Input value={form.poste} onChange={e => setForm(f => ({ ...f, poste: e.target.value }))} placeholder="Ex: Secrétaire" /></div>
                   )}
                   <div className="space-y-1"><Label>Sexe</Label>
