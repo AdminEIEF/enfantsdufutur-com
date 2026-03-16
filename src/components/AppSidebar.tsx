@@ -4,6 +4,7 @@ import {
   Home, CreditCard, ClipboardList, Award, RefreshCw, Bus, ShoppingBag, Download, Video, Briefcase, CalendarDays, Clock, FileText, Shield, Bot, Trophy, Archive, Wallet, Banknote, DollarSign, ChevronDown, GraduationCap as GradCap, Wrench
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import {
