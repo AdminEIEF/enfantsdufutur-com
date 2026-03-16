@@ -870,6 +870,14 @@ export default function Personnel() {
                 <SelectItem value="administration">Administration</SelectItem>
                 <SelectItem value="service">Service</SelectItem>
                 <SelectItem value="direction">Direction</SelectItem>
+                <SelectItem value="hygiene">Service Hygiène</SelectItem>
+                <SelectItem value="securite_primaire">Sécurité Primaire</SelectItem>
+                <SelectItem value="securite_lycee">Sécurité Lycée</SelectItem>
+                <SelectItem value="chauffeur">Chauffeur</SelectItem>
+                <SelectItem value="infirmiere">Infirmière</SelectItem>
+                <SelectItem value="librairie">Librairie</SelectItem>
+                <SelectItem value="cantine">Cantine</SelectItem>
+                <SelectItem value="surveillant">Surveillant</SelectItem>
               </SelectContent>
             </Select>
           </div>
