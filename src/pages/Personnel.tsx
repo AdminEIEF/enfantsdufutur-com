@@ -942,7 +942,8 @@ export default function Personnel() {
               <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Toutes catégories" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Toutes catégories</SelectItem>
-                <SelectItem value="enseignant">Enseignants</SelectItem>
+                <SelectItem value="enseignant_primaire">Enseignants Primaire</SelectItem>
+                <SelectItem value="enseignant_secondaire">Enseignants Secondaire</SelectItem>
                 <SelectItem value="administration">Administration</SelectItem>
                 <SelectItem value="service">Service</SelectItem>
                 <SelectItem value="direction">Direction</SelectItem>
