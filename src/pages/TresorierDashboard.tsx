@@ -59,7 +59,7 @@ export default function TresorierDashboard() {
   const nbPaye = employes.filter(e => isPaid(e.id)).length;
 
   const categoryStats = CATEGORIES.map(cat => {
-    const catEmp = employes.filter(e => e.categorie === cat.value);
+    const catEmp = employes.filter(e => getEffectiveCat(e) === cat.value);
     const catPaid = catEmp.filter(e => isPaid(e.id));
     return { label: cat.label, total: catEmp.length, paid: catPaid.length };
   }).filter(c => c.total > 0);
