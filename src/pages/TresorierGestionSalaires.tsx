@@ -304,7 +304,7 @@ export default function TresorierGestionSalaires() {
     <div className="space-y-6 p-2 sm:p-4">
       <div className="flex items-center gap-3">
         <Banknote className="h-7 w-7 text-emerald-600" />
-        <h1 className="text-2xl font-bold">Gestion Salaires — {format(new Date(), 'MMMM yyyy', { locale: fr })}</h1>
+        <h1 className="text-2xl font-bold">{filterMode ? filterMode.label : 'Gestion Salaires'} — {format(new Date(), 'MMMM yyyy', { locale: fr })}</h1>
       </div>
 
       {/* Filters */}
