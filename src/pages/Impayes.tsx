@@ -245,22 +245,22 @@ export default function Impayes() {
       </h1>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Total Impayés</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold text-destructive">{totalImpaye.toLocaleString()} GNF</p><p className="text-xs text-muted-foreground">{familleGroups.length} famille(s)</p></CardContent>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-1 pt-3 px-3"><CardTitle className="text-xs font-medium text-muted-foreground truncate">Total Impayés</CardTitle></CardHeader>
+          <CardContent className="px-3 pb-3"><p className="text-lg font-bold text-destructive truncate">{totalImpaye.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></p><p className="text-[10px] text-muted-foreground">{familleGroups.length} famille(s)</p></CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Impayés Scolarité</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold text-destructive">{totalImpayeScolarite.toLocaleString()} GNF</p></CardContent>
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-1 pt-3 px-3"><CardTitle className="text-xs font-medium text-muted-foreground truncate">Impayés Scolarité</CardTitle></CardHeader>
+          <CardContent className="px-3 pb-3"><p className="text-lg font-bold text-destructive truncate">{totalImpayeScolarite.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></p></CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Impayés Transport</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold text-destructive">{totalImpayeTransport.toLocaleString()} GNF</p></CardContent>
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-1 pt-3 px-3"><CardTitle className="text-xs font-medium text-muted-foreground truncate">Impayés Transport</CardTitle></CardHeader>
+          <CardContent className="px-3 pb-3"><p className="text-lg font-bold text-destructive truncate">{totalImpayeTransport.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></p></CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Élèves concernés</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">{filtered.length}</p></CardContent>
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-1 pt-3 px-3"><CardTitle className="text-xs font-medium text-muted-foreground truncate">Élèves concernés</CardTitle></CardHeader>
+          <CardContent className="px-3 pb-3"><p className="text-lg font-bold truncate">{filtered.length}</p></CardContent>
         </Card>
       </div>
 
