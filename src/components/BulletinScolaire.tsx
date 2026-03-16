@@ -73,7 +73,7 @@ const cellCenter: React.CSSProperties = {
   textAlign: 'center',
   verticalAlign: 'middle',
   fontFamily: "'JetBrains Mono', 'Courier New', monospace",
-  fontSize: '10.5px',
+  fontSize: '12.5px',
 };
 
 export default function BulletinScolaire({
