@@ -282,11 +282,14 @@ export default function BulletinScolaire({
               <span><strong>Rang :</strong> {rang !== null ? `${rang}ᵉ / ${effectif}` : '—'}</span>
               <span><strong>Mention :</strong> {mention || '—'}</span>
             </div>
-            {rangAnnuel !== null && (
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span><strong>Rang annuel :</strong> <span style={{ fontWeight: 700 }}>{rangAnnuel}ᵉ / {effectif}</span></span>
-              </div>
-            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+              <span><strong>+ forte :</strong> {plusForte !== null ? plusForte.toFixed(2) : '—'}</span>
+              <span><strong>+ faible :</strong> {plusFaible !== null ? plusFaible.toFixed(2) : '—'}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+              <span><strong>Moy. annuelle :</strong> <span style={{ color: moyenneAnnuelle !== null && moyenneAnnuelle >= seuil ? '#047857' : '#dc2626', fontWeight: 700 }}>{moyenneAnnuelle !== null ? `${moyenneAnnuelle.toFixed(2)}/${bareme}` : '—'}</span></span>
+              {rangAnnuel !== null && <span><strong>Rang annuel :</strong> <span style={{ fontWeight: 700 }}>{rangAnnuel}ᵉ / {effectif}</span></span>}
+            </div>
           </div>
         </div>
 

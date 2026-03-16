@@ -563,8 +563,7 @@ export default function Bulletins() {
                 </CardContent>
               </Card>
 
-              {/* Summary */}
-              <div className={`grid grid-cols-2 md:grid-cols-3 ${isP5 ? 'lg:grid-cols-6' : 'lg:grid-cols-3'} gap-4 mt-4`}>
+              <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4`}>
                 <Card className="border-primary/40">
                   <CardContent className="pt-4 pb-4 text-center">
                     <p className="text-xs text-muted-foreground">Moyenne {periode?.nom}</p>
@@ -586,20 +585,42 @@ export default function Bulletins() {
                     </p>
                   </CardContent>
                 </Card>
-                {isP5 && (
-                  <Card>
-                    <CardContent className="pt-4 pb-4 text-center">
-                      <p className="text-xs text-muted-foreground">Rang annuel</p>
-                      <p className="text-2xl font-bold flex items-center justify-center gap-1">
-                        {annualRank?.rang !== null ? (
-                          <>
-                            {annualRank?.rang}<sup>e</sup> / {totalClasseEleves}
-                          </>
-                        ) : '—'}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
+                <Card>
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <p className="text-xs text-muted-foreground">+ Forte moy.</p>
+                    <p className="text-2xl font-bold text-accent">
+                      {plusForte !== null ? `${plusForte.toFixed(2)}/${bareme}` : '—'}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <p className="text-xs text-muted-foreground">+ Faible moy.</p>
+                    <p className="text-2xl font-bold text-destructive">
+                      {plusFaible !== null ? `${plusFaible.toFixed(2)}/${bareme}` : '—'}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <p className="text-xs text-muted-foreground">Moy. annuelle</p>
+                    <p className={`text-2xl font-bold ${moyenneAnnuelle !== null && moyenneAnnuelle >= seuil ? 'text-accent' : 'text-destructive'}`}>
+                      {moyenneAnnuelle !== null ? `${moyenneAnnuelle.toFixed(2)}/${bareme}` : '—'}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <p className="text-xs text-muted-foreground">Rang annuel</p>
+                    <p className="text-2xl font-bold flex items-center justify-center gap-1">
+                      {annualRank?.rang !== null ? (
+                        <>
+                          {annualRank?.rang}<sup>e</sup> / {totalClasseEleves}
+                        </>
+                      ) : '—'}
+                    </p>
+                  </CardContent>
+                </Card>
                 <Card>
                   <CardContent className="pt-4 pb-4 text-center">
                     <p className="text-xs text-muted-foreground">Décision</p>
