@@ -811,7 +811,36 @@ export default function Personnel() {
                   <div className="space-y-1"><Label>Prénom *</Label><Input value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1"><Label>Poste</Label><Input value={form.poste} onChange={e => setForm(f => ({ ...f, poste: e.target.value }))} placeholder="Ex: Prof de Maths" /></div>
+                  {form.categorie === 'enseignant' ? (
+                    <div className="space-y-1">
+                      <Label>Professeur de *</Label>
+                      <Select value={form.poste} onValueChange={v => setForm(f => ({ ...f, poste: v }))}>
+                        <SelectTrigger><SelectValue placeholder="Choisir une matière" /></SelectTrigger>
+                        <SelectContent>
+                          {(() => {
+                            const grouped: Record<string, { id: string; nom: string }[]> = {};
+                            matieresWithCycles.forEach((m: any) => {
+                              const cycleName = m.cycles?.nom || 'Autre';
+                              if (!grouped[cycleName]) grouped[cycleName] = [];
+                              if (!grouped[cycleName].find((x: any) => x.nom === m.nom)) {
+                                grouped[cycleName].push({ id: m.id, nom: m.nom });
+                              }
+                            });
+                            return Object.entries(grouped).map(([cycle, mats]) => (
+                              <div key={cycle}>
+                                <p className="px-2 py-1 text-xs font-semibold text-muted-foreground">{cycle}</p>
+                                {mats.map(m => (
+                                  <SelectItem key={m.id} value={`Professeur de ${m.nom}`}>{m.nom}</SelectItem>
+                                ))}
+                              </div>
+                            ));
+                          })()}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="space-y-1"><Label>Poste</Label><Input value={form.poste} onChange={e => setForm(f => ({ ...f, poste: e.target.value }))} placeholder="Ex: Secrétaire" /></div>
+                  )}
                   <div className="space-y-1"><Label>Sexe</Label>
                     <Select value={form.sexe} onValueChange={v => setForm(f => ({ ...f, sexe: v }))}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
