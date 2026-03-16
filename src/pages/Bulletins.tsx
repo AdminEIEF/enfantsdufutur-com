@@ -420,7 +420,8 @@ export default function Bulletins() {
                 rang={currentRanking?.rang ?? null}
                 plusForte={plusForte}
                 plusFaible={plusFaible}
-                moyenneAnnuelle={moyenneAnnuelle}
+                moyenneAnnuelle={isP5 ? moyenneAnnuelle : null}
+                moyenneClasse={moyenneClasse}
                 bareme={bareme}
                 seuil={seuil}
                 previousPeriods={(() => {
