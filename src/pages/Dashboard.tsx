@@ -456,66 +456,66 @@ export default function Dashboard() {
 
       {/* Abandon KPI */}
       {totalAbandons > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card className="border-destructive/30">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Abandons</CardTitle>
-              <UserX className="h-5 w-5 text-destructive" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <Card className="border-destructive/30 overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
+              <CardTitle className="text-xs font-medium text-muted-foreground truncate">Abandons</CardTitle>
+              <UserX className="h-4 w-4 text-destructive shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">{totalAbandons}</div>
-              <p className="text-xs text-muted-foreground mt-1">Élèves ayant abandonné</p>
+            <CardContent className="px-3 pb-3">
+              <div className="text-xl font-bold text-destructive">{totalAbandons}</div>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Élèves ayant abandonné</p>
             </CardContent>
           </Card>
         </div>
       )}
 
       {/* Family & Librairie KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="border-destructive/30 bg-destructive/5">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Impayés</CardTitle>
-            <AlertTriangle className="h-5 w-5 text-destructive" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <Card className="border-destructive/30 bg-destructive/5 overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">Total Impayés</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{impayesFamilles.reduce((s, f) => s + f.reste, 0).toLocaleString()} <span className="text-sm font-normal">GNF</span></div>
-            <p className="text-xs text-muted-foreground mt-1">{impayesFamilles.length} familles concernées</p>
+          <CardContent className="px-3 pb-3">
+            <div className="text-lg font-bold text-destructive truncate">{impayesFamilles.reduce((s, f) => s + f.reste, 0).toLocaleString()} <span className="text-[10px] font-normal">GNF</span></div>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{impayesFamilles.length} familles</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Familles inscrites</CardTitle>
-            <Users className="h-5 w-5 text-primary" />
+        <Card className="overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">Familles inscrites</CardTitle>
+            <Users className="h-4 w-4 text-primary shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalFamilles}</div>
+          <CardContent className="px-3 pb-3">
+            <div className="text-xl font-bold">{totalFamilles}</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Enfants en fratrie</CardTitle>
-            <Users className="h-5 w-5 text-accent" />
+        <Card className="overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">Enfants en fratrie</CardTitle>
+            <Users className="h-4 w-4 text-accent shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{enfantsEnFratrie}</div>
+          <CardContent className="px-3 pb-3">
+            <div className="text-xl font-bold">{enfantsEnFratrie}</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">CA Scolarité</CardTitle>
-            <CreditCard className="h-5 w-5 text-primary" />
+        <Card className="overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">CA Scolarité</CardTitle>
+            <CreditCard className="h-4 w-4 text-primary shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{caScolarite.toLocaleString()} <span className="text-sm font-normal">GNF</span></div>
+          <CardContent className="px-3 pb-3">
+            <div className="text-lg font-bold truncate">{caScolarite.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">CA Librairie</CardTitle>
-            <BookOpen className="h-5 w-5 text-accent" />
+        <Card className="overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">CA Librairie</CardTitle>
+            <BookOpen className="h-4 w-4 text-accent shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{caLibrairie.toLocaleString()} <span className="text-sm font-normal">GNF</span></div>
+          <CardContent className="px-3 pb-3">
+            <div className="text-lg font-bold truncate">{caLibrairie.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></div>
           </CardContent>
         </Card>
       </div>
