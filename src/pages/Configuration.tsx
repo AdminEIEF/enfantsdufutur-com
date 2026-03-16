@@ -1369,6 +1369,7 @@ function EcoleTab() {
   const [nom, setNom] = useState('Ecole Internationale Les Enfants du Futur');
   const [soustitre, setSoustitre] = useState('Enseignement Général et Technique');
   const [ville, setVille] = useState('Conakry, Guinée');
+  const [telephone, setTelephone] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -1388,6 +1389,7 @@ function EcoleTab() {
       if (val?.nom) setNom(val.nom);
       if (val?.soustitre) setSoustitre(val.soustitre);
       if (val?.ville) setVille(val.ville);
+      if (val?.telephone) setTelephone(val.telephone);
       if (val?.logo_url) setLogoUrl(val.logo_url);
       setLoaded(true);
     }
@@ -1414,7 +1416,7 @@ function EcoleTab() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const valeur = { nom, soustitre, ville, logo_url: logoUrl || null };
+      const valeur = { nom, soustitre, ville, telephone, logo_url: logoUrl || null };
       if (config?.id) {
         const { error } = await supabase.from('parametres').update({ valeur: valeur as any }).eq('id', config.id);
         if (error) throw error;
@@ -1482,6 +1484,10 @@ function EcoleTab() {
             <Input value={ville} onChange={e => setVille(e.target.value)} placeholder="Ex: Conakry, Guinée" />
           </div>
           <div>
+            <Label>Téléphone</Label>
+            <Input value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="Ex: +224 XXX XXX XXX" />
+          </div>
+          <div className="md:col-span-2">
             <Label>URL du logo (alternative)</Label>
             <Input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." className="text-xs" />
           </div>
@@ -1495,6 +1501,7 @@ function EcoleTab() {
             <p className="font-bold text-primary">{nom}</p>
             {soustitre && <p className="text-xs text-muted-foreground italic">{soustitre}</p>}
             {ville && <p className="text-xs text-muted-foreground">{ville}</p>}
+            {telephone && <p className="text-xs text-muted-foreground">📞 {telephone}</p>}
           </div>
         )}
 
