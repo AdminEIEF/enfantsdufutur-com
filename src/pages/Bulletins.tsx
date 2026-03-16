@@ -665,7 +665,7 @@ export default function Bulletins() {
                   .filter((p: any) => p.ordre <= currentOrdre)
                   .sort((a: any, b: any) => a.ordre - b.ordre)
                   .map((p: any) => {
-                    const pNotes = p.id === periodeId ? allClassNotes : allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                    const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
                     const avgs = eleves.map((e: any) => computeAverage(e.id, pNotes)).filter((a): a is number => a !== null);
                     return avgs.length > 0 ? avgs.reduce((a, b) => a + b, 0) / avgs.length : null;
                   });
