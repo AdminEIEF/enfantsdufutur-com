@@ -231,6 +231,13 @@ export default function Bulletins() {
   const plusForte = rankings.length > 0 && rankings[0].moyenne !== null ? rankings[0].moyenne : null;
   const plusFaible = rankings.length > 0 && rankings[rankings.length - 1].moyenne !== null ? rankings[rankings.length - 1].moyenne : null;
 
+  // Moyenne de la classe (somme des moyennes / nombre d'élèves)
+  const moyenneClasse = useMemo(() => {
+    const avgs = eleves.map((e: any) => computeAverage(e.id, allClassNotes)).filter((a): a is number => a !== null);
+    if (avgs.length === 0) return null;
+    return avgs.reduce((a, b) => a + b, 0) / avgs.length;
+  }, [eleves, allClassNotes]);
+
   // Moyenne annuelle simple: average of period averages
   const moyenneAnnuelle = useMemo(() => {
     const periodAverages: number[] = [];
@@ -413,7 +420,8 @@ export default function Bulletins() {
                 rang={currentRanking?.rang ?? null}
                 plusForte={plusForte}
                 plusFaible={plusFaible}
-                moyenneAnnuelle={moyenneAnnuelle}
+                moyenneAnnuelle={isP5 ? moyenneAnnuelle : null}
+                moyenneClasse={moyenneClasse}
                 bareme={bareme}
                 seuil={seuil}
                 previousPeriods={(() => {
@@ -477,7 +485,7 @@ export default function Bulletins() {
                       return { periodeName: p.nom, notesByMatiere };
                     });
                 })()}
-                rangAnnuel={annualRank?.rang ?? null}
+                rangAnnuel={isP5 ? (annualRank?.rang ?? null) : null}
               />
             </div>
           ) : (
@@ -601,26 +609,38 @@ export default function Bulletins() {
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="border-accent/40">
                   <CardContent className="pt-4 pb-4 text-center">
-                    <p className="text-xs text-muted-foreground">Moy. annuelle</p>
-                    <p className={`text-2xl font-bold ${moyenneAnnuelle !== null && moyenneAnnuelle >= seuil ? 'text-accent' : 'text-destructive'}`}>
-                      {moyenneAnnuelle !== null ? `${moyenneAnnuelle.toFixed(2)}/${bareme}` : '—'}
+                    <p className="text-xs text-muted-foreground">Moy. classe</p>
+                    <p className="text-2xl font-bold text-accent">
+                      {moyenneClasse !== null ? `${moyenneClasse.toFixed(2)}/${bareme}` : '—'}
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-4 text-center">
-                    <p className="text-xs text-muted-foreground">Rang annuel</p>
-                    <p className="text-2xl font-bold flex items-center justify-center gap-1">
-                      {annualRank?.rang !== null ? (
-                        <>
-                          {annualRank?.rang}<sup>e</sup> / {totalClasseEleves}
-                        </>
-                      ) : '—'}
-                    </p>
-                  </CardContent>
-                </Card>
+                {isP5 && (
+                  <Card>
+                    <CardContent className="pt-4 pb-4 text-center">
+                      <p className="text-xs text-muted-foreground">Moy. annuelle</p>
+                      <p className={`text-2xl font-bold ${moyenneAnnuelle !== null && moyenneAnnuelle >= seuil ? 'text-accent' : 'text-destructive'}`}>
+                        {moyenneAnnuelle !== null ? `${moyenneAnnuelle.toFixed(2)}/${bareme}` : '—'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+                {isP5 && (
+                  <Card>
+                    <CardContent className="pt-4 pb-4 text-center">
+                      <p className="text-xs text-muted-foreground">Rang annuel</p>
+                      <p className="text-2xl font-bold flex items-center justify-center gap-1">
+                        {annualRank?.rang !== null ? (
+                          <>
+                            {annualRank?.rang}<sup>e</sup> / {totalClasseEleves}
+                          </>
+                        ) : '—'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
                 <Card>
                   <CardContent className="pt-4 pb-4 text-center">
                     <p className="text-xs text-muted-foreground">Décision</p>
