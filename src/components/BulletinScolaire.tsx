@@ -51,6 +51,7 @@ interface BulletinScolaireProps {
   schoolName?: string;
   schoolSubtitle?: string;
   schoolCity?: string;
+  schoolPhone?: string;
   schoolLogoUrl?: string | null;
   isFinalPeriod?: boolean;
   previousPeriodsNotes?: PeriodNoteByMatiere[];
