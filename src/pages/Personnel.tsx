@@ -857,7 +857,7 @@ export default function Personnel() {
                   <div className="space-y-1"><Label>Prénom *</Label><Input value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {form.categorie !== 'enseignant' && (
+                  {form.categorie !== 'enseignant_primaire' && form.categorie !== 'enseignant_secondaire' && (
                     <div className="space-y-1"><Label>Poste</Label><Input value={form.poste} onChange={e => setForm(f => ({ ...f, poste: e.target.value }))} placeholder="Ex: Secrétaire" /></div>
                   )}
                   <div className="space-y-1"><Label>Sexe</Label>
