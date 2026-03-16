@@ -140,7 +140,7 @@ export default function BulletinScolaire({
           [data-bulletin-a4] { width: 210mm !important; max-height: 297mm !important; padding: 5mm 7mm !important; }
           [data-bulletin-a4] * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
-        [data-bulletin-a4] table { border-collapse: collapse; width: 100%; table-layout: auto; }
+        [data-bulletin-a4] table { border-collapse: collapse; width: 100%; table-layout: fixed; }
         [data-bulletin-a4] th, [data-bulletin-a4] td { border: 1px solid #c9cdd3; vertical-align: middle; }
       `}</style>
 
