@@ -176,7 +176,7 @@ export default function BulletinScolaire({
         {eleve.photo_url ? (
           <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} crossOrigin="anonymous" style={{ width: '42px', height: '52px', objectFit: 'cover', borderRadius: '3px', border: '1px solid #cbd5e1', flexShrink: 0 }} />
         ) : (
-          <div style={{ width: '42px', height: '52px', backgroundColor: '#e2e8f0', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', color: '#94a3b8', fontWeight: 700, flexShrink: 0, border: '1px solid #cbd5e1' }}>
+          <div style={{ width: '42px', height: '52px', backgroundColor: '#e2e8f0', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', color: '#94a3b8', fontWeight: 700, flexShrink: 0, border: '1px solid #cbd5e1' }}>
             {eleve.prenom?.charAt(0)}{eleve.nom?.charAt(0)}
           </div>
         )}
