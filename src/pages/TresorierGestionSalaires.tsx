@@ -91,6 +91,7 @@ export default function TresorierGestionSalaires() {
   const [signDialog, setSignDialog] = useState<Employe | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { data: schoolConfig } = useSchoolConfig();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
