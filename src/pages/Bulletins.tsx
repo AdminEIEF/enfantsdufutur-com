@@ -383,12 +383,14 @@ export default function Bulletins() {
                   const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
                   const currentOrdre = periode?.ordre ?? 0;
                   return regularPeriodes
-                    .filter((p: any) => p.ordre < currentOrdre)
+                   .filter((p: any) => p.ordre <= currentOrdre)
                     .sort((a: any, b: any) => a.ordre - b.ordre)
                     .map((p: any) => {
-                      const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                      const pNotes = p.id === periodeId
+                        ? allClassNotes
+                        : allAnnualNotes.filter((n: any) => n.periode_id === p.id);
                       const pAvg = computeAverage(selectedEleve, pNotes);
-                      // Compute rank for this previous period
+                      // Compute rank for this period
                       const pAvgs = eleves.map((e: any) => ({
                         id: e.id,
                         moyenne: computeAverage(e.id, pNotes),
