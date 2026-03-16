@@ -7,19 +7,24 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const CATEGORIES = [
-  { value: 'enseignant', label: 'Professeurs' },
-  { value: 'administration', label: 'Administration' },
-  { value: 'service', label: 'Service' },
-  { value: 'direction', label: 'Direction' },
-  { value: 'hygiene', label: 'Service Hygiène' },
-  { value: 'securite_primaire', label: 'Sécurité Primaire' },
-  { value: 'securite_lycee', label: 'Sécurité Lycée' },
-  { value: 'chauffeur', label: 'Chauffeur' },
-  { value: 'infirmiere', label: 'Infirmière' },
-  { value: 'librairie', label: 'Librairie' },
-  { value: 'cantine', label: 'Cantine' },
-  { value: 'surveillant', label: 'Surveillant' },
+  { value: 'enseignant_primaire', label: '👨‍🏫 Ens. Primaire' },
+  { value: 'enseignant_secondaire', label: '👨‍🏫 Ens. Secondaire' },
+  { value: 'administration', label: '🏢 Administration' },
+  { value: 'service', label: '🔧 Service' },
+  { value: 'direction', label: '👔 Direction' },
+  { value: 'hygiene', label: '🧹 Hygiène' },
+  { value: 'securite_primaire', label: '🛡️ Sécu. Primaire' },
+  { value: 'securite_lycee', label: '🛡️ Sécu. Lycée' },
+  { value: 'chauffeur', label: '🚗 Chauffeur' },
+  { value: 'infirmiere', label: '🏥 Infirmière' },
+  { value: 'librairie', label: '📚 Librairie' },
+  { value: 'cantine', label: '🍽️ Cantine' },
+  { value: 'surveillant', label: '👁️ Surveillant' },
 ];
+
+const getEffectiveCat = (e: any) => e.categorie === 'enseignant'
+  ? (e.matricule?.startsWith('ESC') ? 'enseignant_secondaire' : 'enseignant_primaire')
+  : e.categorie;
 
 function fmtNum(n: number): string {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
