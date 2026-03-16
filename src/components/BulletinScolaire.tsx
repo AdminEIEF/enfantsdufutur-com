@@ -346,7 +346,7 @@ export default function BulletinScolaire({
       {/* ── Graphique d'évolution ── */}
       {chartData.length > 0 && (
         <div style={{ border: '1px solid #e2e8f0', borderRadius: '5px', padding: '4px 6px', marginBottom: '3px' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, color: '#047857', marginBottom: '2px', textAlign: 'center' }}>Évolution des moyennes</div>
+          <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#047857', marginBottom: '2px', textAlign: 'center' }}>Évolution des moyennes</div>
           <div style={{ width: '100%', height: '80px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 4, right: 12, left: -5, bottom: 2 }}>
