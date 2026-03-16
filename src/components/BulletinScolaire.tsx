@@ -351,8 +351,8 @@ export default function BulletinScolaire({
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 4, right: 12, left: -5, bottom: 2 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="periode" tick={{ fontSize: 7, fill: '#6b7280' }} />
-                <YAxis domain={[0, bareme]} tick={{ fontSize: 7, fill: '#6b7280' }} width={22} />
+                <XAxis dataKey="periode" tick={{ fontSize: 8, fill: '#6b7280' }} />
+                <YAxis domain={[0, bareme]} tick={{ fontSize: 8, fill: '#6b7280' }} width={22} />
                 <Tooltip
                   formatter={(value: number) => [`${value.toFixed(2)}/${bareme}`, 'Moyenne']}
                   contentStyle={{ fontSize: 9, borderRadius: 4, padding: '3px 6px' }}
