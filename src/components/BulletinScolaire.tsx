@@ -76,8 +76,10 @@ export default function BulletinScolaire({
   schoolCity = 'Conakry, Guinée',
   schoolLogoUrl,
 }: BulletinScolaireProps) {
+  const isP5 = periodeName?.toUpperCase() === 'P5';
   const isAdmis = moyennePeriode !== null && moyennePeriode >= seuil;
-  const isRedouble = moyennePeriode !== null && !isAdmis;
+  const isSession = moyennePeriode !== null && !isAdmis && moyennePeriode >= (seuil * 0.8);
+  const isRedouble = moyennePeriode !== null && !isAdmis && !isSession;
   const totalCoef = bulletinData.reduce((s, b) => s + b.coefficient, 0);
   const mention = getMention(moyennePeriode, bareme);
 
@@ -235,18 +237,23 @@ export default function BulletinScolaire({
 
       {/* Pied de page : Décision & Signatures */}
       <div className="border-t-2 border-emerald-600 pt-2">
-        <div className="flex items-center gap-4 mb-3">
-          <span className="text-xs font-bold text-gray-700">DÉCISION :</span>
-          <span className="flex items-center gap-1 text-xs">
-            {isAdmis ? <CheckSquare className="h-3.5 w-3.5 text-emerald-600" /> : <Square className="h-3.5 w-3.5 text-gray-400" />} Admis
-          </span>
-          <span className="flex items-center gap-1 text-xs">
-            {isRedouble ? <CheckSquare className="h-3.5 w-3.5 text-red-600" /> : <Square className="h-3.5 w-3.5 text-gray-400" />} Redouble
-          </span>
-          <span className="flex items-center gap-1 text-xs">
-            <Square className="h-3.5 w-3.5 text-gray-400" /> Exclu
-          </span>
-        </div>
+        {isP5 && (
+          <div className="flex items-center gap-4 mb-3">
+            <span className="text-xs font-bold text-gray-700">DÉCISION :</span>
+            <span className="flex items-center gap-1 text-xs">
+              {isAdmis ? <CheckSquare className="h-3.5 w-3.5 text-emerald-600" /> : <Square className="h-3.5 w-3.5 text-gray-400" />} Admis
+            </span>
+            <span className="flex items-center gap-1 text-xs">
+              {isSession ? <CheckSquare className="h-3.5 w-3.5 text-orange-500" /> : <Square className="h-3.5 w-3.5 text-gray-400" />} Session
+            </span>
+            <span className="flex items-center gap-1 text-xs">
+              {isRedouble ? <CheckSquare className="h-3.5 w-3.5 text-red-600" /> : <Square className="h-3.5 w-3.5 text-gray-400" />} Redouble
+            </span>
+            <span className="flex items-center gap-1 text-xs">
+              <Square className="h-3.5 w-3.5 text-gray-400" /> Exclu
+            </span>
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-4 mt-2 items-end">
           {/* QR Code */}
