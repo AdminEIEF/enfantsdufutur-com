@@ -230,7 +230,7 @@ export default function BulletinScolaire({
                     const prevNote = pp.notesByMatiere[b.matiere] ?? null;
                     const prevBelowAvg = prevNote !== null && prevNote < seuil;
                     return (
-                      <td key={pp.periodeName} style={{ ...cellCenter, fontSize: '11.5px', color: prevBelowAvg ? '#dc2626' : '#374151' }}>
+                      <td key={pp.periodeName} style={{ ...cellCenter, fontSize: '10px', color: prevBelowAvg ? '#dc2626' : '#374151' }}>
                         {prevNote !== null ? prevNote.toFixed(2) : '—'}
                       </td>
                     );
