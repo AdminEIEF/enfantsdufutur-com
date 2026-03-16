@@ -93,7 +93,7 @@ export async function generateListePersonnelPDF(options: ListeOptions) {
 
   autoTable(doc, {
     startY: y,
-    head: [['N°', 'Matricule', 'Nom & Prénom', 'Poste', 'Salaire (GNF)']],
+    head: [['N°', 'Matricule', 'Nom & Prénom', 'Poste', 'Salaire (GNF)', 'Signature']],
     body: [
       ...employes.map((e, i) => [
         (i + 1).toString(),
@@ -101,16 +101,18 @@ export async function generateListePersonnelPDF(options: ListeOptions) {
         `${e.prenom} ${e.nom}`,
         e.poste || '—',
         fmtNum(e.salaire_base),
+        '',
       ]),
-      ['', '', '', { content: 'TOTAL', styles: { fontStyle: 'bold' } }, { content: fmtNum(totalSalaire) + ' GNF', styles: { fontStyle: 'bold' } }],
+      ['', '', '', { content: 'TOTAL', styles: { fontStyle: 'bold' } }, { content: fmtNum(totalSalaire) + ' GNF', styles: { fontStyle: 'bold' } }, ''],
     ],
-    styles: { fontSize: 8, cellPadding: 2 },
+    styles: { fontSize: 8, cellPadding: 2, minCellHeight: 10 },
     headStyles: { fillColor: [128, 0, 32], textColor: 255, fontStyle: 'bold', fontSize: 8 },
     alternateRowStyles: { fillColor: [248, 248, 248] },
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 25, font: 'courier' },
-      4: { cellWidth: 30, halign: 'right', font: 'courier' },
+      1: { cellWidth: 22, font: 'courier' },
+      4: { cellWidth: 28, halign: 'right', font: 'courier' },
+      5: { cellWidth: 30 },
     },
     margin: { left: 14, right: 14 },
   });
