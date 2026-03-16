@@ -635,9 +635,7 @@ export default function Bulletins() {
                   .filter((p: any) => p.ordre <= currentOrdre)
                   .sort((a: any, b: any) => a.ordre - b.ordre)
                   .map((p: any) => {
-                    const pNotes = p.id === periodeId
-                      ? allClassNotes
-                      : allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                    const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
                     const pAvg = computeAverage(selectedEleve, pNotes);
                     const pAvgs = eleves.map((e: any) => ({
                       id: e.id,
