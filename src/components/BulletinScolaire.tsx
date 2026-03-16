@@ -200,7 +200,7 @@ export default function BulletinScolaire({
 
       {/* ── Tableau des notes ── */}
       <div style={{ marginBottom: '3px' }}>
-        <table style={{ fontSize: '9px' }}>
+        <table style={{ fontSize: '10px' }}>
           <thead>
             <tr style={{ backgroundColor: '#047857', color: 'white' }}>
               <th style={{ padding: '4px 4px', textAlign: 'left', fontWeight: 700, verticalAlign: 'middle', whiteSpace: 'nowrap' }}>Matière</th>
