@@ -452,7 +452,7 @@ export default function TresorierGestionSalaires() {
             <div className="space-y-4">
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="font-semibold">{signDialog.prenom} {signDialog.nom}</p>
-                <p className="text-sm text-muted-foreground">{signDialog.poste} — {signDialog.categorie}</p>
+                <p className="text-sm text-muted-foreground">{signDialog.poste} — {CATEGORIES.find(c => c.value === getEffectiveCat(signDialog))?.label || signDialog.categorie}</p>
                 <p className="text-lg font-bold mt-1">{fmtNum(signDialog.salaire_base)} GNF</p>
               </div>
               <p className="text-sm text-muted-foreground">
