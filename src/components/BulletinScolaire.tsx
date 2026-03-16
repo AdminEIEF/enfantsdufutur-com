@@ -112,9 +112,13 @@ export default function BulletinScolaire({
           </div>
         </div>
         <div className="text-right">
-          <h2 className="text-lg font-bold text-emerald-700 tracking-wide">BULLETIN DE NOTES</h2>
+          <h2 className="text-lg font-bold text-emerald-700 tracking-wide">
+            {isP5 ? "BULLETIN DE FIN D'ANNÉE" : 'BULLETIN DE NOTES'}
+          </h2>
           <div className="bg-emerald-50 border border-emerald-200 rounded px-3 py-1 mt-1">
-            <p className="text-xs text-emerald-700 font-medium">Année : {anneeScolaire} — {periodeName}</p>
+            <p className="text-xs text-emerald-700 font-medium">
+              Année : {anneeScolaire}{isP5 ? '' : ` — ${periodeName}`}
+            </p>
           </div>
         </div>
       </div>
