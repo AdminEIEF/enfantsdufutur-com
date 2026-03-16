@@ -79,8 +79,6 @@ export default function BulletinScolaire({
   bulletinData,
   moyennePeriode,
   rang,
-  plusForte,
-  plusFaible,
   bareme,
   seuil,
   previousPeriods,
