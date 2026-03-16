@@ -121,7 +121,7 @@ export default function BulletinScolaire({
         padding: '5mm 7mm',
         boxSizing: 'border-box',
         fontFamily: "'Inter', 'Segoe UI', Arial, sans-serif",
-        fontSize: '10.5px',
+        fontSize: '12.5px',
         lineHeight: '1.3',
         color: '#1a1a1a',
         backgroundColor: '#ffffff',
