@@ -698,7 +698,7 @@ export default function Bulletins() {
                             </TableRow>
                           ))}
                           {/* Ligne Moyenne Annuelle */}
-                          {prevPeriods.length > 1 && (
+                          {isP5 && prevPeriods.length > 1 && (
                             <TableRow className="bg-primary/5 font-bold">
                               <TableCell className="font-bold">Moyenne Annuelle</TableCell>
                               <TableCell className={`text-center font-mono font-bold ${moyenneAnnuelleSimple !== null && moyenneAnnuelleSimple < seuil ? 'text-destructive' : 'text-accent'}`}>
