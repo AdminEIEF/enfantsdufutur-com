@@ -208,7 +208,7 @@ export default function Personnel() {
   const [form, setForm] = useState({
     nom: '', prenom: '', sexe: 'M', telephone: '', email: '',
     adresse: '', categorie: 'service' as string, poste: '', salaire_base: '',
-    date_embauche: new Date().toISOString().slice(0, 10),
+    date_embauche: new Date().toISOString().slice(0, 10), niveau_enseignant: '',
   });
 
   // Paie form
@@ -256,6 +256,16 @@ export default function Personnel() {
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
+    },
+  });
+
+  // Fetch cycles for enseignant niveau selection
+  const { data: cycles = [] } = useQuery({
+    queryKey: ['cycles-for-personnel'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('cycles').select('id, nom').order('ordre');
+      if (error) throw error;
+      return data || [];
     },
   });
 
@@ -361,7 +371,7 @@ export default function Personnel() {
       setGeneratedPassword(result?.autoPassword || null);
       qc.invalidateQueries({ queryKey: ['employes'] });
       setAddOpen(false);
-      setForm({ nom: '', prenom: '', sexe: 'M', telephone: '', email: '', adresse: '', categorie: 'service', poste: '', salaire_base: '', date_embauche: new Date().toISOString().slice(0, 10) });
+      setForm({ nom: '', prenom: '', sexe: 'M', telephone: '', email: '', adresse: '', categorie: 'service', poste: '', salaire_base: '', date_embauche: new Date().toISOString().slice(0, 10), niveau_enseignant: '' });
     },
     onError: (err: any) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
   });
@@ -806,39 +816,41 @@ export default function Personnel() {
                     <p className="text-[10px] text-muted-foreground">Le matricule sera généré automatiquement (ex: ENS-0001)</p>
                   </div>
                 </div>
+                {form.categorie === 'enseignant' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label>Niveau *</Label>
+                      <Select value={form.niveau_enseignant} onValueChange={v => setForm(f => ({ ...f, niveau_enseignant: v, poste: '' }))}>
+                        <SelectTrigger><SelectValue placeholder="Choisir un niveau" /></SelectTrigger>
+                        <SelectContent>
+                          {cycles.filter((c: any) => ['Collège', 'Lycée'].includes(c.nom)).map((c: any) => (
+                            <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Professeur de *</Label>
+                      <Select value={form.poste} onValueChange={v => setForm(f => ({ ...f, poste: v }))} disabled={!form.niveau_enseignant}>
+                        <SelectTrigger><SelectValue placeholder={form.niveau_enseignant ? 'Choisir une matière' : 'Sélectionnez un niveau d\'abord'} /></SelectTrigger>
+                        <SelectContent>
+                          {matieresWithCycles
+                            .filter((m: any) => m.cycle_id === form.niveau_enseignant)
+                            .filter((m: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.nom === m.nom) === i)
+                            .map((m: any) => (
+                              <SelectItem key={m.id} value={`Professeur de ${m.nom}`}>{m.nom}</SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1"><Label>Nom *</Label><Input value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} /></div>
                   <div className="space-y-1"><Label>Prénom *</Label><Input value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {form.categorie === 'enseignant' ? (
-                    <div className="space-y-1">
-                      <Label>Professeur de *</Label>
-                      <Select value={form.poste} onValueChange={v => setForm(f => ({ ...f, poste: v }))}>
-                        <SelectTrigger><SelectValue placeholder="Choisir une matière" /></SelectTrigger>
-                        <SelectContent>
-                          {(() => {
-                            const grouped: Record<string, { id: string; nom: string }[]> = {};
-                            matieresWithCycles.forEach((m: any) => {
-                              const cycleName = m.cycles?.nom || 'Autre';
-                              if (!grouped[cycleName]) grouped[cycleName] = [];
-                              if (!grouped[cycleName].find((x: any) => x.nom === m.nom)) {
-                                grouped[cycleName].push({ id: m.id, nom: m.nom });
-                              }
-                            });
-                            return Object.entries(grouped).map(([cycle, mats]) => (
-                              <div key={cycle}>
-                                <p className="px-2 py-1 text-xs font-semibold text-muted-foreground">{cycle}</p>
-                                {mats.map(m => (
-                                  <SelectItem key={m.id} value={`Professeur de ${m.nom}`}>{m.nom}</SelectItem>
-                                ))}
-                              </div>
-                            ));
-                          })()}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ) : (
+                  {form.categorie !== 'enseignant' && (
                     <div className="space-y-1"><Label>Poste</Label><Input value={form.poste} onChange={e => setForm(f => ({ ...f, poste: e.target.value }))} placeholder="Ex: Secrétaire" /></div>
                   )}
                   <div className="space-y-1"><Label>Sexe</Label>
