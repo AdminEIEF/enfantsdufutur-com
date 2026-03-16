@@ -609,26 +609,38 @@ export default function Bulletins() {
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="border-accent/40">
                   <CardContent className="pt-4 pb-4 text-center">
-                    <p className="text-xs text-muted-foreground">Moy. annuelle</p>
-                    <p className={`text-2xl font-bold ${moyenneAnnuelle !== null && moyenneAnnuelle >= seuil ? 'text-accent' : 'text-destructive'}`}>
-                      {moyenneAnnuelle !== null ? `${moyenneAnnuelle.toFixed(2)}/${bareme}` : '—'}
+                    <p className="text-xs text-muted-foreground">Moy. classe</p>
+                    <p className="text-2xl font-bold text-accent">
+                      {moyenneClasse !== null ? `${moyenneClasse.toFixed(2)}/${bareme}` : '—'}
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-4 text-center">
-                    <p className="text-xs text-muted-foreground">Rang annuel</p>
-                    <p className="text-2xl font-bold flex items-center justify-center gap-1">
-                      {annualRank?.rang !== null ? (
-                        <>
-                          {annualRank?.rang}<sup>e</sup> / {totalClasseEleves}
-                        </>
-                      ) : '—'}
-                    </p>
-                  </CardContent>
-                </Card>
+                {isP5 && (
+                  <Card>
+                    <CardContent className="pt-4 pb-4 text-center">
+                      <p className="text-xs text-muted-foreground">Moy. annuelle</p>
+                      <p className={`text-2xl font-bold ${moyenneAnnuelle !== null && moyenneAnnuelle >= seuil ? 'text-accent' : 'text-destructive'}`}>
+                        {moyenneAnnuelle !== null ? `${moyenneAnnuelle.toFixed(2)}/${bareme}` : '—'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+                {isP5 && (
+                  <Card>
+                    <CardContent className="pt-4 pb-4 text-center">
+                      <p className="text-xs text-muted-foreground">Rang annuel</p>
+                      <p className="text-2xl font-bold flex items-center justify-center gap-1">
+                        {annualRank?.rang !== null ? (
+                          <>
+                            {annualRank?.rang}<sup>e</sup> / {totalClasseEleves}
+                          </>
+                        ) : '—'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
                 <Card>
                   <CardContent className="pt-4 pb-4 text-center">
                     <p className="text-xs text-muted-foreground">Décision</p>
