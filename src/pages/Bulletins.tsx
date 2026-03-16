@@ -744,10 +744,8 @@ export default function Bulletins() {
                   .filter((p: any) => p.ordre <= currentOrdre)
                   .sort((a: any, b: any) => a.ordre - b.ordre)
                   .map((p: any) => {
-                    const pNotes = p.id === periodeId
-                      ? allClassNotes.filter((n: any) => n.eleve_id === selectedEleve)
-                      : allAnnualNotes.filter((n: any) => n.periode_id === p.id && n.eleve_id === selectedEleve);
-                    const avg = computeAverage(selectedEleve, p.id === periodeId ? allClassNotes : allAnnualNotes.filter((n: any) => n.periode_id === p.id));
+                    const pNotes = allAnnualNotes.filter((n: any) => n.periode_id === p.id);
+                    const avg = computeAverage(selectedEleve, pNotes);
                     return { periode: p.nom, moyenne: avg };
                   })
                   .filter(d => d.moyenne !== null);
