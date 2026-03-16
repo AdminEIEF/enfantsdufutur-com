@@ -698,32 +698,6 @@ export default function Bulletins() {
                               </TableCell>
                             </TableRow>
                           )}
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/50">
-                            <TableHead>Évaluation</TableHead>
-                            <TableHead className="text-center">Moyenne</TableHead>
-                            <TableHead className="text-center">Rang</TableHead>
-                            <TableHead className="text-center">Mention</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {prevPeriods.map((pp, idx) => (
-                            <TableRow key={idx}>
-                              <TableCell className="font-medium">{pp.periodeName}</TableCell>
-                              <TableCell className={`text-center font-mono font-bold ${pp.moyenne !== null && pp.moyenne < seuil ? 'text-destructive' : ''}`}>
-                                {pp.moyenne !== null ? `${pp.moyenne.toFixed(2)}/${bareme}` : '—'}
-                              </TableCell>
-                              <TableCell className="text-center font-mono">
-                                {pp.rang !== null ? `${pp.rang}e/${pp.effectif}` : '—'}
-                              </TableCell>
-                              <TableCell className="text-center italic">
-                                {pp.mention || '—'}
-                              </TableCell>
-                            </TableRow>
-                          ))}
                         </TableBody>
                       </Table>
                     </CardContent>
