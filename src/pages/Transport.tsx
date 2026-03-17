@@ -209,10 +209,7 @@ export default function Transport() {
       )}
 
       {isChauffeur ? (
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2"><ScanLine className="h-5 w-5" /> Validation bus</h2>
-          <ValidationTransportBus />
-        </div>
+        <ChauffeurDashboard />
       ) : (
       <Tabs defaultValue="zones">
         <TabsList className="flex-wrap h-auto gap-1">
