@@ -408,6 +408,7 @@ export type Database = {
           retenues: number
           salaire_brut: number
           salaire_net: number
+          signature_employe: string | null
         }
         Insert: {
           annee: number
@@ -422,6 +423,7 @@ export type Database = {
           retenues?: number
           salaire_brut?: number
           salaire_net?: number
+          signature_employe?: string | null
         }
         Update: {
           annee?: number
@@ -436,6 +438,7 @@ export type Database = {
           retenues?: number
           salaire_brut?: number
           salaire_net?: number
+          signature_employe?: string | null
         }
         Relationships: [
           {
