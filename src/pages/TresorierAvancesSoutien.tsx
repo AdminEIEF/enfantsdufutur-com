@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DollarSign, Check, Loader2, Banknote, PenTool, Search, Users, HandCoins } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -31,6 +32,7 @@ export default function TresorierAvancesSoutien() {
   const { data: schoolConfig } = useSchoolConfig();
 
   const [search, setSearch] = useState('');
+  const [filterCat, setFilterCat] = useState<string>('all');
   const [selectedEmp, setSelectedEmp] = useState<any>(null);
   const [montant, setMontant] = useState('');
   const [step, setStep] = useState<'list' | 'form' | 'sign'>('list');
@@ -72,9 +74,11 @@ export default function TresorierAvancesSoutien() {
 
   // No pre-selection effect needed; user clicks from the list
 
-  const filtered = employes.filter((e: any) =>
-    `${e.nom} ${e.prenom} ${e.poste}`.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = employes.filter((e: any) => {
+    const matchSearch = `${e.nom} ${e.prenom} ${e.poste}`.toLowerCase().includes(search.toLowerCase());
+    const matchCat = filterCat === 'all' || e.categorie === filterCat;
+    return matchSearch && matchCat;
+  });
 
   const catLabels: Record<string, string> = {
     hygiene: '🧹 Hygiène', securite_primaire: '🛡️ Sécu. Primaire', securite_lycee: '🛡️ Sécu. Lycée',
@@ -236,9 +240,22 @@ export default function TresorierAvancesSoutien() {
           {/* Search */}
           <Card>
             <CardContent className="pt-5">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Rechercher un employé..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Rechercher un employé..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+                </div>
+                <Select value={filterCat} onValueChange={setFilterCat}>
+                  <SelectTrigger className="w-full sm:w-[220px]">
+                    <SelectValue placeholder="Toutes catégories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes catégories</SelectItem>
+                    {SOUTIEN_CATS.map(cat => (
+                      <SelectItem key={cat} value={cat}>{catLabels[cat] || cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
