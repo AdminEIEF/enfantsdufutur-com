@@ -1109,6 +1109,11 @@ export default function Personnel() {
 
         
 
+        {/* Avances sur salaire - Validation par le Personnel */}
+        <TabsContent value="avances" className="mt-4 space-y-4">
+          <AvancesValidationTab />
+        </TabsContent>
+
         {/* Paie */}
         <TabsContent value="paie" className="mt-4 space-y-4">
           <p className="text-sm text-muted-foreground">Les bulletins de paie sont générés automatiquement par le Trésorier lors du paiement des salaires.</p>
