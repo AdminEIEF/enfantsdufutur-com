@@ -43,8 +43,8 @@ export default function TresorierAvancesSoutien() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Barcode scanner support (douchette)
-  useBarcodeScanner((code) => {
-    setSearch(code);
+  useBarcodeScanner({
+    onScan: (code) => setSearch(code),
   });
 
   // Fetch support staff employees
