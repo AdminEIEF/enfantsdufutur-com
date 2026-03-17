@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Bus, MapPin, Users, Search, Wallet, CheckCircle, Circle, Download, AlertTriangle, CreditCard, ScanLine, Route, TrendingUp, Bell } from 'lucide-react';
+import { Bus, MapPin, Users, Search, Wallet, CheckCircle, Circle, Download, AlertTriangle, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
@@ -21,6 +21,7 @@ import ItinerairesTransport from '@/components/transport/ItinerairesTransport';
 import PonctualiteTransport from '@/components/transport/PonctualiteTransport';
 import AlertesTransport from '@/components/transport/AlertesTransport';
 import ChauffeurDashboard from '@/components/transport/ChauffeurDashboard';
+import AssignationBusChauffeur from '@/components/transport/AssignationBusChauffeur';
 
 const MOIS_SCOLAIRES = [
   'Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -219,6 +220,7 @@ export default function Transport() {
           <TabsTrigger value="suivi">Suivi mensuel</TabsTrigger>
           <TabsTrigger value="cartes" className="gap-1"><CreditCard className="h-3.5 w-3.5" /> Cartes</TabsTrigger>
           <TabsTrigger value="ponctualite" className="gap-1"><TrendingUp className="h-3.5 w-3.5" /> Ponctualité</TabsTrigger>
+          <TabsTrigger value="assignation" className="gap-1"><LinkIcon className="h-3.5 w-3.5" /> Assignation</TabsTrigger>
           <TabsTrigger value="alertes" className="gap-1"><Bell className="h-3.5 w-3.5" /> Alertes</TabsTrigger>
           <TabsTrigger value="validation" className="gap-1"><ScanLine className="h-3.5 w-3.5" /> Validation bus</TabsTrigger>
         </TabsList>
@@ -475,6 +477,11 @@ export default function Transport() {
         {/* Tab: Ponctualité */}
         <TabsContent value="ponctualite" className="mt-4">
           <PonctualiteTransport />
+        </TabsContent>
+
+        {/* Tab: Assignation Bus ↔ Chauffeur */}
+        <TabsContent value="assignation" className="mt-4">
+          <AssignationBusChauffeur />
         </TabsContent>
 
         {/* Tab: Alertes */}
