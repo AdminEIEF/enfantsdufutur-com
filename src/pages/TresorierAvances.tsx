@@ -275,7 +275,7 @@ export default function TresorierAvances() {
                 <p className="font-semibold">{payTarget.employes?.prenom} {payTarget.employes?.nom}</p>
                 <p className="text-sm text-muted-foreground">{payTarget.employes?.poste} — {payTarget.employes?.matricule}</p>
                 <p className="text-lg font-bold mt-1 text-amber-600">{fmtNum(Number(payTarget.montant))} GNF</p>
-                {payTarget.motif && <p className="text-sm text-muted-foreground mt-1">Motif: {payTarget.motif}</p>}
+                
               </div>
               <p className="text-sm font-medium text-destructive">
                 ⚠️ La signature de l'employé est obligatoire pour valider le paiement.
