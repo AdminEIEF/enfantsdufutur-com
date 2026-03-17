@@ -32,7 +32,7 @@ export default function AvancesValidationTab() {
   });
 
   const enAttente = avances.filter((a: any) => a.statut === 'en_attente');
-  const approuvees = avances.filter((a: any) => a.statut === 'approuve');
+  const approuvees = avances.filter((a: any) => a.statut === 'approuve' || a.statut === 'paye');
   const refusees = avances.filter((a: any) => a.statut === 'refuse');
 
   const handleAvance = async (id: string, statut: 'approuve' | 'refuse', motif?: string) => {
