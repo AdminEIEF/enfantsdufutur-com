@@ -13,11 +13,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
-  Briefcase, Plus, Search, Loader2, Clock, Calendar, FileText,
+  Briefcase, Plus, Search, Loader2, Clock, Calendar, FileText, DollarSign,
   Check, X, Eye, Trash2, Upload, UserPlus, Users, ScanLine, CreditCard, Printer,
   Camera, Download, Key, Mail, Paperclip, BarChart3, MessageSquare, TrendingUp, TrendingDown, AlertTriangle, GraduationCap, FileSpreadsheet, ChevronDown
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import AvancesValidationTab from '@/components/AvancesValidationTab';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -940,7 +941,7 @@ export default function Personnel() {
           <TabsTrigger value="employes"><Users className="h-3.5 w-3.5 mr-1" />Employés</TabsTrigger>
           <TabsTrigger value="pointage"><Clock className="h-3.5 w-3.5 mr-1" />Pointage</TabsTrigger>
           <TabsTrigger value="conges"><Calendar className="h-3.5 w-3.5 mr-1" />Congés ({congesEnAttente.length})</TabsTrigger>
-          
+          <TabsTrigger value="avances"><DollarSign className="h-3.5 w-3.5 mr-1" />Avances</TabsTrigger>
           <TabsTrigger value="paie"><FileText className="h-3.5 w-3.5 mr-1" />Paie</TabsTrigger>
           
           <TabsTrigger value="courriers"><Mail className="h-3.5 w-3.5 mr-1" />Courriers ({courriers.filter((c: any) => c.statut === 'non_lu').length})</TabsTrigger>
@@ -1108,6 +1109,11 @@ export default function Personnel() {
         </TabsContent>
 
         
+
+        {/* Avances sur salaire - Validation par le Personnel */}
+        <TabsContent value="avances" className="mt-4 space-y-4">
+          <AvancesValidationTab />
+        </TabsContent>
 
         {/* Paie */}
         <TabsContent value="paie" className="mt-4 space-y-4">
