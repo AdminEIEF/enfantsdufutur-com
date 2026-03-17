@@ -74,9 +74,11 @@ export default function TresorierAvancesSoutien() {
 
   // No pre-selection effect needed; user clicks from the list
 
-  const filtered = employes.filter((e: any) =>
-    `${e.nom} ${e.prenom} ${e.poste}`.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = employes.filter((e: any) => {
+    const matchSearch = `${e.nom} ${e.prenom} ${e.poste}`.toLowerCase().includes(search.toLowerCase());
+    const matchCat = filterCat === 'all' || e.categorie === filterCat;
+    return matchSearch && matchCat;
+  });
 
   const catLabels: Record<string, string> = {
     hygiene: '🧹 Hygiène', securite_primaire: '🛡️ Sécu. Primaire', securite_lycee: '🛡️ Sécu. Lycée',
