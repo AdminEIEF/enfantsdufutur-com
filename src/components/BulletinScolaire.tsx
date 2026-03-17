@@ -364,13 +364,13 @@ export default function BulletinScolaire({
               </thead>
               <tbody>
                 {previousPeriods.map((pp, idx) => (
-                  <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc', height: '20px' }}>
-                    <td style={{ padding: '2px 4px', textAlign: 'center', fontWeight: 500, verticalAlign: 'middle', lineHeight: '20px' }}>{pp.periodeName}</td>
-                    <td style={{ padding: '2px 3px', textAlign: 'center', fontFamily: 'monospace', fontWeight: 700, verticalAlign: 'middle', lineHeight: '20px', color: pp.moyenne !== null && pp.moyenne < seuil ? '#dc2626' : '#047857' }}>
+                  <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc', height: '22px' }}>
+                    <td style={{ padding: '3px 6px', textAlign: 'center', fontWeight: 500, verticalAlign: 'middle', lineHeight: '1.4' }}>{pp.periodeName}</td>
+                    <td style={{ padding: '3px 5px', textAlign: 'center', fontFamily: 'monospace', fontWeight: 700, verticalAlign: 'middle', lineHeight: '1.4', color: pp.moyenne !== null && pp.moyenne < seuil ? '#dc2626' : '#047857' }}>
                       {pp.moyenne !== null ? `${pp.moyenne.toFixed(2)}/${bareme}` : '—'}
                     </td>
-                    <td style={{ padding: '2px 3px', textAlign: 'center', fontStyle: 'italic', verticalAlign: 'middle', fontSize: '8px', lineHeight: '20px' }}>{pp.mention || '—'}</td>
-                    <td style={{ padding: '2px 3px', textAlign: 'center', fontFamily: 'monospace', verticalAlign: 'middle', lineHeight: '20px' }}>
+                    <td style={{ padding: '3px 5px', textAlign: 'center', fontStyle: 'italic', verticalAlign: 'middle', fontSize: '8px', lineHeight: '1.4' }}>{pp.mention || '—'}</td>
+                    <td style={{ padding: '3px 5px', textAlign: 'center', fontFamily: 'monospace', verticalAlign: 'middle', lineHeight: '1.4' }}>
                       {pp.rang !== null ? `${pp.rang}ᵉ/${pp.effectif}` : '—'}
                     </td>
                   </tr>
