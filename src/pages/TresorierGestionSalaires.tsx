@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Banknote, PenTool, FileText, Loader2, Check, Search, Users, ChevronDown, Printer, Download } from 'lucide-react';
+import { Banknote, PenTool, FileText, Loader2, Check, Search, Users, ChevronDown, Printer, Download, AlertTriangle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
@@ -97,6 +98,8 @@ export default function TresorierGestionSalaires() {
   const [isEmpDrawing, setIsEmpDrawing] = useState(false);
   const [hasEmpSignature, setHasEmpSignature] = useState(false);
   const [signDialog, setSignDialog] = useState<Employe | null>(null);
+  const [deduireAvance, setDeduireAvance] = useState(true);
+  const [dialogAvanceTotal, setDialogAvanceTotal] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
   const { data: schoolConfig } = useSchoolConfig();
@@ -148,6 +151,12 @@ export default function TresorierGestionSalaires() {
   const openPayDialog = (emp: Employe) => {
     setSignDialog(emp);
     setHasEmpSignature(false);
+    setDeduireAvance(true);
+    // Compute total avance for this employee
+    const totalAv = avancesSoutien
+      .filter(a => a.employe_id === emp.id)
+      .reduce((sum: number, a: any) => sum + Number(a.montant), 0);
+    setDialogAvanceTotal(totalAv);
     setTimeout(() => {
       const canvas = empCanvasRef.current;
       if (canvas) {
@@ -165,6 +174,9 @@ export default function TresorierGestionSalaires() {
 
     const signatureData = empCanvasRef.current?.toDataURL('image/png') || null;
 
+    // Montant effectif (avec ou sans déduction d'avance)
+    const montantPaye = deduireAvance && dialogAvanceTotal > 0 ? salaire - dialogAvanceTotal : salaire;
+
     const { error } = await supabase.from('paiements_tresorier').insert({
       employe_id: emp.id,
       montant: salaire,
@@ -181,17 +193,17 @@ export default function TresorierGestionSalaires() {
       return;
     }
 
-    // Auto-generate bulletin de paie
+    // Auto-generate bulletin de paie — fetch all non-remboursé avances
     const { data: pendingAvances } = await supabase
       .from('avances_salaire')
-      .select('id, montant, montant_rembourse')
+      .select('id, montant, montant_rembourse, statut')
       .eq('employe_id', emp.id)
-      .eq('statut', 'approuve');
+      .in('statut', ['approuve', 'paye']);
 
     let totalAvancesDeduites = 0;
     const avancesToUpdate: { id: string; deduction: number }[] = [];
 
-    if (pendingAvances && pendingAvances.length > 0) {
+    if (deduireAvance && pendingAvances && pendingAvances.length > 0) {
       for (const av of pendingAvances) {
         const remaining = Number(av.montant) - Number(av.montant_rembourse);
         if (remaining > 0) {
@@ -578,6 +590,31 @@ export default function TresorierGestionSalaires() {
                   <p className="text-xs text-muted-foreground">{signDialog.heures_mensuelles}h/mois × {fmtNum(signDialog.prix_heure)} GNF/h</p>
                 )}
               </div>
+              {dialogAvanceTotal > 0 && (
+                <div className="border border-destructive/30 bg-destructive/5 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                    <p className="text-sm font-semibold text-destructive">
+                      Avance en cours : {fmtNum(dialogAvanceTotal)} GNF
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="deduire-avance"
+                      checked={deduireAvance}
+                      onCheckedChange={(v) => setDeduireAvance(!!v)}
+                    />
+                    <label htmlFor="deduire-avance" className="text-sm cursor-pointer">
+                      Déduire l'avance du salaire
+                    </label>
+                  </div>
+                  {deduireAvance && (
+                    <p className="text-xs text-muted-foreground">
+                      Salaire net après déduction : <strong className="text-foreground">{fmtNum((signDialog.salaire_calcule || signDialog.salaire_base) - dialogAvanceTotal)} GNF</strong>
+                    </p>
+                  )}
+                </div>
+              )}
               <p className="text-sm font-medium text-destructive">
                 ⚠️ La signature est obligatoire pour valider le paiement.
               </p>
