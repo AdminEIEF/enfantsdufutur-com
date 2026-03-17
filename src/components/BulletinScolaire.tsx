@@ -70,7 +70,7 @@ const getMention = (moyenne: number | null, bareme: number): string | null => {
 };
 
 const cellCenter: React.CSSProperties = {
-  padding: '3px 3px',
+  padding: '4px 5px',
   textAlign: 'center',
   verticalAlign: 'middle',
   fontFamily: "'JetBrains Mono', 'Courier New', monospace",
@@ -78,7 +78,8 @@ const cellCenter: React.CSSProperties = {
   fontWeight: 700,
   whiteSpace: 'nowrap',
   overflow: 'hidden',
-  lineHeight: '24px',
+  lineHeight: '1.4',
+  height: '26px',
 };
 
 export default function BulletinScolaire({
@@ -221,17 +222,17 @@ export default function BulletinScolaire({
         <table style={{ fontSize: '9.5px' }} cellPadding={0} cellSpacing={0}>
           <thead>
             <tr style={{ backgroundColor: '#047857', color: 'white' }}>
-              <th style={{ padding: '3px 3px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Matière</th>
-              <th style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '24px', fontSize: '8px', verticalAlign: 'middle' }}>Coef</th>
+              <th style={{ padding: '5px 6px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', height: '28px', lineHeight: '1.4' }}>Matière</th>
+              <th style={{ padding: '5px 4px', textAlign: 'center', fontWeight: 700, width: '28px', fontSize: '8.5px', verticalAlign: 'middle', height: '28px', lineHeight: '1.4' }}>Coef</th>
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
-                <th key={pp.periodeName} style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '40px', fontSize: '8.5px', verticalAlign: 'middle' }}>{pp.periodeName}</th>
+                <th key={pp.periodeName} style={{ padding: '5px 4px', textAlign: 'center', fontWeight: 700, width: '40px', fontSize: '8.5px', verticalAlign: 'middle', height: '28px', lineHeight: '1.4' }}>{pp.periodeName}</th>
               ))}
-              <th style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '50px', verticalAlign: 'middle' }}>Moyenne</th>
-              <th style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '54px', verticalAlign: 'middle' }}>Moy×Coef</th>
+              <th style={{ padding: '5px 4px', textAlign: 'center', fontWeight: 700, width: '52px', verticalAlign: 'middle', height: '28px', lineHeight: '1.4' }}>Moyenne</th>
+              <th style={{ padding: '5px 4px', textAlign: 'center', fontWeight: 700, width: '56px', verticalAlign: 'middle', height: '28px', lineHeight: '1.4' }}>Moy×Coef</th>
               {isFinalPeriod && (
-                <th style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '28px', verticalAlign: 'middle' }}>Rang</th>
+                <th style={{ padding: '5px 4px', textAlign: 'center', fontWeight: 700, width: '30px', verticalAlign: 'middle', height: '28px', lineHeight: '1.4' }}>Rang</th>
               )}
-              <th style={{ padding: '3px 3px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>Appréciation</th>
+              <th style={{ padding: '5px 6px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle', height: '28px', lineHeight: '1.4' }}>Appréciation</th>
             </tr>
           </thead>
           <tbody>
@@ -239,9 +240,9 @@ export default function BulletinScolaire({
               const isBelowAvg = b.note !== null && b.note < seuil;
               const total = b.note !== null ? b.note * b.coefficient : null;
               return (
-                <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', height: '24px' }}>
-                  <td style={{ padding: '3px 3px', fontWeight: 700, verticalAlign: 'middle', textAlign: 'left', fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '24px' }}>{b.matiere}</td>
-                  <td style={{ ...cellCenter, color: '#6b7280', fontWeight: 600, fontSize: '8px' }}>{b.coefficient}</td>
+                <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', height: '26px' }}>
+                  <td style={{ padding: '4px 6px', fontWeight: 700, verticalAlign: 'middle', textAlign: 'left', fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '1.4', height: '26px' }}>{b.matiere}</td>
+                  <td style={{ ...cellCenter, color: '#6b7280', fontWeight: 600, fontSize: '8.5px' }}>{b.coefficient}</td>
                   {isFinalPeriod && previousPeriodsNotes.map((pp) => {
                     const prevNote = pp.notesByMatiere[b.matiere] ?? null;
                     const prevBelowAvg = prevNote !== null && prevNote < seuil;
@@ -260,14 +261,14 @@ export default function BulletinScolaire({
                   {isFinalPeriod && (
                     <td style={{ ...cellCenter }}>{b.rang || '—'}</td>
                   )}
-                  <td style={{ padding: '3px 3px', textAlign: 'center', verticalAlign: 'middle', color: '#6b7280', fontStyle: 'italic', fontWeight: 700, fontSize: '8.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '24px' }}>{b.appreciation || '—'}</td>
+                  <td style={{ padding: '4px 6px', textAlign: 'center', verticalAlign: 'middle', color: '#6b7280', fontStyle: 'italic', fontWeight: 700, fontSize: '8.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '1.4', height: '26px' }}>{b.appreciation || '—'}</td>
                 </tr>
               );
             })}
           </tbody>
           <tfoot>
-            <tr style={{ backgroundColor: '#ecfdf5', fontWeight: 700, height: '26px' }}>
-               <td style={{ padding: '3px 5px', verticalAlign: 'middle', textAlign: 'center', fontSize: '9.5px', lineHeight: '26px' }}>TOTAL DES POINTS</td>
+            <tr style={{ backgroundColor: '#ecfdf5', fontWeight: 700, height: '28px' }}>
+               <td style={{ padding: '4px 6px', verticalAlign: 'middle', textAlign: 'center', fontSize: '9.5px', lineHeight: '1.4', height: '28px' }}>TOTAL DES POINTS</td>
               <td style={{ ...cellCenter, fontWeight: 700 }}>{totalCoef}</td>
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
                 <td key={pp.periodeName} style={{ ...cellCenter }}></td>
@@ -283,7 +284,7 @@ export default function BulletinScolaire({
                 {moyennePeriode !== null ? (moyennePeriode * totalCoef).toFixed(2) : '—'}
               </td>
               {isFinalPeriod && <td style={{ ...cellCenter }}></td>}
-              <td style={{ padding: '3px 5px', verticalAlign: 'middle' }}></td>
+              <td style={{ padding: '4px 6px', verticalAlign: 'middle' }}></td>
             </tr>
           </tfoot>
         </table>
@@ -354,22 +355,22 @@ export default function BulletinScolaire({
           {previousPeriods.length > 0 ? (
             <table style={{ fontSize: '9px' }}>
               <thead>
-                <tr style={{ backgroundColor: '#f1f5f9', height: '22px' }}>
-                  <th style={{ padding: '2px 4px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '22px' }}>Évaluation</th>
-                  <th style={{ padding: '2px 3px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '22px' }}>Moyenne</th>
-                  <th style={{ padding: '2px 3px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '22px' }}>Mention</th>
-                  <th style={{ padding: '2px 3px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '22px' }}>Rang</th>
+                <tr style={{ backgroundColor: '#f1f5f9', height: '24px' }}>
+                  <th style={{ padding: '4px 6px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '1.4' }}>Évaluation</th>
+                  <th style={{ padding: '4px 5px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '1.4' }}>Moyenne</th>
+                  <th style={{ padding: '4px 5px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '1.4' }}>Mention</th>
+                  <th style={{ padding: '4px 5px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '1.4' }}>Rang</th>
                 </tr>
               </thead>
               <tbody>
                 {previousPeriods.map((pp, idx) => (
-                  <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc', height: '20px' }}>
-                    <td style={{ padding: '2px 4px', textAlign: 'center', fontWeight: 500, verticalAlign: 'middle', lineHeight: '20px' }}>{pp.periodeName}</td>
-                    <td style={{ padding: '2px 3px', textAlign: 'center', fontFamily: 'monospace', fontWeight: 700, verticalAlign: 'middle', lineHeight: '20px', color: pp.moyenne !== null && pp.moyenne < seuil ? '#dc2626' : '#047857' }}>
+                  <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc', height: '22px' }}>
+                    <td style={{ padding: '3px 6px', textAlign: 'center', fontWeight: 500, verticalAlign: 'middle', lineHeight: '1.4' }}>{pp.periodeName}</td>
+                    <td style={{ padding: '3px 5px', textAlign: 'center', fontFamily: 'monospace', fontWeight: 700, verticalAlign: 'middle', lineHeight: '1.4', color: pp.moyenne !== null && pp.moyenne < seuil ? '#dc2626' : '#047857' }}>
                       {pp.moyenne !== null ? `${pp.moyenne.toFixed(2)}/${bareme}` : '—'}
                     </td>
-                    <td style={{ padding: '2px 3px', textAlign: 'center', fontStyle: 'italic', verticalAlign: 'middle', fontSize: '8px', lineHeight: '20px' }}>{pp.mention || '—'}</td>
-                    <td style={{ padding: '2px 3px', textAlign: 'center', fontFamily: 'monospace', verticalAlign: 'middle', lineHeight: '20px' }}>
+                    <td style={{ padding: '3px 5px', textAlign: 'center', fontStyle: 'italic', verticalAlign: 'middle', fontSize: '8px', lineHeight: '1.4' }}>{pp.mention || '—'}</td>
+                    <td style={{ padding: '3px 5px', textAlign: 'center', fontFamily: 'monospace', verticalAlign: 'middle', lineHeight: '1.4' }}>
                       {pp.rang !== null ? `${pp.rang}ᵉ/${pp.effectif}` : '—'}
                     </td>
                   </tr>
