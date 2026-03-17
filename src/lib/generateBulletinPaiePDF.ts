@@ -261,7 +261,25 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData) {
   pdf.setFontSize(18);
   pdf.text(`${fmt(data.salaire_net)} GNF`, netBoxX + netBoxW - 8, y + 15, { align: 'right' });
 
-  y += netBoxH + 6;
+  // Reste avance warning
+  if ((data.reste_avance || 0) > 0) {
+    const raBoxW = 90;
+    const raBoxH = 12;
+    const raBoxX = m + cw - raBoxW;
+    pdf.setFillColor(255, 240, 240);
+    pdf.setDrawColor(...RED);
+    pdf.setLineWidth(0.4);
+    pdf.roundedRect(raBoxX, y, raBoxW, raBoxH, 2, 2, 'FD');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(7);
+    pdf.setTextColor(...RED);
+    pdf.text('RESTE AVANCE À REMBOURSER', raBoxX + 4, y + 5);
+    pdf.setFontSize(10);
+    pdf.text(`${fmt(data.reste_avance || 0)} GNF`, raBoxX + raBoxW - 4, y + 10, { align: 'right' });
+    y += raBoxH + 4;
+  }
+
+  y += 6;
 
   // ═══════════════════════════════════════════
   // COMMENT
