@@ -1424,6 +1424,13 @@ export default function Personnel() {
                       <div className="space-y-1"><Label>Email</Label><Input type="email" value={editForm.email} onChange={e => setEditForm((f: any) => ({ ...f, email: e.target.value }))} /></div>
                       <div className="space-y-1"><Label>Salaire (GNF)</Label><Input type="number" value={editForm.salaire_base} onChange={e => setEditForm((f: any) => ({ ...f, salaire_base: e.target.value }))} /></div>
                     </div>
+                    {(editForm.categorie === 'enseignant' && selectedEmp?.matricule?.startsWith('ESC')) && (
+                      <div className="space-y-1">
+                        <Label>💰 Prix de l'heure (GNF)</Label>
+                        <Input type="number" value={editForm.prix_heure} onChange={e => setEditForm((f: any) => ({ ...f, prix_heure: e.target.value }))} placeholder="Ex: 50000" />
+                        <p className="text-xs text-muted-foreground">Le salaire sera calculé selon les heures d'emploi du temps × ce tarif.</p>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1"><Label>Date embauche</Label><Input type="date" value={editForm.date_embauche} onChange={e => setEditForm((f: any) => ({ ...f, date_embauche: e.target.value }))} /></div>
                       <div className="space-y-1"><Label>Statut</Label>
