@@ -16,6 +16,8 @@ interface BulletinPaieData {
   retenues: number;
   avances_deduites: number;
   salaire_net: number;
+  avance_totale?: number;
+  reste_avance?: number;
   commentaire?: string | null;
   schoolName?: string;
   schoolSubtitle?: string;
