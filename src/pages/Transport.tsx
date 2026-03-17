@@ -214,11 +214,14 @@ export default function Transport() {
         </div>
       ) : (
       <Tabs defaultValue="zones">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="zones">Zones & Bus</TabsTrigger>
           <TabsTrigger value="eleves">Élèves</TabsTrigger>
+          <TabsTrigger value="itineraires" className="gap-1"><Route className="h-3.5 w-3.5" /> Itinéraires</TabsTrigger>
           <TabsTrigger value="suivi">Suivi mensuel</TabsTrigger>
           <TabsTrigger value="cartes" className="gap-1"><CreditCard className="h-3.5 w-3.5" /> Cartes</TabsTrigger>
+          <TabsTrigger value="ponctualite" className="gap-1"><TrendingUp className="h-3.5 w-3.5" /> Ponctualité</TabsTrigger>
+          <TabsTrigger value="alertes" className="gap-1"><Bell className="h-3.5 w-3.5" /> Alertes</TabsTrigger>
           <TabsTrigger value="validation" className="gap-1"><ScanLine className="h-3.5 w-3.5" /> Validation bus</TabsTrigger>
         </TabsList>
 
