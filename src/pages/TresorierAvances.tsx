@@ -207,8 +207,7 @@ export default function TresorierAvances() {
                   <TableCell className="font-medium">{a.employes?.prenom} {a.employes?.nom}</TableCell>
                   <TableCell className="font-mono text-xs">{a.employes?.matricule}</TableCell>
                   <TableCell className="font-bold">{fmtNum(Number(a.montant))} GNF</TableCell>
-                  <TableCell className="text-sm max-w-40 truncate">{a.motif || '—'}</TableCell>
-                  <TableCell className="text-sm">{format(new Date(a.created_at), 'dd/MM/yyyy')}</TableCell>
+                  <TableCell className="text-sm">{format(new Date(a.traite_at || a.created_at), 'dd/MM/yyyy')}</TableCell>
                   <TableCell><Badge className="bg-amber-500 hover:bg-amber-600 text-white">Approuvé pour le paiement</Badge></TableCell>
                   <TableCell className="text-center">
                     <Button size="sm" onClick={() => openPayDialog(a)} className="bg-emerald-600 hover:bg-emerald-700">
