@@ -151,6 +151,12 @@ export default function TresorierGestionSalaires() {
   const openPayDialog = (emp: Employe) => {
     setSignDialog(emp);
     setHasEmpSignature(false);
+    setDeduireAvance(true);
+    // Compute total avance for this employee
+    const totalAv = avancesSoutien
+      .filter(a => a.employe_id === emp.id)
+      .reduce((sum: number, a: any) => sum + Number(a.montant), 0);
+    setDialogAvanceTotal(totalAv);
     setTimeout(() => {
       const canvas = empCanvasRef.current;
       if (canvas) {
