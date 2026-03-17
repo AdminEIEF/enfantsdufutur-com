@@ -40,6 +40,7 @@ const ROLE_COLORS: Record<string, string> = {
   cantine: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
   librairie: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
   coordinateur: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+  coordinateur_secondaire: 'bg-pink-500/10 text-pink-300 border-pink-500/20',
   robotique: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
   chauffeur: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
   pointeur: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
