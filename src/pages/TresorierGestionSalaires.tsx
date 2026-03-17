@@ -456,7 +456,12 @@ export default function TresorierGestionSalaires() {
                         <TableCell>
                           <Badge variant="outline" className="capitalize">{CATEGORIES.find(c => c.value === getEffectiveCat(emp))?.label || emp.categorie}</Badge>
                         </TableCell>
-                        <TableCell className="text-right font-mono">{fmtNum(emp.salaire_base)} GNF</TableCell>
+                        <TableCell className="text-right font-mono">
+                          {fmtNum(emp.salaire_calcule || emp.salaire_base)} GNF
+                          {emp.heures_mensuelles != null && (
+                            <div className="text-[10px] text-muted-foreground font-normal">{emp.heures_mensuelles}h × {fmtNum(emp.prix_heure)} GNF/h</div>
+                          )}
+                        </TableCell>
                         <TableCell>
                           {paid ? (
                             <div className="flex flex-col gap-1">
