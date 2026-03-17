@@ -70,16 +70,7 @@ export default function TresorierAvancesSoutien() {
   const avancesPayees = avancesSoutien.filter((a: any) => a.statut === 'paye' || a.statut === 'rembourse');
   const avancesEnCours = avancesSoutien.filter((a: any) => a.statut === 'approuve');
 
-  // Pre-select employee from URL param
-  useState(() => {
-    if (preselectedId) {
-      const emp = employes.find((e: any) => e.id === preselectedId);
-      if (emp) {
-        setSelectedEmp(emp);
-        setStep('form');
-      }
-    }
-  });
+  // No pre-selection effect needed; user clicks from the list
 
   const filtered = employes.filter((e: any) =>
     `${e.nom} ${e.prenom} ${e.poste}`.toLowerCase().includes(search.toLowerCase())
