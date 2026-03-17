@@ -154,13 +154,14 @@ export default function TresorierGestionSalaires() {
   const handleConfirmPay = async () => {
     if (!signDialog || !hasEmpSignature) return;
     const emp = signDialog;
+    const salaire = emp.salaire_calcule || emp.salaire_base;
     setPaying(emp.id);
 
     const signatureData = empCanvasRef.current?.toDataURL('image/png') || null;
 
     const { error } = await supabase.from('paiements_tresorier').insert({
       employe_id: emp.id,
-      montant: emp.salaire_base,
+      montant: salaire,
       mois: currentMonth,
       annee: currentYear,
       paye_par: user?.id,
@@ -194,7 +195,7 @@ export default function TresorierGestionSalaires() {
       }
     }
 
-    const salaireNet = emp.salaire_base - totalAvancesDeduites;
+    const salaireNet = salaire - totalAvancesDeduites;
 
     await supabase.from('bulletins_paie').upsert({
       employe_id: emp.id,
