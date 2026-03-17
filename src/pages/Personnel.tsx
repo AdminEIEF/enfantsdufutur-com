@@ -232,6 +232,37 @@ export default function Personnel() {
     },
   });
 
+  // Fetch emploi du temps for secondary teacher hours calculation
+  const { data: emploiDuTemps = [] } = useQuery({
+    queryKey: ['emploi-du-temps-all'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('emploi_du_temps').select('enseignant_id, heure_debut, heure_fin');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Compute weekly hours per teacher
+  const heuresParEnseignant: Record<string, number> = {};
+  for (const slot of emploiDuTemps) {
+    if (!slot.enseignant_id) continue;
+    const [hd, md] = slot.heure_debut.split(':').map(Number);
+    const [hf, mf] = slot.heure_fin.split(':').map(Number);
+    const duree = (hf + mf / 60) - (hd + md / 60);
+    if (duree > 0) {
+      heuresParEnseignant[slot.enseignant_id] = (heuresParEnseignant[slot.enseignant_id] || 0) + duree;
+    }
+  }
+
+  const getHeuresMensuelles = (empId: string) => {
+    const hebdo = heuresParEnseignant[empId] || 0;
+    return Math.round(hebdo * 4.33 * 100) / 100;
+  };
+
+  const getSalaireCalculeSecondaire = (empId: string, prixHeure: number) => {
+    return Math.round(getHeuresMensuelles(empId) * prixHeure);
+  };
+
   // Fetch pointages today
   const today = new Date().toISOString().slice(0, 10);
   const { data: pointagesToday = [] } = useQuery({
