@@ -334,7 +334,7 @@ export default function TresorierGestionSalaires() {
       const p = paiements.find(p => p.employe_id === e.id);
       return {
         nom: e.nom, prenom: e.prenom, poste: e.poste, categorie: e.categorie,
-        montant: e.salaire_base,
+        montant: e.salaire_calcule || e.salaire_base,
         datePaiement: p?.date_paiement || new Date().toISOString(),
         signatureEmploye: p?.signature_employe || undefined,
       };
