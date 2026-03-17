@@ -114,6 +114,7 @@ const navSections = [
     roles: ['admin', 'secretaire', 'chauffeur'] as const,
     items: [
       { title: 'Transport', url: '/transport', icon: BusFront },
+      { title: 'Scan Bus', url: '/transport?tab=scan', icon: ScanLine, roles: ['chauffeur'] as const },
     ],
   },
   {
