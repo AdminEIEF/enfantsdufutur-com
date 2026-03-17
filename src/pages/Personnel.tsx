@@ -358,6 +358,7 @@ export default function Personnel() {
         telephone: form.telephone || null, email: form.email || null,
         adresse: form.adresse || null, categorie: dbCategorie as any,
         poste: form.poste, salaire_base: Number(form.salaire_base) || 0,
+        prix_heure: Number(form.prix_heure) || 0,
         date_embauche: form.date_embauche, mot_de_passe: autoPassword,
       }).select('id').single();
       if (error) throw error;
