@@ -71,6 +71,8 @@ import CoordinateurDashboard from "./pages/CoordinateurDashboard";
 import CoordinateurDocuments from "./pages/CoordinateurDocuments";
 import CoordinateurEleves from "./pages/CoordinateurEleves";
 import CoordinateurPersonnel from "./pages/CoordinateurPersonnel";
+import CoordinateurSecondaireDashboard from "./pages/CoordinateurSecondaireDashboard";
+import CoordinateurSecondairePersonnel from "./pages/CoordinateurSecondairePersonnel";
 import MesClasses from "./pages/MesClasses";
 import Robotique from "./pages/Robotique";
 import Performance from "./pages/Performance";
