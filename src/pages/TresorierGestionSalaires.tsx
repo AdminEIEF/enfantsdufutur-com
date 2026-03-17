@@ -634,6 +634,11 @@ export default function TresorierGestionSalaires() {
                       <p className="text-xs text-muted-foreground">
                         Salaire net après déduction : <strong className="text-foreground">{fmtNum((signDialog.salaire_calcule || signDialog.salaire_base) - montantDeduction)} GNF</strong>
                       </p>
+                      {montantDeduction < dialogAvanceTotal && (
+                        <p className="text-xs font-semibold text-destructive">
+                          ⚠️ Reste d'avance non couvert : {fmtNum(dialogAvanceTotal - montantDeduction)} GNF
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
