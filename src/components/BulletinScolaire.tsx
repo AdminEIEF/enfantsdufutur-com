@@ -267,8 +267,8 @@ export default function BulletinScolaire({
             })}
           </tbody>
           <tfoot>
-            <tr style={{ backgroundColor: '#ecfdf5', fontWeight: 700, height: '26px' }}>
-               <td style={{ padding: '3px 5px', verticalAlign: 'middle', textAlign: 'center', fontSize: '9.5px', lineHeight: '26px' }}>TOTAL DES POINTS</td>
+            <tr style={{ backgroundColor: '#ecfdf5', fontWeight: 700, height: '28px' }}>
+               <td style={{ padding: '4px 6px', verticalAlign: 'middle', textAlign: 'center', fontSize: '9.5px', lineHeight: '1.4', height: '28px' }}>TOTAL DES POINTS</td>
               <td style={{ ...cellCenter, fontWeight: 700 }}>{totalCoef}</td>
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
                 <td key={pp.periodeName} style={{ ...cellCenter }}></td>
