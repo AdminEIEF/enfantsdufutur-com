@@ -204,12 +204,16 @@ export default function TresorierGestionSalaires() {
     let totalAvancesDeduites = 0;
     const avancesToUpdate: { id: string; deduction: number }[] = [];
 
-    if (deduireAvance && pendingAvances && pendingAvances.length > 0) {
+    if (deduireAvance && montantDeduction > 0 && pendingAvances && pendingAvances.length > 0) {
+      let restADeduire = montantDeduction;
       for (const av of pendingAvances) {
+        if (restADeduire <= 0) break;
         const remaining = Number(av.montant) - Number(av.montant_rembourse);
         if (remaining > 0) {
-          totalAvancesDeduites += remaining;
-          avancesToUpdate.push({ id: av.id, deduction: remaining });
+          const deduction = Math.min(remaining, restADeduire);
+          totalAvancesDeduites += deduction;
+          avancesToUpdate.push({ id: av.id, deduction });
+          restADeduire -= deduction;
         }
       }
     }
