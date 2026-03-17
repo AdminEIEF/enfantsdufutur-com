@@ -209,6 +209,7 @@ export default function Personnel() {
   const [form, setForm] = useState({
     nom: '', prenom: '', sexe: 'M', telephone: '', email: '',
     adresse: '', categorie: 'service' as string, poste: '', salaire_base: '',
+    prix_heure: '',
     date_embauche: new Date().toISOString().slice(0, 10), niveau_enseignant: '',
   });
 
