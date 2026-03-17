@@ -123,10 +123,17 @@ export default function EmployeePaie() {
                 <Card key={b.id}>
                   <CardContent className="pt-4">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold">{MOIS_NOMS[b.mois]} {b.annee}</h3>
+                      <div>
+                        <h3 className="font-semibold">{MOIS_NOMS[b.mois]} {b.annee}</h3>
+                        {b.signature_employe && (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-accent">
+                            <PenTool className="h-3 w-3" /> Signé
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2">
                         <Badge className="bg-emerald-500">{fmtNum(Number(b.salaire_net))} GNF</Badge>
-                        <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => handleDownload(b)} title="Télécharger PDF">
+                        <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => handleDownload(b)} title="Télécharger reçu de paie signé">
                           <Download className="h-3.5 w-3.5" />
                         </Button>
                       </div>
