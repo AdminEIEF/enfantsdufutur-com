@@ -1341,6 +1341,7 @@ export type Database = {
           photo_url: string | null
           poste: string
           prenom: string
+          prix_heure: number
           salaire_base: number
           sexe: string | null
           statut: string
@@ -1363,6 +1364,7 @@ export type Database = {
           photo_url?: string | null
           poste?: string
           prenom: string
+          prix_heure?: number
           salaire_base?: number
           sexe?: string | null
           statut?: string
@@ -1385,6 +1387,7 @@ export type Database = {
           photo_url?: string | null
           poste?: string
           prenom?: string
+          prix_heure?: number
           salaire_base?: number
           sexe?: string | null
           statut?: string
