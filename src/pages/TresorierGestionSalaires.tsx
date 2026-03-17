@@ -75,6 +75,8 @@ const FILTER_MODES: Record<string, { label: string; cats: string[] }> = {
   admin: { label: 'Salaires — Administration & Direction', cats: ['administration', 'direction', 'service'] },
 };
 
+const SOUTIEN_CATS = ['hygiene', 'securite_primaire', 'securite_lycee', 'chauffeur', 'infirmiere', 'cantine', 'librairie', 'surveillant'];
+
 export default function TresorierGestionSalaires() {
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode') || '';
