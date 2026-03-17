@@ -254,6 +254,8 @@ export default function TresorierGestionSalaires() {
     });
 
     // Auto-generate receipt PDF
+    const resteAvance = dialogAvanceTotal - totalAvancesDeduites;
+
     generateBulletinPaiePDF({
       employe: {
         nom: emp.nom, prenom: emp.prenom, matricule: emp.matricule,
@@ -262,6 +264,8 @@ export default function TresorierGestionSalaires() {
       mois: currentMonth, annee: currentYear,
       salaire_brut: salaire, primes: 0, retenues: 0,
       avances_deduites: totalAvancesDeduites, salaire_net: salaireNet,
+      avance_totale: dialogAvanceTotal,
+      reste_avance: resteAvance > 0 ? resteAvance : 0,
       schoolName: schoolConfig?.nom, schoolCity: schoolConfig?.ville, logoUrl: schoolConfig?.logo_url,
       signatureEmploye: signatureData || undefined,
     });
@@ -634,6 +638,11 @@ export default function TresorierGestionSalaires() {
                       <p className="text-xs text-muted-foreground">
                         Salaire net après déduction : <strong className="text-foreground">{fmtNum((signDialog.salaire_calcule || signDialog.salaire_base) - montantDeduction)} GNF</strong>
                       </p>
+                      {montantDeduction < dialogAvanceTotal && (
+                        <p className="text-xs font-semibold text-destructive">
+                          ⚠️ Reste d'avance non couvert : {fmtNum(dialogAvanceTotal - montantDeduction)} GNF
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>

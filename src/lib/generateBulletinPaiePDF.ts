@@ -16,6 +16,8 @@ interface BulletinPaieData {
   retenues: number;
   avances_deduites: number;
   salaire_net: number;
+  avance_totale?: number;
+  reste_avance?: number;
   commentaire?: string | null;
   schoolName?: string;
   schoolSubtitle?: string;
@@ -175,7 +177,8 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData) {
   ];
   if (data.primes > 0) rows.push({ label: 'Primes & Indemnités', gain: data.primes, loss: 0 });
   if (data.retenues > 0) rows.push({ label: 'Retenues sur salaire', gain: 0, loss: data.retenues });
-  if (data.avances_deduites > 0) rows.push({ label: 'Remboursement avance', gain: 0, loss: data.avances_deduites });
+  if ((data.avance_totale || 0) > 0) rows.push({ label: `Avance totale accordée`, gain: 0, loss: 0 });
+  if (data.avances_deduites > 0) rows.push({ label: 'Remboursement avance (déduit)', gain: 0, loss: data.avances_deduites });
 
   rows.forEach((row, i) => {
     const isAlt = i % 2 === 0;
@@ -194,14 +197,22 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData) {
     pdf.setTextColor(...DARK);
     pdf.text(row.label, tableX + 4, y + 6);
 
-    pdf.setFont('helvetica', 'bold');
-    if (row.gain > 0) {
-      pdf.setTextColor(...GREEN);
-      pdf.text(`${fmt(row.gain)} GNF`, tableX + colWidths[0] + colWidths[1] / 2, y + 6, { align: 'center' });
-    }
-    if (row.loss > 0) {
+    // Special row for avance totale info
+    if (row.label.startsWith('Avance totale') && (data.avance_totale || 0) > 0) {
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
       pdf.setTextColor(...RED);
-      pdf.text(`-${fmt(row.loss)} GNF`, tableX + colWidths[0] + colWidths[1] + colWidths[2] / 2, y + 6, { align: 'center' });
+      pdf.text(`${fmt(data.avance_totale || 0)} GNF`, tableX + colWidths[0] + colWidths[1] + colWidths[2] / 2, y + 6, { align: 'center' });
+    } else {
+      pdf.setFont('helvetica', 'bold');
+      if (row.gain > 0) {
+        pdf.setTextColor(...GREEN);
+        pdf.text(`${fmt(row.gain)} GNF`, tableX + colWidths[0] + colWidths[1] / 2, y + 6, { align: 'center' });
+      }
+      if (row.loss > 0) {
+        pdf.setTextColor(...RED);
+        pdf.text(`-${fmt(row.loss)} GNF`, tableX + colWidths[0] + colWidths[1] + colWidths[2] / 2, y + 6, { align: 'center' });
+      }
     }
 
     y += rowH;
@@ -250,7 +261,25 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData) {
   pdf.setFontSize(18);
   pdf.text(`${fmt(data.salaire_net)} GNF`, netBoxX + netBoxW - 8, y + 15, { align: 'right' });
 
-  y += netBoxH + 6;
+  // Reste avance warning
+  if ((data.reste_avance || 0) > 0) {
+    const raBoxW = 90;
+    const raBoxH = 12;
+    const raBoxX = m + cw - raBoxW;
+    pdf.setFillColor(255, 240, 240);
+    pdf.setDrawColor(...RED);
+    pdf.setLineWidth(0.4);
+    pdf.roundedRect(raBoxX, y, raBoxW, raBoxH, 2, 2, 'FD');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(7);
+    pdf.setTextColor(...RED);
+    pdf.text('RESTE AVANCE À REMBOURSER', raBoxX + 4, y + 5);
+    pdf.setFontSize(10);
+    pdf.text(`${fmt(data.reste_avance || 0)} GNF`, raBoxX + raBoxW - 4, y + 10, { align: 'right' });
+    y += raBoxH + 4;
+  }
+
+  y += 6;
 
   // ═══════════════════════════════════════════
   // COMMENT
