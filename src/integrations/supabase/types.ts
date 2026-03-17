@@ -62,6 +62,50 @@ export type Database = {
         }
         Relationships: []
       }
+      arrets_transport: {
+        Row: {
+          created_at: string
+          heure_passage_matin: string | null
+          heure_passage_soir: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          nom: string
+          ordre: number
+          route_id: string
+        }
+        Insert: {
+          created_at?: string
+          heure_passage_matin?: string | null
+          heure_passage_soir?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nom: string
+          ordre?: number
+          route_id: string
+        }
+        Update: {
+          created_at?: string
+          heure_passage_matin?: string | null
+          heure_passage_soir?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nom?: string
+          ordre?: number
+          route_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arrets_transport_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes_transport"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       articles: {
         Row: {
           categorie: string
@@ -2639,6 +2683,56 @@ export type Database = {
           },
         ]
       }
+      routes_transport: {
+        Row: {
+          actif: boolean
+          created_at: string
+          description: string | null
+          heure_arrivee_matin: string
+          heure_arrivee_soir: string
+          heure_depart_matin: string
+          heure_depart_soir: string
+          id: string
+          nom: string
+          updated_at: string
+          zone_transport_id: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          description?: string | null
+          heure_arrivee_matin?: string
+          heure_arrivee_soir?: string
+          heure_depart_matin?: string
+          heure_depart_soir?: string
+          id?: string
+          nom: string
+          updated_at?: string
+          zone_transport_id: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          description?: string | null
+          heure_arrivee_matin?: string
+          heure_arrivee_soir?: string
+          heure_depart_matin?: string
+          heure_depart_soir?: string
+          id?: string
+          nom?: string
+          updated_at?: string
+          zone_transport_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routes_transport_zone_transport_id_fkey"
+            columns: ["zone_transport_id"]
+            isOneToOne: false
+            referencedRelation: "zones_transport"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       soumissions_devoirs: {
         Row: {
           commentaire: string | null
@@ -2828,6 +2922,56 @@ export type Database = {
             columns: ["cycle_id"]
             isOneToOne: false
             referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trajets_transport: {
+        Row: {
+          created_at: string
+          date_trajet: string
+          heure_arrivee_reelle: string | null
+          heure_depart_reelle: string | null
+          id: string
+          motif_retard: string | null
+          retard_minutes: number | null
+          route_id: string
+          signale_par: string | null
+          statut: string
+          type_trajet: string
+        }
+        Insert: {
+          created_at?: string
+          date_trajet?: string
+          heure_arrivee_reelle?: string | null
+          heure_depart_reelle?: string | null
+          id?: string
+          motif_retard?: string | null
+          retard_minutes?: number | null
+          route_id: string
+          signale_par?: string | null
+          statut?: string
+          type_trajet?: string
+        }
+        Update: {
+          created_at?: string
+          date_trajet?: string
+          heure_arrivee_reelle?: string | null
+          heure_depart_reelle?: string | null
+          id?: string
+          motif_retard?: string | null
+          retard_minutes?: number | null
+          route_id?: string
+          signale_par?: string | null
+          statut?: string
+          type_trajet?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trajets_transport_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes_transport"
             referencedColumns: ["id"]
           },
         ]
