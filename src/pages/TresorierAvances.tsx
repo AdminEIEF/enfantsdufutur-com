@@ -131,7 +131,7 @@ export default function TresorierAvances() {
         poste: payTarget.employes?.poste || '',
       },
       montant: Number(payTarget.montant),
-      motif: payTarget.motif,
+      motif: undefined,
       date: format(new Date(), 'dd/MM/yyyy HH:mm'),
       signatureEmploye: signatureData || undefined,
       schoolName: schoolConfig?.nom,
@@ -191,7 +191,7 @@ export default function TresorierAvances() {
                 <TableHead>Employé</TableHead>
                 <TableHead>Matricule</TableHead>
                 <TableHead>Montant</TableHead>
-                <TableHead>Motif</TableHead>
+                <TableHead>Date demande</TableHead>
                 <TableHead>Date demande</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead className="text-center">Action</TableHead>
@@ -207,8 +207,7 @@ export default function TresorierAvances() {
                   <TableCell className="font-medium">{a.employes?.prenom} {a.employes?.nom}</TableCell>
                   <TableCell className="font-mono text-xs">{a.employes?.matricule}</TableCell>
                   <TableCell className="font-bold">{fmtNum(Number(a.montant))} GNF</TableCell>
-                  <TableCell className="text-sm max-w-40 truncate">{a.motif || '—'}</TableCell>
-                  <TableCell className="text-sm">{format(new Date(a.created_at), 'dd/MM/yyyy')}</TableCell>
+                  <TableCell className="text-sm">{format(new Date(a.traite_at || a.created_at), 'dd/MM/yyyy')}</TableCell>
                   <TableCell><Badge className="bg-amber-500 hover:bg-amber-600 text-white">Approuvé pour le paiement</Badge></TableCell>
                   <TableCell className="text-center">
                     <Button size="sm" onClick={() => openPayDialog(a)} className="bg-emerald-600 hover:bg-emerald-700">
@@ -276,7 +275,7 @@ export default function TresorierAvances() {
                 <p className="font-semibold">{payTarget.employes?.prenom} {payTarget.employes?.nom}</p>
                 <p className="text-sm text-muted-foreground">{payTarget.employes?.poste} — {payTarget.employes?.matricule}</p>
                 <p className="text-lg font-bold mt-1 text-amber-600">{fmtNum(Number(payTarget.montant))} GNF</p>
-                {payTarget.motif && <p className="text-sm text-muted-foreground mt-1">Motif: {payTarget.motif}</p>}
+                
               </div>
               <p className="text-sm font-medium text-destructive">
                 ⚠️ La signature de l'employé est obligatoire pour valider le paiement.
