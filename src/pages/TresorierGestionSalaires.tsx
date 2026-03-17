@@ -71,7 +71,8 @@ function fmtNum(n: number): string {
 const FILTER_MODES: Record<string, { label: string; cats: string[] }> = {
   secondaire: { label: 'Salaires — Enseignants Secondaire', cats: ['enseignant_secondaire'] },
   primaire: { label: 'Salaires — Enseignants Primaire', cats: ['enseignant_primaire'] },
-  soutien: { label: 'Salaires — Service de soutien', cats: ['hygiene', 'securite_primaire', 'securite_lycee', 'chauffeur', 'infirmiere', 'cantine', 'librairie'] },
+  soutien: { label: 'Salaires — Service de soutien', cats: ['hygiene', 'securite_primaire', 'securite_lycee', 'chauffeur', 'infirmiere', 'cantine', 'librairie', 'surveillant'] },
+  admin: { label: 'Salaires — Administration & Direction', cats: ['administration', 'direction', 'service'] },
 };
 
 export default function TresorierGestionSalaires() {
