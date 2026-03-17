@@ -1453,6 +1453,7 @@ export default function Personnel() {
                           categorie: editForm.categorie as any, poste: editForm.poste,
                           telephone: editForm.telephone || null, email: editForm.email || null,
                           adresse: editForm.adresse || null, salaire_base: Number(editForm.salaire_base) || 0,
+                          prix_heure: Number(editForm.prix_heure) || 0,
                           date_embauche: editForm.date_embauche || undefined, statut: editForm.statut,
                         }).eq('id', selectedEmp.id);
                         setEditSaving(false);
