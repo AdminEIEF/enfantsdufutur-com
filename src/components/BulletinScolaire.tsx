@@ -70,14 +70,14 @@ const getMention = (moyenne: number | null, bareme: number): string | null => {
 };
 
 const cellCenter: React.CSSProperties = {
-  padding: '2px 2px',
+  padding: '3px 3px',
   textAlign: 'center',
   verticalAlign: 'middle',
   fontFamily: "'JetBrains Mono', 'Courier New', monospace",
   fontSize: '9.5px',
   whiteSpace: 'nowrap',
   overflow: 'hidden',
-  lineHeight: '20px',
+  lineHeight: '24px',
 };
 
 export default function BulletinScolaire({
@@ -238,8 +238,8 @@ export default function BulletinScolaire({
               const isBelowAvg = b.note !== null && b.note < seuil;
               const total = b.note !== null ? b.note * b.coefficient : null;
               return (
-                <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', height: '20px' }}>
-                  <td style={{ padding: '2px 3px', fontWeight: 500, verticalAlign: 'middle', textAlign: 'left', fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '20px' }}>{b.matiere}</td>
+                <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', height: '24px' }}>
+                  <td style={{ padding: '3px 3px', fontWeight: 500, verticalAlign: 'middle', textAlign: 'center', fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '24px' }}>{b.matiere}</td>
                   <td style={{ ...cellCenter, color: '#6b7280', fontWeight: 600, fontSize: '8px' }}>{b.coefficient}</td>
                   {isFinalPeriod && previousPeriodsNotes.map((pp) => {
                     const prevNote = pp.notesByMatiere[b.matiere] ?? null;
@@ -259,14 +259,14 @@ export default function BulletinScolaire({
                   {isFinalPeriod && (
                     <td style={{ ...cellCenter }}>{b.rang || '—'}</td>
                   )}
-                  <td style={{ padding: '2px 3px', textAlign: 'center', verticalAlign: 'middle', color: '#6b7280', fontStyle: 'italic', fontSize: '8.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '20px' }}>{b.appreciation || '—'}</td>
+                  <td style={{ padding: '3px 3px', textAlign: 'center', verticalAlign: 'middle', color: '#6b7280', fontStyle: 'italic', fontSize: '8.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '24px' }}>{b.appreciation || '—'}</td>
                 </tr>
               );
             })}
           </tbody>
           <tfoot>
-            <tr style={{ backgroundColor: '#ecfdf5', fontWeight: 700, height: '22px' }}>
-               <td style={{ padding: '3px 5px', verticalAlign: 'middle', fontSize: '9.5px' }}>TOTAL DES POINTS</td>
+            <tr style={{ backgroundColor: '#ecfdf5', fontWeight: 700, height: '26px' }}>
+               <td style={{ padding: '3px 5px', verticalAlign: 'middle', textAlign: 'center', fontSize: '9.5px', lineHeight: '26px' }}>TOTAL DES POINTS</td>
               <td style={{ ...cellCenter, fontWeight: 700 }}>{totalCoef}</td>
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
                 <td key={pp.periodeName} style={{ ...cellCenter }}></td>
