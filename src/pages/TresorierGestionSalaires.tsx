@@ -99,11 +99,40 @@ export default function TresorierGestionSalaires() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [empRes, paiRes] = await Promise.all([
-      supabase.from('employes').select('id, nom, prenom, poste, categorie, matricule, salaire_base, statut').eq('statut', 'actif'),
+    const [empRes, paiRes, edtRes] = await Promise.all([
+      supabase.from('employes').select('id, nom, prenom, poste, categorie, matricule, salaire_base, prix_heure, statut').eq('statut', 'actif'),
       supabase.from('paiements_tresorier').select('*').eq('mois', currentMonth).eq('annee', currentYear),
+      supabase.from('emploi_du_temps').select('enseignant_id, heure_debut, heure_fin, jour_semaine'),
     ]);
-    if (empRes.data) setEmployes(empRes.data);
+
+    // Calculate weekly hours per teacher from emploi_du_temps
+    const heuresParEnseignant: Record<string, number> = {};
+    if (edtRes.data) {
+      for (const slot of edtRes.data) {
+        if (!slot.enseignant_id) continue;
+        const [hd, md] = slot.heure_debut.split(':').map(Number);
+        const [hf, mf] = slot.heure_fin.split(':').map(Number);
+        const duree = (hf + mf / 60) - (hd + md / 60);
+        if (duree > 0) {
+          heuresParEnseignant[slot.enseignant_id] = (heuresParEnseignant[slot.enseignant_id] || 0) + duree;
+        }
+      }
+    }
+
+    if (empRes.data) {
+      const enriched = empRes.data.map(emp => {
+        const isSecondaire = emp.categorie === 'enseignant' && emp.matricule?.startsWith('ESC');
+        if (isSecondaire && emp.prix_heure > 0) {
+          const heuresHebdo = heuresParEnseignant[emp.id] || 0;
+          // Monthly = weekly hours × ~4.33 weeks
+          const heuresMensuelles = Math.round(heuresHebdo * 4.33 * 100) / 100;
+          const salaireCalc = Math.round(heuresMensuelles * emp.prix_heure);
+          return { ...emp, salaire_calcule: salaireCalc, heures_mensuelles: heuresMensuelles };
+        }
+        return { ...emp, salaire_calcule: emp.salaire_base, heures_mensuelles: undefined };
+      });
+      setEmployes(enriched);
+    }
     if (paiRes.data) setPaiements(paiRes.data as PaiementRecord[]);
     setLoading(false);
   }, [currentMonth, currentYear]);
