@@ -355,11 +355,11 @@ export default function BulletinScolaire({
           {previousPeriods.length > 0 ? (
             <table style={{ fontSize: '9px' }}>
               <thead>
-                <tr style={{ backgroundColor: '#f1f5f9', height: '22px' }}>
-                  <th style={{ padding: '2px 4px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '22px' }}>Évaluation</th>
-                  <th style={{ padding: '2px 3px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '22px' }}>Moyenne</th>
-                  <th style={{ padding: '2px 3px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '22px' }}>Mention</th>
-                  <th style={{ padding: '2px 3px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '22px' }}>Rang</th>
+                <tr style={{ backgroundColor: '#f1f5f9', height: '24px' }}>
+                  <th style={{ padding: '4px 6px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '1.4' }}>Évaluation</th>
+                  <th style={{ padding: '4px 5px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '1.4' }}>Moyenne</th>
+                  <th style={{ padding: '4px 5px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '1.4' }}>Mention</th>
+                  <th style={{ padding: '4px 5px', textAlign: 'center', fontWeight: 600, verticalAlign: 'middle', lineHeight: '1.4' }}>Rang</th>
                 </tr>
               </thead>
               <tbody>
