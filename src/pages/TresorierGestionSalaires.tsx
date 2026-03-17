@@ -548,8 +548,9 @@ export default function TresorierGestionSalaires() {
             <Button variant="outline" onClick={() => setSignDialog(null)}>Annuler</Button>
             <Button
               onClick={handleConfirmPay}
-              disabled={paying !== null}
+              disabled={paying !== null || !hasEmpSignature}
               className="bg-emerald-600 hover:bg-emerald-700"
+              title={!hasEmpSignature ? 'La signature de l\'employé est obligatoire' : ''}
             >
               {paying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
               Confirmer le paiement
