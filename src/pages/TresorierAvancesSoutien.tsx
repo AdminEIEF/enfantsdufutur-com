@@ -42,6 +42,11 @@ export default function TresorierAvancesSoutien() {
   const [hasSignature, setHasSignature] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Barcode scanner support (douchette)
+  useBarcodeScanner((code) => {
+    setSearch(code);
+  });
+
   // Fetch support staff employees
   const { data: employes = [], isLoading: loadingEmp } = useQuery({
     queryKey: ['employes-soutien'],
