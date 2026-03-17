@@ -131,7 +131,7 @@ export default function TresorierAvances() {
         poste: payTarget.employes?.poste || '',
       },
       montant: Number(payTarget.montant),
-      motif: payTarget.motif,
+      motif: undefined,
       date: format(new Date(), 'dd/MM/yyyy HH:mm'),
       signatureEmploye: signatureData || undefined,
       schoolName: schoolConfig?.nom,
