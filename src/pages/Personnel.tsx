@@ -18,6 +18,7 @@ import {
   Camera, Download, Key, Mail, Paperclip, BarChart3, MessageSquare, TrendingUp, TrendingDown, AlertTriangle, GraduationCap, FileSpreadsheet, ChevronDown
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import AvancesValidationTab from '@/components/AvancesValidationTab';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
