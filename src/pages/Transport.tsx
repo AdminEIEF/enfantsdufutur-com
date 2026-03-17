@@ -464,9 +464,24 @@ export default function Transport() {
             </Card>
           )}
         </TabsContent>
+        {/* Tab: Itinéraires */}
+        <TabsContent value="itineraires" className="mt-4">
+          <ItinerairesTransport zones={zones} />
+        </TabsContent>
+
         {/* Tab: Cartes transport */}
         <TabsContent value="cartes" className="mt-4">
           <CarteTransportEleve zones={zones} />
+        </TabsContent>
+
+        {/* Tab: Ponctualité */}
+        <TabsContent value="ponctualite" className="mt-4">
+          <PonctualiteTransport />
+        </TabsContent>
+
+        {/* Tab: Alertes */}
+        <TabsContent value="alertes" className="mt-4">
+          <AlertesTransport zones={zones} />
         </TabsContent>
 
         {/* Tab: Validation bus */}
