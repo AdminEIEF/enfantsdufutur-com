@@ -16,6 +16,7 @@ import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { generateRegistrePaiePDF } from '@/lib/generateRegistrePaiePDF';
+import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
 import { downloadListePersonnelPDF, printListePersonnelPDF } from '@/lib/generateListePersonnelPDF';
 
 const CATEGORIES = [
@@ -119,11 +120,11 @@ export default function TresorierGestionSalaires() {
   };
 
   const handleConfirmPay = async () => {
-    if (!signDialog) return;
+    if (!signDialog || !hasEmpSignature) return;
     const emp = signDialog;
     setPaying(emp.id);
 
-    const signatureData = hasEmpSignature ? empCanvasRef.current?.toDataURL('image/png') : null;
+    const signatureData = empCanvasRef.current?.toDataURL('image/png') || null;
 
     const { error } = await supabase.from('paiements_tresorier').insert({
       employe_id: emp.id,
@@ -174,6 +175,7 @@ export default function TresorierGestionSalaires() {
       salaire_net: salaireNet,
       commentaire: null,
       genere_par: user?.id,
+      signature_employe: signatureData,
     } as any, { onConflict: 'employe_id,mois,annee' });
 
     for (const av of avancesToUpdate) {
@@ -195,7 +197,20 @@ export default function TresorierGestionSalaires() {
       type: 'info',
     });
 
-    toast({ title: 'Paiement enregistré', description: `${emp.prenom} ${emp.nom} a été payé. Bulletin généré automatiquement.` });
+    // Auto-generate receipt PDF
+    generateBulletinPaiePDF({
+      employe: {
+        nom: emp.nom, prenom: emp.prenom, matricule: emp.matricule,
+        poste: emp.poste, categorie: emp.categorie,
+      },
+      mois: currentMonth, annee: currentYear,
+      salaire_brut: emp.salaire_base, primes: 0, retenues: 0,
+      avances_deduites: totalAvancesDeduites, salaire_net: salaireNet,
+      schoolName: schoolConfig?.nom, schoolCity: schoolConfig?.ville, logoUrl: schoolConfig?.logo_url,
+      signatureEmploye: signatureData || undefined,
+    });
+
+    toast({ title: 'Paiement enregistré', description: `${emp.prenom} ${emp.nom} a été payé. Bulletin et reçu générés.` });
     fetchData();
     setPaying(null);
     setSignDialog(null);
@@ -508,8 +523,11 @@ export default function TresorierGestionSalaires() {
                 <p className="text-sm text-muted-foreground">{signDialog.poste} — {CATEGORIES.find(c => c.value === getEffectiveCat(signDialog))?.label || signDialog.categorie}</p>
                 <p className="text-lg font-bold mt-1">{fmtNum(signDialog.salaire_base)} GNF</p>
               </div>
+              <p className="text-sm font-medium text-destructive">
+                ⚠️ La signature est obligatoire pour valider le paiement.
+              </p>
               <p className="text-sm text-muted-foreground">
-                L'employé doit signer ci-dessous comme preuve de réception du paiement :
+                L'employé doit signer ci-dessous comme preuve de réception. Un reçu sera généré automatiquement.
               </p>
               <div className="border-2 border-dashed rounded-lg p-1 bg-white">
                 <canvas
@@ -533,8 +551,9 @@ export default function TresorierGestionSalaires() {
             <Button variant="outline" onClick={() => setSignDialog(null)}>Annuler</Button>
             <Button
               onClick={handleConfirmPay}
-              disabled={paying !== null}
+              disabled={paying !== null || !hasEmpSignature}
               className="bg-emerald-600 hover:bg-emerald-700"
+              title={!hasEmpSignature ? 'La signature de l\'employé est obligatoire' : ''}
             >
               {paying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
               Confirmer le paiement

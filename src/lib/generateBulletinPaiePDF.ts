@@ -21,6 +21,7 @@ interface BulletinPaieData {
   schoolSubtitle?: string;
   schoolCity?: string;
   logoUrl?: string | null;
+  signatureEmploye?: string;
 }
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
@@ -293,14 +294,35 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData) {
   pdf.text('Scannez le QR code pour vérifier l\'authenticité.', m + 28, y + 11);
   pdf.text(`${data.employe.matricule} — ${data.employe.prenom} ${data.employe.nom}`, m + 28, y + 16);
 
-  // Signature zone
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(7);
-  pdf.setTextColor(...DARK);
-  pdf.text('Signature & Cachet', m + cw, y + 4, { align: 'right' });
-  pdf.setDrawColor(...LIGHT_GRAY);
-  pdf.setLineWidth(0.3);
-  pdf.line(m + cw - 50, y + 8, m + cw, y + 8);
+  // Signature zone - Employee
+  if (data.signatureEmploye) {
+    try {
+      const sigImg = await loadImage(data.signatureEmploye);
+      const sigW = 45;
+      const sigH = (sigImg.height / sigImg.width) * sigW;
+      pdf.addImage(sigImg, 'PNG', m + cw - sigW - 5, y - 2, sigW, Math.min(sigH, 20));
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(7);
+      pdf.setTextColor(...DARK);
+      pdf.text('Signature de l\'employé', m + cw, y + 20, { align: 'right' });
+    } catch {
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(7);
+      pdf.setTextColor(...DARK);
+      pdf.text('Signature & Cachet', m + cw, y + 4, { align: 'right' });
+      pdf.setDrawColor(...LIGHT_GRAY);
+      pdf.setLineWidth(0.3);
+      pdf.line(m + cw - 50, y + 8, m + cw, y + 8);
+    }
+  } else {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(7);
+    pdf.setTextColor(...DARK);
+    pdf.text('Signature & Cachet', m + cw, y + 4, { align: 'right' });
+    pdf.setDrawColor(...LIGHT_GRAY);
+    pdf.setLineWidth(0.3);
+    pdf.line(m + cw - 50, y + 8, m + cw, y + 8);
+  }
 
   // ═══════════════════════════════════════════
   // BOTTOM BAR
