@@ -49,6 +49,7 @@ const roleMeta: Record<AppRole, { label: string; color: string }> = {
   cantine: { label: 'Cantine', color: 'bg-orange-600 text-white' },
   librairie: { label: 'Librairie', color: 'bg-teal-600 text-white' },
   coordinateur: { label: 'Coordinateur', color: 'bg-indigo-600 text-white' },
+  coordinateur_secondaire: { label: 'Coord. Secondaire', color: 'bg-indigo-500 text-white' },
   robotique: { label: 'Robotique', color: 'bg-violet-600 text-white' },
   chauffeur: { label: 'Chauffeur', color: 'bg-teal-600 text-white' },
   pointeur: { label: 'Pointeur', color: 'bg-sky-600 text-white' },
