@@ -197,14 +197,22 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData) {
     pdf.setTextColor(...DARK);
     pdf.text(row.label, tableX + 4, y + 6);
 
-    pdf.setFont('helvetica', 'bold');
-    if (row.gain > 0) {
-      pdf.setTextColor(...GREEN);
-      pdf.text(`${fmt(row.gain)} GNF`, tableX + colWidths[0] + colWidths[1] / 2, y + 6, { align: 'center' });
-    }
-    if (row.loss > 0) {
+    // Special row for avance totale info
+    if (row.label.startsWith('Avance totale') && (data.avance_totale || 0) > 0) {
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
       pdf.setTextColor(...RED);
-      pdf.text(`-${fmt(row.loss)} GNF`, tableX + colWidths[0] + colWidths[1] + colWidths[2] / 2, y + 6, { align: 'center' });
+      pdf.text(`${fmt(data.avance_totale || 0)} GNF`, tableX + colWidths[0] + colWidths[1] + colWidths[2] / 2, y + 6, { align: 'center' });
+    } else {
+      pdf.setFont('helvetica', 'bold');
+      if (row.gain > 0) {
+        pdf.setTextColor(...GREEN);
+        pdf.text(`${fmt(row.gain)} GNF`, tableX + colWidths[0] + colWidths[1] / 2, y + 6, { align: 'center' });
+      }
+      if (row.loss > 0) {
+        pdf.setTextColor(...RED);
+        pdf.text(`-${fmt(row.loss)} GNF`, tableX + colWidths[0] + colWidths[1] + colWidths[2] / 2, y + 6, { align: 'center' });
+      }
     }
 
     y += rowH;
