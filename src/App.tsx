@@ -255,6 +255,7 @@ const App = () => (
             <Route path="/tresorier-salaires" element={<ProtectedRoute><TresorierGestionSalaires /></ProtectedRoute>} />
             <Route path="/tresorier-avances" element={<ProtectedRoute><TresorierAvances /></ProtectedRoute>} />
             <Route path="/tresorier-avances-soutien" element={<ProtectedRoute><TresorierAvancesSoutien /></ProtectedRoute>} />
+            <Route path="/tresorier-historique" element={<ProtectedRoute><TresorierHistorique /></ProtectedRoute>} />
             <Route path="/eleve/ecriture" element={<StudentAuthProvider><StudentEcriture /></StudentAuthProvider>} />
             <Route path="/eleve/calcul" element={<StudentAuthProvider><StudentCalculMental /></StudentAuthProvider>} />
             <Route path="/eleve/culture" element={<StudentAuthProvider><StudentCultureGenerale /></StudentAuthProvider>} />
