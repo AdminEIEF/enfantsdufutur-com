@@ -260,7 +260,7 @@ export default function BulletinScolaire({
                   {isFinalPeriod && (
                     <td style={{ ...cellCenter }}>{b.rang || '—'}</td>
                   )}
-                  <td style={{ padding: '3px 3px', textAlign: 'center', verticalAlign: 'middle', color: '#6b7280', fontStyle: 'italic', fontSize: '8.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '24px' }}>{b.appreciation || '—'}</td>
+                  <td style={{ padding: '3px 3px', textAlign: 'center', verticalAlign: 'middle', color: '#6b7280', fontStyle: 'italic', fontWeight: 700, fontSize: '8.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '24px' }}>{b.appreciation || '—'}</td>
                 </tr>
               );
             })}
