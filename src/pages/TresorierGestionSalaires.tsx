@@ -83,6 +83,7 @@ export default function TresorierGestionSalaires() {
   const filterMode = FILTER_MODES[mode] || null;
   const [employes, setEmployes] = useState<Employe[]>([]);
   const [paiements, setPaiements] = useState<PaiementRecord[]>([]);
+  const [avancesSoutien, setAvancesSoutien] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState<string | null>(null);
   const [categorie, setCategorie] = useState('all');
