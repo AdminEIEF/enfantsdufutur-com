@@ -355,7 +355,7 @@ export default function TresorierGestionSalaires() {
         nom: e.nom,
         prenom: e.prenom,
         poste: e.poste,
-        salaire_base: e.salaire_base,
+        salaire_base: e.salaire_calcule || e.salaire_base,
         matricule: e.matricule,
       })),
       mois: format(new Date(), 'MMMM yyyy', { locale: fr }),
