@@ -134,9 +134,17 @@ export default function TresorierDashboard() {
             <p className="text-sm text-muted-foreground">{format(new Date(), 'MMMM yyyy', { locale: fr })}</p>
           </div>
         </div>
-        <Button onClick={() => navigate('/tresorier-salaires')} className="bg-emerald-600 hover:bg-emerald-700">
-          <Banknote className="h-4 w-4 mr-2" /> Gestion Salaires
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button onClick={() => navigate('/tresorier-salaires')} className="bg-emerald-600 hover:bg-emerald-700">
+            <Banknote className="h-4 w-4 mr-2" /> Gestion Salaires
+          </Button>
+          <Button onClick={() => navigate('/tresorier-avances')} variant="outline">
+            <Wallet className="h-4 w-4 mr-2" /> Avances
+          </Button>
+          <Button onClick={() => navigate('/tresorier-avances-soutien')} variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50">
+            <Wrench className="h-4 w-4 mr-2" /> Avances Soutien
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}
