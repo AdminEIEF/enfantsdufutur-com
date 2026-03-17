@@ -1,7 +1,7 @@
 import {
   GraduationCap, UsersRound, UserRoundPlus, BookOpenText, Calculator, TriangleAlert,
   Cog, BellRing, QrCode, LibraryBig, ChartColumnStacked,
-  LayoutDashboard, Landmark, ClipboardCheck, Medal, RotateCcw, BusFront, Store, Download, TvMinimalPlay, BriefcaseBusiness, CalendarRange, Timer, FileCheck2, ShieldCheck, Sparkles, Trophy, Trash2, WalletCards, HandCoins, CircleDollarSign, ChevronDown, GraduationCap as GradCap, Wrench
+  LayoutDashboard, Landmark, ClipboardCheck, Medal, RotateCcw, BusFront, Store, Download, TvMinimalPlay, BriefcaseBusiness, CalendarRange, Timer, FileCheck2, ShieldCheck, Sparkles, Trophy, Trash2, WalletCards, HandCoins, CircleDollarSign, ChevronDown, GraduationCap as GradCap, Wrench, ScanLine
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Link, useLocation } from 'react-router-dom';
@@ -114,6 +114,7 @@ const navSections = [
     roles: ['admin', 'secretaire', 'chauffeur'] as const,
     items: [
       { title: 'Transport', url: '/transport', icon: BusFront },
+      { title: 'Scan Bus', url: '/transport?tab=scan', icon: ScanLine, roles: ['chauffeur'] as const },
     ],
   },
   {
@@ -231,7 +232,7 @@ export function AppSidebar() {
                 <CollapsibleContent>
                   <SidebarGroupContent>
                     <SidebarMenu>
-                      {section.items.map((item) => {
+                      {section.items.filter((item: any) => !item.roles || hasAnyRole(item.roles)).map((item) => {
                         const hasQuery = item.url.includes('?');
                         if (hasQuery) {
                           const isActive = location.pathname + location.search === item.url;
