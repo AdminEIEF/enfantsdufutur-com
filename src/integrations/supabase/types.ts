@@ -3228,6 +3228,7 @@ export type Database = {
           annee: number | null
           assurance_expire: string | null
           capacite: number | null
+          chauffeur_id: string | null
           controle_technique_expire: string | null
           couleur: string | null
           created_at: string
@@ -3244,6 +3245,7 @@ export type Database = {
           annee?: number | null
           assurance_expire?: string | null
           capacite?: number | null
+          chauffeur_id?: string | null
           controle_technique_expire?: string | null
           couleur?: string | null
           created_at?: string
@@ -3260,6 +3262,7 @@ export type Database = {
           annee?: number | null
           assurance_expire?: string | null
           capacite?: number | null
+          chauffeur_id?: string | null
           controle_technique_expire?: string | null
           couleur?: string | null
           created_at?: string
@@ -3272,6 +3275,13 @@ export type Database = {
           zone_transport_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "vehicules_transport_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vehicules_transport_zone_transport_id_fkey"
             columns: ["zone_transport_id"]
