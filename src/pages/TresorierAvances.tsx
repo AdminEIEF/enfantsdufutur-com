@@ -82,7 +82,7 @@ export default function TresorierAvances() {
                     <TableCell className="text-sm">{a.mois_remboursement || '—'}</TableCell>
                     <TableCell>
                       <Badge variant={a.statut === 'rembourse' ? 'default' : 'secondary'}>
-                        {a.statut === 'rembourse' ? 'Remboursé' : 'En cours'}
+                        {a.statut === 'rembourse' ? 'Remboursé' : 'Approuvé pour le paiement'}
                       </Badge>
                     </TableCell>
                   </TableRow>
