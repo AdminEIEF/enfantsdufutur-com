@@ -1550,7 +1550,7 @@ export default function Configuration() {
         <TabsContent value="classe-matieres"><ClasseMatieresTab /></TabsContent>
         <TabsContent value="periodes"><PeriodesTab /></TabsContent>
         <TabsContent value="tranches"><TranchesTab /></TabsContent>
-        <TabsContent value="transport"><ZonesTransportTab /></TabsContent>
+        
         <TabsContent value="corbeille"><CorbeilleTab /></TabsContent>
       </Tabs>
     </div>
