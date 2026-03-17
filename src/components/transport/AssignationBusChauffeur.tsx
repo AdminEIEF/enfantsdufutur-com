@@ -101,7 +101,7 @@ export default function AssignationBusChauffeur() {
         </Card>
         <Card>
           <CardContent className="pt-5 flex items-center gap-3">
-            <AlertTriangle className="h-7 w-7 text-orange-500" />
+            <AlertTriangle className="h-7 w-7 text-warning" />
             <div>
               <p className="text-xs text-muted-foreground">Sans chauffeur</p>
               <p className="text-xl font-bold">{vehiculesLibres.length}</p>
