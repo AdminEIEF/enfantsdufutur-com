@@ -237,7 +237,7 @@ export default function TresorierGestionSalaires() {
         poste: emp.poste, categorie: emp.categorie,
       },
       mois: currentMonth, annee: currentYear,
-      salaire_brut: emp.salaire_base, primes: 0, retenues: 0,
+      salaire_brut: salaire, primes: 0, retenues: 0,
       avances_deduites: totalAvancesDeduites, salaire_net: salaireNet,
       schoolName: schoolConfig?.nom, schoolCity: schoolConfig?.ville, logoUrl: schoolConfig?.logo_url,
       signatureEmploye: signatureData || undefined,
