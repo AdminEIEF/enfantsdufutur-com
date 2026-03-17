@@ -176,7 +176,7 @@ export default function TresorierGestionSalaires() {
     const signatureData = empCanvasRef.current?.toDataURL('image/png') || null;
 
     // Montant effectif (avec ou sans déduction d'avance)
-    const montantPaye = deduireAvance && dialogAvanceTotal > 0 ? salaire - dialogAvanceTotal : salaire;
+    const montantPaye = deduireAvance && montantDeduction > 0 ? salaire - montantDeduction : salaire;
 
     const { error } = await supabase.from('paiements_tresorier').insert({
       employe_id: emp.id,
