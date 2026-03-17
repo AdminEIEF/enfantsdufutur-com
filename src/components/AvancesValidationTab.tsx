@@ -130,7 +130,7 @@ export default function AvancesValidationTab() {
                     <TableCell className="font-medium">{a.employes?.prenom} {a.employes?.nom}</TableCell>
                     <TableCell className="font-bold">{Number(a.montant).toLocaleString()} GNF</TableCell>
                     <TableCell className="text-sm">{a.traite_at ? format(new Date(a.traite_at), 'dd/MM/yyyy') : '—'}</TableCell>
-                    <TableCell><Badge variant="secondary">Transmise au trésorier</Badge></TableCell>
+                    <TableCell><Badge variant={a.statut === 'paye' ? 'default' : 'secondary'}>{a.statut === 'paye' ? '💰 Payée' : 'Transmise au trésorier'}</Badge></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
