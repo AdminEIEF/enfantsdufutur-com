@@ -46,7 +46,7 @@ export async function generateBulletinPDF(
         clonedElement.style.overflow = 'hidden';
 
         // Ensure crisp text rendering in the clone
-        clonedElement.style.webkitFontSmoothing = 'antialiased';
+        (clonedElement.style as any).webkitFontSmoothing = 'antialiased';
         (clonedElement.style as any).textRendering = 'optimizeLegibility';
 
         // Force all tables to fixed layout for consistent column widths
