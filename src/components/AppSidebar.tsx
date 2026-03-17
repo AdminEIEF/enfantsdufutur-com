@@ -185,6 +185,7 @@ const navSections = [
       { title: 'Salaire Soutien', url: '/tresorier-salaires?mode=soutien', icon: Wrench },
       { title: 'Gestion Avances', url: '/tresorier-avances', icon: CircleDollarSign },
       { title: 'Avances Soutien', url: '/tresorier-avances-soutien', icon: HandCoins },
+      { title: 'Historique', url: '/tresorier-historique', icon: ClipboardCheck },
     ],
   },
   {
