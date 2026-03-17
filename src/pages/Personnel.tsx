@@ -232,6 +232,37 @@ export default function Personnel() {
     },
   });
 
+  // Fetch emploi du temps for secondary teacher hours calculation
+  const { data: emploiDuTemps = [] } = useQuery({
+    queryKey: ['emploi-du-temps-all'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('emploi_du_temps').select('enseignant_id, heure_debut, heure_fin');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Compute weekly hours per teacher
+  const heuresParEnseignant: Record<string, number> = {};
+  for (const slot of emploiDuTemps) {
+    if (!slot.enseignant_id) continue;
+    const [hd, md] = slot.heure_debut.split(':').map(Number);
+    const [hf, mf] = slot.heure_fin.split(':').map(Number);
+    const duree = (hf + mf / 60) - (hd + md / 60);
+    if (duree > 0) {
+      heuresParEnseignant[slot.enseignant_id] = (heuresParEnseignant[slot.enseignant_id] || 0) + duree;
+    }
+  }
+
+  const getHeuresMensuelles = (empId: string) => {
+    const hebdo = heuresParEnseignant[empId] || 0;
+    return Math.round(hebdo * 4.33 * 100) / 100;
+  };
+
+  const getSalaireCalculeSecondaire = (empId: string, prixHeure: number) => {
+    return Math.round(getHeuresMensuelles(empId) * prixHeure);
+  };
+
   // Fetch pointages today
   const today = new Date().toISOString().slice(0, 10);
   const { data: pointagesToday = [] } = useQuery({
@@ -899,15 +930,24 @@ export default function Personnel() {
                   <div className="space-y-1"><Label>Téléphone</Label><Input value={form.telephone} onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))} /></div>
                   <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1"><Label>{form.categorie === 'enseignant_secondaire' ? 'Salaire de base (GNF) — calculé auto' : 'Salaire (GNF)'}</Label><Input type="number" value={form.salaire_base} onChange={e => setForm(f => ({ ...f, salaire_base: e.target.value }))} /></div>
-                  <div className="space-y-1"><Label>Date d'embauche</Label><Input type="date" value={form.date_embauche} onChange={e => setForm(f => ({ ...f, date_embauche: e.target.value }))} /></div>
-                </div>
-                {form.categorie === 'enseignant_secondaire' && (
-                  <div className="space-y-1">
-                    <Label>💰 Prix de l'heure (GNF)</Label>
-                    <Input type="number" value={form.prix_heure} onChange={e => setForm(f => ({ ...f, prix_heure: e.target.value }))} placeholder="Ex: 50000" />
-                    <p className="text-xs text-muted-foreground">Le salaire sera calculé automatiquement en fonction des heures d'emploi du temps × ce tarif horaire.</p>
+                {form.categorie === 'enseignant_secondaire' ? (
+                  <div className="space-y-2">
+                    <div className="space-y-1">
+                      <Label>💰 Prix de l'heure (GNF)</Label>
+                      <Input type="number" value={form.prix_heure} onChange={e => setForm(f => ({ ...f, prix_heure: e.target.value }))} placeholder="Ex: 50000" />
+                    </div>
+                    <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5">
+                      ⏱️ Le salaire sera calculé automatiquement une fois l'emploi du temps attribué (heures hebdo × 4.33 × prix/h).
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1"><Label>Salaire de base (GNF)</Label><Input type="number" value={form.salaire_base} onChange={e => setForm(f => ({ ...f, salaire_base: e.target.value }))} placeholder="Calculé auto ou saisie manuelle" /></div>
+                      <div className="space-y-1"><Label>Date d'embauche</Label><Input type="date" value={form.date_embauche} onChange={e => setForm(f => ({ ...f, date_embauche: e.target.value }))} /></div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1"><Label>Salaire (GNF)</Label><Input type="number" value={form.salaire_base} onChange={e => setForm(f => ({ ...f, salaire_base: e.target.value }))} /></div>
+                    <div className="space-y-1"><Label>Date d'embauche</Label><Input type="date" value={form.date_embauche} onChange={e => setForm(f => ({ ...f, date_embauche: e.target.value }))} /></div>
                   </div>
                 )}
                 <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5">🔐 Le mot de passe sera généré automatiquement et affiché après création.</p>
@@ -1420,15 +1460,36 @@ export default function Personnel() {
                       <div className="space-y-1"><Label>Poste</Label><Input value={editForm.poste} onChange={e => setEditForm((f: any) => ({ ...f, poste: e.target.value }))} /></div>
                       <div className="space-y-1"><Label>Téléphone</Label><Input value={editForm.telephone} onChange={e => setEditForm((f: any) => ({ ...f, telephone: e.target.value }))} /></div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1"><Label>Email</Label><Input type="email" value={editForm.email} onChange={e => setEditForm((f: any) => ({ ...f, email: e.target.value }))} /></div>
-                      <div className="space-y-1"><Label>Salaire (GNF)</Label><Input type="number" value={editForm.salaire_base} onChange={e => setEditForm((f: any) => ({ ...f, salaire_base: e.target.value }))} /></div>
-                    </div>
-                    {(editForm.categorie === 'enseignant' && selectedEmp?.matricule?.startsWith('ESC')) && (
-                      <div className="space-y-1">
-                        <Label>💰 Prix de l'heure (GNF)</Label>
-                        <Input type="number" value={editForm.prix_heure} onChange={e => setEditForm((f: any) => ({ ...f, prix_heure: e.target.value }))} placeholder="Ex: 50000" />
-                        <p className="text-xs text-muted-foreground">Le salaire sera calculé selon les heures d'emploi du temps × ce tarif.</p>
+                    {(editForm.categorie === 'enseignant' && selectedEmp?.matricule?.startsWith('ESC')) ? (
+                      <>
+                        <div className="space-y-1">
+                          <Label>💰 Prix de l'heure (GNF)</Label>
+                          <Input type="number" value={editForm.prix_heure} onChange={e => setEditForm((f: any) => ({ ...f, prix_heure: e.target.value }))} placeholder="Ex: 50000" />
+                        </div>
+                        {Number(editForm.prix_heure) > 0 && (
+                          <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                            <p className="text-xs font-medium">📊 Calcul automatique du salaire</p>
+                            <p className="text-xs text-muted-foreground">
+                              Heures hebdo: <strong>{(heuresParEnseignant[selectedEmp.id] || 0).toFixed(1)}h</strong> → 
+                              Heures mensuelles: <strong>{getHeuresMensuelles(selectedEmp.id)}h</strong>
+                            </p>
+                            <p className="text-sm font-bold">
+                              Salaire calculé: {getSalaireCalculeSecondaire(selectedEmp.id, Number(editForm.prix_heure)).toLocaleString()} GNF
+                            </p>
+                            {getHeuresMensuelles(selectedEmp.id) === 0 && (
+                              <p className="text-xs text-destructive">⚠️ Aucun créneau dans l'emploi du temps. Attribuez des heures d'abord.</p>
+                            )}
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1"><Label>Email</Label><Input type="email" value={editForm.email} onChange={e => setEditForm((f: any) => ({ ...f, email: e.target.value }))} /></div>
+                          <div className="space-y-1"><Label>Salaire base (GNF)</Label><Input type="number" value={editForm.salaire_base} onChange={e => setEditForm((f: any) => ({ ...f, salaire_base: e.target.value }))} /></div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1"><Label>Email</Label><Input type="email" value={editForm.email} onChange={e => setEditForm((f: any) => ({ ...f, email: e.target.value }))} /></div>
+                        <div className="space-y-1"><Label>Salaire (GNF)</Label><Input type="number" value={editForm.salaire_base} onChange={e => setEditForm((f: any) => ({ ...f, salaire_base: e.target.value }))} /></div>
                       </div>
                     )}
                     <div className="grid grid-cols-2 gap-3">
