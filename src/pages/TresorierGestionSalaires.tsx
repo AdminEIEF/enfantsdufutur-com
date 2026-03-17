@@ -75,12 +75,15 @@ const FILTER_MODES: Record<string, { label: string; cats: string[] }> = {
   admin: { label: 'Salaires — Administration & Direction', cats: ['administration', 'direction', 'service'] },
 };
 
+const SOUTIEN_CATS = ['hygiene', 'securite_primaire', 'securite_lycee', 'chauffeur', 'infirmiere', 'cantine', 'librairie', 'surveillant'];
+
 export default function TresorierGestionSalaires() {
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode') || '';
   const filterMode = FILTER_MODES[mode] || null;
   const [employes, setEmployes] = useState<Employe[]>([]);
   const [paiements, setPaiements] = useState<PaiementRecord[]>([]);
+  const [avancesSoutien, setAvancesSoutien] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState<string | null>(null);
   const [categorie, setCategorie] = useState('all');
@@ -100,10 +103,11 @@ export default function TresorierGestionSalaires() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [empRes, paiRes, edtRes] = await Promise.all([
+    const [empRes, paiRes, edtRes, avRes] = await Promise.all([
       supabase.from('employes').select('id, nom, prenom, poste, categorie, matricule, salaire_base, prix_heure, statut').eq('statut', 'actif'),
       supabase.from('paiements_tresorier').select('*').eq('mois', currentMonth).eq('annee', currentYear),
       supabase.from('emploi_du_temps').select('enseignant_id, heure_debut, heure_fin, jour_semaine'),
+      supabase.from('avances_salaire').select('employe_id, montant, statut').eq('statut', 'paye'),
     ]);
 
     // Calculate weekly hours per teacher from emploi_du_temps
@@ -135,6 +139,7 @@ export default function TresorierGestionSalaires() {
       setEmployes(enriched);
     }
     if (paiRes.data) setPaiements(paiRes.data as PaiementRecord[]);
+    if (avRes.data) setAvancesSoutien(avRes.data);
     setLoading(false);
   }, [currentMonth, currentYear]);
 
@@ -462,6 +467,14 @@ export default function TresorierGestionSalaires() {
                           {emp.heures_mensuelles != null && (
                             <div className="text-[10px] text-muted-foreground font-normal">{emp.heures_mensuelles}h × {fmtNum(emp.prix_heure)} GNF/h</div>
                           )}
+                          {SOUTIEN_CATS.includes(emp.categorie) && (() => {
+                            const totalAvance = avancesSoutien
+                              .filter(a => a.employe_id === emp.id)
+                              .reduce((sum: number, a: any) => sum + Number(a.montant), 0);
+                            return totalAvance > 0 ? (
+                              <div className="text-xs text-destructive font-semibold mt-0.5">− {fmtNum(totalAvance)} GNF avancé</div>
+                            ) : null;
+                          })()}
                         </TableCell>
                         <TableCell>
                           {paid ? (
