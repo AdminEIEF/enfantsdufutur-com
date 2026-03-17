@@ -292,6 +292,9 @@ export default function TresorierAvancesSoutien() {
                     <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucun employé trouvé</TableCell></TableRow>
                   ) : filtered.map((emp: any) => {
                     const empAvances = avancesSoutien.filter((a: any) => a.employe_id === emp.id && (a.statut === 'paye' || a.statut === 'approuve'));
+                    const totalAvancesPayees = avancesSoutien
+                      .filter((a: any) => a.employe_id === emp.id && a.statut === 'paye')
+                      .reduce((sum: number, a: any) => sum + Number(a.montant), 0);
                     return (
                       <TableRow
                         key={emp.id}
@@ -301,7 +304,14 @@ export default function TresorierAvancesSoutien() {
                         <TableCell className="font-medium">{emp.prenom} {emp.nom}</TableCell>
                         <TableCell><Badge variant="outline" className="text-xs">{catLabels[emp.categorie] || emp.categorie}</Badge></TableCell>
                         <TableCell className="text-sm">{emp.poste}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">{fmtNum(Number(emp.salaire_base))} GNF</TableCell>
+                        <TableCell className="text-right">
+                          <div className="font-mono text-sm">{fmtNum(Number(emp.salaire_base))} GNF</div>
+                          {totalAvancesPayees > 0 && (
+                            <div className="text-xs text-destructive font-semibold mt-0.5">
+                              − {fmtNum(totalAvancesPayees)} GNF avancé
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="text-center">
                           {empAvances.length > 0 ? (
                             <Badge variant="secondary" className="text-xs">{empAvances.length} avance(s)</Badge>
