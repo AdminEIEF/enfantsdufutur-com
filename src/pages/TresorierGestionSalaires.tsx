@@ -139,6 +139,7 @@ export default function TresorierGestionSalaires() {
       setEmployes(enriched);
     }
     if (paiRes.data) setPaiements(paiRes.data as PaiementRecord[]);
+    if (avRes.data) setAvancesSoutien(avRes.data);
     setLoading(false);
   }, [currentMonth, currentYear]);
 
