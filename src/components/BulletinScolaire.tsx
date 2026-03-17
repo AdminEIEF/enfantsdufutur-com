@@ -70,7 +70,7 @@ const getMention = (moyenne: number | null, bareme: number): string | null => {
 };
 
 const cellCenter: React.CSSProperties = {
-  padding: '3px 3px',
+  padding: '4px 5px',
   textAlign: 'center',
   verticalAlign: 'middle',
   fontFamily: "'JetBrains Mono', 'Courier New', monospace",
@@ -78,7 +78,8 @@ const cellCenter: React.CSSProperties = {
   fontWeight: 700,
   whiteSpace: 'nowrap',
   overflow: 'hidden',
-  lineHeight: '24px',
+  lineHeight: '1.4',
+  height: '26px',
 };
 
 export default function BulletinScolaire({
