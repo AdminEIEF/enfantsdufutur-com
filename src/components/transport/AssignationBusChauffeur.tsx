@@ -92,7 +92,7 @@ export default function AssignationBusChauffeur() {
         </Card>
         <Card>
           <CardContent className="pt-5 flex items-center gap-3">
-            <CheckCircle2 className="h-7 w-7 text-green-600" />
+            <CheckCircle2 className="h-7 w-7 text-accent" />
             <div>
               <p className="text-xs text-muted-foreground">Assignés</p>
               <p className="text-xl font-bold">{vehiculesAssignes.length}</p>
