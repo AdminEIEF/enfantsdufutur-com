@@ -222,17 +222,17 @@ export default function BulletinScolaire({
         <table style={{ fontSize: '9.5px' }} cellPadding={0} cellSpacing={0}>
           <thead>
             <tr style={{ backgroundColor: '#047857', color: 'white' }}>
-              <th style={{ padding: '3px 3px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Matière</th>
-              <th style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '24px', fontSize: '8px', verticalAlign: 'middle' }}>Coef</th>
+              <th style={{ padding: '5px 6px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', height: '28px', lineHeight: '1.4' }}>Matière</th>
+              <th style={{ padding: '5px 4px', textAlign: 'center', fontWeight: 700, width: '28px', fontSize: '8.5px', verticalAlign: 'middle', height: '28px', lineHeight: '1.4' }}>Coef</th>
               {isFinalPeriod && previousPeriodsNotes.map((pp) => (
-                <th key={pp.periodeName} style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '40px', fontSize: '8.5px', verticalAlign: 'middle' }}>{pp.periodeName}</th>
+                <th key={pp.periodeName} style={{ padding: '5px 4px', textAlign: 'center', fontWeight: 700, width: '40px', fontSize: '8.5px', verticalAlign: 'middle', height: '28px', lineHeight: '1.4' }}>{pp.periodeName}</th>
               ))}
-              <th style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '50px', verticalAlign: 'middle' }}>Moyenne</th>
-              <th style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '54px', verticalAlign: 'middle' }}>Moy×Coef</th>
+              <th style={{ padding: '5px 4px', textAlign: 'center', fontWeight: 700, width: '52px', verticalAlign: 'middle', height: '28px', lineHeight: '1.4' }}>Moyenne</th>
+              <th style={{ padding: '5px 4px', textAlign: 'center', fontWeight: 700, width: '56px', verticalAlign: 'middle', height: '28px', lineHeight: '1.4' }}>Moy×Coef</th>
               {isFinalPeriod && (
-                <th style={{ padding: '3px 1px', textAlign: 'center', fontWeight: 700, width: '28px', verticalAlign: 'middle' }}>Rang</th>
+                <th style={{ padding: '5px 4px', textAlign: 'center', fontWeight: 700, width: '30px', verticalAlign: 'middle', height: '28px', lineHeight: '1.4' }}>Rang</th>
               )}
-              <th style={{ padding: '3px 3px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle' }}>Appréciation</th>
+              <th style={{ padding: '5px 6px', textAlign: 'center', fontWeight: 700, verticalAlign: 'middle', height: '28px', lineHeight: '1.4' }}>Appréciation</th>
             </tr>
           </thead>
           <tbody>
