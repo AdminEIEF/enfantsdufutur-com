@@ -191,7 +191,7 @@ export default function TresorierAvances() {
                 <TableHead>Employé</TableHead>
                 <TableHead>Matricule</TableHead>
                 <TableHead>Montant</TableHead>
-                <TableHead>Motif</TableHead>
+                <TableHead>Date demande</TableHead>
                 <TableHead>Date demande</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead className="text-center">Action</TableHead>
