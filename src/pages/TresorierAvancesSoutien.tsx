@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { useSearchParams } from 'react-router-dom';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { format } from 'date-fns';
 import { generateRecuAvancePDF } from '@/lib/generateRecuAvancePDF';
 
