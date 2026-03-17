@@ -590,6 +590,31 @@ export default function TresorierGestionSalaires() {
                   <p className="text-xs text-muted-foreground">{signDialog.heures_mensuelles}h/mois × {fmtNum(signDialog.prix_heure)} GNF/h</p>
                 )}
               </div>
+              {dialogAvanceTotal > 0 && (
+                <div className="border border-destructive/30 bg-destructive/5 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                    <p className="text-sm font-semibold text-destructive">
+                      Avance en cours : {fmtNum(dialogAvanceTotal)} GNF
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="deduire-avance"
+                      checked={deduireAvance}
+                      onCheckedChange={(v) => setDeduireAvance(!!v)}
+                    />
+                    <label htmlFor="deduire-avance" className="text-sm cursor-pointer">
+                      Déduire l'avance du salaire
+                    </label>
+                  </div>
+                  {deduireAvance && (
+                    <p className="text-xs text-muted-foreground">
+                      Salaire net après déduction : <strong className="text-foreground">{fmtNum((signDialog.salaire_calcule || signDialog.salaire_base) - dialogAvanceTotal)} GNF</strong>
+                    </p>
+                  )}
+                </div>
+              )}
               <p className="text-sm font-medium text-destructive">
                 ⚠️ La signature est obligatoire pour valider le paiement.
               </p>
