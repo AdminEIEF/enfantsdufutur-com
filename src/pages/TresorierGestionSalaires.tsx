@@ -467,6 +467,14 @@ export default function TresorierGestionSalaires() {
                           {emp.heures_mensuelles != null && (
                             <div className="text-[10px] text-muted-foreground font-normal">{emp.heures_mensuelles}h × {fmtNum(emp.prix_heure)} GNF/h</div>
                           )}
+                          {SOUTIEN_CATS.includes(emp.categorie) && (() => {
+                            const totalAvance = avancesSoutien
+                              .filter(a => a.employe_id === emp.id)
+                              .reduce((sum: number, a: any) => sum + Number(a.montant), 0);
+                            return totalAvance > 0 ? (
+                              <div className="text-xs text-destructive font-semibold mt-0.5">− {fmtNum(totalAvance)} GNF avancé</div>
+                            ) : null;
+                          })()}
                         </TableCell>
                         <TableCell>
                           {paid ? (
