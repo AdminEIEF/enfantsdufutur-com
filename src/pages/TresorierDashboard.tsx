@@ -47,7 +47,7 @@ const GROUPS = [
     cats: ['administration', 'direction', 'service'],
     color: 'text-purple-600',
     borderColor: 'border-l-purple-500',
-    link: '/tresorier-salaires',
+    link: '/tresorier-salaires?mode=admin',
   },
   {
     label: 'Services de soutien',
