@@ -479,6 +479,11 @@ export default function Transport() {
           <PonctualiteTransport />
         </TabsContent>
 
+        {/* Tab: Assignation Bus ↔ Chauffeur */}
+        <TabsContent value="assignation" className="mt-4">
+          <AssignationBusChauffeur />
+        </TabsContent>
+
         {/* Tab: Alertes */}
         <TabsContent value="alertes" className="mt-4">
           <AlertesTransport zones={zones} />
