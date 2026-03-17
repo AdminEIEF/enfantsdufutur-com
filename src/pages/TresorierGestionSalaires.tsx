@@ -103,10 +103,11 @@ export default function TresorierGestionSalaires() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [empRes, paiRes, edtRes] = await Promise.all([
+    const [empRes, paiRes, edtRes, avRes] = await Promise.all([
       supabase.from('employes').select('id, nom, prenom, poste, categorie, matricule, salaire_base, prix_heure, statut').eq('statut', 'actif'),
       supabase.from('paiements_tresorier').select('*').eq('mois', currentMonth).eq('annee', currentYear),
       supabase.from('emploi_du_temps').select('enseignant_id, heure_debut, heure_fin, jour_semaine'),
+      supabase.from('avances_salaire').select('employe_id, montant, statut').eq('statut', 'paye'),
     ]);
 
     // Calculate weekly hours per teacher from emploi_du_temps
