@@ -596,7 +596,7 @@ export default function TresorierGestionSalaires() {
                 )}
               </div>
               {dialogAvanceTotal > 0 && (
-                <div className="border border-destructive/30 bg-destructive/5 rounded-lg p-3 space-y-2">
+                <div className="border border-destructive/30 bg-destructive/5 rounded-lg p-3 space-y-3">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-destructive" />
                     <p className="text-sm font-semibold text-destructive">
@@ -607,16 +607,34 @@ export default function TresorierGestionSalaires() {
                     <Checkbox
                       id="deduire-avance"
                       checked={deduireAvance}
-                      onCheckedChange={(v) => setDeduireAvance(!!v)}
+                      onCheckedChange={(v) => {
+                        setDeduireAvance(!!v);
+                        if (v) setMontantDeduction(dialogAvanceTotal);
+                        else setMontantDeduction(0);
+                      }}
                     />
                     <label htmlFor="deduire-avance" className="text-sm cursor-pointer">
                       Déduire l'avance du salaire
                     </label>
                   </div>
                   {deduireAvance && (
-                    <p className="text-xs text-muted-foreground">
-                      Salaire net après déduction : <strong className="text-foreground">{fmtNum((signDialog.salaire_calcule || signDialog.salaire_base) - dialogAvanceTotal)} GNF</strong>
-                    </p>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground">Montant à déduire (GNF)</label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={dialogAvanceTotal}
+                        value={montantDeduction}
+                        onChange={(e) => {
+                          const val = Math.min(Math.max(0, Number(e.target.value)), dialogAvanceTotal);
+                          setMontantDeduction(val);
+                        }}
+                        className="h-9"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Salaire net après déduction : <strong className="text-foreground">{fmtNum((signDialog.salaire_calcule || signDialog.salaire_base) - montantDeduction)} GNF</strong>
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
