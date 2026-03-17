@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { useSearchParams } from 'react-router-dom';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { format } from 'date-fns';
 import { generateRecuAvancePDF } from '@/lib/generateRecuAvancePDF';
 
@@ -40,6 +41,11 @@ export default function TresorierAvancesSoutien() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Barcode scanner support (douchette)
+  useBarcodeScanner({
+    onScan: (code) => setSearch(code),
+  });
 
   // Fetch support staff employees
   const { data: employes = [], isLoading: loadingEmp } = useQuery({
@@ -75,7 +81,8 @@ export default function TresorierAvancesSoutien() {
   // No pre-selection effect needed; user clicks from the list
 
   const filtered = employes.filter((e: any) => {
-    const matchSearch = `${e.nom} ${e.prenom} ${e.poste}`.toLowerCase().includes(search.toLowerCase());
+    const term = search.toLowerCase();
+    const matchSearch = `${e.nom} ${e.prenom} ${e.matricule} ${e.poste}`.toLowerCase().includes(term);
     const matchCat = filterCat === 'all' || e.categorie === filterCat;
     return matchSearch && matchCat;
   });
@@ -243,7 +250,7 @@ export default function TresorierAvancesSoutien() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Rechercher un employé..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+                  <Input placeholder="Nom, prénom ou matricule..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
                 </div>
                 <Select value={filterCat} onValueChange={setFilterCat}>
                   <SelectTrigger className="w-full sm:w-[220px]">
