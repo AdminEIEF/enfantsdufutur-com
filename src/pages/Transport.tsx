@@ -20,6 +20,7 @@ import ValidationTransportBus from '@/components/ValidationTransportBus';
 import ItinerairesTransport from '@/components/transport/ItinerairesTransport';
 import PonctualiteTransport from '@/components/transport/PonctualiteTransport';
 import AlertesTransport from '@/components/transport/AlertesTransport';
+import ChauffeurDashboard from '@/components/transport/ChauffeurDashboard';
 
 const MOIS_SCOLAIRES = [
   'Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -208,10 +209,7 @@ export default function Transport() {
       )}
 
       {isChauffeur ? (
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2"><ScanLine className="h-5 w-5" /> Validation bus</h2>
-          <ValidationTransportBus />
-        </div>
+        <ChauffeurDashboard />
       ) : (
       <Tabs defaultValue="zones">
         <TabsList className="flex-wrap h-auto gap-1">

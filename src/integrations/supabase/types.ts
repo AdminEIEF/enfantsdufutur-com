@@ -447,6 +447,67 @@ export type Database = {
           },
         ]
       }
+      checkin_transport: {
+        Row: {
+          arret_id: string | null
+          created_at: string
+          date_checkin: string
+          eleve_id: string
+          heure_checkin: string | null
+          id: string
+          note: string | null
+          present: boolean
+          route_id: string | null
+          type_trajet: string
+        }
+        Insert: {
+          arret_id?: string | null
+          created_at?: string
+          date_checkin?: string
+          eleve_id: string
+          heure_checkin?: string | null
+          id?: string
+          note?: string | null
+          present?: boolean
+          route_id?: string | null
+          type_trajet?: string
+        }
+        Update: {
+          arret_id?: string | null
+          created_at?: string
+          date_checkin?: string
+          eleve_id?: string
+          heure_checkin?: string | null
+          id?: string
+          note?: string | null
+          present?: boolean
+          route_id?: string | null
+          type_trajet?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkin_transport_arret_id_fkey"
+            columns: ["arret_id"]
+            isOneToOne: false
+            referencedRelation: "arrets_transport"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkin_transport_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkin_transport_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes_transport"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classe_matieres: {
         Row: {
           classe_id: string
@@ -1619,6 +1680,85 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      incidents_transport: {
+        Row: {
+          created_at: string
+          date_incident: string
+          description: string
+          gravite: string
+          heure_incident: string | null
+          id: string
+          lieu: string | null
+          resolu_at: string | null
+          resolu_par: string | null
+          resolution: string | null
+          route_id: string | null
+          signale_par: string | null
+          statut: string
+          type_incident: string
+          vehicule_id: string | null
+          zone_transport_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          date_incident?: string
+          description: string
+          gravite?: string
+          heure_incident?: string | null
+          id?: string
+          lieu?: string | null
+          resolu_at?: string | null
+          resolu_par?: string | null
+          resolution?: string | null
+          route_id?: string | null
+          signale_par?: string | null
+          statut?: string
+          type_incident?: string
+          vehicule_id?: string | null
+          zone_transport_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          date_incident?: string
+          description?: string
+          gravite?: string
+          heure_incident?: string | null
+          id?: string
+          lieu?: string | null
+          resolu_at?: string | null
+          resolu_par?: string | null
+          resolution?: string | null
+          route_id?: string | null
+          signale_par?: string | null
+          statut?: string
+          type_incident?: string
+          vehicule_id?: string | null
+          zone_transport_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incidents_transport_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes_transport"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_transport_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules_transport"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_transport_zone_transport_id_fkey"
+            columns: ["zone_transport_id"]
+            isOneToOne: false
+            referencedRelation: "zones_transport"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       justificatifs: {
         Row: {
@@ -3075,6 +3215,65 @@ export type Database = {
           },
           {
             foreignKeyName: "validations_transport_zone_transport_id_fkey"
+            columns: ["zone_transport_id"]
+            isOneToOne: false
+            referencedRelation: "zones_transport"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicules_transport: {
+        Row: {
+          actif: boolean
+          annee: number | null
+          assurance_expire: string | null
+          capacite: number | null
+          controle_technique_expire: string | null
+          couleur: string | null
+          created_at: string
+          id: string
+          immatriculation: string
+          marque: string | null
+          modele: string | null
+          photo_url: string | null
+          updated_at: string
+          zone_transport_id: string | null
+        }
+        Insert: {
+          actif?: boolean
+          annee?: number | null
+          assurance_expire?: string | null
+          capacite?: number | null
+          controle_technique_expire?: string | null
+          couleur?: string | null
+          created_at?: string
+          id?: string
+          immatriculation: string
+          marque?: string | null
+          modele?: string | null
+          photo_url?: string | null
+          updated_at?: string
+          zone_transport_id?: string | null
+        }
+        Update: {
+          actif?: boolean
+          annee?: number | null
+          assurance_expire?: string | null
+          capacite?: number | null
+          controle_technique_expire?: string | null
+          couleur?: string | null
+          created_at?: string
+          id?: string
+          immatriculation?: string
+          marque?: string | null
+          modele?: string | null
+          photo_url?: string | null
+          updated_at?: string
+          zone_transport_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicules_transport_zone_transport_id_fkey"
             columns: ["zone_transport_id"]
             isOneToOne: false
             referencedRelation: "zones_transport"
