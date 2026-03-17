@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Bus, MapPin, Users, Search, Wallet, CheckCircle, Circle, Download, AlertTriangle, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon } from 'lucide-react';
+import { Bus, MapPin, Users, Search, Wallet, CheckCircle, Circle, Download, AlertTriangle, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
