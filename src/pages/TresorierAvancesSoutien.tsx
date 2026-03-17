@@ -31,6 +31,7 @@ export default function TresorierAvancesSoutien() {
   const { data: schoolConfig } = useSchoolConfig();
 
   const [search, setSearch] = useState('');
+  const [filterCat, setFilterCat] = useState<string>('all');
   const [selectedEmp, setSelectedEmp] = useState<any>(null);
   const [montant, setMontant] = useState('');
   const [step, setStep] = useState<'list' | 'form' | 'sign'>('list');
