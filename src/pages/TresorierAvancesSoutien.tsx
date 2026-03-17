@@ -240,9 +240,22 @@ export default function TresorierAvancesSoutien() {
           {/* Search */}
           <Card>
             <CardContent className="pt-5">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Rechercher un employé..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Rechercher un employé..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+                </div>
+                <Select value={filterCat} onValueChange={setFilterCat}>
+                  <SelectTrigger className="w-full sm:w-[220px]">
+                    <SelectValue placeholder="Toutes catégories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes catégories</SelectItem>
+                    {SOUTIEN_CATS.map(cat => (
+                      <SelectItem key={cat} value={cat}>{catLabels[cat] || cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
