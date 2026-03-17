@@ -44,7 +44,10 @@ interface Employe {
   categorie: string;
   matricule: string;
   salaire_base: number;
+  prix_heure: number;
   statut: string;
+  salaire_calcule?: number; // computed salary for secondary teachers
+  heures_mensuelles?: number;
 }
 
 const getEffectiveCat = (e: Employe) => e.categorie === 'enseignant'
