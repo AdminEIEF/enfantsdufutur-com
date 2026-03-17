@@ -2,15 +2,12 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 /**
- * Generate a high-quality print-ready PDF (300 DPI minimum).
+ * Generate a high-quality print-ready PDF (300+ DPI).
  * 
- * Strategy:
- * - html2canvas scale=5 → captures at ~5× CSS pixels
- *   For A4 at 794px CSS width, this gives 3970px canvas width.
- *   At 210mm print width, that's 3970 / 8.27" ≈ 480 DPI — well above 300 DPI.
- * - PNG format for lossless text rendering (no JPEG artifacts on thin lines/text)
- * - jsPDF compression enabled for smaller file size
- * - FAST image compression in PDF for best quality
+ * - html2canvas scale=4 → 794×4 = 3176px → ~384 DPI on A4 (above 300 DPI threshold)
+ * - PNG lossless format: no JPEG compression artifacts on text/thin lines
+ * - addImage with 'NONE' compression: preserves full pixel quality in the PDF
+ * - jsPDF compress: true for efficient PDF stream compression (lossless deflate)
  */
 export async function generateBulletinPDF(
   elementId: string,
@@ -23,14 +20,16 @@ export async function generateBulletinPDF(
 
   const a4Container = element.querySelector('[data-bulletin-a4]') as HTMLElement || element;
 
-  // Temporarily reset transform for pixel-perfect capture
+  // Save original styles
   const originalTransform = a4Container.style.transform;
   const originalTransformOrigin = a4Container.style.transformOrigin;
+  
+  // Reset transform for pixel-perfect capture
   a4Container.style.transform = 'none';
   a4Container.style.transformOrigin = 'top left';
 
   const canvas = await html2canvas(a4Container, {
-    scale: 5, // High DPI: 794 × 5 = 3970px → ~480 DPI on A4
+    scale: 4, // ~384 DPI on A4 — crisp for print
     useCORS: true,
     allowTaint: true,
     backgroundColor: '#ffffff',
@@ -38,32 +37,30 @@ export async function generateBulletinPDF(
     imageTimeout: 20000,
     windowWidth: 794,
     onclone: (clonedDoc) => {
-      const clonedElement = clonedDoc.querySelector('[data-bulletin-a4]') as HTMLElement;
-      if (clonedElement) {
-        clonedElement.style.transform = 'none';
-        clonedElement.style.width = '794px';
-        clonedElement.style.maxWidth = '794px';
-        clonedElement.style.overflow = 'hidden';
+      const el = clonedDoc.querySelector('[data-bulletin-a4]') as HTMLElement;
+      if (!el) return;
+      
+      el.style.transform = 'none';
+      el.style.width = '794px';
+      el.style.maxWidth = '794px';
+      el.style.overflow = 'hidden';
+      (el.style as any).textRendering = 'optimizeLegibility';
+      (el.style as any).webkitFontSmoothing = 'antialiased';
 
-        // Ensure crisp text rendering in the clone
-        (clonedElement.style as any).webkitFontSmoothing = 'antialiased';
-        (clonedElement.style as any).textRendering = 'optimizeLegibility';
-
-        // Force all tables to fixed layout for consistent column widths
-        clonedElement.querySelectorAll('table').forEach((t: HTMLElement) => {
-          t.style.tableLayout = 'fixed';
-          t.style.width = '100%';
-        });
-        // Prevent any cell from overflowing
-        clonedElement.querySelectorAll('td, th').forEach((c: HTMLElement) => {
-          c.style.overflow = 'hidden';
-          c.style.textOverflow = 'ellipsis';
-        });
-        // Ensure SVGs render crisply (QR code, icons)
-        clonedElement.querySelectorAll('svg').forEach((svg: SVGElement) => {
-          svg.setAttribute('shape-rendering', 'crispEdges');
-        });
-      }
+      // Fixed table layout for consistent columns
+      el.querySelectorAll('table').forEach((t: HTMLElement) => {
+        t.style.tableLayout = 'fixed';
+        t.style.width = '100%';
+      });
+      // Prevent cell overflow
+      el.querySelectorAll('td, th').forEach((c: HTMLElement) => {
+        c.style.overflow = 'hidden';
+        c.style.textOverflow = 'ellipsis';
+      });
+      // Crisp SVG rendering (QR code, icons)
+      el.querySelectorAll('svg').forEach((svg: SVGElement) => {
+        svg.setAttribute('shape-rendering', 'crispEdges');
+      });
     },
   });
 
@@ -71,34 +68,31 @@ export async function generateBulletinPDF(
   a4Container.style.transform = originalTransform;
   a4Container.style.transformOrigin = originalTransformOrigin;
 
-  // Use PNG for lossless quality — no compression artifacts on text/lines
+  // PNG = lossless — no artifacts on text, lines, or table borders
   const imgData = canvas.toDataURL('image/png');
 
-  // A4 dimensions in mm
-  const pdfWidth = 210;
-  const pdfHeight = 297;
+  const pdfWidth = 210;  // A4 width mm
+  const pdfHeight = 297; // A4 height mm
 
   const pdf = new jsPDF({
     orientation: 'p',
     unit: 'mm',
     format: 'a4',
     compress: true,
-    putOnlyUsedFonts: true,
   });
 
   const imgWidth = pdfWidth;
   const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
   if (imgHeight <= pdfHeight) {
-    // Fits on one page — center vertically if there's space
-    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight, undefined, 'FAST');
+    // Fits on one page
+    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight, undefined, 'NONE');
   } else {
-    // Scale down to fit single A4 page
-    const scale = pdfHeight / imgHeight;
-    const scaledWidth = imgWidth * scale;
-    const scaledHeight = pdfHeight;
+    // Scale to fit single A4 page
+    const ratio = pdfHeight / imgHeight;
+    const scaledWidth = imgWidth * ratio;
     const offsetX = (pdfWidth - scaledWidth) / 2;
-    pdf.addImage(imgData, 'PNG', offsetX, 0, scaledWidth, scaledHeight, undefined, 'FAST');
+    pdf.addImage(imgData, 'PNG', offsetX, 0, scaledWidth, pdfHeight, undefined, 'NONE');
   }
 
   pdf.save(filename);
