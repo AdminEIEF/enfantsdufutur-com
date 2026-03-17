@@ -45,7 +45,8 @@ export default function CoordinateurPersonnel() {
         .eq('categorie', 'enseignant')
         .order('nom');
       if (error) throw error;
-      return data || [];
+      // Filter out secondary teachers (ESC prefix) — they belong to coordinateur_secondaire
+      return (data || []).filter((e: any) => !e.matricule?.startsWith('ESC'));
     },
   });
 
