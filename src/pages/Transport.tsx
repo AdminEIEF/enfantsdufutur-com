@@ -495,6 +495,10 @@ export default function Transport() {
         <TabsContent value="validation" className="mt-4">
           <ValidationTransportBus />
         </TabsContent>
+
+        {/* Tab: Gestion (Zones + Véhicules) */}
+        <TabsContent value="gestion" className="mt-4">
+          <GestionTransport />
       </Tabs>
       )}
 
