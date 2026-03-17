@@ -44,7 +44,10 @@ interface Employe {
   categorie: string;
   matricule: string;
   salaire_base: number;
+  prix_heure: number;
   statut: string;
+  salaire_calcule?: number; // computed salary for secondary teachers
+  heures_mensuelles?: number;
 }
 
 const getEffectiveCat = (e: Employe) => e.categorie === 'enseignant'
@@ -96,11 +99,40 @@ export default function TresorierGestionSalaires() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [empRes, paiRes] = await Promise.all([
-      supabase.from('employes').select('id, nom, prenom, poste, categorie, matricule, salaire_base, statut').eq('statut', 'actif'),
+    const [empRes, paiRes, edtRes] = await Promise.all([
+      supabase.from('employes').select('id, nom, prenom, poste, categorie, matricule, salaire_base, prix_heure, statut').eq('statut', 'actif'),
       supabase.from('paiements_tresorier').select('*').eq('mois', currentMonth).eq('annee', currentYear),
+      supabase.from('emploi_du_temps').select('enseignant_id, heure_debut, heure_fin, jour_semaine'),
     ]);
-    if (empRes.data) setEmployes(empRes.data);
+
+    // Calculate weekly hours per teacher from emploi_du_temps
+    const heuresParEnseignant: Record<string, number> = {};
+    if (edtRes.data) {
+      for (const slot of edtRes.data) {
+        if (!slot.enseignant_id) continue;
+        const [hd, md] = slot.heure_debut.split(':').map(Number);
+        const [hf, mf] = slot.heure_fin.split(':').map(Number);
+        const duree = (hf + mf / 60) - (hd + md / 60);
+        if (duree > 0) {
+          heuresParEnseignant[slot.enseignant_id] = (heuresParEnseignant[slot.enseignant_id] || 0) + duree;
+        }
+      }
+    }
+
+    if (empRes.data) {
+      const enriched = empRes.data.map(emp => {
+        const isSecondaire = emp.categorie === 'enseignant' && emp.matricule?.startsWith('ESC');
+        if (isSecondaire && emp.prix_heure > 0) {
+          const heuresHebdo = heuresParEnseignant[emp.id] || 0;
+          // Monthly = weekly hours × ~4.33 weeks
+          const heuresMensuelles = Math.round(heuresHebdo * 4.33 * 100) / 100;
+          const salaireCalc = Math.round(heuresMensuelles * emp.prix_heure);
+          return { ...emp, salaire_calcule: salaireCalc, heures_mensuelles: heuresMensuelles };
+        }
+        return { ...emp, salaire_calcule: emp.salaire_base, heures_mensuelles: undefined };
+      });
+      setEmployes(enriched);
+    }
     if (paiRes.data) setPaiements(paiRes.data as PaiementRecord[]);
     setLoading(false);
   }, [currentMonth, currentYear]);
@@ -122,13 +154,14 @@ export default function TresorierGestionSalaires() {
   const handleConfirmPay = async () => {
     if (!signDialog || !hasEmpSignature) return;
     const emp = signDialog;
+    const salaire = emp.salaire_calcule || emp.salaire_base;
     setPaying(emp.id);
 
     const signatureData = empCanvasRef.current?.toDataURL('image/png') || null;
 
     const { error } = await supabase.from('paiements_tresorier').insert({
       employe_id: emp.id,
-      montant: emp.salaire_base,
+      montant: salaire,
       mois: currentMonth,
       annee: currentYear,
       paye_par: user?.id,
@@ -162,13 +195,13 @@ export default function TresorierGestionSalaires() {
       }
     }
 
-    const salaireNet = emp.salaire_base - totalAvancesDeduites;
+    const salaireNet = salaire - totalAvancesDeduites;
 
     await supabase.from('bulletins_paie').upsert({
       employe_id: emp.id,
       mois: currentMonth,
       annee: currentYear,
-      salaire_brut: emp.salaire_base,
+      salaire_brut: salaire,
       retenues: 0,
       avances_deduites: totalAvancesDeduites,
       primes: 0,
@@ -204,7 +237,7 @@ export default function TresorierGestionSalaires() {
         poste: emp.poste, categorie: emp.categorie,
       },
       mois: currentMonth, annee: currentYear,
-      salaire_brut: emp.salaire_base, primes: 0, retenues: 0,
+      salaire_brut: salaire, primes: 0, retenues: 0,
       avances_deduites: totalAvancesDeduites, salaire_net: salaireNet,
       schoolName: schoolConfig?.nom, schoolCity: schoolConfig?.ville, logoUrl: schoolConfig?.logo_url,
       signatureEmploye: signatureData || undefined,
@@ -301,7 +334,7 @@ export default function TresorierGestionSalaires() {
       const p = paiements.find(p => p.employe_id === e.id);
       return {
         nom: e.nom, prenom: e.prenom, poste: e.poste, categorie: e.categorie,
-        montant: e.salaire_base,
+        montant: e.salaire_calcule || e.salaire_base,
         datePaiement: p?.date_paiement || new Date().toISOString(),
         signatureEmploye: p?.signature_employe || undefined,
       };
@@ -322,7 +355,7 @@ export default function TresorierGestionSalaires() {
         nom: e.nom,
         prenom: e.prenom,
         poste: e.poste,
-        salaire_base: e.salaire_base,
+        salaire_base: e.salaire_calcule || e.salaire_base,
         matricule: e.matricule,
       })),
       mois: format(new Date(), 'MMMM yyyy', { locale: fr }),
@@ -423,7 +456,12 @@ export default function TresorierGestionSalaires() {
                         <TableCell>
                           <Badge variant="outline" className="capitalize">{CATEGORIES.find(c => c.value === getEffectiveCat(emp))?.label || emp.categorie}</Badge>
                         </TableCell>
-                        <TableCell className="text-right font-mono">{fmtNum(emp.salaire_base)} GNF</TableCell>
+                        <TableCell className="text-right font-mono">
+                          {fmtNum(emp.salaire_calcule || emp.salaire_base)} GNF
+                          {emp.heures_mensuelles != null && (
+                            <div className="text-[10px] text-muted-foreground font-normal">{emp.heures_mensuelles}h × {fmtNum(emp.prix_heure)} GNF/h</div>
+                          )}
+                        </TableCell>
                         <TableCell>
                           {paid ? (
                             <div className="flex flex-col gap-1">
@@ -521,7 +559,10 @@ export default function TresorierGestionSalaires() {
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="font-semibold">{signDialog.prenom} {signDialog.nom}</p>
                 <p className="text-sm text-muted-foreground">{signDialog.poste} — {CATEGORIES.find(c => c.value === getEffectiveCat(signDialog))?.label || signDialog.categorie}</p>
-                <p className="text-lg font-bold mt-1">{fmtNum(signDialog.salaire_base)} GNF</p>
+                <p className="text-lg font-bold mt-1">{fmtNum(signDialog.salaire_calcule || signDialog.salaire_base)} GNF</p>
+                {signDialog.heures_mensuelles != null && (
+                  <p className="text-xs text-muted-foreground">{signDialog.heures_mensuelles}h/mois × {fmtNum(signDialog.prix_heure)} GNF/h</p>
+                )}
               </div>
               <p className="text-sm font-medium text-destructive">
                 ⚠️ La signature est obligatoire pour valider le paiement.

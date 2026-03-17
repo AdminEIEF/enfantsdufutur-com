@@ -209,6 +209,7 @@ export default function Personnel() {
   const [form, setForm] = useState({
     nom: '', prenom: '', sexe: 'M', telephone: '', email: '',
     adresse: '', categorie: 'service' as string, poste: '', salaire_base: '',
+    prix_heure: '',
     date_embauche: new Date().toISOString().slice(0, 10), niveau_enseignant: '',
   });
 
@@ -357,6 +358,7 @@ export default function Personnel() {
         telephone: form.telephone || null, email: form.email || null,
         adresse: form.adresse || null, categorie: dbCategorie as any,
         poste: form.poste, salaire_base: Number(form.salaire_base) || 0,
+        prix_heure: Number(form.prix_heure) || 0,
         date_embauche: form.date_embauche, mot_de_passe: autoPassword,
       }).select('id').single();
       if (error) throw error;
@@ -373,7 +375,7 @@ export default function Personnel() {
       setGeneratedPassword(result?.autoPassword || null);
       qc.invalidateQueries({ queryKey: ['employes'] });
       setAddOpen(false);
-      setForm({ nom: '', prenom: '', sexe: 'M', telephone: '', email: '', adresse: '', categorie: 'service', poste: '', salaire_base: '', date_embauche: new Date().toISOString().slice(0, 10), niveau_enseignant: '' });
+      setForm({ nom: '', prenom: '', sexe: 'M', telephone: '', email: '', adresse: '', categorie: 'service', poste: '', salaire_base: '', prix_heure: '', date_embauche: new Date().toISOString().slice(0, 10), niveau_enseignant: '' });
     },
     onError: (err: any) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
   });
@@ -898,9 +900,16 @@ export default function Personnel() {
                   <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1"><Label>Salaire (GNF)</Label><Input type="number" value={form.salaire_base} onChange={e => setForm(f => ({ ...f, salaire_base: e.target.value }))} /></div>
+                  <div className="space-y-1"><Label>{form.categorie === 'enseignant_secondaire' ? 'Salaire de base (GNF) — calculé auto' : 'Salaire (GNF)'}</Label><Input type="number" value={form.salaire_base} onChange={e => setForm(f => ({ ...f, salaire_base: e.target.value }))} /></div>
                   <div className="space-y-1"><Label>Date d'embauche</Label><Input type="date" value={form.date_embauche} onChange={e => setForm(f => ({ ...f, date_embauche: e.target.value }))} /></div>
                 </div>
+                {form.categorie === 'enseignant_secondaire' && (
+                  <div className="space-y-1">
+                    <Label>💰 Prix de l'heure (GNF)</Label>
+                    <Input type="number" value={form.prix_heure} onChange={e => setForm(f => ({ ...f, prix_heure: e.target.value }))} placeholder="Ex: 50000" />
+                    <p className="text-xs text-muted-foreground">Le salaire sera calculé automatiquement en fonction des heures d'emploi du temps × ce tarif horaire.</p>
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5">🔐 Le mot de passe sera généré automatiquement et affiché après création.</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1"><Label>Adresse</Label><Input value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))} /></div>
@@ -1356,6 +1365,7 @@ export default function Personnel() {
                       nom: selectedEmp.nom, prenom: selectedEmp.prenom, sexe: selectedEmp.sexe || 'M',
                       categorie: selectedEmp.categorie, poste: selectedEmp.poste || '', telephone: selectedEmp.telephone || '',
                       email: selectedEmp.email || '', adresse: selectedEmp.adresse || '', salaire_base: String(selectedEmp.salaire_base || 0),
+                      prix_heure: String(selectedEmp.prix_heure || 0),
                       date_embauche: selectedEmp.date_embauche || '', statut: selectedEmp.statut,
                     })}>
                       ✏️ Modifier
@@ -1414,6 +1424,13 @@ export default function Personnel() {
                       <div className="space-y-1"><Label>Email</Label><Input type="email" value={editForm.email} onChange={e => setEditForm((f: any) => ({ ...f, email: e.target.value }))} /></div>
                       <div className="space-y-1"><Label>Salaire (GNF)</Label><Input type="number" value={editForm.salaire_base} onChange={e => setEditForm((f: any) => ({ ...f, salaire_base: e.target.value }))} /></div>
                     </div>
+                    {(editForm.categorie === 'enseignant' && selectedEmp?.matricule?.startsWith('ESC')) && (
+                      <div className="space-y-1">
+                        <Label>💰 Prix de l'heure (GNF)</Label>
+                        <Input type="number" value={editForm.prix_heure} onChange={e => setEditForm((f: any) => ({ ...f, prix_heure: e.target.value }))} placeholder="Ex: 50000" />
+                        <p className="text-xs text-muted-foreground">Le salaire sera calculé selon les heures d'emploi du temps × ce tarif.</p>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1"><Label>Date embauche</Label><Input type="date" value={editForm.date_embauche} onChange={e => setEditForm((f: any) => ({ ...f, date_embauche: e.target.value }))} /></div>
                       <div className="space-y-1"><Label>Statut</Label>
@@ -1436,6 +1453,7 @@ export default function Personnel() {
                           categorie: editForm.categorie as any, poste: editForm.poste,
                           telephone: editForm.telephone || null, email: editForm.email || null,
                           adresse: editForm.adresse || null, salaire_base: Number(editForm.salaire_base) || 0,
+                          prix_heure: Number(editForm.prix_heure) || 0,
                           date_embauche: editForm.date_embauche || undefined, statut: editForm.statut,
                         }).eq('id', selectedEmp.id);
                         setEditSaving(false);
