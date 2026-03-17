@@ -16,6 +16,7 @@ import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { generateRegistrePaiePDF } from '@/lib/generateRegistrePaiePDF';
+import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
 import { downloadListePersonnelPDF, printListePersonnelPDF } from '@/lib/generateListePersonnelPDF';
 
 const CATEGORIES = [
