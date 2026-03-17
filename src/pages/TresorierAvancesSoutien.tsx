@@ -129,6 +129,16 @@ export default function TresorierAvancesSoutien() {
   };
 
   const handleSelectEmp = (emp: any) => {
+    // Check if employee already has a paid advance
+    const existingPaid = avancesSoutien.find((a: any) => a.employe_id === emp.id && a.statut === 'paye');
+    if (existingPaid) {
+      toast({
+        title: '⚠️ Avance déjà versée',
+        description: `${emp.prenom} ${emp.nom} a déjà bénéficié d'une avance. Une seule avance est autorisée pour le personnel de soutien.`,
+        variant: 'destructive',
+      });
+      return;
+    }
     setSelectedEmp(emp);
     setMontant('');
     setStep('form');
