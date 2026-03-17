@@ -940,7 +940,7 @@ export default function Personnel() {
           <TabsTrigger value="employes"><Users className="h-3.5 w-3.5 mr-1" />Employés</TabsTrigger>
           <TabsTrigger value="pointage"><Clock className="h-3.5 w-3.5 mr-1" />Pointage</TabsTrigger>
           <TabsTrigger value="conges"><Calendar className="h-3.5 w-3.5 mr-1" />Congés ({congesEnAttente.length})</TabsTrigger>
-          
+          <TabsTrigger value="avances"><DollarSign className="h-3.5 w-3.5 mr-1" />Avances</TabsTrigger>
           <TabsTrigger value="paie"><FileText className="h-3.5 w-3.5 mr-1" />Paie</TabsTrigger>
           
           <TabsTrigger value="courriers"><Mail className="h-3.5 w-3.5 mr-1" />Courriers ({courriers.filter((c: any) => c.statut === 'non_lu').length})</TabsTrigger>
