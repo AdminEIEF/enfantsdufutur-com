@@ -70,14 +70,14 @@ const getMention = (moyenne: number | null, bareme: number): string | null => {
 };
 
 const cellCenter: React.CSSProperties = {
-  padding: '2px 2px',
+  padding: '3px 3px',
   textAlign: 'center',
   verticalAlign: 'middle',
   fontFamily: "'JetBrains Mono', 'Courier New', monospace",
   fontSize: '9.5px',
   whiteSpace: 'nowrap',
   overflow: 'hidden',
-  lineHeight: '20px',
+  lineHeight: '24px',
 };
 
 export default function BulletinScolaire({
