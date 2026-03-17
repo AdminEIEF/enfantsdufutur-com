@@ -174,7 +174,7 @@ export default function AssignationBusChauffeur() {
                       {!v.actif ? (
                         <Badge variant="secondary">Inactif</Badge>
                       ) : chauffeur ? (
-                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Assigné</Badge>
+                        <Badge className="bg-accent/20 text-accent hover:bg-accent/20">Assigné</Badge>
                       ) : (
                         <Badge variant="destructive">Libre</Badge>
                       )}
