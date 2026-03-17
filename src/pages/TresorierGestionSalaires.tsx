@@ -559,7 +559,10 @@ export default function TresorierGestionSalaires() {
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="font-semibold">{signDialog.prenom} {signDialog.nom}</p>
                 <p className="text-sm text-muted-foreground">{signDialog.poste} — {CATEGORIES.find(c => c.value === getEffectiveCat(signDialog))?.label || signDialog.categorie}</p>
-                <p className="text-lg font-bold mt-1">{fmtNum(signDialog.salaire_base)} GNF</p>
+                <p className="text-lg font-bold mt-1">{fmtNum(signDialog.salaire_calcule || signDialog.salaire_base)} GNF</p>
+                {signDialog.heures_mensuelles != null && (
+                  <p className="text-xs text-muted-foreground">{signDialog.heures_mensuelles}h/mois × {fmtNum(signDialog.prix_heure)} GNF/h</p>
+                )}
               </div>
               <p className="text-sm font-medium text-destructive">
                 ⚠️ La signature est obligatoire pour valider le paiement.
