@@ -1460,15 +1460,36 @@ export default function Personnel() {
                       <div className="space-y-1"><Label>Poste</Label><Input value={editForm.poste} onChange={e => setEditForm((f: any) => ({ ...f, poste: e.target.value }))} /></div>
                       <div className="space-y-1"><Label>Téléphone</Label><Input value={editForm.telephone} onChange={e => setEditForm((f: any) => ({ ...f, telephone: e.target.value }))} /></div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1"><Label>Email</Label><Input type="email" value={editForm.email} onChange={e => setEditForm((f: any) => ({ ...f, email: e.target.value }))} /></div>
-                      <div className="space-y-1"><Label>Salaire (GNF)</Label><Input type="number" value={editForm.salaire_base} onChange={e => setEditForm((f: any) => ({ ...f, salaire_base: e.target.value }))} /></div>
-                    </div>
-                    {(editForm.categorie === 'enseignant' && selectedEmp?.matricule?.startsWith('ESC')) && (
-                      <div className="space-y-1">
-                        <Label>💰 Prix de l'heure (GNF)</Label>
-                        <Input type="number" value={editForm.prix_heure} onChange={e => setEditForm((f: any) => ({ ...f, prix_heure: e.target.value }))} placeholder="Ex: 50000" />
-                        <p className="text-xs text-muted-foreground">Le salaire sera calculé selon les heures d'emploi du temps × ce tarif.</p>
+                    {(editForm.categorie === 'enseignant' && selectedEmp?.matricule?.startsWith('ESC')) ? (
+                      <>
+                        <div className="space-y-1">
+                          <Label>💰 Prix de l'heure (GNF)</Label>
+                          <Input type="number" value={editForm.prix_heure} onChange={e => setEditForm((f: any) => ({ ...f, prix_heure: e.target.value }))} placeholder="Ex: 50000" />
+                        </div>
+                        {Number(editForm.prix_heure) > 0 && (
+                          <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                            <p className="text-xs font-medium">📊 Calcul automatique du salaire</p>
+                            <p className="text-xs text-muted-foreground">
+                              Heures hebdo: <strong>{(heuresParEnseignant[selectedEmp.id] || 0).toFixed(1)}h</strong> → 
+                              Heures mensuelles: <strong>{getHeuresMensuelles(selectedEmp.id)}h</strong>
+                            </p>
+                            <p className="text-sm font-bold">
+                              Salaire calculé: {getSalaireCalculeSecondaire(selectedEmp.id, Number(editForm.prix_heure)).toLocaleString()} GNF
+                            </p>
+                            {getHeuresMensuelles(selectedEmp.id) === 0 && (
+                              <p className="text-xs text-destructive">⚠️ Aucun créneau dans l'emploi du temps. Attribuez des heures d'abord.</p>
+                            )}
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1"><Label>Email</Label><Input type="email" value={editForm.email} onChange={e => setEditForm((f: any) => ({ ...f, email: e.target.value }))} /></div>
+                          <div className="space-y-1"><Label>Salaire base (GNF)</Label><Input type="number" value={editForm.salaire_base} onChange={e => setEditForm((f: any) => ({ ...f, salaire_base: e.target.value }))} /></div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1"><Label>Email</Label><Input type="email" value={editForm.email} onChange={e => setEditForm((f: any) => ({ ...f, email: e.target.value }))} /></div>
+                        <div className="space-y-1"><Label>Salaire (GNF)</Label><Input type="number" value={editForm.salaire_base} onChange={e => setEditForm((f: any) => ({ ...f, salaire_base: e.target.value }))} /></div>
                       </div>
                     )}
                     <div className="grid grid-cols-2 gap-3">
