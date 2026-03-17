@@ -523,8 +523,11 @@ export default function TresorierGestionSalaires() {
                 <p className="text-sm text-muted-foreground">{signDialog.poste} — {CATEGORIES.find(c => c.value === getEffectiveCat(signDialog))?.label || signDialog.categorie}</p>
                 <p className="text-lg font-bold mt-1">{fmtNum(signDialog.salaire_base)} GNF</p>
               </div>
+              <p className="text-sm font-medium text-destructive">
+                ⚠️ La signature est obligatoire pour valider le paiement.
+              </p>
               <p className="text-sm text-muted-foreground">
-                L'employé doit signer ci-dessous comme preuve de réception du paiement :
+                L'employé doit signer ci-dessous comme preuve de réception. Un reçu sera généré automatiquement.
               </p>
               <div className="border-2 border-dashed rounded-lg p-1 bg-white">
                 <canvas
