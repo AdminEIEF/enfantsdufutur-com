@@ -20,6 +20,7 @@ import ValidationTransportBus from '@/components/ValidationTransportBus';
 import ItinerairesTransport from '@/components/transport/ItinerairesTransport';
 import PonctualiteTransport from '@/components/transport/PonctualiteTransport';
 import AlertesTransport from '@/components/transport/AlertesTransport';
+import ChauffeurDashboard from '@/components/transport/ChauffeurDashboard';
 
 const MOIS_SCOLAIRES = [
   'Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
