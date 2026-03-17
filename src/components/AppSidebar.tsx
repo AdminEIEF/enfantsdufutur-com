@@ -232,7 +232,7 @@ export function AppSidebar() {
                 <CollapsibleContent>
                   <SidebarGroupContent>
                     <SidebarMenu>
-                      {section.items.map((item) => {
+                      {section.items.filter((item: any) => !item.roles || hasAnyRole(item.roles)).map((item) => {
                         const hasQuery = item.url.includes('?');
                         if (hasQuery) {
                           const isActive = location.pathname + location.search === item.url;
