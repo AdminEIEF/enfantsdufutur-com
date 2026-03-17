@@ -193,17 +193,17 @@ export default function TresorierGestionSalaires() {
       return;
     }
 
-    // Auto-generate bulletin de paie
+    // Auto-generate bulletin de paie — fetch all non-remboursé avances
     const { data: pendingAvances } = await supabase
       .from('avances_salaire')
-      .select('id, montant, montant_rembourse')
+      .select('id, montant, montant_rembourse, statut')
       .eq('employe_id', emp.id)
-      .eq('statut', 'approuve');
+      .in('statut', ['approuve', 'paye']);
 
     let totalAvancesDeduites = 0;
     const avancesToUpdate: { id: string; deduction: number }[] = [];
 
-    if (pendingAvances && pendingAvances.length > 0) {
+    if (deduireAvance && pendingAvances && pendingAvances.length > 0) {
       for (const av of pendingAvances) {
         const remaining = Number(av.montant) - Number(av.montant_rembourse);
         if (remaining > 0) {
