@@ -78,14 +78,21 @@ export async function generateBulletinPDF(
     orientation: 'p',
     unit: 'mm',
     format: 'a4',
-    compress: true,
+    compress: false, // No PDF stream compression — preserves image data exactly
+  });
+
+  // Set PDF properties for print
+  pdf.setProperties({
+    title: filename.replace('.pdf', ''),
+    subject: 'Bulletin scolaire',
+    creator: 'EduGestion Pro',
   });
 
   const imgWidth = pdfWidth;
   const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
   if (imgHeight <= pdfHeight) {
-    // Fits on one page
+    // Fits on one page — no scaling needed, 1:1 quality preserved
     pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight, undefined, 'NONE');
   } else {
     // Scale to fit single A4 page
