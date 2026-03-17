@@ -201,7 +201,7 @@ export default function TresorierGestionSalaires() {
       employe_id: emp.id,
       mois: currentMonth,
       annee: currentYear,
-      salaire_brut: emp.salaire_base,
+      salaire_brut: salaire,
       retenues: 0,
       avances_deduites: totalAvancesDeduites,
       primes: 0,
