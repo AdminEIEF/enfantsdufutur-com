@@ -177,7 +177,8 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData) {
   ];
   if (data.primes > 0) rows.push({ label: 'Primes & Indemnités', gain: data.primes, loss: 0 });
   if (data.retenues > 0) rows.push({ label: 'Retenues sur salaire', gain: 0, loss: data.retenues });
-  if (data.avances_deduites > 0) rows.push({ label: 'Remboursement avance', gain: 0, loss: data.avances_deduites });
+  if ((data.avance_totale || 0) > 0) rows.push({ label: `Avance totale accordée`, gain: 0, loss: 0 });
+  if (data.avances_deduites > 0) rows.push({ label: 'Remboursement avance (déduit)', gain: 0, loss: data.avances_deduites });
 
   rows.forEach((row, i) => {
     const isAlt = i % 2 === 0;
