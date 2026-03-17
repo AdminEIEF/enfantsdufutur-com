@@ -1365,6 +1365,7 @@ export default function Personnel() {
                       nom: selectedEmp.nom, prenom: selectedEmp.prenom, sexe: selectedEmp.sexe || 'M',
                       categorie: selectedEmp.categorie, poste: selectedEmp.poste || '', telephone: selectedEmp.telephone || '',
                       email: selectedEmp.email || '', adresse: selectedEmp.adresse || '', salaire_base: String(selectedEmp.salaire_base || 0),
+                      prix_heure: String(selectedEmp.prix_heure || 0),
                       date_embauche: selectedEmp.date_embauche || '', statut: selectedEmp.statut,
                     })}>
                       ✏️ Modifier
