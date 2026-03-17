@@ -900,9 +900,16 @@ export default function Personnel() {
                   <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1"><Label>Salaire (GNF)</Label><Input type="number" value={form.salaire_base} onChange={e => setForm(f => ({ ...f, salaire_base: e.target.value }))} /></div>
+                  <div className="space-y-1"><Label>{form.categorie === 'enseignant_secondaire' ? 'Salaire de base (GNF) — calculé auto' : 'Salaire (GNF)'}</Label><Input type="number" value={form.salaire_base} onChange={e => setForm(f => ({ ...f, salaire_base: e.target.value }))} /></div>
                   <div className="space-y-1"><Label>Date d'embauche</Label><Input type="date" value={form.date_embauche} onChange={e => setForm(f => ({ ...f, date_embauche: e.target.value }))} /></div>
                 </div>
+                {form.categorie === 'enseignant_secondaire' && (
+                  <div className="space-y-1">
+                    <Label>💰 Prix de l'heure (GNF)</Label>
+                    <Input type="number" value={form.prix_heure} onChange={e => setForm(f => ({ ...f, prix_heure: e.target.value }))} placeholder="Ex: 50000" />
+                    <p className="text-xs text-muted-foreground">Le salaire sera calculé automatiquement en fonction des heures d'emploi du temps × ce tarif horaire.</p>
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5">🔐 Le mot de passe sera généré automatiquement et affiché après création.</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1"><Label>Adresse</Label><Input value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))} /></div>
