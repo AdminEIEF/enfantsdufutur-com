@@ -21,6 +21,7 @@ interface BulletinPaieData {
   schoolSubtitle?: string;
   schoolCity?: string;
   logoUrl?: string | null;
+  signatureEmploye?: string;
 }
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
