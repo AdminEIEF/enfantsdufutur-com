@@ -141,6 +141,7 @@ function RoleBasedRedirect() {
     if (roles[0] === 'boutique') return <Navigate to="/boutique" replace />;
     if (roles[0] === 'librairie') return <Navigate to="/librairie" replace />;
     if ((roles[0] as string) === 'coordinateur') return <Navigate to="/coordinateur-dashboard" replace />;
+    if ((roles[0] as string) === 'coordinateur_secondaire') return <Navigate to="/coordinateur-secondaire-dashboard" replace />;
     if (roles[0] === 'robotique') return <Navigate to="/robotique-dashboard" replace />;
     if (roles[0] === 'pointeur') return <Navigate to="/pointeur-pointage" replace />;
     if (roles[0] === 'comptable') return <Navigate to="/paiements" replace />;
