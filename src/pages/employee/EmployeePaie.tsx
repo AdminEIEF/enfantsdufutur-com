@@ -55,6 +55,7 @@ export default function EmployeePaie() {
       avances_deduites: Number(b.avances_deduites),
       salaire_net: Number(b.salaire_net),
       commentaire: b.commentaire,
+      signatureEmploye: b.signature_employe || undefined,
     });
   };
 
