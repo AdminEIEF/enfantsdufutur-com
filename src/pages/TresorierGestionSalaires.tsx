@@ -100,6 +100,7 @@ export default function TresorierGestionSalaires() {
   const [signDialog, setSignDialog] = useState<Employe | null>(null);
   const [deduireAvance, setDeduireAvance] = useState(true);
   const [dialogAvanceTotal, setDialogAvanceTotal] = useState(0);
+  const [montantDeduction, setMontantDeduction] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
   const { data: schoolConfig } = useSchoolConfig();
