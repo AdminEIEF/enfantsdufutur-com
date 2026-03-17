@@ -238,8 +238,8 @@ export default function BulletinScolaire({
               const isBelowAvg = b.note !== null && b.note < seuil;
               const total = b.note !== null ? b.note * b.coefficient : null;
               return (
-                <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', height: '20px' }}>
-                  <td style={{ padding: '2px 3px', fontWeight: 500, verticalAlign: 'middle', textAlign: 'left', fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '20px' }}>{b.matiere}</td>
+                <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', height: '24px' }}>
+                  <td style={{ padding: '3px 3px', fontWeight: 500, verticalAlign: 'middle', textAlign: 'center', fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '24px' }}>{b.matiere}</td>
                   <td style={{ ...cellCenter, color: '#6b7280', fontWeight: 600, fontSize: '8px' }}>{b.coefficient}</td>
                   {isFinalPeriod && previousPeriodsNotes.map((pp) => {
                     const prevNote = pp.notesByMatiere[b.matiere] ?? null;
