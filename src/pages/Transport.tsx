@@ -499,6 +499,7 @@ export default function Transport() {
         {/* Tab: Gestion (Zones + Véhicules) */}
         <TabsContent value="gestion" className="mt-4">
           <GestionTransport />
+        </TabsContent>
       </Tabs>
       )}
 
