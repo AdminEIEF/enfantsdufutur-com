@@ -22,6 +22,7 @@ const ROLE_LABELS: Record<string, string> = {
   cantine: 'Cantine',
   librairie: 'Librairie',
   coordinateur: 'Coordinateur',
+  coordinateur_secondaire: 'Coord. Secondaire',
   robotique: 'Robotique',
   chauffeur: 'Chauffeur de Bus',
   pointeur: 'Pointeur',
