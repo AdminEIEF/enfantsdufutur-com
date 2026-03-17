@@ -75,6 +75,7 @@ const cellCenter: React.CSSProperties = {
   verticalAlign: 'middle',
   fontFamily: "'JetBrains Mono', 'Courier New', monospace",
   fontSize: '9.5px',
+  fontWeight: 700,
   whiteSpace: 'nowrap',
   overflow: 'hidden',
   lineHeight: '24px',
