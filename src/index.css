@@ -143,3 +143,49 @@
   mask-size: contain;
   mask-repeat: no-repeat;
 }
+
+/* ===== Print styles: show only the bulletin ===== */
+@media print {
+  /* Hide everything by default */
+  body > *,
+  #root > * {
+    visibility: hidden !important;
+  }
+
+  /* Hide sidebar, header, nav, buttons, etc. */
+  nav, header, aside,
+  [data-sidebar],
+  .no-print,
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  /* Show only the bulletin container and its children */
+  #bulletin-print,
+  #bulletin-print * {
+    visibility: visible !important;
+  }
+
+  #bulletin-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Reset page margins */
+  @page {
+    margin: 5mm;
+    size: A4;
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
