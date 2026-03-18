@@ -18,6 +18,7 @@ import {
   Camera, Download, Key, Mail, Paperclip, BarChart3, MessageSquare, TrendingUp, TrendingDown, AlertTriangle, GraduationCap, FileSpreadsheet, ChevronDown
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import AvancesValidationTab from '@/components/AvancesValidationTab';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -1051,6 +1052,7 @@ export default function Personnel() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-10">Photo</TableHead>
                         <TableHead>Matricule</TableHead>
                         <TableHead>Nom & Prénom</TableHead>
                         <TableHead>Catégorie</TableHead>
@@ -1061,11 +1063,21 @@ export default function Personnel() {
                     </TableHeader>
                     <TableBody>
                       {isLoading ? (
-                        <TableRow><TableCell colSpan={6} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
+                        <TableRow><TableCell colSpan={7} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
                       ) : filtered.length === 0 ? (
-                        <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun employé</TableCell></TableRow>
-                      ) : filtered.map((emp: any) => (
+                        <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun employé</TableCell></TableRow>
+                      ) : filtered.map((emp: any) => {
+                        const photoSrc = emp.photo_url
+                          ? (emp.photo_url.startsWith('http') ? emp.photo_url : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/photos/${emp.photo_url}`)
+                          : null;
+                        return (
                         <TableRow key={emp.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedEmp(emp)}>
+                          <TableCell>
+                            <Avatar className="h-8 w-8">
+                              {photoSrc && <AvatarImage src={photoSrc} alt={`${emp.prenom} ${emp.nom}`} />}
+                              <AvatarFallback className="text-xs">{emp.prenom?.[0]}{emp.nom?.[0]}</AvatarFallback>
+                            </Avatar>
+                          </TableCell>
                           <TableCell className="font-mono text-xs">{emp.matricule}</TableCell>
                           <TableCell className="font-medium">{emp.prenom} {emp.nom}</TableCell>
                           <TableCell><Badge variant="secondary" className="text-xs">{categorieLabel[getEffectiveCat(emp)] || emp.categorie}</Badge></TableCell>
@@ -1073,7 +1085,8 @@ export default function Personnel() {
                           <TableCell className="text-sm">{Number(emp.salaire_base).toLocaleString()} GNF</TableCell>
                           <TableCell><Badge variant={emp.statut === 'actif' ? 'default' : 'destructive'}>{emp.statut}</Badge></TableCell>
                         </TableRow>
-                      ))}
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
