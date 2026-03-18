@@ -1190,29 +1190,75 @@ export default function AdminMonitoring() {
             </DialogTitle>
           </DialogHeader>
           {connectionDetail && (
-            <div className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Nom :</span><br /><strong>{connectionDetail.display_name}</strong></div>
-                <div><span className="text-muted-foreground">Type :</span><br /><Badge>{TYPE_CONFIG[connectionDetail.type]?.label || connectionDetail.type}</Badge></div>
-                {connectionDetail.classe_nom && <div><span className="text-muted-foreground">Classe :</span><br /><strong>{connectionDetail.classe_nom}</strong></div>}
-                {connectionDetail.niveau_nom && <div><span className="text-muted-foreground">Niveau :</span><br /><strong>{connectionDetail.niveau_nom}</strong></div>}
-                {connectionDetail.cycle_nom && <div><span className="text-muted-foreground">Cycle :</span><br /><strong>{connectionDetail.cycle_nom}</strong></div>}
-                {connectionDetail.categorie && <div><span className="text-muted-foreground">Catégorie :</span><br /><strong>{connectionDetail.categorie}</strong></div>}
-                {connectionDetail.poste && <div><span className="text-muted-foreground">Poste :</span><br /><strong>{connectionDetail.poste}</strong></div>}
-                {connectionDetail.email && <div><span className="text-muted-foreground">Email :</span><br /><strong>{connectionDetail.email}</strong></div>}
-                <div><span className="text-muted-foreground">Connexion :</span><br /><strong>{formatDate(connectionDetail.connected_at)}</strong></div>
-                <div><span className="text-muted-foreground">Durée :</span><br /><strong className="text-emerald-600 dark:text-emerald-400">{formatDuration(connectionDetail.connected_at)}</strong></div>
+            <ScrollArea className="max-h-[70vh]">
+            <div className="space-y-4 text-sm pr-2">
+              <div className="space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="text-muted-foreground text-xs block">Nom</span>
+                    <strong className="block truncate">{connectionDetail.display_name}</strong>
+                  </div>
+                  <Badge className="shrink-0">{TYPE_CONFIG[connectionDetail.type]?.label || connectionDetail.type}</Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  {connectionDetail.classe_nom && (
+                    <div className="min-w-0">
+                      <span className="text-muted-foreground text-xs block">Classe</span>
+                      <strong className="block truncate">{connectionDetail.classe_nom}</strong>
+                    </div>
+                  )}
+                  {connectionDetail.niveau_nom && (
+                    <div className="min-w-0">
+                      <span className="text-muted-foreground text-xs block">Niveau</span>
+                      <strong className="block truncate">{connectionDetail.niveau_nom}</strong>
+                    </div>
+                  )}
+                  {connectionDetail.cycle_nom && (
+                    <div className="min-w-0">
+                      <span className="text-muted-foreground text-xs block">Cycle</span>
+                      <strong className="block truncate">{connectionDetail.cycle_nom}</strong>
+                    </div>
+                  )}
+                  {connectionDetail.categorie && (
+                    <div className="min-w-0">
+                      <span className="text-muted-foreground text-xs block">Catégorie</span>
+                      <strong className="block truncate">{connectionDetail.categorie}</strong>
+                    </div>
+                  )}
+                  {connectionDetail.poste && (
+                    <div className="min-w-0">
+                      <span className="text-muted-foreground text-xs block">Poste</span>
+                      <strong className="block truncate">{connectionDetail.poste}</strong>
+                    </div>
+                  )}
+                </div>
+                {connectionDetail.email && (
+                  <div className="min-w-0">
+                    <span className="text-muted-foreground text-xs block">Email</span>
+                    <strong className="block truncate text-xs">{connectionDetail.email}</strong>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-1 border-t">
+                  <div className="min-w-0">
+                    <span className="text-muted-foreground text-xs block">Connexion</span>
+                    <strong className="block text-xs">{formatDate(connectionDetail.connected_at)}</strong>
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-muted-foreground text-xs block">Durée</span>
+                    <strong className="block text-emerald-600 dark:text-emerald-400">{formatDuration(connectionDetail.connected_at)}</strong>
+                  </div>
+                </div>
               </div>
               {connectionDetail.extra_info && Object.keys(connectionDetail.extra_info).length > 0 && (
-                <div>
-                  <span className="text-muted-foreground text-xs">Informations supplémentaires :</span>
-                  <div className="mt-1 grid grid-cols-2 gap-2">
-                    {connectionDetail.extra_info.matricule && <div className="text-xs"><span className="text-muted-foreground">Matricule :</span> <strong>{connectionDetail.extra_info.matricule}</strong></div>}
-                    {connectionDetail.extra_info.telephone && <div className="text-xs"><span className="text-muted-foreground">Tél :</span> <strong>{connectionDetail.extra_info.telephone}</strong></div>}
-                    {connectionDetail.extra_info.telephone_pere && <div className="text-xs"><span className="text-muted-foreground">Tél père :</span> <strong>{connectionDetail.extra_info.telephone_pere}</strong></div>}
-                    {connectionDetail.extra_info.telephone_mere && <div className="text-xs"><span className="text-muted-foreground">Tél mère :</span> <strong>{connectionDetail.extra_info.telephone_mere}</strong></div>}
-                    {connectionDetail.extra_info.enfants && <div className="text-xs col-span-2"><span className="text-muted-foreground">Enfants :</span> <strong>{connectionDetail.extra_info.enfants}</strong></div>}
-                    {connectionDetail.extra_info.sexe && <div className="text-xs"><span className="text-muted-foreground">Sexe :</span> <strong>{connectionDetail.extra_info.sexe === 'M' ? 'Masculin' : 'Féminin'}</strong></div>}
+                <div className="border-t pt-2">
+                  <span className="text-muted-foreground text-xs font-medium block mb-1">Informations supplémentaires</span>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                    {connectionDetail.extra_info.matricule && <div className="text-xs min-w-0"><span className="text-muted-foreground">Matricule :</span> <strong>{connectionDetail.extra_info.matricule}</strong></div>}
+                    {connectionDetail.extra_info.telephone && <div className="text-xs min-w-0"><span className="text-muted-foreground">Tél :</span> <strong>{connectionDetail.extra_info.telephone}</strong></div>}
+                    {connectionDetail.extra_info.telephone_pere && <div className="text-xs min-w-0"><span className="text-muted-foreground">Tél père :</span> <strong className="break-all">{connectionDetail.extra_info.telephone_pere}</strong></div>}
+                    {connectionDetail.extra_info.telephone_mere && <div className="text-xs min-w-0"><span className="text-muted-foreground">Tél mère :</span> <strong className="break-all">{connectionDetail.extra_info.telephone_mere}</strong></div>}
+                    {connectionDetail.extra_info.enfants && <div className="text-xs col-span-2 min-w-0"><span className="text-muted-foreground">Enfants :</span> <strong className="break-words">{connectionDetail.extra_info.enfants}</strong></div>}
+                    {connectionDetail.extra_info.sexe && <div className="text-xs min-w-0"><span className="text-muted-foreground">Sexe :</span> <strong>{connectionDetail.extra_info.sexe === 'M' ? 'Masculin' : 'Féminin'}</strong></div>}
                   </div>
                 </div>
               )}
@@ -1242,6 +1288,7 @@ export default function AdminMonitoring() {
                 </div>
               )}
             </div>
+            </ScrollArea>
           )}
         </DialogContent>
       </Dialog>
