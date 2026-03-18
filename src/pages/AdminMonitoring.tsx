@@ -1288,6 +1288,7 @@ export default function AdminMonitoring() {
                 </div>
               )}
             </div>
+            </ScrollArea>
           )}
         </DialogContent>
       </Dialog>
