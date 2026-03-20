@@ -106,32 +106,34 @@ export default function ParentEnfant() {
           </div>
         ) : (
           <Tabs defaultValue="pointage">
-            <TabsList className="w-full grid grid-cols-4 sm:grid-cols-7">
-              <TabsTrigger value="pointage">
-                <ScanLine className="h-4 w-4 mr-1" /> Présence
-              </TabsTrigger>
-              <TabsTrigger value="devoirs">
-                <ClipboardList className="h-4 w-4 mr-1" /> Devoirs
-                {devoirsEnAttente.length > 0 && (
-                  <Badge variant="destructive" className="ml-1 text-xs h-5 px-1.5">{devoirsEnAttente.length}</Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="emploi">
-                <Calendar className="h-4 w-4 mr-1" /> Emploi
-              </TabsTrigger>
-              <TabsTrigger value="commandes">
-                <Package className="h-4 w-4 mr-1" /> Commandes
-              </TabsTrigger>
-              <TabsTrigger value="cantine">
-                <UtensilsCrossed className="h-4 w-4 mr-1" /> Cantine
-              </TabsTrigger>
-              <TabsTrigger value="fournitures">
-                <BookOpen className="h-4 w-4 mr-1" /> Achats
-              </TabsTrigger>
-              <TabsTrigger value="bulletins">
-                <FileText className="h-4 w-4 mr-1" /> Bulletins
-              </TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto -mx-4 px-4 pb-2">
+              <TabsList className="inline-flex w-max gap-0.5">
+                <TabsTrigger value="pointage" className="text-xs px-2.5 py-1.5 whitespace-nowrap">
+                  <ScanLine className="h-3.5 w-3.5 mr-1 shrink-0" /> Présence
+                </TabsTrigger>
+                <TabsTrigger value="devoirs" className="text-xs px-2.5 py-1.5 whitespace-nowrap">
+                  <ClipboardList className="h-3.5 w-3.5 mr-1 shrink-0" /> Devoirs
+                  {devoirsEnAttente.length > 0 && (
+                    <Badge variant="destructive" className="ml-1 text-[10px] h-4 px-1">{devoirsEnAttente.length}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="emploi" className="text-xs px-2.5 py-1.5 whitespace-nowrap">
+                  <Calendar className="h-3.5 w-3.5 mr-1 shrink-0" /> Emploi
+                </TabsTrigger>
+                <TabsTrigger value="commandes" className="text-xs px-2.5 py-1.5 whitespace-nowrap">
+                  <Package className="h-3.5 w-3.5 mr-1 shrink-0" /> Commandes
+                </TabsTrigger>
+                <TabsTrigger value="cantine" className="text-xs px-2.5 py-1.5 whitespace-nowrap">
+                  <UtensilsCrossed className="h-3.5 w-3.5 mr-1 shrink-0" /> Cantine
+                </TabsTrigger>
+                <TabsTrigger value="fournitures" className="text-xs px-2.5 py-1.5 whitespace-nowrap">
+                  <BookOpen className="h-3.5 w-3.5 mr-1 shrink-0" /> Achats
+                </TabsTrigger>
+                <TabsTrigger value="bulletins" className="text-xs px-2.5 py-1.5 whitespace-nowrap">
+                  <FileText className="h-3.5 w-3.5 mr-1 shrink-0" /> Bulletins
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="pointage" className="mt-4">
               <ParentEnfantPointage pointages={data?.pointages || []} />
