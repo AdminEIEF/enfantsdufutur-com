@@ -35,6 +35,8 @@ const COLORS = [
 ];
 
 export default function Transport() {
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'zones';
   const { hasRole } = useAuth();
   const isChauffeur = hasRole('chauffeur') && !hasRole('admin') && !hasRole('secretaire');
   const { toast } = useToast();
