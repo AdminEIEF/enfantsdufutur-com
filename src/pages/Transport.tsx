@@ -216,7 +216,7 @@ export default function Transport() {
       {isChauffeur ? (
         <ChauffeurDashboard />
       ) : (
-      <Tabs defaultValue="zones">
+      <Tabs defaultValue={initialTab}>
         <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="zones">Zones & Bus</TabsTrigger>
           <TabsTrigger value="eleves">Élèves</TabsTrigger>
