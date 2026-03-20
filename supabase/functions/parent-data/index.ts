@@ -494,6 +494,19 @@ serve(async (req) => {
         .gte("date_pointage", thirtyDaysAgoDate.toISOString().split('T')[0])
         .order("date_pointage", { ascending: false });
 
+      // Fetch notes for radar profile
+      const { data: notesData } = await supabaseAdmin
+        .from("notes")
+        .select("*, matieres(nom, pole, coefficient), periodes(nom, ordre, est_rattrapage)")
+        .eq("eleve_id", eleve_id)
+        .order("created_at");
+
+      // Fetch periodes
+      const { data: periodesData } = await supabaseAdmin
+        .from("periodes")
+        .select("*")
+        .order("ordre");
+
       return new Response(
         JSON.stringify({
           solde_cantine,
@@ -508,6 +521,8 @@ serve(async (req) => {
           soumissions,
           emploiDuTemps,
           pointages: pointagesData || [],
+          notes: notesData || [],
+          periodes: periodesData || [],
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

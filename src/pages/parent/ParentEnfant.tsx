@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useParentAuth } from '@/hooks/useParentAuth';
 import {
   ArrowLeft, UtensilsCrossed, BookOpen, ShoppingBag, FileText,
-  Loader2, CheckCircle2, Clock, Package, Download, ClipboardList, Calendar, ScanLine
+  Loader2, CheckCircle2, Clock, Package, Download, ClipboardList, Calendar, ScanLine, BarChart3
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateBonRecuperation } from '@/lib/generateBonRecuperation';
@@ -19,6 +19,8 @@ import ParentEnfantBulletins from '@/components/parent/ParentEnfantBulletins';
 import ParentEnfantDevoirs from '@/components/parent/ParentEnfantDevoirs';
 import ParentEnfantEmploiDuTemps from '@/components/parent/ParentEnfantEmploiDuTemps';
 import ParentEnfantPointage from '@/components/parent/ParentEnfantPointage';
+import ParentEnfantProfilRadar from '@/components/parent/ParentEnfantProfilRadar';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
 export default function ParentEnfant() {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +29,7 @@ export default function ParentEnfant() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('pointage');
+  const { data: schoolConfig } = useSchoolConfig();
 
   const enfant = session?.eleves.find((e) => e.id === id);
 
@@ -116,6 +119,7 @@ export default function ParentEnfant() {
                 { key: 'cantine', label: 'Cantine', icon: UtensilsCrossed, color: 'bg-rose-500', textColor: 'text-rose-700', bgLight: 'bg-rose-50' },
                 { key: 'fournitures', label: 'Achats', icon: BookOpen, color: 'bg-amber-500', textColor: 'text-amber-700', bgLight: 'bg-amber-50' },
                 { key: 'bulletins', label: 'Bulletins', icon: FileText, color: 'bg-teal-500', textColor: 'text-teal-700', bgLight: 'bg-teal-50' },
+                { key: 'profil', label: 'Profil', icon: BarChart3, color: 'bg-indigo-500', textColor: 'text-indigo-700', bgLight: 'bg-indigo-50' },
               ].map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.key;
@@ -163,6 +167,15 @@ export default function ParentEnfant() {
                 />
               )}
               {activeTab === 'bulletins' && <ParentEnfantBulletins bulletinPublications={data?.bulletinPublications || []} />}
+              {activeTab === 'profil' && (
+                <ParentEnfantProfilRadar
+                  notes={data?.notes || []}
+                  periodes={data?.periodes || []}
+                  bareme={enfant.classes?.niveaux?.cycles?.bareme || 20}
+                  eleve={enfant}
+                  schoolConfig={schoolConfig}
+                />
+              )}
             </div>
           </>
         )}
