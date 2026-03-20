@@ -1144,7 +1144,7 @@ export default function Eleves() {
                         className="text-primary hover:underline font-semibold inline-flex items-center gap-1"
                         onClick={() => {
                           setSelected(null);
-                          navigate(`/familles?search=${encodeURIComponent(selected.familles.nom_famille)}`);
+                          navigate(`/familles?familleId=${selected.familles.id}`);
                         }}
                       >
                         {selected.familles.nom_famille}
