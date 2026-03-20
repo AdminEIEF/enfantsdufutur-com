@@ -102,6 +102,7 @@ const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvie
 type TrancheConfig = { label: string; mois: string[]; montant: number };
 
 export default function Eleves() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filterCycle, setFilterCycle] = useState('all');
   const [filterClasse, setFilterClasse] = useState('all');
