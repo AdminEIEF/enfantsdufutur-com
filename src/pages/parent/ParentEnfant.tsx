@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useParentAuth } from '@/hooks/useParentAuth';
 import {
   ArrowLeft, UtensilsCrossed, BookOpen, ShoppingBag, FileText,
-  Loader2, CheckCircle2, Clock, Package, Download, ClipboardList, Calendar, ScanLine
+  Loader2, CheckCircle2, Clock, Package, Download, ClipboardList, Calendar, ScanLine, BarChart3
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateBonRecuperation } from '@/lib/generateBonRecuperation';
@@ -19,6 +19,8 @@ import ParentEnfantBulletins from '@/components/parent/ParentEnfantBulletins';
 import ParentEnfantDevoirs from '@/components/parent/ParentEnfantDevoirs';
 import ParentEnfantEmploiDuTemps from '@/components/parent/ParentEnfantEmploiDuTemps';
 import ParentEnfantPointage from '@/components/parent/ParentEnfantPointage';
+import ParentEnfantProfilRadar from '@/components/parent/ParentEnfantProfilRadar';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
 export default function ParentEnfant() {
   const { id } = useParams<{ id: string }>();
