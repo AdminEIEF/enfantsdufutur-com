@@ -48,7 +48,8 @@ export default function Familles() {
   const qc = useQueryClient();
   const { data: familles = [], isLoading } = useFamilles();
   const { data: allClasses = [] } = useClassesAll();
-  const [search, setSearch] = useState('');
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('search') || '');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
 
