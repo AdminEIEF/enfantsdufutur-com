@@ -105,74 +105,72 @@ export default function ParentEnfant() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <Tabs defaultValue="pointage">
-            <div className="overflow-x-auto -mx-4 px-4 pb-2">
-              <TabsList className="inline-flex w-max gap-0.5">
-                <TabsTrigger value="pointage" className="text-xs px-2.5 py-1.5 whitespace-nowrap">
-                  <ScanLine className="h-3.5 w-3.5 mr-1 shrink-0" /> Présence
-                </TabsTrigger>
-                <TabsTrigger value="devoirs" className="text-xs px-2.5 py-1.5 whitespace-nowrap">
-                  <ClipboardList className="h-3.5 w-3.5 mr-1 shrink-0" /> Devoirs
-                  {devoirsEnAttente.length > 0 && (
-                    <Badge variant="destructive" className="ml-1 text-[10px] h-4 px-1">{devoirsEnAttente.length}</Badge>
+          {(() => {
+            const [activeTab, setActiveTab] = useState('pointage');
+            const menuItems = [
+              { key: 'pointage', label: 'Présence', icon: ScanLine, color: 'bg-blue-500', textColor: 'text-blue-700', bgLight: 'bg-blue-50' },
+              { key: 'devoirs', label: 'Devoirs', icon: ClipboardList, color: 'bg-orange-500', textColor: 'text-orange-700', bgLight: 'bg-orange-50', badge: devoirsEnAttente.length },
+              { key: 'emploi', label: 'Emploi', icon: Calendar, color: 'bg-emerald-500', textColor: 'text-emerald-700', bgLight: 'bg-emerald-50' },
+              { key: 'commandes', label: 'Commandes', icon: Package, color: 'bg-purple-500', textColor: 'text-purple-700', bgLight: 'bg-purple-50' },
+              { key: 'cantine', label: 'Cantine', icon: UtensilsCrossed, color: 'bg-rose-500', textColor: 'text-rose-700', bgLight: 'bg-rose-50' },
+              { key: 'fournitures', label: 'Achats', icon: BookOpen, color: 'bg-amber-500', textColor: 'text-amber-700', bgLight: 'bg-amber-50' },
+              { key: 'bulletins', label: 'Bulletins', icon: FileText, color: 'bg-teal-500', textColor: 'text-teal-700', bgLight: 'bg-teal-50' },
+            ];
+
+            return (
+              <>
+                <div className="grid grid-cols-4 gap-2">
+                  {menuItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = activeTab === item.key;
+                    return (
+                      <button
+                        key={item.key}
+                        onClick={() => setActiveTab(item.key)}
+                        className={`relative flex flex-col items-center gap-1.5 rounded-xl p-3 transition-all duration-200 active:scale-95 ${
+                          isActive
+                            ? `${item.bgLight} ring-2 ring-offset-1 ring-current ${item.textColor} shadow-sm`
+                            : 'bg-card hover:bg-muted/60'
+                        }`}
+                      >
+                        <div className={`flex items-center justify-center w-10 h-10 rounded-full ${isActive ? item.color : 'bg-muted'} transition-colors`}>
+                          <Icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-muted-foreground'}`} />
+                        </div>
+                        <span className={`text-[11px] font-medium leading-tight text-center ${isActive ? item.textColor : 'text-muted-foreground'}`}>
+                          {item.label}
+                        </span>
+                        {item.badge && item.badge > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full h-5 min-w-[20px] flex items-center justify-center px-1">
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-4">
+                  {activeTab === 'pointage' && <ParentEnfantPointage pointages={data?.pointages || []} />}
+                  {activeTab === 'devoirs' && <ParentEnfantDevoirs devoirs={devoirs} soumissions={soumissions} />}
+                  {activeTab === 'emploi' && <ParentEnfantEmploiDuTemps emploiDuTemps={data?.emploiDuTemps || []} />}
+                  {activeTab === 'commandes' && (
+                    <ParentEnfantCommandes commandesArticles={data?.commandesArticles || []} enfant={enfant} />
                   )}
-                </TabsTrigger>
-                <TabsTrigger value="emploi" className="text-xs px-2.5 py-1.5 whitespace-nowrap">
-                  <Calendar className="h-3.5 w-3.5 mr-1 shrink-0" /> Emploi
-                </TabsTrigger>
-                <TabsTrigger value="commandes" className="text-xs px-2.5 py-1.5 whitespace-nowrap">
-                  <Package className="h-3.5 w-3.5 mr-1 shrink-0" /> Commandes
-                </TabsTrigger>
-                <TabsTrigger value="cantine" className="text-xs px-2.5 py-1.5 whitespace-nowrap">
-                  <UtensilsCrossed className="h-3.5 w-3.5 mr-1 shrink-0" /> Cantine
-                </TabsTrigger>
-                <TabsTrigger value="fournitures" className="text-xs px-2.5 py-1.5 whitespace-nowrap">
-                  <BookOpen className="h-3.5 w-3.5 mr-1 shrink-0" /> Achats
-                </TabsTrigger>
-                <TabsTrigger value="bulletins" className="text-xs px-2.5 py-1.5 whitespace-nowrap">
-                  <FileText className="h-3.5 w-3.5 mr-1 shrink-0" /> Bulletins
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent value="pointage" className="mt-4">
-              <ParentEnfantPointage pointages={data?.pointages || []} />
-            </TabsContent>
-
-            <TabsContent value="devoirs" className="mt-4">
-              <ParentEnfantDevoirs devoirs={devoirs} soumissions={soumissions} />
-            </TabsContent>
-
-            <TabsContent value="emploi" className="mt-4">
-              <ParentEnfantEmploiDuTemps emploiDuTemps={data?.emploiDuTemps || []} />
-            </TabsContent>
-
-            <TabsContent value="commandes" className="mt-4">
-              <ParentEnfantCommandes
-                commandesArticles={data?.commandesArticles || []}
-                enfant={enfant}
-              />
-            </TabsContent>
-
-            <TabsContent value="cantine" className="mt-4">
-              <ParentEnfantCantine
-                repas={data?.repas || []}
-                soldeCantine={data?.solde_cantine ?? enfant.solde_cantine ?? 0}
-              />
-            </TabsContent>
-
-            <TabsContent value="fournitures" className="mt-4">
-              <ParentEnfantFournitures
-                articlesNiveau={data?.articlesNiveau || []}
-                ventesArticles={data?.ventesArticles || []}
-                boutiqueVentes={data?.boutiqueVentes || []}
-              />
-            </TabsContent>
-
-            <TabsContent value="bulletins" className="mt-4">
-              <ParentEnfantBulletins bulletinPublications={data?.bulletinPublications || []} />
-            </TabsContent>
-          </Tabs>
+                  {activeTab === 'cantine' && (
+                    <ParentEnfantCantine repas={data?.repas || []} soldeCantine={data?.solde_cantine ?? enfant.solde_cantine ?? 0} />
+                  )}
+                  {activeTab === 'fournitures' && (
+                    <ParentEnfantFournitures
+                      articlesNiveau={data?.articlesNiveau || []}
+                      ventesArticles={data?.ventesArticles || []}
+                      boutiqueVentes={data?.boutiqueVentes || []}
+                    />
+                  )}
+                  {activeTab === 'bulletins' && <ParentEnfantBulletins bulletinPublications={data?.bulletinPublications || []} />}
+                </div>
+              </>
+            );
+          })()}
         )}
       </main>
     </div>
