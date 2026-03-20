@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,8 @@ const COLORS = [
 ];
 
 export default function Transport() {
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'zones';
   const { hasRole } = useAuth();
   const isChauffeur = hasRole('chauffeur') && !hasRole('admin') && !hasRole('secretaire');
   const { toast } = useToast();
@@ -213,7 +216,7 @@ export default function Transport() {
       {isChauffeur ? (
         <ChauffeurDashboard />
       ) : (
-      <Tabs defaultValue="zones">
+      <Tabs defaultValue={initialTab}>
         <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="zones">Zones & Bus</TabsTrigger>
           <TabsTrigger value="eleves">Élèves</TabsTrigger>
