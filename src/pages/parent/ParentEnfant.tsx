@@ -107,7 +107,6 @@ export default function ParentEnfant() {
           </div>
         ) : (
           {(() => {
-            const [activeTab, setActiveTab] = useState('pointage');
             const menuItems = [
               { key: 'pointage', label: 'Présence', icon: ScanLine, color: 'bg-blue-500', textColor: 'text-blue-700', bgLight: 'bg-blue-50' },
               { key: 'devoirs', label: 'Devoirs', icon: ClipboardList, color: 'bg-orange-500', textColor: 'text-orange-700', bgLight: 'bg-orange-50', badge: devoirsEnAttente.length },
