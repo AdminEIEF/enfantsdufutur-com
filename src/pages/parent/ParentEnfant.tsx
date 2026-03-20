@@ -106,71 +106,65 @@ export default function ParentEnfant() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          {(() => {
-            const menuItems = [
-              { key: 'pointage', label: 'Présence', icon: ScanLine, color: 'bg-blue-500', textColor: 'text-blue-700', bgLight: 'bg-blue-50' },
-              { key: 'devoirs', label: 'Devoirs', icon: ClipboardList, color: 'bg-orange-500', textColor: 'text-orange-700', bgLight: 'bg-orange-50', badge: devoirsEnAttente.length },
-              { key: 'emploi', label: 'Emploi', icon: Calendar, color: 'bg-emerald-500', textColor: 'text-emerald-700', bgLight: 'bg-emerald-50' },
-              { key: 'commandes', label: 'Commandes', icon: Package, color: 'bg-purple-500', textColor: 'text-purple-700', bgLight: 'bg-purple-50' },
-              { key: 'cantine', label: 'Cantine', icon: UtensilsCrossed, color: 'bg-rose-500', textColor: 'text-rose-700', bgLight: 'bg-rose-50' },
-              { key: 'fournitures', label: 'Achats', icon: BookOpen, color: 'bg-amber-500', textColor: 'text-amber-700', bgLight: 'bg-amber-50' },
-              { key: 'bulletins', label: 'Bulletins', icon: FileText, color: 'bg-teal-500', textColor: 'text-teal-700', bgLight: 'bg-teal-50' },
-            ];
+          <>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { key: 'pointage', label: 'Présence', icon: ScanLine, color: 'bg-blue-500', textColor: 'text-blue-700', bgLight: 'bg-blue-50' },
+                { key: 'devoirs', label: 'Devoirs', icon: ClipboardList, color: 'bg-orange-500', textColor: 'text-orange-700', bgLight: 'bg-orange-50', badge: devoirsEnAttente.length },
+                { key: 'emploi', label: 'Emploi', icon: Calendar, color: 'bg-emerald-500', textColor: 'text-emerald-700', bgLight: 'bg-emerald-50' },
+                { key: 'commandes', label: 'Commandes', icon: Package, color: 'bg-purple-500', textColor: 'text-purple-700', bgLight: 'bg-purple-50' },
+                { key: 'cantine', label: 'Cantine', icon: UtensilsCrossed, color: 'bg-rose-500', textColor: 'text-rose-700', bgLight: 'bg-rose-50' },
+                { key: 'fournitures', label: 'Achats', icon: BookOpen, color: 'bg-amber-500', textColor: 'text-amber-700', bgLight: 'bg-amber-50' },
+                { key: 'bulletins', label: 'Bulletins', icon: FileText, color: 'bg-teal-500', textColor: 'text-teal-700', bgLight: 'bg-teal-50' },
+              ].map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => setActiveTab(item.key)}
+                    className={`relative flex flex-col items-center gap-1.5 rounded-xl p-3 transition-all duration-200 active:scale-95 ${
+                      isActive
+                        ? `${item.bgLight} ring-2 ring-offset-1 ring-current ${item.textColor} shadow-sm`
+                        : 'bg-card hover:bg-muted/60'
+                    }`}
+                  >
+                    <div className={`flex items-center justify-center w-10 h-10 rounded-full ${isActive ? item.color : 'bg-muted'} transition-colors`}>
+                      <Icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-muted-foreground'}`} />
+                    </div>
+                    <span className={`text-[11px] font-medium leading-tight text-center ${isActive ? item.textColor : 'text-muted-foreground'}`}>
+                      {item.label}
+                    </span>
+                    {item.badge && item.badge > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full h-5 min-w-[20px] flex items-center justify-center px-1">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
-            return (
-              <>
-                <div className="grid grid-cols-4 gap-2">
-                  {menuItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = activeTab === item.key;
-                    return (
-                      <button
-                        key={item.key}
-                        onClick={() => setActiveTab(item.key)}
-                        className={`relative flex flex-col items-center gap-1.5 rounded-xl p-3 transition-all duration-200 active:scale-95 ${
-                          isActive
-                            ? `${item.bgLight} ring-2 ring-offset-1 ring-current ${item.textColor} shadow-sm`
-                            : 'bg-card hover:bg-muted/60'
-                        }`}
-                      >
-                        <div className={`flex items-center justify-center w-10 h-10 rounded-full ${isActive ? item.color : 'bg-muted'} transition-colors`}>
-                          <Icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-muted-foreground'}`} />
-                        </div>
-                        <span className={`text-[11px] font-medium leading-tight text-center ${isActive ? item.textColor : 'text-muted-foreground'}`}>
-                          {item.label}
-                        </span>
-                        {item.badge && item.badge > 0 && (
-                          <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full h-5 min-w-[20px] flex items-center justify-center px-1">
-                            {item.badge}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-4">
-                  {activeTab === 'pointage' && <ParentEnfantPointage pointages={data?.pointages || []} />}
-                  {activeTab === 'devoirs' && <ParentEnfantDevoirs devoirs={devoirs} soumissions={soumissions} />}
-                  {activeTab === 'emploi' && <ParentEnfantEmploiDuTemps emploiDuTemps={data?.emploiDuTemps || []} />}
-                  {activeTab === 'commandes' && (
-                    <ParentEnfantCommandes commandesArticles={data?.commandesArticles || []} enfant={enfant} />
-                  )}
-                  {activeTab === 'cantine' && (
-                    <ParentEnfantCantine repas={data?.repas || []} soldeCantine={data?.solde_cantine ?? enfant.solde_cantine ?? 0} />
-                  )}
-                  {activeTab === 'fournitures' && (
-                    <ParentEnfantFournitures
-                      articlesNiveau={data?.articlesNiveau || []}
-                      ventesArticles={data?.ventesArticles || []}
-                      boutiqueVentes={data?.boutiqueVentes || []}
-                    />
-                  )}
-                  {activeTab === 'bulletins' && <ParentEnfantBulletins bulletinPublications={data?.bulletinPublications || []} />}
-                </div>
-              </>
-            );
-          })()}
+            <div className="mt-4">
+              {activeTab === 'pointage' && <ParentEnfantPointage pointages={data?.pointages || []} />}
+              {activeTab === 'devoirs' && <ParentEnfantDevoirs devoirs={devoirs} soumissions={soumissions} />}
+              {activeTab === 'emploi' && <ParentEnfantEmploiDuTemps emploiDuTemps={data?.emploiDuTemps || []} />}
+              {activeTab === 'commandes' && (
+                <ParentEnfantCommandes commandesArticles={data?.commandesArticles || []} enfant={enfant} />
+              )}
+              {activeTab === 'cantine' && (
+                <ParentEnfantCantine repas={data?.repas || []} soldeCantine={data?.solde_cantine ?? enfant.solde_cantine ?? 0} />
+              )}
+              {activeTab === 'fournitures' && (
+                <ParentEnfantFournitures
+                  articlesNiveau={data?.articlesNiveau || []}
+                  ventesArticles={data?.ventesArticles || []}
+                  boutiqueVentes={data?.boutiqueVentes || []}
+                />
+              )}
+              {activeTab === 'bulletins' && <ParentEnfantBulletins bulletinPublications={data?.bulletinPublications || []} />}
+            </div>
+          </>
         )}
       </main>
     </div>
