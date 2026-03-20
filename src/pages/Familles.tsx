@@ -65,6 +65,15 @@ export default function Familles() {
   // Detail view
   const [selectedFamille, setSelectedFamille] = useState<any>(null);
 
+  // Auto-open family from URL param (e.g. from Eleves page)
+  useEffect(() => {
+    const familleId = searchParams.get('familleId');
+    if (familleId && familles.length > 0 && !selectedFamille) {
+      const found = familles.find((f: any) => f.id === familleId);
+      if (found) setSelectedFamille(found);
+    }
+  }, [familles, searchParams]);
+
   // Add child dialog
   const [addChildOpen, setAddChildOpen] = useState(false);
   const [addChildMode, setAddChildMode] = useState<'search' | 'create'>('search');
