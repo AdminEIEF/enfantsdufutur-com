@@ -167,6 +167,15 @@ export default function ParentEnfant() {
                 />
               )}
               {activeTab === 'bulletins' && <ParentEnfantBulletins bulletinPublications={data?.bulletinPublications || []} />}
+              {activeTab === 'profil' && (
+                <ParentEnfantProfilRadar
+                  notes={data?.notes || []}
+                  periodes={data?.periodes || []}
+                  bareme={enfant.classes?.niveaux?.cycles?.bareme || 20}
+                  eleve={enfant}
+                  schoolConfig={schoolConfig}
+                />
+              )}
             </div>
           </>
         )}

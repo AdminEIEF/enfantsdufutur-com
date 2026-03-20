@@ -559,6 +559,37 @@ export default function Bibliotheque() {
                     </CardContent>
                   </Card>
                 )}
+
+                {/* Remarques d'orientation */}
+                {(() => {
+                  const remarks = getOrientationRemarks(radarData, bareme);
+                  if (!remarks || remarks.length === 0) return null;
+                  return (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <Lightbulb className="h-4 w-4 text-amber-500" /> Remarques d'orientation
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {remarks.map((r, i) => (
+                          <div
+                            key={i}
+                            className={`p-3 rounded-lg text-sm border-l-4 ${
+                              r.type === 'success'
+                                ? 'bg-green-50 border-green-500 text-green-800'
+                                : r.type === 'warning'
+                                ? 'bg-amber-50 border-amber-500 text-amber-800'
+                                : 'bg-blue-50 border-blue-500 text-blue-800'
+                            }`}
+                          >
+                            {r.text}
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
               </TabsContent>
 
               {/* ── Livret Scolaire Imprimable ── */}
