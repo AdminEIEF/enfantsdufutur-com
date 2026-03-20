@@ -8,12 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Library, Search, User, Award, BarChart3, FileText, ChevronRight, Printer } from 'lucide-react';
+import { Library, Search, User, Award, BarChart3, FileText, ChevronRight, Printer, Lightbulb } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { Progress } from '@/components/ui/progress';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
+import { getOrientationRemarks } from '@/components/parent/ParentEnfantProfilRadar';
 
 // ─── Hooks ───────────────────────────────────────────────
 function useCycles() {
