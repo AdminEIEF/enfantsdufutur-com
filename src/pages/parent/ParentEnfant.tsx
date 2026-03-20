@@ -29,6 +29,7 @@ export default function ParentEnfant() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('pointage');
+  const { data: schoolConfig } = useSchoolConfig();
 
   const enfant = session?.eleves.find((e) => e.id === id);
 
