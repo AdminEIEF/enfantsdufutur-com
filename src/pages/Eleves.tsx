@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle, Camera, Upload, Bus, FileDown, Trash2 } from 'lucide-react';
+import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle, Camera, Upload, Bus, FileDown, Trash2, ChevronRight } from 'lucide-react';
 import PlancheBadgesScolaires from '@/components/PlancheBadgesScolaires';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
@@ -101,6 +102,7 @@ const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvie
 type TrancheConfig = { label: string; mois: string[]; montant: number };
 
 export default function Eleves() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filterCycle, setFilterCycle] = useState('all');
   const [filterClasse, setFilterClasse] = useState('all');
@@ -1136,11 +1138,25 @@ export default function Eleves() {
               <TabsContent value="famille" className="space-y-3 text-sm mt-3">
                 {selected.familles ? (
                   <div>
-                    <h4 className="font-semibold mb-1">Famille: {selected.familles.nom_famille}</h4>
+                    <h4 className="font-semibold mb-1 flex items-center gap-2">
+                      Famille:
+                      <button
+                        className="text-primary hover:underline font-semibold inline-flex items-center gap-1"
+                        onClick={() => {
+                          setSelected(null);
+                          navigate(`/familles?search=${encodeURIComponent(selected.familles.nom_famille)}`);
+                        }}
+                      >
+                        {selected.familles.nom_famille}
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </h4>
                     <div className="text-muted-foreground space-y-1">
                       {selected.familles.telephone_pere && <p>Tél. père: {selected.familles.telephone_pere}</p>}
                       {selected.familles.telephone_mere && <p>Tél. mère: {selected.familles.telephone_mere}</p>}
                       {selected.familles.email_parent && <p>Email: {selected.familles.email_parent}</p>}
+                      {selected.familles.adresse && <p>Adresse: {selected.familles.adresse}</p>}
+                      {selected.familles.code_acces && <p>Code accès parent: <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{selected.familles.code_acces}</code></p>}
                     </div>
                   </div>
                 ) : (
