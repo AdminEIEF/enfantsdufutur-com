@@ -119,6 +119,7 @@ export default function ParentEnfant() {
                 { key: 'cantine', label: 'Cantine', icon: UtensilsCrossed, color: 'bg-rose-500', textColor: 'text-rose-700', bgLight: 'bg-rose-50' },
                 { key: 'fournitures', label: 'Achats', icon: BookOpen, color: 'bg-amber-500', textColor: 'text-amber-700', bgLight: 'bg-amber-50' },
                 { key: 'bulletins', label: 'Bulletins', icon: FileText, color: 'bg-teal-500', textColor: 'text-teal-700', bgLight: 'bg-teal-50' },
+                { key: 'profil', label: 'Profil', icon: BarChart3, color: 'bg-indigo-500', textColor: 'text-indigo-700', bgLight: 'bg-indigo-50' },
               ].map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.key;
