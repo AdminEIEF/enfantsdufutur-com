@@ -138,7 +138,7 @@ export default function Eleves() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('*, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycle_id, cycles:cycle_id(nom, id))), familles(id, nom_famille, telephone_pere, telephone_mere, email_parent)')
+        .select('*, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycle_id, cycles:cycle_id(nom, id))), familles(id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse, code_acces)')
         .is('deleted_at', null)
         .order('nom');
       if (error) throw error;
