@@ -334,7 +334,17 @@ export default function EmploiDuTemps() {
         </div>
       </div>
 
-      {!selectedClasseId ? (
+      <Tabs value={cycleTab} onValueChange={handleCycleChange} className="w-full">
+        <TabsList>
+          <TabsTrigger value="primaire" className="gap-1.5">
+            <School className="h-4 w-4" /> Primaire / Maternelle
+          </TabsTrigger>
+          <TabsTrigger value="secondaire" className="gap-1.5">
+            <GraduationCap className="h-4 w-4" /> Secondaire
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
         <Card>
           <CardContent className="py-16 text-center text-muted-foreground">
             <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-30" />
