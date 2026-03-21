@@ -288,7 +288,20 @@ export default function EmploiDuTemps() {
 
   const selectedClasse = classes.find((c: any) => c.id === selectedClasseId);
 
-  return (
+  const SECONDAIRE_CYCLES = ['secondaire', 'collège', 'lycée', 'college', 'lycee'];
+  const isSecondaire = (c: any) => {
+    const cycleName = c.niveaux?.cycles?.nom?.toLowerCase() || '';
+    return SECONDAIRE_CYCLES.some(s => cycleName.includes(s));
+  };
+
+  const filteredClasses = useMemo(() => {
+    return classes.filter((c: any) => cycleTab === 'secondaire' ? isSecondaire(c) : !isSecondaire(c));
+  }, [classes, cycleTab]);
+
+  const handleCycleChange = (tab: string) => {
+    setCycleTab(tab as 'primaire' | 'secondaire');
+    setSelectedClasseId('');
+  };
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
