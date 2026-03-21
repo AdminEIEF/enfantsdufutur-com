@@ -232,71 +232,82 @@ export default function Transport() {
 
         {/* Tab: Zones */}
         <TabsContent value="zones" className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader><CardTitle className="text-base">Recouvrement par zone</CardTitle></CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Zone</TableHead>
-                      <TableHead>Chauffeur/Bus</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead className="text-center">Effectif</TableHead>
-                      <TableHead className="text-right">Prix/mois</TableHead>
-                      <TableHead className="text-center">Taux</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {statsParZone.length === 0 ? (
-                      <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucune zone configurée</TableCell></TableRow>
-                    ) : statsParZone.map((z) => (
-                      <TableRow key={z.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedZone(z)}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{z.nom}</p>
-                            {z.quartiers.length > 0 && (
-                              <p className="text-xs text-muted-foreground">{z.quartiers.slice(0, 3).join(', ')}{z.quartiers.length > 3 ? '…' : ''}</p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm">{z.chauffeur}</TableCell>
-                        <TableCell className="text-sm">{z.telephoneChauffeur || '—'}</TableCell>
-                        <TableCell className="text-center font-bold">{z.effectif}</TableCell>
-                        <TableCell className="text-right font-mono">{z.prixMensuel.toLocaleString()} F</TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant={z.taux >= 75 ? 'default' : z.taux >= 50 ? 'secondary' : 'destructive'}>
-                            {z.taux}%
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader><CardTitle className="text-base">Répartition des élèves par zone</CardTitle></CardHeader>
-              <CardContent>
-                {chartEffectif.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart>
-                      <Pie data={chartEffectif} cx="50%" cy="50%" innerRadius={50} outerRadius={100} paddingAngle={3} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
-                        {chartEffectif.map((_, i) => (
-                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-[280px] flex items-center justify-center text-muted-foreground">Aucune donnée</div>
-                )}
-              </CardContent>
-            </Card>
+          {/* Recouvrement par zone - cards */}
+          <div>
+            <h2 className="text-sm font-semibold mb-3">Recouvrement par zone</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {statsParZone.length === 0 ? (
+                <Card className="col-span-full">
+                  <CardContent className="py-8 text-center text-muted-foreground">Aucune zone configurée</CardContent>
+                </Card>
+              ) : statsParZone.map((z, i) => {
+                const color = COLORS[i % COLORS.length];
+                return (
+                  <Card 
+                    key={z.id} 
+                    className="cursor-pointer hover:shadow-md transition-shadow border-l-4"
+                    style={{ borderLeftColor: color }}
+                    onClick={() => setSelectedZone(z)}
+                  >
+                    <CardContent className="pt-4 pb-3 px-4 space-y-2">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-semibold text-sm">{z.nom}</h3>
+                          <p className="text-xs text-muted-foreground">{z.chauffeur}</p>
+                        </div>
+                        <Badge variant={z.taux >= 75 ? 'default' : z.taux >= 50 ? 'secondary' : 'destructive'} className="text-xs">
+                          {z.taux}%
+                        </Badge>
+                      </div>
+                      {z.quartiers.length > 0 && (
+                        <p className="text-[11px] text-muted-foreground/70 line-clamp-1">{z.quartiers.join(', ')}</p>
+                      )}
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {z.effectif} élèves</span>
+                        <span className="font-mono">{z.prixMensuel.toLocaleString()} F/mois</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                        <div 
+                          className="h-full rounded-full transition-all" 
+                          style={{ width: `${Math.min(z.taux, 100)}%`, backgroundColor: color }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-muted-foreground">
+                        <span>Payé: {z.totalPaye.toLocaleString()} F</span>
+                        <span>Attendu: {z.totalAttendu.toLocaleString()} F</span>
+                      </div>
+                      {z.telephoneChauffeur && (
+                        <p className="text-[11px] text-muted-foreground">📞 {z.telephoneChauffeur}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
+
+          {/* Graphique répartition - horizontal bar */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Répartition des élèves par zone</CardTitle></CardHeader>
+            <CardContent>
+              {chartEffectif.length > 0 ? (
+                <ResponsiveContainer width="100%" height={Math.max(200, chartEffectif.length * 50)}>
+                  <BarChart data={chartEffectif} layout="vertical" margin={{ left: 10, right: 30, top: 5, bottom: 5 }}>
+                    <XAxis type="number" allowDecimals={false} />
+                    <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(val: number) => [`${val} élève(s)`, 'Effectif']} />
+                    <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={28}>
+                      {chartEffectif.map((_, i) => (
+                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-muted-foreground">Aucune donnée</div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Alertes impayés */}
           {zonesImpayees > 0 && (
