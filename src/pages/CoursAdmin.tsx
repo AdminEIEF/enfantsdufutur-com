@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Video, FileText, Plus, Trash2, BookOpen, Search, Loader2, Upload, CirclePlus, CircleMinus, FileType, ListChecks, Eye } from 'lucide-react';
+import { Video, FileText, Plus, Trash2, BookOpen, Search, Loader2, Upload, CirclePlus, CircleMinus, FileType, ListChecks, Eye, GraduationCap, School } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -27,6 +27,7 @@ interface QuizQuestion {
 }
 
 export default function CoursAdmin() {
+  const [cycleTab, setCycleTab] = useState('primaire');
   const [tab, setTab] = useState('cours');
   const [filterClasse, setFilterClasse] = useState('all');
   const [search, setSearch] = useState('');
@@ -78,10 +79,19 @@ export default function CoursAdmin() {
     },
   });
 
+  const { data: classeMatieres = [] } = useQuery({
+    queryKey: ['classe-matieres-all'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('classe_matieres').select('classe_id, matiere_id, matieres:matiere_id(id, nom)');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   const { data: cours = [], isLoading: loadingCours } = useQuery({
     queryKey: ['admin-cours'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('cours').select('*, matieres:matiere_id(nom), classes:classe_id(nom)').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('cours').select('*, matieres:matiere_id(nom), classes:classe_id(nom, niveau_id)').order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -90,10 +100,56 @@ export default function CoursAdmin() {
   const { data: devoirs = [], isLoading: loadingDevoirs } = useQuery({
     queryKey: ['admin-devoirs'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('devoirs').select('*, matieres:matiere_id(nom), classes:classe_id(nom)').order('date_limite', { ascending: false });
+      const { data, error } = await supabase.from('devoirs').select('*, matieres:matiere_id(nom), classes:classe_id(nom, niveau_id)').order('date_limite', { ascending: false });
       if (error) throw error;
       return data;
     },
+  });
+
+  // Determine if a class is secondaire
+  const isSecondaire = (classeId: string) => {
+    const cl = classes.find((c: any) => c.id === classeId);
+    const cycleName = cl?.niveaux?.cycles?.nom?.toLowerCase() || '';
+    return cycleName.includes('secondaire') || cycleName.includes('collège') || cycleName.includes('lycée');
+  };
+
+  // Filter classes by cycle tab
+  const filteredClasses = useMemo(() => {
+    return classes.filter((c: any) => {
+      const isSec = isSecondaire(c.id);
+      return cycleTab === 'secondaire' ? isSec : !isSec;
+    });
+  }, [classes, cycleTab]);
+
+  // Get class IDs for current cycle
+  const cycleClassIds = useMemo(() => new Set(filteredClasses.map((c: any) => c.id)), [filteredClasses]);
+
+  // Get matières for a specific class (for secondaire, use classe_matieres)
+  const matieresForClasse = (classeId: string) => {
+    if (!classeId) return matieres;
+    if (isSecondaire(classeId)) {
+      const cms = classeMatieres.filter((cm: any) => cm.classe_id === classeId);
+      return cms.map((cm: any) => cm.matieres).filter(Boolean);
+    }
+    // For primaire, show all matieres of the cycle
+    const cl = classes.find((c: any) => c.id === classeId);
+    if (!cl) return matieres;
+    const cycleId = cl.niveaux?.cycle_id;
+    return matieres.filter((m: any) => !m.cycle_id || m.cycle_id === cycleId);
+  };
+
+  const filteredCours = cours.filter((c: any) => {
+    if (!cycleClassIds.has(c.classe_id)) return false;
+    const matchClasse = filterClasse === 'all' || c.classe_id === filterClasse;
+    const matchSearch = !search || c.titre.toLowerCase().includes(search.toLowerCase());
+    return matchClasse && matchSearch;
+  });
+
+  const filteredDevoirs = devoirs.filter((d: any) => {
+    if (!cycleClassIds.has(d.classe_id)) return false;
+    const matchClasse = filterClasse === 'all' || d.classe_id === filterClasse;
+    const matchSearch = !search || d.titre.toLowerCase().includes(search.toLowerCase());
+    return matchClasse && matchSearch;
   });
 
   const toggleVisibility = useMutation({
@@ -113,7 +169,6 @@ export default function CoursAdmin() {
 
       let finalUrl = cUrl.trim();
 
-      // If file upload type (word or pdf-upload), upload the file
       if ((cTypeContenu === 'word' || cTypeContenu === 'pdf') && cFile) {
         setCUploading(true);
         const ext = cFile.name.split('.').pop();
@@ -143,7 +198,7 @@ export default function CoursAdmin() {
       qc.invalidateQueries({ queryKey: ['admin-cours'] });
       toast({ title: 'Cours ajouté' });
       setOpenCours(false);
-      setCTitre(''); setCDescription(''); setCMatiereId(''); setCClasseId(''); setCUrl(''); setCTypeContenu('pdf'); setCFile(null);
+      resetCoursForm();
     },
     onError: (e: Error) => {
       setCUploading(false);
@@ -157,7 +212,6 @@ export default function CoursAdmin() {
 
       if (dTypeDevoir === 'quiz' && quizQuestions.length === 0) throw new Error('Ajoutez au moins une question');
 
-      // Validate quiz questions
       if (dTypeDevoir === 'quiz') {
         for (const q of quizQuestions) {
           if (!q.question.trim()) throw new Error('Toutes les questions doivent avoir un intitulé');
@@ -170,7 +224,6 @@ export default function CoursAdmin() {
         ? quizQuestions.reduce((s, q) => s + q.points, 0) 
         : Number(dNoteMax) || 20;
 
-      // Handle sujet file upload
       let sujetUrl: string | null = null;
       let sujetNom: string | null = null;
       if (dSujetMode === 'fichier' && dSujetFile) {
@@ -198,7 +251,6 @@ export default function CoursAdmin() {
       } as any).select('id').single();
       if (error) throw error;
 
-      // Insert quiz questions
       if (dTypeDevoir === 'quiz' && devoir) {
         const questions = quizQuestions.map((q, i) => ({
           devoir_id: devoir.id,
@@ -216,8 +268,7 @@ export default function CoursAdmin() {
       qc.invalidateQueries({ queryKey: ['admin-devoirs'] });
       toast({ title: 'Devoir ajouté' });
       setOpenDevoir(false);
-      setDTitre(''); setDDescription(''); setDMatiereId(''); setDClasseId(''); setDDateLimite(''); setDNoteMax('20');
-      setDTypeDevoir('fichier'); setQuizQuestions([]); setDSujetMode('texte'); setDSujetFile(null);
+      resetDevoirForm();
     },
     onError: (e: Error) => {
       setDUploading(false);
@@ -247,32 +298,24 @@ export default function CoursAdmin() {
     },
   });
 
-  const filteredCours = cours.filter((c: any) => {
-    const matchClasse = filterClasse === 'all' || c.classe_id === filterClasse;
-    const matchSearch = !search || c.titre.toLowerCase().includes(search.toLowerCase());
-    return matchClasse && matchSearch;
-  });
+  const resetCoursForm = () => {
+    setCTitre(''); setCDescription(''); setCMatiereId(''); setCClasseId(''); setCUrl(''); setCTypeContenu('pdf'); setCFile(null);
+  };
 
-  const filteredDevoirs = devoirs.filter((d: any) => {
-    const matchClasse = filterClasse === 'all' || d.classe_id === filterClasse;
-    const matchSearch = !search || d.titre.toLowerCase().includes(search.toLowerCase());
-    return matchClasse && matchSearch;
-  });
+  const resetDevoirForm = () => {
+    setDTitre(''); setDDescription(''); setDMatiereId(''); setDClasseId(''); setDDateLimite(''); setDNoteMax('20');
+    setDTypeDevoir('fichier'); setQuizQuestions([]); setDSujetMode('texte'); setDSujetFile(null);
+  };
 
   // Quiz question helpers
   const addQuestion = () => {
     setQuizQuestions([...quizQuestions, {
-      question: '',
-      type: 'choix_multiple',
+      question: '', type: 'choix_multiple',
       options: [{ label: '', correct: false }, { label: '', correct: false }],
       points: 1,
     }]);
   };
-
-  const removeQuestion = (idx: number) => {
-    setQuizQuestions(quizQuestions.filter((_, i) => i !== idx));
-  };
-
+  const removeQuestion = (idx: number) => setQuizQuestions(quizQuestions.filter((_, i) => i !== idx));
   const updateQuestion = (idx: number, field: string, value: any) => {
     const updated = [...quizQuestions];
     (updated[idx] as any)[field] = value;
@@ -281,36 +324,234 @@ export default function CoursAdmin() {
     }
     setQuizQuestions(updated);
   };
-
   const updateOption = (qIdx: number, oIdx: number, field: string, value: any) => {
     const updated = [...quizQuestions];
     (updated[qIdx].options[oIdx] as any)[field] = value;
     setQuizQuestions(updated);
   };
-
   const addOption = (qIdx: number) => {
     const updated = [...quizQuestions];
-    if (updated[qIdx].options.length < 6) {
-      updated[qIdx].options.push({ label: '', correct: false });
-      setQuizQuestions(updated);
-    }
+    if (updated[qIdx].options.length < 6) { updated[qIdx].options.push({ label: '', correct: false }); setQuizQuestions(updated); }
   };
-
   const removeOption = (qIdx: number, oIdx: number) => {
     const updated = [...quizQuestions];
-    if (updated[qIdx].options.length > 2) {
-      updated[qIdx].options.splice(oIdx, 1);
-      setQuizQuestions(updated);
-    }
+    if (updated[qIdx].options.length > 2) { updated[qIdx].options.splice(oIdx, 1); setQuizQuestions(updated); }
   };
 
   const needsFileUpload = cTypeContenu === 'word' || cTypeContenu === 'pdf';
+
+  // Current form matières based on selected class
+  const cFormMatieres = matieresForClasse(cClasseId);
+  const dFormMatieres = matieresForClasse(dClasseId);
+
+  const renderCoursDialog = () => (
+    <Dialog open={openCours} onOpenChange={(o) => { setOpenCours(o); if (!o) resetCoursForm(); }}>
+      <DialogTrigger asChild>
+        <Button><Plus className="h-4 w-4 mr-2" /> Ajouter un cours</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Nouveau cours — {cycleTab === 'secondaire' ? 'Secondaire' : 'Primaire / Maternelle'}</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div><Label>Titre *</Label><Input value={cTitre} onChange={e => setCTitre(e.target.value)} /></div>
+          <div><Label>Description</Label><Input value={cDescription} onChange={e => setCDescription(e.target.value)} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Classe *</Label>
+              <Select value={cClasseId} onValueChange={(v) => { setCClasseId(v); setCMatiereId(''); }}>
+                <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                <SelectContent>{filteredClasses.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.niveaux?.nom} — {c.nom}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div><Label>Matière *</Label>
+              <Select value={cMatiereId} onValueChange={setCMatiereId} disabled={!cClasseId}>
+                <SelectTrigger><SelectValue placeholder={cClasseId ? 'Choisir' : 'Sélectionnez une classe'} /></SelectTrigger>
+                <SelectContent>{cFormMatieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div><Label>Type de contenu</Label>
+            <Select value={cTypeContenu} onValueChange={(v) => { setCTypeContenu(v); setCFile(null); setCUrl(''); }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pdf">📄 Fichier PDF</SelectItem>
+                <SelectItem value="word">📝 Fichier Word (.docx)</SelectItem>
+                <SelectItem value="video">🎬 Vidéo (YouTube/Vimeo/MP4)</SelectItem>
+                <SelectItem value="lien">🔗 Lien externe</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {needsFileUpload ? (
+            <div>
+              <Label>Fichier {cTypeContenu === 'word' ? 'Word' : 'PDF'} *</Label>
+              <input ref={cFileRef} type="file" className="hidden" accept={cTypeContenu === 'word' ? '.doc,.docx' : '.pdf'} onChange={e => { if (e.target.files?.[0]) setCFile(e.target.files[0]); }} />
+              <div className="mt-1 flex items-center gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => cFileRef.current?.click()}>
+                  <Upload className="h-4 w-4 mr-1" /> Choisir un fichier
+                </Button>
+                {cFile && <span className="text-sm text-muted-foreground truncate max-w-[200px]">{cFile.name}</span>}
+              </div>
+            </div>
+          ) : (
+            <div><Label>URL du contenu *</Label><Input value={cUrl} onChange={e => setCUrl(e.target.value)} placeholder={cTypeContenu === 'video' ? 'https://youtube.com/watch?v=...' : 'https://...'} /></div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpenCours(false)}>Annuler</Button>
+          <Button onClick={() => createCours.mutate()} disabled={createCours.isPending || cUploading}>
+            {(createCours.isPending || cUploading) ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Upload...</> : 'Ajouter'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const renderDevoirDialog = () => (
+    <Dialog open={openDevoir} onOpenChange={(o) => { setOpenDevoir(o); if (!o) resetDevoirForm(); }}>
+      <DialogTrigger asChild>
+        <Button><Plus className="h-4 w-4 mr-2" /> Ajouter un devoir</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Nouveau devoir — {cycleTab === 'secondaire' ? 'Secondaire' : 'Primaire / Maternelle'}</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div><Label>Titre *</Label><Input value={dTitre} onChange={e => setDTitre(e.target.value)} /></div>
+          <div>
+            <Label>Sujet / Consigne</Label>
+            <RadioGroup value={dSujetMode} onValueChange={(v: any) => { setDSujetMode(v); setDSujetFile(null); setDDescription(''); }} className="flex gap-4 mt-1 mb-2">
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="texte" id="sujet-texte" />
+                <Label htmlFor="sujet-texte" className="flex items-center gap-1 cursor-pointer text-sm"><FileText className="h-4 w-4" /> Saisir le sujet</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="fichier" id="sujet-fichier" />
+                <Label htmlFor="sujet-fichier" className="flex items-center gap-1 cursor-pointer text-sm"><Upload className="h-4 w-4" /> Joindre un fichier</Label>
+              </div>
+            </RadioGroup>
+            {dSujetMode === 'texte' ? (
+              <Textarea value={dDescription} onChange={e => setDDescription(e.target.value)} placeholder="Saisissez le sujet ou les consignes..." className="min-h-[100px]" />
+            ) : (
+              <div>
+                <input ref={dFileRef} type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={e => { if (e.target.files?.[0]) setDSujetFile(e.target.files[0]); }} />
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => dFileRef.current?.click()}>
+                    <Upload className="h-4 w-4 mr-1" /> Choisir un fichier
+                  </Button>
+                  {dSujetFile && <span className="text-sm text-muted-foreground truncate max-w-[250px]">📎 {dSujetFile.name}</span>}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Classe *</Label>
+              <Select value={dClasseId} onValueChange={(v) => { setDClasseId(v); setDMatiereId(''); }}>
+                <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                <SelectContent>{filteredClasses.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.niveaux?.nom} — {c.nom}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div><Label>Matière *</Label>
+              <Select value={dMatiereId} onValueChange={setDMatiereId} disabled={!dClasseId}>
+                <SelectTrigger><SelectValue placeholder={dClasseId ? 'Choisir' : 'Sélectionnez une classe'} /></SelectTrigger>
+                <SelectContent>{dFormMatieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Date limite *</Label><Input type="datetime-local" value={dDateLimite} onChange={e => setDDateLimite(e.target.value)} /></div>
+            {dTypeDevoir === 'fichier' && (
+              <div><Label>Note max</Label><Input type="number" value={dNoteMax} onChange={e => setDNoteMax(e.target.value)} /></div>
+            )}
+          </div>
+          <div>
+            <Label>Type de devoir</Label>
+            <RadioGroup value={dTypeDevoir} onValueChange={setDTypeDevoir} className="flex gap-4 mt-1">
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="fichier" id="type-fichier" />
+                <Label htmlFor="type-fichier" className="flex items-center gap-1 cursor-pointer"><Upload className="h-4 w-4" /> Soumission fichier</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="quiz" id="type-quiz" />
+                <Label htmlFor="type-quiz" className="flex items-center gap-1 cursor-pointer"><ListChecks className="h-4 w-4" /> Quiz en ligne</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          {dTypeDevoir === 'quiz' && (
+            <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm">Questions du quiz ({quizQuestions.length})</h3>
+                <Button type="button" size="sm" variant="outline" onClick={addQuestion}><CirclePlus className="h-4 w-4 mr-1" /> Ajouter</Button>
+              </div>
+              {quizQuestions.map((q, qi) => (
+                <Card key={qi}>
+                  <CardContent className="py-3 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="shrink-0">Q{qi + 1}</Badge>
+                          <Input value={q.question} onChange={e => updateQuestion(qi, 'question', e.target.value)} placeholder="Intitulé de la question" className="flex-1" />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Select value={q.type} onValueChange={v => updateQuestion(qi, 'type', v)}>
+                            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="choix_multiple">Choix multiple</SelectItem>
+                              <SelectItem value="vrai_faux">Vrai / Faux</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <div className="flex items-center gap-1">
+                            <Label className="text-xs whitespace-nowrap">Points :</Label>
+                            <Input type="number" min={1} max={20} value={q.points} onChange={e => updateQuestion(qi, 'points', Number(e.target.value) || 1)} className="w-16" />
+                          </div>
+                        </div>
+                      </div>
+                      <Button type="button" size="icon" variant="ghost" className="text-destructive shrink-0" onClick={() => removeQuestion(qi)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="space-y-2 pl-6">
+                      {q.options.map((opt, oi) => (
+                        <div key={oi} className="flex items-center gap-2">
+                          <Checkbox checked={opt.correct} onCheckedChange={(checked) => updateOption(qi, oi, 'correct', !!checked)} />
+                          <Input value={opt.label} onChange={e => updateOption(qi, oi, 'label', e.target.value)} placeholder={`Option ${oi + 1}`} className="flex-1" disabled={q.type === 'vrai_faux'} />
+                          {q.type === 'choix_multiple' && q.options.length > 2 && (
+                            <Button type="button" size="icon" variant="ghost" onClick={() => removeOption(qi, oi)}><CircleMinus className="h-4 w-4" /></Button>
+                          )}
+                        </div>
+                      ))}
+                      {q.type === 'choix_multiple' && q.options.length < 6 && (
+                        <Button type="button" size="sm" variant="ghost" className="text-xs" onClick={() => addOption(qi)}><CirclePlus className="h-3 w-3 mr-1" /> Option</Button>
+                      )}
+                      <p className="text-xs text-muted-foreground">✅ Cochez la/les bonne(s) réponse(s)</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {quizQuestions.length > 0 && (
+                <p className="text-sm text-muted-foreground text-right">Total : {quizQuestions.reduce((s, q) => s + q.points, 0)} points</p>
+              )}
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpenDevoir(false)}>Annuler</Button>
+          <Button onClick={() => createDevoir.mutate()} disabled={createDevoir.isPending || dUploading}>
+            {(createDevoir.isPending || dUploading) ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> {dUploading ? 'Upload...' : 'Ajout...'}</> : 'Ajouter'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
         <BookOpen className="h-7 w-7 text-primary" /> Cours & Devoirs
       </h1>
+
+      {/* Cycle Tabs */}
+      <Tabs value={cycleTab} onValueChange={(v) => { setCycleTab(v); setFilterClasse('all'); setSearch(''); }}>
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="primaire" className="gap-2"><School className="h-4 w-4" /> Primaire / Maternelle</TabsTrigger>
+          <TabsTrigger value="secondaire" className="gap-2"><GraduationCap className="h-4 w-4" /> Secondaire</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Filters */}
       <div className="flex gap-3 flex-wrap">
@@ -319,10 +560,10 @@ export default function CoursAdmin() {
           <Input placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={filterClasse} onValueChange={setFilterClasse}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Classe" /></SelectTrigger>
+          <SelectTrigger className="w-[220px]"><SelectValue placeholder="Classe" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Toutes les classes</SelectItem>
-            {classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+            {filteredClasses.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.niveaux?.nom} — {c.nom}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -335,73 +576,7 @@ export default function CoursAdmin() {
 
         {/* COURS TAB */}
         <TabsContent value="cours" className="space-y-4 mt-3">
-          <div className="flex justify-end">
-            <Dialog open={openCours} onOpenChange={setOpenCours}>
-              <DialogTrigger asChild>
-                <Button><Plus className="h-4 w-4 mr-2" /> Ajouter un cours</Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader><DialogTitle>Nouveau cours</DialogTitle></DialogHeader>
-                <div className="space-y-3">
-                  <div><Label>Titre *</Label><Input value={cTitre} onChange={e => setCTitre(e.target.value)} /></div>
-                  <div><Label>Description</Label><Input value={cDescription} onChange={e => setCDescription(e.target.value)} /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Classe *</Label>
-                      <Select value={cClasseId} onValueChange={setCClasseId}>
-                        <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
-                        <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                    <div><Label>Matière *</Label>
-                      <Select value={cMatiereId} onValueChange={setCMatiereId}>
-                        <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
-                        <SelectContent>{matieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div><Label>Type de contenu</Label>
-                    <Select value={cTypeContenu} onValueChange={(v) => { setCTypeContenu(v); setCFile(null); setCUrl(''); }}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pdf">📄 Fichier PDF</SelectItem>
-                        <SelectItem value="word">📝 Fichier Word (.docx)</SelectItem>
-                        <SelectItem value="video">🎬 Vidéo (YouTube/Vimeo/MP4)</SelectItem>
-                        <SelectItem value="lien">🔗 Lien externe</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {needsFileUpload ? (
-                    <div>
-                      <Label>Fichier {cTypeContenu === 'word' ? 'Word' : 'PDF'} *</Label>
-                      <input
-                        ref={cFileRef}
-                        type="file"
-                        className="hidden"
-                        accept={cTypeContenu === 'word' ? '.doc,.docx' : '.pdf'}
-                        onChange={e => { if (e.target.files?.[0]) setCFile(e.target.files[0]); }}
-                      />
-                      <div className="mt-1 flex items-center gap-2">
-                        <Button type="button" variant="outline" size="sm" onClick={() => cFileRef.current?.click()}>
-                          <Upload className="h-4 w-4 mr-1" /> Choisir un fichier
-                        </Button>
-                        {cFile && <span className="text-sm text-muted-foreground truncate max-w-[200px]">{cFile.name}</span>}
-                      </div>
-                    </div>
-                  ) : (
-                    <div><Label>URL du contenu *</Label><Input value={cUrl} onChange={e => setCUrl(e.target.value)} placeholder={cTypeContenu === 'video' ? 'https://youtube.com/watch?v=...' : 'https://...'} /></div>
-                  )}
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setOpenCours(false)}>Annuler</Button>
-                  <Button onClick={() => createCours.mutate()} disabled={createCours.isPending || cUploading}>
-                    {(createCours.isPending || cUploading) ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Upload...</> : 'Ajouter'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-
+          <div className="flex justify-end">{renderCoursDialog()}</div>
           <Card>
             <CardContent className="p-0">
               <Table>
@@ -427,17 +602,12 @@ export default function CoursAdmin() {
                       <TableCell>{(c.classes as any)?.nom || '—'}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="gap-1">
-                          {c.type_contenu === 'video' ? <Video className="h-3 w-3" /> :
-                           c.type_contenu === 'word' ? <FileType className="h-3 w-3" /> :
-                           <FileText className="h-3 w-3" />}
+                          {c.type_contenu === 'video' ? <Video className="h-3 w-3" /> : c.type_contenu === 'word' ? <FileType className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
                           {c.type_contenu}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Switch
-                          checked={c.visible !== false}
-                          onCheckedChange={(checked) => toggleVisibility.mutate({ id: c.id, visible: checked })}
-                        />
+                        <Switch checked={c.visible !== false} onCheckedChange={(checked) => toggleVisibility.mutate({ id: c.id, visible: checked })} />
                       </TableCell>
                       <TableCell className="text-right">
                         <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteCours.mutate(c.id)}>
@@ -454,190 +624,7 @@ export default function CoursAdmin() {
 
         {/* DEVOIRS TAB */}
         <TabsContent value="devoirs" className="space-y-4 mt-3">
-          <div className="flex justify-end">
-            <Dialog open={openDevoir} onOpenChange={setOpenDevoir}>
-              <DialogTrigger asChild>
-                <Button><Plus className="h-4 w-4 mr-2" /> Ajouter un devoir</Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-                <DialogHeader><DialogTitle>Nouveau devoir</DialogTitle></DialogHeader>
-                <div className="space-y-3">
-                  <div><Label>Titre *</Label><Input value={dTitre} onChange={e => setDTitre(e.target.value)} /></div>
-                  {/* Sujet du devoir : texte ou fichier */}
-                  <div>
-                    <Label>Sujet / Consigne</Label>
-                    <RadioGroup value={dSujetMode} onValueChange={(v: any) => { setDSujetMode(v); setDSujetFile(null); setDDescription(''); }} className="flex gap-4 mt-1 mb-2">
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem value="texte" id="sujet-texte" />
-                        <Label htmlFor="sujet-texte" className="flex items-center gap-1 cursor-pointer text-sm">
-                          <FileText className="h-4 w-4" /> Saisir le sujet
-                        </Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem value="fichier" id="sujet-fichier" />
-                        <Label htmlFor="sujet-fichier" className="flex items-center gap-1 cursor-pointer text-sm">
-                          <Upload className="h-4 w-4" /> Joindre un fichier (Word/PDF)
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                    {dSujetMode === 'texte' ? (
-                      <Textarea
-                        value={dDescription}
-                        onChange={e => setDDescription(e.target.value)}
-                        placeholder="Saisissez le sujet ou les consignes du devoir..."
-                        className="min-h-[100px]"
-                      />
-                    ) : (
-                      <div>
-                        <input
-                          ref={dFileRef}
-                          type="file"
-                          className="hidden"
-                          accept=".pdf,.doc,.docx"
-                          onChange={e => { if (e.target.files?.[0]) setDSujetFile(e.target.files[0]); }}
-                        />
-                        <div className="flex items-center gap-2">
-                          <Button type="button" variant="outline" size="sm" onClick={() => dFileRef.current?.click()}>
-                            <Upload className="h-4 w-4 mr-1" /> Choisir un fichier
-                          </Button>
-                          {dSujetFile && <span className="text-sm text-muted-foreground truncate max-w-[250px]">📎 {dSujetFile.name}</span>}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">Formats acceptés : PDF, Word (.doc, .docx)</p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Classe *</Label>
-                      <Select value={dClasseId} onValueChange={setDClasseId}>
-                        <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
-                        <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                    <div><Label>Matière *</Label>
-                      <Select value={dMatiereId} onValueChange={setDMatiereId}>
-                        <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
-                        <SelectContent>{matieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Date limite *</Label><Input type="datetime-local" value={dDateLimite} onChange={e => setDDateLimite(e.target.value)} /></div>
-                    {dTypeDevoir === 'fichier' && (
-                      <div><Label>Note max</Label><Input type="number" value={dNoteMax} onChange={e => setDNoteMax(e.target.value)} /></div>
-                    )}
-                  </div>
-
-                  {/* Type de devoir */}
-                  <div>
-                    <Label>Type de devoir</Label>
-                    <RadioGroup value={dTypeDevoir} onValueChange={setDTypeDevoir} className="flex gap-4 mt-1">
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem value="fichier" id="type-fichier" />
-                        <Label htmlFor="type-fichier" className="flex items-center gap-1 cursor-pointer">
-                          <Upload className="h-4 w-4" /> Soumission fichier
-                        </Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem value="quiz" id="type-quiz" />
-                        <Label htmlFor="type-quiz" className="flex items-center gap-1 cursor-pointer">
-                          <ListChecks className="h-4 w-4" /> Quiz en ligne
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  {/* Quiz builder */}
-                  {dTypeDevoir === 'quiz' && (
-                    <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-sm">Questions du quiz ({quizQuestions.length})</h3>
-                        <Button type="button" size="sm" variant="outline" onClick={addQuestion}>
-                          <CirclePlus className="h-4 w-4 mr-1" /> Ajouter
-                        </Button>
-                      </div>
-                      {quizQuestions.map((q, qi) => (
-                        <Card key={qi}>
-                          <CardContent className="py-3 space-y-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1 space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="secondary" className="shrink-0">Q{qi + 1}</Badge>
-                                  <Input
-                                    value={q.question}
-                                    onChange={e => updateQuestion(qi, 'question', e.target.value)}
-                                    placeholder="Intitulé de la question"
-                                    className="flex-1"
-                                  />
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <Select value={q.type} onValueChange={v => updateQuestion(qi, 'type', v)}>
-                                    <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="choix_multiple">Choix multiple</SelectItem>
-                                      <SelectItem value="vrai_faux">Vrai / Faux</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <div className="flex items-center gap-1">
-                                    <Label className="text-xs whitespace-nowrap">Points :</Label>
-                                    <Input type="number" min={1} max={20} value={q.points} onChange={e => updateQuestion(qi, 'points', Number(e.target.value) || 1)} className="w-16" />
-                                  </div>
-                                </div>
-                              </div>
-                              <Button type="button" size="icon" variant="ghost" className="text-destructive shrink-0" onClick={() => removeQuestion(qi)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-
-                            {/* Options */}
-                            <div className="space-y-2 pl-6">
-                              {q.options.map((opt, oi) => (
-                                <div key={oi} className="flex items-center gap-2">
-                                  <Checkbox
-                                    checked={opt.correct}
-                                    onCheckedChange={(checked) => updateOption(qi, oi, 'correct', !!checked)}
-                                  />
-                                  <Input
-                                    value={opt.label}
-                                    onChange={e => updateOption(qi, oi, 'label', e.target.value)}
-                                    placeholder={`Option ${oi + 1}`}
-                                    className="flex-1"
-                                    disabled={q.type === 'vrai_faux'}
-                                  />
-                                  {q.type === 'choix_multiple' && q.options.length > 2 && (
-                                    <Button type="button" size="icon" variant="ghost" onClick={() => removeOption(qi, oi)}>
-                                      <CircleMinus className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                </div>
-                              ))}
-                              {q.type === 'choix_multiple' && q.options.length < 6 && (
-                                <Button type="button" size="sm" variant="ghost" className="text-xs" onClick={() => addOption(qi)}>
-                                  <CirclePlus className="h-3 w-3 mr-1" /> Option
-                                </Button>
-                              )}
-                              <p className="text-xs text-muted-foreground">✅ Cochez la/les bonne(s) réponse(s)</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                      {quizQuestions.length > 0 && (
-                        <p className="text-sm text-muted-foreground text-right">
-                          Total : {quizQuestions.reduce((s, q) => s + q.points, 0)} points
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setOpenDevoir(false)}>Annuler</Button>
-                  <Button onClick={() => createDevoir.mutate()} disabled={createDevoir.isPending || dUploading}>
-                    {(createDevoir.isPending || dUploading) ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> {dUploading ? 'Upload...' : 'Ajout...'}</> : 'Ajouter'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-
+          <div className="flex justify-end">{renderDevoirDialog()}</div>
           <Card>
             <CardContent className="p-0">
               <Table>
@@ -671,12 +658,8 @@ export default function CoursAdmin() {
                       <TableCell>{new Date(d.date_limite).toLocaleDateString('fr-FR')}</TableCell>
                       <TableCell>{d.note_max}</TableCell>
                       <TableCell className="text-right flex gap-1 justify-end">
-                        <Button size="icon" variant="ghost" onClick={() => setViewDevoir(d)} title="Voir soumissions">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteDevoir.mutate(d.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => setViewDevoir(d)} title="Voir soumissions"><Eye className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteDevoir.mutate(d.id)}><Trash2 className="h-4 w-4" /></Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -688,11 +671,7 @@ export default function CoursAdmin() {
       </Tabs>
 
       {viewDevoir && (
-        <DevoirSoumissionsDialog
-          devoir={viewDevoir}
-          open={!!viewDevoir}
-          onOpenChange={(open) => { if (!open) setViewDevoir(null); }}
-        />
+        <DevoirSoumissionsDialog devoir={viewDevoir} open={!!viewDevoir} onOpenChange={(open) => { if (!open) setViewDevoir(null); }} />
       )}
     </div>
   );
