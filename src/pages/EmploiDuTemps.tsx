@@ -302,6 +302,7 @@ export default function EmploiDuTemps() {
     setCycleTab(tab as 'primaire' | 'secondaire');
     setSelectedClasseId('');
   };
+  return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -318,7 +319,7 @@ export default function EmploiDuTemps() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__none__">— Choisir une classe —</SelectItem>
-              {classes.map((c: any) => (
+              {filteredClasses.map((c: any) => (
                 <SelectItem key={c.id} value={c.id}>
                   {(c as any).niveaux?.cycles?.nom} — {(c as any).niveaux?.nom} — {c.nom}
                 </SelectItem>
