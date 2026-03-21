@@ -70,7 +70,7 @@ serve(async (req) => {
       // Verify child belongs to family
       const { data: eleve } = await supabaseAdmin
         .from("eleves")
-        .select("id, prenom, nom, famille_id")
+        .select("id, prenom, nom, famille_id, solde_cantine")
         .eq("id", eleve_id)
         .eq("famille_id", familleId)
         .maybeSingle();
@@ -82,6 +82,42 @@ serve(async (req) => {
         });
       }
 
+      // Check family wallet balance
+      const { data: famille } = await supabaseAdmin
+        .from("familles")
+        .select("solde_famille")
+        .eq("id", familleId)
+        .single();
+
+      const solde = famille?.solde_famille || 0;
+      if (solde < montant) {
+        return new Response(JSON.stringify({ 
+          error: `Solde portefeuille insuffisant. Solde actuel: ${Number(solde).toLocaleString()} GNF` 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Debit family wallet
+      const { error: debitErr } = await supabaseAdmin
+        .from("familles")
+        .update({ solde_famille: solde - montant, updated_at: new Date().toISOString() })
+        .eq("id", familleId);
+
+      if (debitErr) throw debitErr;
+
+      // Credit child's cantine balance
+      const { error: creditErr } = await supabaseAdmin
+        .from("eleves")
+        .update({ 
+          solde_cantine: (eleve.solde_cantine || 0) + montant,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", eleve_id);
+
+      if (creditErr) throw creditErr;
+
       // Generate unique transaction code
       const codeTransaction = "CAN-" + Math.random().toString(36).substring(2, 10).toUpperCase();
 
@@ -92,16 +128,25 @@ serve(async (req) => {
           eleve_id,
           montant,
           code_transaction: codeTransaction,
-          statut: "en_attente",
-          canal: "ordre_parent",
+          statut: "valide",
+          canal: "portefeuille",
+          validated_at: new Date().toISOString(),
         })
         .select()
         .single();
 
       if (error) throw error;
 
+      // Notify parent
+      await supabaseAdmin.from("parent_notifications").insert({
+        famille_id: familleId,
+        titre: "🍽️ Recharge Cantine effectuée",
+        message: `Rechargement de ${Number(montant).toLocaleString()} GNF pour ${eleve.prenom} ${eleve.nom} débité du portefeuille.`,
+        type: "paiement",
+      });
+
       return new Response(
-        JSON.stringify({ ordre, message: "Ordre créé avec succès" }),
+        JSON.stringify({ ordre, message: "Recharge effectuée et débitée du portefeuille" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

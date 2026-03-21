@@ -89,7 +89,7 @@ export default function ParentCantineOrdre({ enfants, code, onSuccess }: Props) 
         if (!resp.ok) throw new Error(data.error);
       }
       const count = selectedIds.length;
-      toast.success(`${count} ordre(s) de rechargement créé(s) ! Présentez-vous à la caisse avec le code.`);
+      toast.success(`${count} recharge(s) cantine effectuée(s) et débitée(s) du portefeuille !`);
       setMontant('');
       setOpen(false);
       fetchOrdres();
