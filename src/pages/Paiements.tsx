@@ -832,6 +832,7 @@ function RechargePortefeuillePanel({ eleves, familles }: { eleves: any[]; famill
   const { data: schoolConfig } = useSchoolConfig();
 
   const [mode, setMode] = useState<'famille' | 'eleve'>('famille');
+  const [searchFamilleRecharge, setSearchFamilleRecharge] = useState('');
   const [familleId, setFamilleId] = useState('');
   const [eleveId, setEleveId] = useState('');
   const [montant, setMontant] = useState('');
