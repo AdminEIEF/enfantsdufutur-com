@@ -1437,10 +1437,12 @@ export default function Paiements() {
                        <TableCell className="text-xs">{format(new Date(p.date_paiement), 'dd MMM yyyy', { locale: fr })}</TableCell>
                        <TableCell className="font-medium">{p.eleves?.prenom} {p.eleves?.nom}</TableCell>
                        <TableCell className="font-mono text-xs">{p.eleves?.matricule || '—'}</TableCell>
-                       <TableCell><Badge variant="outline">{TYPES.find(t => t.value === p.type_paiement)?.label || p.type_paiement}</Badge></TableCell>
-                       <TableCell className="text-xs">{(p as any).mois_concerne || '—'}</TableCell>
-                       <TableCell className="font-mono font-bold">{Number(p.montant).toLocaleString()} GNF</TableCell>
-                       <TableCell><Badge variant={p.canal === 'especes' ? 'secondary' : p.canal === 'banque' ? 'outline' : 'default'}>{CANAUX.find(c => c.value === p.canal)?.label || p.canal}</Badge></TableCell>
+                       <TableCell>
+                         {(() => {
+                           const colors = typeColorMap[p.type_paiement] || typeColorMap.autre;
+                           return <Badge className={`${colors.bg} ${colors.text} ${colors.border} border`}>{TYPES.find(t => t.value === p.type_paiement)?.label || p.type_paiement}</Badge>;
+                         })()}
+                       </TableCell>
                        <TableCell className="text-xs text-muted-foreground">{p.reference || '—'}</TableCell>
                        <TableCell className="text-xs">{(p as any).banque_nom || '—'}</TableCell>
                       <TableCell>
