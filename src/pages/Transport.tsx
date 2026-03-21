@@ -146,8 +146,8 @@ export default function Transport() {
             <div className="flex items-center gap-3">
               <Bus className="h-8 w-8 text-primary" />
               <div>
-                <p className="text-sm text-muted-foreground">Chauffeurs</p>
-                <p className="text-2xl font-bold">{statsParZone.filter(z => z.chauffeur !== '—').length}</p>
+                <p className="text-sm text-muted-foreground">Chauffeurs assignés</p>
+                <p className="text-2xl font-bold">{nbChauffeurs}</p>
               </div>
             </div>
           </CardContent>
