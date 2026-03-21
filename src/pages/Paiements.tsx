@@ -1443,6 +1443,9 @@ export default function Paiements() {
                            return <Badge className={`${colors.bg} ${colors.text} ${colors.border} border`}>{TYPES.find(t => t.value === p.type_paiement)?.label || p.type_paiement}</Badge>;
                          })()}
                        </TableCell>
+                       <TableCell className="text-xs">{(p as any).mois_concerne || '—'}</TableCell>
+                       <TableCell className="font-mono font-bold">{Number(p.montant).toLocaleString()} GNF</TableCell>
+                       <TableCell><Badge variant={p.canal === 'especes' ? 'secondary' : p.canal === 'banque' ? 'outline' : 'default'}>{CANAUX.find(c => c.value === p.canal)?.label || p.canal}</Badge></TableCell>
                        <TableCell className="text-xs text-muted-foreground">{p.reference || '—'}</TableCell>
                        <TableCell className="text-xs">{(p as any).banque_nom || '—'}</TableCell>
                       <TableCell>
