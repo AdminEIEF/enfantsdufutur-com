@@ -33,6 +33,7 @@ import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
 import { exportToExcel, readExcelFile } from '@/lib/excelUtils';
 
 import AffectationsEnseignants from '@/components/AffectationsEnseignants';
+import AffectationsSecondaire from '@/components/AffectationsSecondaire';
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
