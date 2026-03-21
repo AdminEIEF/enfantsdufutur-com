@@ -9,9 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { sortClasses } from '@/lib/utils';
-import { Clock, Plus, Trash2, Pencil, CalendarDays } from 'lucide-react';
+import { Clock, Plus, Trash2, Pencil, CalendarDays, GraduationCap, School } from 'lucide-react';
 
 const JOURS = [
   { value: 1, label: 'Lundi' },
