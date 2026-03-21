@@ -450,6 +450,50 @@ export type Database = {
           },
         ]
       }
+      bus_positions: {
+        Row: {
+          cap: number | null
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          message: string | null
+          statut: string
+          vehicule_id: string
+          vitesse: number | null
+        }
+        Insert: {
+          cap?: number | null
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          message?: string | null
+          statut?: string
+          vehicule_id: string
+          vitesse?: number | null
+        }
+        Update: {
+          cap?: number | null
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          message?: string | null
+          statut?: string
+          vehicule_id?: string
+          vitesse?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bus_positions_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules_transport"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checkin_transport: {
         Row: {
           arret_id: string | null

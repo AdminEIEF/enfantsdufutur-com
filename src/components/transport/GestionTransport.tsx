@@ -8,10 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { MapPin, Bus, Plus, Pencil, Trash2, User } from 'lucide-react';
+import { MapPin, Bus, Plus, Pencil, Trash2, User, Navigation } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import SuiviGPSBus from './SuiviGPSBus';
 
 // ─── Zones Transport ─────────────────────────────────────
 function ZonesTab() {
@@ -308,9 +309,11 @@ export default function GestionTransport() {
         <TabsList>
           <TabsTrigger value="zones" className="gap-1"><MapPin className="h-3.5 w-3.5" /> Zones</TabsTrigger>
           <TabsTrigger value="vehicules" className="gap-1"><Bus className="h-3.5 w-3.5" /> Véhicules</TabsTrigger>
+          <TabsTrigger value="gps" className="gap-1"><Navigation className="h-3.5 w-3.5" /> Suivi GPS</TabsTrigger>
         </TabsList>
         <TabsContent value="zones" className="mt-4"><ZonesTab /></TabsContent>
         <TabsContent value="vehicules" className="mt-4"><VehiculesTab /></TabsContent>
+        <TabsContent value="gps" className="mt-4"><SuiviGPSBus /></TabsContent>
       </Tabs>
     </div>
   );
