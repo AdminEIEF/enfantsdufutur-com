@@ -291,9 +291,6 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarSeparator />
       <SidebarFooter className="p-3">
-        <div className="text-xs text-sidebar-foreground/60 mb-2 truncate px-2">
-          {user?.email}
-        </div>
         {isInstallable && (
           <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground mb-1" onClick={install}>
             <Download className="mr-2 h-4 w-4" />
