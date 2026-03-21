@@ -83,12 +83,26 @@ serve(async (req) => {
     if (action === "cours") {
       const { data: cours } = await supabaseAdmin
         .from("cours")
-        .select("*, matieres:matiere_id(nom, pole, coefficient)")
+        .select("*, matieres:matiere_id(id, nom, pole, coefficient)")
         .eq("classe_id", classeId)
         .eq("visible", true)
         .order("created_at", { ascending: false });
 
-      return new Response(JSON.stringify({ cours: cours || [] }), {
+      // Get class matières for secondary students
+      const { data: classeMatieres } = await supabaseAdmin
+        .from("classe_matieres")
+        .select("id, matiere_id, matieres:matiere_id(id, nom, pole, coefficient)")
+        .eq("classe_id", classeId);
+
+      // Determine if secondary
+      const cycleName = ((eleve as any).classes?.niveaux?.cycles?.nom || '').toLowerCase();
+      const isSecondaire = ['secondaire', 'collège', 'lycée', 'college', 'lycee'].some(s => cycleName.includes(s));
+
+      return new Response(JSON.stringify({ 
+        cours: cours || [], 
+        classe_matieres: classeMatieres || [],
+        is_secondaire: isSecondaire,
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
