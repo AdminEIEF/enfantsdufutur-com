@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { StudentLayout } from '@/components/StudentLayout';
 import { StudentAIChat } from '@/components/StudentAIChat';
-import { BookOpen, ClipboardList, Award, Clock, UtensilsCrossed, Loader2, ChevronRight, CalendarDays } from 'lucide-react';
+import { BookOpen, ClipboardList, Award, Clock, UtensilsCrossed, Loader2, ChevronRight, CalendarDays, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+
+const JOURS = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
 export default function StudentDashboard() {
   const { session } = useStudentAuth();
@@ -51,6 +53,13 @@ export default function StudentDashboard() {
   };
 
   const eleve = session?.eleve;
+
+  // Group timetable by day
+  const edtParJour: Record<number, any[]> = {};
+  (data?.emploi_du_temps_semaine || []).forEach((s: any) => {
+    if (!edtParJour[s.jour_semaine]) edtParJour[s.jour_semaine] = [];
+    edtParJour[s.jour_semaine].push(s);
+  });
 
   return (
     <StudentLayout>
@@ -121,34 +130,62 @@ export default function StudentDashboard() {
             )}
           </div>
 
-          {/* Today's Timetable */}
-          {data?.emploi_du_temps_aujourdhui?.length > 0 && (
+          {/* Class Rank per Period */}
+          {data?.rang_par_periode?.length > 0 && (
             <div className="space-y-3">
               <h3 className="font-semibold flex items-center gap-2">
-                <CalendarDays className="h-5 w-5 text-primary" /> Mon emploi du temps aujourd'hui
+                <Trophy className="h-5 w-5 text-amber-500" /> Mon classement
               </h3>
-              <div className="grid gap-2">
-                {data.emploi_du_temps_aujourdhui.map((s: any) => (
-                  <Card key={s.id}>
-                    <CardContent className="py-2.5 px-3 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="text-xs font-mono text-muted-foreground w-20">
-                          {s.heure_debut?.slice(0, 5)} — {s.heure_fin?.slice(0, 5)}
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{s.matieres?.nom}</p>
-                          {s.employes && (
-                            <p className="text-xs text-muted-foreground">
-                              👤 {s.employes.prenom} {s.employes.nom}
-                            </p>
-                          )}
-                        </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {data.rang_par_periode.map((r: any) => (
+                  <Card key={r.periode_id} className="border-amber-200/50">
+                    <CardContent className="py-3 px-3 text-center space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">{r.periode_nom}</p>
+                      <div className="flex items-center justify-center gap-1">
+                        <span className={`text-2xl font-extrabold ${r.rang <= 3 ? 'text-amber-500' : 'text-foreground'}`}>
+                          {r.rang}<sup className="text-xs font-normal">e</sup>
+                        </span>
+                        <span className="text-xs text-muted-foreground">/ {r.total_eleves}</span>
                       </div>
-                      {s.salle && <Badge variant="outline" className="text-xs">🏫 {s.salle}</Badge>}
+                      <p className="text-xs text-muted-foreground">Moy: {r.moyenne}</p>
                     </CardContent>
                   </Card>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Weekly Timetable */}
+          {Object.keys(edtParJour).length > 0 && (
+            <div className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-primary" /> Mon emploi du temps
+              </h3>
+              {Object.entries(edtParJour)
+                .sort(([a], [b]) => Number(a) - Number(b))
+                .map(([jour, cours]) => (
+                  <Card key={jour}>
+                    <CardContent className="py-2.5 px-3 space-y-1.5">
+                      <p className="text-xs font-bold text-primary">{JOURS[Number(jour)] || `Jour ${jour}`}</p>
+                      {cours.map((s: any) => (
+                        <div key={s.id} className="flex items-center gap-3 py-1 px-2 rounded-lg bg-muted/50">
+                          <div className="text-[11px] font-mono text-muted-foreground w-[70px] shrink-0">
+                            {s.heure_debut?.slice(0, 5)} — {s.heure_fin?.slice(0, 5)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{s.matieres?.nom}</p>
+                            {s.employes && (
+                              <p className="text-[11px] text-muted-foreground">
+                                {s.employes.prenom} {s.employes.nom}
+                              </p>
+                            )}
+                          </div>
+                          {s.salle && <Badge variant="outline" className="text-[10px] shrink-0">{s.salle}</Badge>}
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                ))}
             </div>
           )}
 

@@ -308,14 +308,77 @@ serve(async (req) => {
         bulletinCount = count || 0;
       }
 
-      const todayJS = new Date().getDay();
-      const jourSemaine = todayJS === 0 ? 7 : todayJS;
-      const { data: edtToday } = await supabaseAdmin
+      // Full weekly timetable
+      const { data: edtSemaine } = await supabaseAdmin
         .from("emploi_du_temps")
         .select("*, matieres:matiere_id(nom), employes:enseignant_id(nom, prenom)")
         .eq("classe_id", classeId)
-        .eq("jour_semaine", jourSemaine)
+        .order("jour_semaine")
         .order("heure_debut");
+
+      // Class rank per period
+      let rangParPeriode: any[] = [];
+      if (classeId) {
+        // Get all periods
+        const { data: periodes } = await supabaseAdmin
+          .from("periodes")
+          .select("id, nom, ordre")
+          .order("ordre");
+
+        // Get all students in class
+        const { data: classeEleves } = await supabaseAdmin
+          .from("eleves")
+          .select("id")
+          .eq("classe_id", classeId)
+          .is("deleted_at", null)
+          .eq("statut", "inscrit");
+
+        const classeEleveIds = (classeEleves || []).map((e: any) => e.id);
+
+        if (classeEleveIds.length > 0 && (periodes || []).length > 0) {
+          // Get all notes for this class
+          const { data: allNotes } = await supabaseAdmin
+            .from("notes")
+            .select("eleve_id, note, matieres:matiere_id(coefficient), periode_id")
+            .in("eleve_id", classeEleveIds);
+
+          // Get matieres with coefficients for the class
+          for (const periode of (periodes || [])) {
+            const periodeNotes = (allNotes || []).filter((n: any) => n.periode_id === periode.id);
+            if (periodeNotes.length === 0) continue;
+
+            // Calculate weighted average for each student
+            const moyennes: { eleve_id: string; moyenne: number }[] = [];
+            for (const eid of classeEleveIds) {
+              const studentNotes = periodeNotes.filter((n: any) => n.eleve_id === eid);
+              if (studentNotes.length === 0) continue;
+              let totalPondere = 0;
+              let totalCoeff = 0;
+              for (const n of studentNotes) {
+                const coeff = n.matieres?.coefficient || 1;
+                totalPondere += (n.note || 0) * coeff;
+                totalCoeff += coeff;
+              }
+              if (totalCoeff > 0) {
+                moyennes.push({ eleve_id: eid, moyenne: totalPondere / totalCoeff });
+              }
+            }
+
+            // Sort descending
+            moyennes.sort((a, b) => b.moyenne - a.moyenne);
+            const myIndex = moyennes.findIndex(m => m.eleve_id === eleveId);
+            if (myIndex !== -1) {
+              rangParPeriode.push({
+                periode_id: periode.id,
+                periode_nom: periode.nom,
+                rang: myIndex + 1,
+                total_eleves: moyennes.length,
+                moyenne: Math.round(moyennes[myIndex].moyenne * 100) / 100,
+              });
+            }
+          }
+        }
+      }
 
       return new Response(JSON.stringify({
         prochains_devoirs: devoirs || [],
@@ -323,7 +386,8 @@ serve(async (req) => {
         nb_soumissions: (soumissions || []).length,
         nb_bulletins: bulletinCount,
         solde_cantine: eleve.solde_cantine || 0,
-        emploi_du_temps_aujourdhui: edtToday || [],
+        emploi_du_temps_semaine: edtSemaine || [],
+        rang_par_periode: rangParPeriode,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
