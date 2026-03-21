@@ -302,22 +302,28 @@ export default function EmploiDuTemps() {
   const selectedClasse = classes.find((c: any) => c.id === selectedClasseId);
 
   const SECONDAIRE_CYCLES = ['secondaire', 'collège', 'lycée', 'college', 'lycee'];
-  const isSecondaire = (c: any) => {
-    const cycleName = c.niveaux?.cycles?.nom?.toLowerCase() || '';
-    return SECONDAIRE_CYCLES.some(s => cycleName.includes(s));
+  const isSecondaireCycle = (cycleName: string) => {
+    const lower = cycleName?.toLowerCase() || '';
+    return SECONDAIRE_CYCLES.some(s => lower.includes(s));
   };
 
-  const filteredClasses = useMemo(() => {
-    return classes.filter((c: any) => cycleTab === 'secondaire' ? isSecondaire(c) : !isSecondaire(c));
-  }, [classes, cycleTab]);
+  const filteredNiveaux = useMemo(() => {
+    return niveaux.filter((n: any) => {
+      const cycleName = n.cycles?.nom || '';
+      return cycleTab === 'secondaire' ? isSecondaireCycle(cycleName) : !isSecondaireCycle(cycleName);
+    });
+  }, [niveaux, cycleTab]);
+
+  const classesForNiveau = useMemo(() => {
+    if (!selectedNiveauId) return [];
+    return classes.filter((c: any) => c.niveau_id === selectedNiveauId);
+  }, [classes, selectedNiveauId]);
 
   const handleCycleChange = (tab: string) => {
     setCycleTab(tab as 'primaire' | 'secondaire');
+    setSelectedNiveauId('');
     setSelectedClasseId('');
   };
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Clock className="h-6 w-6 text-primary" />
