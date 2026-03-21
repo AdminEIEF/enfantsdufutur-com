@@ -1,0 +1,1 @@
+ALTER TABLE public.enseignant_classes ADD COLUMN deleted_at timestamptz DEFAULT NULL;

@@ -1444,6 +1444,7 @@ export type Database = {
         Row: {
           classe_id: string
           created_at: string
+          deleted_at: string | null
           employe_id: string
           id: string
           matiere_id: string | null
@@ -1451,6 +1452,7 @@ export type Database = {
         Insert: {
           classe_id: string
           created_at?: string
+          deleted_at?: string | null
           employe_id: string
           id?: string
           matiere_id?: string | null
@@ -1458,6 +1460,7 @@ export type Database = {
         Update: {
           classe_id?: string
           created_at?: string
+          deleted_at?: string | null
           employe_id?: string
           id?: string
           matiere_id?: string | null
