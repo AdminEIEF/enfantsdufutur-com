@@ -55,6 +55,7 @@ const emptySlot: SlotForm = {
 export default function EmploiDuTemps() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [cycleTab, setCycleTab] = useState<'primaire' | 'secondaire'>('primaire');
   const [selectedClasseId, setSelectedClasseId] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
