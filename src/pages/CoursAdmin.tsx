@@ -124,16 +124,17 @@ export default function CoursAdmin() {
   // Get class IDs for current cycle
   const cycleClassIds = useMemo(() => new Set(filteredClasses.map((c: any) => c.id)), [filteredClasses]);
 
-  // Get matières for a specific class (for secondaire, use classe_matieres)
+  // Get matières for a specific class — use classe_matieres first, fallback to cycle matieres
   const matieresForClasse = (classeId: string) => {
-    if (!classeId) return matieres;
-    if (isSecondaire(classeId)) {
-      const cms = classeMatieres.filter((cm: any) => cm.classe_id === classeId);
+    if (!classeId) return [];
+    // Check classe_matieres first (works for both primaire and secondaire)
+    const cms = classeMatieres.filter((cm: any) => cm.classe_id === classeId);
+    if (cms.length > 0) {
       return cms.map((cm: any) => cm.matieres).filter(Boolean);
     }
-    // For primaire, show all matieres of the cycle
+    // Fallback: show matieres of the same cycle
     const cl = classes.find((c: any) => c.id === classeId);
-    if (!cl) return matieres;
+    if (!cl) return [];
     const cycleId = cl.niveaux?.cycle_id;
     return matieres.filter((m: any) => !m.cycle_id || m.cycle_id === cycleId);
   };
