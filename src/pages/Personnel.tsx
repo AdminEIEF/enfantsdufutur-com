@@ -1035,65 +1035,103 @@ export default function Personnel() {
               );
             })}
           </div>
-          <Collapsible defaultOpen>
-            <Card>
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors">
-                  <CardTitle className="text-base flex items-center justify-between">
-                    <span className="flex items-center gap-2"><Users className="h-4 w-4" /> Liste du personnel</span>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">{filtered.length} employé(s)</Badge>
-                      <ChevronDown className="h-4 w-4 transition-transform group-data-[state=closed]:rotate-[-90deg]" />
+          {isLoading ? (
+            <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>
+          ) : filtered.length === 0 ? (
+            <Card><CardContent className="py-12 text-center text-muted-foreground">Aucun employé trouvé</CardContent></Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filtered.map((emp: any) => {
+                const photoSrc = emp.photo_url
+                  ? (emp.photo_url.startsWith('http') ? emp.photo_url : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/photos/${emp.photo_url}`)
+                  : null;
+                const isSecondaire = emp.matricule?.startsWith('ESC');
+                const heuresMens = isSecondaire ? getHeuresMensuelles(emp.id) : 0;
+                const salaireCalc = isSecondaire && Number(emp.prix_heure) > 0 ? getSalaireCalculeSecondaire(emp.id, Number(emp.prix_heure)) : 0;
+                const catLabel = categorieLabel[getEffectiveCat(emp)] || emp.categorie;
+                const catColors: Record<string, string> = {
+                  enseignant_primaire: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20',
+                  enseignant_secondaire: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20',
+                  administration: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20',
+                  direction: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',
+                  service: 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/20',
+                  chauffeur: 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20',
+                  securite_primaire: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20',
+                  securite_lycee: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20',
+                  cantine: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20',
+                  hygiene: 'bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-500/20',
+                  librairie: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20',
+                  surveillant: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20',
+                  infirmiere: 'bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/20',
+                };
+                const catColor = catColors[getEffectiveCat(emp)] || 'bg-muted text-muted-foreground';
+
+                return (
+                  <Card
+                    key={emp.id}
+                    className="group cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/30 overflow-hidden"
+                    onClick={() => setSelectedEmp(emp)}
+                  >
+                    <div className="p-4">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                          {photoSrc && <AvatarImage src={photoSrc} alt={`${emp.prenom} ${emp.nom}`} />}
+                          <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">{emp.prenom?.[0]}{emp.nom?.[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="text-sm font-semibold truncate group-hover:text-primary transition-colors">
+                              {emp.prenom} {emp.nom}
+                            </h3>
+                            <Badge variant={emp.statut === 'actif' ? 'default' : 'destructive'} className="shrink-0 text-[10px] h-5">
+                              {emp.statut === 'actif' ? '● Actif' : emp.statut}
+                            </Badge>
+                          </div>
+                          <p className="text-[11px] font-mono text-muted-foreground">{emp.matricule}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${catColor}`}>
+                            {catLabel}
+                          </span>
+                          {emp.poste && (
+                            <span className="text-[11px] text-muted-foreground truncate max-w-[50%] text-right" title={emp.poste}>
+                              {emp.poste.length > 25 ? emp.poste.slice(0, 25) + '…' : emp.poste}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1 border-t border-dashed">
+                          <div className="text-xs">
+                            <span className="text-muted-foreground">Salaire : </span>
+                            <span className="font-semibold">
+                              {isSecondaire && salaireCalc > 0
+                                ? `${salaireCalc.toLocaleString()} GNF`
+                                : `${Number(emp.salaire_base).toLocaleString()} GNF`
+                              }
+                            </span>
+                          </div>
+                          {isSecondaire && heuresMens > 0 && (
+                            <span className="text-[10px] text-muted-foreground">
+                              ⏱ {heuresMens}h/mois
+                            </span>
+                          )}
+                        </div>
+
+                        {emp.telephone && (
+                          <div className="text-[11px] text-muted-foreground truncate">
+                            📞 {emp.telephone}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </CardTitle>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-10">Photo</TableHead>
-                        <TableHead>Matricule</TableHead>
-                        <TableHead>Nom & Prénom</TableHead>
-                        <TableHead>Catégorie</TableHead>
-                        <TableHead>Poste</TableHead>
-                        <TableHead>Salaire</TableHead>
-                        <TableHead>Statut</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {isLoading ? (
-                        <TableRow><TableCell colSpan={7} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
-                      ) : filtered.length === 0 ? (
-                        <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun employé</TableCell></TableRow>
-                      ) : filtered.map((emp: any) => {
-                        const photoSrc = emp.photo_url
-                          ? (emp.photo_url.startsWith('http') ? emp.photo_url : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/photos/${emp.photo_url}`)
-                          : null;
-                        return (
-                        <TableRow key={emp.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedEmp(emp)}>
-                          <TableCell>
-                            <Avatar className="h-8 w-8">
-                              {photoSrc && <AvatarImage src={photoSrc} alt={`${emp.prenom} ${emp.nom}`} />}
-                              <AvatarFallback className="text-xs">{emp.prenom?.[0]}{emp.nom?.[0]}</AvatarFallback>
-                            </Avatar>
-                          </TableCell>
-                          <TableCell className="font-mono text-xs">{emp.matricule}</TableCell>
-                          <TableCell className="font-medium">{emp.prenom} {emp.nom}</TableCell>
-                          <TableCell><Badge variant="secondary" className="text-xs">{categorieLabel[getEffectiveCat(emp)] || emp.categorie}</Badge></TableCell>
-                          <TableCell className="text-sm">{emp.poste}</TableCell>
-                          <TableCell className="text-sm">{Number(emp.salaire_base).toLocaleString()} GNF</TableCell>
-                          <TableCell><Badge variant={emp.statut === 'actif' ? 'default' : 'destructive'}>{emp.statut}</Badge></TableCell>
-                        </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </TabsContent>
 
         {/* Pointage */}
