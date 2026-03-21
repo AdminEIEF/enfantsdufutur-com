@@ -1396,22 +1396,24 @@ export default function Paiements() {
             </Select>
             <div className="ml-auto flex items-center gap-2">
               <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">{filtered.length} paiement(s)</Badge>
+              <Button variant="outline" size="sm" onClick={() => {
+                const rows = filtered.map((p: any) => ({
+                  Date: format(new Date(p.date_paiement), 'dd/MM/yyyy', { locale: fr }),
+                  Élève: `${p.eleves?.prenom} ${p.eleves?.nom}`,
+                  Matricule: p.eleves?.matricule || '',
+                  Type: TYPES.find(t => t.value === p.type_paiement)?.label || p.type_paiement,
+                  Mois: (p as any).mois_concerne || '',
+                  'Montant (GNF)': Number(p.montant),
+                  Canal: CANAUX.find(c => c.value === p.canal)?.label || p.canal,
+                  Référence: p.reference || '',
+                  Banque: (p as any).banque_nom || '',
+                  'Date Dépôt': (p as any).date_depot || '',
+                }));
+                exportToExcel(rows, `paiements_${format(new Date(), 'yyyy-MM-dd')}`);
+              }}>
+                <Download className="h-4 w-4 mr-1" /> Exporter
+              </Button>
             </div>
-                Date: format(new Date(p.date_paiement), 'dd/MM/yyyy', { locale: fr }),
-                Élève: `${p.eleves?.prenom} ${p.eleves?.nom}`,
-                Matricule: p.eleves?.matricule || '',
-                Type: TYPES.find(t => t.value === p.type_paiement)?.label || p.type_paiement,
-                Mois: (p as any).mois_concerne || '',
-                'Montant (GNF)': Number(p.montant),
-                Canal: CANAUX.find(c => c.value === p.canal)?.label || p.canal,
-                Référence: p.reference || '',
-                Banque: (p as any).banque_nom || '',
-                'Date Dépôt': (p as any).date_depot || '',
-              }));
-              exportToExcel(rows, `paiements_${format(new Date(), 'yyyy-MM-dd')}`);
-            }}>
-              <Download className="h-4 w-4 mr-1" /> Exporter
-            </Button>
           </div>
 
           <Card>
