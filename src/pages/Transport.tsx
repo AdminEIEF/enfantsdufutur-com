@@ -186,7 +186,11 @@ export default function Transport() {
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="font-semibold text-sm">{z.nom}</h3>
-                        <p className="text-xs text-muted-foreground">{z.chauffeur}</p>
+                        {z.chauffeurNom ? (
+                          <p className="text-xs text-muted-foreground">🚐 {z.chauffeurNom}</p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">Pas de chauffeur</p>
+                        )}
                       </div>
                       <Badge variant="outline" className="text-xs">{z.effectif} élèves</Badge>
                     </div>
@@ -194,8 +198,8 @@ export default function Transport() {
                       <p className="text-[11px] text-muted-foreground/70 line-clamp-1">{z.quartiers.join(', ')}</p>
                     )}
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-mono">{z.prixMensuel.toLocaleString()} F/mois</span>
-                      {z.telephoneChauffeur && <span className="text-muted-foreground">📞 {z.telephoneChauffeur}</span>}
+                      {z.busImmat && <span className="font-mono text-muted-foreground">🚌 {z.busImmat}</span>}
+                      {z.chauffeurTel && <span className="text-muted-foreground">📞 {z.chauffeurTel}</span>}
                     </div>
                   </CardContent>
                 </Card>
