@@ -282,15 +282,19 @@ export default function Transport() {
                     <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Chargement…</TableCell></TableRow>
                   ) : filteredEleves.length === 0 ? (
                     <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucun élève inscrit au transport</TableCell></TableRow>
-                  ) : filteredEleves.map((e: any) => (
+                  ) : filteredEleves.map((e: any) => {
+                    const veh = vehiculesAssignes.find((v: any) => v.zone_transport_id === e.zone_transport_id);
+                    const chauffeur = veh?.employes;
+                    return (
                     <TableRow key={e.id}>
                       <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
                       <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
                       <TableCell>{e.classes?.nom || '—'}</TableCell>
                       <TableCell><Badge variant="outline">{(e.zones_transport as any)?.nom || '—'}</Badge></TableCell>
-                      <TableCell className="text-sm">{(e.zones_transport as any)?.chauffeur_bus || '—'}</TableCell>
+                      <TableCell className="text-sm">{chauffeur ? `${chauffeur.prenom} ${chauffeur.nom}` : '—'}</TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
