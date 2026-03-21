@@ -309,9 +309,11 @@ export default function GestionTransport() {
         <TabsList>
           <TabsTrigger value="zones" className="gap-1"><MapPin className="h-3.5 w-3.5" /> Zones</TabsTrigger>
           <TabsTrigger value="vehicules" className="gap-1"><Bus className="h-3.5 w-3.5" /> Véhicules</TabsTrigger>
+          <TabsTrigger value="gps" className="gap-1"><Navigation className="h-3.5 w-3.5" /> Suivi GPS</TabsTrigger>
         </TabsList>
         <TabsContent value="zones" className="mt-4"><ZonesTab /></TabsContent>
         <TabsContent value="vehicules" className="mt-4"><VehiculesTab /></TabsContent>
+        <TabsContent value="gps" className="mt-4"><SuiviGPSBus /></TabsContent>
       </Tabs>
     </div>
   );
