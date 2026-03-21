@@ -3,16 +3,14 @@ import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Bus, MapPin, Users, Search, Wallet, CheckCircle, Circle, Download, AlertTriangle, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon, Settings } from 'lucide-react';
+import { Bus, MapPin, Users, Search, Download, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
+import { useQuery } from '@tanstack/react-query';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { exportToExcel } from '@/lib/excelUtils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,10 +23,6 @@ import ChauffeurDashboard from '@/components/transport/ChauffeurDashboard';
 import AssignationBusChauffeur from '@/components/transport/AssignationBusChauffeur';
 import GestionTransport from '@/components/transport/GestionTransport';
 
-const MOIS_SCOLAIRES = [
-  'Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-];
-
 const COLORS = [
   'hsl(220, 70%, 45%)', 'hsl(38, 92%, 50%)', 'hsl(162, 63%, 41%)',
   'hsl(200, 80%, 50%)', 'hsl(0, 72%, 51%)', 'hsl(280, 60%, 50%)',
@@ -40,11 +34,8 @@ export default function Transport() {
   const { hasRole } = useAuth();
   const isChauffeur = hasRole('chauffeur') && !hasRole('admin') && !hasRole('secretaire');
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [filterZone, setFilterZone] = useState('all');
-  const [selectedZone, setSelectedZone] = useState<any>(null);
-  const [quickPay, setQuickPay] = useState<{ eleveId: string; eleveName: string; mois: string; montant: number } | null>(null);
 
   // Zones
   const { data: zones = [] } = useQuery({
@@ -74,20 +65,6 @@ export default function Transport() {
     },
   });
 
-  // Paiements transport
-  const { data: paiements = [] } = useQuery({
-    queryKey: ['transport-paiements'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('paiements')
-        .select('id, montant, date_paiement, eleve_id, mois_concerne')
-        .eq('type_paiement', 'transport')
-        .order('date_paiement', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
   // ─── Computed ─────────────────────────────────────────
   const filteredEleves = useMemo(() => {
     return eleves.filter((e: any) => {
@@ -101,13 +78,6 @@ export default function Transport() {
   const statsParZone = useMemo(() => {
     return zones.map((z: any) => {
       const elevesZone = eleves.filter((e: any) => e.zone_transport_id === z.id);
-      const paiementsZone = paiements.filter((p: any) =>
-        elevesZone.some((e: any) => e.id === p.eleve_id)
-      );
-      const totalAttendu = elevesZone.length * Number(z.prix_mensuel) * 10;
-      const totalPaye = paiementsZone.reduce((s: number, p: any) => s + Number(p.montant), 0);
-      const taux = totalAttendu > 0 ? Math.round((totalPaye / totalAttendu) * 100) : 0;
-
       return {
         id: z.id,
         nom: z.nom,
@@ -116,45 +86,11 @@ export default function Transport() {
         quartiers: z.quartiers || [],
         prixMensuel: Number(z.prix_mensuel),
         effectif: elevesZone.length,
-        totalAttendu,
-        totalPaye,
-        taux,
       };
     });
-  }, [zones, eleves, paiements]);
+  }, [zones, eleves]);
 
-  // Suivi mensuel par élève pour la zone sélectionnée
-  const suiviMensuelZone = useMemo(() => {
-    if (!selectedZone) return [];
-    const elevesZone = eleves.filter((e: any) => e.zone_transport_id === selectedZone.id);
-
-    return elevesZone.map((e: any) => {
-      const paiementsEleve = paiements.filter((p: any) => p.eleve_id === e.id);
-      const moisPayes = paiementsEleve
-        .map((p: any) => p.mois_concerne)
-        .filter(Boolean) as string[];
-      const totalPaye = paiementsEleve.reduce((s: number, p: any) => s + Number(p.montant), 0);
-
-      return {
-        id: e.id,
-        nom: `${e.prenom} ${e.nom}`,
-        matricule: e.matricule || '—',
-        classe: e.classes?.nom || '—',
-        moisPayes,
-        totalPaye,
-        nbMoisPayes: moisPayes.length,
-      };
-    });
-  }, [selectedZone, eleves, paiements]);
-
-  // Totaux globaux
   const totalElevesTransport = eleves.length;
-  const totalRecettesTransport = paiements.reduce((s: number, p: any) => s + Number(p.montant), 0);
-  const totalAttenduGlobal = statsParZone.reduce((s, z) => s + z.totalAttendu, 0);
-  const tauxGlobal = totalAttenduGlobal > 0 ? Math.round((totalRecettesTransport / totalAttenduGlobal) * 100) : 0;
-  const zonesImpayees = statsParZone.filter(z => z.taux < 50).length;
-
-  // Chart data
   const chartEffectif = statsParZone.map(z => ({ name: z.nom, value: z.effectif }));
 
   return (
@@ -165,7 +101,7 @@ export default function Transport() {
 
       {/* KPIs */}
       {!isChauffeur && (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -191,21 +127,10 @@ export default function Transport() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <Wallet className="h-8 w-8 text-accent" />
+              <Bus className="h-8 w-8 text-primary" />
               <div>
-                <p className="text-sm text-muted-foreground">Recettes transport</p>
-                <p className="text-2xl font-bold">{totalRecettesTransport.toLocaleString()} GNF</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <CheckCircle className={`h-8 w-8 ${tauxGlobal >= 70 ? 'text-accent' : 'text-warning'}`} />
-              <div>
-                <p className="text-sm text-muted-foreground">Taux recouvrement</p>
-                <p className="text-2xl font-bold">{tauxGlobal}%</p>
+                <p className="text-sm text-muted-foreground">Chauffeurs</p>
+                <p className="text-2xl font-bold">{statsParZone.filter(z => z.chauffeur !== '—').length}</p>
               </div>
             </div>
           </CardContent>
@@ -218,75 +143,50 @@ export default function Transport() {
       ) : (
       <Tabs defaultValue={initialTab}>
         <TabsList className="flex-wrap h-auto gap-1">
-          <TabsTrigger value="zones">Zones & Bus</TabsTrigger>
+          <TabsTrigger value="zones">Zones</TabsTrigger>
           <TabsTrigger value="eleves">Élèves</TabsTrigger>
           <TabsTrigger value="itineraires" className="gap-1"><Route className="h-3.5 w-3.5" /> Itinéraires</TabsTrigger>
-          <TabsTrigger value="suivi">Suivi mensuel</TabsTrigger>
           <TabsTrigger value="cartes" className="gap-1"><CreditCard className="h-3.5 w-3.5" /> Cartes</TabsTrigger>
           <TabsTrigger value="ponctualite" className="gap-1"><TrendingUp className="h-3.5 w-3.5" /> Ponctualité</TabsTrigger>
           <TabsTrigger value="assignation" className="gap-1"><LinkIcon className="h-3.5 w-3.5" /> Assignation</TabsTrigger>
           <TabsTrigger value="alertes" className="gap-1"><Bell className="h-3.5 w-3.5" /> Alertes</TabsTrigger>
-          <TabsTrigger value="validation" className="gap-1"><ScanLine className="h-3.5 w-3.5" /> Validation bus</TabsTrigger>
+          <TabsTrigger value="validation" className="gap-1"><ScanLine className="h-3.5 w-3.5" /> Scan</TabsTrigger>
           <TabsTrigger value="gestion" className="gap-1"><Settings className="h-3.5 w-3.5" /> Gestion</TabsTrigger>
         </TabsList>
 
         {/* Tab: Zones */}
         <TabsContent value="zones" className="space-y-4 mt-4">
-          {/* Recouvrement par zone - cards */}
-          <div>
-            <h2 className="text-sm font-semibold mb-3">Recouvrement par zone</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {statsParZone.length === 0 ? (
-                <Card className="col-span-full">
-                  <CardContent className="py-8 text-center text-muted-foreground">Aucune zone configurée</CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {statsParZone.length === 0 ? (
+              <Card className="col-span-full">
+                <CardContent className="py-8 text-center text-muted-foreground">Aucune zone configurée</CardContent>
+              </Card>
+            ) : statsParZone.map((z, i) => {
+              const color = COLORS[i % COLORS.length];
+              return (
+                <Card key={z.id} className="border-l-4" style={{ borderLeftColor: color }}>
+                  <CardContent className="pt-4 pb-3 px-4 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-semibold text-sm">{z.nom}</h3>
+                        <p className="text-xs text-muted-foreground">{z.chauffeur}</p>
+                      </div>
+                      <Badge variant="outline" className="text-xs">{z.effectif} élèves</Badge>
+                    </div>
+                    {z.quartiers.length > 0 && (
+                      <p className="text-[11px] text-muted-foreground/70 line-clamp-1">{z.quartiers.join(', ')}</p>
+                    )}
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-mono">{z.prixMensuel.toLocaleString()} F/mois</span>
+                      {z.telephoneChauffeur && <span className="text-muted-foreground">📞 {z.telephoneChauffeur}</span>}
+                    </div>
+                  </CardContent>
                 </Card>
-              ) : statsParZone.map((z, i) => {
-                const color = COLORS[i % COLORS.length];
-                return (
-                  <Card 
-                    key={z.id} 
-                    className="cursor-pointer hover:shadow-md transition-shadow border-l-4"
-                    style={{ borderLeftColor: color }}
-                    onClick={() => setSelectedZone(z)}
-                  >
-                    <CardContent className="pt-4 pb-3 px-4 space-y-2">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-semibold text-sm">{z.nom}</h3>
-                          <p className="text-xs text-muted-foreground">{z.chauffeur}</p>
-                        </div>
-                        <Badge variant={z.taux >= 75 ? 'default' : z.taux >= 50 ? 'secondary' : 'destructive'} className="text-xs">
-                          {z.taux}%
-                        </Badge>
-                      </div>
-                      {z.quartiers.length > 0 && (
-                        <p className="text-[11px] text-muted-foreground/70 line-clamp-1">{z.quartiers.join(', ')}</p>
-                      )}
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {z.effectif} élèves</span>
-                        <span className="font-mono">{z.prixMensuel.toLocaleString()} F/mois</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                        <div 
-                          className="h-full rounded-full transition-all" 
-                          style={{ width: `${Math.min(z.taux, 100)}%`, backgroundColor: color }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-[10px] text-muted-foreground">
-                        <span>Payé: {z.totalPaye.toLocaleString()} F</span>
-                        <span>Attendu: {z.totalAttendu.toLocaleString()} F</span>
-                      </div>
-                      {z.telephoneChauffeur && (
-                        <p className="text-[11px] text-muted-foreground">📞 {z.telephoneChauffeur}</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+              );
+            })}
           </div>
 
-          {/* Graphique répartition - horizontal bar */}
+          {/* Graphique répartition */}
           <Card>
             <CardHeader><CardTitle className="text-base">Répartition des élèves par zone</CardTitle></CardHeader>
             <CardContent>
@@ -308,26 +208,6 @@ export default function Transport() {
               )}
             </CardContent>
           </Card>
-
-          {/* Alertes impayés */}
-          {zonesImpayees > 0 && (
-            <Card className="border-warning/40">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-warning" /> Zones avec faible recouvrement (&lt;50%)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2 flex-wrap">
-                  {statsParZone.filter(z => z.taux < 50).map(z => (
-                    <Badge key={z.id} variant="destructive" className="cursor-pointer" onClick={() => setSelectedZone(z)}>
-                      {z.nom} — {z.taux}% ({z.effectif} élèves)
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
 
         {/* Tab: Élèves */}
@@ -352,7 +232,6 @@ export default function Transport() {
                 Classe: e.classes?.nom || '',
                 Zone: (e.zones_transport as any)?.nom || '',
                 Chauffeur: (e.zones_transport as any)?.chauffeur_bus || '',
-                'Prix mensuel (GNF)': Number((e.zones_transport as any)?.prix_mensuel || 0),
               }));
               exportToExcel(rows, `transport_eleves_${new Date().toISOString().slice(0, 10)}`, 'Transport');
               toast({ title: 'Export réussi', description: `${rows.length} élève(s)` });
@@ -370,15 +249,14 @@ export default function Transport() {
                     <TableHead>Élève</TableHead>
                     <TableHead>Classe</TableHead>
                     <TableHead>Zone</TableHead>
-                    <TableHead>Chauffeur/Bus</TableHead>
-                    <TableHead className="text-right">Prix/mois</TableHead>
+                    <TableHead>Chauffeur</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Chargement…</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Chargement…</TableCell></TableRow>
                   ) : filteredEleves.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun élève inscrit au transport</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucun élève inscrit au transport</TableCell></TableRow>
                   ) : filteredEleves.map((e: any) => (
                     <TableRow key={e.id}>
                       <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
@@ -386,7 +264,6 @@ export default function Transport() {
                       <TableCell>{e.classes?.nom || '—'}</TableCell>
                       <TableCell><Badge variant="outline">{(e.zones_transport as any)?.nom || '—'}</Badge></TableCell>
                       <TableCell className="text-sm">{(e.zones_transport as any)?.chauffeur_bus || '—'}</TableCell>
-                      <TableCell className="text-right font-mono">{Number((e.zones_transport as any)?.prix_mensuel || 0).toLocaleString()} F</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -396,90 +273,6 @@ export default function Transport() {
           <p className="text-sm text-muted-foreground">{filteredEleves.length} élève(s)</p>
         </TabsContent>
 
-        {/* Tab: Suivi mensuel */}
-        <TabsContent value="suivi" className="space-y-4 mt-4">
-          <div className="flex gap-3 items-center">
-            <Label>Zone :</Label>
-            <Select value={selectedZone?.id || ''} onValueChange={id => setSelectedZone(statsParZone.find(z => z.id === id) || null)}>
-              <SelectTrigger className="w-[250px]"><SelectValue placeholder="Sélectionner une zone" /></SelectTrigger>
-              <SelectContent>
-                {statsParZone.map(z => (
-                  <SelectItem key={z.id} value={z.id}>{z.nom} ({z.effectif} élèves)</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedZone && (
-              <div className="ml-auto text-sm text-muted-foreground">
-                Attendu: <strong>{selectedZone.totalAttendu.toLocaleString()} GNF</strong> •
-                Payé: <strong className="text-accent">{selectedZone.totalPaye.toLocaleString()} GNF</strong> •
-                Taux: <Badge variant={selectedZone.taux >= 75 ? 'default' : 'destructive'}>{selectedZone.taux}%</Badge>
-              </div>
-            )}
-          </div>
-
-          {selectedZone ? (
-            <Card>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="sticky left-0 bg-background z-10">Élève</TableHead>
-                        <TableHead>Classe</TableHead>
-                        {MOIS_SCOLAIRES.map(m => (
-                          <TableHead key={m} className="text-center text-xs min-w-[60px]">{m.slice(0, 3)}</TableHead>
-                        ))}
-                        <TableHead className="text-center">Payés</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {suiviMensuelZone.length === 0 ? (
-                        <TableRow><TableCell colSpan={13} className="text-center py-8 text-muted-foreground">Aucun élève dans cette zone</TableCell></TableRow>
-                      ) : suiviMensuelZone.map((e) => (
-                        <TableRow key={e.id}>
-                          <TableCell className="sticky left-0 bg-background font-medium whitespace-nowrap">{e.nom}</TableCell>
-                          <TableCell className="text-xs">{e.classe}</TableCell>
-                          {MOIS_SCOLAIRES.map(m => {
-                            const paid = e.moisPayes.includes(m);
-                            return (
-                              <TableCell key={m} className="text-center p-1">
-                                {paid ? (
-                                  <CheckCircle className="h-4 w-4 text-accent mx-auto" />
-                                ) : (
-                                  <button
-                                    className="mx-auto flex items-center justify-center rounded-full h-6 w-6 hover:bg-primary/10 transition-colors group"
-                                    title={`Payer ${m} pour ${e.nom}`}
-                                    onClick={() => setQuickPay({ eleveId: e.id, eleveName: e.nom, mois: m, montant: selectedZone.prixMensuel })}
-                                  >
-                                    <Circle className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-colors" />
-                                  </button>
-                                )}
-                              </TableCell>
-                            );
-                          })}
-                          <TableCell className="text-center">
-                             <Badge variant={e.nbMoisPayes >= 8 ? 'default' : e.nbMoisPayes >= 5 ? 'secondary' : 'destructive'}>
-                              {e.nbMoisPayes}/10
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-mono">{e.totalPaye.toLocaleString()} F</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                <Bus className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                <p>Sélectionnez une zone pour voir le suivi mensuel des paiements transport</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
         {/* Tab: Itinéraires */}
         <TabsContent value="itineraires" className="mt-4">
           <ItinerairesTransport zones={zones} />
@@ -495,7 +288,7 @@ export default function Transport() {
           <PonctualiteTransport />
         </TabsContent>
 
-        {/* Tab: Assignation Bus ↔ Chauffeur */}
+        {/* Tab: Assignation */}
         <TabsContent value="assignation" className="mt-4">
           <AssignationBusChauffeur />
         </TabsContent>
@@ -510,51 +303,12 @@ export default function Transport() {
           <ValidationTransportBus />
         </TabsContent>
 
-        {/* Tab: Gestion (Zones + Véhicules) */}
+        {/* Tab: Gestion */}
         <TabsContent value="gestion" className="mt-4">
           <GestionTransport />
         </TabsContent>
       </Tabs>
       )}
-
-      {/* Quick pay dialog */}
-      <Dialog open={!!quickPay} onOpenChange={() => setQuickPay(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Confirmer le paiement transport</DialogTitle></DialogHeader>
-          {quickPay && (
-            <div className="space-y-4">
-              <div className="text-sm space-y-1">
-                <p><strong>Élève :</strong> {quickPay.eleveName}</p>
-                <p><strong>Mois :</strong> {quickPay.mois}</p>
-                <p><strong>Zone :</strong> {selectedZone?.nom}</p>
-                <p><strong>Montant :</strong> <span className="text-lg font-bold">{quickPay.montant.toLocaleString()} GNF</span></p>
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setQuickPay(null)}>Annuler</Button>
-                <Button onClick={async () => {
-                  try {
-                    const { error } = await supabase.from('paiements').insert({
-                      eleve_id: quickPay.eleveId,
-                      montant: quickPay.montant,
-                      type_paiement: 'transport',
-                      canal: 'especes',
-                      mois_concerne: quickPay.mois,
-                    } as any);
-                    if (error) throw error;
-                    queryClient.invalidateQueries({ queryKey: ['transport-paiements'] });
-                    toast({ title: 'Paiement enregistré', description: `${quickPay.eleveName} — ${quickPay.mois} — ${quickPay.montant.toLocaleString()} GNF` });
-                    setQuickPay(null);
-                  } catch (err: any) {
-                    toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
-                  }
-                }}>
-                  Confirmer le paiement
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
