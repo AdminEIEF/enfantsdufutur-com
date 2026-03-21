@@ -1394,12 +1394,9 @@ export default function Paiements() {
                 {CANAUX.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            <div className="ml-auto flex items-center gap-2 text-sm">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              <span className="font-bold">{totalRecettes.toLocaleString()} GNF</span>
+            <div className="ml-auto flex items-center gap-2">
+              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">{filtered.length} paiement(s)</Badge>
             </div>
-            <Button variant="outline" size="sm" onClick={() => {
-              const rows = filtered.map((p: any) => ({
                 Date: format(new Date(p.date_paiement), 'dd/MM/yyyy', { locale: fr }),
                 Élève: `${p.eleves?.prenom} ${p.eleves?.nom}`,
                 Matricule: p.eleves?.matricule || '',
