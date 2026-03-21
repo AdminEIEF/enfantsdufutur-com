@@ -232,6 +232,84 @@ export default function Transport() {
               )}
             </CardContent>
           </Card>
+
+          {/* Dialog détails zone */}
+          <Dialog open={!!selectedZone} onOpenChange={(o) => !o && setSelectedZone(null)}>
+            <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+              {selectedZone && (
+                <>
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-primary" />
+                      {selectedZone.nom}
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  <div className="space-y-4">
+                    {/* Infos zone */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-[11px] text-muted-foreground mb-1">🚌 Bus assigné</p>
+                        <p className="font-mono font-bold text-sm">{selectedZone.busImmat || 'Non assigné'}</p>
+                      </div>
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-[11px] text-muted-foreground mb-1">👥 Effectif</p>
+                        <p className="font-bold text-sm">{selectedZone.effectif} élève(s)</p>
+                      </div>
+                    </div>
+
+                    {/* Chauffeur */}
+                    {selectedZone.chauffeurNom && (
+                      <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg border border-primary/10">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <User className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{selectedZone.chauffeurNom}</p>
+                          {selectedZone.chauffeurTel && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Phone className="h-3 w-3" /> {selectedZone.chauffeurTel}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Quartiers */}
+                    {selectedZone.quartiers.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-2">📍 Quartiers desservis</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedZone.quartiers.map((q: string, i: number) => (
+                            <Badge key={i} variant="secondary" className="text-xs">{q}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Liste des élèves */}
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">🎓 Élèves inscrits</p>
+                      {(() => {
+                        const zoneEleves = eleves.filter((e: any) => e.zone_transport_id === selectedZone.id);
+                        if (zoneEleves.length === 0) return <p className="text-sm text-muted-foreground italic">Aucun élève dans cette zone</p>;
+                        return (
+                          <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                            {zoneEleves.map((e: any) => (
+                              <div key={e.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50 text-sm">
+                                <span className="font-medium">{e.prenom} {e.nom}</span>
+                                <span className="text-xs text-muted-foreground">{e.classes?.nom || '—'}</span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </>
+              )}
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* Tab: Élèves */}
