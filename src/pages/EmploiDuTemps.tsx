@@ -62,13 +62,25 @@ export default function EmploiDuTemps() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<SlotForm>(emptySlot);
 
+  // Fetch niveaux with cycle info
+  const { data: niveaux = [] } = useQuery({
+    queryKey: ['edt-niveaux'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('niveaux')
+        .select('id, nom, ordre, cycles:cycle_id(nom, ordre)')
+        .order('ordre');
+      return data || [];
+    },
+  });
+
   // Fetch classes grouped
   const { data: classes = [] } = useQuery({
     queryKey: ['edt-classes'],
     queryFn: async () => {
       const { data } = await supabase
         .from('classes')
-        .select('id, nom, niveaux:niveau_id(nom, ordre, cycles:cycle_id(nom, ordre))');
+        .select('id, nom, niveau_id, niveaux:niveau_id(nom, ordre, cycles:cycle_id(nom, ordre))');
       return sortClasses(data || []);
     },
   });
