@@ -324,6 +324,9 @@ export default function EmploiDuTemps() {
     setSelectedNiveauId('');
     setSelectedClasseId('');
   };
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Clock className="h-6 w-6 text-primary" />
@@ -331,20 +334,33 @@ export default function EmploiDuTemps() {
           </h1>
           <p className="text-sm text-muted-foreground">Gérez les créneaux horaires par classe avec enseignants et matières</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Select value={selectedClasseId || '__none__'} onValueChange={v => setSelectedClasseId(v === '__none__' ? '' : v)}>
-            <SelectTrigger className="w-[250px]">
-              <SelectValue placeholder="Choisir une classe" />
+        <div className="flex items-center gap-3 flex-wrap">
+          <Select value={selectedNiveauId || '__none__'} onValueChange={v => { setSelectedNiveauId(v === '__none__' ? '' : v); setSelectedClasseId(''); }}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Choisir un niveau" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__">— Choisir une classe —</SelectItem>
-              {filteredClasses.map((c: any) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {(c as any).niveaux?.cycles?.nom} — {(c as any).niveaux?.nom} — {c.nom}
+              <SelectItem value="__none__">— Choisir un niveau —</SelectItem>
+              {filteredNiveaux.map((n: any) => (
+                <SelectItem key={n.id} value={n.id}>
+                  {n.cycles?.nom} — {n.nom}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {selectedNiveauId && (
+            <Select value={selectedClasseId || '__none__'} onValueChange={v => setSelectedClasseId(v === '__none__' ? '' : v)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Choisir une classe" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">— Choisir une classe —</SelectItem>
+                {classesForNiveau.map((c: any) => (
+                  <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           {selectedClasseId && (
             <Button onClick={() => openNew()} className="gap-2">
               <Plus className="h-4 w-4" /> Ajouter créneau
