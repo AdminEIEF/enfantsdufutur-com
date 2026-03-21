@@ -183,7 +183,8 @@ export default function Transport() {
             ) : statsParZone.map((z, i) => {
               const color = COLORS[i % COLORS.length];
               return (
-                <Card key={z.id} className="border-l-4" style={{ borderLeftColor: color }}>
+                <Card key={z.id} className="border-l-4 cursor-pointer hover:shadow-md transition-shadow" style={{ borderLeftColor: color }}
+                  onClick={() => setSelectedZone(z)}>
                   <CardContent className="pt-4 pb-3 px-4 space-y-2">
                     <div className="flex items-start justify-between">
                       <div>
