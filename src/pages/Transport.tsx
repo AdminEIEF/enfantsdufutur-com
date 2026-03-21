@@ -56,10 +56,24 @@ export default function Transport() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, statut, zone_transport_id, classe_id, classes(nom), zones_transport:zone_transport_id(id, nom, prix_mensuel, chauffeur_bus, telephone_chauffeur, quartiers)')
+        .select('id, nom, prenom, matricule, statut, zone_transport_id, classe_id, classes(nom), zones_transport:zone_transport_id(id, nom, quartiers)')
         .not('zone_transport_id', 'is', null)
         .eq('statut', 'inscrit')
         .order('nom');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Véhicules avec chauffeur assigné (source unique de vérité pour chauffeur par zone)
+  const { data: vehiculesAssignes = [] } = useQuery({
+    queryKey: ['vehicules-assignation'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vehicules_transport')
+        .select('id, immatriculation, marque, capacite, zone_transport_id, chauffeur_id, employes:chauffeur_id(id, nom, prenom, telephone)')
+        .eq('actif', true)
+        .order('immatriculation');
       if (error) throw error;
       return data;
     },

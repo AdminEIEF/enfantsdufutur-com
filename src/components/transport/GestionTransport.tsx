@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { MapPin, Bus, Plus, Pencil, Trash2 } from 'lucide-react';
+import { MapPin, Bus, Plus, Pencil, Trash2, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -25,20 +25,32 @@ function ZonesTab() {
     },
   });
 
+  // Véhicules avec chauffeur pour afficher l'assignation par zone
+  const { data: vehicules = [] } = useQuery({
+    queryKey: ['vehicules-assignation'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vehicules_transport')
+        .select('*, employes:chauffeur_id(id, nom, prenom, telephone), zones_transport:zone_transport_id(nom)')
+        .eq('actif', true)
+        .order('immatriculation');
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [nom, setNom] = useState('');
-  const [chauffeurBus, setChauffeurBus] = useState('');
-  const [telephoneChauffeur, setTelephoneChauffeur] = useState('');
   const [quartiersInput, setQuartiersInput] = useState('');
 
-  const reset = () => { setEditId(null); setNom(''); setChauffeurBus(''); setTelephoneChauffeur(''); setQuartiersInput(''); setOpen(false); };
+  const reset = () => { setEditId(null); setNom(''); setQuartiersInput(''); setOpen(false); };
 
   const save = useMutation({
     mutationFn: async () => {
       if (!nom) throw new Error('Le nom est requis');
       const quartiers = quartiersInput.split(',').map(q => q.trim()).filter(Boolean);
-      const payload = { nom, chauffeur_bus: chauffeurBus || null, telephone_chauffeur: telephoneChauffeur || null, quartiers };
+      const payload = { nom, quartiers };
       if (editId) {
         const { error } = await supabase.from('zones_transport' as any).update(payload).eq('id', editId);
         if (error) throw error;
@@ -61,9 +73,13 @@ function ZonesTab() {
   });
 
   const openEdit = (z: any) => {
-    setEditId(z.id); setNom(z.nom); setChauffeurBus(z.chauffeur_bus ?? '');
-    setTelephoneChauffeur(z.telephone_chauffeur ?? '');
+    setEditId(z.id); setNom(z.nom);
     setQuartiersInput((z.quartiers ?? []).join(', ')); setOpen(true);
+  };
+
+  // Helper: get vehicle + chauffeur for a zone
+  const getVehiculeForZone = (zoneId: string) => {
+    return vehicules.find((v: any) => v.zone_transport_id === zoneId);
   };
 
   return (
@@ -77,8 +93,8 @@ function ZonesTab() {
           <TableHeader>
             <TableRow>
               <TableHead>Zone</TableHead>
+              <TableHead>Bus assigné</TableHead>
               <TableHead>Chauffeur</TableHead>
-              <TableHead>Téléphone</TableHead>
               <TableHead>Quartiers</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
@@ -88,20 +104,41 @@ function ZonesTab() {
               <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
             ) : zones.length === 0 ? (
               <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Aucune zone</TableCell></TableRow>
-            ) : zones.map((z: any) => (
-              <TableRow key={z.id}>
-                <TableCell className="font-medium">{z.nom}</TableCell>
-                <TableCell>{z.chauffeur_bus ?? '—'}</TableCell>
-                <TableCell>{z.telephone_chauffeur ?? '—'}</TableCell>
-                <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">{(z.quartiers ?? []).join(', ') || '—'}</TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(z)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove.mutate(z.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+            ) : zones.map((z: any) => {
+              const veh = getVehiculeForZone(z.id);
+              const chauffeur = veh?.employes;
+              return (
+                <TableRow key={z.id}>
+                  <TableCell className="font-medium">{z.nom}</TableCell>
+                  <TableCell>
+                    {veh ? (
+                      <div className="text-sm">
+                        <span className="font-mono">{veh.immatriculation}</span>
+                        {veh.marque && <span className="text-muted-foreground ml-1 text-xs">({veh.marque})</span>}
+                      </div>
+                    ) : <span className="text-muted-foreground text-xs italic">Non assigné</span>}
+                  </TableCell>
+                  <TableCell>
+                    {chauffeur ? (
+                      <div className="flex items-center gap-1.5">
+                        <User className="h-3.5 w-3.5 text-primary" />
+                        <div>
+                          <p className="text-sm font-medium">{chauffeur.prenom} {chauffeur.nom}</p>
+                          {chauffeur.telephone && <p className="text-[11px] text-muted-foreground">{chauffeur.telephone}</p>}
+                        </div>
+                      </div>
+                    ) : <span className="text-muted-foreground text-xs italic">—</span>}
+                  </TableCell>
+                  <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">{(z.quartiers ?? []).join(', ') || '—'}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(z)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => remove.mutate(z.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </CardContent>
@@ -111,10 +148,9 @@ function ZonesTab() {
           <DialogHeader><DialogTitle>{editId ? 'Modifier' : 'Ajouter'} une zone</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Nom *</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Zone Nord" /></div>
-            <div><Label>Chauffeur</Label><Input value={chauffeurBus} onChange={e => setChauffeurBus(e.target.value)} placeholder="Ex: M. Diallo" /></div>
-            <div><Label>Téléphone</Label><Input value={telephoneChauffeur} onChange={e => setTelephoneChauffeur(e.target.value)} placeholder="620 00 00 00" /></div>
             <div><Label>Quartiers (séparés par virgules)</Label><Input value={quartiersInput} onChange={e => setQuartiersInput(e.target.value)} placeholder="Quartier A, Quartier B" /></div>
           </div>
+          <p className="text-xs text-muted-foreground mt-2">💡 Pour assigner un chauffeur, allez dans l'onglet <strong>Assignation</strong> après avoir créé un véhicule lié à cette zone.</p>
           <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
@@ -130,7 +166,7 @@ function VehiculesTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('vehicules_transport')
-        .select('*, zones_transport:zone_transport_id(nom)')
+        .select('*, employes:chauffeur_id(id, nom, prenom), zones_transport:zone_transport_id(nom)')
         .order('immatriculation');
       if (error) throw error;
       return data;
@@ -160,7 +196,7 @@ function VehiculesTab() {
       if (!immat) throw new Error("L'immatriculation est requise");
       const payload: any = {
         immatriculation: immat, marque: marque || null,
-        capacite, zone_transport_id: zoneId || null, actif: true,
+        capacite, zone_transport_id: zoneId && zoneId !== 'none' ? zoneId : null, actif: true,
       };
       if (editId) {
         payload.updated_at = new Date().toISOString();
@@ -202,20 +238,29 @@ function VehiculesTab() {
               <TableHead>Immatriculation</TableHead>
               <TableHead>Marque</TableHead>
               <TableHead>Zone</TableHead>
+              <TableHead>Chauffeur</TableHead>
               <TableHead className="text-center">Places</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
             ) : vehicules.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Aucun véhicule</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Aucun véhicule</TableCell></TableRow>
             ) : vehicules.map((v: any) => (
               <TableRow key={v.id}>
                 <TableCell className="font-medium font-mono">{v.immatriculation}</TableCell>
                 <TableCell>{v.marque || '—'}</TableCell>
                 <TableCell>{v.zones_transport ? <Badge variant="outline">{(v.zones_transport as any).nom}</Badge> : '—'}</TableCell>
+                <TableCell>
+                  {v.employes ? (
+                    <div className="flex items-center gap-1.5">
+                      <User className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-sm">{v.employes.prenom} {v.employes.nom}</span>
+                    </div>
+                  ) : <span className="text-muted-foreground text-xs italic">Non assigné</span>}
+                </TableCell>
                 <TableCell className="text-center">{v.capacite ?? '—'}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
@@ -247,6 +292,7 @@ function VehiculesTab() {
               </Select>
             </div>
           </div>
+          <p className="text-xs text-muted-foreground mt-1">💡 Pour assigner un chauffeur, utilisez l'onglet <strong>Assignation</strong>.</p>
           <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
