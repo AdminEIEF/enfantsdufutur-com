@@ -9,9 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { sortClasses } from '@/lib/utils';
-import { Clock, Plus, Trash2, Pencil, CalendarDays } from 'lucide-react';
+import { Clock, Plus, Trash2, Pencil, CalendarDays, GraduationCap, School } from 'lucide-react';
 
 const JOURS = [
   { value: 1, label: 'Lundi' },
@@ -54,6 +55,7 @@ const emptySlot: SlotForm = {
 export default function EmploiDuTemps() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [cycleTab, setCycleTab] = useState<'primaire' | 'secondaire'>('primaire');
   const [selectedClasseId, setSelectedClasseId] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -286,6 +288,20 @@ export default function EmploiDuTemps() {
 
   const selectedClasse = classes.find((c: any) => c.id === selectedClasseId);
 
+  const SECONDAIRE_CYCLES = ['secondaire', 'collège', 'lycée', 'college', 'lycee'];
+  const isSecondaire = (c: any) => {
+    const cycleName = c.niveaux?.cycles?.nom?.toLowerCase() || '';
+    return SECONDAIRE_CYCLES.some(s => cycleName.includes(s));
+  };
+
+  const filteredClasses = useMemo(() => {
+    return classes.filter((c: any) => cycleTab === 'secondaire' ? isSecondaire(c) : !isSecondaire(c));
+  }, [classes, cycleTab]);
+
+  const handleCycleChange = (tab: string) => {
+    setCycleTab(tab as 'primaire' | 'secondaire');
+    setSelectedClasseId('');
+  };
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -303,7 +319,7 @@ export default function EmploiDuTemps() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__none__">— Choisir une classe —</SelectItem>
-              {classes.map((c: any) => (
+              {filteredClasses.map((c: any) => (
                 <SelectItem key={c.id} value={c.id}>
                   {(c as any).niveaux?.cycles?.nom} — {(c as any).niveaux?.nom} — {c.nom}
                 </SelectItem>
@@ -317,6 +333,17 @@ export default function EmploiDuTemps() {
           )}
         </div>
       </div>
+
+      <Tabs value={cycleTab} onValueChange={handleCycleChange} className="w-full">
+        <TabsList>
+          <TabsTrigger value="primaire" className="gap-1.5">
+            <School className="h-4 w-4" /> Primaire / Maternelle
+          </TabsTrigger>
+          <TabsTrigger value="secondaire" className="gap-1.5">
+            <GraduationCap className="h-4 w-4" /> Secondaire
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {!selectedClasseId ? (
         <Card>
