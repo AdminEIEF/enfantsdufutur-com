@@ -1402,7 +1402,18 @@ export default function Personnel() {
 
         {/* Affectations enseignants */}
         <TabsContent value="affectations" className="mt-4">
-          <AffectationsEnseignants />
+          <Tabs defaultValue="primaire" className="w-full">
+            <TabsList className="mb-3">
+              <TabsTrigger value="primaire">🏫 Primaire / Maternelle</TabsTrigger>
+              <TabsTrigger value="secondaire">🎓 Secondaire</TabsTrigger>
+            </TabsList>
+            <TabsContent value="primaire">
+              <AffectationsEnseignants primaryOnly />
+            </TabsContent>
+            <TabsContent value="secondaire">
+              <AffectationsSecondaire />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
       </Tabs>
 
