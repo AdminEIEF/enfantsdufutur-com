@@ -832,6 +832,7 @@ function RechargePortefeuillePanel({ eleves, familles }: { eleves: any[]; famill
   const { data: schoolConfig } = useSchoolConfig();
 
   const [mode, setMode] = useState<'famille' | 'eleve'>('famille');
+  const [searchFamilleRecharge, setSearchFamilleRecharge] = useState('');
   const [familleId, setFamilleId] = useState('');
   const [eleveId, setEleveId] = useState('');
   const [montant, setMontant] = useState('');
@@ -850,6 +851,20 @@ function RechargePortefeuillePanel({ eleves, familles }: { eleves: any[]; famill
       return { ...f, enfants: kids };
     });
   }, [familles, eleves]);
+
+  const normalizePhoneRecharge = (p: string) => (p || '').replace(/[\s\-\+]/g, '').replace(/^224/, '');
+
+  const filteredFamillesRecharge = useMemo(() => {
+    if (!searchFamilleRecharge.trim()) return famillesAvecEnfants;
+    const q = searchFamilleRecharge.toLowerCase().trim();
+    const qPhone = normalizePhoneRecharge(q);
+    return famillesAvecEnfants.filter((f: any) =>
+      f.nom_famille.toLowerCase().includes(q) ||
+      f.enfants.some((e: any) => `${e.prenom} ${e.nom}`.toLowerCase().includes(q)) ||
+      (f.telephone_pere && normalizePhoneRecharge(f.telephone_pere).includes(qPhone)) ||
+      (f.telephone_mere && normalizePhoneRecharge(f.telephone_mere).includes(qPhone))
+    );
+  }, [famillesAvecEnfants, searchFamilleRecharge]);
 
   const selectedFamille = famillesAvecEnfants.find((f: any) => f.id === familleId);
   const selectedEleve = eleves.find((e: any) => e.id === eleveId);
@@ -960,11 +975,20 @@ function RechargePortefeuillePanel({ eleves, familles }: { eleves: any[]; famill
               {mode === 'famille' ? (
                 <div>
                   <Label>Famille *</Label>
+                  <div className="relative mb-2">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher par nom, enfant ou téléphone..."
+                      value={searchFamilleRecharge}
+                      onChange={e => setSearchFamilleRecharge(e.target.value)}
+                      className="pl-9 h-9"
+                    />
+                  </div>
                   <Select value={familleId} onValueChange={setFamilleId}>
                     <SelectTrigger><SelectValue placeholder="Sélectionner une famille" /></SelectTrigger>
                     <SelectContent>
-                      {famillesAvecEnfants.map((f: any) => (
-                        <SelectItem key={f.id} value={f.id}>👨‍👩‍👧‍👦 {f.nom_famille} ({f.enfants.length} enfant{f.enfants.length > 1 ? 's' : ''})</SelectItem>
+                      {filteredFamillesRecharge.map((f: any) => (
+                        <SelectItem key={f.id} value={f.id}>👨‍👩‍👧‍👦 {f.nom_famille} ({f.enfants.length} enfant{f.enfants.length > 1 ? 's' : ''}){f.telephone_pere ? ` — ${f.telephone_pere}` : ''}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
