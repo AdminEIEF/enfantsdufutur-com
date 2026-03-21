@@ -975,11 +975,20 @@ function RechargePortefeuillePanel({ eleves, familles }: { eleves: any[]; famill
               {mode === 'famille' ? (
                 <div>
                   <Label>Famille *</Label>
+                  <div className="relative mb-2">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher par nom, enfant ou téléphone..."
+                      value={searchFamilleRecharge}
+                      onChange={e => setSearchFamilleRecharge(e.target.value)}
+                      className="pl-9 h-9"
+                    />
+                  </div>
                   <Select value={familleId} onValueChange={setFamilleId}>
                     <SelectTrigger><SelectValue placeholder="Sélectionner une famille" /></SelectTrigger>
                     <SelectContent>
-                      {famillesAvecEnfants.map((f: any) => (
-                        <SelectItem key={f.id} value={f.id}>👨‍👩‍👧‍👦 {f.nom_famille} ({f.enfants.length} enfant{f.enfants.length > 1 ? 's' : ''})</SelectItem>
+                      {filteredFamillesRecharge.map((f: any) => (
+                        <SelectItem key={f.id} value={f.id}>👨‍👩‍👧‍👦 {f.nom_famille} ({f.enfants.length} enfant{f.enfants.length > 1 ? 's' : ''}){f.telephone_pere ? ` — ${f.telephone_pere}` : ''}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
