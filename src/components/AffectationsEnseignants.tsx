@@ -25,7 +25,7 @@ export default function AffectationsEnseignants({ primaryOnly = false }: Props) 
 
   // Fetch enseignants
   const { data: enseignants = [] } = useQuery({
-    queryKey: ['affect-enseignants'],
+    queryKey: ['affect-enseignants', primaryOnly],
     queryFn: async () => {
       const { data } = await supabase
         .from('employes')
@@ -33,7 +33,11 @@ export default function AffectationsEnseignants({ primaryOnly = false }: Props) 
         .eq('categorie', 'enseignant')
         .eq('statut', 'actif')
         .order('nom');
-      return data || [];
+      let result = data || [];
+      if (primaryOnly) {
+        result = result.filter((e: any) => e.matricule?.startsWith('ENP'));
+      }
+      return result;
     },
   });
 
