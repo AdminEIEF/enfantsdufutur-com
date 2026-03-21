@@ -246,14 +246,18 @@ export default function Transport() {
               </SelectContent>
             </Select>
             <Button variant="outline" size="sm" className="ml-auto" onClick={() => {
-              const rows = filteredEleves.map((e: any) => ({
-                Matricule: e.matricule || '',
-                Nom: e.nom,
-                Prénom: e.prenom,
-                Classe: e.classes?.nom || '',
-                Zone: (e.zones_transport as any)?.nom || '',
-                Chauffeur: (e.zones_transport as any)?.chauffeur_bus || '',
-              }));
+              const rows = filteredEleves.map((e: any) => {
+                const veh = vehiculesAssignes.find((v: any) => v.zone_transport_id === e.zone_transport_id);
+                const chauffeur = veh?.employes;
+                return {
+                  Matricule: e.matricule || '',
+                  Nom: e.nom,
+                  Prénom: e.prenom,
+                  Classe: e.classes?.nom || '',
+                  Zone: (e.zones_transport as any)?.nom || '',
+                  Chauffeur: chauffeur ? `${chauffeur.prenom} ${chauffeur.nom}` : '',
+                };
+              });
               exportToExcel(rows, `transport_eleves_${new Date().toISOString().slice(0, 10)}`, 'Transport');
               toast({ title: 'Export réussi', description: `${rows.length} élève(s)` });
             }}>
