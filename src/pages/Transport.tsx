@@ -88,23 +88,26 @@ export default function Transport() {
     });
   }, [eleves, search, filterZone]);
 
-  // Stats par zone
+  // Stats par zone — chauffeur vient de vehicules_transport.chauffeur_id
   const statsParZone = useMemo(() => {
     return zones.map((z: any) => {
       const elevesZone = eleves.filter((e: any) => e.zone_transport_id === z.id);
+      const veh = vehiculesAssignes.find((v: any) => v.zone_transport_id === z.id);
+      const chauffeur = veh?.employes;
       return {
         id: z.id,
         nom: z.nom,
-        chauffeur: z.chauffeur_bus || '—',
-        telephoneChauffeur: z.telephone_chauffeur || '',
+        chauffeurNom: chauffeur ? `${chauffeur.prenom} ${chauffeur.nom}` : null,
+        chauffeurTel: chauffeur?.telephone || '',
+        busImmat: veh?.immatriculation || null,
         quartiers: z.quartiers || [],
-        prixMensuel: Number(z.prix_mensuel),
         effectif: elevesZone.length,
       };
     });
-  }, [zones, eleves]);
+  }, [zones, eleves, vehiculesAssignes]);
 
   const totalElevesTransport = eleves.length;
+  const nbChauffeurs = vehiculesAssignes.filter((v: any) => v.chauffeur_id).length;
   const chartEffectif = statsParZone.map(z => ({ name: z.nom, value: z.effectif }));
 
   return (
