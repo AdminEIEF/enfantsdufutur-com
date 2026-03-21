@@ -1279,33 +1279,72 @@ export default function Paiements() {
 
   const typeColors = ['hsl(var(--primary))', '#f97316', '#22c55e', '#8b5cf6', '#06b6d4', '#ec4899', '#6b7280'];
 
+  const typeColorMap: Record<string, { bg: string; text: string; icon: string; border: string }> = {
+    scolarite: { bg: 'bg-blue-50', text: 'text-blue-700', icon: 'text-blue-500', border: 'border-blue-200' },
+    transport: { bg: 'bg-orange-50', text: 'text-orange-700', icon: 'text-orange-500', border: 'border-orange-200' },
+    cantine: { bg: 'bg-green-50', text: 'text-green-700', icon: 'text-green-500', border: 'border-green-200' },
+    wallet: { bg: 'bg-purple-50', text: 'text-purple-700', icon: 'text-purple-500', border: 'border-purple-200' },
+    uniforme: { bg: 'bg-pink-50', text: 'text-pink-700', icon: 'text-pink-500', border: 'border-pink-200' },
+    fournitures: { bg: 'bg-cyan-50', text: 'text-cyan-700', icon: 'text-cyan-500', border: 'border-cyan-200' },
+    article: { bg: 'bg-amber-50', text: 'text-amber-700', icon: 'text-amber-500', border: 'border-amber-200' },
+    autre: { bg: 'bg-gray-50', text: 'text-gray-700', icon: 'text-gray-500', border: 'border-gray-200' },
+  };
+
+  const typeIconMap: Record<string, any> = {
+    scolarite: CreditCard,
+    transport: Landmark,
+    cantine: UtensilsCrossed,
+    wallet: Wallet,
+    uniforme: ShoppingCart,
+    fournitures: Package,
+    article: ShoppingCart,
+    autre: CreditCard,
+  };
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-        <CreditCard className="h-7 w-7 text-primary" /> Paiements
-      </h1>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <CreditCard className="h-7 w-7 text-primary" /> Paiements
+        </h1>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200">
+          <TrendingUp className="h-4 w-4 text-emerald-600" />
+          <span className="text-sm font-bold text-emerald-700">{totalRecettes.toLocaleString()} GNF</span>
+        </div>
+      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
-        {statsByType.map(s => (
-          <Card key={s.value}>
-            <CardHeader className="pb-1 pt-3 px-3"><CardTitle className="text-xs text-muted-foreground">{s.label}</CardTitle></CardHeader>
-            <CardContent className="px-3 pb-3">
-              <p className="text-lg font-bold">{s.total.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">{s.count} paiement(s)</p>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Stats with distinct colors */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        {statsByType.map(s => {
+          const colors = typeColorMap[s.value] || typeColorMap.autre;
+          const IconComp = typeIconMap[s.value] || CreditCard;
+          return (
+            <Card key={s.value} className={`${colors.bg} ${colors.border} border`}>
+              <CardContent className="pt-4 pb-3 px-4">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${colors.icon}`}>
+                    <IconComp className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground truncate">{s.label}</p>
+                    <p className={`text-lg font-bold ${colors.text}`}>{s.total.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">{s.count} paiement(s)</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <Tabs defaultValue="individuel">
-        <TabsList className="flex flex-wrap">
-          <TabsTrigger value="individuel">🎓 Élèves Individuels</TabsTrigger>
-          <TabsTrigger value="famille">👨‍👩‍👧‍👦 Comptes Familles</TabsTrigger>
-          <TabsTrigger value="portefeuille">💰 Portefeuille</TabsTrigger>
-          <TabsTrigger value="cantine">🍽️ Cantine</TabsTrigger>
-          <TabsTrigger value="historique">📋 Historique</TabsTrigger>
-          <TabsTrigger value="tendances">📊 Tendances</TabsTrigger>
+        <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/60 p-1">
+          <TabsTrigger value="individuel" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">🎓 Élèves</TabsTrigger>
+          <TabsTrigger value="famille" className="data-[state=active]:bg-violet-500 data-[state=active]:text-white">👨‍👩‍👧‍👦 Familles</TabsTrigger>
+          <TabsTrigger value="portefeuille" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">💰 Portefeuille</TabsTrigger>
+          <TabsTrigger value="cantine" className="data-[state=active]:bg-green-500 data-[state=active]:text-white">🍽️ Cantine</TabsTrigger>
+          <TabsTrigger value="historique" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white">📋 Historique</TabsTrigger>
+          <TabsTrigger value="tendances" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-white">📊 Tendances</TabsTrigger>
         </TabsList>
 
         <TabsContent value="individuel" className="mt-4">
