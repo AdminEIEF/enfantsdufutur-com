@@ -345,7 +345,7 @@ export default function EmploiDuTemps() {
         </TabsList>
       </Tabs>
 
-        <Card>
+      {!selectedClasseId ? (
           <CardContent className="py-16 text-center text-muted-foreground">
             <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-30" />
             <p className="text-lg font-medium">Sélectionnez une classe</p>
