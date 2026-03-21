@@ -852,6 +852,20 @@ function RechargePortefeuillePanel({ eleves, familles }: { eleves: any[]; famill
     });
   }, [familles, eleves]);
 
+  const normalizePhoneRecharge = (p: string) => (p || '').replace(/[\s\-\+]/g, '').replace(/^224/, '');
+
+  const filteredFamillesRecharge = useMemo(() => {
+    if (!searchFamilleRecharge.trim()) return famillesAvecEnfants;
+    const q = searchFamilleRecharge.toLowerCase().trim();
+    const qPhone = normalizePhoneRecharge(q);
+    return famillesAvecEnfants.filter((f: any) =>
+      f.nom_famille.toLowerCase().includes(q) ||
+      f.enfants.some((e: any) => `${e.prenom} ${e.nom}`.toLowerCase().includes(q)) ||
+      (f.telephone_pere && normalizePhoneRecharge(f.telephone_pere).includes(qPhone)) ||
+      (f.telephone_mere && normalizePhoneRecharge(f.telephone_mere).includes(qPhone))
+    );
+  }, [famillesAvecEnfants, searchFamilleRecharge]);
+
   const selectedFamille = famillesAvecEnfants.find((f: any) => f.id === familleId);
   const selectedEleve = eleves.find((e: any) => e.id === eleveId);
   const familleFromEleve = selectedEleve?.famille_id ? familles.find((f: any) => f.id === selectedEleve.famille_id) : null;
