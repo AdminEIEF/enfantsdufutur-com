@@ -56,10 +56,24 @@ export default function Transport() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, statut, zone_transport_id, classe_id, classes(nom), zones_transport:zone_transport_id(id, nom, prix_mensuel, chauffeur_bus, telephone_chauffeur, quartiers)')
+        .select('id, nom, prenom, matricule, statut, zone_transport_id, classe_id, classes(nom), zones_transport:zone_transport_id(id, nom, quartiers)')
         .not('zone_transport_id', 'is', null)
         .eq('statut', 'inscrit')
         .order('nom');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Véhicules avec chauffeur assigné (source unique de vérité pour chauffeur par zone)
+  const { data: vehiculesAssignes = [] } = useQuery({
+    queryKey: ['vehicules-assignation'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vehicules_transport')
+        .select('id, immatriculation, marque, capacite, zone_transport_id, chauffeur_id, employes:chauffeur_id(id, nom, prenom, telephone)')
+        .eq('actif', true)
+        .order('immatriculation');
       if (error) throw error;
       return data;
     },
@@ -74,23 +88,26 @@ export default function Transport() {
     });
   }, [eleves, search, filterZone]);
 
-  // Stats par zone
+  // Stats par zone — chauffeur vient de vehicules_transport.chauffeur_id
   const statsParZone = useMemo(() => {
     return zones.map((z: any) => {
       const elevesZone = eleves.filter((e: any) => e.zone_transport_id === z.id);
+      const veh = vehiculesAssignes.find((v: any) => v.zone_transport_id === z.id);
+      const chauffeur = veh?.employes;
       return {
         id: z.id,
         nom: z.nom,
-        chauffeur: z.chauffeur_bus || '—',
-        telephoneChauffeur: z.telephone_chauffeur || '',
+        chauffeurNom: chauffeur ? `${chauffeur.prenom} ${chauffeur.nom}` : null,
+        chauffeurTel: chauffeur?.telephone || '',
+        busImmat: veh?.immatriculation || null,
         quartiers: z.quartiers || [],
-        prixMensuel: Number(z.prix_mensuel),
         effectif: elevesZone.length,
       };
     });
-  }, [zones, eleves]);
+  }, [zones, eleves, vehiculesAssignes]);
 
   const totalElevesTransport = eleves.length;
+  const nbChauffeurs = vehiculesAssignes.filter((v: any) => v.chauffeur_id).length;
   const chartEffectif = statsParZone.map(z => ({ name: z.nom, value: z.effectif }));
 
   return (
@@ -129,8 +146,8 @@ export default function Transport() {
             <div className="flex items-center gap-3">
               <Bus className="h-8 w-8 text-primary" />
               <div>
-                <p className="text-sm text-muted-foreground">Chauffeurs</p>
-                <p className="text-2xl font-bold">{statsParZone.filter(z => z.chauffeur !== '—').length}</p>
+                <p className="text-sm text-muted-foreground">Chauffeurs assignés</p>
+                <p className="text-2xl font-bold">{nbChauffeurs}</p>
               </div>
             </div>
           </CardContent>
@@ -169,7 +186,11 @@ export default function Transport() {
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="font-semibold text-sm">{z.nom}</h3>
-                        <p className="text-xs text-muted-foreground">{z.chauffeur}</p>
+                        {z.chauffeurNom ? (
+                          <p className="text-xs text-muted-foreground">🚐 {z.chauffeurNom}</p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">Pas de chauffeur</p>
+                        )}
                       </div>
                       <Badge variant="outline" className="text-xs">{z.effectif} élèves</Badge>
                     </div>
@@ -177,8 +198,8 @@ export default function Transport() {
                       <p className="text-[11px] text-muted-foreground/70 line-clamp-1">{z.quartiers.join(', ')}</p>
                     )}
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-mono">{z.prixMensuel.toLocaleString()} F/mois</span>
-                      {z.telephoneChauffeur && <span className="text-muted-foreground">📞 {z.telephoneChauffeur}</span>}
+                      {z.busImmat && <span className="font-mono text-muted-foreground">🚌 {z.busImmat}</span>}
+                      {z.chauffeurTel && <span className="text-muted-foreground">📞 {z.chauffeurTel}</span>}
                     </div>
                   </CardContent>
                 </Card>
@@ -225,14 +246,18 @@ export default function Transport() {
               </SelectContent>
             </Select>
             <Button variant="outline" size="sm" className="ml-auto" onClick={() => {
-              const rows = filteredEleves.map((e: any) => ({
-                Matricule: e.matricule || '',
-                Nom: e.nom,
-                Prénom: e.prenom,
-                Classe: e.classes?.nom || '',
-                Zone: (e.zones_transport as any)?.nom || '',
-                Chauffeur: (e.zones_transport as any)?.chauffeur_bus || '',
-              }));
+              const rows = filteredEleves.map((e: any) => {
+                const veh = vehiculesAssignes.find((v: any) => v.zone_transport_id === e.zone_transport_id);
+                const chauffeur = veh?.employes;
+                return {
+                  Matricule: e.matricule || '',
+                  Nom: e.nom,
+                  Prénom: e.prenom,
+                  Classe: e.classes?.nom || '',
+                  Zone: (e.zones_transport as any)?.nom || '',
+                  Chauffeur: chauffeur ? `${chauffeur.prenom} ${chauffeur.nom}` : '',
+                };
+              });
               exportToExcel(rows, `transport_eleves_${new Date().toISOString().slice(0, 10)}`, 'Transport');
               toast({ title: 'Export réussi', description: `${rows.length} élève(s)` });
             }}>
@@ -257,15 +282,19 @@ export default function Transport() {
                     <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Chargement…</TableCell></TableRow>
                   ) : filteredEleves.length === 0 ? (
                     <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucun élève inscrit au transport</TableCell></TableRow>
-                  ) : filteredEleves.map((e: any) => (
+                  ) : filteredEleves.map((e: any) => {
+                    const veh = vehiculesAssignes.find((v: any) => v.zone_transport_id === e.zone_transport_id);
+                    const chauffeur = veh?.employes;
+                    return (
                     <TableRow key={e.id}>
                       <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
                       <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
                       <TableCell>{e.classes?.nom || '—'}</TableCell>
                       <TableCell><Badge variant="outline">{(e.zones_transport as any)?.nom || '—'}</Badge></TableCell>
-                      <TableCell className="text-sm">{(e.zones_transport as any)?.chauffeur_bus || '—'}</TableCell>
+                      <TableCell className="text-sm">{chauffeur ? `${chauffeur.prenom} ${chauffeur.nom}` : '—'}</TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
