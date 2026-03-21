@@ -37,6 +37,7 @@ export default function Transport() {
   const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [filterZone, setFilterZone] = useState('all');
+  const [selectedZone, setSelectedZone] = useState<any>(null);
 
   // Zones
   const { data: zones = [] } = useQuery({
