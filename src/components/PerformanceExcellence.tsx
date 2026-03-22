@@ -79,9 +79,12 @@ function HonneurCard({ eleve, rank, logoUrl, periodeName, schoolConfig }: {
   );
 }
 
+const SECONDAIRE_CYCLES = ['collège', 'lycée', 'college', 'lycee'];
+const isSecondaireCycle = (cycleName: string) => SECONDAIRE_CYCLES.some(c => cycleName.toLowerCase().includes(c));
+
 export default function PerformanceExcellence({ isPublic = false }: { isPublic?: boolean }) {
   const [selectedPeriode, setSelectedPeriode] = useState<string>('all');
-  const [cycleFilter, setCycleFilter] = useState<string>('all');
+  const [sectionTab, setSectionTab] = useState<string>('autres');
   const [printingAll, setPrintingAll] = useState(false);
   const hallRef = useRef<HTMLDivElement>(null);
   const { data: schoolConfig } = useSchoolConfig();
@@ -90,15 +93,14 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
     selectedPeriode !== 'all' ? selectedPeriode : undefined
   );
 
-  const cycles = [...new Set(niveauPerformances.map(n => n.cycle_nom))].filter(Boolean);
+  // Filter by section tab instead of cycle dropdown
+  const filteredPerf = niveauPerformances.filter(n => 
+    sectionTab === 'secondaire' ? isSecondaireCycle(n.cycle_nom) : !isSecondaireCycle(n.cycle_nom)
+  );
 
-  const filteredPerf = cycleFilter === 'all'
-    ? niveauPerformances
-    : niveauPerformances.filter(n => n.cycle_nom === cycleFilter);
-
-  const filteredHonneur = cycleFilter === 'all'
-    ? tableauHonneur
-    : tableauHonneur.filter(e => e.cycle_nom === cycleFilter);
+  const filteredHonneur = tableauHonneur.filter(e => 
+    sectionTab === 'secondaire' ? isSecondaireCycle(e.cycle_nom) : !isSecondaireCycle(e.cycle_nom)
+  );
 
   const periodeName = selectedPeriode === 'all'
     ? 'Toutes les périodes'
