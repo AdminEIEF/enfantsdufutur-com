@@ -346,16 +346,22 @@ export default function CalendrierScolaire() {
                 {upcomingEvents.map((ev: any) => {
                   const typeInfo = getTypeInfo(ev.type);
                   return (
-                    <div key={ev.id} className="flex items-center gap-2 text-xs">
-                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: ev.couleur || typeInfo.color }} />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{ev.titre}</div>
-                        <div className="text-muted-foreground">
-                          {format(new Date(ev.date_debut), 'd MMM', { locale: fr })}
-                          {ev.date_fin && ev.date_fin !== ev.date_debut ? ` — ${format(new Date(ev.date_fin), 'd MMM', { locale: fr })}` : ''}
-                        </div>
-                      </div>
-                    </div>
+                     <div key={ev.id} className="flex items-start gap-2 text-xs">
+                       <div className="w-2 h-2 rounded-full flex-shrink-0 mt-1" style={{ backgroundColor: ev.couleur || typeInfo.color }} />
+                       <div className="flex-1 min-w-0">
+                         <div className="font-medium truncate">{ev.titre}</div>
+                         {ev.matieres?.nom && (
+                           <div className="text-muted-foreground">📖 {ev.matieres.nom}</div>
+                         )}
+                         {ev.description && (
+                           <div className="text-muted-foreground line-clamp-2">{ev.description}</div>
+                         )}
+                         <div className="text-muted-foreground">
+                           {format(new Date(ev.date_debut), 'd MMM', { locale: fr })}
+                           {ev.date_fin && ev.date_fin !== ev.date_debut ? ` — ${format(new Date(ev.date_fin), 'd MMM', { locale: fr })}` : ''}
+                         </div>
+                       </div>
+                     </div>
                   );
                 })}
                 {upcomingEvents.length === 0 && <p className="text-xs text-muted-foreground">Aucun événement à venir</p>}
