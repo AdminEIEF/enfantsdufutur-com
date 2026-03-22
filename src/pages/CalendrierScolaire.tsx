@@ -231,7 +231,11 @@ export default function CalendrierScolaire() {
     return filteredEvents.filter((e: any) => {
       const start = e.date_debut;
       const end = e.date_fin || e.date_debut;
-      return dayStr >= start && dayStr <= end;
+      // Event spans this day
+      if (dayStr >= start && dayStr <= end) return true;
+      // Or has a specific epreuve on this day
+      if (e.evenement_classes?.some((ec: any) => ec.date_epreuve === dayStr)) return true;
+      return false;
     });
   };
 
