@@ -163,31 +163,32 @@ export default function StudentDashboard() {
               <h3 className="font-semibold flex items-center gap-2">
                 <CalendarDays className="h-5 w-5 text-primary" /> Mon emploi du temps
               </h3>
-              {Object.entries(edtParJour)
-                .sort(([a], [b]) => Number(a) - Number(b))
-                .map(([jour, cours]) => (
-                  <Card key={jour}>
-                    <CardContent className="py-2.5 px-3 space-y-1.5">
-                      <p className="text-xs font-bold text-primary">{JOURS[Number(jour)] || `Jour ${jour}`}</p>
-                      {cours.map((s: any) => (
-                        <div key={s.id} className="flex items-center gap-3 py-1 px-2 rounded-lg bg-muted/50">
-                          <div className="text-[11px] font-mono text-muted-foreground w-[70px] shrink-0">
-                            {s.heure_debut?.slice(0, 5)} — {s.heure_fin?.slice(0, 5)}
+              <div className="grid grid-cols-2 gap-3">
+                {Object.entries(edtParJour)
+                  .sort(([a], [b]) => Number(a) - Number(b))
+                  .map(([jour, cours]) => (
+                    <Card key={jour}>
+                      <CardContent className="py-2.5 px-3 space-y-1.5">
+                        <p className="text-xs font-bold text-primary">{JOURS[Number(jour)] || `Jour ${jour}`}</p>
+                        {cours.map((s: any) => (
+                          <div key={s.id} className="flex items-center gap-2 py-1 px-2 rounded-lg bg-muted/50">
+                            <div className="text-[10px] font-mono text-muted-foreground w-[60px] shrink-0">
+                              {s.heure_debut?.slice(0, 5)}—{s.heure_fin?.slice(0, 5)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium truncate">{s.matieres?.nom}</p>
+                              {s.employes && (
+                                <p className="text-[10px] text-muted-foreground truncate">
+                                  {s.employes.prenom} {s.employes.nom}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{s.matieres?.nom}</p>
-                            {s.employes && (
-                              <p className="text-[11px] text-muted-foreground">
-                                {s.employes.prenom} {s.employes.nom}
-                              </p>
-                            )}
-                          </div>
-                          {s.salle && <Badge variant="outline" className="text-[10px] shrink-0">{s.salle}</Badge>}
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                ))}
+                        ))}
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
             </div>
           )}
 
