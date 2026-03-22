@@ -269,10 +269,10 @@ export default function CalendrierScolaire() {
   // Upcoming events
   const upcomingEvents = useMemo(() => {
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    return events
+    return filteredEvents
       .filter((e: any) => (e.date_fin || e.date_debut) >= todayStr)
       .slice(0, 8);
-  }, [events]);
+  }, [filteredEvents]);
 
   const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
