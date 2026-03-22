@@ -1601,6 +1601,8 @@ export type Database = {
           classe_id: string
           created_at: string
           evenement_id: string
+          heure_debut: string | null
+          heure_fin: string | null
           id: string
           matiere_id: string | null
         }
@@ -1608,6 +1610,8 @@ export type Database = {
           classe_id: string
           created_at?: string
           evenement_id: string
+          heure_debut?: string | null
+          heure_fin?: string | null
           id?: string
           matiere_id?: string | null
         }
@@ -1615,6 +1619,8 @@ export type Database = {
           classe_id?: string
           created_at?: string
           evenement_id?: string
+          heure_debut?: string | null
+          heure_fin?: string | null
           id?: string
           matiere_id?: string | null
         }
