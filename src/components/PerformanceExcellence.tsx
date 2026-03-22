@@ -123,7 +123,8 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
     doc.text("TABLEAU D'HONNEUR", pageW / 2, 16, { align: 'center' });
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-    doc.text(`${periodeName} — Moyenne Générale: ${moyenneGenerale.toFixed(2)} / 20`, pageW / 2, 26, { align: 'center' });
+    const sectionBareme = sectionTab === 'secondaire' ? 20 : 10;
+    doc.text(`${periodeName} — Moyenne Générale: ${moyenneGenerale.toFixed(2)} / ${sectionBareme}`, pageW / 2, 26, { align: 'center' });
 
     doc.setTextColor(30, 30, 30);
     let y = 45;
