@@ -581,7 +581,7 @@ export default function CalendrierScolaire() {
                         <span className="text-xs font-medium">{c.nom}</span>
                         {isChecked && (
                           <Button type="button" variant="ghost" size="sm" className="h-5 px-1 text-[10px]" onClick={() => {
-                            setForm({ ...form, classes_matieres: [...form.classes_matieres, { classe_id: c.id, matiere_id: '', heure_debut: '', heure_fin: '' }] });
+                            setForm({ ...form, classes_matieres: [...form.classes_matieres, { classe_id: c.id, matiere_id: '', heure_debut: '', heure_fin: '', date_epreuve: '' }] });
                           }}>
                             <Plus className="h-3 w-3 mr-0.5" /> Matière
                           </Button>
