@@ -297,16 +297,21 @@ export default function CalendrierScolaire() {
                       {format(day, 'd')}
                     </div>
                     <div className="space-y-0.5">
-                      {dayEvents.slice(0, 3).map((ev: any) => (
-                        <div
-                          key={ev.id}
-                          className="text-[10px] leading-tight px-1 py-0.5 rounded truncate text-white font-medium"
-                          style={{ backgroundColor: ev.couleur || getTypeInfo(ev.type).color }}
-                          title={`${ev.titre}${ev.matieres?.nom ? ' — ' + ev.matieres.nom : ''}`}
-                        >
-                          {ev.matieres?.nom ? `${ev.titre} (${ev.matieres.nom})` : ev.titre}
-                        </div>
-                      ))}
+                      {dayEvents.slice(0, 3).map((ev: any) => {
+                        const classesInfo = ev.evenement_classes?.length > 0
+                          ? ev.evenement_classes.map((ec: any) => `${ec.classes?.nom || ''}${ec.matieres?.nom ? ' (' + ec.matieres.nom + ')' : ''}`).join(', ')
+                          : (ev.matieres?.nom || '');
+                        return (
+                          <div
+                            key={ev.id}
+                            className="text-[10px] leading-tight px-1 py-0.5 rounded truncate text-white font-medium"
+                            style={{ backgroundColor: ev.couleur || getTypeInfo(ev.type).color }}
+                            title={`${ev.titre}${classesInfo ? ' — ' + classesInfo : ''}`}
+                          >
+                            {ev.titre}
+                          </div>
+                        );
+                      })}
                       {dayEvents.length > 3 && (
                         <div className="text-[10px] text-muted-foreground px-1">+{dayEvents.length - 3}</div>
                       )}
