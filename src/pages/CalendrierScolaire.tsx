@@ -258,9 +258,9 @@ export default function CalendrierScolaire() {
                           key={ev.id}
                           className="text-[10px] leading-tight px-1 py-0.5 rounded truncate text-white font-medium"
                           style={{ backgroundColor: ev.couleur || getTypeInfo(ev.type).color }}
-                          title={ev.titre}
+                          title={`${ev.titre}${ev.matieres?.nom ? ' — ' + ev.matieres.nom : ''}`}
                         >
-                          {ev.titre}
+                          {ev.matieres?.nom ? `${ev.titre} (${ev.matieres.nom})` : ev.titre}
                         </div>
                       ))}
                       {dayEvents.length > 3 && (
