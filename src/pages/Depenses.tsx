@@ -35,6 +35,7 @@ const SERVICES = [
 
 const SOUS_CATEGORIES: Record<string, string[]> = {
   'Fonctionnement': ['Loyer', 'Électricité', 'Eau', 'Internet/Téléphone', 'Fournitures bureau', 'Produits d\'entretien', 'Impression/Papeterie', 'Frais bancaires', 'Assurances', 'Impôts/Taxes', 'Autre'],
+  'Salaires': ['Enseignant Primaire', 'Enseignant Secondaire', 'Administration & Direction', 'Personnel de soutien'],
   'Pédagogie': ['Matériel pédagogique', 'Équipement laboratoire', 'Matériel robotique', 'Équipement sportif', 'Matériel informatique', 'Logiciels/Licences', 'Formation enseignants', 'Autre'],
   'Transport': ['Carburant', 'Entretien véhicule', 'Assurance véhicule', 'Pièces détachées', 'Péage/Parking', 'Lavage', 'Contrôle technique', 'Autre'],
   'Cantine': ['Achat de vivres', 'Gaz/Charbon', 'Ustensiles de cuisine', 'Produits d\'hygiène', 'Eau minérale', 'Autre'],
