@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle, Camera, Upload, Bus, FileDown, Trash2, ChevronRight } from 'lucide-react';
+import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle, Camera, Upload, Bus, FileDown, Trash2, ChevronRight, GraduationCap } from 'lucide-react';
 import PlancheBadgesScolaires from '@/components/PlancheBadgesScolaires';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
@@ -743,18 +743,28 @@ export default function Eleves() {
       </h1>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card><CardContent className="pt-4 flex items-center gap-3">
           <Users className="h-8 w-8 text-primary" />
           <div><p className="text-2xl font-bold">{eleves.length}</p><p className="text-xs text-muted-foreground">Total élèves</p></div>
         </CardContent></Card>
+        <Card className="border-primary/30"><CardContent className="pt-4 flex items-center gap-3">
+          <GraduationCap className="h-8 w-8 text-primary" />
+          <div>
+            <p className="text-2xl font-bold">{eleves.filter((e: any) => { const cn = (e.classes?.niveaux?.cycles?.nom || '').toLowerCase(); return cn.includes('collège') || cn.includes('college') || cn.includes('lycée') || cn.includes('lycee'); }).length}</p>
+            <p className="text-xs text-muted-foreground">Secondaire (Collège & Lycée)</p>
+          </div>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4 flex items-center gap-3">
+          <Users className="h-8 w-8 text-accent-foreground" />
+          <div>
+            <p className="text-2xl font-bold">{eleves.filter((e: any) => { const cn = (e.classes?.niveaux?.cycles?.nom || '').toLowerCase(); return !(cn.includes('collège') || cn.includes('college') || cn.includes('lycée') || cn.includes('lycee')); }).length}</p>
+            <p className="text-xs text-muted-foreground">Préscolaire & Primaire</p>
+          </div>
+        </CardContent></Card>
         <Card><CardContent className="pt-4 flex items-center gap-3">
           <Users className="h-8 w-8 text-blue-500" />
           <div><p className="text-2xl font-bold">{totalFamille}</p><p className="text-xs text-muted-foreground">En famille</p></div>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4 flex items-center gap-3">
-          <UserCheck className="h-8 w-8 text-orange-500" />
-          <div><p className="text-2xl font-bold">{totalIndividuel}</p><p className="text-xs text-muted-foreground">Individuels</p></div>
         </CardContent></Card>
         {totalAbandons > 0 && (
           <Card className="border-destructive/30"><CardContent className="pt-4 flex items-center gap-3">

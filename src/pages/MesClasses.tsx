@@ -14,8 +14,11 @@ import { sortClasses } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
+const SECONDAIRE_CYCLES = ['collège', 'lycée', 'college', 'lycee'];
+const isSecondaireCycle = (cycleName: string) => SECONDAIRE_CYCLES.some(c => (cycleName || '').toLowerCase().includes(c));
+
 export default function MesClasses() {
-  const [selectedCycle, setSelectedCycle] = useState('all');
+  const [selectedTab, setSelectedTab] = useState('secondaire');
   const [classSorts, setClassSorts] = useState<Record<string, 'nom' | 'matricule'>>({});
   const [classSearches, setClassSearches] = useState<Record<string, string>>({});
   const { data: schoolConfig } = useSchoolConfig();
@@ -44,35 +47,24 @@ export default function MesClasses() {
     },
   });
 
-  const cycles = useMemo(() => {
-    const map = new Map<string, { id: string; nom: string; ordre: number }>();
-    classes.forEach((c: any) => {
-      const cycle = c.niveaux?.cycles;
-      if (cycle && !map.has(cycle.id)) {
-        map.set(cycle.id, { id: cycle.id, nom: cycle.nom, ordre: cycle.ordre });
-      }
-    });
-    return Array.from(map.values()).sort((a, b) => a.ordre - b.ordre);
-  }, [classes]);
 
-  const cycleCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: eleves.length };
-    eleves.forEach((e: any) => {
-      const cycleId = e.classes?.niveaux?.cycles?.id;
-      if (cycleId) counts[cycleId] = (counts[cycleId] || 0) + 1;
-    });
-    return counts;
+  const secondaireCount = useMemo(() => {
+    return eleves.filter((e: any) => isSecondaireCycle(e.classes?.niveaux?.cycles?.nom || '')).length;
   }, [eleves]);
+  const autresCount = eleves.length - secondaireCount;
 
   const filteredEleves = useMemo(() => {
-    if (selectedCycle === 'all') return eleves;
-    return eleves.filter((e: any) => e.classes?.niveaux?.cycles?.id === selectedCycle);
-  }, [eleves, selectedCycle]);
+    return eleves.filter((e: any) => {
+      const cycleName = e.classes?.niveaux?.cycles?.nom || '';
+      return selectedTab === 'secondaire' ? isSecondaireCycle(cycleName) : !isSecondaireCycle(cycleName);
+    });
+  }, [eleves, selectedTab]);
 
   const structure = useMemo(() => {
-    const filteredClasses = selectedCycle === 'all'
-      ? classes
-      : classes.filter((c: any) => c.niveaux?.cycles?.id === selectedCycle);
+    const filteredClasses = classes.filter((c: any) => {
+      const cycleName = c.niveaux?.cycles?.nom || '';
+      return selectedTab === 'secondaire' ? isSecondaireCycle(cycleName) : !isSecondaireCycle(cycleName);
+    });
 
     const niveauMap = new Map<string, { id: string; nom: string; ordre: number; classes: any[] }>();
     filteredClasses.forEach((c: any) => {
@@ -84,7 +76,7 @@ export default function MesClasses() {
       niveauMap.get(niv.id)!.classes.push(c);
     });
     return Array.from(niveauMap.values()).sort((a, b) => a.ordre - b.ordre);
-  }, [classes, selectedCycle]);
+  }, [classes, selectedTab]);
 
   // Stats for a class
   const getClassStats = (classeId: string) => {
@@ -139,26 +131,25 @@ export default function MesClasses() {
         <h1 className="text-2xl font-bold">Mes Classes</h1>
       </div>
 
-      <Tabs value={selectedCycle} onValueChange={setSelectedCycle}>
+      <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
-          <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
-            <Users className="h-4 w-4 mr-1.5" />
-            Tous
+          <TabsTrigger value="secondaire" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
+            <GraduationCap className="h-4 w-4 mr-1.5" />
+            Secondaire
             <Badge variant="secondary" className="ml-1.5 text-xs bg-primary/20">
-              {cycleCounts.all || 0}
+              {secondaireCount}
             </Badge>
           </TabsTrigger>
-          {cycles.map(cycle => (
-            <TabsTrigger key={cycle.id} value={cycle.id} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
-              {cycle.nom}
-              <Badge variant="secondary" className="ml-1.5 text-xs bg-primary/20">
-                {cycleCounts[cycle.id] || 0}
-              </Badge>
-            </TabsTrigger>
-          ))}
+          <TabsTrigger value="autres" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
+            <Users className="h-4 w-4 mr-1.5" />
+            Préscolaire & Primaire
+            <Badge variant="secondary" className="ml-1.5 text-xs bg-primary/20">
+              {autresCount}
+            </Badge>
+          </TabsTrigger>
         </TabsList>
 
-        {['all', ...cycles.map(c => c.id)].map(tabValue => (
+        {['secondaire', 'autres'].map(tabValue => (
           <TabsContent key={tabValue} value={tabValue} className="mt-4 space-y-4">
             {isLoading ? (
               <div className="space-y-4">
