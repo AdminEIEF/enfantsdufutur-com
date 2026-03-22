@@ -1,0 +1,1 @@
+ALTER TABLE public.evenement_classes ADD COLUMN IF NOT EXISTS date_epreuve date;

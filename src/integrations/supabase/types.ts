@@ -1600,6 +1600,7 @@ export type Database = {
         Row: {
           classe_id: string
           created_at: string
+          date_epreuve: string | null
           evenement_id: string
           heure_debut: string | null
           heure_fin: string | null
@@ -1609,6 +1610,7 @@ export type Database = {
         Insert: {
           classe_id: string
           created_at?: string
+          date_epreuve?: string | null
           evenement_id: string
           heure_debut?: string | null
           heure_fin?: string | null
@@ -1618,6 +1620,7 @@ export type Database = {
         Update: {
           classe_id?: string
           created_at?: string
+          date_epreuve?: string | null
           evenement_id?: string
           heure_debut?: string | null
           heure_fin?: string | null
