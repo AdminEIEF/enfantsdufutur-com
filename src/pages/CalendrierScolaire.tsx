@@ -100,10 +100,34 @@ export default function CalendrierScolaire() {
   const { data: classes = [] } = useQuery({
     queryKey: ['classes-cal'],
     queryFn: async () => {
-      const { data } = await supabase.from('classes').select('id, nom, niveaux:niveau_id(nom, ordre, cycles:cycle_id(ordre))');
+      const { data } = await supabase.from('classes').select('id, nom, niveau_id, niveaux:niveau_id(nom, ordre, cycles:cycle_id(nom, ordre))');
       return sortClasses(data || []);
     },
   });
+
+  // Filter classes by cycle tab
+  const filteredClasses = useMemo(() => {
+    return classes.filter((c: any) => {
+      const cycleName = c.niveaux?.cycles?.nom || '';
+      return cycleTab === 'secondaire' ? isSecondaireCycle(cycleName) : !isSecondaireCycle(cycleName);
+    });
+  }, [classes, cycleTab]);
+
+  // Filter events: show events linked to classes of the current cycle tab (+ global events with no class)
+  const filteredEvents = useMemo(() => {
+    const cycleClassIds = new Set(filteredClasses.map((c: any) => c.id));
+    return events.filter((ev: any) => {
+      // Global event (no class linked)
+      const hasClassLinks = ev.evenement_classes?.length > 0 || ev.classe_id;
+      if (!hasClassLinks) return true;
+      // Check evenement_classes links
+      if (ev.evenement_classes?.length > 0) {
+        return ev.evenement_classes.some((ec: any) => cycleClassIds.has(ec.classe_id));
+      }
+      // Fallback to direct classe_id
+      return cycleClassIds.has(ev.classe_id);
+    });
+  }, [events, filteredClasses]);
 
   const { data: matieres = [] } = useQuery({
     queryKey: ['matieres-cal'],
