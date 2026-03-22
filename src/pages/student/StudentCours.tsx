@@ -109,6 +109,7 @@ export default function StudentCours() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedMatiere, setSelectedMatiere] = useState<any>(null);
+  const [viewingCours, setViewingCours] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
