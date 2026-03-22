@@ -330,29 +330,45 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
         </Card>
       )}
 
-      {/* Tableau d'Honneur */}
-      {filteredHonneur.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <Trophy className="h-5 w-5 text-[hsl(38,92%,50%)]" />
-            <h3 className="text-lg font-bold text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Tableau d'Honneur ({filteredHonneur.length} élèves)
-            </h3>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-            {filteredHonneur.map((eleve, i) => (
-              <HonneurCard
-                key={eleve.id}
-                eleve={eleve}
-                rank={i}
-                logoUrl={schoolConfig?.logo_url || null}
-                periodeName={periodeName}
-                schoolConfig={config}
-              />
+      {/* Tableau d'Honneur — grouped by niveau */}
+      {filteredHonneur.length > 0 && (() => {
+        const byNiveau: Record<string, typeof filteredHonneur> = {};
+        filteredHonneur.forEach(e => {
+          const key = e.niveau_nom || 'Autre';
+          if (!byNiveau[key]) byNiveau[key] = [];
+          byNiveau[key].push(e);
+        });
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-[hsl(38,92%,50%)]" />
+              <h3 className="text-lg font-bold text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Tableau d'Honneur ({filteredHonneur.length} élèves)
+              </h3>
+            </div>
+            {Object.entries(byNiveau).map(([niveauNom, eleves]) => (
+              <div key={niveauNom}>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">{niveauNom}</Badge>
+                  <span className="text-xs">({eleves.length} élèves)</span>
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                  {eleves.map((eleve, i) => (
+                    <HonneurCard
+                      key={eleve.id}
+                      eleve={eleve}
+                      rank={i}
+                      logoUrl={schoolConfig?.logo_url || null}
+                      periodeName={periodeName}
+                      schoolConfig={config}
+                    />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {filteredHonneur.length === 0 && !isLoading && (
         <Card className="border-dashed">
