@@ -211,6 +211,14 @@ export default function CalendrierScolaire() {
 
   const openEdit = (ev: any) => {
     setEditingId(ev.id);
+    const ecList: ClasseMatiere[] = (ev.evenement_classes || []).map((ec: any) => ({
+      classe_id: ec.classe_id,
+      matiere_id: ec.matiere_id || '',
+    }));
+    // Fallback: if no evenement_classes but has classe_id on event
+    if (ecList.length === 0 && ev.classe_id) {
+      ecList.push({ classe_id: ev.classe_id, matiere_id: ev.matiere_id || '' });
+    }
     setForm({
       titre: ev.titre,
       description: ev.description || '',
@@ -222,6 +230,7 @@ export default function CalendrierScolaire() {
       classe_id: ev.classe_id || '',
       matiere_id: ev.matiere_id || '',
       couleur: ev.couleur || '#3b82f6',
+      classes_matieres: ecList,
     });
     setDialogOpen(true);
   };
