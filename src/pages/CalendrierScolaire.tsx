@@ -562,10 +562,10 @@ export default function CalendrierScolaire() {
             </div>
             {/* Multi-class selection */}
             <div>
-              <Label className="text-xs font-semibold">Classes concernées (optionnel)</Label>
+              <Label className="text-xs font-semibold">Classes concernées — {cycleTab === 'secondaire' ? 'Secondaire' : 'Primaire / Maternelle'}</Label>
               <p className="text-[10px] text-muted-foreground mb-2">Cochez les classes et choisissez la matière pour chacune</p>
               <div className="max-h-[200px] overflow-y-auto border rounded-lg p-2 space-y-1.5">
-                {classes.map((c: any) => {
+                {filteredClasses.map((c: any) => {
                   const entry = form.classes_matieres.find(cm => cm.classe_id === c.id);
                   const isChecked = !!entry;
                   return (
