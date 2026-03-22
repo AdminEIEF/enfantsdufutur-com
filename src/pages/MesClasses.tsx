@@ -47,16 +47,6 @@ export default function MesClasses() {
     },
   });
 
-  const cycles = useMemo(() => {
-    const map = new Map<string, { id: string; nom: string; ordre: number }>();
-    classes.forEach((c: any) => {
-      const cycle = c.niveaux?.cycles;
-      if (cycle && !map.has(cycle.id)) {
-        map.set(cycle.id, { id: cycle.id, nom: cycle.nom, ordre: cycle.ordre });
-      }
-    });
-    return Array.from(map.values()).sort((a, b) => a.ordre - b.ordre);
-  }, [classes]);
 
   const secondaireCount = useMemo(() => {
     return eleves.filter((e: any) => isSecondaireCycle(e.classes?.niveaux?.cycles?.nom || '')).length;
