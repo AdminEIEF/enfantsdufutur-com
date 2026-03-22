@@ -362,11 +362,20 @@ export default function CalendrierScolaire() {
                           {ev.heure_debut?.slice(0, 5)} {ev.heure_fin ? `— ${ev.heure_fin.slice(0, 5)}` : ''}
                         </p>
                       )}
-                      {ev.classes?.nom && (
-                        <p className="text-[10px] text-muted-foreground">📚 {ev.classes.nom}</p>
-                      )}
-                      {ev.matieres?.nom && (
-                        <Badge variant="outline" className="text-[10px] mt-0.5">📖 {ev.matieres.nom}</Badge>
+                      {/* Show classes & matières from evenement_classes */}
+                      {ev.evenement_classes?.length > 0 ? (
+                        <div className="space-y-0.5 mt-1">
+                          {ev.evenement_classes.map((ec: any, i: number) => (
+                            <p key={i} className="text-[10px] text-muted-foreground">
+                              📚 {ec.classes?.nom || '?'}{ec.matieres?.nom ? ` — 📖 ${ec.matieres.nom}` : ''}
+                            </p>
+                          ))}
+                        </div>
+                      ) : (
+                        <>
+                          {ev.classes?.nom && <p className="text-[10px] text-muted-foreground">📚 {ev.classes.nom}</p>}
+                          {ev.matieres?.nom && <Badge variant="outline" className="text-[10px] mt-0.5">📖 {ev.matieres.nom}</Badge>}
+                        </>
                       )}
                     </div>
                   );
