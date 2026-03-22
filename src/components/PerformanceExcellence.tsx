@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, Star, TrendingUp, Users, Download, Award, Crown, Printer, FileText } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Trophy, Star, TrendingUp, Users, Download, Award, Crown, Printer, FileText, GraduationCap, School } from 'lucide-react';
 import { usePerformanceData, type TableauHonneurEleve } from '@/hooks/usePerformanceData';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { generateTableauHonneurPDF, generateAllTableauxHonneurPDF } from '@/lib/generateCertificatExcellence';
@@ -78,9 +79,12 @@ function HonneurCard({ eleve, rank, logoUrl, periodeName, schoolConfig }: {
   );
 }
 
+const SECONDAIRE_CYCLES = ['collège', 'lycée', 'college', 'lycee'];
+const isSecondaireCycle = (cycleName: string) => SECONDAIRE_CYCLES.some(c => cycleName.toLowerCase().includes(c));
+
 export default function PerformanceExcellence({ isPublic = false }: { isPublic?: boolean }) {
   const [selectedPeriode, setSelectedPeriode] = useState<string>('all');
-  const [cycleFilter, setCycleFilter] = useState<string>('all');
+  const [sectionTab, setSectionTab] = useState<string>('autres');
   const [printingAll, setPrintingAll] = useState(false);
   const hallRef = useRef<HTMLDivElement>(null);
   const { data: schoolConfig } = useSchoolConfig();
@@ -89,15 +93,14 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
     selectedPeriode !== 'all' ? selectedPeriode : undefined
   );
 
-  const cycles = [...new Set(niveauPerformances.map(n => n.cycle_nom))].filter(Boolean);
+  // Filter by section tab instead of cycle dropdown
+  const filteredPerf = niveauPerformances.filter(n => 
+    sectionTab === 'secondaire' ? isSecondaireCycle(n.cycle_nom) : !isSecondaireCycle(n.cycle_nom)
+  );
 
-  const filteredPerf = cycleFilter === 'all'
-    ? niveauPerformances
-    : niveauPerformances.filter(n => n.cycle_nom === cycleFilter);
-
-  const filteredHonneur = cycleFilter === 'all'
-    ? tableauHonneur
-    : tableauHonneur.filter(e => e.cycle_nom === cycleFilter);
+  const filteredHonneur = tableauHonneur.filter(e => 
+    sectionTab === 'secondaire' ? isSecondaireCycle(e.cycle_nom) : !isSecondaireCycle(e.cycle_nom)
+  );
 
   const periodeName = selectedPeriode === 'all'
     ? 'Toutes les périodes'
@@ -210,17 +213,6 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
                 ))}
               </SelectContent>
             </Select>
-            <Select value={cycleFilter} onValueChange={setCycleFilter}>
-              <SelectTrigger className="w-[150px] h-8 text-xs">
-                <SelectValue placeholder="Cycle" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les cycles</SelectItem>
-                {cycles.map(c => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Button size="sm" variant="outline" onClick={handleExportPDF} className="h-8 text-xs">
               <Download className="mr-1.5 h-3.5 w-3.5" />
               PDF
@@ -239,6 +231,19 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
           </div>
         )}
       </div>
+
+      {/* Section tabs */}
+      <Tabs value={sectionTab} onValueChange={setSectionTab}>
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="autres" className="gap-2">
+            <School className="h-4 w-4" /> Préscolaire & Primaire
+          </TabsTrigger>
+          <TabsTrigger value="secondaire" className="gap-2">
+            <GraduationCap className="h-4 w-4" /> Secondaire
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
 
       {/* Global Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
