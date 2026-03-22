@@ -325,13 +325,34 @@ serve(async (req) => {
 
       // Calendar events (upcoming, for the class or global)
       const today = new Date().toISOString().split('T')[0];
+      
+      // Get events linked to this class via evenement_classes
+      const { data: ecLinks } = await supabaseAdmin
+        .from("evenement_classes")
+        .select("evenement_id")
+        .eq("classe_id", classeId);
+      const linkedEventIds = (ecLinks || []).map((l: any) => l.evenement_id);
+
       const { data: evenements } = await supabaseAdmin
         .from("evenements_calendrier")
-        .select("id, titre, description, type, couleur, date_debut, date_fin, heure_debut, heure_fin")
-        .or(`classe_id.eq.${classeId},classe_id.is.null`)
+        .select("id, titre, description, type, couleur, date_debut, date_fin, heure_debut, heure_fin, matieres:matiere_id(nom)")
+        .or(`classe_id.eq.${classeId},classe_id.is.null${linkedEventIds.length > 0 ? `,id.in.(${linkedEventIds.join(',')})` : ''}`)
         .gte("date_debut", today)
         .order("date_debut", { ascending: true })
         .limit(10);
+
+      // Enrich with evenement_classes for multi-class events
+      if (evenements && evenements.length > 0) {
+        const evIds = evenements.map((e: any) => e.id);
+        const { data: allEcLinks } = await supabaseAdmin
+          .from("evenement_classes")
+          .select("evenement_id, classe_id, matiere_id, classes:classe_id(nom), matieres:matiere_id(nom)")
+          .in("evenement_id", evIds);
+        
+        evenements.forEach((ev: any) => {
+          ev.evenement_classes = (allEcLinks || []).filter((l: any) => l.evenement_id === ev.id);
+        });
+      }
 
       // Class rank per period
       let rangParPeriode: any[] = [];

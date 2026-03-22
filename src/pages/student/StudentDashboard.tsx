@@ -226,7 +226,17 @@ export default function StudentDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-sm">{ev.titre}</p>
-                        {ev.description && <p className="text-xs text-muted-foreground line-clamp-1">{ev.description}</p>}
+                        {ev.matieres?.nom && <p className="text-xs text-muted-foreground">📖 {ev.matieres.nom}</p>}
+                        {ev.evenement_classes?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {ev.evenement_classes.map((ec: any, i: number) => (
+                              <Badge key={i} variant="secondary" className="text-[10px]">
+                                {ec.classes?.nom}{ec.matieres?.nom ? ` — ${ec.matieres.nom}` : ''}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        {ev.description && <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{ev.description}</p>}
                       </div>
                       <Badge variant="outline" className="text-xs shrink-0 ml-2">
                         {new Date(ev.date_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}

@@ -1596,6 +1596,52 @@ export type Database = {
           },
         ]
       }
+      evenement_classes: {
+        Row: {
+          classe_id: string
+          created_at: string
+          evenement_id: string
+          id: string
+          matiere_id: string | null
+        }
+        Insert: {
+          classe_id: string
+          created_at?: string
+          evenement_id: string
+          id?: string
+          matiere_id?: string | null
+        }
+        Update: {
+          classe_id?: string
+          created_at?: string
+          evenement_id?: string
+          id?: string
+          matiere_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evenement_classes_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evenement_classes_evenement_id_fkey"
+            columns: ["evenement_id"]
+            isOneToOne: false
+            referencedRelation: "evenements_calendrier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evenement_classes_matiere_id_fkey"
+            columns: ["matiere_id"]
+            isOneToOne: false
+            referencedRelation: "matieres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evenements_calendrier: {
         Row: {
           classe_id: string | null

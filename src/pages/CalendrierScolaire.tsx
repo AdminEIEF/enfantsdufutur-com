@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,6 +32,11 @@ const EVENT_TYPES = [
 
 const getTypeInfo = (type: string) => EVENT_TYPES.find(t => t.value === type) || EVENT_TYPES[EVENT_TYPES.length - 1];
 
+interface ClasseMatiere {
+  classe_id: string;
+  matiere_id: string;
+}
+
 interface EventForm {
   titre: string;
   description: string;
@@ -42,11 +48,13 @@ interface EventForm {
   classe_id: string;
   matiere_id: string;
   couleur: string;
+  classes_matieres: ClasseMatiere[];
 }
 
 const emptyForm: EventForm = {
   titre: '', description: '', type: 'general', date_debut: '', date_fin: '',
   heure_debut: '', heure_fin: '', classe_id: '', matiere_id: '', couleur: '#3b82f6',
+  classes_matieres: [],
 };
 
 export default function CalendrierScolaire() {
@@ -58,7 +66,7 @@ export default function CalendrierScolaire() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<EventForm>(emptyForm);
 
-  // Fetch events
+  // Fetch events with linked classes
   const { data: events = [] } = useQuery({
     queryKey: ['evenements-calendrier'],
     queryFn: async () => {
@@ -67,7 +75,17 @@ export default function CalendrierScolaire() {
         .select('*, classes(nom), matieres(nom)')
         .order('date_debut');
       if (error) throw error;
-      return data;
+
+      // Fetch all event-class links
+      const { data: ecLinks } = await supabase
+        .from('evenement_classes')
+        .select('evenement_id, classe_id, matiere_id, classes:classe_id(nom), matieres:matiere_id(nom)');
+
+      // Attach links to events
+      return (data || []).map((ev: any) => ({
+        ...ev,
+        evenement_classes: (ecLinks || []).filter((l: any) => l.evenement_id === ev.id),
+      }));
     },
   });
 
@@ -99,17 +117,34 @@ export default function CalendrierScolaire() {
         date_fin: formData.date_fin || null,
         heure_debut: formData.heure_debut || null,
         heure_fin: formData.heure_fin || null,
-        classe_id: formData.classe_id || null,
-        matiere_id: formData.matiere_id || null,
+        classe_id: formData.classes_matieres.length === 1 ? formData.classes_matieres[0].classe_id : null,
+        matiere_id: formData.classes_matieres.length === 1 ? (formData.classes_matieres[0].matiere_id || null) : null,
         couleur: formData.couleur,
       };
+
+      let eventId = editingId;
       if (editingId) {
         const { error } = await supabase.from('evenements_calendrier').update(payload).eq('id', editingId);
         if (error) throw error;
       } else {
         payload.created_by = user?.id;
-        const { error } = await supabase.from('evenements_calendrier').insert(payload);
+        const { data: inserted, error } = await supabase.from('evenements_calendrier').insert(payload).select('id').single();
         if (error) throw error;
+        eventId = inserted.id;
+      }
+
+      // Sync evenement_classes
+      if (eventId) {
+        await supabase.from('evenement_classes').delete().eq('evenement_id', eventId);
+        if (formData.classes_matieres.length > 0) {
+          const links = formData.classes_matieres.map(cm => ({
+            evenement_id: eventId!,
+            classe_id: cm.classe_id,
+            matiere_id: cm.matiere_id || null,
+          }));
+          const { error: linkErr } = await supabase.from('evenement_classes').insert(links);
+          if (linkErr) throw linkErr;
+        }
       }
     },
     onSuccess: () => {
@@ -176,6 +211,14 @@ export default function CalendrierScolaire() {
 
   const openEdit = (ev: any) => {
     setEditingId(ev.id);
+    const ecList: ClasseMatiere[] = (ev.evenement_classes || []).map((ec: any) => ({
+      classe_id: ec.classe_id,
+      matiere_id: ec.matiere_id || '',
+    }));
+    // Fallback: if no evenement_classes but has classe_id on event
+    if (ecList.length === 0 && ev.classe_id) {
+      ecList.push({ classe_id: ev.classe_id, matiere_id: ev.matiere_id || '' });
+    }
     setForm({
       titre: ev.titre,
       description: ev.description || '',
@@ -187,6 +230,7 @@ export default function CalendrierScolaire() {
       classe_id: ev.classe_id || '',
       matiere_id: ev.matiere_id || '',
       couleur: ev.couleur || '#3b82f6',
+      classes_matieres: ecList,
     });
     setDialogOpen(true);
   };
@@ -253,16 +297,21 @@ export default function CalendrierScolaire() {
                       {format(day, 'd')}
                     </div>
                     <div className="space-y-0.5">
-                      {dayEvents.slice(0, 3).map((ev: any) => (
-                        <div
-                          key={ev.id}
-                          className="text-[10px] leading-tight px-1 py-0.5 rounded truncate text-white font-medium"
-                          style={{ backgroundColor: ev.couleur || getTypeInfo(ev.type).color }}
-                          title={`${ev.titre}${ev.matieres?.nom ? ' — ' + ev.matieres.nom : ''}`}
-                        >
-                          {ev.matieres?.nom ? `${ev.titre} (${ev.matieres.nom})` : ev.titre}
-                        </div>
-                      ))}
+                      {dayEvents.slice(0, 3).map((ev: any) => {
+                        const classesInfo = ev.evenement_classes?.length > 0
+                          ? ev.evenement_classes.map((ec: any) => `${ec.classes?.nom || ''}${ec.matieres?.nom ? ' (' + ec.matieres.nom + ')' : ''}`).join(', ')
+                          : (ev.matieres?.nom || '');
+                        return (
+                          <div
+                            key={ev.id}
+                            className="text-[10px] leading-tight px-1 py-0.5 rounded truncate text-white font-medium"
+                            style={{ backgroundColor: ev.couleur || getTypeInfo(ev.type).color }}
+                            title={`${ev.titre}${classesInfo ? ' — ' + classesInfo : ''}`}
+                          >
+                            {ev.titre}
+                          </div>
+                        );
+                      })}
                       {dayEvents.length > 3 && (
                         <div className="text-[10px] text-muted-foreground px-1">+{dayEvents.length - 3}</div>
                       )}
@@ -318,11 +367,20 @@ export default function CalendrierScolaire() {
                           {ev.heure_debut?.slice(0, 5)} {ev.heure_fin ? `— ${ev.heure_fin.slice(0, 5)}` : ''}
                         </p>
                       )}
-                      {ev.classes?.nom && (
-                        <p className="text-[10px] text-muted-foreground">📚 {ev.classes.nom}</p>
-                      )}
-                      {ev.matieres?.nom && (
-                        <Badge variant="outline" className="text-[10px] mt-0.5">📖 {ev.matieres.nom}</Badge>
+                      {/* Show classes & matières from evenement_classes */}
+                      {ev.evenement_classes?.length > 0 ? (
+                        <div className="space-y-0.5 mt-1">
+                          {ev.evenement_classes.map((ec: any, i: number) => (
+                            <p key={i} className="text-[10px] text-muted-foreground">
+                              📚 {ec.classes?.nom || '?'}{ec.matieres?.nom ? ` — 📖 ${ec.matieres.nom}` : ''}
+                            </p>
+                          ))}
+                        </div>
+                      ) : (
+                        <>
+                          {ev.classes?.nom && <p className="text-[10px] text-muted-foreground">📚 {ev.classes.nom}</p>}
+                          {ev.matieres?.nom && <Badge variant="outline" className="text-[10px] mt-0.5">📖 {ev.matieres.nom}</Badge>}
+                        </>
                       )}
                     </div>
                   );
@@ -350,8 +408,17 @@ export default function CalendrierScolaire() {
                        <div className="w-2 h-2 rounded-full flex-shrink-0 mt-1" style={{ backgroundColor: ev.couleur || typeInfo.color }} />
                        <div className="flex-1 min-w-0">
                          <div className="font-medium truncate">{ev.titre}</div>
-                         {ev.matieres?.nom && (
-                           <div className="text-muted-foreground">📖 {ev.matieres.nom}</div>
+                         {ev.evenement_classes?.length > 0 ? (
+                           ev.evenement_classes.map((ec: any, i: number) => (
+                             <div key={i} className="text-muted-foreground">
+                               📚 {ec.classes?.nom}{ec.matieres?.nom ? ` — ${ec.matieres.nom}` : ''}
+                             </div>
+                           ))
+                         ) : (
+                           <>
+                             {ev.matieres?.nom && <div className="text-muted-foreground">📖 {ev.matieres.nom}</div>}
+                             {ev.classes?.nom && <div className="text-muted-foreground">📚 {ev.classes.nom}</div>}
+                           </>
                          )}
                          {ev.description && (
                            <div className="text-muted-foreground line-clamp-2">{ev.description}</div>
@@ -451,27 +518,55 @@ export default function CalendrierScolaire() {
                 <Input type="time" value={form.heure_fin} onChange={e => setForm({ ...form, heure_fin: e.target.value })} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">Classe (optionnel)</Label>
-                <Select value={form.classe_id || '__none__'} onValueChange={v => setForm({ ...form, classe_id: v === '__none__' ? '' : v })}>
-                  <SelectTrigger><SelectValue placeholder="Toutes" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">Toutes les classes</SelectItem>
-                    {classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+            {/* Multi-class selection */}
+            <div>
+              <Label className="text-xs font-semibold">Classes concernées (optionnel)</Label>
+              <p className="text-[10px] text-muted-foreground mb-2">Cochez les classes et choisissez la matière pour chacune</p>
+              <div className="max-h-[200px] overflow-y-auto border rounded-lg p-2 space-y-1.5">
+                {classes.map((c: any) => {
+                  const entry = form.classes_matieres.find(cm => cm.classe_id === c.id);
+                  const isChecked = !!entry;
+                  return (
+                    <div key={c.id} className="flex items-center gap-2">
+                      <Checkbox
+                        checked={isChecked}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setForm({ ...form, classes_matieres: [...form.classes_matieres, { classe_id: c.id, matiere_id: '' }] });
+                          } else {
+                            setForm({ ...form, classes_matieres: form.classes_matieres.filter(cm => cm.classe_id !== c.id) });
+                          }
+                        }}
+                      />
+                      <span className="text-xs font-medium w-24 truncate">{c.nom}</span>
+                      {isChecked && (
+                        <Select
+                          value={entry?.matiere_id || '__none__'}
+                          onValueChange={v => {
+                            setForm({
+                              ...form,
+                              classes_matieres: form.classes_matieres.map(cm =>
+                                cm.classe_id === c.id ? { ...cm, matiere_id: v === '__none__' ? '' : v } : cm
+                              ),
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="h-7 text-xs flex-1">
+                            <SelectValue placeholder="Matière..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">— Aucune matière —</SelectItem>
+                            {matieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-              <div>
-                <Label className="text-xs">Matière (optionnel)</Label>
-                <Select value={form.matiere_id || '__none__'} onValueChange={v => setForm({ ...form, matiere_id: v === '__none__' ? '' : v })}>
-                  <SelectTrigger><SelectValue placeholder="Toutes" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">Toutes les matières</SelectItem>
-                    {matieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
+              {form.classes_matieres.length > 0 && (
+                <p className="text-[10px] text-muted-foreground mt-1">{form.classes_matieres.length} classe(s) sélectionnée(s)</p>
+              )}
             </div>
             <div>
               <Label className="text-xs">Description</Label>
