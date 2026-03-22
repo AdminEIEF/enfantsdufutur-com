@@ -168,24 +168,24 @@ export default function StudentDashboard() {
                 {Object.entries(edtParJour)
                   .sort(([a], [b]) => Number(a) - Number(b))
                   .map(([jour, cours]) => (
-                    <Card key={jour}>
+                    <Card 
+                      key={jour} 
+                      className="cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => setSelectedEdtJour({ jour: JOURS[Number(jour)] || `Jour ${jour}`, cours })}
+                    >
                       <CardContent className="py-2.5 px-3 space-y-1.5">
                         <p className="text-xs font-bold text-primary">{JOURS[Number(jour)] || `Jour ${jour}`}</p>
-                        {cours.map((s: any) => (
+                        {cours.slice(0, 3).map((s: any) => (
                           <div key={s.id} className="flex items-center gap-2 py-1 px-2 rounded-lg bg-muted/50">
                             <div className="text-[10px] font-mono text-muted-foreground w-[60px] shrink-0">
                               {s.heure_debut?.slice(0, 5)}—{s.heure_fin?.slice(0, 5)}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium truncate">{s.matieres?.nom}</p>
-                              {s.employes && (
-                                <p className="text-[10px] text-muted-foreground truncate">
-                                  {s.employes.prenom} {s.employes.nom}
-                                </p>
-                              )}
-                            </div>
+                            <p className="text-xs font-medium truncate flex-1">{s.matieres?.nom}</p>
                           </div>
                         ))}
+                        {cours.length > 3 && (
+                          <p className="text-[10px] text-muted-foreground text-center">+{cours.length - 3} autres</p>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
