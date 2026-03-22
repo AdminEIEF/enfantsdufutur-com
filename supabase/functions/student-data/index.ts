@@ -306,6 +306,7 @@ serve(async (req) => {
         .eq("eleve_id", eleveId);
 
       let bulletinCount = 0;
+      let coursCount = 0;
       if (classeId) {
         const { count } = await supabaseAdmin
           .from("bulletin_publications")
@@ -313,6 +314,13 @@ serve(async (req) => {
           .eq("classe_id", classeId)
           .eq("visible_parent", true);
         bulletinCount = count || 0;
+
+        const { count: cCount } = await supabaseAdmin
+          .from("cours")
+          .select("id", { count: "exact", head: true })
+          .eq("classe_id", classeId)
+          .eq("visible", true);
+        coursCount = cCount || 0;
       }
 
       // Full weekly timetable
@@ -416,6 +424,7 @@ serve(async (req) => {
         prochains_devoirs: devoirs || [],
         nb_soumissions: (soumissions || []).length,
         nb_bulletins: bulletinCount,
+        nb_cours: coursCount,
         solde_cantine: eleve.solde_cantine || 0,
         emploi_du_temps_semaine: edtSemaine || [],
         rang_par_periode: rangParPeriode,
