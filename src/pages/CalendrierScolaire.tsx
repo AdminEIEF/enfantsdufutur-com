@@ -11,13 +11,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { sortClasses } from '@/lib/utils';
 import {
-  CalendarDays, Plus, ChevronLeft, ChevronRight, Trash2, Pencil, Clock, MapPin
+  CalendarDays, Plus, ChevronLeft, ChevronRight, Trash2, Pencil, Clock, MapPin, School, GraduationCap
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, getDay, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
+
+const SECONDAIRE_CYCLES = ['secondaire', 'collège', 'lycée', 'college', 'lycee'];
+const isSecondaireCycle = (cycleName: string) => {
+  const lower = cycleName?.toLowerCase() || '';
+  return SECONDAIRE_CYCLES.some(s => lower.includes(s));
+};
 
 const EVENT_TYPES = [
   { value: 'examen', label: 'Examen / Contrôle', color: '#ef4444' },
@@ -65,7 +72,7 @@ export default function CalendrierScolaire() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<EventForm>(emptyForm);
-
+  const [cycleTab, setCycleTab] = useState<'primaire' | 'secondaire'>('primaire');
   // Fetch events with linked classes
   const { data: events = [] } = useQuery({
     queryKey: ['evenements-calendrier'],
@@ -93,10 +100,34 @@ export default function CalendrierScolaire() {
   const { data: classes = [] } = useQuery({
     queryKey: ['classes-cal'],
     queryFn: async () => {
-      const { data } = await supabase.from('classes').select('id, nom, niveaux:niveau_id(nom, ordre, cycles:cycle_id(ordre))');
+      const { data } = await supabase.from('classes').select('id, nom, niveau_id, niveaux:niveau_id(nom, ordre, cycles:cycle_id(nom, ordre))');
       return sortClasses(data || []);
     },
   });
+
+  // Filter classes by cycle tab
+  const filteredClasses = useMemo(() => {
+    return classes.filter((c: any) => {
+      const cycleName = c.niveaux?.cycles?.nom || '';
+      return cycleTab === 'secondaire' ? isSecondaireCycle(cycleName) : !isSecondaireCycle(cycleName);
+    });
+  }, [classes, cycleTab]);
+
+  // Filter events: show events linked to classes of the current cycle tab (+ global events with no class)
+  const filteredEvents = useMemo(() => {
+    const cycleClassIds = new Set(filteredClasses.map((c: any) => c.id));
+    return events.filter((ev: any) => {
+      // Global event (no class linked)
+      const hasClassLinks = ev.evenement_classes?.length > 0 || ev.classe_id;
+      if (!hasClassLinks) return true;
+      // Check evenement_classes links
+      if (ev.evenement_classes?.length > 0) {
+        return ev.evenement_classes.some((ec: any) => cycleClassIds.has(ec.classe_id));
+      }
+      // Fallback to direct classe_id
+      return cycleClassIds.has(ev.classe_id);
+    });
+  }, [events, filteredClasses]);
 
   const { data: matieres = [] } = useQuery({
     queryKey: ['matieres-cal'],
@@ -191,7 +222,7 @@ export default function CalendrierScolaire() {
 
   const eventsForDay = (day: Date) => {
     const dayStr = format(day, 'yyyy-MM-dd');
-    return events.filter((e: any) => {
+    return filteredEvents.filter((e: any) => {
       const start = e.date_debut;
       const end = e.date_fin || e.date_debut;
       return dayStr >= start && dayStr <= end;
@@ -238,10 +269,10 @@ export default function CalendrierScolaire() {
   // Upcoming events
   const upcomingEvents = useMemo(() => {
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    return events
+    return filteredEvents
       .filter((e: any) => (e.date_fin || e.date_debut) >= todayStr)
       .slice(0, 8);
-  }, [events]);
+  }, [filteredEvents]);
 
   const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
@@ -259,6 +290,17 @@ export default function CalendrierScolaire() {
           <Plus className="h-4 w-4" /> Nouvel événement
         </Button>
       </div>
+
+      <Tabs value={cycleTab} onValueChange={v => setCycleTab(v as 'primaire' | 'secondaire')} className="w-full">
+        <TabsList>
+          <TabsTrigger value="primaire" className="gap-1.5">
+            <School className="h-4 w-4" /> Primaire / Maternelle
+          </TabsTrigger>
+          <TabsTrigger value="secondaire" className="gap-1.5">
+            <GraduationCap className="h-4 w-4" /> Secondaire
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar */}
@@ -520,10 +562,10 @@ export default function CalendrierScolaire() {
             </div>
             {/* Multi-class selection */}
             <div>
-              <Label className="text-xs font-semibold">Classes concernées (optionnel)</Label>
+              <Label className="text-xs font-semibold">Classes concernées — {cycleTab === 'secondaire' ? 'Secondaire' : 'Primaire / Maternelle'}</Label>
               <p className="text-[10px] text-muted-foreground mb-2">Cochez les classes et choisissez la matière pour chacune</p>
               <div className="max-h-[200px] overflow-y-auto border rounded-lg p-2 space-y-1.5">
-                {classes.map((c: any) => {
+                {filteredClasses.map((c: any) => {
                   const entry = form.classes_matieres.find(cm => cm.classe_id === c.id);
                   const isChecked = !!entry;
                   return (
