@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Wallet, Banknote, CalendarCheck, Users, Loader2, BookOpen, GraduationCap, Wrench, Briefcase, TrendingUp } from 'lucide-react';
+import { Wallet, Banknote, CalendarCheck, Users, Loader2, BookOpen, GraduationCap, Wrench, Briefcase, TrendingUp, DollarSign, AlertTriangle, CheckCircle2, PiggyBank, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Progress } from '@/components/ui/progress';
 
 const CATEGORIES = [
   { value: 'enseignant_primaire', label: '👨‍🏫 Ens. Primaire' },
@@ -69,7 +70,12 @@ function fmtNum(n: number): string {
 
 export default function TresorierDashboard() {
   const [employes, setEmployes] = useState<any[]>([]);
-  const [paiements, setPaiements] = useState<any[]>([]);
+  const [paiementsSalaire, setPaiementsSalaire] = useState<any[]>([]);
+  const [recettesMois, setRecettesMois] = useState(0);
+  const [recettesTotal, setRecettesTotal] = useState(0);
+  const [depensesAutresMois, setDepensesAutresMois] = useState(0);
+  const [totalElevesInscrits, setTotalElevesInscrits] = useState(0);
+  const [totalElevesPayesMois, setTotalElevesPayesMois] = useState(0);
   const [loading, setLoading] = useState(true);
   const [currentMonth] = useState(new Date().getMonth() + 1);
   const [currentYear] = useState(new Date().getFullYear());
@@ -77,24 +83,71 @@ export default function TresorierDashboard() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [empRes, paiRes] = await Promise.all([
+    const now = new Date();
+    const mStart = startOfMonth(now).toISOString();
+    const mEnd = endOfMonth(now).toISOString();
+
+    const [empRes, paiSalRes, recMoisRes, recTotalRes, depAutresRes, elevesRes, elevesPaidRes] = await Promise.all([
       supabase.from('employes').select('id, nom, prenom, poste, categorie, matricule, salaire_base, statut').eq('statut', 'actif'),
       supabase.from('paiements_tresorier').select('id, employe_id, montant, mois, annee').eq('mois', currentMonth).eq('annee', currentYear),
+      // Recettes du mois (paiements scolarité + autres)
+      supabase.from('paiements').select('montant').gte('date_paiement', mStart).lte('date_paiement', mEnd),
+      // Recettes totales de l'année
+      supabase.from('paiements').select('montant'),
+      // Dépenses du mois (hors salaires, car on veut savoir ce qui reste après les autres charges)
+      supabase.from('depenses').select('montant, service').eq('statut', 'validee').gte('date_depense', mStart).lte('date_depense', mEnd),
+      // Total élèves inscrits
+      supabase.from('eleves').select('id', { count: 'exact', head: true }).eq('statut', 'inscrit').is('deleted_at', null),
+      // Élèves ayant payé ce mois
+      supabase.from('paiements').select('eleve_id').eq('type_paiement', 'scolarite').gte('date_paiement', mStart).lte('date_paiement', mEnd),
     ]);
+
     if (empRes.data) setEmployes(empRes.data);
-    if (paiRes.data) setPaiements(paiRes.data);
+    if (paiSalRes.data) setPaiementsSalaire(paiSalRes.data);
+    
+    const recMois = (recMoisRes.data || []).reduce((s: number, p: any) => s + Number(p.montant), 0);
+    setRecettesMois(recMois);
+    
+    const recTotal = (recTotalRes.data || []).reduce((s: number, p: any) => s + Number(p.montant), 0);
+    setRecettesTotal(recTotal);
+
+    // Dépenses du mois hors salaires
+    const depAutres = (depAutresRes.data || []).filter((d: any) => d.service !== 'Salaires').reduce((s: number, d: any) => s + Number(d.montant), 0);
+    setDepensesAutresMois(depAutres);
+
+    setTotalElevesInscrits(elevesRes.count || 0);
+    // Unique students who paid this month
+    const uniquePaid = new Set((elevesPaidRes.data || []).map((p: any) => p.eleve_id));
+    setTotalElevesPayesMois(uniquePaid.size);
+
     setLoading(false);
   }, [currentMonth, currentYear]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const isPaid = (empId: string) => paiements.some(p => p.employe_id === empId);
+  const isPaid = (empId: string) => paiementsSalaire.some(p => p.employe_id === empId);
 
-  const totalBudget = employes.reduce((s, e) => s + Number(e.salaire_base), 0);
-  const totalPaye = employes.filter(e => isPaid(e.id)).reduce((s, e) => s + Number(e.salaire_base), 0);
-  const soldeRestant = totalBudget - totalPaye;
+  const totalBudgetSalaires = employes.reduce((s, e) => s + Number(e.salaire_base), 0);
+  const totalSalairePaye = employes.filter(e => isPaid(e.id)).reduce((s, e) => s + Number(e.salaire_base), 0);
+  const salaireRestantAPayer = totalBudgetSalaires - totalSalairePaye;
   const nbPaye = employes.filter(e => isPaid(e.id)).length;
   const pctGlobal = employes.length > 0 ? Math.round((nbPaye / employes.length) * 100) : 0;
+
+  // Taux de recouvrement
+  const tauxRecouvrement = totalElevesInscrits > 0 ? Math.round((totalElevesPayesMois / totalElevesInscrits) * 100) : 0;
+
+  // Caisse disponible = Recettes du mois - Dépenses autres du mois
+  const caisseDisponible = recettesMois - depensesAutresMois;
+  
+  // Après paiement salaires déjà effectués
+  const caisseApresPayes = caisseDisponible - totalSalairePaye;
+  
+  // Si on payait tous les salaires restants
+  const caisseApresTout = caisseDisponible - totalBudgetSalaires;
+  
+  // Peut-on payer tous les salaires ?
+  const peutPayerTous = caisseDisponible >= totalBudgetSalaires;
+  const peutPayerRestants = caisseApresPayes >= salaireRestantAPayer;
 
   // Per-category stats
   const categoryStats = CATEGORIES.map(cat => {
@@ -147,15 +200,119 @@ export default function TresorierDashboard() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* === SECTION CAISSE & RECOUVREMENT === */}
+      <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <PiggyBank className="h-5 w-5 text-blue-600" />
+            État de la Caisse — {format(new Date(), 'MMMM yyyy', { locale: fr })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Recettes et recouvrement */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-white dark:bg-background rounded-lg border p-3">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Recettes du mois</p>
+              <p className="text-lg font-bold text-blue-600">{fmtNum(recettesMois)} GNF</p>
+              <p className="text-[10px] text-muted-foreground">Tous paiements confondus</p>
+            </div>
+            <div className="bg-white dark:bg-background rounded-lg border p-3">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Taux de recouvrement</p>
+              <p className="text-lg font-bold">{tauxRecouvrement}%</p>
+              <p className="text-[10px] text-muted-foreground">{fmtNum(totalElevesPayesMois)}/{fmtNum(totalElevesInscrits)} élèves ce mois</p>
+            </div>
+            <div className="bg-white dark:bg-background rounded-lg border p-3">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Autres dépenses du mois</p>
+              <p className="text-lg font-bold text-orange-600">{fmtNum(depensesAutresMois)} GNF</p>
+              <p className="text-[10px] text-muted-foreground">Hors salaires</p>
+            </div>
+            <div className="bg-white dark:bg-background rounded-lg border p-3">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Caisse disponible</p>
+              <p className={`text-lg font-bold ${caisseDisponible >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>{fmtNum(caisseDisponible)} GNF</p>
+              <p className="text-[10px] text-muted-foreground">Recettes - Dépenses autres</p>
+            </div>
+          </div>
+
+          {/* Analyse : Caisse vs Salaires */}
+          <div className="bg-white dark:bg-background rounded-lg border p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" /> Caisse vs Masse Salariale
+              </h3>
+              {peutPayerTous ? (
+                <Badge className="bg-emerald-500 text-white gap-1"><CheckCircle2 className="h-3 w-3" /> Caisse suffisante</Badge>
+              ) : (
+                <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" /> Caisse insuffisante</Badge>
+              )}
+            </div>
+
+            {/* Visual comparison */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Caisse disponible</span>
+                <span className="font-mono font-bold text-emerald-600">{fmtNum(caisseDisponible)} GNF</span>
+              </div>
+              <div className="relative h-6 bg-muted rounded-full overflow-hidden">
+                <div className="absolute inset-y-0 left-0 bg-emerald-500 rounded-full transition-all" 
+                  style={{ width: `${totalBudgetSalaires > 0 ? Math.min((caisseDisponible / totalBudgetSalaires) * 100, 100) : 0}%` }} />
+                <div className="absolute inset-y-0 left-0 border-r-2 border-destructive" 
+                  style={{ width: `${totalBudgetSalaires > 0 ? Math.min(100, 100) : 0}%` }} />
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Masse salariale totale</span>
+                <span className="font-mono font-bold text-destructive">{fmtNum(totalBudgetSalaires)} GNF</span>
+              </div>
+            </div>
+
+            {/* Résumé après paiement */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t">
+              <div className="text-center p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20">
+                <p className="text-[10px] text-muted-foreground">Salaires déjà payés</p>
+                <p className="text-sm font-bold text-emerald-600">{fmtNum(totalSalairePaye)} GNF</p>
+                <p className="text-[10px] text-muted-foreground">{nbPaye} employé(s)</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-orange-50 dark:bg-orange-950/20">
+                <p className="text-[10px] text-muted-foreground">Salaires restants à payer</p>
+                <p className="text-sm font-bold text-orange-600">{fmtNum(salaireRestantAPayer)} GNF</p>
+                <p className="text-[10px] text-muted-foreground">{employes.length - nbPaye} employé(s)</p>
+              </div>
+              <div className={`text-center p-2 rounded-lg ${caisseApresTout >= 0 ? 'bg-blue-50 dark:bg-blue-950/20' : 'bg-red-50 dark:bg-red-950/20'}`}>
+                <p className="text-[10px] text-muted-foreground">Reste en caisse après salaires</p>
+                <p className={`text-sm font-bold ${caisseApresTout >= 0 ? 'text-blue-600' : 'text-destructive'}`}>
+                  {caisseApresTout >= 0 ? '' : '- '}{fmtNum(Math.abs(caisseApresTout))} GNF
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {caisseApresTout >= 0 ? '✅ Excédent' : '⚠️ Déficit'}
+                </p>
+              </div>
+            </div>
+
+            {!peutPayerRestants && salaireRestantAPayer > 0 && (
+              <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                <div className="text-xs">
+                  <p className="font-semibold text-destructive">Attention : Fonds insuffisants</p>
+                  <p className="text-muted-foreground">
+                    Il manque <strong className="text-destructive">{fmtNum(salaireRestantAPayer - caisseApresPayes)} GNF</strong> pour payer 
+                    les {employes.length - nbPaye} employé(s) restant(s). 
+                    Augmentez le recouvrement (actuellement {tauxRecouvrement}%) ou priorisez les paiements.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* KPI Cards - Salaires */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Card className="border-l-4 border-l-emerald-500">
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
               <Banknote className="h-7 w-7 text-emerald-600 shrink-0" />
               <div className="min-w-0">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Budget Total</p>
-                <p className="text-lg font-bold truncate">{fmtNum(totalBudget)} GNF</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Masse Salariale</p>
+                <p className="text-lg font-bold truncate">{fmtNum(totalBudgetSalaires)} GNF</p>
               </div>
             </div>
           </CardContent>
@@ -166,19 +323,19 @@ export default function TresorierDashboard() {
               <CalendarCheck className="h-7 w-7 text-blue-600 shrink-0" />
               <div className="min-w-0">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Montant Payé</p>
-                <p className="text-lg font-bold text-emerald-600 truncate">{fmtNum(totalPaye)} GNF</p>
+                <p className="text-lg font-bold text-emerald-600 truncate">{fmtNum(totalSalairePaye)} GNF</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className={`border-l-4 ${soldeRestant > 0 ? 'border-l-destructive' : 'border-l-emerald-500'}`}>
+        <Card className={`border-l-4 ${salaireRestantAPayer > 0 ? 'border-l-destructive' : 'border-l-emerald-500'}`}>
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-destructive shrink-0" />
               <div className="min-w-0">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Solde Restant</p>
-                <p className={`text-lg font-bold truncate ${soldeRestant > 0 ? 'text-destructive' : 'text-emerald-600'}`}>
-                  {fmtNum(soldeRestant)} GNF
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Restant à payer</p>
+                <p className={`text-lg font-bold truncate ${salaireRestantAPayer > 0 ? 'text-destructive' : 'text-emerald-600'}`}>
+                  {fmtNum(salaireRestantAPayer)} GNF
                 </p>
               </div>
             </div>
@@ -201,7 +358,7 @@ export default function TresorierDashboard() {
       <Card>
         <CardContent className="pt-5 pb-4">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium">Progression globale des paiements</p>
+            <p className="text-sm font-medium">Progression globale des paiements salaires</p>
             <Badge variant={pctGlobal === 100 ? 'default' : 'secondary'}>{pctGlobal}%</Badge>
           </div>
           <div className="w-full bg-muted rounded-full h-3">
