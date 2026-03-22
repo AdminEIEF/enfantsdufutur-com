@@ -177,6 +177,7 @@ export default function CalendrierScolaire() {
             matiere_id: cm.matiere_id || null,
             heure_debut: cm.heure_debut || null,
             heure_fin: cm.heure_fin || null,
+            date_epreuve: cm.date_epreuve || null,
           }));
           const { error: linkErr } = await supabase.from('evenement_classes').insert(links);
           if (linkErr) throw linkErr;
