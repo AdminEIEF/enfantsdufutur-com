@@ -141,26 +141,25 @@ export default function MesClasses() {
         <h1 className="text-2xl font-bold">Mes Classes</h1>
       </div>
 
-      <Tabs value={selectedCycle} onValueChange={setSelectedCycle}>
+      <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
-          <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
-            <Users className="h-4 w-4 mr-1.5" />
-            Tous
+          <TabsTrigger value="secondaire" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
+            <GraduationCap className="h-4 w-4 mr-1.5" />
+            Secondaire
             <Badge variant="secondary" className="ml-1.5 text-xs bg-primary/20">
-              {cycleCounts.all || 0}
+              {secondaireCount}
             </Badge>
           </TabsTrigger>
-          {cycles.map(cycle => (
-            <TabsTrigger key={cycle.id} value={cycle.id} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
-              {cycle.nom}
-              <Badge variant="secondary" className="ml-1.5 text-xs bg-primary/20">
-                {cycleCounts[cycle.id] || 0}
-              </Badge>
-            </TabsTrigger>
-          ))}
+          <TabsTrigger value="autres" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
+            <Users className="h-4 w-4 mr-1.5" />
+            Préscolaire & Primaire
+            <Badge variant="secondary" className="ml-1.5 text-xs bg-primary/20">
+              {autresCount}
+            </Badge>
+          </TabsTrigger>
         </TabsList>
 
-        {['all', ...cycles.map(c => c.id)].map(tabValue => (
+        {['secondaire', 'autres'].map(tabValue => (
           <TabsContent key={tabValue} value={tabValue} className="mt-4 space-y-4">
             {isLoading ? (
               <div className="space-y-4">
