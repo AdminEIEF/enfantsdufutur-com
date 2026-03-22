@@ -638,7 +638,6 @@ export default function CalendrierScolaire() {
                               )}
                             </div>
                           </div>
-                          </div>
                         );
                       })}
                     </div>
