@@ -44,6 +44,7 @@ interface ClasseMatiere {
   matiere_id: string;
   heure_debut?: string;
   heure_fin?: string;
+  date_epreuve?: string;
 }
 
 interface EventForm {
