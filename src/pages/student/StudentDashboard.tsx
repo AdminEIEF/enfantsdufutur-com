@@ -282,28 +282,68 @@ export default function StudentDashboard() {
                   </div>
                 )}
 
-                {selectedEvent?.evenement_classes?.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold">📋 Programme des épreuves</p>
-                    {selectedEvent.evenement_classes
-                      .sort((a: any, b: any) => (a.heure_debut || '').localeCompare(b.heure_debut || ''))
-                      .map((ec: any, i: number) => (
-                        <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50 border border-border/50">
+                {selectedEvent?.evenement_classes?.length > 0 && (() => {
+                  const entries = [...selectedEvent.evenement_classes].sort((a: any, b: any) => 
+                    (a.date_epreuve || '').localeCompare(b.date_epreuve || '') || (a.heure_debut || '').localeCompare(b.heure_debut || '')
+                  );
+                  const hasDates = entries.some((ec: any) => ec.date_epreuve);
+                  
+                  if (hasDates) {
+                    // Group by date
+                    const grouped: Record<string, any[]> = {};
+                    entries.forEach((ec: any) => {
+                      const key = ec.date_epreuve || 'non_date';
+                      if (!grouped[key]) grouped[key] = [];
+                      grouped[key].push(ec);
+                    });
+                    return (
+                      <div className="space-y-3">
+                        <p className="text-sm font-semibold">📋 Programme des épreuves</p>
+                        {Object.entries(grouped).map(([date, items]) => (
+                          <div key={date} className="space-y-1.5">
+                            {date !== 'non_date' && (
+                              <p className="text-xs font-bold text-primary">
+                                📅 {new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                              </p>
+                            )}
+                            {items.map((ec: any, i: number) => (
+                              <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 border border-border/50">
+                                {ec.heure_debut && (
+                                  <div className="text-[11px] font-mono text-muted-foreground w-[85px] shrink-0">
+                                    🕐 {ec.heure_debut?.slice(0, 5)} — {ec.heure_fin?.slice(0, 5)}
+                                  </div>
+                                )}
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium">{ec.matieres?.nom || 'Matière'}</p>
+                                  {ec.classes?.nom && <p className="text-[11px] text-muted-foreground">{ec.classes.nom}</p>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold">📋 Programme des épreuves</p>
+                      {entries.map((ec: any, i: number) => (
+                        <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 border border-border/50">
                           {ec.heure_debut && (
-                            <div className="text-xs font-mono text-muted-foreground w-[90px] shrink-0">
+                            <div className="text-[11px] font-mono text-muted-foreground w-[85px] shrink-0">
                               🕐 {ec.heure_debut?.slice(0, 5)} — {ec.heure_fin?.slice(0, 5)}
                             </div>
                           )}
                           <div className="flex-1">
                             <p className="text-sm font-medium">{ec.matieres?.nom || 'Matière'}</p>
-                            {ec.classes?.nom && (
-                              <p className="text-[11px] text-muted-foreground">{ec.classes.nom}</p>
-                            )}
+                            {ec.classes?.nom && <p className="text-[11px] text-muted-foreground">{ec.classes.nom}</p>}
                           </div>
                         </div>
                       ))}
-                  </div>
-                )}
+                    </div>
+                  );
+                })()}
               </div>
             </DialogContent>
           </Dialog>
