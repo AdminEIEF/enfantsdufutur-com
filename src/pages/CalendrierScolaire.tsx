@@ -641,10 +641,6 @@ export default function CalendrierScolaire() {
                 </p>
               )}
             </div>
-            <div>
-              <Label className="text-xs">Description</Label>
-              <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} placeholder="Détails de l'événement..." />
-            </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
               <Button type="submit" disabled={saveMutation.isPending}>
