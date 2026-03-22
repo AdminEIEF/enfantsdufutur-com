@@ -249,10 +249,12 @@ export default function CalendrierScolaire() {
     const ecList: ClasseMatiere[] = (ev.evenement_classes || []).map((ec: any) => ({
       classe_id: ec.classe_id,
       matiere_id: ec.matiere_id || '',
+      heure_debut: ec.heure_debut?.slice(0, 5) || '',
+      heure_fin: ec.heure_fin?.slice(0, 5) || '',
     }));
     // Fallback: if no evenement_classes but has classe_id on event
     if (ecList.length === 0 && ev.classe_id) {
-      ecList.push({ classe_id: ev.classe_id, matiere_id: ev.matiere_id || '' });
+      ecList.push({ classe_id: ev.classe_id, matiere_id: ev.matiere_id || '', heure_debut: '', heure_fin: '' });
     }
     setForm({
       titre: ev.titre,
