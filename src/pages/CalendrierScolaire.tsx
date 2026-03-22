@@ -222,7 +222,7 @@ export default function CalendrierScolaire() {
 
   const eventsForDay = (day: Date) => {
     const dayStr = format(day, 'yyyy-MM-dd');
-    return events.filter((e: any) => {
+    return filteredEvents.filter((e: any) => {
       const start = e.date_debut;
       const end = e.date_fin || e.date_debut;
       return dayStr >= start && dayStr <= end;
