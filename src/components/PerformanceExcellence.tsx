@@ -395,7 +395,7 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Trophy className="h-10 w-10 text-muted-foreground/40 mb-3" />
             <p className="text-muted-foreground text-sm">Aucun élève éligible au Tableau d'Honneur pour cette période.</p>
-            <p className="text-muted-foreground/60 text-xs mt-1">Primaire ≥ 8/20 · Collège & Lycée ≥ 16/20</p>
+            <p className="text-muted-foreground/60 text-xs mt-1">Primaire ≥ 8/10 · Collège & Lycée ≥ 16/20</p>
           </CardContent>
         </Card>
       )}
