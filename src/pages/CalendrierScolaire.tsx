@@ -572,7 +572,7 @@ export default function CalendrierScolaire() {
                           checked={isChecked}
                           onCheckedChange={(checked) => {
                             if (checked) {
-                              setForm({ ...form, classes_matieres: [...form.classes_matieres, { classe_id: c.id, matiere_id: '', heure_debut: '', heure_fin: '' }] });
+                              setForm({ ...form, classes_matieres: [...form.classes_matieres, { classe_id: c.id, matiere_id: '', heure_debut: '', heure_fin: '', date_epreuve: '' }] });
                             } else {
                               setForm({ ...form, classes_matieres: form.classes_matieres.filter(cm => cm.classe_id !== c.id) });
                             }
