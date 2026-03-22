@@ -42,6 +42,8 @@ const getTypeInfo = (type: string) => EVENT_TYPES.find(t => t.value === type) ||
 interface ClasseMatiere {
   classe_id: string;
   matiere_id: string;
+  heure_debut?: string;
+  heure_fin?: string;
 }
 
 interface EventForm {
