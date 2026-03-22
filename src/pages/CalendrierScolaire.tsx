@@ -589,42 +589,55 @@ export default function CalendrierScolaire() {
                       </div>
                       {entries.map((entry, idx) => {
                         const entryIndex = form.classes_matieres.indexOf(entry);
+                        const hasDateRange = form.date_fin && form.date_fin !== form.date_debut;
                         return (
-                          <div key={idx} className="flex items-center gap-1.5 ml-6">
-                            <Select
-                              value={entry.matiere_id || '__none__'}
-                              onValueChange={v => {
+                          <div key={idx} className="ml-6 space-y-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {hasDateRange && (
+                                <Input type="date" className="h-7 text-[11px] w-[120px]" 
+                                  min={form.date_debut} max={form.date_fin}
+                                  value={entry.date_epreuve || ''} onChange={e => {
+                                  const updated = [...form.classes_matieres];
+                                  updated[entryIndex] = { ...entry, date_epreuve: e.target.value };
+                                  setForm({ ...form, classes_matieres: updated });
+                                }} />
+                              )}
+                              <Select
+                                value={entry.matiere_id || '__none__'}
+                                onValueChange={v => {
+                                  const updated = [...form.classes_matieres];
+                                  updated[entryIndex] = { ...entry, matiere_id: v === '__none__' ? '' : v };
+                                  setForm({ ...form, classes_matieres: updated });
+                                }}
+                              >
+                                <SelectTrigger className="h-7 text-[11px] flex-1 min-w-[100px]">
+                                  <SelectValue placeholder="Matière..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__none__">— Matière —</SelectItem>
+                                  {matieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                              <Input type="time" className="h-7 text-[11px] w-20" placeholder="Début" value={entry.heure_debut || ''} onChange={e => {
                                 const updated = [...form.classes_matieres];
-                                updated[entryIndex] = { ...entry, matiere_id: v === '__none__' ? '' : v };
+                                updated[entryIndex] = { ...entry, heure_debut: e.target.value };
                                 setForm({ ...form, classes_matieres: updated });
-                              }}
-                            >
-                              <SelectTrigger className="h-7 text-[11px] flex-1">
-                                <SelectValue placeholder="Matière..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="__none__">— Matière —</SelectItem>
-                                {matieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                            <Input type="time" className="h-7 text-[11px] w-20" placeholder="Début" value={entry.heure_debut || ''} onChange={e => {
-                              const updated = [...form.classes_matieres];
-                              updated[entryIndex] = { ...entry, heure_debut: e.target.value };
-                              setForm({ ...form, classes_matieres: updated });
-                            }} />
-                            <Input type="time" className="h-7 text-[11px] w-20" placeholder="Fin" value={entry.heure_fin || ''} onChange={e => {
-                              const updated = [...form.classes_matieres];
-                              updated[entryIndex] = { ...entry, heure_fin: e.target.value };
-                              setForm({ ...form, classes_matieres: updated });
-                            }} />
-                            {entries.length > 1 && (
-                              <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => {
-                                const updated = form.classes_matieres.filter((_, i) => i !== entryIndex);
+                              }} />
+                              <Input type="time" className="h-7 text-[11px] w-20" placeholder="Fin" value={entry.heure_fin || ''} onChange={e => {
+                                const updated = [...form.classes_matieres];
+                                updated[entryIndex] = { ...entry, heure_fin: e.target.value };
                                 setForm({ ...form, classes_matieres: updated });
-                              }}>
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            )}
+                              }} />
+                              {entries.length > 1 && (
+                                <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => {
+                                  const updated = form.classes_matieres.filter((_, i) => i !== entryIndex);
+                                  setForm({ ...form, classes_matieres: updated });
+                                }}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
                           </div>
                         );
                       })}
