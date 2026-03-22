@@ -286,7 +286,6 @@ export default function CalendrierScolaire() {
             <CalendarDays className="h-6 w-6 text-primary" />
             Calendrier Scolaire
           </h1>
-          <p className="text-sm text-muted-foreground">Gestion des événements académiques, vacances, examens et réunions</p>
         </div>
         <Button onClick={() => openNew()} className="gap-2">
           <Plus className="h-4 w-4" /> Nouvel événement
