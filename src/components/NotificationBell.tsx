@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Bell, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,11 +40,31 @@ interface NotificationBellProps {
   onViewAll?: () => void;
 }
 
+// Generate a short notification beep using Web Audio API
+function playNotificationSound() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1047, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch {
+    // silent fallback
+  }
+}
+
 export function NotificationBell({ mode, targetId, token, onViewAll }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState<Notification | null>(null);
+  const initialLoadDone = useRef(false);
   const fetchNotifications = useCallback(async () => {
     try {
       const action = 'notifications';
@@ -76,7 +96,7 @@ export function NotificationBell({ mode, targetId, token, onViewAll }: Notificat
 
   // Initial fetch
   useEffect(() => {
-    fetchNotifications();
+    fetchNotifications().then(() => { initialLoadDone.current = true; });
   }, [fetchNotifications]);
 
   // Realtime subscription
@@ -98,6 +118,9 @@ export function NotificationBell({ mode, targetId, token, onViewAll }: Notificat
           const newNotif = payload.new as Notification;
           setNotifications(prev => [newNotif, ...prev].slice(0, 5));
           setUnreadCount(prev => prev + 1);
+          if (initialLoadDone.current) {
+            playNotificationSound();
+          }
         }
       )
       .subscribe();
