@@ -348,10 +348,30 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
             </div>
             {Object.entries(byNiveau).map(([niveauNom, eleves]) => (
               <div key={niveauNom}>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">{niveauNom}</Badge>
-                  <span className="text-xs">({eleves.length} élèves)</span>
-                </h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">{niveauNom}</Badge>
+                    <span className="text-xs">({eleves.length} élèves)</span>
+                  </h4>
+                  {!isPublic && eleves.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[10px] gap-1 border-[hsl(38,92%,50%)]/30 text-[hsl(38,92%,50%)] hover:bg-[hsl(38,92%,50%)]/10"
+                      onClick={async () => {
+                        try {
+                          await generateAllTableauxHonneurPDF(eleves, schoolConfig?.logo_url || null, periodeName, config);
+                          toast.success(`${eleves.length} TH générés pour ${niveauNom}`);
+                        } catch {
+                          toast.error("Erreur lors de la génération");
+                        }
+                      }}
+                    >
+                      <Printer className="h-3 w-3" />
+                      Imprimer TH {niveauNom}
+                    </Button>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                   {eleves.map((eleve, i) => (
                     <HonneurCard
