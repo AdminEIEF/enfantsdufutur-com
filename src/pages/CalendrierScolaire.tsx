@@ -321,6 +321,9 @@ export default function CalendrierScolaire() {
                       {ev.classes?.nom && (
                         <p className="text-[10px] text-muted-foreground">📚 {ev.classes.nom}</p>
                       )}
+                      {ev.matieres?.nom && (
+                        <Badge variant="outline" className="text-[10px] mt-0.5">📖 {ev.matieres.nom}</Badge>
+                      )}
                     </div>
                   );
                 })}
