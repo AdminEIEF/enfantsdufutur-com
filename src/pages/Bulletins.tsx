@@ -307,11 +307,29 @@ export default function Bulletins() {
     return groups;
   }, [bulletinData]);
 
+  const filteredClasses = useMemo(() => {
+    return classes.filter((c: any) => {
+      const cycleName = c.niveaux?.cycles?.nom || '';
+      return sectionTab === 'secondaire' ? isSecondaireCycle(cycleName) : !isSecondaireCycle(cycleName);
+    });
+  }, [classes, sectionTab]);
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
         <Award className="h-7 w-7 text-primary" /> Bulletins Scolaires
       </h1>
+
+      <Tabs value={sectionTab} onValueChange={(v) => { setSectionTab(v); setClasseId(''); setSelectedEleve(''); }}>
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="autres" className="gap-2">
+            <School className="h-4 w-4" /> Préscolaire & Primaire
+          </TabsTrigger>
+          <TabsTrigger value="secondaire" className="gap-2">
+            <GraduationCap className="h-4 w-4" /> Secondaire
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Filters */}
       <Card>
@@ -322,7 +340,7 @@ export default function Bulletins() {
               <Select value={classeId} onValueChange={(v) => { setClasseId(v); setSelectedEleve(''); }}>
                 <SelectTrigger><SelectValue placeholder="Sélectionner la classe" /></SelectTrigger>
                 <SelectContent>
-                  {classes.map((c: any) => (
+                  {filteredClasses.map((c: any) => (
                     <SelectItem key={c.id} value={c.id}>{c.niveaux?.cycles?.nom} — {c.niveaux?.nom} — {c.nom}</SelectItem>
                   ))}
                 </SelectContent>
