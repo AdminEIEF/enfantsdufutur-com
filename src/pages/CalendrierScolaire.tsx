@@ -32,6 +32,11 @@ const EVENT_TYPES = [
 
 const getTypeInfo = (type: string) => EVENT_TYPES.find(t => t.value === type) || EVENT_TYPES[EVENT_TYPES.length - 1];
 
+interface ClasseMatiere {
+  classe_id: string;
+  matiere_id: string;
+}
+
 interface EventForm {
   titre: string;
   description: string;
@@ -43,11 +48,13 @@ interface EventForm {
   classe_id: string;
   matiere_id: string;
   couleur: string;
+  classes_matieres: ClasseMatiere[];
 }
 
 const emptyForm: EventForm = {
   titre: '', description: '', type: 'general', date_debut: '', date_fin: '',
   heure_debut: '', heure_fin: '', classe_id: '', matiere_id: '', couleur: '#3b82f6',
+  classes_matieres: [],
 };
 
 export default function CalendrierScolaire() {
