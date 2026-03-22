@@ -62,7 +62,7 @@ function HonneurCard({ eleve, rank, logoUrl, periodeName, schoolConfig }: {
           <div className="text-2xl font-extrabold text-primary" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             {eleve.moyenne.toFixed(2)}
           </div>
-          <div className="text-[10px] text-muted-foreground font-medium">/ 20 (seuil: {eleve.seuil})</div>
+          <div className="text-[10px] text-muted-foreground font-medium">/ {isSecondaireCycle(eleve.cycle_nom) ? '20' : '10'} (seuil: {eleve.seuil})</div>
         </div>
         <Button
           size="sm"
@@ -123,7 +123,8 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
     doc.text("TABLEAU D'HONNEUR", pageW / 2, 16, { align: 'center' });
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-    doc.text(`${periodeName} — Moyenne Générale: ${moyenneGenerale.toFixed(2)} / 20`, pageW / 2, 26, { align: 'center' });
+    const sectionBareme = sectionTab === 'secondaire' ? 20 : 10;
+    doc.text(`${periodeName} — Moyenne Générale: ${moyenneGenerale.toFixed(2)} / ${sectionBareme}`, pageW / 2, 26, { align: 'center' });
 
     doc.setTextColor(30, 30, 30);
     let y = 45;
@@ -151,7 +152,8 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
       doc.text(`${eleve.moyenne.toFixed(2)}`, x + (colW - 5) / 2, y + 32, { align: 'center' });
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.text('/ 20', x + (colW - 5) / 2 + 12, y + 32);
+      const eleveBareme = isSecondaireCycle(eleve.cycle_nom) ? 20 : 10;
+      doc.text(`/ ${eleveBareme}`, x + (colW - 5) / 2 + 12, y + 32);
       doc.setTextColor(30, 30, 30);
     });
 
@@ -197,7 +199,7 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
             <h2 className="text-xl sm:text-2xl font-bold text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Performance & Tableau d'Honneur
             </h2>
-            <p className="text-xs text-muted-foreground">Primaire ≥ 8/20 · Collège & Lycée ≥ 16/20</p>
+            <p className="text-xs text-muted-foreground">Primaire ≥ 8/10 · Collège & Lycée ≥ 16/20</p>
           </div>
         </div>
         {!isPublic && (
@@ -395,7 +397,7 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Trophy className="h-10 w-10 text-muted-foreground/40 mb-3" />
             <p className="text-muted-foreground text-sm">Aucun élève éligible au Tableau d'Honneur pour cette période.</p>
-            <p className="text-muted-foreground/60 text-xs mt-1">Primaire ≥ 8/20 · Collège & Lycée ≥ 16/20</p>
+            <p className="text-muted-foreground/60 text-xs mt-1">Primaire ≥ 8/10 · Collège & Lycée ≥ 16/20</p>
           </CardContent>
         </Card>
       )}

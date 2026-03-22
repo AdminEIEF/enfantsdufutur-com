@@ -3,11 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { BarChart3, TrendingUp, Award, AlertTriangle } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BarChart3, TrendingUp, Award, AlertTriangle, School, GraduationCap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { sortClasses } from '@/lib/utils';
+
+const SECONDAIRE_CYCLES = ['collège', 'lycée', 'college', 'lycee'];
+const isSecondaireCycle = (cycleName: string) => SECONDAIRE_CYCLES.some(c => cycleName.toLowerCase().includes(c));
 
 function useClasses() {
   return useQuery({
@@ -78,24 +82,24 @@ function useNotesEleve(eleveId: string) {
   });
 }
 
-// Poles for radar
 const DEFAULT_POLES = ['Littéraire', 'Scientifique', 'Expérimentale'];
 
-function getSuggestion(radarData: { pole: string; moyenne: number }[]): { orientation: string; detail: string; color: string } {
+function getSuggestion(radarData: { pole: string; moyenne: number }[], bareme: number): { orientation: string; detail: string; color: string } {
   if (!radarData.length) return { orientation: '—', detail: 'Données insuffisantes', color: 'text-muted-foreground' };
 
   const sorted = [...radarData].sort((a, b) => b.moyenne - a.moyenne);
   const best = sorted[0];
-  const secondBest = sorted[1];
+  const highThreshold = bareme * 0.7; // 7/10 or 14/20
+  const midThreshold = bareme * 0.5;  // 5/10 or 10/20
 
-  if (best.moyenne >= 14) {
-    if (best.pole === 'Scientifique') return { orientation: 'Filière Scientifique', detail: `Excellent profil scientifique (${best.moyenne.toFixed(1)}/20)`, color: 'text-primary' };
-    if (best.pole === 'Littéraire') return { orientation: 'Filière Littéraire', detail: `Fort potentiel littéraire (${best.moyenne.toFixed(1)}/20)`, color: 'text-accent' };
-    if (best.pole === 'Expérimentale') return { orientation: 'Filière Expérimentale', detail: `Fort potentiel expérimental (${best.moyenne.toFixed(1)}/20)`, color: 'text-primary' };
-    return { orientation: `Spécialisation ${best.pole}`, detail: `Forte aptitude en ${best.pole} (${best.moyenne.toFixed(1)}/20)`, color: 'text-primary' };
+  if (best.moyenne >= highThreshold) {
+    if (best.pole === 'Scientifique') return { orientation: 'Filière Scientifique', detail: `Excellent profil scientifique (${best.moyenne.toFixed(1)}/${bareme})`, color: 'text-primary' };
+    if (best.pole === 'Littéraire') return { orientation: 'Filière Littéraire', detail: `Fort potentiel littéraire (${best.moyenne.toFixed(1)}/${bareme})`, color: 'text-accent' };
+    if (best.pole === 'Expérimentale') return { orientation: 'Filière Expérimentale', detail: `Fort potentiel expérimental (${best.moyenne.toFixed(1)}/${bareme})`, color: 'text-primary' };
+    return { orientation: `Spécialisation ${best.pole}`, detail: `Forte aptitude en ${best.pole} (${best.moyenne.toFixed(1)}/${bareme})`, color: 'text-primary' };
   }
-  if (best.moyenne >= 10) {
-    return { orientation: 'Filière Générale', detail: `Profil équilibré, meilleur en ${best.pole} (${best.moyenne.toFixed(1)}/20)`, color: 'text-secondary' };
+  if (best.moyenne >= midThreshold) {
+    return { orientation: 'Filière Générale', detail: `Profil équilibré, meilleur en ${best.pole} (${best.moyenne.toFixed(1)}/${bareme})`, color: 'text-secondary' };
   }
   return { orientation: 'Soutien recommandé', detail: `Moyennes faibles, renforcement nécessaire`, color: 'text-destructive' };
 }
@@ -103,12 +107,34 @@ function getSuggestion(radarData: { pole: string; moyenne: number }[]): { orient
 export default function Orientation() {
   const { data: classes = [] } = useClasses();
   const { data: periodes = [] } = usePeriodes();
+  const [sectionTab, setSectionTab] = useState('autres');
   const [classeId, setClasseId] = useState('');
   const [eleveId, setEleveId] = useState('');
   const [periodeId, setPeriodeId] = useState('');
 
+  // Filter classes by section
+  const filteredClasses = useMemo(() => {
+    return classes.filter((c: any) => {
+      const cycleName = c.niveaux?.cycles?.nom || '';
+      return sectionTab === 'secondaire' ? isSecondaireCycle(cycleName) : !isSecondaireCycle(cycleName);
+    });
+  }, [classes, sectionTab]);
+
+  // Group by niveau
+  const classesByNiveau = useMemo(() => {
+    const groups: Record<string, { niveauNom: string; classes: any[] }> = {};
+    filteredClasses.forEach((c: any) => {
+      const niveauNom = c.niveaux?.nom || 'Autre';
+      if (!groups[niveauNom]) groups[niveauNom] = { niveauNom, classes: [] };
+      groups[niveauNom].classes.push(c);
+    });
+    return Object.values(groups);
+  }, [filteredClasses]);
+
   const selectedClasse = classes.find((c: any) => c.id === classeId);
   const cycleId = selectedClasse?.niveaux?.cycle_id || '';
+  const cycleName = selectedClasse?.niveaux?.cycles?.nom || '';
+  const bareme = isSecondaireCycle(cycleName) ? 20 : 10;
 
   const { data: eleves = [] } = useElevesClasse(classeId);
   const { data: matieres = [] } = useMatieresCycle(cycleId);
@@ -116,18 +142,18 @@ export default function Orientation() {
 
   const selectedEleve = eleves.find((e: any) => e.id === eleveId);
 
+  // Reset selections on tab change
+  const handleTabChange = (tab: string) => {
+    setSectionTab(tab);
+    setClasseId('');
+    setEleveId('');
+  };
+
   // Calculate radar data: moyenne par pôle
   const radarData = useMemo(() => {
     if (!notes.length || !matieres.length) return [];
-
-    // Filter notes by period if selected
-    const filteredNotes = periodeId
-      ? notes.filter((n: any) => n.periode_id === periodeId)
-      : notes;
-
-    // Group by pole
+    const filteredNotes = periodeId ? notes.filter((n: any) => n.periode_id === periodeId) : notes;
     const poleMap: Record<string, { total: number; coefTotal: number }> = {};
-
     for (const n of filteredNotes) {
       if (n.note == null || !n.matieres?.pole) continue;
       const pole = n.matieres.pole;
@@ -136,24 +162,19 @@ export default function Orientation() {
       poleMap[pole].total += Number(n.note) * coef;
       poleMap[pole].coefTotal += coef;
     }
-
     return DEFAULT_POLES
       .filter(pole => poleMap[pole])
       .map(pole => ({
         pole,
         moyenne: poleMap[pole].coefTotal > 0 ? poleMap[pole].total / poleMap[pole].coefTotal : 0,
-        fullMark: 20,
+        fullMark: bareme,
       }));
-  }, [notes, matieres, periodeId]);
+  }, [notes, matieres, periodeId, bareme]);
 
   // Per-matière averages
   const matiereAverages = useMemo(() => {
     if (!notes.length) return [];
-
-    const filteredNotes = periodeId
-      ? notes.filter((n: any) => n.periode_id === periodeId)
-      : notes;
-
+    const filteredNotes = periodeId ? notes.filter((n: any) => n.periode_id === periodeId) : notes;
     const map: Record<string, { nom: string; pole: string; total: number; count: number; coef: number }> = {};
     for (const n of filteredNotes) {
       if (n.note == null) continue;
@@ -162,13 +183,12 @@ export default function Orientation() {
       map[mid].total += Number(n.note);
       map[mid].count += 1;
     }
-
     return Object.values(map)
       .map(m => ({ ...m, moyenne: m.count > 0 ? m.total / m.count : 0 }))
       .sort((a, b) => b.moyenne - a.moyenne);
   }, [notes, periodeId]);
 
-  const suggestion = getSuggestion(radarData as any);
+  const suggestion = getSuggestion(radarData as any, bareme);
 
   // Global average
   const moyenneGenerale = useMemo(() => {
@@ -181,11 +201,26 @@ export default function Orientation() {
     return totalCoef > 0 ? totalWeighted / totalCoef : 0;
   }, [matiereAverages]);
 
+  const highThreshold = bareme * 0.7;
+  const midThreshold = bareme * 0.5;
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
         <BarChart3 className="h-7 w-7 text-primary" /> Orientation
       </h1>
+
+      {/* Section tabs */}
+      <Tabs value={sectionTab} onValueChange={handleTabChange}>
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="autres" className="gap-2">
+            <School className="h-4 w-4" /> Préscolaire & Primaire
+          </TabsTrigger>
+          <TabsTrigger value="secondaire" className="gap-2">
+            <GraduationCap className="h-4 w-4" /> Secondaire
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Filters */}
       <Card>
@@ -196,10 +231,13 @@ export default function Orientation() {
               <Select value={classeId} onValueChange={(v) => { setClasseId(v); setEleveId(''); }}>
                 <SelectTrigger><SelectValue placeholder="Choisir une classe" /></SelectTrigger>
                 <SelectContent>
-                  {classes.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.niveaux?.cycles?.nom} — {c.niveaux?.nom} — {c.nom}
-                    </SelectItem>
+                  {classesByNiveau.map(group => (
+                    <div key={group.niveauNom}>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">{group.niveauNom}</div>
+                      {group.classes.map((c: any) => (
+                        <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                      ))}
+                    </div>
                   ))}
                 </SelectContent>
               </Select>
@@ -243,7 +281,7 @@ export default function Orientation() {
                   <TrendingUp className="h-8 w-8 text-primary" />
                   <div>
                     <p className="text-sm text-muted-foreground">Moyenne générale</p>
-                    <p className="text-2xl font-bold">{moyenneGenerale.toFixed(2)} / 20</p>
+                    <p className="text-2xl font-bold">{moyenneGenerale.toFixed(2)} / {bareme}</p>
                   </div>
                 </div>
               </CardContent>
@@ -287,7 +325,7 @@ export default function Orientation() {
                     <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
                       <PolarGrid stroke="hsl(var(--border))" />
                       <PolarAngleAxis dataKey="pole" tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }} />
-                      <PolarRadiusAxis angle={30} domain={[0, 20]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
+                      <PolarRadiusAxis angle={30} domain={[0, bareme]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
                       <Radar
                         name="Moyenne"
                         dataKey="moyenne"
@@ -303,7 +341,7 @@ export default function Orientation() {
                           borderRadius: '8px',
                           color: 'hsl(var(--popover-foreground))',
                         }}
-                        formatter={(value: number) => [`${value.toFixed(2)} / 20`, 'Moyenne']}
+                        formatter={(value: number) => [`${value.toFixed(2)} / ${bareme}`, 'Moyenne']}
                       />
                     </RadarChart>
                   </ResponsiveContainer>
@@ -340,13 +378,13 @@ export default function Orientation() {
                             <div
                               className="h-full rounded-full transition-all"
                               style={{
-                                width: `${(m.moyenne / 20) * 100}%`,
-                                backgroundColor: m.moyenne >= 14 ? 'hsl(var(--accent))' : m.moyenne >= 10 ? 'hsl(var(--primary))' : 'hsl(var(--destructive))',
+                                width: `${(m.moyenne / bareme) * 100}%`,
+                                backgroundColor: m.moyenne >= highThreshold ? 'hsl(var(--accent))' : m.moyenne >= midThreshold ? 'hsl(var(--primary))' : 'hsl(var(--destructive))',
                               }}
                             />
                           </div>
-                          <span className={`text-sm font-bold w-14 text-right ${m.moyenne >= 14 ? 'text-accent' : m.moyenne >= 10 ? 'text-primary' : 'text-destructive'}`}>
-                            {m.moyenne.toFixed(1)}/20
+                          <span className={`text-sm font-bold w-14 text-right ${m.moyenne >= highThreshold ? 'text-accent' : m.moyenne >= midThreshold ? 'text-primary' : 'text-destructive'}`}>
+                            {m.moyenne.toFixed(1)}/{bareme}
                           </span>
                         </div>
                       </div>
