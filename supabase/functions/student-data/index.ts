@@ -424,6 +424,7 @@ serve(async (req) => {
         prochains_devoirs: devoirs || [],
         nb_soumissions: (soumissions || []).length,
         nb_bulletins: bulletinCount,
+        nb_cours: coursCount,
         solde_cantine: eleve.solde_cantine || 0,
         emploi_du_temps_semaine: edtSemaine || [],
         rang_par_periode: rangParPeriode,
