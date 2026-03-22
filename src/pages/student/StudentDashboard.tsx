@@ -19,6 +19,7 @@ export default function StudentDashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [selectedEdtJour, setSelectedEdtJour] = useState<{ jour: string; cours: any[] } | null>(null);
 
   useEffect(() => {
     if (!session) return;
