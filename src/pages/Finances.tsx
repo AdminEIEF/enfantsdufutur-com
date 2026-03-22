@@ -20,7 +20,9 @@ const SERVICE_LABELS: Record<string, string> = {
 };
 const DEP_SERVICE_MAP: Record<string, string> = {
   'Transport': 'transport', 'Cantine': 'cantine', 'Boutique': 'uniforme',
-  'Librairie': 'fournitures', 'Fonctionnement': 'autre', 'Autre': 'autre',
+  'Librairie': 'fournitures', 'Fonctionnement': 'autre', 'Pédagogie': 'autre',
+  'Maintenance': 'autre', 'Événements': 'autre', 'Sécurité': 'autre',
+  'Santé': 'autre', 'Communication': 'autre', 'Autre': 'autre',
 };
 const COLORS = ['hsl(var(--primary))', '#f97316', '#22c55e', '#8b5cf6', '#06b6d4', '#6b7280'];
 
