@@ -291,6 +291,17 @@ export default function CalendrierScolaire() {
         </Button>
       </div>
 
+      <Tabs value={cycleTab} onValueChange={v => setCycleTab(v as 'primaire' | 'secondaire')} className="w-full">
+        <TabsList>
+          <TabsTrigger value="primaire" className="gap-1.5">
+            <School className="h-4 w-4" /> Primaire / Maternelle
+          </TabsTrigger>
+          <TabsTrigger value="secondaire" className="gap-1.5">
+            <GraduationCap className="h-4 w-4" /> Secondaire
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar */}
         <Card className="lg:col-span-2">
