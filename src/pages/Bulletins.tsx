@@ -390,6 +390,85 @@ export default function Bulletins() {
               </Select>
             </div>
           </div>
+          {classeId && periodeId && eleves.length > 0 && (
+            <div className="mt-4 pt-4 border-t flex items-center gap-3">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={pdfLoading}
+                onClick={async () => {
+                  setPdfLoading(true);
+                  toast.info(`Génération des ${eleves.length} bulletins en cours...`);
+                  try {
+                    // Iterate through each student, render bulletin, capture to PDF
+                    const { default: jsPDF } = await import('jspdf');
+                    const { default: html2canvas } = await import('html2canvas');
+                    
+                    const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: false });
+                    const pdfWidth = 210;
+                    const pdfHeight = 297;
+                    
+                    for (let i = 0; i < eleves.length; i++) {
+                      // Select the student to render their bulletin
+                      setSelectedEleve(eleves[i].id);
+                      setShowPrintView(true);
+                      // Wait for React to render
+                      await new Promise(r => setTimeout(r, 800));
+                      
+                      const el = document.querySelector('[data-bulletin-a4]') as HTMLElement;
+                      if (!el) continue;
+                      
+                      const origTransform = el.style.transform;
+                      el.style.transform = 'none';
+                      
+                      const canvas = await html2canvas(el, {
+                        scale: 3,
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#ffffff',
+                        logging: false,
+                        windowWidth: 794,
+                        onclone: (clonedDoc) => {
+                          const clEl = clonedDoc.querySelector('[data-bulletin-a4]') as HTMLElement;
+                          if (!clEl) return;
+                          clEl.style.transform = 'none';
+                          clEl.style.width = '794px';
+                          clEl.style.maxWidth = '794px';
+                        },
+                      });
+                      
+                      el.style.transform = origTransform;
+                      
+                      if (i > 0) pdf.addPage();
+                      const imgData = canvas.toDataURL('image/png');
+                      const imgW = pdfWidth;
+                      const imgH = (canvas.height * pdfWidth) / canvas.width;
+                      if (imgH <= pdfHeight) {
+                        pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH, undefined, 'NONE');
+                      } else {
+                        const ratio = pdfHeight / imgH;
+                        const scaledW = imgW * ratio;
+                        const offsetX = (pdfWidth - scaledW) / 2;
+                        pdf.addImage(imgData, 'PNG', offsetX, 0, scaledW, pdfHeight, undefined, 'NONE');
+                      }
+                    }
+                    
+                    const className = selectedCl?.nom || 'classe';
+                    const periodName = periode?.nom || '';
+                    pdf.save(`Bulletins_${className}_${periodName}.pdf`.replace(/\s+/g, '_'));
+                    toast.success(`${eleves.length} bulletins générés avec succès`);
+                  } catch (e: any) {
+                    toast.error(e.message || 'Erreur lors de la génération');
+                  } finally {
+                    setPdfLoading(false);
+                  }
+                }}
+              >
+                <Printer className="h-4 w-4 mr-1.5" />
+                {pdfLoading ? 'Génération...' : `Imprimer tous les bulletins (${eleves.length})`}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
