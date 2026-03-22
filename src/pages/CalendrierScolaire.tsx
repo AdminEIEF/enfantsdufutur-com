@@ -117,17 +117,34 @@ export default function CalendrierScolaire() {
         date_fin: formData.date_fin || null,
         heure_debut: formData.heure_debut || null,
         heure_fin: formData.heure_fin || null,
-        classe_id: formData.classe_id || null,
-        matiere_id: formData.matiere_id || null,
+        classe_id: formData.classes_matieres.length === 1 ? formData.classes_matieres[0].classe_id : null,
+        matiere_id: formData.classes_matieres.length === 1 ? (formData.classes_matieres[0].matiere_id || null) : null,
         couleur: formData.couleur,
       };
+
+      let eventId = editingId;
       if (editingId) {
         const { error } = await supabase.from('evenements_calendrier').update(payload).eq('id', editingId);
         if (error) throw error;
       } else {
         payload.created_by = user?.id;
-        const { error } = await supabase.from('evenements_calendrier').insert(payload);
+        const { data: inserted, error } = await supabase.from('evenements_calendrier').insert(payload).select('id').single();
         if (error) throw error;
+        eventId = inserted.id;
+      }
+
+      // Sync evenement_classes
+      if (eventId) {
+        await supabase.from('evenement_classes').delete().eq('evenement_id', eventId);
+        if (formData.classes_matieres.length > 0) {
+          const links = formData.classes_matieres.map(cm => ({
+            evenement_id: eventId!,
+            classe_id: cm.classe_id,
+            matiere_id: cm.matiere_id || null,
+          }));
+          const { error: linkErr } = await supabase.from('evenement_classes').insert(links);
+          if (linkErr) throw linkErr;
+        }
       }
     },
     onSuccess: () => {
