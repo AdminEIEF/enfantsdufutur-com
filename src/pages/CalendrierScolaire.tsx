@@ -458,7 +458,7 @@ export default function CalendrierScolaire() {
                          {ev.evenement_classes?.length > 0 ? (
                            ev.evenement_classes.map((ec: any, i: number) => (
                              <div key={i} className="text-muted-foreground">
-                               📚 {ec.classes?.nom}{ec.matieres?.nom ? ` — ${ec.matieres.nom}` : ''}
+                               📚 {ec.classes?.nom}{ec.matieres?.nom ? ` — ${ec.matieres.nom}` : ''}{ec.heure_debut ? ` (${ec.heure_debut.slice(0,5)}${ec.heure_fin ? '-' + ec.heure_fin.slice(0,5) : ''})` : ''}
                              </div>
                            ))
                          ) : (
