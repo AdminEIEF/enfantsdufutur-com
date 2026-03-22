@@ -336,11 +336,22 @@ export default function StudentCours() {
                             </p>
                           </div>
                         </div>
-                        <Button size="sm" variant="outline" asChild>
-                          <a href={c.contenu_url} target="_blank" rel="noopener noreferrer">Ouvrir</a>
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          {(isPdf(c) || isVideo(c)) && (
+                            <Button size="sm" variant={viewingCours === c.id ? 'default' : 'outline'} onClick={() => setViewingCours(viewingCours === c.id ? null : c.id)}>
+                              <Eye className="h-3.5 w-3.5 mr-1" />
+                              {viewingCours === c.id ? 'Fermer' : 'Lire'}
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" asChild>
+                            <a href={c.contenu_url} target="_blank" rel="noopener noreferrer">
+                              <Download className="h-3.5 w-3.5 mr-1" /> Ouvrir
+                            </a>
+                          </Button>
+                        </div>
                       </div>
-                      {isVideo(c) && <VideoEmbed url={c.contenu_url} />}
+                      {viewingCours === c.id && isPdf(c) && <PdfViewer url={c.contenu_url} />}
+                      {(viewingCours === c.id || isVideo(c)) && isVideo(c) && <VideoEmbed url={c.contenu_url} />}
                     </CardContent>
                   </Card>
                 ))}
