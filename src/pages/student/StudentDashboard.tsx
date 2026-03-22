@@ -223,35 +223,29 @@ export default function StudentDashboard() {
                 <Calendar className="h-5 w-5 text-primary" /> Calendrier scolaire
               </h3>
               <div className="grid grid-cols-2 gap-3">
-              {data.evenements_calendrier.map((ev: any) => (
-                <Card 
-                  key={ev.id} 
-                  className="border-l-4 cursor-pointer hover:shadow-md transition-shadow" 
-                  style={{ borderLeftColor: ev.couleur || 'hsl(var(--primary))' }}
-                  onClick={() => setSelectedEvent(ev)}
-                >
-                  <CardContent className="py-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-sm">{ev.titre}</p>
-                        {ev.matieres?.nom && <p className="text-xs text-muted-foreground">📖 {ev.matieres.nom}</p>}
-                        {ev.evenement_classes?.length > 0 && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            📚 {ev.evenement_classes.length} épreuve{ev.evenement_classes.length > 1 ? 's' : ''} programmée{ev.evenement_classes.length > 1 ? 's' : ''}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs shrink-0">
-                          {new Date(ev.date_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                          {ev.date_fin && ev.date_fin !== ev.date_debut && (' — ' + new Date(ev.date_fin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }))}
-                        </Badge>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                {data.evenements_calendrier.map((ev: any) => (
+                  <Card 
+                    key={ev.id} 
+                    className="border-l-4 cursor-pointer hover:shadow-md transition-shadow" 
+                    style={{ borderLeftColor: ev.couleur || 'hsl(var(--primary))' }}
+                    onClick={() => setSelectedEvent(ev)}
+                  >
+                    <CardContent className="py-3 px-3">
+                      <p className="font-medium text-sm truncate">{ev.titre}</p>
+                      <Badge variant="outline" className="text-[10px] mt-1.5">
+                        {new Date(ev.date_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        {ev.date_fin && ev.date_fin !== ev.date_debut && (' — ' + new Date(ev.date_fin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }))}
+                      </Badge>
+                      {ev.matieres?.nom && <p className="text-[11px] text-muted-foreground mt-1">📖 {ev.matieres.nom}</p>}
+                      {ev.evenement_classes?.length > 0 && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          📚 {ev.evenement_classes.length} épreuve{ev.evenement_classes.length > 1 ? 's' : ''}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
 
