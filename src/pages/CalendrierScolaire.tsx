@@ -11,13 +11,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { sortClasses } from '@/lib/utils';
 import {
-  CalendarDays, Plus, ChevronLeft, ChevronRight, Trash2, Pencil, Clock, MapPin
+  CalendarDays, Plus, ChevronLeft, ChevronRight, Trash2, Pencil, Clock, MapPin, School, GraduationCap
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, getDay, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
+
+const SECONDAIRE_CYCLES = ['secondaire', 'collège', 'lycée', 'college', 'lycee'];
+const isSecondaireCycle = (cycleName: string) => {
+  const lower = cycleName?.toLowerCase() || '';
+  return SECONDAIRE_CYCLES.some(s => lower.includes(s));
+};
 
 const EVENT_TYPES = [
   { value: 'examen', label: 'Examen / Contrôle', color: '#ef4444' },
