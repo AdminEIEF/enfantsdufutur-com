@@ -300,13 +300,6 @@ serve(async (req) => {
         .order("date_limite", { ascending: true })
         .limit(5);
 
-      const { data: cours } = await supabaseAdmin
-        .from("cours")
-        .select("id, titre, type_contenu, created_at, matieres:matiere_id(nom)")
-        .eq("classe_id", classeId)
-        .order("created_at", { ascending: false })
-        .limit(5);
-
       const { data: soumissions } = await supabaseAdmin
         .from("soumissions_devoirs")
         .select("devoir_id")
@@ -330,16 +323,24 @@ serve(async (req) => {
         .order("jour_semaine")
         .order("heure_debut");
 
+      // Calendar events (upcoming, for the class or global)
+      const today = new Date().toISOString().split('T')[0];
+      const { data: evenements } = await supabaseAdmin
+        .from("evenements_calendrier")
+        .select("id, titre, description, type, couleur, date_debut, date_fin, heure_debut, heure_fin")
+        .or(`classe_id.eq.${classeId},classe_id.is.null`)
+        .gte("date_debut", today)
+        .order("date_debut", { ascending: true })
+        .limit(10);
+
       // Class rank per period
       let rangParPeriode: any[] = [];
       if (classeId) {
-        // Get all periods
         const { data: periodes } = await supabaseAdmin
           .from("periodes")
           .select("id, nom, ordre")
           .order("ordre");
 
-        // Get all students in class
         const { data: classeEleves } = await supabaseAdmin
           .from("eleves")
           .select("id")
@@ -350,18 +351,15 @@ serve(async (req) => {
         const classeEleveIds = (classeEleves || []).map((e: any) => e.id);
 
         if (classeEleveIds.length > 0 && (periodes || []).length > 0) {
-          // Get all notes for this class
           const { data: allNotes } = await supabaseAdmin
             .from("notes")
             .select("eleve_id, note, matieres:matiere_id(coefficient), periode_id")
             .in("eleve_id", classeEleveIds);
 
-          // Get matieres with coefficients for the class
           for (const periode of (periodes || [])) {
             const periodeNotes = (allNotes || []).filter((n: any) => n.periode_id === periode.id);
             if (periodeNotes.length === 0) continue;
 
-            // Calculate weighted average for each student
             const moyennes: { eleve_id: string; moyenne: number }[] = [];
             for (const eid of classeEleveIds) {
               const studentNotes = periodeNotes.filter((n: any) => n.eleve_id === eid);
@@ -378,7 +376,6 @@ serve(async (req) => {
               }
             }
 
-            // Sort descending
             moyennes.sort((a, b) => b.moyenne - a.moyenne);
             const myIndex = moyennes.findIndex(m => m.eleve_id === eleveId);
             if (myIndex !== -1) {
@@ -396,12 +393,12 @@ serve(async (req) => {
 
       return new Response(JSON.stringify({
         prochains_devoirs: devoirs || [],
-        derniers_cours: cours || [],
         nb_soumissions: (soumissions || []).length,
         nb_bulletins: bulletinCount,
         solde_cantine: eleve.solde_cantine || 0,
         emploi_du_temps_semaine: edtSemaine || [],
         rang_par_periode: rangParPeriode,
+        evenements_calendrier: evenements || [],
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

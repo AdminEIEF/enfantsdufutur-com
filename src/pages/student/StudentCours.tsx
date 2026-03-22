@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { StudentLayout } from '@/components/StudentLayout';
 import { StudentAIChat } from '@/components/StudentAIChat';
-import { BookOpen, FileText, Video, ExternalLink, Search, Loader2, Play, ChevronRight, ArrowLeft, FolderOpen } from 'lucide-react';
+import { BookOpen, FileText, Video, ExternalLink, Search, Loader2, Play, ChevronRight, ArrowLeft, FolderOpen, Eye, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 function VideoEmbed({ url }: { url: string }) {
@@ -67,6 +67,27 @@ const MATIERE_COLORS = [
   'bg-cyan-500/10 text-cyan-600',
 ];
 
+function isPdf(c: any) {
+  const type = (c.type_contenu || '').toLowerCase();
+  const url = (c.contenu_url || '').toLowerCase();
+  return type === 'pdf' || url.endsWith('.pdf') || url.includes('.pdf?');
+}
+
+function PdfViewer({ url }: { url: string }) {
+  // Use Google Docs viewer for cross-browser PDF rendering
+  const googleUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
+  return (
+    <div className="w-full rounded-lg overflow-hidden border bg-muted/30" style={{ height: '70vh', minHeight: 400 }}>
+      <iframe
+        src={googleUrl}
+        className="w-full h-full"
+        title="Visualiseur PDF"
+        loading="lazy"
+      />
+    </div>
+  );
+}
+
 function getIcon(type: string) {
   if (type === 'pdf') return <FileText className="h-5 w-5 text-red-500" />;
   if (type === 'word') return <FileText className="h-5 w-5 text-blue-700" />;
@@ -88,6 +109,7 @@ export default function StudentCours() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedMatiere, setSelectedMatiere] = useState<any>(null);
+  const [viewingCours, setViewingCours] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -213,11 +235,22 @@ export default function StudentCours() {
                             </p>
                           </div>
                         </div>
-                        <Button size="sm" variant="outline" asChild>
-                          <a href={c.contenu_url} target="_blank" rel="noopener noreferrer">Ouvrir</a>
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          {(isPdf(c) || isVideo(c)) && (
+                            <Button size="sm" variant={viewingCours === c.id ? 'default' : 'outline'} onClick={() => setViewingCours(viewingCours === c.id ? null : c.id)}>
+                              <Eye className="h-3.5 w-3.5 mr-1" />
+                              {viewingCours === c.id ? 'Fermer' : 'Lire'}
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" asChild>
+                            <a href={c.contenu_url} target="_blank" rel="noopener noreferrer">
+                              <Download className="h-3.5 w-3.5 mr-1" /> Ouvrir
+                            </a>
+                          </Button>
+                        </div>
                       </div>
-                      {isVideo(c) && <VideoEmbed url={c.contenu_url} />}
+                      {viewingCours === c.id && isPdf(c) && <PdfViewer url={c.contenu_url} />}
+                      {(viewingCours === c.id || isVideo(c)) && isVideo(c) && <VideoEmbed url={c.contenu_url} />}
                     </CardContent>
                   </Card>
                 ))}
@@ -303,11 +336,22 @@ export default function StudentCours() {
                             </p>
                           </div>
                         </div>
-                        <Button size="sm" variant="outline" asChild>
-                          <a href={c.contenu_url} target="_blank" rel="noopener noreferrer">Ouvrir</a>
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          {(isPdf(c) || isVideo(c)) && (
+                            <Button size="sm" variant={viewingCours === c.id ? 'default' : 'outline'} onClick={() => setViewingCours(viewingCours === c.id ? null : c.id)}>
+                              <Eye className="h-3.5 w-3.5 mr-1" />
+                              {viewingCours === c.id ? 'Fermer' : 'Lire'}
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" asChild>
+                            <a href={c.contenu_url} target="_blank" rel="noopener noreferrer">
+                              <Download className="h-3.5 w-3.5 mr-1" /> Ouvrir
+                            </a>
+                          </Button>
+                        </div>
                       </div>
-                      {isVideo(c) && <VideoEmbed url={c.contenu_url} />}
+                      {viewingCours === c.id && isPdf(c) && <PdfViewer url={c.contenu_url} />}
+                      {(viewingCours === c.id || isVideo(c)) && isVideo(c) && <VideoEmbed url={c.contenu_url} />}
                     </CardContent>
                   </Card>
                 ))}

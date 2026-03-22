@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { StudentLayout } from '@/components/StudentLayout';
 import { StudentAIChat } from '@/components/StudentAIChat';
-import { BookOpen, ClipboardList, Award, Clock, UtensilsCrossed, Loader2, ChevronRight, CalendarDays, Trophy } from 'lucide-react';
+import { BookOpen, ClipboardList, Award, Clock, UtensilsCrossed, Loader2, ChevronRight, CalendarDays, Trophy, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -81,12 +81,12 @@ export default function StudentDashboard() {
           <div className="grid grid-cols-2 gap-3">
             <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/eleve/cours')}>
               <CardContent className="pt-4 pb-3 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                  <BookOpen className="h-5 w-5 text-blue-600" />
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <BookOpen className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{data?.derniers_cours?.length || 0}</p>
-                  <p className="text-xs text-muted-foreground">Cours récents</p>
+                  <p className="text-2xl font-bold">Cours</p>
+                  <p className="text-xs text-muted-foreground">Mes cours</p>
                 </div>
               </CardContent>
             </Card>
@@ -214,22 +214,30 @@ export default function StudentDashboard() {
             </div>
           )}
 
-          {/* Recent Courses */}
-          {data?.derniers_cours?.length > 0 && (
+          {/* Calendar Events */}
+          {data?.evenements_calendrier?.length > 0 && (
             <div className="space-y-3">
               <h3 className="font-semibold flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-blue-600" /> Derniers cours ajoutés
+                <Calendar className="h-5 w-5 text-primary" /> Calendrier scolaire
               </h3>
-              {data.derniers_cours.map((c: any) => (
-                <Card key={c.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/eleve/cours')}>
-                  <CardContent className="py-3 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sm">{c.titre}</p>
-                      <p className="text-xs text-muted-foreground">{c.matieres?.nom}</p>
+              {data.evenements_calendrier.map((ev: any) => (
+                <Card key={ev.id} className="border-l-4" style={{ borderLeftColor: ev.couleur || 'hsl(var(--primary))' }}>
+                  <CardContent className="py-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">{ev.titre}</p>
+                        {ev.description && <p className="text-xs text-muted-foreground line-clamp-1">{ev.description}</p>}
+                      </div>
+                      <Badge variant="outline" className="text-xs shrink-0 ml-2">
+                        {new Date(ev.date_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        {ev.date_fin && ev.date_fin !== ev.date_debut && (' — ' + new Date(ev.date_fin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }))}
+                      </Badge>
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      {c.type_contenu === 'pdf' ? '📄 PDF' : c.type_contenu === 'video_youtube' ? '🎬 Vidéo' : '🔗 Lien'}
-                    </Badge>
+                    {ev.heure_debut && (
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        🕐 {ev.heure_debut?.slice(0, 5)}{ev.heure_fin ? ` — ${ev.heure_fin.slice(0, 5)}` : ''}
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               ))}
