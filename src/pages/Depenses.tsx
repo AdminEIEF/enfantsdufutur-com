@@ -51,6 +51,7 @@ const SOUS_CATEGORIES: Record<string, string[]> = {
 
 const SERVICE_COLORS: Record<string, string> = {
   'Fonctionnement': '#ec4899',
+  'Salaires': '#0ea5e9',
   'Pédagogie': '#8b5cf6',
   'Transport': '#f97316',
   'Cantine': '#22c55e',
