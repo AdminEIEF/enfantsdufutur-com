@@ -88,7 +88,7 @@ export default function CalendrierScolaire() {
       // Fetch all event-class links
       const { data: ecLinks } = await supabase
         .from('evenement_classes')
-        .select('evenement_id, classe_id, matiere_id, classes:classe_id(nom), matieres:matiere_id(nom)');
+        .select('evenement_id, classe_id, matiere_id, heure_debut, heure_fin, classes:classe_id(nom), matieres:matiere_id(nom)');
 
       // Attach links to events
       return (data || []).map((ev: any) => ({
