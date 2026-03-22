@@ -197,7 +197,7 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
             <h2 className="text-xl sm:text-2xl font-bold text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Performance & Tableau d'Honneur
             </h2>
-            <p className="text-xs text-muted-foreground">Primaire ≥ 8/20 · Collège & Lycée ≥ 16/20</p>
+            <p className="text-xs text-muted-foreground">Primaire ≥ 8/10 · Collège & Lycée ≥ 16/20</p>
           </div>
         </div>
         {!isPublic && (
