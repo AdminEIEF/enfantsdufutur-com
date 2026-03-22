@@ -19,6 +19,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 const SERVICES = [
   'Fonctionnement',
+  'Salaires',
   'Pédagogie',
   'Transport',
   'Cantine',
