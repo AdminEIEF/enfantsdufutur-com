@@ -72,7 +72,7 @@ export default function CalendrierScolaire() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<EventForm>(emptyForm);
-
+  const [cycleTab, setCycleTab] = useState<'primaire' | 'secondaire'>('primaire');
   // Fetch events with linked classes
   const { data: events = [] } = useQuery({
     queryKey: ['evenements-calendrier'],
