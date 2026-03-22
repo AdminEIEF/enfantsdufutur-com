@@ -253,6 +253,7 @@ export default function CalendrierScolaire() {
       matiere_id: ec.matiere_id || '',
       heure_debut: ec.heure_debut?.slice(0, 5) || '',
       heure_fin: ec.heure_fin?.slice(0, 5) || '',
+      date_epreuve: ec.date_epreuve || '',
     }));
     // Fallback: if no evenement_classes but has classe_id on event
     if (ecList.length === 0 && ev.classe_id) {
