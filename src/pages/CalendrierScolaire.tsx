@@ -403,8 +403,17 @@ export default function CalendrierScolaire() {
                        <div className="w-2 h-2 rounded-full flex-shrink-0 mt-1" style={{ backgroundColor: ev.couleur || typeInfo.color }} />
                        <div className="flex-1 min-w-0">
                          <div className="font-medium truncate">{ev.titre}</div>
-                         {ev.matieres?.nom && (
-                           <div className="text-muted-foreground">📖 {ev.matieres.nom}</div>
+                         {ev.evenement_classes?.length > 0 ? (
+                           ev.evenement_classes.map((ec: any, i: number) => (
+                             <div key={i} className="text-muted-foreground">
+                               📚 {ec.classes?.nom}{ec.matieres?.nom ? ` — ${ec.matieres.nom}` : ''}
+                             </div>
+                           ))
+                         ) : (
+                           <>
+                             {ev.matieres?.nom && <div className="text-muted-foreground">📖 {ev.matieres.nom}</div>}
+                             {ev.classes?.nom && <div className="text-muted-foreground">📚 {ev.classes.nom}</div>}
+                           </>
                          )}
                          {ev.description && (
                            <div className="text-muted-foreground line-clamp-2">{ev.description}</div>
