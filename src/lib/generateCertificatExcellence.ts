@@ -170,9 +170,27 @@ async function generateSingleTableauHonneur(
   doc.text("pour son travail, son assiduité et sa bonne conduite", centerX, y, { align: 'center' });
   
   y += 10;
-  const periodeText = periodeName || 'la';
   const moyenneText = eleve.moyenne.toFixed(2);
-  const periodeLine = `pendant la ${periodeText} période avec une moyenne de: `;
+  
+  // Dynamic period text based on period name
+  let periodeLine: string;
+  const pName = (periodeName || '').trim().toUpperCase();
+  if (pName === 'P1' || pName.includes('PÉRIODE 1') || pName.includes('PREMIERE') || pName.includes('PREMIÈRE')) {
+    periodeLine = 'pendant la première période avec une moyenne de: ';
+  } else if (pName === 'P2' || pName.includes('PÉRIODE 2') || pName.includes('DEUXIÈME') || pName.includes('DEUXIEME')) {
+    periodeLine = 'pendant la deuxième période avec une moyenne de: ';
+  } else if (pName === 'P3' || pName.includes('PÉRIODE 3') || pName.includes('TROISIÈME') || pName.includes('TROISIEME')) {
+    periodeLine = 'pendant la troisième période avec une moyenne de: ';
+  } else if (pName === 'P4' || pName.includes('PÉRIODE 4') || pName.includes('QUATRIÈME') || pName.includes('QUATRIEME')) {
+    periodeLine = 'pendant la quatrième période avec une moyenne de: ';
+  } else if (pName === 'P5' || pName.includes('TOUTES') || pName.includes('ANNUEL')) {
+    periodeLine = 'pendant toutes les périodes avec une moyenne de: ';
+  } else if (periodeName) {
+    periodeLine = `pendant la période ${periodeName} avec une moyenne de: `;
+  } else {
+    periodeLine = 'avec une moyenne de: ';
+  }
+  
   const periodeLineWidth = doc.getTextWidth(periodeLine);
   const moyennePart = `${moyenneText} / ${eleve.seuil <= 10 ? '10' : '20'}.`;
   const moyennePartWidth = doc.getTextWidth(moyennePart);
