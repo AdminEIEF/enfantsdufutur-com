@@ -460,9 +460,9 @@ export default function CalendrierScolaire() {
                          <div className="font-medium truncate">{ev.titre}</div>
                          {ev.evenement_classes?.length > 0 ? (
                            ev.evenement_classes.map((ec: any, i: number) => (
-                             <div key={i} className="text-muted-foreground">
-                               📚 {ec.classes?.nom}{ec.matieres?.nom ? ` — ${ec.matieres.nom}` : ''}{ec.heure_debut ? ` (${ec.heure_debut.slice(0,5)}${ec.heure_fin ? '-' + ec.heure_fin.slice(0,5) : ''})` : ''}
-                             </div>
+                              <div key={i} className="text-muted-foreground">
+                                {ec.date_epreuve ? `📅 ${format(new Date(ec.date_epreuve), 'd MMM', { locale: fr })} — ` : ''}📚 {ec.classes?.nom}{ec.matieres?.nom ? ` — ${ec.matieres.nom}` : ''}{ec.heure_debut ? ` (${ec.heure_debut.slice(0,5)}${ec.heure_fin ? '-' + ec.heure_fin.slice(0,5) : ''})` : ''}
+                              </div>
                            ))
                          ) : (
                            <>
