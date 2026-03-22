@@ -314,6 +314,18 @@ export default function Bulletins() {
     });
   }, [classes, sectionTab]);
 
+  // Group filtered classes by niveau
+  const classesByNiveau = useMemo(() => {
+    const groups: Record<string, { niveauNom: string; ordre: number; classes: any[] }> = {};
+    filteredClasses.forEach((c: any) => {
+      const niveauNom = c.niveaux?.nom || 'Autre';
+      const ordre = c.niveaux?.ordre ?? 99;
+      if (!groups[niveauNom]) groups[niveauNom] = { niveauNom, ordre, classes: [] };
+      groups[niveauNom].classes.push(c);
+    });
+    return Object.values(groups).sort((a, b) => a.ordre - b.ordre);
+  }, [filteredClasses]);
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
@@ -340,8 +352,15 @@ export default function Bulletins() {
               <Select value={classeId} onValueChange={(v) => { setClasseId(v); setSelectedEleve(''); }}>
                 <SelectTrigger><SelectValue placeholder="Sélectionner la classe" /></SelectTrigger>
                 <SelectContent>
-                  {filteredClasses.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>{c.niveaux?.cycles?.nom} — {c.niveaux?.nom} — {c.nom}</SelectItem>
+                  {classesByNiveau.map((group) => (
+                    <div key={group.niveauNom}>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 sticky top-0">
+                        {group.niveauNom}
+                      </div>
+                      {group.classes.map((c: any) => (
+                        <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                      ))}
+                    </div>
                   ))}
                 </SelectContent>
               </Select>
