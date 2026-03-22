@@ -495,27 +495,55 @@ export default function CalendrierScolaire() {
                 <Input type="time" value={form.heure_fin} onChange={e => setForm({ ...form, heure_fin: e.target.value })} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">Classe (optionnel)</Label>
-                <Select value={form.classe_id || '__none__'} onValueChange={v => setForm({ ...form, classe_id: v === '__none__' ? '' : v })}>
-                  <SelectTrigger><SelectValue placeholder="Toutes" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">Toutes les classes</SelectItem>
-                    {classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+            {/* Multi-class selection */}
+            <div>
+              <Label className="text-xs font-semibold">Classes concernées (optionnel)</Label>
+              <p className="text-[10px] text-muted-foreground mb-2">Cochez les classes et choisissez la matière pour chacune</p>
+              <div className="max-h-[200px] overflow-y-auto border rounded-lg p-2 space-y-1.5">
+                {classes.map((c: any) => {
+                  const entry = form.classes_matieres.find(cm => cm.classe_id === c.id);
+                  const isChecked = !!entry;
+                  return (
+                    <div key={c.id} className="flex items-center gap-2">
+                      <Checkbox
+                        checked={isChecked}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setForm({ ...form, classes_matieres: [...form.classes_matieres, { classe_id: c.id, matiere_id: '' }] });
+                          } else {
+                            setForm({ ...form, classes_matieres: form.classes_matieres.filter(cm => cm.classe_id !== c.id) });
+                          }
+                        }}
+                      />
+                      <span className="text-xs font-medium w-24 truncate">{c.nom}</span>
+                      {isChecked && (
+                        <Select
+                          value={entry?.matiere_id || '__none__'}
+                          onValueChange={v => {
+                            setForm({
+                              ...form,
+                              classes_matieres: form.classes_matieres.map(cm =>
+                                cm.classe_id === c.id ? { ...cm, matiere_id: v === '__none__' ? '' : v } : cm
+                              ),
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="h-7 text-xs flex-1">
+                            <SelectValue placeholder="Matière..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">— Aucune matière —</SelectItem>
+                            {matieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-              <div>
-                <Label className="text-xs">Matière (optionnel)</Label>
-                <Select value={form.matiere_id || '__none__'} onValueChange={v => setForm({ ...form, matiere_id: v === '__none__' ? '' : v })}>
-                  <SelectTrigger><SelectValue placeholder="Toutes" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">Toutes les matières</SelectItem>
-                    {matieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
+              {form.classes_matieres.length > 0 && (
+                <p className="text-[10px] text-muted-foreground mt-1">{form.classes_matieres.length} classe(s) sélectionnée(s)</p>
+              )}
             </div>
             <div>
               <Label className="text-xs">Description</Label>
