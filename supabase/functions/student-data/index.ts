@@ -346,7 +346,7 @@ serve(async (req) => {
         const evIds = evenements.map((e: any) => e.id);
         const { data: allEcLinks } = await supabaseAdmin
           .from("evenement_classes")
-          .select("evenement_id, classe_id, matiere_id, heure_debut, heure_fin, classes:classe_id(nom), matieres:matiere_id(nom)")
+          .select("evenement_id, classe_id, matiere_id, heure_debut, heure_fin, date_epreuve, classes:classe_id(nom), matieres:matiere_id(nom)")
           .in("evenement_id", evIds);
         
         evenements.forEach((ev: any) => {

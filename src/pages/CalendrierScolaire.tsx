@@ -44,6 +44,7 @@ interface ClasseMatiere {
   matiere_id: string;
   heure_debut?: string;
   heure_fin?: string;
+  date_epreuve?: string;
 }
 
 interface EventForm {
@@ -88,7 +89,7 @@ export default function CalendrierScolaire() {
       // Fetch all event-class links
       const { data: ecLinks } = await supabase
         .from('evenement_classes')
-        .select('evenement_id, classe_id, matiere_id, heure_debut, heure_fin, classes:classe_id(nom), matieres:matiere_id(nom)');
+        .select('evenement_id, classe_id, matiere_id, heure_debut, heure_fin, date_epreuve, classes:classe_id(nom), matieres:matiere_id(nom)');
 
       // Attach links to events
       return (data || []).map((ev: any) => ({
@@ -176,6 +177,7 @@ export default function CalendrierScolaire() {
             matiere_id: cm.matiere_id || null,
             heure_debut: cm.heure_debut || null,
             heure_fin: cm.heure_fin || null,
+            date_epreuve: cm.date_epreuve || null,
           }));
           const { error: linkErr } = await supabase.from('evenement_classes').insert(links);
           if (linkErr) throw linkErr;
@@ -229,7 +231,11 @@ export default function CalendrierScolaire() {
     return filteredEvents.filter((e: any) => {
       const start = e.date_debut;
       const end = e.date_fin || e.date_debut;
-      return dayStr >= start && dayStr <= end;
+      // Event spans this day
+      if (dayStr >= start && dayStr <= end) return true;
+      // Or has a specific epreuve on this day
+      if (e.evenement_classes?.some((ec: any) => ec.date_epreuve === dayStr)) return true;
+      return false;
     });
   };
 
@@ -251,10 +257,11 @@ export default function CalendrierScolaire() {
       matiere_id: ec.matiere_id || '',
       heure_debut: ec.heure_debut?.slice(0, 5) || '',
       heure_fin: ec.heure_fin?.slice(0, 5) || '',
+      date_epreuve: ec.date_epreuve || '',
     }));
     // Fallback: if no evenement_classes but has classe_id on event
     if (ecList.length === 0 && ev.classe_id) {
-      ecList.push({ classe_id: ev.classe_id, matiere_id: ev.matiere_id || '', heure_debut: '', heure_fin: '' });
+      ecList.push({ classe_id: ev.classe_id, matiere_id: ev.matiere_id || '', heure_debut: '', heure_fin: '', date_epreuve: '' });
     }
     setForm({
       titre: ev.titre,
@@ -418,9 +425,9 @@ export default function CalendrierScolaire() {
                       {ev.evenement_classes?.length > 0 ? (
                         <div className="space-y-0.5 mt-1">
                           {ev.evenement_classes.map((ec: any, i: number) => (
-                            <p key={i} className="text-[10px] text-muted-foreground">
-                              📚 {ec.classes?.nom || '?'}{ec.matieres?.nom ? ` — 📖 ${ec.matieres.nom}` : ''}{ec.heure_debut ? ` (${ec.heure_debut.slice(0,5)}${ec.heure_fin ? '-' + ec.heure_fin.slice(0,5) : ''})` : ''}
-                            </p>
+                             <p key={i} className="text-[10px] text-muted-foreground">
+                               {ec.date_epreuve ? `📅 ${format(new Date(ec.date_epreuve), 'd MMM', { locale: fr })} — ` : ''}📚 {ec.classes?.nom || '?'}{ec.matieres?.nom ? ` — 📖 ${ec.matieres.nom}` : ''}{ec.heure_debut ? ` (${ec.heure_debut.slice(0,5)}${ec.heure_fin ? '-' + ec.heure_fin.slice(0,5) : ''})` : ''}
+                             </p>
                           ))}
                         </div>
                       ) : (
@@ -457,9 +464,9 @@ export default function CalendrierScolaire() {
                          <div className="font-medium truncate">{ev.titre}</div>
                          {ev.evenement_classes?.length > 0 ? (
                            ev.evenement_classes.map((ec: any, i: number) => (
-                             <div key={i} className="text-muted-foreground">
-                               📚 {ec.classes?.nom}{ec.matieres?.nom ? ` — ${ec.matieres.nom}` : ''}{ec.heure_debut ? ` (${ec.heure_debut.slice(0,5)}${ec.heure_fin ? '-' + ec.heure_fin.slice(0,5) : ''})` : ''}
-                             </div>
+                              <div key={i} className="text-muted-foreground">
+                                {ec.date_epreuve ? `📅 ${format(new Date(ec.date_epreuve), 'd MMM', { locale: fr })} — ` : ''}📚 {ec.classes?.nom}{ec.matieres?.nom ? ` — ${ec.matieres.nom}` : ''}{ec.heure_debut ? ` (${ec.heure_debut.slice(0,5)}${ec.heure_fin ? '-' + ec.heure_fin.slice(0,5) : ''})` : ''}
+                              </div>
                            ))
                          ) : (
                            <>
@@ -569,7 +576,7 @@ export default function CalendrierScolaire() {
                           checked={isChecked}
                           onCheckedChange={(checked) => {
                             if (checked) {
-                              setForm({ ...form, classes_matieres: [...form.classes_matieres, { classe_id: c.id, matiere_id: '', heure_debut: '', heure_fin: '' }] });
+                              setForm({ ...form, classes_matieres: [...form.classes_matieres, { classe_id: c.id, matiere_id: '', heure_debut: '', heure_fin: '', date_epreuve: '' }] });
                             } else {
                               setForm({ ...form, classes_matieres: form.classes_matieres.filter(cm => cm.classe_id !== c.id) });
                             }
@@ -578,7 +585,7 @@ export default function CalendrierScolaire() {
                         <span className="text-xs font-medium">{c.nom}</span>
                         {isChecked && (
                           <Button type="button" variant="ghost" size="sm" className="h-5 px-1 text-[10px]" onClick={() => {
-                            setForm({ ...form, classes_matieres: [...form.classes_matieres, { classe_id: c.id, matiere_id: '', heure_debut: '', heure_fin: '' }] });
+                            setForm({ ...form, classes_matieres: [...form.classes_matieres, { classe_id: c.id, matiere_id: '', heure_debut: '', heure_fin: '', date_epreuve: '' }] });
                           }}>
                             <Plus className="h-3 w-3 mr-0.5" /> Matière
                           </Button>
@@ -586,42 +593,54 @@ export default function CalendrierScolaire() {
                       </div>
                       {entries.map((entry, idx) => {
                         const entryIndex = form.classes_matieres.indexOf(entry);
+                        const hasDateRange = form.date_fin && form.date_fin !== form.date_debut;
                         return (
-                          <div key={idx} className="flex items-center gap-1.5 ml-6">
-                            <Select
-                              value={entry.matiere_id || '__none__'}
-                              onValueChange={v => {
+                          <div key={idx} className="ml-6 space-y-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {hasDateRange && (
+                                <Input type="date" className="h-7 text-[11px] w-[120px]" 
+                                  min={form.date_debut} max={form.date_fin}
+                                  value={entry.date_epreuve || ''} onChange={e => {
+                                  const updated = [...form.classes_matieres];
+                                  updated[entryIndex] = { ...entry, date_epreuve: e.target.value };
+                                  setForm({ ...form, classes_matieres: updated });
+                                }} />
+                              )}
+                              <Select
+                                value={entry.matiere_id || '__none__'}
+                                onValueChange={v => {
+                                  const updated = [...form.classes_matieres];
+                                  updated[entryIndex] = { ...entry, matiere_id: v === '__none__' ? '' : v };
+                                  setForm({ ...form, classes_matieres: updated });
+                                }}
+                              >
+                                <SelectTrigger className="h-7 text-[11px] flex-1 min-w-[100px]">
+                                  <SelectValue placeholder="Matière..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__none__">— Matière —</SelectItem>
+                                  {matieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                              <Input type="time" className="h-7 text-[11px] w-20" placeholder="Début" value={entry.heure_debut || ''} onChange={e => {
                                 const updated = [...form.classes_matieres];
-                                updated[entryIndex] = { ...entry, matiere_id: v === '__none__' ? '' : v };
+                                updated[entryIndex] = { ...entry, heure_debut: e.target.value };
                                 setForm({ ...form, classes_matieres: updated });
-                              }}
-                            >
-                              <SelectTrigger className="h-7 text-[11px] flex-1">
-                                <SelectValue placeholder="Matière..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="__none__">— Matière —</SelectItem>
-                                {matieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                            <Input type="time" className="h-7 text-[11px] w-20" placeholder="Début" value={entry.heure_debut || ''} onChange={e => {
-                              const updated = [...form.classes_matieres];
-                              updated[entryIndex] = { ...entry, heure_debut: e.target.value };
-                              setForm({ ...form, classes_matieres: updated });
-                            }} />
-                            <Input type="time" className="h-7 text-[11px] w-20" placeholder="Fin" value={entry.heure_fin || ''} onChange={e => {
-                              const updated = [...form.classes_matieres];
-                              updated[entryIndex] = { ...entry, heure_fin: e.target.value };
-                              setForm({ ...form, classes_matieres: updated });
-                            }} />
-                            {entries.length > 1 && (
-                              <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => {
-                                const updated = form.classes_matieres.filter((_, i) => i !== entryIndex);
+                              }} />
+                              <Input type="time" className="h-7 text-[11px] w-20" placeholder="Fin" value={entry.heure_fin || ''} onChange={e => {
+                                const updated = [...form.classes_matieres];
+                                updated[entryIndex] = { ...entry, heure_fin: e.target.value };
                                 setForm({ ...form, classes_matieres: updated });
-                              }}>
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            )}
+                              }} />
+                              {entries.length > 1 && (
+                                <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => {
+                                  const updated = form.classes_matieres.filter((_, i) => i !== entryIndex);
+                                  setForm({ ...form, classes_matieres: updated });
+                                }}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
