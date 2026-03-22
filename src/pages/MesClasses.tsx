@@ -14,8 +14,11 @@ import { sortClasses } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
+const SECONDAIRE_CYCLES = ['collège', 'lycée', 'college', 'lycee'];
+const isSecondaireCycle = (cycleName: string) => SECONDAIRE_CYCLES.some(c => (cycleName || '').toLowerCase().includes(c));
+
 export default function MesClasses() {
-  const [selectedCycle, setSelectedCycle] = useState('all');
+  const [selectedTab, setSelectedTab] = useState('secondaire');
   const [classSorts, setClassSorts] = useState<Record<string, 'nom' | 'matricule'>>({});
   const [classSearches, setClassSearches] = useState<Record<string, string>>({});
   const { data: schoolConfig } = useSchoolConfig();
