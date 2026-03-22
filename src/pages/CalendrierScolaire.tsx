@@ -66,7 +66,7 @@ export default function CalendrierScolaire() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<EventForm>(emptyForm);
 
-  // Fetch events
+  // Fetch events with linked classes
   const { data: events = [] } = useQuery({
     queryKey: ['evenements-calendrier'],
     queryFn: async () => {
@@ -75,7 +75,17 @@ export default function CalendrierScolaire() {
         .select('*, classes(nom), matieres(nom)')
         .order('date_debut');
       if (error) throw error;
-      return data;
+
+      // Fetch all event-class links
+      const { data: ecLinks } = await supabase
+        .from('evenement_classes')
+        .select('evenement_id, classe_id, matiere_id, classes:classe_id(nom), matieres:matiere_id(nom)');
+
+      // Attach links to events
+      return (data || []).map((ev: any) => ({
+        ...ev,
+        evenement_classes: (ecLinks || []).filter((l: any) => l.evenement_id === ev.id),
+      }));
     },
   });
 
