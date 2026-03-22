@@ -58,24 +58,23 @@ export default function MesClasses() {
     return Array.from(map.values()).sort((a, b) => a.ordre - b.ordre);
   }, [classes]);
 
-  const cycleCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: eleves.length };
-    eleves.forEach((e: any) => {
-      const cycleId = e.classes?.niveaux?.cycles?.id;
-      if (cycleId) counts[cycleId] = (counts[cycleId] || 0) + 1;
-    });
-    return counts;
+  const secondaireCount = useMemo(() => {
+    return eleves.filter((e: any) => isSecondaireCycle(e.classes?.niveaux?.cycles?.nom || '')).length;
   }, [eleves]);
+  const autresCount = eleves.length - secondaireCount;
 
   const filteredEleves = useMemo(() => {
-    if (selectedCycle === 'all') return eleves;
-    return eleves.filter((e: any) => e.classes?.niveaux?.cycles?.id === selectedCycle);
-  }, [eleves, selectedCycle]);
+    return eleves.filter((e: any) => {
+      const cycleName = e.classes?.niveaux?.cycles?.nom || '';
+      return selectedTab === 'secondaire' ? isSecondaireCycle(cycleName) : !isSecondaireCycle(cycleName);
+    });
+  }, [eleves, selectedTab]);
 
   const structure = useMemo(() => {
-    const filteredClasses = selectedCycle === 'all'
-      ? classes
-      : classes.filter((c: any) => c.niveaux?.cycles?.id === selectedCycle);
+    const filteredClasses = classes.filter((c: any) => {
+      const cycleName = c.niveaux?.cycles?.nom || '';
+      return selectedTab === 'secondaire' ? isSecondaireCycle(cycleName) : !isSecondaireCycle(cycleName);
+    });
 
     const niveauMap = new Map<string, { id: string; nom: string; ordre: number; classes: any[] }>();
     filteredClasses.forEach((c: any) => {
@@ -87,7 +86,7 @@ export default function MesClasses() {
       niveauMap.get(niv.id)!.classes.push(c);
     });
     return Array.from(niveauMap.values()).sort((a, b) => a.ordre - b.ordre);
-  }, [classes, selectedCycle]);
+  }, [classes, selectedTab]);
 
   // Stats for a class
   const getClassStats = (classeId: string) => {
