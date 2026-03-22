@@ -115,9 +115,20 @@ export default function CoursAdmin() {
 
   // Filter classes by cycle tab
   const filteredClasses = useMemo(() => {
-    return classes.filter((c: any) => {
+    const filtered = classes.filter((c: any) => {
       const isSec = isSecondaire(c.id);
       return cycleTab === 'secondaire' ? isSec : !isSec;
+    });
+    // Sort by niveau ordre (descending for secondaire so highest classes appear first)
+    return [...filtered].sort((a: any, b: any) => {
+      const ordreA = a.niveaux?.ordre ?? 0;
+      const ordreB = b.niveaux?.ordre ?? 0;
+      if (cycleTab === 'secondaire') {
+        if (ordreA !== ordreB) return ordreB - ordreA;
+      } else {
+        if (ordreA !== ordreB) return ordreA - ordreB;
+      }
+      return (a.nom || '').localeCompare(b.nom || '', 'fr', { numeric: true });
     });
   }, [classes, cycleTab]);
 
