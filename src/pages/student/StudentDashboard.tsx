@@ -88,8 +88,8 @@ export default function StudentDashboard() {
                   <BookOpen className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">Cours</p>
-                  <p className="text-xs text-muted-foreground">Mes cours</p>
+                  <p className="text-2xl font-bold">{data?.nb_cours || 0}</p>
+                  <p className="text-xs text-muted-foreground">Cours disponibles</p>
                 </div>
               </CardContent>
             </Card>
