@@ -152,7 +152,8 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
       doc.text(`${eleve.moyenne.toFixed(2)}`, x + (colW - 5) / 2, y + 32, { align: 'center' });
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.text('/ 20', x + (colW - 5) / 2 + 12, y + 32);
+      const eleveBareme = isSecondaireCycle(eleve.cycle_nom) ? 20 : 10;
+      doc.text(`/ ${eleveBareme}`, x + (colW - 5) / 2 + 12, y + 32);
       doc.setTextColor(30, 30, 30);
     });
 
