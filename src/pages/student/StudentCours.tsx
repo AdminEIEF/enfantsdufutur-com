@@ -67,6 +67,27 @@ const MATIERE_COLORS = [
   'bg-cyan-500/10 text-cyan-600',
 ];
 
+function isPdf(c: any) {
+  const type = (c.type_contenu || '').toLowerCase();
+  const url = (c.contenu_url || '').toLowerCase();
+  return type === 'pdf' || url.endsWith('.pdf') || url.includes('.pdf?');
+}
+
+function PdfViewer({ url }: { url: string }) {
+  // Use Google Docs viewer for cross-browser PDF rendering
+  const googleUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
+  return (
+    <div className="w-full rounded-lg overflow-hidden border bg-muted/30" style={{ height: '70vh', minHeight: 400 }}>
+      <iframe
+        src={googleUrl}
+        className="w-full h-full"
+        title="Visualiseur PDF"
+        loading="lazy"
+      />
+    </div>
+  );
+}
+
 function getIcon(type: string) {
   if (type === 'pdf') return <FileText className="h-5 w-5 text-red-500" />;
   if (type === 'word') return <FileText className="h-5 w-5 text-blue-700" />;
