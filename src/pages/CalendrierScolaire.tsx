@@ -257,7 +257,7 @@ export default function CalendrierScolaire() {
     }));
     // Fallback: if no evenement_classes but has classe_id on event
     if (ecList.length === 0 && ev.classe_id) {
-      ecList.push({ classe_id: ev.classe_id, matiere_id: ev.matiere_id || '', heure_debut: '', heure_fin: '' });
+      ecList.push({ classe_id: ev.classe_id, matiere_id: ev.matiere_id || '', heure_debut: '', heure_fin: '', date_epreuve: '' });
     }
     setForm({
       titre: ev.titre,
