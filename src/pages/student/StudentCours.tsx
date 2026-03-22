@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { StudentLayout } from '@/components/StudentLayout';
 import { StudentAIChat } from '@/components/StudentAIChat';
-import { BookOpen, FileText, Video, ExternalLink, Search, Loader2, Play, ChevronRight, ArrowLeft, FolderOpen } from 'lucide-react';
+import { BookOpen, FileText, Video, ExternalLink, Search, Loader2, Play, ChevronRight, ArrowLeft, FolderOpen, Eye, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 function VideoEmbed({ url }: { url: string }) {
