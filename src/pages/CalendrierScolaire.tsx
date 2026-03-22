@@ -561,54 +561,84 @@ export default function CalendrierScolaire() {
                 <Input type="time" value={form.heure_fin} onChange={e => setForm({ ...form, heure_fin: e.target.value })} />
               </div>
             </div>
-            {/* Multi-class selection */}
+            {/* Multi-class selection with multiple matières per class */}
             <div>
               <Label className="text-xs font-semibold">Classes concernées — {cycleTab === 'secondaire' ? 'Secondaire' : 'Primaire / Maternelle'}</Label>
-              <p className="text-[10px] text-muted-foreground mb-2">Cochez les classes et choisissez la matière pour chacune</p>
-              <div className="max-h-[200px] overflow-y-auto border rounded-lg p-2 space-y-1.5">
+              <div className="max-h-[250px] overflow-y-auto border rounded-lg p-2 space-y-2 mt-1">
                 {filteredClasses.map((c: any) => {
-                  const entry = form.classes_matieres.find(cm => cm.classe_id === c.id);
-                  const isChecked = !!entry;
+                  const entries = form.classes_matieres.filter(cm => cm.classe_id === c.id);
+                  const isChecked = entries.length > 0;
                   return (
-                    <div key={c.id} className="flex items-center gap-2">
-                      <Checkbox
-                        checked={isChecked}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setForm({ ...form, classes_matieres: [...form.classes_matieres, { classe_id: c.id, matiere_id: '' }] });
-                          } else {
-                            setForm({ ...form, classes_matieres: form.classes_matieres.filter(cm => cm.classe_id !== c.id) });
-                          }
-                        }}
-                      />
-                      <span className="text-xs font-medium w-24 truncate">{c.nom}</span>
-                      {isChecked && (
-                        <Select
-                          value={entry?.matiere_id || '__none__'}
-                          onValueChange={v => {
-                            setForm({
-                              ...form,
-                              classes_matieres: form.classes_matieres.map(cm =>
-                                cm.classe_id === c.id ? { ...cm, matiere_id: v === '__none__' ? '' : v } : cm
-                              ),
-                            });
+                    <div key={c.id} className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setForm({ ...form, classes_matieres: [...form.classes_matieres, { classe_id: c.id, matiere_id: '', heure_debut: '', heure_fin: '' }] });
+                            } else {
+                              setForm({ ...form, classes_matieres: form.classes_matieres.filter(cm => cm.classe_id !== c.id) });
+                            }
                           }}
-                        >
-                          <SelectTrigger className="h-7 text-xs flex-1">
-                            <SelectValue placeholder="Matière..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none__">— Aucune matière —</SelectItem>
-                            {matieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      )}
+                        />
+                        <span className="text-xs font-medium">{c.nom}</span>
+                        {isChecked && (
+                          <Button type="button" variant="ghost" size="sm" className="h-5 px-1 text-[10px]" onClick={() => {
+                            setForm({ ...form, classes_matieres: [...form.classes_matieres, { classe_id: c.id, matiere_id: '', heure_debut: '', heure_fin: '' }] });
+                          }}>
+                            <Plus className="h-3 w-3 mr-0.5" /> Matière
+                          </Button>
+                        )}
+                      </div>
+                      {entries.map((entry, idx) => {
+                        const entryIndex = form.classes_matieres.indexOf(entry);
+                        return (
+                          <div key={idx} className="flex items-center gap-1.5 ml-6">
+                            <Select
+                              value={entry.matiere_id || '__none__'}
+                              onValueChange={v => {
+                                const updated = [...form.classes_matieres];
+                                updated[entryIndex] = { ...entry, matiere_id: v === '__none__' ? '' : v };
+                                setForm({ ...form, classes_matieres: updated });
+                              }}
+                            >
+                              <SelectTrigger className="h-7 text-[11px] flex-1">
+                                <SelectValue placeholder="Matière..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__none__">— Matière —</SelectItem>
+                                {matieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            <Input type="time" className="h-7 text-[11px] w-20" placeholder="Début" value={entry.heure_debut || ''} onChange={e => {
+                              const updated = [...form.classes_matieres];
+                              updated[entryIndex] = { ...entry, heure_debut: e.target.value };
+                              setForm({ ...form, classes_matieres: updated });
+                            }} />
+                            <Input type="time" className="h-7 text-[11px] w-20" placeholder="Fin" value={entry.heure_fin || ''} onChange={e => {
+                              const updated = [...form.classes_matieres];
+                              updated[entryIndex] = { ...entry, heure_fin: e.target.value };
+                              setForm({ ...form, classes_matieres: updated });
+                            }} />
+                            {entries.length > 1 && (
+                              <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => {
+                                const updated = form.classes_matieres.filter((_, i) => i !== entryIndex);
+                                setForm({ ...form, classes_matieres: updated });
+                              }}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })}
               </div>
               {form.classes_matieres.length > 0 && (
-                <p className="text-[10px] text-muted-foreground mt-1">{form.classes_matieres.length} classe(s) sélectionnée(s)</p>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {new Set(form.classes_matieres.map(cm => cm.classe_id)).size} classe(s), {form.classes_matieres.filter(cm => cm.matiere_id).length} matière(s)
+                </p>
               )}
             </div>
             <div>
