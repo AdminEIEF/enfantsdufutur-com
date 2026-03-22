@@ -555,16 +555,6 @@ export default function CalendrierScolaire() {
                 <Input type="date" value={form.date_fin} onChange={e => setForm({ ...form, date_fin: e.target.value })} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">Heure début</Label>
-                <Input type="time" value={form.heure_debut} onChange={e => setForm({ ...form, heure_debut: e.target.value })} />
-              </div>
-              <div>
-                <Label className="text-xs">Heure fin</Label>
-                <Input type="time" value={form.heure_fin} onChange={e => setForm({ ...form, heure_fin: e.target.value })} />
-              </div>
-            </div>
             {/* Multi-class selection with multiple matières per class */}
             <div>
               <Label className="text-xs font-semibold">Classes concernées — {cycleTab === 'secondaire' ? 'Secondaire' : 'Primaire / Maternelle'}</Label>
