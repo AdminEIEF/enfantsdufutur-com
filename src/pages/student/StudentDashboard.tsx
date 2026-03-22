@@ -81,12 +81,12 @@ export default function StudentDashboard() {
           <div className="grid grid-cols-2 gap-3">
             <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/eleve/cours')}>
               <CardContent className="pt-4 pb-3 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                  <BookOpen className="h-5 w-5 text-blue-600" />
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <BookOpen className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{data?.derniers_cours?.length || 0}</p>
-                  <p className="text-xs text-muted-foreground">Cours récents</p>
+                  <p className="text-2xl font-bold">Cours</p>
+                  <p className="text-xs text-muted-foreground">Mes cours</p>
                 </div>
               </CardContent>
             </Card>
