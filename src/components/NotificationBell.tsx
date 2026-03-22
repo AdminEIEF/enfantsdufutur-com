@@ -96,7 +96,7 @@ export function NotificationBell({ mode, targetId, token, onViewAll }: Notificat
 
   // Initial fetch
   useEffect(() => {
-    fetchNotifications();
+    fetchNotifications().then(() => { initialLoadDone.current = true; });
   }, [fetchNotifications]);
 
   // Realtime subscription
@@ -118,6 +118,9 @@ export function NotificationBell({ mode, targetId, token, onViewAll }: Notificat
           const newNotif = payload.new as Notification;
           setNotifications(prev => [newNotif, ...prev].slice(0, 5));
           setUnreadCount(prev => prev + 1);
+          if (initialLoadDone.current) {
+            playNotificationSound();
+          }
         }
       )
       .subscribe();
