@@ -213,17 +213,6 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
                 ))}
               </SelectContent>
             </Select>
-            <Select value={cycleFilter} onValueChange={setCycleFilter}>
-              <SelectTrigger className="w-[150px] h-8 text-xs">
-                <SelectValue placeholder="Cycle" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les cycles</SelectItem>
-                {cycles.map(c => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Button size="sm" variant="outline" onClick={handleExportPDF} className="h-8 text-xs">
               <Download className="mr-1.5 h-3.5 w-3.5" />
               PDF
@@ -241,6 +230,19 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
             )}
           </div>
         )}
+      </div>
+
+      {/* Section tabs */}
+      <Tabs value={sectionTab} onValueChange={setSectionTab}>
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="autres" className="gap-2">
+            <School className="h-4 w-4" /> Préscolaire & Primaire
+          </TabsTrigger>
+          <TabsTrigger value="secondaire" className="gap-2">
+            <GraduationCap className="h-4 w-4" /> Secondaire
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
       </div>
 
       {/* Global Stats */}
