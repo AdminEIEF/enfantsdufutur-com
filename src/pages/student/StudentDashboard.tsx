@@ -251,6 +251,36 @@ export default function StudentDashboard() {
             </div>
           )}
 
+          {/* EDT Detail Dialog */}
+          <Dialog open={!!selectedEdtJour} onOpenChange={() => setSelectedEdtJour(null)}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5 text-primary" />
+                  {selectedEdtJour?.jour}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2">
+                {selectedEdtJour?.cours
+                  .sort((a: any, b: any) => (a.heure_debut || '').localeCompare(b.heure_debut || ''))
+                  .map((s: any) => (
+                    <div key={s.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50 border border-border/50">
+                      <div className="text-xs font-mono text-muted-foreground w-[85px] shrink-0">
+                        🕐 {s.heure_debut?.slice(0, 5)} — {s.heure_fin?.slice(0, 5)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{s.matieres?.nom}</p>
+                        {s.employes && (
+                          <p className="text-xs text-muted-foreground">👤 {s.employes.prenom} {s.employes.nom}</p>
+                        )}
+                        {s.salle && <p className="text-xs text-muted-foreground">🏫 Salle {s.salle}</p>}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </DialogContent>
+          </Dialog>
+
           {/* Event Detail Dialog */}
           <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
             <DialogContent className="max-w-md">
