@@ -62,7 +62,7 @@ function HonneurCard({ eleve, rank, logoUrl, periodeName, schoolConfig }: {
           <div className="text-2xl font-extrabold text-primary" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             {eleve.moyenne.toFixed(2)}
           </div>
-          <div className="text-[10px] text-muted-foreground font-medium">/ 20 (seuil: {eleve.seuil})</div>
+          <div className="text-[10px] text-muted-foreground font-medium">/ {isSecondaireCycle(eleve.cycle_nom) ? '20' : '10'} (seuil: {eleve.seuil})</div>
         </div>
         <Button
           size="sm"
