@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { StudentLayout } from '@/components/StudentLayout';
 import { StudentAIChat } from '@/components/StudentAIChat';
-import { BookOpen, ClipboardList, Award, Clock, UtensilsCrossed, Loader2, ChevronRight, CalendarDays, Trophy } from 'lucide-react';
+import { BookOpen, ClipboardList, Award, Clock, UtensilsCrossed, Loader2, ChevronRight, CalendarDays, Trophy, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
