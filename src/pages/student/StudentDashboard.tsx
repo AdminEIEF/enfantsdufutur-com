@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { StudentLayout } from '@/components/StudentLayout';
 import { StudentAIChat } from '@/components/StudentAIChat';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BookOpen, ClipboardList, Award, Clock, UtensilsCrossed, Loader2, ChevronRight, CalendarDays, Trophy, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
@@ -17,6 +18,7 @@ export default function StudentDashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -221,38 +223,94 @@ export default function StudentDashboard() {
                 <Calendar className="h-5 w-5 text-primary" /> Calendrier scolaire
               </h3>
               {data.evenements_calendrier.map((ev: any) => (
-                <Card key={ev.id} className="border-l-4" style={{ borderLeftColor: ev.couleur || 'hsl(var(--primary))' }}>
+                <Card 
+                  key={ev.id} 
+                  className="border-l-4 cursor-pointer hover:shadow-md transition-shadow" 
+                  style={{ borderLeftColor: ev.couleur || 'hsl(var(--primary))' }}
+                  onClick={() => setSelectedEvent(ev)}
+                >
                   <CardContent className="py-3">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-sm">{ev.titre}</p>
                         {ev.matieres?.nom && <p className="text-xs text-muted-foreground">📖 {ev.matieres.nom}</p>}
                         {ev.evenement_classes?.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {ev.evenement_classes.map((ec: any, i: number) => (
-                              <Badge key={i} variant="secondary" className="text-[10px]">
-                                {ec.classes?.nom}{ec.matieres?.nom ? ` — ${ec.matieres.nom}` : ''}
-                              </Badge>
-                            ))}
-                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            📚 {ev.evenement_classes.length} épreuve{ev.evenement_classes.length > 1 ? 's' : ''} programmée{ev.evenement_classes.length > 1 ? 's' : ''}
+                          </p>
                         )}
-                        {ev.description && <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{ev.description}</p>}
                       </div>
-                      <Badge variant="outline" className="text-xs shrink-0 ml-2">
-                        {new Date(ev.date_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                        {ev.date_fin && ev.date_fin !== ev.date_debut && (' — ' + new Date(ev.date_fin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }))}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs shrink-0">
+                          {new Date(ev.date_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                          {ev.date_fin && ev.date_fin !== ev.date_debut && (' — ' + new Date(ev.date_fin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }))}
+                        </Badge>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
                     </div>
-                    {ev.heure_debut && (
-                      <p className="text-[11px] text-muted-foreground mt-1">
-                        🕐 {ev.heure_debut?.slice(0, 5)}{ev.heure_fin ? ` — ${ev.heure_fin.slice(0, 5)}` : ''}
-                      </p>
-                    )}
                   </CardContent>
                 </Card>
               ))}
             </div>
           )}
+
+          {/* Event Detail Dialog */}
+          <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  {selectedEvent?.titre}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  📅 {selectedEvent && new Date(selectedEvent.date_debut).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  {selectedEvent?.date_fin && selectedEvent.date_fin !== selectedEvent.date_debut && (
+                    <> — {new Date(selectedEvent.date_fin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</>
+                  )}
+                </div>
+
+                {selectedEvent?.description && (
+                  <p className="text-sm text-muted-foreground">{selectedEvent.description}</p>
+                )}
+
+                {selectedEvent?.matieres?.nom && !selectedEvent?.evenement_classes?.length && (
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-sm font-medium">📖 {selectedEvent.matieres.nom}</p>
+                    {selectedEvent.heure_debut && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        🕐 {selectedEvent.heure_debut?.slice(0, 5)}{selectedEvent.heure_fin ? ` — ${selectedEvent.heure_fin.slice(0, 5)}` : ''}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {selectedEvent?.evenement_classes?.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold">📋 Programme des épreuves</p>
+                    {selectedEvent.evenement_classes
+                      .sort((a: any, b: any) => (a.heure_debut || '').localeCompare(b.heure_debut || ''))
+                      .map((ec: any, i: number) => (
+                        <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50 border border-border/50">
+                          {ec.heure_debut && (
+                            <div className="text-xs font-mono text-muted-foreground w-[90px] shrink-0">
+                              🕐 {ec.heure_debut?.slice(0, 5)} — {ec.heure_fin?.slice(0, 5)}
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{ec.matieres?.nom || 'Matière'}</p>
+                            {ec.classes?.nom && (
+                              <p className="text-[11px] text-muted-foreground">{ec.classes.nom}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         </>
       )}
       <StudentAIChat />
