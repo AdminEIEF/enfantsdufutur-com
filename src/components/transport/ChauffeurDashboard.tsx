@@ -173,7 +173,7 @@ export default function ChauffeurDashboard() {
 
       // Notifier les admins (alerte)
       await supabase.from('notifications').insert({
-        destinataire_type: 'admin',
+        destinataire_type: 'staff',
         titre: `🚨 Incident transport — ${incidentForm.type_incident}`,
         message: `${incidentForm.description.slice(0, 200)} | Gravité: ${incidentForm.gravite}${incidentForm.lieu ? ' | Lieu: ' + incidentForm.lieu : ''}`,
         type: 'alerte',
