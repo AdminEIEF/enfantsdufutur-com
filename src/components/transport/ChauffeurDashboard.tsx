@@ -171,12 +171,12 @@ export default function ChauffeurDashboard() {
       } as any);
       if (error) throw error;
 
-      // Notifier les admins
+      // Notifier les admins (alerte)
       await supabase.from('notifications').insert({
-        destinataire_type: 'staff',
+        destinataire_type: 'admin',
         titre: `🚨 Incident transport — ${incidentForm.type_incident}`,
-        message: `${incidentForm.description.slice(0, 100)}… (Gravité: ${incidentForm.gravite})`,
-        type: 'info',
+        message: `${incidentForm.description.slice(0, 200)} | Gravité: ${incidentForm.gravite}${incidentForm.lieu ? ' | Lieu: ' + incidentForm.lieu : ''}`,
+        type: 'alerte',
       } as any);
     },
     onSuccess: () => {
