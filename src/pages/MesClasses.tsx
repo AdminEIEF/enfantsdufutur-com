@@ -167,18 +167,18 @@ export default function MesClasses() {
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
-          <TabsTrigger value="secondaire" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
-            <GraduationCap className="h-4 w-4 mr-1.5" />
-            Secondaire
-            <Badge variant="secondary" className="ml-1.5 text-xs bg-primary/20">
-              {secondaireCount}
-            </Badge>
-          </TabsTrigger>
           <TabsTrigger value="autres" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
             <Users className="h-4 w-4 mr-1.5" />
             Préscolaire & Primaire
             <Badge variant="secondary" className="ml-1.5 text-xs bg-primary/20">
               {autresCount}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="secondaire" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
+            <GraduationCap className="h-4 w-4 mr-1.5" />
+            Secondaire
+            <Badge variant="secondary" className="ml-1.5 text-xs bg-primary/20">
+              {secondaireCount}
             </Badge>
           </TabsTrigger>
         </TabsList>
