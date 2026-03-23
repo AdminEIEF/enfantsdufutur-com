@@ -230,6 +230,19 @@ export function AppSidebar() {
   const { isInstallable, install } = usePWAInstall();
   const location = useLocation();
 
+  const { data: activeSession } = useQuery({
+    queryKey: ['active-session-sidebar'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('sessions_scolaires')
+        .select('nom')
+        .eq('active', true)
+        .maybeSingle();
+      return data;
+    },
+    staleTime: 60000,
+  });
+
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
@@ -239,7 +252,7 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-sm">EduGestion Pro</span>
-            <span className="text-xs text-sidebar-foreground/60">Année 2025-2026</span>
+            <span className="text-xs text-sidebar-foreground/60">{activeSession?.nom || 'Aucune session active'}</span>
           </div>
         </div>
       </SidebarHeader>
