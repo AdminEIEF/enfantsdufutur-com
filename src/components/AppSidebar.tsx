@@ -23,6 +23,7 @@ const navSections = [
       { title: 'Tableau de bord', url: '/superviseur-dashboard', icon: LayoutDashboard },
       { title: 'Personnel', url: '/personnel', icon: BriefcaseBusiness },
       { title: 'Pré-inscriptions', url: '/pre-inscriptions', icon: FileCheck2 },
+      { title: 'Années Scolaires', url: '/sessions', icon: CalendarRange },
       { title: 'Supervision', url: '/supervision', icon: ShieldCheck },
       { title: 'Configuration', url: '/configuration', icon: Cog },
     ],
