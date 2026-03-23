@@ -482,50 +482,60 @@ export default function Dashboard() {
 
       {/* Family & Librairie KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <Card className="border-destructive/30 bg-destructive/5 overflow-hidden">
+        <Card className="overflow-hidden border-0 bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Total Impayés</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+            <div className="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center">
+              <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+            </div>
           </CardHeader>
           <CardContent className="px-3 pb-3">
-            <div className="text-lg font-bold text-destructive truncate">{impayesFamilles.reduce((s, f) => s + f.reste, 0).toLocaleString()} <span className="text-[10px] font-normal">GNF</span></div>
+            <div className="text-lg font-bold text-red-600 truncate">{impayesFamilles.reduce((s, f) => s + f.reste, 0).toLocaleString()} <span className="text-[10px] font-normal">GNF</span></div>
             <p className="text-[10px] text-muted-foreground mt-0.5">{impayesFamilles.length} familles</p>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border-0 bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Familles inscrites</CardTitle>
-            <Users className="h-4 w-4 text-primary shrink-0" />
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+              <Users className="h-4 w-4 text-indigo-600 shrink-0" />
+            </div>
           </CardHeader>
           <CardContent className="px-3 pb-3">
-            <div className="text-xl font-bold">{totalFamilles}</div>
+            <div className="text-xl font-bold text-indigo-700 dark:text-indigo-400">{totalFamilles}</div>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border-0 bg-gradient-to-br from-cyan-500/10 via-cyan-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Enfants en fratrie</CardTitle>
-            <Users className="h-4 w-4 text-accent shrink-0" />
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/15 flex items-center justify-center">
+              <Users className="h-4 w-4 text-cyan-600 shrink-0" />
+            </div>
           </CardHeader>
           <CardContent className="px-3 pb-3">
-            <div className="text-xl font-bold">{enfantsEnFratrie}</div>
+            <div className="text-xl font-bold text-cyan-700 dark:text-cyan-400">{enfantsEnFratrie}</div>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border-0 bg-gradient-to-br from-sky-500/10 via-sky-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">CA Scolarité</CardTitle>
-            <CreditCard className="h-4 w-4 text-primary shrink-0" />
+            <div className="w-8 h-8 rounded-lg bg-sky-500/15 flex items-center justify-center">
+              <CreditCard className="h-4 w-4 text-sky-600 shrink-0" />
+            </div>
           </CardHeader>
           <CardContent className="px-3 pb-3">
-            <div className="text-lg font-bold truncate">{caScolarite.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></div>
+            <div className="text-lg font-bold text-sky-700 dark:text-sky-400 truncate">{caScolarite.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></div>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">CA Librairie</CardTitle>
-            <BookOpen className="h-4 w-4 text-accent shrink-0" />
+            <div className="w-8 h-8 rounded-lg bg-orange-500/15 flex items-center justify-center">
+              <BookOpen className="h-4 w-4 text-orange-600 shrink-0" />
+            </div>
           </CardHeader>
           <CardContent className="px-3 pb-3">
-            <div className="text-lg font-bold truncate">{caLibrairie.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></div>
+            <div className="text-lg font-bold text-orange-700 dark:text-orange-400 truncate">{caLibrairie.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></div>
           </CardContent>
         </Card>
       </div>
