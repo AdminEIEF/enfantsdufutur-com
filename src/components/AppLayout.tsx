@@ -7,8 +7,10 @@ import { AdminNotificationBell } from '@/components/AdminNotificationBell';
 import { useAuth, AppRole } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
+import { LogOut, CalendarCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import schoolLogo from '@/assets/school-logo.png';
 
 function LogoRefreshButton() {
@@ -60,6 +62,19 @@ const roleMeta: Record<AppRole, { label: string; color: string }> = {
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, roles, signOut } = useAuth();
 
+  const { data: activeSession } = useQuery({
+    queryKey: ['active-session-header'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('sessions_scolaires')
+        .select('id, nom')
+        .eq('active', true)
+        .maybeSingle();
+      return data;
+    },
+    staleTime: 60000,
+  });
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -70,6 +85,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <LogoRefreshButton />
             <div className="flex-1" />
             <div className="flex items-center gap-2">
+              {activeSession && (
+                <Badge variant="outline" className="gap-1.5 text-xs border-primary/30 text-primary hidden md:flex">
+                  <CalendarCheck className="h-3.5 w-3.5" />
+                  {activeSession.nom}
+                </Badge>
+              )}
               {roles.map((role) => {
                 const meta = roleMeta[role];
                 return meta ? (

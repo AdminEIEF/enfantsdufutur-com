@@ -7,6 +7,8 @@ import { NavLink } from '@/components/NavLink';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -23,6 +25,7 @@ const navSections = [
       { title: 'Tableau de bord', url: '/superviseur-dashboard', icon: LayoutDashboard },
       { title: 'Personnel', url: '/personnel', icon: BriefcaseBusiness },
       { title: 'Pré-inscriptions', url: '/pre-inscriptions', icon: FileCheck2 },
+      { title: 'Années Scolaires', url: '/sessions', icon: CalendarRange },
       { title: 'Supervision', url: '/supervision', icon: ShieldCheck },
       { title: 'Configuration', url: '/configuration', icon: Cog },
     ],
@@ -214,6 +217,7 @@ const navSections = [
     roles: ['admin'] as const,
     items: [
       { title: 'Personnel', url: '/personnel', icon: BriefcaseBusiness },
+      { title: 'Années Scolaires', url: '/sessions', icon: CalendarRange },
       { title: 'Traçabilité', url: '/tracabilite', icon: ClipboardCheck },
       { title: 'Supervision', url: '/supervision', icon: ShieldCheck },
       { title: 'Configuration', url: '/configuration', icon: Cog },
@@ -226,6 +230,19 @@ export function AppSidebar() {
   const { isInstallable, install } = usePWAInstall();
   const location = useLocation();
 
+  const { data: activeSession } = useQuery({
+    queryKey: ['active-session-sidebar'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('sessions_scolaires')
+        .select('nom')
+        .eq('active', true)
+        .maybeSingle();
+      return data;
+    },
+    staleTime: 60000,
+  });
+
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
@@ -235,7 +252,7 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-sm">EduGestion Pro</span>
-            <span className="text-xs text-sidebar-foreground/60">Année 2025-2026</span>
+            <span className="text-xs text-sidebar-foreground/60">{activeSession?.nom || 'Aucune session active'}</span>
           </div>
         </div>
       </SidebarHeader>

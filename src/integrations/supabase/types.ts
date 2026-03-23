@@ -1157,6 +1157,7 @@ export type Database = {
           prenom: string
           qr_code: string | null
           robotique_paye: boolean | null
+          session_id: string | null
           sexe: string | null
           solde_cantine: number | null
           statut: string
@@ -1192,6 +1193,7 @@ export type Database = {
           prenom: string
           qr_code?: string | null
           robotique_paye?: boolean | null
+          session_id?: string | null
           sexe?: string | null
           solde_cantine?: number | null
           statut?: string
@@ -1227,6 +1229,7 @@ export type Database = {
           prenom?: string
           qr_code?: string | null
           robotique_paye?: boolean | null
+          session_id?: string | null
           sexe?: string | null
           solde_cantine?: number | null
           statut?: string
@@ -1252,6 +1255,13 @@ export type Database = {
             columns: ["famille_id"]
             isOneToOne: false
             referencedRelation: "familles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eleves_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions_scolaires"
             referencedColumns: ["id"]
           },
           {
@@ -2283,6 +2293,7 @@ export type Database = {
           montant: number
           preuve_url: string | null
           reference: string | null
+          session_id: string | null
           type_paiement: string
         }
         Insert: {
@@ -2298,6 +2309,7 @@ export type Database = {
           montant: number
           preuve_url?: string | null
           reference?: string | null
+          session_id?: string | null
           type_paiement: string
         }
         Update: {
@@ -2313,6 +2325,7 @@ export type Database = {
           montant?: number
           preuve_url?: string | null
           reference?: string | null
+          session_id?: string | null
           type_paiement?: string
         }
         Relationships: [
@@ -2321,6 +2334,69 @@ export type Database = {
             columns: ["eleve_id"]
             isOneToOne: false
             referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paiements_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions_scolaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paiements_archive: {
+        Row: {
+          canal: string | null
+          classe_nom: string | null
+          created_at: string
+          date_paiement: string | null
+          eleve_id: string | null
+          eleve_nom: string | null
+          eleve_prenom: string | null
+          id: string
+          mois_concerne: string | null
+          montant: number
+          paiement_original_id: string | null
+          session_id: string
+          type_paiement: string | null
+        }
+        Insert: {
+          canal?: string | null
+          classe_nom?: string | null
+          created_at?: string
+          date_paiement?: string | null
+          eleve_id?: string | null
+          eleve_nom?: string | null
+          eleve_prenom?: string | null
+          id?: string
+          mois_concerne?: string | null
+          montant?: number
+          paiement_original_id?: string | null
+          session_id: string
+          type_paiement?: string | null
+        }
+        Update: {
+          canal?: string | null
+          classe_nom?: string | null
+          created_at?: string
+          date_paiement?: string | null
+          eleve_id?: string | null
+          eleve_nom?: string | null
+          eleve_prenom?: string | null
+          id?: string
+          mois_concerne?: string | null
+          montant?: number
+          paiement_original_id?: string | null
+          session_id?: string
+          type_paiement?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paiements_archive_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions_scolaires"
             referencedColumns: ["id"]
           },
         ]
@@ -2724,6 +2800,60 @@ export type Database = {
         }
         Relationships: []
       }
+      promotions_log: {
+        Row: {
+          ancien_classe_id: string | null
+          ancien_classe_nom: string | null
+          created_at: string
+          created_by: string | null
+          eleve_id: string | null
+          id: string
+          nouveau_classe_id: string | null
+          nouveau_classe_nom: string | null
+          session_id: string
+          type: string
+        }
+        Insert: {
+          ancien_classe_id?: string | null
+          ancien_classe_nom?: string | null
+          created_at?: string
+          created_by?: string | null
+          eleve_id?: string | null
+          id?: string
+          nouveau_classe_id?: string | null
+          nouveau_classe_nom?: string | null
+          session_id: string
+          type?: string
+        }
+        Update: {
+          ancien_classe_id?: string | null
+          ancien_classe_nom?: string | null
+          created_at?: string
+          created_by?: string | null
+          eleve_id?: string | null
+          id?: string
+          nouveau_classe_id?: string | null
+          nouveau_classe_nom?: string | null
+          session_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotions_log_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotions_log_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions_scolaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiz_questions: {
         Row: {
           created_at: string
@@ -2980,6 +3110,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sessions_scolaires: {
+        Row: {
+          active: boolean
+          cloturee: boolean
+          cloturee_at: string | null
+          cloturee_par: string | null
+          created_at: string
+          created_by: string | null
+          date_debut: string
+          date_fin: string
+          id: string
+          nom: string
+        }
+        Insert: {
+          active?: boolean
+          cloturee?: boolean
+          cloturee_at?: string | null
+          cloturee_par?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_debut: string
+          date_fin: string
+          id?: string
+          nom: string
+        }
+        Update: {
+          active?: boolean
+          cloturee?: boolean
+          cloturee_at?: string | null
+          cloturee_par?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_debut?: string
+          date_fin?: string
+          id?: string
+          nom?: string
+        }
+        Relationships: []
       }
       soumissions_devoirs: {
         Row: {

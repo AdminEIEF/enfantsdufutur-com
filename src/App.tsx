@@ -94,6 +94,7 @@ import StudentColoriage from "./pages/student/StudentColoriage";
 import StudentSerpentAlphabet from "./pages/student/StudentSerpentAlphabet";
 import StudentAnglais from "./pages/student/StudentAnglais";
 import StudentPyramideAdditions from "./pages/student/StudentPyramideAdditions";
+import GestionSessions from "./pages/GestionSessions";
 
 const queryClient = new QueryClient();
 
@@ -268,6 +269,7 @@ const App = () => (
             <Route path="/eleve/serpent" element={<StudentAuthProvider><StudentSerpentAlphabet /></StudentAuthProvider>} />
             <Route path="/eleve/anglais" element={<StudentAuthProvider><StudentAnglais /></StudentAuthProvider>} />
             <Route path="/eleve/pyramide" element={<StudentAuthProvider><StudentPyramideAdditions /></StudentAuthProvider>} />
+            <Route path="/sessions" element={<ProtectedRoute><GestionSessions /></ProtectedRoute>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
