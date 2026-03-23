@@ -235,39 +235,39 @@ export default function CoordinateurPersonnel() {
         const nonAffectes = totalEnseignants - affectes;
         return (
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-            <Card>
+            <Card className="overflow-hidden border border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent shadow-sm">
               <CardContent className="pt-4 pb-3">
-                <div className="text-2xl font-bold">{employes.length}</div>
+                <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">{employes.length}</div>
                 <p className="text-xs text-muted-foreground">Total personnel</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="overflow-hidden border border-indigo-200 dark:border-indigo-800 bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent shadow-sm">
               <CardContent className="pt-4 pb-3">
-                <div className="text-2xl font-bold">{totalEnseignants}</div>
+                <div className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">{totalEnseignants}</div>
                 <p className="text-xs text-muted-foreground">Enseignants</p>
               </CardContent>
             </Card>
-            <Card className="border-green-200 bg-green-50/50">
+            <Card className="overflow-hidden border border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent shadow-sm">
               <CardContent className="pt-4 pb-3">
-                <div className="text-2xl font-bold text-green-600">{affectes}</div>
-                <p className="text-xs text-green-700 font-medium">✅ Affectés</p>
+                <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{affectes}</div>
+                <p className="text-xs text-emerald-600 font-medium">✅ Affectés</p>
               </CardContent>
             </Card>
-            <Card className="border-red-200 bg-red-50/50">
+            <Card className="overflow-hidden border border-red-200 dark:border-red-800 bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent shadow-sm">
               <CardContent className="pt-4 pb-3">
                 <div className="text-2xl font-bold text-red-600">{nonAffectes}</div>
-                <p className="text-xs text-red-700 font-medium">❌ Non affectés</p>
+                <p className="text-xs text-red-600 font-medium">❌ Non affectés</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="overflow-hidden border border-teal-200 dark:border-teal-800 bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent shadow-sm">
               <CardContent className="pt-4 pb-3">
-                <div className="text-2xl font-bold text-green-600">{employes.filter((e: any) => e.statut === 'actif').length}</div>
+                <div className="text-2xl font-bold text-teal-700 dark:text-teal-400">{employes.filter((e: any) => e.statut === 'actif').length}</div>
                 <p className="text-xs text-muted-foreground">Actifs</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="overflow-hidden border border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent shadow-sm">
               <CardContent className="pt-4 pb-3">
-                <div className="text-2xl font-bold text-orange-500">{employes.filter((e: any) => e.statut === 'en congé').length}</div>
+                <div className="text-2xl font-bold text-amber-600">{employes.filter((e: any) => e.statut === 'en congé').length}</div>
                 <p className="text-xs text-muted-foreground">En congé</p>
               </CardContent>
             </Card>

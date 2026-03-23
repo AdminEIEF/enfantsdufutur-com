@@ -150,30 +150,36 @@ export default function TresorierHistorique() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
+        <Card className="overflow-hidden border border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent shadow-sm">
           <CardContent className="p-4 flex items-center gap-3">
-            <Banknote className="h-8 w-8 text-emerald-600" />
+            <div className="w-10 h-10 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
+              <Banknote className="h-5 w-5 text-emerald-600" />
+            </div>
             <div>
               <p className="text-xs text-muted-foreground">Total salaires versés</p>
-              <p className="text-lg font-bold">{fmtNum(totalSalaires)} GNF</p>
+              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{fmtNum(totalSalaires)} GNF</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="overflow-hidden border border-orange-200 dark:border-orange-800 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent shadow-sm">
           <CardContent className="p-4 flex items-center gap-3">
-            <HandCoins className="h-8 w-8 text-orange-500" />
+            <div className="w-10 h-10 rounded-lg bg-orange-500/15 flex items-center justify-center shrink-0">
+              <HandCoins className="h-5 w-5 text-orange-600" />
+            </div>
             <div>
               <p className="text-xs text-muted-foreground">Total avances versées</p>
-              <p className="text-lg font-bold">{fmtNum(totalAvances)} GNF</p>
+              <p className="text-lg font-bold text-orange-700 dark:text-orange-400">{fmtNum(totalAvances)} GNF</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="overflow-hidden border border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent shadow-sm">
           <CardContent className="p-4 flex items-center gap-3">
-            <History className="h-8 w-8 text-primary" />
+            <div className="w-10 h-10 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0">
+              <History className="h-5 w-5 text-blue-600" />
+            </div>
             <div>
               <p className="text-xs text-muted-foreground">Nombre de mouvements</p>
-              <p className="text-lg font-bold">{filtered.length}</p>
+              <p className="text-lg font-bold text-blue-700 dark:text-blue-400">{filtered.length}</p>
             </div>
           </CardContent>
         </Card>
