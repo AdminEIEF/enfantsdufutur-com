@@ -583,30 +583,36 @@ export default function Dashboard() {
 
       {/* Financial balance */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-accent/30">
+        <Card className="border-0 bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 shadow-sm">
           <CardContent className="pt-6 flex items-center gap-4">
-            <TrendingUp className="h-10 w-10 text-accent" />
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+              <TrendingUp className="h-6 w-6 text-emerald-600" />
+            </div>
             <div>
               <p className="text-sm text-muted-foreground">Total recettes</p>
-              <p className="text-xl font-bold">{totalRecettes.toLocaleString()} GNF</p>
+              <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{totalRecettes.toLocaleString()} GNF</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-destructive/30">
+        <Card className="border-0 bg-gradient-to-br from-red-500/15 to-red-500/5 shadow-sm">
           <CardContent className="pt-6 flex items-center gap-4">
-            <ArrowDownRight className="h-10 w-10 text-destructive" />
+            <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+              <ArrowDownRight className="h-6 w-6 text-red-600" />
+            </div>
             <div>
               <p className="text-sm text-muted-foreground">Total dépenses</p>
-              <p className="text-xl font-bold">{totalDepenses.toLocaleString()} GNF</p>
+              <p className="text-xl font-bold text-red-600">{totalDepenses.toLocaleString()} GNF</p>
             </div>
           </CardContent>
         </Card>
-        <Card className={totalRecettes - totalDepenses >= 0 ? 'border-accent/30 bg-accent/5' : 'border-destructive/30 bg-destructive/5'}>
+        <Card className={`border-0 shadow-sm ${totalRecettes - totalDepenses >= 0 ? 'bg-gradient-to-br from-teal-500/15 to-teal-500/5' : 'bg-gradient-to-br from-red-500/15 to-red-500/5'}`}>
           <CardContent className="pt-6 flex items-center gap-4">
-            <Wallet className={`h-10 w-10 ${totalRecettes - totalDepenses >= 0 ? 'text-accent' : 'text-destructive'}`} />
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${totalRecettes - totalDepenses >= 0 ? 'bg-teal-500/20' : 'bg-red-500/20'}`}>
+              <Wallet className={`h-6 w-6 ${totalRecettes - totalDepenses >= 0 ? 'text-teal-600' : 'text-red-600'}`} />
+            </div>
             <div>
               <p className="text-sm text-muted-foreground">Solde net</p>
-              <p className={`text-xl font-bold ${totalRecettes - totalDepenses >= 0 ? 'text-accent' : 'text-destructive'}`}>
+              <p className={`text-xl font-bold ${totalRecettes - totalDepenses >= 0 ? 'text-teal-700 dark:text-teal-400' : 'text-red-600'}`}>
                 {(totalRecettes - totalDepenses).toLocaleString()} GNF
               </p>
             </div>
