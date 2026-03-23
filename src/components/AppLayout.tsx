@@ -72,6 +72,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <LogoRefreshButton />
             <div className="flex-1" />
             <div className="flex items-center gap-2">
+              {activeSession && (
+                <Badge variant="outline" className="gap-1.5 text-xs border-primary/30 text-primary hidden md:flex">
+                  <CalendarCheck className="h-3.5 w-3.5" />
+                  {activeSession.nom}
+                </Badge>
+              )}
               {roles.map((role) => {
                 const meta = roleMeta[role];
                 return meta ? (
