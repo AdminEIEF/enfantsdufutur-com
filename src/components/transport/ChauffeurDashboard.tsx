@@ -47,7 +47,7 @@ export default function ChauffeurDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, zone_transport_id, classe_id, classes(nom), photo_url')
+        .select('id, nom, prenom, matricule, zone_transport_id, classe_id, famille_id, classes(nom), photo_url')
         .not('zone_transport_id', 'is', null)
         .eq('statut', 'inscrit')
         .order('nom');
