@@ -62,6 +62,19 @@ const roleMeta: Record<AppRole, { label: string; color: string }> = {
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, roles, signOut } = useAuth();
 
+  const { data: activeSession } = useQuery({
+    queryKey: ['active-session-header'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('sessions_scolaires')
+        .select('id, nom')
+        .eq('active', true)
+        .maybeSingle();
+      return data;
+    },
+    staleTime: 60000,
+  });
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
