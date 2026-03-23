@@ -306,48 +306,56 @@ export default function TresorierDashboard() {
 
       {/* KPI Cards - Salaires */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Card className="border-l-4 border-l-emerald-500">
+        <Card className="overflow-hidden border border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent shadow-sm">
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
-              <Banknote className="h-7 w-7 text-emerald-600 shrink-0" />
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
+                <Banknote className="h-5 w-5 text-emerald-600" />
+              </div>
               <div className="min-w-0">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Masse Salariale</p>
-                <p className="text-lg font-bold truncate">{fmtNum(totalBudgetSalaires)} GNF</p>
+                <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400 truncate">{fmtNum(totalBudgetSalaires)} GNF</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-l-4 border-l-blue-500">
+        <Card className="overflow-hidden border border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent shadow-sm">
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
-              <CalendarCheck className="h-7 w-7 text-blue-600 shrink-0" />
+              <div className="w-10 h-10 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0">
+                <CalendarCheck className="h-5 w-5 text-blue-600" />
+              </div>
               <div className="min-w-0">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Montant Payé</p>
-                <p className="text-lg font-bold text-emerald-600 truncate">{fmtNum(totalSalairePaye)} GNF</p>
+                <p className="text-lg font-bold text-blue-700 dark:text-blue-400 truncate">{fmtNum(totalSalairePaye)} GNF</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className={`border-l-4 ${salaireRestantAPayer > 0 ? 'border-l-destructive' : 'border-l-emerald-500'}`}>
+        <Card className={`overflow-hidden border shadow-sm ${salaireRestantAPayer > 0 ? 'border-red-200 dark:border-red-800 bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent' : 'border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent'}`}>
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
-              <TrendingUp className="h-7 w-7 text-destructive shrink-0" />
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${salaireRestantAPayer > 0 ? 'bg-red-500/15' : 'bg-emerald-500/15'}`}>
+                <TrendingUp className={`h-5 w-5 ${salaireRestantAPayer > 0 ? 'text-red-600' : 'text-emerald-600'}`} />
+              </div>
               <div className="min-w-0">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Restant à payer</p>
-                <p className={`text-lg font-bold truncate ${salaireRestantAPayer > 0 ? 'text-destructive' : 'text-emerald-600'}`}>
+                <p className={`text-lg font-bold truncate ${salaireRestantAPayer > 0 ? 'text-red-600' : 'text-emerald-700 dark:text-emerald-400'}`}>
                   {fmtNum(salaireRestantAPayer)} GNF
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-l-4 border-l-violet-500">
+        <Card className="overflow-hidden border border-violet-200 dark:border-violet-800 bg-gradient-to-br from-violet-500/10 via-violet-500/5 to-transparent shadow-sm">
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-3">
-              <Users className="h-7 w-7 text-violet-600 shrink-0" />
+              <div className="w-10 h-10 rounded-lg bg-violet-500/15 flex items-center justify-center shrink-0">
+                <Users className="h-5 w-5 text-violet-600" />
+              </div>
               <div className="min-w-0">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Employés payés</p>
-                <p className="text-lg font-bold">{nbPaye} / {employes.length}</p>
+                <p className="text-lg font-bold text-violet-700 dark:text-violet-400">{nbPaye} / {employes.length}</p>
               </div>
             </div>
           </CardContent>

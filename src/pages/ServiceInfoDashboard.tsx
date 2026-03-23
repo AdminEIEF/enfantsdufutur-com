@@ -61,31 +61,39 @@ export default function ServiceInfoDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card>
+        <Card className="overflow-hidden border border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="pt-4 text-center">
-            <Users className="h-6 w-6 mx-auto mb-1 text-blue-500" />
-            <div className="text-2xl font-bold">{stats?.eleves}</div>
+            <div className="w-10 h-10 rounded-lg bg-blue-500/15 flex items-center justify-center mx-auto mb-2">
+              <Users className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">{stats?.eleves}</div>
             <p className="text-xs text-muted-foreground">Élèves inscrits</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="overflow-hidden border border-indigo-200 dark:border-indigo-800 bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="pt-4 text-center">
-            <BookOpen className="h-6 w-6 mx-auto mb-1 text-indigo-500" />
-            <div className="text-2xl font-bold">{stats?.classes}</div>
+            <div className="w-10 h-10 rounded-lg bg-indigo-500/15 flex items-center justify-center mx-auto mb-2">
+              <BookOpen className="h-5 w-5 text-indigo-600" />
+            </div>
+            <div className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">{stats?.classes}</div>
             <p className="text-xs text-muted-foreground">Classes</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="overflow-hidden border border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="pt-4 text-center">
-            <Video className="h-6 w-6 mx-auto mb-1 text-purple-500" />
-            <div className="text-2xl font-bold">{stats?.cours}</div>
+            <div className="w-10 h-10 rounded-lg bg-purple-500/15 flex items-center justify-center mx-auto mb-2">
+              <Video className="h-5 w-5 text-purple-600" />
+            </div>
+            <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">{stats?.cours}</div>
             <p className="text-xs text-muted-foreground">Cours publiés</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="overflow-hidden border border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="pt-4 text-center">
-            <Award className="h-6 w-6 mx-auto mb-1 text-amber-500" />
-            <div className="text-2xl font-bold">{stats?.bulletins}</div>
+            <div className="w-10 h-10 rounded-lg bg-amber-500/15 flex items-center justify-center mx-auto mb-2">
+              <Award className="h-5 w-5 text-amber-600" />
+            </div>
+            <div className="text-2xl font-bold text-amber-700 dark:text-amber-400">{stats?.bulletins}</div>
             <p className="text-xs text-muted-foreground">Bulletins publiés</p>
           </CardContent>
         </Card>

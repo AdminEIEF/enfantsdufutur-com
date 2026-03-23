@@ -129,7 +129,9 @@ export default function CoordinateurDashboard() {
       subtitle: `${stats.elevesMaternelle} Maternelle · ${stats.elevesPrimaire} Primaire`,
       icon: Users,
       color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      bgColor: 'bg-blue-500/15',
+      borderColor: 'border-blue-200 dark:border-blue-800',
+      gradient: 'from-blue-500/10 via-blue-500/5 to-transparent',
       link: '/coordinateur-eleves',
     },
     {
@@ -138,7 +140,9 @@ export default function CoordinateurDashboard() {
       subtitle: `${stats.documentsComplets} déposés · ${stats.documentsManquants} manquants`,
       icon: FileText,
       color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
+      bgColor: 'bg-emerald-500/15',
+      borderColor: 'border-emerald-200 dark:border-emerald-800',
+      gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent',
       link: '/coordinateur-documents',
     },
     {
@@ -147,7 +151,9 @@ export default function CoordinateurDashboard() {
       subtitle: 'Maternelle & Primaire',
       icon: BookOpen,
       color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      bgColor: 'bg-purple-500/15',
+      borderColor: 'border-purple-200 dark:border-purple-800',
+      gradient: 'from-purple-500/10 via-purple-500/5 to-transparent',
       link: '/cours-admin',
     },
     {
@@ -156,7 +162,9 @@ export default function CoordinateurDashboard() {
       subtitle: `${stats.devoirsEnCours} en cours`,
       icon: ClipboardList,
       color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
+      bgColor: 'bg-orange-500/15',
+      borderColor: 'border-orange-200 dark:border-orange-800',
+      gradient: 'from-orange-500/10 via-orange-500/5 to-transparent',
       link: '/cours-admin',
     },
     {
@@ -165,7 +173,9 @@ export default function CoordinateurDashboard() {
       subtitle: "Emploi du temps",
       icon: Clock,
       color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
+      bgColor: 'bg-indigo-500/15',
+      borderColor: 'border-indigo-200 dark:border-indigo-800',
+      gradient: 'from-indigo-500/10 via-indigo-500/5 to-transparent',
       link: '/emploi-du-temps',
     },
     {
@@ -174,7 +184,9 @@ export default function CoordinateurDashboard() {
       subtitle: 'Calendrier scolaire',
       icon: Calendar,
       color: 'text-pink-600',
-      bgColor: 'bg-pink-50',
+      bgColor: 'bg-pink-500/15',
+      borderColor: 'border-pink-200 dark:border-pink-800',
+      gradient: 'from-pink-500/10 via-pink-500/5 to-transparent',
       link: '/calendrier',
     },
   ];
@@ -212,14 +224,14 @@ export default function CoordinateurDashboard() {
         {statCards.map((card) => (
           <Card
             key={card.title}
-            className="cursor-pointer hover:shadow-md transition-shadow border"
+            className={`cursor-pointer hover:shadow-md transition-shadow border ${card.borderColor} bg-gradient-to-br ${card.gradient} overflow-hidden`}
             onClick={() => navigate(card.link)}
           >
             <CardContent className="p-4">
               <div className={`w-9 h-9 rounded-lg ${card.bgColor} flex items-center justify-center mb-2`}>
                 <card.icon className={`h-5 w-5 ${card.color}`} />
               </div>
-              <p className="text-2xl font-bold text-foreground">{card.value}</p>
+              <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
               <p className="text-xs font-medium text-foreground/80 mt-0.5">{card.title}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{card.subtitle}</p>
             </CardContent>
