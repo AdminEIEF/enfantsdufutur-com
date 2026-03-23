@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Search, Download, ChevronDown, ChevronRight } from 'lucide-react';
+import { AlertTriangle, Search, Download, ChevronDown, ChevronRight, CreditCard, Users, Bus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { exportToExcel } from '@/lib/excelUtils';
