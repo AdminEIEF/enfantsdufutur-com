@@ -214,6 +214,7 @@ const navSections = [
     roles: ['admin'] as const,
     items: [
       { title: 'Personnel', url: '/personnel', icon: BriefcaseBusiness },
+      { title: 'Années Scolaires', url: '/sessions', icon: CalendarRange },
       { title: 'Traçabilité', url: '/tracabilite', icon: ClipboardCheck },
       { title: 'Supervision', url: '/supervision', icon: ShieldCheck },
       { title: 'Configuration', url: '/configuration', icon: Cog },
