@@ -895,30 +895,30 @@ function VenteCreditPanel() {
     <div className="space-y-4">
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Card className="border-orange-300/50">
+        <Card className="overflow-hidden border border-orange-200 dark:border-orange-800 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="py-3 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-orange-100"><CreditCard className="h-5 w-5 text-orange-600" /></div>
+            <div className="w-10 h-10 rounded-lg bg-orange-500/15 flex items-center justify-center"><CreditCard className="h-5 w-5 text-orange-600" /></div>
             <div>
               <p className="text-xs text-muted-foreground">Crédits en cours</p>
-              <p className="text-xl font-bold">{totalEnCours}</p>
+              <p className="text-xl font-bold text-orange-700 dark:text-orange-400">{totalEnCours}</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-red-300/50">
+        <Card className="overflow-hidden border border-red-200 dark:border-red-800 bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="py-3 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-red-100"><Banknote className="h-5 w-5 text-red-600" /></div>
+            <div className="w-10 h-10 rounded-lg bg-red-500/15 flex items-center justify-center"><Banknote className="h-5 w-5 text-red-600" /></div>
             <div>
               <p className="text-xs text-muted-foreground">Solde restant global</p>
               <p className="text-xl font-bold text-red-600">{totalSoldeRestant.toLocaleString()} GNF</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-green-300/50">
+        <Card className="overflow-hidden border border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="py-3 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-green-100"><CheckCircle2 className="h-5 w-5 text-green-600" /></div>
+            <div className="w-10 h-10 rounded-lg bg-emerald-500/15 flex items-center justify-center"><CheckCircle2 className="h-5 w-5 text-emerald-600" /></div>
             <div>
               <p className="text-xs text-muted-foreground">Crédits soldés</p>
-              <p className="text-xl font-bold text-green-600">{totalSoldes}</p>
+              <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{totalSoldes}</p>
             </div>
           </CardContent>
         </Card>
