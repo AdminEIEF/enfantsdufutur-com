@@ -398,7 +398,7 @@ export default function Dashboard() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <Card className="overflow-hidden border-0 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
+        <Card className="overflow-hidden border border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Élèves inscrits</CardTitle>
             <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center">
@@ -414,7 +414,7 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
-        <Card className="overflow-hidden border-0 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
+        <Card className="overflow-hidden border border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Inscriptions</CardTitle>
             <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center">
@@ -426,7 +426,7 @@ export default function Dashboard() {
             <p className="text-[10px] text-muted-foreground mt-0.5">Nouvelles inscriptions</p>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden border-0 bg-gradient-to-br from-violet-500/10 via-violet-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
+        <Card className="overflow-hidden border border-violet-200 dark:border-violet-800 bg-gradient-to-br from-violet-500/10 via-violet-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Réinscriptions</CardTitle>
             <div className="w-8 h-8 rounded-lg bg-violet-500/15 flex items-center justify-center">
@@ -438,7 +438,7 @@ export default function Dashboard() {
             <p className="text-[10px] text-muted-foreground mt-0.5">Réinscriptions</p>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden border-0 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
+        <Card className="overflow-hidden border border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Recettes du mois</CardTitle>
             <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center">
@@ -450,7 +450,7 @@ export default function Dashboard() {
             <p className="text-[10px] text-muted-foreground mt-0.5">{paiementsMois.length} paiements</p>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden border-0 bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
+        <Card className="overflow-hidden border border-teal-200 dark:border-teal-800 bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Recouvrement</CardTitle>
             <div className="w-8 h-8 rounded-lg bg-teal-500/15 flex items-center justify-center">
@@ -482,7 +482,7 @@ export default function Dashboard() {
 
       {/* Family & Librairie KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <Card className="overflow-hidden border-0 bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
+        <Card className="overflow-hidden border border-red-200 dark:border-red-800 bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Total Impayés</CardTitle>
             <div className="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center">
@@ -494,7 +494,7 @@ export default function Dashboard() {
             <p className="text-[10px] text-muted-foreground mt-0.5">{impayesFamilles.length} familles</p>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden border-0 bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
+        <Card className="overflow-hidden border border-indigo-200 dark:border-indigo-800 bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Familles inscrites</CardTitle>
             <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
@@ -505,7 +505,7 @@ export default function Dashboard() {
             <div className="text-xl font-bold text-indigo-700 dark:text-indigo-400">{totalFamilles}</div>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden border-0 bg-gradient-to-br from-cyan-500/10 via-cyan-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
+        <Card className="overflow-hidden border border-cyan-200 dark:border-cyan-800 bg-gradient-to-br from-cyan-500/10 via-cyan-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Enfants en fratrie</CardTitle>
             <div className="w-8 h-8 rounded-lg bg-cyan-500/15 flex items-center justify-center">
@@ -516,7 +516,7 @@ export default function Dashboard() {
             <div className="text-xl font-bold text-cyan-700 dark:text-cyan-400">{enfantsEnFratrie}</div>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden border-0 bg-gradient-to-br from-sky-500/10 via-sky-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
+        <Card className="overflow-hidden border border-sky-200 dark:border-sky-800 bg-gradient-to-br from-sky-500/10 via-sky-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">CA Scolarité</CardTitle>
             <div className="w-8 h-8 rounded-lg bg-sky-500/15 flex items-center justify-center">
@@ -527,7 +527,7 @@ export default function Dashboard() {
             <div className="text-lg font-bold text-sky-700 dark:text-sky-400 truncate">{caScolarite.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></div>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden border-0 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
+        <Card className="overflow-hidden border border-orange-200 dark:border-orange-800 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">CA Librairie</CardTitle>
             <div className="w-8 h-8 rounded-lg bg-orange-500/15 flex items-center justify-center">
@@ -583,7 +583,7 @@ export default function Dashboard() {
 
       {/* Financial balance */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-0 bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 shadow-sm">
+        <Card className="border border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 shadow-sm">
           <CardContent className="pt-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
               <TrendingUp className="h-6 w-6 text-emerald-600" />
@@ -594,7 +594,7 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-0 bg-gradient-to-br from-red-500/15 to-red-500/5 shadow-sm">
+        <Card className="border border-red-200 dark:border-red-800 bg-gradient-to-br from-red-500/15 to-red-500/5 shadow-sm">
           <CardContent className="pt-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
               <ArrowDownRight className="h-6 w-6 text-red-600" />
@@ -605,7 +605,7 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-        <Card className={`border-0 shadow-sm ${totalRecettes - totalDepenses >= 0 ? 'bg-gradient-to-br from-teal-500/15 to-teal-500/5' : 'bg-gradient-to-br from-red-500/15 to-red-500/5'}`}>
+        <Card className={`border border-teal-200 dark:border-teal-800 shadow-sm bg-gradient-to-br from-teal-500/15 to-teal-500/5' : 'bg-gradient-to-br from-red-500/15 to-red-500/5'}`}>
           <CardContent className="pt-6 flex items-center gap-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${totalRecettes - totalDepenses >= 0 ? 'bg-teal-500/20' : 'bg-red-500/20'}`}>
               <Wallet className={`h-6 w-6 ${totalRecettes - totalDepenses >= 0 ? 'text-teal-600' : 'text-red-600'}`} />
