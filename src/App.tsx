@@ -94,6 +94,7 @@ import StudentColoriage from "./pages/student/StudentColoriage";
 import StudentSerpentAlphabet from "./pages/student/StudentSerpentAlphabet";
 import StudentAnglais from "./pages/student/StudentAnglais";
 import StudentPyramideAdditions from "./pages/student/StudentPyramideAdditions";
+import GestionSessions from "./pages/GestionSessions";
 
 const queryClient = new QueryClient();
 
