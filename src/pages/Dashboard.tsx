@@ -398,57 +398,67 @@ export default function Dashboard() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border-0 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Élèves inscrits</CardTitle>
-            <Users className="h-4 w-4 text-primary shrink-0" />
+            <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center">
+              <Users className="h-4 w-4 text-blue-600 shrink-0" />
+            </div>
           </CardHeader>
           <CardContent className="px-3 pb-3">
-            <div className="text-xl font-bold">{totalEleves}</div>
+            <div className="text-xl font-bold text-blue-700 dark:text-blue-400">{totalEleves}</div>
             {newInscriptions > 0 && (
-              <p className="text-[10px] text-accent flex items-center gap-1 mt-0.5">
+              <p className="text-[10px] text-emerald-600 flex items-center gap-1 mt-0.5">
                 <ArrowUpRight className="h-3 w-3" /> +{newInscriptions} ce mois
               </p>
             )}
           </CardContent>
         </Card>
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border-0 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Inscriptions</CardTitle>
-            <UserPlus className="h-4 w-4 text-accent shrink-0" />
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+              <UserPlus className="h-4 w-4 text-emerald-600 shrink-0" />
+            </div>
           </CardHeader>
           <CardContent className="px-3 pb-3">
-            <div className="text-xl font-bold">{totalInscriptions}</div>
+            <div className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{totalInscriptions}</div>
             <p className="text-[10px] text-muted-foreground mt-0.5">Nouvelles inscriptions</p>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border-0 bg-gradient-to-br from-violet-500/10 via-violet-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Réinscriptions</CardTitle>
-            <UserPlus className="h-4 w-4 text-primary shrink-0" />
+            <div className="w-8 h-8 rounded-lg bg-violet-500/15 flex items-center justify-center">
+              <UserPlus className="h-4 w-4 text-violet-600 shrink-0" />
+            </div>
           </CardHeader>
           <CardContent className="px-3 pb-3">
-            <div className="text-xl font-bold">{totalReinscriptions}</div>
+            <div className="text-xl font-bold text-violet-700 dark:text-violet-400">{totalReinscriptions}</div>
             <p className="text-[10px] text-muted-foreground mt-0.5">Réinscriptions</p>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border-0 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Recettes du mois</CardTitle>
-            <CreditCard className="h-4 w-4 text-accent shrink-0" />
+            <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center">
+              <CreditCard className="h-4 w-4 text-amber-600 shrink-0" />
+            </div>
           </CardHeader>
           <CardContent className="px-3 pb-3">
-            <div className="text-lg font-bold truncate">{totalRecettesMois.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></div>
+            <div className="text-lg font-bold text-amber-700 dark:text-amber-400 truncate">{totalRecettesMois.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></div>
             <p className="text-[10px] text-muted-foreground mt-0.5">{paiementsMois.length} paiements</p>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border-0 bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Recouvrement</CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary shrink-0" />
+            <div className="w-8 h-8 rounded-lg bg-teal-500/15 flex items-center justify-center">
+              <TrendingUp className="h-4 w-4 text-teal-600 shrink-0" />
+            </div>
           </CardHeader>
           <CardContent className="px-3 pb-3">
-            <div className="text-xl font-bold">{tauxGlobal}%</div>
+            <div className="text-xl font-bold text-teal-700 dark:text-teal-400">{tauxGlobal}%</div>
             <p className="text-[10px] text-muted-foreground mt-0.5">Taux global</p>
           </CardContent>
         </Card>
