@@ -178,6 +178,18 @@ export default function ChauffeurDashboard() {
         message: `${incidentForm.description.slice(0, 200)} | Gravité: ${incidentForm.gravite}${incidentForm.lieu ? ' | Lieu: ' + incidentForm.lieu : ''}`,
         type: 'alerte',
       } as any);
+
+      // Notifier les parents des élèves transportés
+      const elevesWithFamille = eleves.filter((e: any) => e.famille_id);
+      if (elevesWithFamille.length > 0) {
+        const parentNotifs = elevesWithFamille.map((e: any) => ({
+          famille_id: e.famille_id,
+          titre: `🚨 Incident transport — ${incidentForm.type_incident}`,
+          message: `Un incident (${incidentForm.gravite}) a été signalé sur le trajet de votre enfant ${e.prenom} ${e.nom}. ${incidentForm.description.slice(0, 150)}${incidentForm.lieu ? ' — Lieu: ' + incidentForm.lieu : ''}`,
+          type: 'alerte',
+        }));
+        await supabase.from('parent_notifications').insert(parentNotifs as any);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chauffeur-incidents'] });
