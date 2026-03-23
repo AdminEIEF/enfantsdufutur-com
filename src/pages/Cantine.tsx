@@ -379,46 +379,54 @@ export default function Cantine() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="overflow-hidden border border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <Utensils className="h-8 w-8 text-primary" />
+              <div className="w-10 h-10 rounded-lg bg-blue-500/15 flex items-center justify-center">
+                <Utensils className="h-5 w-5 text-blue-600" />
+              </div>
               <div>
                 <p className="text-sm text-muted-foreground">Inscrits cantine</p>
-                <p className="text-2xl font-bold">{totalInscrits}</p>
+                <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{totalInscrits}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="overflow-hidden border border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <Wallet className="h-8 w-8 text-accent" />
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                <Wallet className="h-5 w-5 text-emerald-600" />
+              </div>
               <div>
                 <p className="text-sm text-muted-foreground">Solde total</p>
-                <p className="text-2xl font-bold">{totalSolde.toLocaleString()} GNF</p>
+                <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{totalSolde.toLocaleString()} GNF</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="overflow-hidden border border-teal-200 dark:border-teal-800 bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <TrendingUp className="h-8 w-8 text-green-600" />
+              <div className="w-10 h-10 rounded-lg bg-teal-500/15 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-teal-600" />
+              </div>
               <div>
                 <p className="text-sm text-muted-foreground">CA du jour</p>
-                <p className="text-2xl font-bold">{caToday.toLocaleString()} GNF</p>
+                <p className="text-2xl font-bold text-teal-700 dark:text-teal-400">{caToday.toLocaleString()} GNF</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="overflow-hidden border border-red-200 dark:border-red-800 bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="h-8 w-8 text-destructive" />
+              <div className="w-10 h-10 rounded-lg bg-red-500/15 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+              </div>
               <div>
                 <p className="text-sm text-muted-foreground">Solde insuffisant</p>
-                <p className="text-2xl font-bold text-destructive">{soldeFaible}</p>
+                <p className="text-2xl font-bold text-red-600">{soldeFaible}</p>
               </div>
             </div>
           </CardContent>
