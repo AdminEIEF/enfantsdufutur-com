@@ -7,8 +7,10 @@ import { AdminNotificationBell } from '@/components/AdminNotificationBell';
 import { useAuth, AppRole } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
+import { LogOut, CalendarCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import schoolLogo from '@/assets/school-logo.png';
 
 function LogoRefreshButton() {
