@@ -19,7 +19,7 @@ const SECONDAIRE_CYCLES = ['collège', 'lycée', 'college', 'lycee'];
 const isSecondaireCycle = (cycleName: string) => SECONDAIRE_CYCLES.some(c => (cycleName || '').toLowerCase().includes(c));
 
 export default function MesClasses() {
-  const [selectedTab, setSelectedTab] = useState('secondaire');
+  const [selectedTab, setSelectedTab] = useState('autres');
   const [classSorts, setClassSorts] = useState<Record<string, 'nom' | 'matricule'>>({});
   const [classSearches, setClassSearches] = useState<Record<string, string>>({});
   const { data: schoolConfig } = useSchoolConfig();
