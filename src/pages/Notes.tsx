@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BookOpen, Save, CheckCircle, Circle, ChevronRight, AlertTriangle, Eye, EyeOff, FileSpreadsheet } from 'lucide-react';
+import { BookOpen, Save, CheckCircle, Circle, ChevronRight, AlertTriangle, Eye, EyeOff, FileSpreadsheet, GraduationCap, Users } from 'lucide-react';
 import ImportNotesExcel from '@/components/ImportNotesExcel';
 import SaisieNotesParMatiere from '@/components/SaisieNotesParMatiere';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,7 +18,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { sortClasses } from '@/lib/utils';
 
+const SECONDAIRE_CYCLES = ['collège', 'lycée', 'college', 'lycee'];
+const isSecondaireCycle = (cycleName: string) => SECONDAIRE_CYCLES.some(c => (cycleName || '').toLowerCase().includes(c));
+
 export default function Notes() {
+  const [selectedTab, setSelectedTab] = useState('secondaire');
   const [cycleId, setCycleId] = useState('');
   const [classeId, setClasseId] = useState('');
   const [periodeId, setPeriodeId] = useState('');
@@ -34,6 +39,27 @@ export default function Notes() {
       return data;
     },
   });
+
+  // Filter cycles by selected tab
+  const filteredCycles = useMemo(() => {
+    return cycles.filter((c: any) => {
+      return selectedTab === 'secondaire' ? isSecondaireCycle(c.nom) : !isSecondaireCycle(c.nom);
+    });
+  }, [cycles, selectedTab]);
+
+  // Reset cycle when tab changes
+  useEffect(() => {
+    setCycleId('');
+    setClasseId('');
+    setSelectedEleveId(null);
+  }, [selectedTab]);
+
+  // Auto-select first cycle
+  useEffect(() => {
+    if (filteredCycles.length > 0 && !cycleId) {
+      setCycleId(filteredCycles[0].id);
+    }
+  }, [filteredCycles, cycleId]);
 
   const { data: classes = [] } = useQuery({
     queryKey: ['classes-by-cycle', cycleId],
@@ -60,7 +86,6 @@ export default function Notes() {
   const selectedClasse = classes.find((c: any) => c.id === classeId);
   const selectedNiveauId = selectedClasse?.niveaux?.id || null;
 
-  // Fetch classe_matieres for the selected class
   const { data: classeMatieres = [] } = useQuery({
     queryKey: ['classe-matieres', classeId],
     enabled: !!classeId,
@@ -83,19 +108,16 @@ export default function Notes() {
 
   const selectedCycle = cycles.find((c: any) => c.id === cycleId);
   const bareme = selectedCycle?.bareme ?? 20;
-  const isSecondaire = bareme >= 20; // Collège/Lycée use subject-by-subject mode
+  const isSecondaire = selectedTab === 'secondaire';
 
   const matieres = useMemo(() => {
-    // For Crèche/Primaire (non-secondaire): strictly use classe_matieres only
     if (classeId && classeMatieres.length > 0) {
       const allowedIds = new Set(classeMatieres.map((cm: any) => cm.matiere_id));
       return allMatieresCycle.filter((m: any) => allowedIds.has(m.id));
     }
-    // For non-secondaire cycles, if no classe_matieres configured, return empty (strict)
     if (classeId && !isSecondaire) {
       return [];
     }
-    // Fallback for secondaire: filter by niveau_id
     if (!selectedNiveauId) return allMatieresCycle;
     return allMatieresCycle.filter((m: any) => !m.niveau_id || m.niveau_id === selectedNiveauId);
   }, [allMatieresCycle, selectedNiveauId, classeId, classeMatieres, isSecondaire]);
@@ -115,7 +137,6 @@ export default function Notes() {
     },
   });
 
-  // Fetch ALL notes for this class + period
   const { data: allNotesForPeriod = [] } = useQuery({
     queryKey: ['all-notes-period', classeId, periodeId],
     enabled: !!classeId && !!periodeId && eleves.length > 0,
@@ -132,7 +153,6 @@ export default function Notes() {
     },
   });
 
-  // Per-student progress
   const progressByEleve = useMemo(() => {
     const totalMatieres = matieres.length;
     const matiereIds = new Set(matieres.map((m: any) => m.id));
@@ -146,9 +166,6 @@ export default function Notes() {
     return map;
   }, [eleves, allNotesForPeriod, matieres]);
 
-  // selectedCycle, bareme, isSecondaire moved above matieres useMemo
-
-  // When opening student dialog, load their notes into notesMap
   const selectedEleve = eleves.find((e: any) => e.id === selectedEleveId);
 
   useEffect(() => {
@@ -161,14 +178,11 @@ export default function Notes() {
     setNotesMap(map);
   }, [selectedEleveId, allNotesForPeriod, matieres]);
 
-  // Count how many notes are filled for current student
   const filledCount = useMemo(() => {
     return matieres.filter((m: any) => notesMap[m.id] !== undefined && notesMap[m.id] !== '').length;
   }, [notesMap, matieres]);
 
   const allFilled = filledCount === matieres.length && matieres.length > 0;
-
-  // Find current index and next student
   const currentIndex = eleves.findIndex((e: any) => e.id === selectedEleveId);
   const nextEleve = currentIndex >= 0 && currentIndex < eleves.length - 1 ? eleves[currentIndex + 1] : null;
 
@@ -187,7 +201,6 @@ export default function Notes() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-notes-period'] });
       toast({ title: 'Notes enregistrées', description: `Notes de ${selectedEleve?.prenom} ${selectedEleve?.nom} sauvegardées.` });
-      // Go to next student or close
       if (nextEleve) {
         setSelectedEleveId(nextEleve.id);
       } else {
@@ -200,7 +213,6 @@ export default function Notes() {
 
   const canShowList = classeId && periodeId && eleves.length > 0 && matieres.length > 0;
 
-  // Bulletin publication toggle
   const { data: bulletinPub } = useQuery({
     queryKey: ['bulletin-publication', classeId, periodeId],
     queryFn: async () => {
@@ -246,143 +258,159 @@ export default function Notes() {
         </Button>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Cycle</label>
-              <Select value={cycleId} onValueChange={v => { setCycleId(v); setClasseId(''); setSelectedEleveId(null); }}>
-                <SelectTrigger><SelectValue placeholder="Cycle" /></SelectTrigger>
-                <SelectContent>{cycles.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom} (/{c.bareme})</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Classe</label>
-              <Select value={classeId} onValueChange={(v) => { setClasseId(v); setSelectedEleveId(null); }} disabled={!cycleId}>
-                <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
-                <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Période</label>
-              <Select value={periodeId} onValueChange={v => { setPeriodeId(v); setSelectedEleveId(null); }}>
-                <SelectTrigger><SelectValue placeholder="Période" /></SelectTrigger>
-                <SelectContent>{periodes.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.nom}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-          </div>
+      {/* Tabs Secondaire vs Préscolaire & Primaire */}
+      <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+        <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
+          <TabsTrigger value="secondaire" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
+            <GraduationCap className="h-4 w-4 mr-1.5" />
+            Secondaire
+          </TabsTrigger>
+          <TabsTrigger value="autres" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
+            <Users className="h-4 w-4 mr-1.5" />
+            Préscolaire & Primaire
+          </TabsTrigger>
+        </TabsList>
 
-          {/* Publication toggle */}
-          {canShowList && (
-            <div className="mt-4 pt-4 border-t flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {bulletinPub?.visible_parent ? (
-                  <Eye className="h-4 w-4 text-green-600" />
-                ) : (
-                  <EyeOff className="h-4 w-4 text-muted-foreground" />
-                )}
-                <div>
-                  <p className="text-sm font-medium">Rendre visible par les parents</p>
-                  <p className="text-xs text-muted-foreground">
-                    {bulletinPub?.visible_parent
-                      ? `Publié le ${new Date(bulletinPub.published_at!).toLocaleDateString('fr-FR')}`
-                      : 'Les parents ne peuvent pas encore voir les bulletins'}
-                  </p>
+        {['secondaire', 'autres'].map(tabValue => (
+          <TabsContent key={tabValue} value={tabValue} className="mt-4 space-y-4">
+            {/* Filters */}
+            <Card className="border-l-4 border-l-primary">
+              <CardContent className="pt-6">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Cycle</label>
+                    <Select value={cycleId} onValueChange={v => { setCycleId(v); setClasseId(''); setSelectedEleveId(null); }}>
+                      <SelectTrigger><SelectValue placeholder="Cycle" /></SelectTrigger>
+                      <SelectContent>{filteredCycles.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom} (/{c.bareme})</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Classe</label>
+                    <Select value={classeId} onValueChange={(v) => { setClasseId(v); setSelectedEleveId(null); }} disabled={!cycleId}>
+                      <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
+                      <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Période</label>
+                    <Select value={periodeId} onValueChange={v => { setPeriodeId(v); setSelectedEleveId(null); }}>
+                      <SelectTrigger><SelectValue placeholder="Période" /></SelectTrigger>
+                      <SelectContent>{periodes.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.nom}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
-              <Switch
-                checked={bulletinPub?.visible_parent ?? false}
-                onCheckedChange={(checked) => toggleVisibility.mutate(checked)}
-                disabled={toggleVisibility.isPending}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Student List */}
-      {canShowList ? (
-        isSecondaire ? (
-          /* Mode par matière pour collège/lycée */
-          <SaisieNotesParMatiere
-            matieres={matieres}
-            eleves={eleves}
-            allNotesForPeriod={allNotesForPeriod}
-            periodeId={periodeId}
-            bareme={bareme}
-          />
-        ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">
-              {eleves.length} élève(s) — {matieres.length} matière(s)
-              <span className="text-sm font-normal text-muted-foreground ml-2">(/{bareme})</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">#</TableHead>
-                  <TableHead>Matricule</TableHead>
-                  <TableHead>Nom & Prénom</TableHead>
-                  <TableHead className="w-48 text-center">Progression</TableHead>
-                  <TableHead className="w-32 text-center">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {eleves.map((e: any, i: number) => {
-                  const prog = progressByEleve[e.id] || { done: 0, total: matieres.length };
-                  const pct = prog.total > 0 ? Math.round((prog.done / prog.total) * 100) : 0;
-                  const isComplete = prog.done === prog.total && prog.total > 0;
-                  return (
-                    <TableRow key={e.id} className={isComplete ? 'bg-accent/5' : ''}>
-                      <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                      <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
-                      <TableCell className="font-medium">{e.nom} {e.prenom}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Progress value={pct} className="h-2 flex-1" />
-                          <span className="text-xs whitespace-nowrap">
-                            {isComplete ? (
-                              <Badge variant="default" className="text-xs gap-1"><CheckCircle className="h-3 w-3" /> {prog.done}/{prog.total}</Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-xs gap-1"><Circle className="h-3 w-3" /> {prog.done}/{prog.total}</Badge>
-                            )}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Button size="sm" variant={isComplete ? 'outline' : 'default'} onClick={() => setSelectedEleveId(e.id)}>
-                          {isComplete ? 'Modifier' : 'Saisir'} <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-        )
-      ) : (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            {!cycleId ? 'Sélectionnez un cycle pour commencer' :
-             !classeId ? 'Sélectionnez une classe' :
-             !periodeId ? 'Sélectionnez une période' :
-             matieres.length === 0 ? 'Aucune matière assignée à cette classe. Configurez les matières dans Configuration > Classes.' :
-             'Aucun élève inscrit dans cette classe'}
-          </CardContent>
-        </Card>
-      )}
+                {canShowList && (
+                  <div className="mt-4 pt-4 border-t flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {bulletinPub?.visible_parent ? (
+                        <Eye className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">Rendre visible par les parents</p>
+                        <p className="text-xs text-muted-foreground">
+                          {bulletinPub?.visible_parent
+                            ? `Publié le ${new Date(bulletinPub.published_at!).toLocaleDateString('fr-FR')}`
+                            : 'Les parents ne peuvent pas encore voir les bulletins'}
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={bulletinPub?.visible_parent ?? false}
+                      onCheckedChange={(checked) => toggleVisibility.mutate(checked)}
+                      disabled={toggleVisibility.isPending}
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-      {/* Student Notes Dialog — all subjects at once */}
+            {/* Student List */}
+            {canShowList ? (
+              isSecondaire ? (
+                <SaisieNotesParMatiere
+                  matieres={matieres}
+                  eleves={eleves}
+                  allNotesForPeriod={allNotesForPeriod}
+                  periodeId={periodeId}
+                  bareme={bareme}
+                />
+              ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    {eleves.length} élève(s) — {matieres.length} matière(s)
+                    <span className="text-sm font-normal text-muted-foreground ml-2">(/{bareme})</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">#</TableHead>
+                        <TableHead>Matricule</TableHead>
+                        <TableHead>Nom & Prénom</TableHead>
+                        <TableHead className="w-48 text-center">Progression</TableHead>
+                        <TableHead className="w-32 text-center">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {eleves.map((e: any, i: number) => {
+                        const prog = progressByEleve[e.id] || { done: 0, total: matieres.length };
+                        const pct = prog.total > 0 ? Math.round((prog.done / prog.total) * 100) : 0;
+                        const isComplete = prog.done === prog.total && prog.total > 0;
+                        return (
+                          <TableRow key={e.id} className={isComplete ? 'bg-accent/5' : ''}>
+                            <TableCell className="text-muted-foreground">{i + 1}</TableCell>
+                            <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
+                            <TableCell className="font-medium">{e.nom} {e.prenom}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Progress value={pct} className="h-2 flex-1" />
+                                <span className="text-xs whitespace-nowrap">
+                                  {isComplete ? (
+                                    <Badge variant="default" className="text-xs gap-1"><CheckCircle className="h-3 w-3" /> {prog.done}/{prog.total}</Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-xs gap-1"><Circle className="h-3 w-3" /> {prog.done}/{prog.total}</Badge>
+                                  )}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Button size="sm" variant={isComplete ? 'outline' : 'default'} onClick={() => setSelectedEleveId(e.id)}>
+                                {isComplete ? 'Modifier' : 'Saisir'} <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+              )
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  {!cycleId ? 'Sélectionnez un cycle pour commencer' :
+                   !classeId ? 'Sélectionnez une classe' :
+                   !periodeId ? 'Sélectionnez une période' :
+                   matieres.length === 0 ? 'Aucune matière assignée à cette classe. Configurez les matières dans Configuration > Classes.' :
+                   'Aucun élève inscrit dans cette classe'}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        ))}
+      </Tabs>
+
+      {/* Student Notes Dialog */}
       <Dialog open={!!selectedEleveId} onOpenChange={(open) => {
         if (!open && !allFilled && matieres.length > 0) {
           toast({ title: 'Saisie incomplète', description: `Il reste ${matieres.length - filledCount} matière(s) à saisir.`, variant: 'destructive' });
-          return; // Prevent closing
+          return;
         }
         if (!open) setSelectedEleveId(null);
       }}>
