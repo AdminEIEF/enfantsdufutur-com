@@ -246,21 +246,33 @@ export default function Impayes() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card className="overflow-hidden">
-          <CardHeader className="pb-1 pt-3 px-3"><CardTitle className="text-xs font-medium text-muted-foreground truncate">Total Impayés</CardTitle></CardHeader>
-          <CardContent className="px-3 pb-3"><p className="text-lg font-bold text-destructive truncate">{totalImpaye.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></p><p className="text-[10px] text-muted-foreground">{familleGroups.length} famille(s)</p></CardContent>
+        <Card className="overflow-hidden border border-red-200 dark:border-red-800 bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-1 pt-3 px-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">Total Impayés</CardTitle>
+            <div className="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center"><AlertTriangle className="h-4 w-4 text-red-600" /></div>
+          </CardHeader>
+          <CardContent className="px-3 pb-3"><p className="text-lg font-bold text-red-600 truncate">{totalImpaye.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></p><p className="text-[10px] text-muted-foreground">{familleGroups.length} famille(s)</p></CardContent>
         </Card>
-        <Card className="overflow-hidden">
-          <CardHeader className="pb-1 pt-3 px-3"><CardTitle className="text-xs font-medium text-muted-foreground truncate">Impayés Scolarité</CardTitle></CardHeader>
-          <CardContent className="px-3 pb-3"><p className="text-lg font-bold text-destructive truncate">{totalImpayeScolarite.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></p></CardContent>
+        <Card className="overflow-hidden border border-orange-200 dark:border-orange-800 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-1 pt-3 px-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">Impayés Scolarité</CardTitle>
+            <div className="w-8 h-8 rounded-lg bg-orange-500/15 flex items-center justify-center"><CreditCard className="h-4 w-4 text-orange-600" /></div>
+          </CardHeader>
+          <CardContent className="px-3 pb-3"><p className="text-lg font-bold text-orange-600 truncate">{totalImpayeScolarite.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></p></CardContent>
         </Card>
-        <Card className="overflow-hidden">
-          <CardHeader className="pb-1 pt-3 px-3"><CardTitle className="text-xs font-medium text-muted-foreground truncate">Impayés Transport</CardTitle></CardHeader>
-          <CardContent className="px-3 pb-3"><p className="text-lg font-bold text-destructive truncate">{totalImpayeTransport.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></p></CardContent>
+        <Card className="overflow-hidden border border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-1 pt-3 px-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">Impayés Transport</CardTitle>
+            <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center"><Bus className="h-4 w-4 text-amber-600" /></div>
+          </CardHeader>
+          <CardContent className="px-3 pb-3"><p className="text-lg font-bold text-amber-600 truncate">{totalImpayeTransport.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></p></CardContent>
         </Card>
-        <Card className="overflow-hidden">
-          <CardHeader className="pb-1 pt-3 px-3"><CardTitle className="text-xs font-medium text-muted-foreground truncate">Élèves concernés</CardTitle></CardHeader>
-          <CardContent className="px-3 pb-3"><p className="text-lg font-bold truncate">{filtered.length}</p></CardContent>
+        <Card className="overflow-hidden border border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-1 pt-3 px-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">Élèves concernés</CardTitle>
+            <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center"><Users className="h-4 w-4 text-blue-600" /></div>
+          </CardHeader>
+          <CardContent className="px-3 pb-3"><p className="text-lg font-bold text-blue-700 dark:text-blue-400 truncate">{filtered.length}</p></CardContent>
         </Card>
       </div>
 

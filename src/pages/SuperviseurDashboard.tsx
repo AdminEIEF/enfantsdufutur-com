@@ -46,10 +46,10 @@ export default function SuperviseurDashboard() {
   }
 
   const cards = [
-    { label: 'Élèves inscrits', value: stats.inscrits, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Pré-inscriptions', value: stats.preInscrits, icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Réinscriptions', value: stats.reinscrits, icon: RefreshCw, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Personnel actif', value: stats.totalEmployes, icon: Briefcase, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Élèves inscrits', value: stats.inscrits, icon: Users, color: 'text-blue-600', borderColor: 'border-blue-200 dark:border-blue-800', gradient: 'from-blue-500/10 via-blue-500/5 to-transparent', iconBg: 'bg-blue-500/15' },
+    { label: 'Pré-inscriptions', value: stats.preInscrits, icon: FileText, color: 'text-amber-600', borderColor: 'border-amber-200 dark:border-amber-800', gradient: 'from-amber-500/10 via-amber-500/5 to-transparent', iconBg: 'bg-amber-500/15' },
+    { label: 'Réinscriptions', value: stats.reinscrits, icon: RefreshCw, color: 'text-emerald-600', borderColor: 'border-emerald-200 dark:border-emerald-800', gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent', iconBg: 'bg-emerald-500/15' },
+    { label: 'Personnel actif', value: stats.totalEmployes, icon: Briefcase, color: 'text-purple-600', borderColor: 'border-purple-200 dark:border-purple-800', gradient: 'from-purple-500/10 via-purple-500/5 to-transparent', iconBg: 'bg-purple-500/15' },
   ];
 
   return (
@@ -61,15 +61,15 @@ export default function SuperviseurDashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c) => (
-          <Card key={c.label}>
+          <Card key={c.label} className={`overflow-hidden border ${c.borderColor} bg-gradient-to-br ${c.gradient} shadow-sm hover:shadow-md transition-shadow`}>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-xl ${c.bg}`}>
+                <div className={`w-12 h-12 rounded-xl ${c.iconBg} flex items-center justify-center`}>
                   <c.icon className={`h-6 w-6 ${c.color}`} />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">{c.label}</p>
-                  <p className="text-2xl font-bold">{c.value}</p>
+                  <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
                 </div>
               </div>
             </CardContent>

@@ -224,14 +224,14 @@ export default function CoordinateurDashboard() {
         {statCards.map((card) => (
           <Card
             key={card.title}
-            className="cursor-pointer hover:shadow-md transition-shadow border"
+            className={`cursor-pointer hover:shadow-md transition-shadow border ${card.borderColor} bg-gradient-to-br ${card.gradient} overflow-hidden`}
             onClick={() => navigate(card.link)}
           >
             <CardContent className="p-4">
               <div className={`w-9 h-9 rounded-lg ${card.bgColor} flex items-center justify-center mb-2`}>
                 <card.icon className={`h-5 w-5 ${card.color}`} />
               </div>
-              <p className="text-2xl font-bold text-foreground">{card.value}</p>
+              <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
               <p className="text-xs font-medium text-foreground/80 mt-0.5">{card.title}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{card.subtitle}</p>
             </CardContent>
