@@ -193,10 +193,13 @@ export default function ParentEnfantProfilRadar({ notes, periodes, bareme, eleve
         th { border:1px solid #bbb; padding:5px 8px; background:#2563eb; color:white; font-size:10px; text-transform:uppercase; }
       </style></head><body>
       <div style="text-align:center;border-bottom:3px double #1a1a1a;padding-bottom:12px;margin-bottom:16px;">
-        <div style="font-size:10px;font-style:italic;color:#555;">RÉPUBLIQUE DE GUINÉE — Travail - Justice - Solidarité</div>
+        <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:2px;">RÉPUBLIQUE DE GUINÉE</div>
+        <div style="font-size:10px;font-style:italic;color:#555;margin-top:2px;">Travail - Justice - Solidarité</div>
+        <div style="margin:8px auto;border-top:1px solid #ccc;width:40%;"></div>
         <h1 style="font-size:16px;margin:4px 0;">${schoolConfig?.nom || 'Établissement Scolaire'}</h1>
         <div style="font-size:11px;color:#555;">${schoolConfig?.soustitre || ''} — ${schoolConfig?.ville || ''}</div>
         <h3 style="font-size:18px;margin-top:10px;text-transform:uppercase;letter-spacing:1px;">LIVRET SCOLAIRE</h3>
+        <div style="font-size:9px;color:#888;margin-top:4px;">Document de suivi du parcours scolaire — De la 1ère Année au Baccalauréat</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:16px;padding:10px;border:1px solid #ddd;border-radius:6px;background:#fafafa;">
         <div><b style="color:#555;">Nom : </b>${eleve.nom}</div>

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Library, Search, User, Award, BarChart3, FileText, ChevronRight, Printer, Lightbulb } from 'lucide-react';
+import { Library, Search, User, Award, BarChart3, FileText, ChevronRight, Printer, Lightbulb, GraduationCap, BookOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
@@ -95,7 +95,30 @@ function usePeriodes() {
   });
 }
 
+// Fetch all notes for a student across all their history
+function useEleveAllNotes(eleveId: string) {
+  return useQuery({
+    queryKey: ['all-notes-biblio', eleveId],
+    enabled: !!eleveId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*, matieres(nom, pole, coefficient), periodes(nom, ordre, est_rattrapage)')
+        .eq('eleve_id', eleveId)
+        .order('created_at');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 // ─── Helpers ─────────────────────────────────────────────
+const SECONDARY_CYCLES = ['collège', 'lycée', 'college', 'lycee', 'secondaire'];
+
+function isSecondaryCycle(cycleName: string) {
+  return SECONDARY_CYCLES.some(s => cycleName.toLowerCase().includes(s));
+}
+
 function computeRadar(notes: any[], bareme: number) {
   const poleMap: Record<string, { total: number; coefTotal: number }> = {};
   for (const n of notes) {
@@ -161,6 +184,7 @@ function computeMatiereByPeriode(notes: any[], periodes: any[]) {
 
 export default function Bibliotheque() {
   const { data: cycles = [] } = useCycles();
+  const [activeTab, setActiveTab] = useState('prescolaire-primaire');
   const [cycleId, setCycleId] = useState('');
   const [niveauId, setNiveauId] = useState('');
   const [classeId, setClasseId] = useState('');
@@ -175,6 +199,11 @@ export default function Bibliotheque() {
   const { data: eleves = [] } = useElevesClasse(classeId);
   const { data: eleveNotes = [] } = useEleveNotes(selectedEleveId);
   const { data: periodes = [] } = usePeriodes();
+
+  // Separate cycles
+  const prescolairePrimaireCycles = cycles.filter((c: any) => !isSecondaryCycle(c.nom));
+  const secondaireCycles = cycles.filter((c: any) => isSecondaryCycle(c.nom));
+  const currentCycles = activeTab === 'prescolaire-primaire' ? prescolairePrimaireCycles : secondaireCycles;
 
   const selectedEleve = eleves.find((e: any) => e.id === selectedEleveId);
   const bareme = selectedEleve?.classes?.niveaux?.cycles?.bareme || 20;
@@ -211,6 +240,14 @@ export default function Bibliotheque() {
   const openDossier = (eleveId: string) => {
     setSelectedEleveId(eleveId);
     setDossierOpen(true);
+  };
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setCycleId('');
+    setNiveauId('');
+    setClasseId('');
+    setSearch('');
   };
 
   const handlePrintLivret = () => {
@@ -258,111 +295,140 @@ export default function Bibliotheque() {
 
   const regularPeriodes = periodes.filter((p: any) => !p.est_rattrapage);
 
+  const renderFilters = () => (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <Label>Cycle</Label>
+            <Select value={cycleId} onValueChange={(v) => { setCycleId(v); setNiveauId(''); setClasseId(''); }}>
+              <SelectTrigger><SelectValue placeholder="Choisir un cycle" /></SelectTrigger>
+              <SelectContent>
+                {currentCycles.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Niveau</Label>
+            <Select value={niveauId} onValueChange={(v) => { setNiveauId(v); setClasseId(''); }}>
+              <SelectTrigger><SelectValue placeholder="Choisir un niveau" /></SelectTrigger>
+              <SelectContent>
+                {niveaux.length === 0 ? (
+                  <SelectItem value="__empty__" disabled>Aucun niveau</SelectItem>
+                ) : niveaux.map((n: any) => <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Classe</Label>
+            <Select value={classeId} onValueChange={setClasseId}>
+              <SelectTrigger><SelectValue placeholder="Choisir une classe" /></SelectTrigger>
+              <SelectContent>
+                {classes.length === 0 ? (
+                  <SelectItem value="__empty__" disabled>Aucune classe</SelectItem>
+                ) : classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Rechercher</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Nom, prénom, matricule…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderElevesList = () => (
+    classeId ? (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Élèves ({filtered.length})</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Élève</TableHead>
+                <TableHead>Matricule</TableHead>
+                <TableHead>Sexe</TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead className="w-32">Dossier</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucun élève dans cette classe</TableCell>
+                </TableRow>
+              ) : filtered.map((e: any) => (
+                <TableRow key={e.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openDossier(e.id)}>
+                  <TableCell className="font-medium flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    {e.prenom} {e.nom}
+                  </TableCell>
+                  <TableCell>{e.matricule || '—'}</TableCell>
+                  <TableCell>{e.sexe || '—'}</TableCell>
+                  <TableCell>
+                    <Badge variant={e.statut === 'inscrit' ? 'default' : e.statut === 'réinscrit' ? 'secondary' : 'outline'}>
+                      {e.statut}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm">
+                      <FileText className="h-4 w-4 mr-1" /> Ouvrir <ChevronRight className="h-3 w-3 ml-1" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    ) : (
+      <Card>
+        <CardContent className="py-16 text-center text-muted-foreground">
+          <Library className="h-16 w-16 mx-auto mb-4 opacity-20" />
+          <p className="text-lg">Sélectionnez un Cycle, un Niveau puis une Classe pour consulter les dossiers élèves</p>
+        </CardContent>
+      </Card>
+    )
+  );
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
         <Library className="h-7 w-7 text-primary" /> Bibliothèque Numérique
       </h1>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label>Cycle</Label>
-              <Select value={cycleId} onValueChange={(v) => { setCycleId(v); setNiveauId(''); setClasseId(''); }}>
-                <SelectTrigger><SelectValue placeholder="Choisir un cycle" /></SelectTrigger>
-                <SelectContent>
-                  {cycles.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Niveau</Label>
-              <Select value={niveauId} onValueChange={(v) => { setNiveauId(v); setClasseId(''); }}>
-                <SelectTrigger><SelectValue placeholder="Choisir un niveau" /></SelectTrigger>
-                <SelectContent>
-                  {niveaux.length === 0 ? (
-                    <SelectItem value="__empty__" disabled>Aucun niveau</SelectItem>
-                  ) : niveaux.map((n: any) => <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Classe</Label>
-              <Select value={classeId} onValueChange={setClasseId}>
-                <SelectTrigger><SelectValue placeholder="Choisir une classe" /></SelectTrigger>
-                <SelectContent>
-                  {classes.length === 0 ? (
-                    <SelectItem value="__empty__" disabled>Aucune classe</SelectItem>
-                  ) : classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Rechercher</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Nom, prénom, matricule…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Tabs Préscolaire & Primaire / Secondaire */}
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="prescolaire-primaire" className="gap-2">
+            <BookOpen className="h-4 w-4" />
+            Préscolaire & Primaire
+          </TabsTrigger>
+          <TabsTrigger value="secondaire" className="gap-2">
+            <GraduationCap className="h-4 w-4" />
+            Secondaire
+          </TabsTrigger>
+        </TabsList>
 
-      {classeId ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Élèves ({filtered.length})</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Élève</TableHead>
-                  <TableHead>Matricule</TableHead>
-                  <TableHead>Sexe</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead className="w-32">Dossier</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucun élève dans cette classe</TableCell>
-                  </TableRow>
-                ) : filtered.map((e: any) => (
-                  <TableRow key={e.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openDossier(e.id)}>
-                    <TableCell className="font-medium flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      {e.prenom} {e.nom}
-                    </TableCell>
-                    <TableCell>{e.matricule || '—'}</TableCell>
-                    <TableCell>{e.sexe || '—'}</TableCell>
-                    <TableCell>
-                      <Badge variant={e.statut === 'inscrit' ? 'default' : e.statut === 'réinscrit' ? 'secondary' : 'outline'}>
-                        {e.statut}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm">
-                        <FileText className="h-4 w-4 mr-1" /> Ouvrir <ChevronRight className="h-3 w-3 ml-1" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="py-16 text-center text-muted-foreground">
-            <Library className="h-16 w-16 mx-auto mb-4 opacity-20" />
-            <p className="text-lg">Sélectionnez un Cycle, un Niveau puis une Classe pour consulter les dossiers élèves</p>
-          </CardContent>
-        </Card>
-      )}
+        <TabsContent value="prescolaire-primaire" className="space-y-4 mt-4">
+          {renderFilters()}
+          {renderElevesList()}
+        </TabsContent>
 
+        <TabsContent value="secondaire" className="space-y-4 mt-4">
+          {renderFilters()}
+          {renderElevesList()}
+        </TabsContent>
+      </Tabs>
+
+      {/* Dialog Dossier Élève */}
       <Dialog open={dossierOpen} onOpenChange={(open) => { setDossierOpen(open); if (!open) setSelectedEleveId(''); }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -432,6 +498,31 @@ export default function Bibliotheque() {
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Parcours scolaire */}
+                <Card className="border-amber-200 bg-gradient-to-br from-amber-500/5 to-transparent">
+                  <CardHeader>
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4 text-amber-600" /> Parcours Scolaire
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Ce livret unique retrace le parcours complet de l'élève, de la 1ère année d'école jusqu'au Baccalauréat.
+                    </p>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        Cycle actuel : {selectedEleve.classes?.niveaux?.cycles?.nom || '—'}
+                      </Badge>
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        Niveau : {selectedEleve.classes?.niveaux?.nom || '—'}
+                      </Badge>
+                      <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                        Classe : {selectedEleve.classes?.nom || '—'}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               {/* ── Notes ── */}
@@ -540,7 +631,6 @@ export default function Bibliotheque() {
                   </CardContent>
                 </Card>
 
-                {/* Barres de progression par pôle */}
                 {radarData.length > 0 && (
                   <Card>
                     <CardHeader><CardTitle className="text-sm">Détail par pôle</CardTitle></CardHeader>
@@ -560,7 +650,6 @@ export default function Bibliotheque() {
                   </Card>
                 )}
 
-                {/* Remarques d'orientation */}
                 {(() => {
                   const remarks = getOrientationRemarks(radarData, bareme);
                   if (!remarks || remarks.length === 0) return null;
@@ -604,10 +693,13 @@ export default function Bibliotheque() {
                   <CardContent className="p-6" ref={livretRef}>
                     {/* En-tête */}
                     <div className="header" style={{ textAlign: 'center', borderBottom: '3px double #1a1a1a', paddingBottom: 12, marginBottom: 16 }}>
-                      <div style={{ fontSize: 10, fontStyle: 'italic', color: '#555' }}>RÉPUBLIQUE DE GUINÉE — Travail - Justice - Solidarité</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2 }}>RÉPUBLIQUE DE GUINÉE</div>
+                      <div style={{ fontSize: 10, fontStyle: 'italic', color: '#555', marginTop: 2 }}>Travail - Justice - Solidarité</div>
+                      <div style={{ margin: '8px 0', borderTop: '1px solid #ccc', width: '40%', marginLeft: '30%' }} />
                       <h1 style={{ fontSize: 16, margin: '4px 0' }}>{schoolConfig?.nom || 'Établissement Scolaire'}</h1>
                       <div style={{ fontSize: 11, color: '#555' }}>{schoolConfig?.soustitre} — {schoolConfig?.ville}</div>
                       <h3 style={{ fontSize: 18, marginTop: 10, textTransform: 'uppercase', letterSpacing: 1 }}>LIVRET SCOLAIRE</h3>
+                      <div style={{ fontSize: 9, color: '#888', marginTop: 4 }}>Document de suivi du parcours scolaire — De la 1ère Année au Baccalauréat</div>
                     </div>
 
                     {/* Infos élève */}
@@ -618,6 +710,11 @@ export default function Bibliotheque() {
                       <div><span style={{ fontWeight: 600, color: '#555' }}>Date de naissance : </span>{selectedEleve.date_naissance ? new Date(selectedEleve.date_naissance).toLocaleDateString('fr-FR') : '—'}</div>
                       <div><span style={{ fontWeight: 600, color: '#555' }}>Sexe : </span>{selectedEleve.sexe || '—'}</div>
                       <div><span style={{ fontWeight: 600, color: '#555' }}>Classe : </span>{selectedEleve.classes?.niveaux?.cycles?.nom} — {selectedEleve.classes?.niveaux?.nom} — {selectedEleve.classes?.nom}</div>
+                    </div>
+
+                    {/* Parcours info */}
+                    <div style={{ fontSize: 11, padding: '6px 10px', background: '#fffbeb', border: '1px solid #fbbf24', borderRadius: 6, marginBottom: 16 }}>
+                      <strong>📋 Parcours scolaire :</strong> Ce livret retrace l'ensemble du parcours académique de l'élève, du cycle {selectedEleve.classes?.niveaux?.cycles?.nom || '—'}, niveau {selectedEleve.classes?.niveaux?.nom || '—'}.
                     </div>
 
                     {/* Tableau des notes par matière et période */}
@@ -661,7 +758,6 @@ export default function Bibliotheque() {
                             </tr>
                           );
                         })}
-                        {/* Ligne moyenne générale */}
                         <tr style={{ background: '#f0f7ff', fontWeight: 700 }}>
                           <td colSpan={3} style={{ border: '1px solid #bbb', padding: '5px 8px', textAlign: 'right' }}>MOYENNE GÉNÉRALE</td>
                           {regularPeriodes.map((p: any) => {
