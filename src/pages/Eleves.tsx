@@ -288,8 +288,8 @@ export default function Eleves() {
   const searchTerms = searchLower.split(/\s+/).filter(t => t.length > 0);
 
   const filtered = eleves.filter((e: any) => {
-    // Search: only by nom and prénom
-    const fullText = `${e.nom} ${e.prenom}`.toLowerCase();
+    // Search: only by nom, prénom and matricule
+    const fullText = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase();
     const basicMatch = searchTerms.length > 0 && searchTerms.some(term => fullText.includes(term));
     const matchSearch = isSearchActive ? basicMatch : true;
 
