@@ -134,7 +134,7 @@ function getOrientationRemarks(radarData: { pole: string; moyenne: number; fullM
   return remarks;
 }
 
-export default function ParentEnfantProfilRadar({ notes, periodes, bareme, eleve, schoolConfig }: Props) {
+export default function ParentEnfantProfilRadar({ notes, periodes, bareme, eleve, schoolConfig, famille }: Props) {
   const seuil = bareme / 2;
   const radarData = useMemo(() => computeRadar(notes, bareme), [notes, bareme]);
   const remarks = useMemo(() => getOrientationRemarks(radarData, bareme), [radarData, bareme]);
