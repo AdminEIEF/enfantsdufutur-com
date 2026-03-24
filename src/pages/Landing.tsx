@@ -114,22 +114,26 @@ export default function Landing() {
                 </Button>
               )}
               <Link to="/eleve">
-                <Button variant="outline" size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9">
+                <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9 bg-violet-600 hover:bg-violet-700 text-white border-0">
+                  <GraduationCap className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Espace </span>Élève
                 </Button>
               </Link>
               <Link to="/parent">
-                <Button variant="outline" size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9">
+                <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9 bg-amber-500 hover:bg-amber-600 text-white border-0">
+                  <Users className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Espace </span>Parent
                 </Button>
               </Link>
               <Link to="/employe">
-                <Button variant="outline" size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9">
+                <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9 bg-emerald-600 hover:bg-emerald-700 text-white border-0">
+                  <Briefcase className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Portail </span>Employé
                 </Button>
               </Link>
               <Link to="/auth">
-                <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9">
+                <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9 bg-blue-600 hover:bg-blue-700 text-white border-0">
+                  <Shield className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Espace </span>Admin
                   <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
@@ -341,9 +345,16 @@ export default function Landing() {
             Rejoignez la communauté de l'Ecole Internationale Les Enfants du Futur et donnez à votre enfant les outils pour réussir.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
+            <Link to="/eleve">
+              <Button size="lg" className="text-base px-8 bg-violet-600 hover:bg-violet-700 text-white border-0">
+                <GraduationCap className="mr-2 h-5 w-5" />
+                Espace Élève
+              </Button>
+            </Link>
             <Link to="/parent">
-              <Button size="lg" variant="secondary" className="text-base px-8">
-                Accéder à l'espace parent
+              <Button size="lg" className="text-base px-8 bg-amber-500 hover:bg-amber-600 text-white border-0">
+                <Users className="mr-2 h-5 w-5" />
+                Espace Parent
                 <motion.span
                   animate={{ x: [0, 6, 0] }}
                   transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
@@ -354,13 +365,19 @@ export default function Landing() {
               </Button>
             </Link>
             <Link to="/employe">
-              <Button size="lg" className="text-base px-8 bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive))]/90 text-white border-0">
+              <Button size="lg" className="text-base px-8 bg-emerald-600 hover:bg-emerald-700 text-white border-0">
                 <Briefcase className="mr-2 h-5 w-5" />
                 Portail Employé
               </Button>
             </Link>
+            <Link to="/auth">
+              <Button size="lg" className="text-base px-8 bg-blue-600 hover:bg-blue-700 text-white border-0">
+                <Shield className="mr-2 h-5 w-5" />
+                Espace Admin
+              </Button>
+            </Link>
             <Link to="/download">
-              <Button size="lg" className="text-base px-8 bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))]/90 text-white border-0">
+              <Button size="lg" className="text-base px-8 bg-green-500 hover:bg-green-600 text-white border-0">
                 <Download className="mr-2 h-5 w-5" />
                 Installer l'Appli
               </Button>
