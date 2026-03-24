@@ -174,6 +174,7 @@ export default function ParentEnfant() {
                   bareme={enfant.classes?.niveaux?.cycles?.bareme || 20}
                   eleve={enfant}
                   schoolConfig={schoolConfig}
+                  famille={session?.famille}
                 />
               )}
             </div>
