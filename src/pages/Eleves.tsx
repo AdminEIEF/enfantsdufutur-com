@@ -288,16 +288,10 @@ export default function Eleves() {
   const searchTerms = searchLower.split(/\s+/).filter(t => t.length > 0);
 
   const filtered = eleves.filter((e: any) => {
-    // Search: name, matricule, phone — each word matches independently (OR between words)
-    const fullText = `${e.nom} ${e.prenom} ${e.matricule || ''} ${e.nom_prenom_pere || ''} ${e.nom_prenom_mere || ''}`.toLowerCase();
+    // Search: only by nom and prénom
+    const fullText = `${e.nom} ${e.prenom}`.toLowerCase();
     const basicMatch = searchTerms.length > 0 && searchTerms.some(term => fullText.includes(term));
-    const telPere = e.familles?.telephone_pere || '';
-    const telMere = e.familles?.telephone_mere || '';
-    const phoneMatch = searchNorm.length >= 3 && (
-      normalizePhone(telPere).includes(searchNorm) ||
-      normalizePhone(telMere).includes(searchNorm)
-    );
-    const matchSearch = isSearchActive ? (basicMatch || phoneMatch) : true;
+    const matchSearch = isSearchActive ? basicMatch : true;
 
     const matchCycle = filterCycle === 'all' || e.classes?.niveaux?.cycles?.id === filterCycle;
     const matchClasse = filterClasse === 'all' || e.classe_id === filterClasse;
