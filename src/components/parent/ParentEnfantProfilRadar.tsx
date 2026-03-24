@@ -12,6 +12,7 @@ interface Props {
   bareme: number;
   eleve: any;
   schoolConfig?: any;
+  famille?: any;
 }
 
 function computeRadar(notes: any[], bareme: number) {
