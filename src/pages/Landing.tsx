@@ -114,22 +114,26 @@ export default function Landing() {
                 </Button>
               )}
               <Link to="/eleve">
-                <Button variant="outline" size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9">
+                <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9 bg-violet-600 hover:bg-violet-700 text-white border-0">
+                  <GraduationCap className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Espace </span>Élève
                 </Button>
               </Link>
               <Link to="/parent">
-                <Button variant="outline" size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9">
+                <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9 bg-amber-500 hover:bg-amber-600 text-white border-0">
+                  <Users className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Espace </span>Parent
                 </Button>
               </Link>
               <Link to="/employe">
-                <Button variant="outline" size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9">
+                <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9 bg-emerald-600 hover:bg-emerald-700 text-white border-0">
+                  <Briefcase className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Portail </span>Employé
                 </Button>
               </Link>
               <Link to="/auth">
-                <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9">
+                <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9 bg-blue-600 hover:bg-blue-700 text-white border-0">
+                  <Shield className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Espace </span>Admin
                   <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
