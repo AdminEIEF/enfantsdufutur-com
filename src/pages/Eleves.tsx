@@ -772,7 +772,7 @@ export default function Eleves() {
       <div className="flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Rechercher nom, téléphone, matricule..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Rechercher par nom ou prénom..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={filterCycle} onValueChange={v => { setFilterCycle(v); setFilterClasse('all'); }}>
           <SelectTrigger className="w-[160px]"><SelectValue placeholder="Cycle" /></SelectTrigger>
