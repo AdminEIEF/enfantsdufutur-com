@@ -12,6 +12,7 @@ interface Props {
   bareme: number;
   eleve: any;
   schoolConfig?: any;
+  famille?: any;
 }
 
 function computeRadar(notes: any[], bareme: number) {
@@ -133,7 +134,7 @@ function getOrientationRemarks(radarData: { pole: string; moyenne: number; fullM
   return remarks;
 }
 
-export default function ParentEnfantProfilRadar({ notes, periodes, bareme, eleve, schoolConfig }: Props) {
+export default function ParentEnfantProfilRadar({ notes, periodes, bareme, eleve, schoolConfig, famille }: Props) {
   const seuil = bareme / 2;
   const radarData = useMemo(() => computeRadar(notes, bareme), [notes, bareme]);
   const remarks = useMemo(() => getOrientationRemarks(radarData, bareme), [radarData, bareme]);
@@ -208,6 +209,47 @@ export default function ParentEnfantProfilRadar({ notes, periodes, bareme, eleve
         <div><b style="color:#555;">Classe : </b>${classInfo}</div>
         <div><b style="color:#555;">Date de naissance : </b>${eleve.date_naissance ? new Date(eleve.date_naissance).toLocaleDateString('fr-FR') : '—'}</div>
         <div><b style="color:#555;">Sexe : </b>${eleve.sexe || '—'}</div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin:14px 0 6px;padding:4px 8px;background:#fef3c7;border-left:4px solid #f59e0b;">
+        Renseignements du Parent / Tuteur
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:10px;padding:10px;border:1px solid #ddd;border-radius:6px;background:#fafafa;">
+        <div><b style="color:#555;">Nom & Prénom du Père : </b>${eleve.nom_prenom_pere || famille?.nom_famille || '—'}</div>
+        <div><b style="color:#555;">Nom & Prénom de la Mère : </b>${eleve.nom_prenom_mere || '—'}</div>
+        <div><b style="color:#555;">Profession : </b>..........................................</div>
+        <div><b style="color:#555;">Lien avec le tuteur : </b>..........................................</div>
+        <div><b style="color:#555;">Téléphone Père : </b>${famille?.telephone_pere || '—'}</div>
+        <div><b style="color:#555;">Téléphone Mère : </b>${famille?.telephone_mere || '—'}</div>
+        <div><b style="color:#555;">Adresse / Domicile : </b>${famille?.adresse || '—'}</div>
+        <div><b style="color:#555;">Lieu de travail : </b>..........................................</div>
+        <div><b style="color:#555;">Email : </b>${famille?.email_parent || '—'}</div>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px;font-size:10px;">
+        <thead>
+          <tr><th colspan="3" style="border:1px solid #bbb;padding:4px 8px;background:#e5edff;font-weight:700;font-size:11px;">Changement d'adresse</th></tr>
+          <tr>
+            <th style="border:1px solid #bbb;padding:4px 8px;background:#f0f0f0;font-weight:600;width:33%;">Date</th>
+            <th style="border:1px solid #bbb;padding:4px 8px;background:#f0f0f0;font-weight:600;width:33%;">Domicile / Ville</th>
+            <th style="border:1px solid #bbb;padding:4px 8px;background:#f0f0f0;font-weight:600;width:34%;">École</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="border:1px solid #bbb;padding:6px 8px;height:24px;">&nbsp;</td><td style="border:1px solid #bbb;padding:6px 8px;height:24px;">&nbsp;</td><td style="border:1px solid #bbb;padding:6px 8px;height:24px;">&nbsp;</td></tr>
+          <tr><td style="border:1px solid #bbb;padding:6px 8px;height:24px;">&nbsp;</td><td style="border:1px solid #bbb;padding:6px 8px;height:24px;">&nbsp;</td><td style="border:1px solid #bbb;padding:6px 8px;height:24px;">&nbsp;</td></tr>
+          <tr><td style="border:1px solid #bbb;padding:6px 8px;height:24px;">&nbsp;</td><td style="border:1px solid #bbb;padding:6px 8px;height:24px;">&nbsp;</td><td style="border:1px solid #bbb;padding:6px 8px;height:24px;">&nbsp;</td></tr>
+        </tbody>
+      </table>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:16px;padding:10px;border:1px solid #ddd;border-radius:6px;background:#fafafa;font-size:11px;">
+        <div style="font-weight:600;color:#555;">Situation familiale :</div><div>&nbsp;</div>
+        <div style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:14px;height:14px;border:1.5px solid #555;border-radius:2px;"></span> Parents séparés</div>
+        <div style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:14px;height:14px;border:1.5px solid #555;border-radius:2px;"></span> Orphelin de père</div>
+        <div style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:14px;height:14px;border:1.5px solid #555;border-radius:2px;"></span> Orphelin de mère</div>
+        <div>&nbsp;</div>
+        <div><b style="color:#555;">Date de 1ère rentrée scolaire : </b>..........................................</div>
+        <div><b style="color:#555;">Venant de l'école : </b>..........................................</div>
       </div>
       <div style="font-size:13px;font-weight:700;margin:14px 0 6px;padding:4px 8px;background:#e5edff;border-left:4px solid #2563eb;">Notes par matière et par période (/${bareme})</div>
       <table>

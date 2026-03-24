@@ -59,7 +59,7 @@ function useElevesClasse(classeId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, date_naissance, sexe, photo_url, statut, classe_id, classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom, bareme)))')
+        .select('id, nom, prenom, matricule, date_naissance, sexe, photo_url, statut, classe_id, nom_prenom_pere, nom_prenom_mere, famille_id, familles:famille_id(nom_famille, telephone_pere, telephone_mere, email_parent, adresse), classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom, bareme)))')
         .eq('classe_id', classeId)
         .order('nom');
       if (error) throw error;
@@ -710,6 +710,68 @@ export default function Bibliotheque() {
                       <div><span style={{ fontWeight: 600, color: '#555' }}>Date de naissance : </span>{selectedEleve.date_naissance ? new Date(selectedEleve.date_naissance).toLocaleDateString('fr-FR') : '—'}</div>
                       <div><span style={{ fontWeight: 600, color: '#555' }}>Sexe : </span>{selectedEleve.sexe || '—'}</div>
                       <div><span style={{ fontWeight: 600, color: '#555' }}>Classe : </span>{selectedEleve.classes?.niveaux?.cycles?.nom} — {selectedEleve.classes?.niveaux?.nom} — {selectedEleve.classes?.nom}</div>
+                    </div>
+
+                    {/* Renseignements Parent / Tuteur */}
+                    <div style={{ fontSize: 13, fontWeight: 700, margin: '14px 0 6px', padding: '4px 8px', background: '#fef3c7', borderLeft: '4px solid #f59e0b' }}>
+                      Renseignements du Parent / Tuteur
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 20px', marginBottom: 10, padding: 10, border: '1px solid #ddd', borderRadius: 6, background: '#fafafa' }}>
+                      <div><span style={{ fontWeight: 600, color: '#555' }}>Nom & Prénom du Père : </span>{selectedEleve.nom_prenom_pere || '—'}</div>
+                      <div><span style={{ fontWeight: 600, color: '#555' }}>Nom & Prénom de la Mère : </span>{selectedEleve.nom_prenom_mere || '—'}</div>
+                      <div><span style={{ fontWeight: 600, color: '#555' }}>Profession : </span>..........................................</div>
+                      <div><span style={{ fontWeight: 600, color: '#555' }}>Lien avec le tuteur : </span>..........................................</div>
+                      <div><span style={{ fontWeight: 600, color: '#555' }}>Téléphone Père : </span>{(selectedEleve as any).familles?.telephone_pere || '—'}</div>
+                      <div><span style={{ fontWeight: 600, color: '#555' }}>Téléphone Mère : </span>{(selectedEleve as any).familles?.telephone_mere || '—'}</div>
+                      <div><span style={{ fontWeight: 600, color: '#555' }}>Adresse / Domicile : </span>{(selectedEleve as any).familles?.adresse || '—'}</div>
+                      <div><span style={{ fontWeight: 600, color: '#555' }}>Lieu de travail : </span>..........................................</div>
+                      <div><span style={{ fontWeight: 600, color: '#555' }}>Email : </span>{(selectedEleve as any).familles?.email_parent || '—'}</div>
+                    </div>
+
+                    {/* Tableau changement d'adresse */}
+                    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 10, fontSize: 10 }}>
+                      <thead>
+                        <tr>
+                          <th colSpan={3} style={{ border: '1px solid #bbb', padding: '4px 8px', background: '#e5edff', fontWeight: 700, fontSize: 11 }}>Changement d'adresse</th>
+                        </tr>
+                        <tr>
+                          <th style={{ border: '1px solid #bbb', padding: '4px 8px', background: '#f0f0f0', fontWeight: 600, width: '33%' }}>Date</th>
+                          <th style={{ border: '1px solid #bbb', padding: '4px 8px', background: '#f0f0f0', fontWeight: 600, width: '33%' }}>Domicile / Ville</th>
+                          <th style={{ border: '1px solid #bbb', padding: '4px 8px', background: '#f0f0f0', fontWeight: 600, width: '34%' }}>École</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[1, 2, 3].map(i => (
+                          <tr key={i}>
+                            <td style={{ border: '1px solid #bbb', padding: '6px 8px', height: 24 }}>&nbsp;</td>
+                            <td style={{ border: '1px solid #bbb', padding: '6px 8px', height: 24 }}>&nbsp;</td>
+                            <td style={{ border: '1px solid #bbb', padding: '6px 8px', height: 24 }}>&nbsp;</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    {/* Situation familiale */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 20px', marginBottom: 10, padding: 10, border: '1px solid #ddd', borderRadius: 6, background: '#fafafa', fontSize: 11 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontWeight: 600, color: '#555' }}>Situation familiale :</span>
+                      </div>
+                      <div>&nbsp;</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ display: 'inline-block', width: 14, height: 14, border: '1.5px solid #555', borderRadius: 2 }}></span>
+                        <span>Parents séparés</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ display: 'inline-block', width: 14, height: 14, border: '1.5px solid #555', borderRadius: 2 }}></span>
+                        <span>Orphelin de père</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ display: 'inline-block', width: 14, height: 14, border: '1.5px solid #555', borderRadius: 2 }}></span>
+                        <span>Orphelin de mère</span>
+                      </div>
+                      <div>&nbsp;</div>
+                      <div><span style={{ fontWeight: 600, color: '#555' }}>Date de 1ère rentrée scolaire : </span>..........................................</div>
+                      <div><span style={{ fontWeight: 600, color: '#555' }}>Venant de l'école : </span>..........................................</div>
                     </div>
 
                     {/* Parcours info */}
