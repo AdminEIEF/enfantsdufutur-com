@@ -59,7 +59,7 @@ function useElevesClasse(classeId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, date_naissance, sexe, photo_url, statut, classe_id, classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom, bareme)))')
+        .select('id, nom, prenom, matricule, date_naissance, sexe, photo_url, statut, classe_id, nom_prenom_pere, nom_prenom_mere, famille_id, familles:famille_id(nom_famille, telephone_pere, telephone_mere, email_parent, adresse), classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom, bareme)))')
         .eq('classe_id', classeId)
         .order('nom');
       if (error) throw error;
