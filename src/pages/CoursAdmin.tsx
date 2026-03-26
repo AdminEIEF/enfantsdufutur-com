@@ -357,7 +357,7 @@ export default function CoursAdmin() {
     },
   });
 
-  const openEditDevoirDialog = (d: any) => {
+  const openEditDevoirDialog = async (d: any) => {
     setDTitre(d.titre || '');
     setDDescription(d.description || '');
     setDMatiereId(d.matiere_id || '');
@@ -367,6 +367,25 @@ export default function CoursAdmin() {
     setDTypeDevoir(d.type_devoir || 'fichier');
     setDSujetMode(d.sujet_url ? 'fichier' : 'texte');
     setDSujetFile(null);
+    
+    // Load quiz questions if quiz type
+    if (d.type_devoir === 'quiz') {
+      const { data: qs } = await supabase.from('quiz_questions').select('*').eq('devoir_id', d.id).order('ordre');
+      if (qs && qs.length > 0) {
+        setQuizQuestions(qs.map((q: any) => ({
+          id: q.id,
+          question: q.question,
+          type: q.type,
+          options: q.options as { label: string; correct: boolean }[],
+          points: q.points,
+        })));
+      } else {
+        setQuizQuestions([]);
+      }
+    } else {
+      setQuizQuestions([]);
+    }
+    
     setEditDevoir(d);
   };
 
