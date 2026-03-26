@@ -311,6 +311,65 @@ export default function CoursAdmin() {
     },
   });
 
+  const updateDevoir = useMutation({
+    mutationFn: async () => {
+      if (!editDevoir) throw new Error('Aucun devoir sélectionné');
+      if (!dTitre.trim() || !dMatiereId || !dClasseId || !dDateLimite) throw new Error('Champs obligatoires manquants');
+
+      let sujetUrl = editDevoir.sujet_url;
+      let sujetNom = editDevoir.sujet_nom;
+      if (dSujetMode === 'fichier' && dSujetFile) {
+        setDUploading(true);
+        const ext = dSujetFile.name.split('.').pop();
+        const fileName = `devoirs-sujets/${dClasseId}/${Date.now()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage.from('devoirs').upload(fileName, dSujetFile);
+        if (uploadErr) throw uploadErr;
+        const { data: signedData } = await supabase.storage.from('devoirs').createSignedUrl(fileName, 31536000);
+        sujetUrl = signedData?.signedUrl || null;
+        sujetNom = dSujetFile.name;
+        setDUploading(false);
+      } else if (dSujetMode === 'texte') {
+        sujetUrl = null;
+        sujetNom = null;
+      }
+
+      const { error } = await supabase.from('devoirs').update({
+        titre: dTitre.trim(),
+        description: dSujetMode === 'texte' ? (dDescription.trim() || null) : editDevoir.description,
+        matiere_id: dMatiereId,
+        classe_id: dClasseId,
+        date_limite: dDateLimite,
+        note_max: Number(dNoteMax) || 20,
+        sujet_url: sujetUrl,
+        sujet_nom: sujetNom,
+      } as any).eq('id', editDevoir.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-devoirs'] });
+      toast({ title: 'Devoir modifié avec succès' });
+      setEditDevoir(null);
+      resetDevoirForm();
+    },
+    onError: (e: Error) => {
+      setDUploading(false);
+      toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
+    },
+  });
+
+  const openEditDevoirDialog = (d: any) => {
+    setDTitre(d.titre || '');
+    setDDescription(d.description || '');
+    setDMatiereId(d.matiere_id || '');
+    setDClasseId(d.classe_id || '');
+    setDDateLimite(d.date_limite ? d.date_limite.slice(0, 16) : '');
+    setDNoteMax(String(d.note_max || 20));
+    setDTypeDevoir(d.type_devoir || 'fichier');
+    setDSujetMode(d.sujet_url ? 'fichier' : 'texte');
+    setDSujetFile(null);
+    setEditDevoir(d);
+  };
+
   const resetCoursForm = () => {
     setCTitre(''); setCDescription(''); setCMatiereId(''); setCClasseId(''); setCUrl(''); setCTypeContenu('pdf'); setCFile(null);
   };
