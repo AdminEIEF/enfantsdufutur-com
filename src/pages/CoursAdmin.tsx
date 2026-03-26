@@ -746,6 +746,72 @@ export default function CoursAdmin() {
       {viewDevoir && (
         <DevoirSoumissionsDialog devoir={viewDevoir} open={!!viewDevoir} onOpenChange={(open) => { if (!open) setViewDevoir(null); }} />
       )}
+
+      {/* Edit Devoir Dialog */}
+      <Dialog open={!!editDevoir} onOpenChange={(o) => { if (!o) { setEditDevoir(null); resetDevoirForm(); } }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Modifier le devoir</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Titre *</Label><Input value={dTitre} onChange={e => setDTitre(e.target.value)} /></div>
+            <div>
+              <Label>Sujet / Consigne</Label>
+              <RadioGroup value={dSujetMode} onValueChange={(v: any) => { setDSujetMode(v); setDSujetFile(null); if (v === 'texte') setDDescription(editDevoir?.description || ''); }} className="flex gap-4 mt-1 mb-2">
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="texte" id="edit-sujet-texte" />
+                  <Label htmlFor="edit-sujet-texte" className="flex items-center gap-1 cursor-pointer text-sm"><FileText className="h-4 w-4" /> Saisir le sujet</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="fichier" id="edit-sujet-fichier" />
+                  <Label htmlFor="edit-sujet-fichier" className="flex items-center gap-1 cursor-pointer text-sm"><Upload className="h-4 w-4" /> Joindre un fichier</Label>
+                </div>
+              </RadioGroup>
+              {dSujetMode === 'texte' ? (
+                <Textarea value={dDescription} onChange={e => setDDescription(e.target.value)} placeholder="Saisissez le sujet ou les consignes..." className="min-h-[100px]" />
+              ) : (
+                <div>
+                  <input ref={dFileRef} type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={e => { if (e.target.files?.[0]) setDSujetFile(e.target.files[0]); }} />
+                  <div className="flex items-center gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => dFileRef.current?.click()}>
+                      <Upload className="h-4 w-4 mr-1" /> Choisir un fichier
+                    </Button>
+                    {dSujetFile ? (
+                      <span className="text-sm text-muted-foreground truncate max-w-[250px]">📎 {dSujetFile.name}</span>
+                    ) : editDevoir?.sujet_nom ? (
+                      <span className="text-sm text-muted-foreground truncate max-w-[250px]">📎 {editDevoir.sujet_nom} (actuel)</span>
+                    ) : null}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Classe *</Label>
+                <Select value={dClasseId} onValueChange={(v) => { setDClasseId(v); setDMatiereId(''); }}>
+                  <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                  <SelectContent>{filteredClasses.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.niveaux?.nom} — {c.nom}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label>Matière *</Label>
+                <Select value={dMatiereId} onValueChange={setDMatiereId} disabled={!dClasseId}>
+                  <SelectTrigger><SelectValue placeholder={dClasseId ? 'Choisir' : 'Sélectionnez une classe'} /></SelectTrigger>
+                  <SelectContent>{dFormMatieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Date limite *</Label><Input type="datetime-local" value={dDateLimite} onChange={e => setDDateLimite(e.target.value)} /></div>
+              {editDevoir?.type_devoir !== 'quiz' && (
+                <div><Label>Note max</Label><Input type="number" value={dNoteMax} onChange={e => setDNoteMax(e.target.value)} /></div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setEditDevoir(null); resetDevoirForm(); }}>Annuler</Button>
+            <Button onClick={() => updateDevoir.mutate()} disabled={updateDevoir.isPending || dUploading}>
+              {(updateDevoir.isPending || dUploading) ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Modification...</> : 'Enregistrer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
