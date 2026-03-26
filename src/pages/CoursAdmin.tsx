@@ -34,6 +34,7 @@ export default function CoursAdmin() {
   const [openCours, setOpenCours] = useState(false);
   const [openDevoir, setOpenDevoir] = useState(false);
   const [viewDevoir, setViewDevoir] = useState<any>(null);
+  const [editDevoir, setEditDevoir] = useState<any>(null);
   const qc = useQueryClient();
 
   // Form states - Cours
