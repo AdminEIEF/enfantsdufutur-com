@@ -731,6 +731,7 @@ export default function CoursAdmin() {
                       <TableCell>{d.note_max}</TableCell>
                       <TableCell className="text-right flex gap-1 justify-end">
                         <Button size="icon" variant="ghost" onClick={() => setViewDevoir(d)} title="Voir soumissions"><Eye className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => openEditDevoirDialog(d)} title="Modifier"><Pencil className="h-4 w-4 text-blue-600" /></Button>
                         <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteDevoir.mutate(d.id)}><Trash2 className="h-4 w-4" /></Button>
                       </TableCell>
                     </TableRow>
