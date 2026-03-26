@@ -333,17 +333,39 @@ export default function CoursAdmin() {
         sujetNom = null;
       }
 
+      const totalPoints = dTypeDevoir === 'quiz' 
+        ? quizQuestions.reduce((s, q) => s + q.points, 0) 
+        : Number(dNoteMax) || 20;
+
       const { error } = await supabase.from('devoirs').update({
         titre: dTitre.trim(),
         description: dSujetMode === 'texte' ? (dDescription.trim() || null) : editDevoir.description,
         matiere_id: dMatiereId,
         classe_id: dClasseId,
         date_limite: dDateLimite,
-        note_max: Number(dNoteMax) || 20,
+        note_max: totalPoints,
         sujet_url: sujetUrl,
         sujet_nom: sujetNom,
       } as any).eq('id', editDevoir.id);
       if (error) throw error;
+
+      // Update quiz questions if quiz type
+      if (editDevoir.type_devoir === 'quiz') {
+        // Delete existing questions and re-insert
+        await supabase.from('quiz_questions').delete().eq('devoir_id', editDevoir.id);
+        if (quizQuestions.length > 0) {
+          const questions = quizQuestions.map((q, i) => ({
+            devoir_id: editDevoir.id,
+            question: q.question.trim(),
+            type: q.type,
+            options: q.options,
+            points: q.points,
+            ordre: i,
+          }));
+          const { error: qErr } = await supabase.from('quiz_questions').insert(questions as any);
+          if (qErr) throw qErr;
+        }
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-devoirs'] });
