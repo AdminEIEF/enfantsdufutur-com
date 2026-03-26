@@ -333,17 +333,39 @@ export default function CoursAdmin() {
         sujetNom = null;
       }
 
+      const totalPoints = dTypeDevoir === 'quiz' 
+        ? quizQuestions.reduce((s, q) => s + q.points, 0) 
+        : Number(dNoteMax) || 20;
+
       const { error } = await supabase.from('devoirs').update({
         titre: dTitre.trim(),
         description: dSujetMode === 'texte' ? (dDescription.trim() || null) : editDevoir.description,
         matiere_id: dMatiereId,
         classe_id: dClasseId,
         date_limite: dDateLimite,
-        note_max: Number(dNoteMax) || 20,
+        note_max: totalPoints,
         sujet_url: sujetUrl,
         sujet_nom: sujetNom,
       } as any).eq('id', editDevoir.id);
       if (error) throw error;
+
+      // Update quiz questions if quiz type
+      if (editDevoir.type_devoir === 'quiz') {
+        // Delete existing questions and re-insert
+        await supabase.from('quiz_questions').delete().eq('devoir_id', editDevoir.id);
+        if (quizQuestions.length > 0) {
+          const questions = quizQuestions.map((q, i) => ({
+            devoir_id: editDevoir.id,
+            question: q.question.trim(),
+            type: q.type,
+            options: q.options,
+            points: q.points,
+            ordre: i,
+          }));
+          const { error: qErr } = await supabase.from('quiz_questions').insert(questions as any);
+          if (qErr) throw qErr;
+        }
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-devoirs'] });
@@ -357,7 +379,7 @@ export default function CoursAdmin() {
     },
   });
 
-  const openEditDevoirDialog = (d: any) => {
+  const openEditDevoirDialog = async (d: any) => {
     setDTitre(d.titre || '');
     setDDescription(d.description || '');
     setDMatiereId(d.matiere_id || '');
@@ -367,6 +389,25 @@ export default function CoursAdmin() {
     setDTypeDevoir(d.type_devoir || 'fichier');
     setDSujetMode(d.sujet_url ? 'fichier' : 'texte');
     setDSujetFile(null);
+    
+    // Load quiz questions if quiz type
+    if (d.type_devoir === 'quiz') {
+      const { data: qs } = await supabase.from('quiz_questions').select('*').eq('devoir_id', d.id).order('ordre');
+      if (qs && qs.length > 0) {
+        setQuizQuestions(qs.map((q: any) => ({
+          id: q.id,
+          question: q.question,
+          type: q.type,
+          options: q.options as { label: string; correct: boolean }[],
+          points: q.points,
+        })));
+      } else {
+        setQuizQuestions([]);
+      }
+    } else {
+      setQuizQuestions([]);
+    }
+    
     setEditDevoir(d);
   };
 
@@ -803,6 +844,63 @@ export default function CoursAdmin() {
                 <div><Label>Note max</Label><Input type="number" value={dNoteMax} onChange={e => setDNoteMax(e.target.value)} /></div>
               )}
             </div>
+            {/* Quiz questions editor */}
+            {editDevoir?.type_devoir === 'quiz' && (
+              <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-sm">Questions du quiz ({quizQuestions.length})</h3>
+                  <Button type="button" size="sm" variant="outline" onClick={addQuestion}><CirclePlus className="h-4 w-4 mr-1" /> Ajouter</Button>
+                </div>
+                {quizQuestions.map((q, qi) => (
+                  <Card key={qi}>
+                    <CardContent className="py-3 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="shrink-0">Q{qi + 1}</Badge>
+                            <Input value={q.question} onChange={e => updateQuestion(qi, 'question', e.target.value)} placeholder="Intitulé de la question" className="flex-1" />
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Select value={q.type} onValueChange={v => updateQuestion(qi, 'type', v)}>
+                              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="choix_multiple">Choix multiple</SelectItem>
+                                <SelectItem value="vrai_faux">Vrai / Faux</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <div className="flex items-center gap-1">
+                              <Label className="text-xs whitespace-nowrap">Points :</Label>
+                              <Input type="number" min={1} max={20} value={q.points} onChange={e => updateQuestion(qi, 'points', Number(e.target.value) || 1)} className="w-16" />
+                            </div>
+                          </div>
+                        </div>
+                        <Button type="button" size="icon" variant="ghost" className="text-destructive shrink-0" onClick={() => removeQuestion(qi)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="space-y-2 pl-6">
+                        {q.options.map((opt, oi) => (
+                          <div key={oi} className="flex items-center gap-2">
+                            <Checkbox checked={opt.correct} onCheckedChange={(checked) => updateOption(qi, oi, 'correct', !!checked)} />
+                            <Input value={opt.label} onChange={e => updateOption(qi, oi, 'label', e.target.value)} placeholder={`Option ${oi + 1}`} className="flex-1" disabled={q.type === 'vrai_faux'} />
+                            {q.type === 'choix_multiple' && q.options.length > 2 && (
+                              <Button type="button" size="icon" variant="ghost" onClick={() => removeOption(qi, oi)}><CircleMinus className="h-4 w-4" /></Button>
+                            )}
+                          </div>
+                        ))}
+                        {q.type === 'choix_multiple' && q.options.length < 6 && (
+                          <Button type="button" size="sm" variant="ghost" className="text-xs" onClick={() => addOption(qi)}><CirclePlus className="h-3 w-3 mr-1" /> Option</Button>
+                        )}
+                        <p className="text-xs text-muted-foreground">✅ Cochez la/les bonne(s) réponse(s)</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {quizQuestions.length > 0 && (
+                  <p className="text-sm text-muted-foreground text-right">Total : {quizQuestions.reduce((s, q) => s + q.points, 0)} points</p>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setEditDevoir(null); resetDevoirForm(); }}>Annuler</Button>
