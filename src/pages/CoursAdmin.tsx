@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Video, FileText, Plus, Trash2, BookOpen, Search, Loader2, Upload, CirclePlus, CircleMinus, FileType, ListChecks, Eye, GraduationCap, School } from 'lucide-react';
+import { Video, FileText, Plus, Trash2, BookOpen, Search, Loader2, Upload, CirclePlus, CircleMinus, FileType, ListChecks, Eye, GraduationCap, School, Pencil } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -34,6 +34,7 @@ export default function CoursAdmin() {
   const [openCours, setOpenCours] = useState(false);
   const [openDevoir, setOpenDevoir] = useState(false);
   const [viewDevoir, setViewDevoir] = useState<any>(null);
+  const [editDevoir, setEditDevoir] = useState<any>(null);
   const qc = useQueryClient();
 
   // Form states - Cours
@@ -309,6 +310,65 @@ export default function CoursAdmin() {
       toast({ title: 'Devoir supprimé' });
     },
   });
+
+  const updateDevoir = useMutation({
+    mutationFn: async () => {
+      if (!editDevoir) throw new Error('Aucun devoir sélectionné');
+      if (!dTitre.trim() || !dMatiereId || !dClasseId || !dDateLimite) throw new Error('Champs obligatoires manquants');
+
+      let sujetUrl = editDevoir.sujet_url;
+      let sujetNom = editDevoir.sujet_nom;
+      if (dSujetMode === 'fichier' && dSujetFile) {
+        setDUploading(true);
+        const ext = dSujetFile.name.split('.').pop();
+        const fileName = `devoirs-sujets/${dClasseId}/${Date.now()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage.from('devoirs').upload(fileName, dSujetFile);
+        if (uploadErr) throw uploadErr;
+        const { data: signedData } = await supabase.storage.from('devoirs').createSignedUrl(fileName, 31536000);
+        sujetUrl = signedData?.signedUrl || null;
+        sujetNom = dSujetFile.name;
+        setDUploading(false);
+      } else if (dSujetMode === 'texte') {
+        sujetUrl = null;
+        sujetNom = null;
+      }
+
+      const { error } = await supabase.from('devoirs').update({
+        titre: dTitre.trim(),
+        description: dSujetMode === 'texte' ? (dDescription.trim() || null) : editDevoir.description,
+        matiere_id: dMatiereId,
+        classe_id: dClasseId,
+        date_limite: dDateLimite,
+        note_max: Number(dNoteMax) || 20,
+        sujet_url: sujetUrl,
+        sujet_nom: sujetNom,
+      } as any).eq('id', editDevoir.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-devoirs'] });
+      toast({ title: 'Devoir modifié avec succès' });
+      setEditDevoir(null);
+      resetDevoirForm();
+    },
+    onError: (e: Error) => {
+      setDUploading(false);
+      toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
+    },
+  });
+
+  const openEditDevoirDialog = (d: any) => {
+    setDTitre(d.titre || '');
+    setDDescription(d.description || '');
+    setDMatiereId(d.matiere_id || '');
+    setDClasseId(d.classe_id || '');
+    setDDateLimite(d.date_limite ? d.date_limite.slice(0, 16) : '');
+    setDNoteMax(String(d.note_max || 20));
+    setDTypeDevoir(d.type_devoir || 'fichier');
+    setDSujetMode(d.sujet_url ? 'fichier' : 'texte');
+    setDSujetFile(null);
+    setEditDevoir(d);
+  };
 
   const resetCoursForm = () => {
     setCTitre(''); setCDescription(''); setCMatiereId(''); setCClasseId(''); setCUrl(''); setCTypeContenu('pdf'); setCFile(null);
@@ -671,6 +731,7 @@ export default function CoursAdmin() {
                       <TableCell>{d.note_max}</TableCell>
                       <TableCell className="text-right flex gap-1 justify-end">
                         <Button size="icon" variant="ghost" onClick={() => setViewDevoir(d)} title="Voir soumissions"><Eye className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => openEditDevoirDialog(d)} title="Modifier"><Pencil className="h-4 w-4 text-blue-600" /></Button>
                         <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteDevoir.mutate(d.id)}><Trash2 className="h-4 w-4" /></Button>
                       </TableCell>
                     </TableRow>
@@ -685,6 +746,72 @@ export default function CoursAdmin() {
       {viewDevoir && (
         <DevoirSoumissionsDialog devoir={viewDevoir} open={!!viewDevoir} onOpenChange={(open) => { if (!open) setViewDevoir(null); }} />
       )}
+
+      {/* Edit Devoir Dialog */}
+      <Dialog open={!!editDevoir} onOpenChange={(o) => { if (!o) { setEditDevoir(null); resetDevoirForm(); } }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Modifier le devoir</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Titre *</Label><Input value={dTitre} onChange={e => setDTitre(e.target.value)} /></div>
+            <div>
+              <Label>Sujet / Consigne</Label>
+              <RadioGroup value={dSujetMode} onValueChange={(v: any) => { setDSujetMode(v); setDSujetFile(null); if (v === 'texte') setDDescription(editDevoir?.description || ''); }} className="flex gap-4 mt-1 mb-2">
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="texte" id="edit-sujet-texte" />
+                  <Label htmlFor="edit-sujet-texte" className="flex items-center gap-1 cursor-pointer text-sm"><FileText className="h-4 w-4" /> Saisir le sujet</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="fichier" id="edit-sujet-fichier" />
+                  <Label htmlFor="edit-sujet-fichier" className="flex items-center gap-1 cursor-pointer text-sm"><Upload className="h-4 w-4" /> Joindre un fichier</Label>
+                </div>
+              </RadioGroup>
+              {dSujetMode === 'texte' ? (
+                <Textarea value={dDescription} onChange={e => setDDescription(e.target.value)} placeholder="Saisissez le sujet ou les consignes..." className="min-h-[100px]" />
+              ) : (
+                <div>
+                  <input ref={dFileRef} type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={e => { if (e.target.files?.[0]) setDSujetFile(e.target.files[0]); }} />
+                  <div className="flex items-center gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => dFileRef.current?.click()}>
+                      <Upload className="h-4 w-4 mr-1" /> Choisir un fichier
+                    </Button>
+                    {dSujetFile ? (
+                      <span className="text-sm text-muted-foreground truncate max-w-[250px]">📎 {dSujetFile.name}</span>
+                    ) : editDevoir?.sujet_nom ? (
+                      <span className="text-sm text-muted-foreground truncate max-w-[250px]">📎 {editDevoir.sujet_nom} (actuel)</span>
+                    ) : null}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Classe *</Label>
+                <Select value={dClasseId} onValueChange={(v) => { setDClasseId(v); setDMatiereId(''); }}>
+                  <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                  <SelectContent>{filteredClasses.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.niveaux?.nom} — {c.nom}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label>Matière *</Label>
+                <Select value={dMatiereId} onValueChange={setDMatiereId} disabled={!dClasseId}>
+                  <SelectTrigger><SelectValue placeholder={dClasseId ? 'Choisir' : 'Sélectionnez une classe'} /></SelectTrigger>
+                  <SelectContent>{dFormMatieres.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Date limite *</Label><Input type="datetime-local" value={dDateLimite} onChange={e => setDDateLimite(e.target.value)} /></div>
+              {editDevoir?.type_devoir !== 'quiz' && (
+                <div><Label>Note max</Label><Input type="number" value={dNoteMax} onChange={e => setDNoteMax(e.target.value)} /></div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setEditDevoir(null); resetDevoirForm(); }}>Annuler</Button>
+            <Button onClick={() => updateDevoir.mutate()} disabled={updateDevoir.isPending || dUploading}>
+              {(updateDevoir.isPending || dUploading) ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Modification...</> : 'Enregistrer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
