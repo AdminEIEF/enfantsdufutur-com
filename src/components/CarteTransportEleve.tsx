@@ -315,16 +315,16 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                   preserveAspectRatio="none"
                   style={{ height: 90 }}
                 >
-                  <path
-                    d="M0,40 C80,0 160,70 240,35 C300,10 360,50 400,25 L400,90 L0,90 Z"
-                    fill="#87CEEB"
-                    opacity="0.35"
-                  />
-                  <path
-                    d="M0,55 C60,30 140,75 220,50 C290,30 350,65 400,40 L400,90 L0,90 Z"
-                    fill="#5BA3D9"
-                    opacity="0.25"
-                  />
+                    <path
+                     d="M0,40 C80,0 160,70 240,35 C300,10 360,50 400,25 L400,90 L0,90 Z"
+                     fill="#4ADE80"
+                     opacity="0.35"
+                   />
+                   <path
+                     d="M0,55 C60,30 140,75 220,50 C290,30 350,65 400,40 L400,90 L0,90 Z"
+                     fill="#FCA5A5"
+                     opacity="0.35"
+                   />
                 </svg>
 
                 {/* Bus watermark */}
