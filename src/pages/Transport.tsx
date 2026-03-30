@@ -590,8 +590,8 @@ export default function Transport() {
                   }}
                 >
                   <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 400 90" preserveAspectRatio="none" style={{ height: 90 }}>
-                    <path d="M0,40 C80,0 160,70 240,35 C300,10 360,50 400,25 L400,90 L0,90 Z" fill="#4ADE80" opacity="0.35" />
-                    <path d="M0,55 C60,30 140,75 220,50 C290,30 350,65 400,40 L400,90 L0,90 Z" fill="#FCA5A5" opacity="0.35" />
+                    <path d="M0,40 C80,0 160,70 240,35 C300,10 360,50 400,25 L400,90 L0,90 Z" fill="#F87171" opacity="0.5" />
+                    <path d="M0,55 C60,30 140,75 220,50 C290,30 350,65 400,40 L400,90 L0,90 Z" fill="#4ADE80" opacity="0.4" />
                   </svg>
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-[0.06]">
                     <svg width="140" height="90" viewBox="0 0 140 90" fill="none">
