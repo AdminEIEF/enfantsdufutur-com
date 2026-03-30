@@ -46,12 +46,9 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Use canvas-like approach via sharp-like processing
-        // Since Deno edge functions don't have canvas, we'll use a simpler approach:
-        // Re-upload with reduced quality using the image as-is but convert to smaller JPEG
-        
-        // We'll use the built-in ImageBitmap API available in Deno
-        const bitmap = await createImageBitmap(new Blob([originalBlob]));
+        // Detect content type from response or default to jpeg
+        const contentType = response.headers.get("content-type") || "image/jpeg";
+        const bitmap = await createImageBitmap(new Blob([originalBlob], { type: contentType }));
         
         // Calculate new dimensions (max 400px)
         const maxDim = 400;
