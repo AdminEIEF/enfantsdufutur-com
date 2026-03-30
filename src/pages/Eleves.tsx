@@ -157,24 +157,7 @@ export default function Eleves() {
     return url;
   }, []);
 
-  // Auto-fix broken public URLs on load
-  useEffect(() => {
-    if (!eleves) return;
-    const broken = (eleves as any[]).filter((e: any) => {
-      const url = e.photo_thumbnail_url || e.photo_url;
-      return url && url.includes('/object/public/photos/') && !fixedUrls[e.id];
-    });
-    if (broken.length === 0) return;
-    broken.forEach(async (e: any) => {
-      const url = e.photo_thumbnail_url || e.photo_url;
-      const fixed = await getFixedPhotoUrl(url);
-      if (fixed !== url) {
-        setFixedUrls(prev => ({ ...prev, [e.id]: fixed }));
-        // Also fix in DB
-        await supabase.from('eleves').update({ photo_url: fixed, photo_thumbnail_url: fixed }).eq('id', e.id);
-      }
-    });
-  }, [eleves, fixedUrls, getFixedPhotoUrl]);
+  // useEffect for fixing URLs is placed after eleves query below
   const { toast } = useToast();
   const qc = useQueryClient();
   const { data: schoolConfig } = useSchoolConfig();
