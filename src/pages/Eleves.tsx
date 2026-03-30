@@ -868,6 +868,7 @@ export default function Eleves() {
                     }}
                   />
                 </TableHead>
+                <TableHead className="w-10">Photo</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Matricule</TableHead><TableHead>Nom</TableHead><TableHead>Prénom</TableHead>
                 <TableHead>Sexe</TableHead><TableHead>Cycle</TableHead><TableHead>Classe</TableHead>
