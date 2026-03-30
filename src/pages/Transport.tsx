@@ -37,6 +37,8 @@ export default function Transport() {
   const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [filterZone, setFilterZone] = useState('all');
+  const [filterClasseZone, setFilterClasseZone] = useState('all');
+  const [expandedClasse, setExpandedClasse] = useState<string | null>(null);
   const [selectedZone, setSelectedZone] = useState<any>(null);
 
   // Zones
