@@ -445,7 +445,7 @@ export default function Landing() {
             </div>
           </div>
           <div className="border-t border-background/10 mt-12 pt-8 text-center text-xs text-background/40">
-            © {new Date().getFullYear()} IdrissdevTech — Tous droits réservés. Propulsé par Reve Jeune Prestation Sarlu (RJP SARLU).
+            © {new Date().getFullYear()} — Tous droits réservés.
           </div>
         </div>
       </footer>
