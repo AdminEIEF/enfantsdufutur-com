@@ -124,11 +124,18 @@ export default function Transport() {
       imageTimeout: 15000,
       logging: false,
     });
-    const link = document.createElement('a');
-    link.download = `carte_transport_${selectedStudent?.matricule || 'eleve'}.png`;
-    link.href = canvas.toDataURL('image/png', 1.0);
-    link.click();
-    toast({ title: 'Carte exportée en haute qualité' });
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `carte_transport_${selectedStudent?.matricule || 'eleve'}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast({ title: 'Carte exportée en haute qualité' });
+    }, 'image/png');
   };
 
   // ─── Computed ─────────────────────────────────────────
