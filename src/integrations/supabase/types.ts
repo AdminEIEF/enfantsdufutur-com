@@ -2657,6 +2657,7 @@ export type Database = {
       }
       pre_inscriptions: {
         Row: {
+          classe_id: string | null
           converted_eleve_id: string | null
           converted_famille_id: string | null
           created_at: string
@@ -2680,6 +2681,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          classe_id?: string | null
           converted_eleve_id?: string | null
           converted_famille_id?: string | null
           created_at?: string
@@ -2703,6 +2705,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          classe_id?: string | null
           converted_eleve_id?: string | null
           converted_famille_id?: string | null
           created_at?: string
@@ -2726,6 +2729,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "pre_inscriptions_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pre_inscriptions_converted_eleve_id_fkey"
             columns: ["converted_eleve_id"]
