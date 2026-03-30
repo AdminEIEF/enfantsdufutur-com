@@ -329,7 +329,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 </svg>
 
                 {/* Map watermark */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-[0.06] pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center opacity-[0.10] pointer-events-none">
                   <img src={transportMapWatermark} alt="" className="w-[85%] h-[85%] object-contain" crossOrigin="anonymous" />
                 </div>
 
