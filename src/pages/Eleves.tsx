@@ -1553,35 +1553,110 @@ export default function Eleves() {
       )}
 
       {/* Photo Zoom Dialog */}
-      <Dialog open={!!zoomPhotoUrl} onOpenChange={() => { setZoomPhotoUrl(null); setCropMode(false); }}>
-        <DialogContent className="max-w-2xl flex flex-col items-center justify-center p-4">
+      <Dialog open={!!zoomPhotoUrl} onOpenChange={() => { setZoomPhotoUrl(null); setCropMode(false); setPhotoBrightness(100); setPhotoContrast(100); setPhotoBgColor(null); }}>
+        <DialogContent className="max-w-3xl flex flex-col items-center justify-center p-4 max-h-[95vh] overflow-y-auto">
           <DialogHeader className="sr-only">
             <DialogTitle>Photo élève</DialogTitle>
           </DialogHeader>
           {zoomPhotoUrl && !cropMode && (
             <div className="flex flex-col items-center gap-3">
-              <img
-                src={zoomPhotoUrl}
-                alt="Photo élève"
-                className="max-h-[70vh] max-w-full rounded-lg object-contain"
-              />
-              <Button variant="outline" size="sm" onClick={() => setCropMode(true)}>
-                <Edit className="w-4 h-4 mr-2" /> Recadrer la photo
-              </Button>
+              <div className="rounded-lg overflow-hidden" style={{ backgroundColor: photoBgColor || 'transparent' }}>
+                <img
+                  src={zoomPhotoUrl}
+                  alt="Photo élève"
+                  className="max-h-[55vh] max-w-full object-contain"
+                  style={{ filter: `brightness(${photoBrightness}%) contrast(${photoContrast}%)` }}
+                />
+              </div>
+              {/* Contrôles de clarté */}
+              <div className="w-full max-w-sm space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs w-20 shrink-0">Luminosité</Label>
+                  <input type="range" min={50} max={200} value={photoBrightness} onChange={e => setPhotoBrightness(Number(e.target.value))} className="flex-1 accent-primary" />
+                  <span className="text-xs w-10 text-right">{photoBrightness}%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs w-20 shrink-0">Contraste</Label>
+                  <input type="range" min={50} max={200} value={photoContrast} onChange={e => setPhotoContrast(Number(e.target.value))} className="flex-1 accent-primary" />
+                  <span className="text-xs w-10 text-right">{photoContrast}%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs w-20 shrink-0">Fond</Label>
+                  <div className="flex gap-1.5">
+                    {[null, '#FFFFFF', '#E8E8E8', '#D4E6F1', '#FADBD8', '#D5F5E3'].map(c => (
+                      <button key={c || 'none'} onClick={() => setPhotoBgColor(c)} className={`w-6 h-6 rounded-full border-2 transition-all ${photoBgColor === c ? 'border-primary ring-2 ring-primary/30' : 'border-muted'}`}
+                        style={{ backgroundColor: c || 'transparent', backgroundImage: !c ? 'linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%)' : undefined, backgroundSize: !c ? '8px 8px' : undefined, backgroundPosition: !c ? '0 0, 4px 4px' : undefined }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setPhotoBrightness(100); setPhotoContrast(100); setPhotoBgColor(null); }}>
+                  Réinitialiser
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => { setCropMode(true); setCrop({x:0,y:0}); setZoom(1); }}>
+                  <Edit className="w-4 h-4 mr-2" /> Recadrer
+                </Button>
+                {(photoBrightness !== 100 || photoContrast !== 100 || photoBgColor) && (
+                  <Button size="sm" disabled={savingCrop} onClick={async () => {
+                    if (!zoomPhotoUrl || !zoomEleveId) return;
+                    setSavingCrop(true);
+                    try {
+                      const img = new Image();
+                      img.crossOrigin = 'anonymous';
+                      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = zoomPhotoUrl; });
+                      const canvas = document.createElement('canvas');
+                      canvas.width = img.naturalWidth;
+                      canvas.height = img.naturalHeight;
+                      const ctx = canvas.getContext('2d')!;
+                      if (photoBgColor) { ctx.fillStyle = photoBgColor; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+                      ctx.filter = `brightness(${photoBrightness}%) contrast(${photoContrast}%)`;
+                      ctx.drawImage(img, 0, 0);
+                      const blob = await new Promise<Blob>(r => canvas.toBlob(b => r(b!), 'image/jpeg', 0.85));
+                      const path = `eleves/${zoomEleveId}_edit_${Date.now()}.jpg`;
+                      const { error: upErr } = await supabase.storage.from('photos').upload(path, blob, { upsert: true });
+                      if (upErr) throw upErr;
+                      const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
+                      await supabase.from('eleves').update({ photo_url: urlData.publicUrl, photo_thumbnail_url: urlData.publicUrl }).eq('id', zoomEleveId);
+                      toast({ title: 'Photo traitée et sauvegardée' });
+                      setZoomPhotoUrl(urlData.publicUrl);
+                      setPhotoBrightness(100); setPhotoContrast(100); setPhotoBgColor(null);
+                      qc.invalidateQueries({ queryKey: ['eleves'] });
+                    } catch (err: any) {
+                      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+                    } finally { setSavingCrop(false); }
+                  }}>
+                    {savingCrop ? 'Sauvegarde...' : 'Appliquer & Sauvegarder'}
+                  </Button>
+                )}
+              </div>
             </div>
           )}
           {zoomPhotoUrl && cropMode && (
             <div className="flex flex-col items-center gap-3 w-full">
-              <div className="relative w-full" style={{ height: '60vh' }}>
+              <div className="flex gap-2 mb-1">
+                <Button size="sm" variant={cropAspect === 1 ? 'default' : 'outline'} onClick={() => setCropAspect(1)}>1:1</Button>
+                <Button size="sm" variant={cropAspect === 3/4 ? 'default' : 'outline'} onClick={() => setCropAspect(3/4)}>3:4</Button>
+                <Button size="sm" variant={cropAspect === 4/3 ? 'default' : 'outline'} onClick={() => setCropAspect(4/3)}>4:3</Button>
+                <Button size="sm" variant={cropAspect === 0 ? 'default' : 'outline'} onClick={() => setCropAspect(0)}>Libre</Button>
+              </div>
+              <div className="relative w-full" style={{ height: '55vh' }}>
                 <Cropper
                   image={zoomPhotoUrl}
                   crop={crop}
                   zoom={zoom}
-                  aspect={1}
+                  aspect={cropAspect || undefined}
                   onCropChange={setCrop}
                   onZoomChange={setZoom}
                   onCropComplete={(_: any, cap: any) => setCroppedAreaPixels(cap)}
+                  restrictPosition={false}
+                  style={{ containerStyle: { borderRadius: '0.5rem' } }}
                 />
+              </div>
+              <div className="flex items-center gap-2 w-full max-w-xs">
+                <Label className="text-xs shrink-0">Zoom</Label>
+                <input type="range" min={1} max={5} step={0.1} value={zoom} onChange={e => setZoom(Number(e.target.value))} className="flex-1 accent-primary" />
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setCropMode(false)}>Annuler</Button>
@@ -1596,6 +1671,8 @@ export default function Eleves() {
                     canvas.width = croppedAreaPixels.width;
                     canvas.height = croppedAreaPixels.height;
                     const ctx = canvas.getContext('2d')!;
+                    if (photoBgColor) { ctx.fillStyle = photoBgColor; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+                    ctx.filter = `brightness(${photoBrightness}%) contrast(${photoContrast}%)`;
                     ctx.drawImage(img, croppedAreaPixels.x, croppedAreaPixels.y, croppedAreaPixels.width, croppedAreaPixels.height, 0, 0, croppedAreaPixels.width, croppedAreaPixels.height);
                     const blob = await new Promise<Blob>((res) => canvas.toBlob(b => res(b!), 'image/jpeg', 0.85));
                     const path = `eleves/${zoomEleveId}_crop_${Date.now()}.jpg`;
