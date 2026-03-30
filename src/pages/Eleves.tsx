@@ -501,15 +501,15 @@ export default function Eleves() {
   const handleSavePhotoOnly = async (eleve: any) => {
     if (!photoPreview) return;
     setUploadingPhoto(true);
-    const url = await uploadElevePhoto(eleve.id);
-    if (url) {
-      const { error } = await supabase.from('eleves').update({ photo_url: url } as any).eq('id', eleve.id);
+    const result = await uploadElevePhoto(eleve.id);
+    if (result) {
+      const { error } = await supabase.from('eleves').update({ photo_url: result.photoUrl, photo_thumbnail_url: result.thumbUrl } as any).eq('id', eleve.id);
       if (error) {
         toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
       } else {
         toast({ title: 'Photo mise à jour' });
         qc.invalidateQueries({ queryKey: ['eleves-full'] });
-        setSelected({ ...eleve, photo_url: url });
+        setSelected({ ...eleve, photo_url: result.photoUrl, photo_thumbnail_url: result.thumbUrl });
       }
     }
     setUploadingPhoto(false);
