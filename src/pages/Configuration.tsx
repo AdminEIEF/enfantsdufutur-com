@@ -1514,6 +1514,60 @@ function EcoleTab() {
   );
 }
 
+// ─── Theme Tab ───────────────────────────────────────────
+function ThemeTab() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
+  const themes = [
+    { value: 'light', label: 'Clair', icon: Sun, desc: 'Interface lumineuse et nette', gradient: 'from-amber-100 to-orange-100', border: 'border-amber-300', iconColor: 'text-amber-500' },
+    { value: 'dark', label: 'Sombre', icon: Moon, desc: 'Repose les yeux, idéal le soir', gradient: 'from-slate-700 to-slate-900', border: 'border-slate-500', iconColor: 'text-blue-300' },
+    { value: 'system', label: 'Système', icon: Monitor, desc: 'Suit le thème de votre appareil', gradient: 'from-violet-100 to-blue-100', border: 'border-violet-300', iconColor: 'text-violet-500' },
+  ];
+
+  return (
+    <Card className="mt-4">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Palette className="h-5 w-5 text-primary" />
+          Apparence
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground mb-6">Choisissez le thème d'affichage de l'interface.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {themes.map((t) => {
+            const isActive = theme === t.value;
+            return (
+              <button
+                key={t.value}
+                onClick={() => setTheme(t.value)}
+                className={`relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
+                  isActive
+                    ? `${t.border} ring-2 ring-primary/30 shadow-lg scale-[1.02]`
+                    : 'border-border hover:border-primary/40 hover:shadow-md'
+                }`}
+              >
+                <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${t.gradient} flex items-center justify-center`}>
+                  <t.icon className={`h-7 w-7 ${t.iconColor}`} />
+                </div>
+                <span className="font-semibold text-sm">{t.label}</span>
+                <span className="text-xs text-muted-foreground text-center">{t.desc}</span>
+                {isActive && (
+                  <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px]">Actif</Badge>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────
 import AdminUserManagement from '@/components/AdminUserManagement';
 import ClasseMatieresTab from '@/components/ClasseMatieresTab';
