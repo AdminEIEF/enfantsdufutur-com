@@ -683,9 +683,9 @@ export default function Transport() {
                           <p style={{ fontSize: 10, fontWeight: 600, color: '#374151', fontFamily: 'monospace' }}>{selectedStudent.matricule || '—'}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 rounded-md px-2 py-1 mt-1" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', maxWidth: '100%', overflow: 'hidden' }}>
-                        <MapPin style={{ width: 10, height: 10, color: '#3B82F6', flexShrink: 0 }} />
-                        <span style={{ fontSize: 9, fontWeight: 600, color: '#1E40AF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>LIGNE : {(selectedStudent.zones_transport as any)?.nom || '—'}</span>
+                      <div className="flex items-center gap-1 rounded px-1.5 py-0.5 mt-1" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', maxWidth: '100%', overflow: 'hidden' }}>
+                        <MapPin style={{ width: 8, height: 8, color: '#3B82F6', flexShrink: 0 }} />
+                        <span style={{ fontSize: 8, fontWeight: 600, color: '#1E40AF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>LIGNE : {(selectedStudent.zones_transport as any)?.nom || '—'}</span>
                       </div>
                       <div className="mt-1">
                         {selectedStudent.recharge ? (
