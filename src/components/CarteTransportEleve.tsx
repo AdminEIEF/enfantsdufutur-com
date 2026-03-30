@@ -467,7 +467,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 {/* Footer */}
                 <div className="absolute bottom-1.5 left-4 right-4 flex justify-between items-center z-10">
                   <p style={{ fontSize: 7, color: '#111827', fontWeight: 700 }}>
-                    {schoolConfig?.adresse || schoolConfig?.ville || 'Conakry, Guinée'}
+                    {schoolConfig?.ville || 'Conakry, Guinée'}
                   </p>
                   <p style={{ fontSize: 6, color: '#111827', fontWeight: 600 }}>
                     Année scolaire 2025-2026
