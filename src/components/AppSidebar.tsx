@@ -1,3 +1,4 @@
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import {
   GraduationCap, UsersRound, UserRoundPlus, BookOpenText, Calculator, TriangleAlert,
   Cog, BellRing, QrCode, LibraryBig, ChartColumnStacked,
@@ -16,6 +17,66 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
+// ─── Sidebar theme CSS vars ─────────────────────────────
+const SIDEBAR_THEME_VARS: Record<string, Record<string, string>> = {
+  default: {},
+  ocean: {
+    '--sidebar-background': '210 50% 15%',
+    '--sidebar-foreground': '200 20% 92%',
+    '--sidebar-primary': '190 80% 50%',
+    '--sidebar-accent': '200 40% 22%',
+    '--sidebar-accent-foreground': '195 30% 95%',
+    '--sidebar-border': '210 35% 22%',
+  },
+  forest: {
+    '--sidebar-background': '160 30% 12%',
+    '--sidebar-foreground': '150 20% 92%',
+    '--sidebar-primary': '162 63% 50%',
+    '--sidebar-accent': '155 25% 18%',
+    '--sidebar-accent-foreground': '150 30% 95%',
+    '--sidebar-border': '160 20% 20%',
+  },
+  purple: {
+    '--sidebar-background': '270 30% 15%',
+    '--sidebar-foreground': '265 20% 92%',
+    '--sidebar-primary': '270 60% 65%',
+    '--sidebar-accent': '265 25% 22%',
+    '--sidebar-accent-foreground': '260 30% 95%',
+    '--sidebar-border': '270 20% 22%',
+  },
+  slate: {
+    '--sidebar-background': '220 10% 18%',
+    '--sidebar-foreground': '215 15% 92%',
+    '--sidebar-primary': '200 80% 55%',
+    '--sidebar-accent': '218 10% 24%',
+    '--sidebar-accent-foreground': '215 15% 95%',
+    '--sidebar-border': '220 8% 25%',
+  },
+  crimson: {
+    '--sidebar-background': '350 30% 14%',
+    '--sidebar-foreground': '345 15% 92%',
+    '--sidebar-primary': '350 70% 60%',
+    '--sidebar-accent': '345 25% 20%',
+    '--sidebar-accent-foreground': '340 20% 95%',
+    '--sidebar-border': '350 20% 22%',
+  },
+};
+
+function useLocalStorageEvent(key: string, fallback: string) {
+  const subscribe = (cb: () => void) => {
+    const handler = () => cb();
+    window.addEventListener('sidebar-theme-change', handler);
+    window.addEventListener('menu-style-change', handler);
+    window.addEventListener('storage', handler);
+    return () => {
+      window.removeEventListener('sidebar-theme-change', handler);
+      window.removeEventListener('menu-style-change', handler);
+      window.removeEventListener('storage', handler);
+    };
+  };
+  return useSyncExternalStore(subscribe, () => localStorage.getItem(key) || fallback);
+}
 
 const navSections = [
   {
