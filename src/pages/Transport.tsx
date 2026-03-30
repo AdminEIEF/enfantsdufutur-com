@@ -11,6 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Bus, MapPin, Users, Search, Download, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon, Settings, User, Phone, Navigation2, GraduationCap, Printer, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { QRCodeCanvas } from 'qrcode.react';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
+import html2canvas from 'html2canvas';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { exportToExcel } from '@/lib/excelUtils';
 import { useToast } from '@/hooks/use-toast';
