@@ -1480,7 +1480,7 @@ export default function Personnel() {
                 {/* Photo */}
                 <div className="flex items-center gap-3">
                   {selectedEmp.photo_url ? (
-                    <img src={selectedEmp.photo_url} alt="Photo" className="w-16 h-16 rounded-full object-cover border" />
+                    <img src={selectedEmp.photo_url} alt="Photo" loading="lazy" decoding="async" className="w-16 h-16 rounded-full object-cover border" />
                   ) : (
                     <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-lg font-bold text-muted-foreground">
                       {selectedEmp.prenom?.[0]}{selectedEmp.nom?.[0]}

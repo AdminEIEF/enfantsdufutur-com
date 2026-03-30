@@ -44,7 +44,7 @@ function HonneurCard({ eleve, rank, logoUrl, periodeName, schoolConfig }: {
       <CardContent className="flex flex-col items-center pt-6 pb-4 px-4">
         <div className={`w-20 h-20 rounded-full overflow-hidden mb-3 border-[3px] ${isFirst ? 'border-[hsl(38,92%,50%)] shadow-[0_0_16px_hsl(38,92%,50%,0.3)]' : 'border-primary/30'} bg-muted flex items-center justify-center`}>
           {eleve.photo_url ? (
-            <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} className="w-full h-full object-cover" />
+            <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
           ) : (
             <span className="text-2xl font-bold text-muted-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               {eleve.prenom[0]}{eleve.nom[0]}

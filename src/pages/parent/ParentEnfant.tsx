@@ -87,7 +87,7 @@ export default function ParentEnfant() {
           </Button>
           <div className="flex items-center gap-3 flex-1">
             {enfant.photo_url ? (
-              <img src={enfant.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+              <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-9 h-9 rounded-full object-cover" />
             ) : (
               <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
                 {enfant.prenom[0]}{enfant.nom[0]}
