@@ -346,20 +346,20 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 </div>
 
                 {/* Header */}
-                <div className="flex items-center gap-2 px-4 pt-3 pb-1 relative z-10">
+                <div className="flex items-center justify-center gap-2 px-4 pt-3 pb-1 relative z-10">
                   {schoolConfig?.logo_url ? (
                     <img
                       src={schoolConfig.logo_url}
                       alt="Logo"
-                      className="h-9 w-9 rounded-full object-cover"
+                      className="h-10 w-10 rounded-full object-cover"
                       crossOrigin="anonymous"
                     />
                   ) : (
-                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Bus className="h-4 w-4 text-primary" />
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Bus className="h-5 w-5 text-primary" />
                     </div>
                   )}
-                  <p style={{ fontSize: 11, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2 }}>
+                  <p style={{ fontSize: 13, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2, textAlign: 'center' }}>
                     {schoolConfig?.nom || 'École'}
                   </p>
                 </div>

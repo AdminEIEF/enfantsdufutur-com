@@ -604,13 +604,13 @@ export default function Transport() {
                       <circle cx="95" cy="70" r="10" fill="#374151" /><circle cx="95" cy="70" r="5" fill="#9CA3AF" />
                     </svg>
                   </div>
-                   <div className="flex items-center gap-2 px-4 pt-3 pb-1 relative z-10">
+                   <div className="flex items-center justify-center gap-2 px-4 pt-3 pb-1 relative z-10">
                      {schoolConfig?.logo_url ? (
-                       <img src={schoolConfig.logo_url} alt="Logo" className="h-9 w-9 rounded-full object-cover" crossOrigin="anonymous" />
+                       <img src={schoolConfig.logo_url} alt="Logo" className="h-10 w-10 rounded-full object-cover" crossOrigin="anonymous" />
                      ) : (
-                       <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center"><Bus className="h-4 w-4 text-primary" /></div>
+                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center"><Bus className="h-5 w-5 text-primary" /></div>
                      )}
-                     <p style={{ fontSize: 11, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2 }}>{schoolConfig?.nom || 'École'}</p>
+                     <p style={{ fontSize: 13, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2, textAlign: 'center' }}>{schoolConfig?.nom || 'École'}</p>
                    </div>
                   <div className="flex gap-3 px-4 pt-2 relative z-10" style={{ height: 140 }}>
                     <div className="flex-shrink-0 rounded-lg overflow-hidden bg-muted border" style={{ width: 72, height: 90, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
