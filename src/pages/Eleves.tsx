@@ -135,6 +135,10 @@ export default function Eleves() {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const [savingCrop, setSavingCrop] = useState(false);
+  const [photoBrightness, setPhotoBrightness] = useState(100);
+  const [photoContrast, setPhotoContrast] = useState(100);
+  const [photoBgColor, setPhotoBgColor] = useState<string | null>(null);
+  const [cropAspect, setCropAspect] = useState<number>(1);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const qc = useQueryClient();
