@@ -191,7 +191,7 @@ export default function PreInscriptionPublic() {
               </div>
               <div className="space-y-2">
                 <Label>Niveau souhaité</Label>
-                <Select value={form.niveau_id} onValueChange={v => setForm(f => ({ ...f, niveau_id: v }))}>
+                <Select value={form.niveau_id} onValueChange={v => setForm(f => ({ ...f, niveau_id: v, classe_id: '' }))}>
                   <SelectTrigger><SelectValue placeholder="Sélectionner un niveau" /></SelectTrigger>
                   <SelectContent>
                     {sortedCycles.map(([cycleId, { cycleName, niveaux: cycleNiveaux }]) => (
@@ -205,6 +205,19 @@ export default function PreInscriptionPublic() {
                   </SelectContent>
                 </Select>
               </div>
+              {form.niveau_id && classes.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Classe souhaitée</Label>
+                  <Select value={form.classe_id} onValueChange={v => setForm(f => ({ ...f, classe_id: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner une classe" /></SelectTrigger>
+                    <SelectContent>
+                      {classes.map((c: any) => (
+                        <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </CardContent>
           </Card>
 
