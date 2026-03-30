@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Bus, MapPin, Users, Search, Download, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon, Settings, User, Phone, Navigation2 } from 'lucide-react';
+import { Bus, MapPin, Users, Search, Download, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon, Settings, User, Phone, Navigation2, GraduationCap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -37,6 +37,8 @@ export default function Transport() {
   const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [filterZone, setFilterZone] = useState('all');
+  const [filterClasseZone, setFilterClasseZone] = useState('all');
+  const [expandedClasse, setExpandedClasse] = useState<string | null>(null);
   const [selectedZone, setSelectedZone] = useState<any>(null);
 
   // Zones
@@ -169,6 +171,7 @@ export default function Transport() {
           <TabsTrigger value="ponctualite" className="gap-1"><TrendingUp className="h-3.5 w-3.5" /> Ponctualité</TabsTrigger>
           <TabsTrigger value="assignation" className="gap-1"><LinkIcon className="h-3.5 w-3.5" /> Assignation</TabsTrigger>
           <TabsTrigger value="alertes" className="gap-1"><Bell className="h-3.5 w-3.5" /> Alertes</TabsTrigger>
+          <TabsTrigger value="par-classe" className="gap-1"><GraduationCap className="h-3.5 w-3.5" /> Par Classe</TabsTrigger>
           <TabsTrigger value="validation" className="gap-1"><ScanLine className="h-3.5 w-3.5" /> Scan</TabsTrigger>
           <TabsTrigger value="gestion" className="gap-1"><Settings className="h-3.5 w-3.5" /> Gestion</TabsTrigger>
         </TabsList>
@@ -406,6 +409,80 @@ export default function Transport() {
         {/* Tab: Alertes */}
         <TabsContent value="alertes" className="mt-4">
           <AlertesTransport zones={zones} />
+        </TabsContent>
+
+        {/* Tab: Par Classe */}
+        <TabsContent value="par-classe" className="space-y-4 mt-4">
+          {(() => {
+            const elevesFiltered = filterClasseZone === 'all' ? eleves : eleves.filter((e: any) => e.zone_transport_id === filterClasseZone);
+            const grouped: Record<string, { classeName: string; eleves: any[] }> = {};
+            elevesFiltered.forEach((e: any) => {
+              const cn = e.classes?.nom || 'Sans classe';
+              if (!grouped[cn]) grouped[cn] = { classeName: cn, eleves: [] };
+              grouped[cn].eleves.push(e);
+            });
+            const sorted = Object.values(grouped).sort((a, b) => a.classeName.localeCompare(b.classeName, 'fr', { numeric: true }));
+            return (
+              <>
+                <div className="flex gap-3 flex-wrap items-center">
+                  <Select value={filterClasseZone} onValueChange={setFilterClasseZone}>
+                    <SelectTrigger className="w-[220px]"><SelectValue placeholder="Filtrer par zone" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes les zones</SelectItem>
+                      {zones.map((z: any) => <SelectItem key={z.id} value={z.id}>{z.nom}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Badge variant="outline" className="text-sm gap-1.5 px-3 py-1.5">
+                    <Users className="h-3.5 w-3.5" /> {elevesFiltered.length} élève(s) — {sorted.length} classe(s)
+                  </Badge>
+                  <Button variant="outline" size="sm" className="ml-auto" onClick={() => {
+                    const rows = sorted.flatMap(g => g.eleves.map((e: any) => ({
+                      Classe: g.classeName,
+                      Matricule: e.matricule || '',
+                      Nom: e.nom,
+                      Prénom: e.prenom,
+                      Zone: (e.zones_transport as any)?.nom || '',
+                    })));
+                    exportToExcel(rows, `transport_par_classe_${new Date().toISOString().slice(0, 10)}`, 'Par Classe');
+                    toast({ title: 'Export réussi', description: `${rows.length} élève(s)` });
+                  }}>
+                    <Download className="h-4 w-4 mr-1" /> Exporter
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {sorted.map((g) => (
+                    <Card key={g.classeName} className="cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-primary/60"
+                      onClick={() => setExpandedClasse(expandedClasse === g.classeName ? null : g.classeName)}>
+                      <CardContent className="pt-4 pb-3 px-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <GraduationCap className="h-4 w-4 text-primary" />
+                            <span className="font-semibold text-sm">{g.classeName}</span>
+                          </div>
+                          <Badge className="bg-primary/10 text-primary border-0 font-bold">{g.eleves.length}</Badge>
+                        </div>
+                        {expandedClasse === g.classeName && (
+                          <div className="space-y-1 mt-3 pt-3 border-t max-h-[250px] overflow-y-auto">
+                            {g.eleves.sort((a: any, b: any) => a.nom.localeCompare(b.nom)).map((e: any) => (
+                              <div key={e.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50 text-sm">
+                                <span className="font-medium">{e.prenom} {e.nom}</span>
+                                <Badge variant="outline" className="text-[10px]">{(e.zones_transport as any)?.nom || '—'}</Badge>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {sorted.length === 0 && (
+                  <Card><CardContent className="py-8 text-center text-muted-foreground">Aucun élève inscrit au transport</CardContent></Card>
+                )}
+              </>
+            );
+          })()}
         </TabsContent>
 
         {/* Tab: Validation bus */}
