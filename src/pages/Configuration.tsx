@@ -1515,10 +1515,40 @@ function EcoleTab() {
 }
 
 // ─── Theme Tab ───────────────────────────────────────────
+const SIDEBAR_THEMES = [
+  { id: 'default', label: 'Classique', desc: 'Bleu foncé professionnel', bg: 'bg-[hsl(220,25%,12%)]', accent: 'bg-[hsl(38,92%,50%)]', preview: 'from-[hsl(220,25%,12%)] to-[hsl(220,25%,18%)]' },
+  { id: 'ocean', label: 'Océan', desc: 'Bleu marine & cyan', bg: 'bg-[hsl(210,50%,15%)]', accent: 'bg-cyan-400', preview: 'from-[hsl(210,50%,15%)] to-[hsl(200,40%,25%)]' },
+  { id: 'forest', label: 'Forêt', desc: 'Vert émeraude naturel', bg: 'bg-[hsl(160,30%,12%)]', accent: 'bg-emerald-400', preview: 'from-[hsl(160,30%,12%)] to-[hsl(150,25%,20%)]' },
+  { id: 'purple', label: 'Violet', desc: 'Violet royal élégant', bg: 'bg-[hsl(270,30%,15%)]', accent: 'bg-violet-400', preview: 'from-[hsl(270,30%,15%)] to-[hsl(260,25%,22%)]' },
+  { id: 'slate', label: 'Ardoise', desc: 'Gris moderne minimaliste', bg: 'bg-[hsl(220,10%,18%)]', accent: 'bg-sky-400', preview: 'from-[hsl(220,10%,18%)] to-[hsl(220,8%,25%)]' },
+  { id: 'crimson', label: 'Bordeaux', desc: 'Rouge sombre prestigieux', bg: 'bg-[hsl(350,30%,14%)]', accent: 'bg-rose-400', preview: 'from-[hsl(350,30%,14%)] to-[hsl(340,25%,20%)]' },
+];
+
+const MENU_STYLES = [
+  { id: 'collapsible', label: 'Pliable', desc: 'Sections dépliables avec chevrons', icon: '📂' },
+  { id: 'flat', label: 'Liste plate', desc: 'Tous les liens visibles directement', icon: '📋' },
+  { id: 'compact', label: 'Compact', desc: 'Éléments réduits, plus dense', icon: '📐' },
+];
+
 function ThemeTab() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [sidebarTheme, setSidebarTheme] = useState(() => localStorage.getItem('eief-sidebar-theme') || 'default');
+  const [menuStyle, setMenuStyle] = useState(() => localStorage.getItem('eief-menu-style') || 'collapsible');
+
   useEffect(() => setMounted(true), []);
+
+  const handleSidebarTheme = (id: string) => {
+    setSidebarTheme(id);
+    localStorage.setItem('eief-sidebar-theme', id);
+    window.dispatchEvent(new Event('sidebar-theme-change'));
+  };
+
+  const handleMenuStyle = (id: string) => {
+    setMenuStyle(id);
+    localStorage.setItem('eief-menu-style', id);
+    window.dispatchEvent(new Event('menu-style-change'));
+  };
 
   if (!mounted) return null;
 
@@ -1529,42 +1559,119 @@ function ThemeTab() {
   ];
 
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Palette className="h-5 w-5 text-primary" />
-          Apparence
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground mb-6">Choisissez le thème d'affichage de l'interface.</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {themes.map((t) => {
-            const isActive = theme === t.value;
-            return (
-              <button
-                key={t.value}
-                onClick={() => setTheme(t.value)}
-                className={`relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
-                  isActive
-                    ? `${t.border} ring-2 ring-primary/30 shadow-lg scale-[1.02]`
-                    : 'border-border hover:border-primary/40 hover:shadow-md'
-                }`}
-              >
-                <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${t.gradient} flex items-center justify-center`}>
-                  <t.icon className={`h-7 w-7 ${t.iconColor}`} />
-                </div>
-                <span className="font-semibold text-sm">{t.label}</span>
-                <span className="text-xs text-muted-foreground text-center">{t.desc}</span>
-                {isActive && (
-                  <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px]">Actif</Badge>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-6 mt-4">
+      {/* Thème général */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5 text-primary" />
+            Thème général
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">Mode d'affichage de l'interface.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {themes.map((t) => {
+              const isActive = theme === t.value;
+              return (
+                <button
+                  key={t.value}
+                  onClick={() => setTheme(t.value)}
+                  className={`relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
+                    isActive
+                      ? `${t.border} ring-2 ring-primary/30 shadow-lg scale-[1.02]`
+                      : 'border-border hover:border-primary/40 hover:shadow-md'
+                  }`}
+                >
+                  <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${t.gradient} flex items-center justify-center`}>
+                    <t.icon className={`h-7 w-7 ${t.iconColor}`} />
+                  </div>
+                  <span className="font-semibold text-sm">{t.label}</span>
+                  <span className="text-xs text-muted-foreground text-center">{t.desc}</span>
+                  {isActive && (
+                    <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px]">Actif</Badge>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Thème sidebar */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sun className="h-5 w-5 text-primary" />
+            Couleur de la barre latérale
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">Personnalisez la couleur du menu latéral.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            {SIDEBAR_THEMES.map((st) => {
+              const isActive = sidebarTheme === st.id;
+              return (
+                <button
+                  key={st.id}
+                  onClick={() => handleSidebarTheme(st.id)}
+                  className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
+                    isActive ? 'border-primary ring-2 ring-primary/30 shadow-lg scale-[1.03]' : 'border-border hover:border-primary/40 hover:shadow-md'
+                  }`}
+                >
+                  <div className={`w-10 h-16 rounded-lg bg-gradient-to-b ${st.preview} relative overflow-hidden`}>
+                    <div className={`absolute bottom-1 left-1 right-1 h-1.5 rounded-full ${st.accent}`} />
+                    <div className="absolute top-2 left-1.5 right-1.5 space-y-1">
+                      <div className="h-1 bg-white/20 rounded" />
+                      <div className="h-1 bg-white/15 rounded w-3/4" />
+                      <div className="h-1 bg-white/10 rounded w-1/2" />
+                    </div>
+                  </div>
+                  <span className="font-medium text-xs">{st.label}</span>
+                  {isActive && (
+                    <Badge className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[9px] px-1.5">✓</Badge>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Style du menu */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Monitor className="h-5 w-5 text-primary" />
+            Style du menu
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">Choisissez la disposition des éléments du menu.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {MENU_STYLES.map((ms) => {
+              const isActive = menuStyle === ms.id;
+              return (
+                <button
+                  key={ms.id}
+                  onClick={() => handleMenuStyle(ms.id)}
+                  className={`relative flex flex-col items-center gap-3 p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
+                    isActive ? 'border-primary ring-2 ring-primary/30 shadow-lg scale-[1.02]' : 'border-border hover:border-primary/40 hover:shadow-md'
+                  }`}
+                >
+                  <span className="text-3xl">{ms.icon}</span>
+                  <span className="font-semibold text-sm">{ms.label}</span>
+                  <span className="text-xs text-muted-foreground text-center">{ms.desc}</span>
+                  {isActive && (
+                    <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px]">Actif</Badge>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
