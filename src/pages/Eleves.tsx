@@ -128,6 +128,12 @@ export default function Eleves() {
   const [generatingMatricules, setGeneratingMatricules] = useState(false);
   const [compressingPhotos, setCompressingPhotos] = useState(false);
   const [zoomPhotoUrl, setZoomPhotoUrl] = useState<string | null>(null);
+  const [zoomEleveId, setZoomEleveId] = useState<string | null>(null);
+  const [cropMode, setCropMode] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [savingCrop, setSavingCrop] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const qc = useQueryClient();
