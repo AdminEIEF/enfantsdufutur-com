@@ -125,6 +125,35 @@ export default function Transport() {
         backgroundColor: '#FFFFFF',
         imageTimeout: 15000,
         logging: false,
+        onclone: (clonedDoc) => {
+          clonedDoc.querySelectorAll('svg path').forEach((node) => {
+            const path = node as SVGPathElement;
+            const fill = path.getAttribute('fill')?.toLowerCase();
+            const opacity = path.getAttribute('opacity');
+
+            if (fill === '#f87171') {
+              path.style.fill = '#EF4444';
+            } else if (fill === '#4ade80') {
+              path.style.fill = '#22C55E';
+            } else if (fill) {
+              path.style.fill = fill;
+            }
+
+            if (opacity) {
+              path.style.opacity = opacity;
+            }
+          });
+
+          clonedDoc.querySelectorAll('div').forEach((node) => {
+            if (node.textContent?.includes('● ACTIVE')) {
+              const badge = node as HTMLElement;
+              badge.style.backgroundColor = '#16A34A';
+              badge.style.color = '#FFFFFF';
+              badge.style.borderColor = '#16A34A';
+              badge.style.opacity = '1';
+            }
+          });
+        },
       });
 
       canvas.toBlob((blob) => {
@@ -143,11 +172,8 @@ export default function Transport() {
         link.click();
         link.remove();
 
-        // Fallback navigateur: ouvre l'image si le téléchargement est bloqué.
         const fallbackWin = window.open(url, '_blank', 'noopener,noreferrer');
-        if (fallbackWin) {
-          fallbackWin.focus();
-        }
+        if (fallbackWin) fallbackWin.focus();
 
         setTimeout(() => {
           URL.revokeObjectURL(url);
