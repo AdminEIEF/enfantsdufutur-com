@@ -346,18 +346,30 @@ export default function Eleves() {
           const res = await fetch(eleve.photo_url!);
           if (!res.ok) { failed++; continue; }
           const originalBlob = await res.blob();
-          if (originalBlob.size < 100_000) { skipped++; continue; }
+          if (originalBlob.size < 50_000) { skipped++; continue; }
 
-          const compressedBlob = await compressImage(originalBlob, 400, 0.7);
+          // Main photo: 300px, 60%
+          const compressedBlob = await compressImage(originalBlob, 300, 0.6);
           if (compressedBlob.size >= originalBlob.size) { skipped++; continue; }
 
-          const path = `eleves/${eleve.id}/photo_opt_${Date.now()}.jpg`;
-          const { error: upErr } = await supabase.storage.from('photos').upload(path, compressedBlob, { contentType: 'image/jpeg', upsert: true });
+          const ts = Date.now();
+          const mainPath = `eleves/${eleve.id}/photo_opt_${ts}.jpg`;
+          const { error: upErr } = await supabase.storage.from('photos').upload(mainPath, compressedBlob, { contentType: 'image/jpeg', upsert: true });
           if (upErr) { failed++; continue; }
 
-          const { data: signedData } = await supabase.storage.from('photos').createSignedUrl(path, 31536000);
-          if (signedData?.signedUrl) {
-            await supabase.from('eleves').update({ photo_url: signedData.signedUrl } as any).eq('id', eleve.id);
+          // Thumbnail: 100px, 50%
+          const thumbBlob = await compressImage(originalBlob, 100, 0.5);
+          const thumbPath = `eleves/${eleve.id}/thumb_${ts}.jpg`;
+          await supabase.storage.from('photos').upload(thumbPath, thumbBlob, { contentType: 'image/jpeg', upsert: true });
+
+          const { data: mainSigned } = await supabase.storage.from('photos').createSignedUrl(mainPath, 31536000);
+          const { data: thumbSigned } = await supabase.storage.from('photos').createSignedUrl(thumbPath, 31536000);
+          
+          if (mainSigned?.signedUrl) {
+            await supabase.from('eleves').update({ 
+              photo_url: mainSigned.signedUrl,
+              photo_thumbnail_url: thumbSigned?.signedUrl || null,
+            } as any).eq('id', eleve.id);
             totalSaved += originalBlob.size - compressedBlob.size;
             compressed++;
           } else { failed++; }
@@ -366,7 +378,7 @@ export default function Eleves() {
 
       toast({
         title: '✅ Compression terminée',
-        description: `${compressed} photo(s) compressée(s), ${skipped} déjà optimisée(s), ${failed} échouée(s). ${Math.round(totalSaved / 1024)} KB économisés.`,
+        description: `${compressed} photo(s) compressée(s) + miniatures, ${skipped} déjà optimisée(s), ${failed} échouée(s). ${Math.round(totalSaved / 1024)} KB économisés.`,
       });
       qc.invalidateQueries({ queryKey: ['eleves-full'] });
     } catch (err: any) {
