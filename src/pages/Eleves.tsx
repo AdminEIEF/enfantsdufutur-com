@@ -1158,7 +1158,6 @@ export default function Eleves() {
                       {selected.familles.telephone_mere && <p>Tél. mère: {selected.familles.telephone_mere}</p>}
                       {selected.familles.email_parent && <p>Email: {selected.familles.email_parent}</p>}
                       {selected.familles.adresse && <p>Adresse: {selected.familles.adresse}</p>}
-                      {selected.familles.code_acces && <p>Code accès parent: <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{selected.familles.code_acces}</code></p>}
                     </div>
                   </div>
                 ) : (
