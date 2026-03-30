@@ -465,7 +465,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                     {schoolConfig?.ville || 'Conakry, Guinée'}
                   </p>
                   <p style={{ fontSize: 6, color: '#111827', fontWeight: 600 }}>
-                    Année scolaire 2025-2026
+                    Carte permanente • Rechargeable
                   </p>
                 </div>
               </div>
