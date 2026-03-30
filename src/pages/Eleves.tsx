@@ -193,6 +193,7 @@ export default function Eleves() {
     });
   }, [eleves, fixedUrls, getFixedPhotoUrl]);
 
+  const { data: cycles = [] } = useQuery({
     queryKey: ['cycles'],
     queryFn: async () => {
       const { data, error } = await supabase.from('cycles').select('*').order('ordre');
