@@ -956,7 +956,7 @@ export default function Eleves() {
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     {(photoPreview || selected.photo_url) ? (
-                      <img src={photoPreview || selected.photo_url} alt={selected.prenom} className="w-20 h-20 rounded-lg object-cover border-2 border-primary" />
+                      <img src={photoPreview || selected.photo_url} alt={selected.prenom} loading="lazy" decoding="async" className="w-20 h-20 rounded-lg object-cover border-2 border-primary" />
                     ) : (
                       <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center text-3xl border-2 border-dashed border-muted-foreground/30">👤</div>
                     )}
@@ -1179,7 +1179,7 @@ export default function Eleves() {
               {/* Photo upload in edit */}
               <div className="flex items-center gap-3">
                 {(photoPreview || editing.photo_url) ? (
-                  <img src={photoPreview || editing.photo_url} alt={editing.prenom} className="w-16 h-16 rounded-lg object-cover border" />
+                  <img src={photoPreview || editing.photo_url} alt={editing.prenom} loading="lazy" decoding="async" className="w-16 h-16 rounded-lg object-cover border" />
                 ) : (
                   <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center text-2xl border-2 border-dashed border-muted-foreground/30">👤</div>
                 )}
@@ -1295,7 +1295,7 @@ export default function Eleves() {
                   <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Carte Scolaire</p>
                   <p className="text-xs text-muted-foreground">{badgeEleve.classes?.niveaux?.cycles?.nom} — {badgeEleve.classes?.nom}</p>
                   {badgeEleve.photo_url && (
-                    <img src={badgeEleve.photo_url} alt={badgeEleve.prenom} className="w-20 h-20 rounded-full object-cover border-2 border-primary mx-auto" />
+                    <img src={badgeEleve.photo_url} alt={badgeEleve.prenom} loading="lazy" decoding="async" className="w-20 h-20 rounded-full object-cover border-2 border-primary mx-auto" />
                   )}
                   <div className="flex justify-center">
                     <QRCodeSVG value={buildQrData(badgeEleve)} size={150} />
@@ -1312,7 +1312,7 @@ export default function Eleves() {
                     {eleveMandataires.map((m: any) => (
                       <div key={m.id} className="flex items-center gap-2 text-sm">
                         {m.photo_url ? (
-                          <img src={m.photo_url} className="w-8 h-8 rounded-full object-cover border" alt={m.prenom} />
+                          <img src={m.photo_url} loading="lazy" decoding="async" className="w-8 h-8 rounded-full object-cover border" alt={m.prenom} />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs">👤</div>
                         )}

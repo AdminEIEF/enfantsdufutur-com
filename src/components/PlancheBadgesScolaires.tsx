@@ -171,7 +171,7 @@ export default function PlancheBadgesScolaires({ eleves, onClose, schoolName, sc
           <div className="card-body">
             <div className="photo-frame">
               {e.photo_url
-                ? <img src={e.photo_url} alt={e.prenom} />
+                ? <img src={e.photo_url} alt={e.prenom} loading="lazy" decoding="async" />
                 : <div className="photo-placeholder">👤</div>}
             </div>
             <div className="info-col">
