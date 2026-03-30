@@ -147,7 +147,7 @@ export default function Landing() {
       {/* Hero */}
       <section className="relative pt-14 sm:pt-16 overflow-hidden">
         <div className="absolute inset-0">
-          <img src={heroImage} alt="Campus de l'école" className="w-full h-full object-cover" />
+          <img src={heroImage} alt="Campus de l'école" className="w-full h-full object-cover" decoding="async" fetchPriority="high" />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/30" />
         </div>
         {/* Globe watermark - large & blurred above content */}
@@ -275,6 +275,7 @@ export default function Landing() {
                         alt={img.alt}
                         className="w-full h-48 sm:h-64 lg:h-80 object-cover transition-transform duration-700 hover:scale-110"
                         loading="lazy"
+                        decoding="async"
                       />
                     </div>
                   </div>
