@@ -1540,6 +1540,22 @@ export default function Eleves() {
           schoolLogo={schoolConfig?.logo_url}
         />
       )}
+
+      {/* Photo Zoom Dialog */}
+      <Dialog open={!!zoomPhotoUrl} onOpenChange={() => setZoomPhotoUrl(null)}>
+        <DialogContent className="max-w-2xl flex items-center justify-center p-2">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Photo élève</DialogTitle>
+          </DialogHeader>
+          {zoomPhotoUrl && (
+            <img
+              src={zoomPhotoUrl}
+              alt="Photo élève"
+              className="max-h-[80vh] max-w-full rounded-lg object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
