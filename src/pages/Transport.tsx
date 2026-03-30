@@ -613,7 +613,7 @@ export default function Transport() {
                       )}
                       <p style={{ fontSize: 9, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase' }}>{schoolConfig?.nom || 'École'}</p>
                     </div>
-                    <div className="flex items-center gap-1 px-3 py-1 rounded-full" style={{ background: '#FCD34D', fontSize: 8, fontWeight: 700, color: '#92400E' }}>
+                    <div className="flex items-center gap-1 px-3 py-1 rounded-full mx-auto" style={{ background: '#FCD34D', fontSize: 8, fontWeight: 700, color: '#92400E' }}>
                       <Bus style={{ width: 10, height: 10 }} /> TRANSPORT SCOLAIRE
                     </div>
                   </div>
