@@ -414,14 +414,14 @@ export default function Eleves() {
     reader.readAsDataURL(file);
   };
 
-  const compressImage = (blob: Blob, maxWidth = 400, quality = 0.7): Promise<Blob> => {
+  const compressImage = (blob: Blob, maxWidth = 300, quality = 0.6): Promise<Blob> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ratio = Math.min(maxWidth / img.width, maxWidth / img.height, 1);
-        canvas.width = img.width * ratio;
-        canvas.height = img.height * ratio;
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
         const ctx = canvas.getContext('2d')!;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         canvas.toBlob((b) => resolve(b || blob), 'image/jpeg', quality);
@@ -431,7 +431,9 @@ export default function Eleves() {
     });
   };
 
-  const uploadElevePhoto = async (eleveId: string): Promise<string | null> => {
+  const createThumbnail = (blob: Blob): Promise<Blob> => compressImage(blob, 100, 0.5);
+
+  const uploadElevePhoto = async (eleveId: string): Promise<{ photoUrl: string; thumbUrl: string } | null> => {
     let blob: Blob;
     if (capturedPhoto) {
       blob = await (await fetch(capturedPhoto)).blob();
@@ -440,13 +442,25 @@ export default function Eleves() {
     } else {
       return null;
     }
-    // Compress image before upload
-    blob = await compressImage(blob);
-    const path = `eleves/${eleveId}/photo_${Date.now()}.jpg`;
-    const { error } = await supabase.storage.from('photos').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+    const ts = Date.now();
+    // Compress main photo (300px, 60%)
+    const mainBlob = await compressImage(blob, 300, 0.6);
+    const mainPath = `eleves/${eleveId}/photo_${ts}.jpg`;
+    const { error } = await supabase.storage.from('photos').upload(mainPath, mainBlob, { contentType: 'image/jpeg', upsert: true });
     if (error) { toast({ title: 'Erreur upload photo', description: error.message, variant: 'destructive' }); return null; }
-    const { data: signedData } = await supabase.storage.from('photos').createSignedUrl(path, 31536000);
-    return signedData?.signedUrl || null;
+
+    // Create & upload thumbnail (100px, 50%)
+    const thumbBlob = await createThumbnail(blob);
+    const thumbPath = `eleves/${eleveId}/thumb_${ts}.jpg`;
+    await supabase.storage.from('photos').upload(thumbPath, thumbBlob, { contentType: 'image/jpeg', upsert: true });
+
+    const { data: mainSigned } = await supabase.storage.from('photos').createSignedUrl(mainPath, 31536000);
+    const { data: thumbSigned } = await supabase.storage.from('photos').createSignedUrl(thumbPath, 31536000);
+    
+    return {
+      photoUrl: mainSigned?.signedUrl || '',
+      thumbUrl: thumbSigned?.signedUrl || '',
+    };
   };
 
   const resetPhotoState = () => {
