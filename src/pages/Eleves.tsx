@@ -474,10 +474,11 @@ export default function Eleves() {
 
     // Upload photo if new one selected
     let photoUrl = editing.photo_url;
+    let thumbUrl = (editing as any).photo_thumbnail_url;
     if (photoPreview) {
       setUploadingPhoto(true);
-      const url = await uploadElevePhoto(editing.id);
-      if (url) photoUrl = url;
+      const result = await uploadElevePhoto(editing.id);
+      if (result) { photoUrl = result.photoUrl; thumbUrl = result.thumbUrl; }
       setUploadingPhoto(false);
     }
 
