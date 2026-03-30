@@ -60,7 +60,7 @@ export function SupportChat() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user, isSuperviseur]);
+  }, [user, hideChat]);
 
   useEffect(() => {
     if (scrollRef.current) {
