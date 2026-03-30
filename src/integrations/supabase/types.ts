@@ -1153,6 +1153,7 @@ export type Database = {
           option_cantine: boolean | null
           option_fournitures: boolean | null
           option_robotique: boolean | null
+          photo_thumbnail_url: string | null
           photo_url: string | null
           prenom: string
           qr_code: string | null
@@ -1189,6 +1190,7 @@ export type Database = {
           option_cantine?: boolean | null
           option_fournitures?: boolean | null
           option_robotique?: boolean | null
+          photo_thumbnail_url?: string | null
           photo_url?: string | null
           prenom: string
           qr_code?: string | null
@@ -1225,6 +1227,7 @@ export type Database = {
           option_cantine?: boolean | null
           option_fournitures?: boolean | null
           option_robotique?: boolean | null
+          photo_thumbnail_url?: string | null
           photo_url?: string | null
           prenom?: string
           qr_code?: string | null

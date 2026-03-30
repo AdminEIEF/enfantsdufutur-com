@@ -137,7 +137,7 @@ export default function Eleves() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, matricule, nom, prenom, sexe, date_naissance, photo_url, classe_id, famille_id, statut, transport_zone, zone_transport_id, option_fournitures, option_cantine, option_robotique, robotique_paye, uniforme_scolaire, uniforme_sport, uniforme_polo_lacoste, uniforme_karate, uniforme_scout, qr_code, solde_cantine, checklist_livret, checklist_rames, checklist_marqueurs, checklist_photo, nom_prenom_pere, nom_prenom_mere, session_id, created_at, updated_at, deleted_at, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycle_id, cycles:cycle_id(nom, id))), familles(id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse)')
+        .select('id, matricule, nom, prenom, sexe, date_naissance, photo_url, photo_thumbnail_url, classe_id, famille_id, statut, transport_zone, zone_transport_id, option_fournitures, option_cantine, option_robotique, robotique_paye, uniforme_scolaire, uniforme_sport, uniforme_polo_lacoste, uniforme_karate, uniforme_scout, qr_code, solde_cantine, checklist_livret, checklist_rames, checklist_marqueurs, checklist_photo, nom_prenom_pere, nom_prenom_mere, session_id, created_at, updated_at, deleted_at, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycle_id, cycles:cycle_id(nom, id))), familles(id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse)')
         .is('deleted_at', null)
         .order('nom');
       if (error) throw error;
@@ -346,18 +346,30 @@ export default function Eleves() {
           const res = await fetch(eleve.photo_url!);
           if (!res.ok) { failed++; continue; }
           const originalBlob = await res.blob();
-          if (originalBlob.size < 100_000) { skipped++; continue; }
+          if (originalBlob.size < 50_000) { skipped++; continue; }
 
-          const compressedBlob = await compressImage(originalBlob, 400, 0.7);
+          // Main photo: 300px, 60%
+          const compressedBlob = await compressImage(originalBlob, 300, 0.6);
           if (compressedBlob.size >= originalBlob.size) { skipped++; continue; }
 
-          const path = `eleves/${eleve.id}/photo_opt_${Date.now()}.jpg`;
-          const { error: upErr } = await supabase.storage.from('photos').upload(path, compressedBlob, { contentType: 'image/jpeg', upsert: true });
+          const ts = Date.now();
+          const mainPath = `eleves/${eleve.id}/photo_opt_${ts}.jpg`;
+          const { error: upErr } = await supabase.storage.from('photos').upload(mainPath, compressedBlob, { contentType: 'image/jpeg', upsert: true });
           if (upErr) { failed++; continue; }
 
-          const { data: signedData } = await supabase.storage.from('photos').createSignedUrl(path, 31536000);
-          if (signedData?.signedUrl) {
-            await supabase.from('eleves').update({ photo_url: signedData.signedUrl } as any).eq('id', eleve.id);
+          // Thumbnail: 100px, 50%
+          const thumbBlob = await compressImage(originalBlob, 100, 0.5);
+          const thumbPath = `eleves/${eleve.id}/thumb_${ts}.jpg`;
+          await supabase.storage.from('photos').upload(thumbPath, thumbBlob, { contentType: 'image/jpeg', upsert: true });
+
+          const { data: mainSigned } = await supabase.storage.from('photos').createSignedUrl(mainPath, 31536000);
+          const { data: thumbSigned } = await supabase.storage.from('photos').createSignedUrl(thumbPath, 31536000);
+          
+          if (mainSigned?.signedUrl) {
+            await supabase.from('eleves').update({ 
+              photo_url: mainSigned.signedUrl,
+              photo_thumbnail_url: thumbSigned?.signedUrl || null,
+            } as any).eq('id', eleve.id);
             totalSaved += originalBlob.size - compressedBlob.size;
             compressed++;
           } else { failed++; }
@@ -366,7 +378,7 @@ export default function Eleves() {
 
       toast({
         title: '✅ Compression terminée',
-        description: `${compressed} photo(s) compressée(s), ${skipped} déjà optimisée(s), ${failed} échouée(s). ${Math.round(totalSaved / 1024)} KB économisés.`,
+        description: `${compressed} photo(s) compressée(s) + miniatures, ${skipped} déjà optimisée(s), ${failed} échouée(s). ${Math.round(totalSaved / 1024)} KB économisés.`,
       });
       qc.invalidateQueries({ queryKey: ['eleves-full'] });
     } catch (err: any) {
@@ -414,14 +426,14 @@ export default function Eleves() {
     reader.readAsDataURL(file);
   };
 
-  const compressImage = (blob: Blob, maxWidth = 400, quality = 0.7): Promise<Blob> => {
+  const compressImage = (blob: Blob, maxWidth = 300, quality = 0.6): Promise<Blob> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ratio = Math.min(maxWidth / img.width, maxWidth / img.height, 1);
-        canvas.width = img.width * ratio;
-        canvas.height = img.height * ratio;
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
         const ctx = canvas.getContext('2d')!;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         canvas.toBlob((b) => resolve(b || blob), 'image/jpeg', quality);
@@ -431,7 +443,9 @@ export default function Eleves() {
     });
   };
 
-  const uploadElevePhoto = async (eleveId: string): Promise<string | null> => {
+  const createThumbnail = (blob: Blob): Promise<Blob> => compressImage(blob, 100, 0.5);
+
+  const uploadElevePhoto = async (eleveId: string): Promise<{ photoUrl: string; thumbUrl: string } | null> => {
     let blob: Blob;
     if (capturedPhoto) {
       blob = await (await fetch(capturedPhoto)).blob();
@@ -440,13 +454,25 @@ export default function Eleves() {
     } else {
       return null;
     }
-    // Compress image before upload
-    blob = await compressImage(blob);
-    const path = `eleves/${eleveId}/photo_${Date.now()}.jpg`;
-    const { error } = await supabase.storage.from('photos').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+    const ts = Date.now();
+    // Compress main photo (300px, 60%)
+    const mainBlob = await compressImage(blob, 300, 0.6);
+    const mainPath = `eleves/${eleveId}/photo_${ts}.jpg`;
+    const { error } = await supabase.storage.from('photos').upload(mainPath, mainBlob, { contentType: 'image/jpeg', upsert: true });
     if (error) { toast({ title: 'Erreur upload photo', description: error.message, variant: 'destructive' }); return null; }
-    const { data: signedData } = await supabase.storage.from('photos').createSignedUrl(path, 31536000);
-    return signedData?.signedUrl || null;
+
+    // Create & upload thumbnail (100px, 50%)
+    const thumbBlob = await createThumbnail(blob);
+    const thumbPath = `eleves/${eleveId}/thumb_${ts}.jpg`;
+    await supabase.storage.from('photos').upload(thumbPath, thumbBlob, { contentType: 'image/jpeg', upsert: true });
+
+    const { data: mainSigned } = await supabase.storage.from('photos').createSignedUrl(mainPath, 31536000);
+    const { data: thumbSigned } = await supabase.storage.from('photos').createSignedUrl(thumbPath, 31536000);
+    
+    return {
+      photoUrl: mainSigned?.signedUrl || '',
+      thumbUrl: thumbSigned?.signedUrl || '',
+    };
   };
 
   const resetPhotoState = () => {
@@ -460,10 +486,11 @@ export default function Eleves() {
 
     // Upload photo if new one selected
     let photoUrl = editing.photo_url;
+    let thumbUrl = (editing as any).photo_thumbnail_url;
     if (photoPreview) {
       setUploadingPhoto(true);
-      const url = await uploadElevePhoto(editing.id);
-      if (url) photoUrl = url;
+      const result = await uploadElevePhoto(editing.id);
+      if (result) { photoUrl = result.photoUrl; thumbUrl = result.thumbUrl; }
       setUploadingPhoto(false);
     }
 
@@ -478,22 +505,23 @@ export default function Eleves() {
       option_cantine: editing.option_cantine,
       famille_id: editing.famille_id || null,
       photo_url: photoUrl,
-    });
+      photo_thumbnail_url: thumbUrl,
+    } as any);
     resetPhotoState();
   };
 
   const handleSavePhotoOnly = async (eleve: any) => {
     if (!photoPreview) return;
     setUploadingPhoto(true);
-    const url = await uploadElevePhoto(eleve.id);
-    if (url) {
-      const { error } = await supabase.from('eleves').update({ photo_url: url } as any).eq('id', eleve.id);
+    const result = await uploadElevePhoto(eleve.id);
+    if (result) {
+      const { error } = await supabase.from('eleves').update({ photo_url: result.photoUrl, photo_thumbnail_url: result.thumbUrl } as any).eq('id', eleve.id);
       if (error) {
         toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
       } else {
         toast({ title: 'Photo mise à jour' });
         qc.invalidateQueries({ queryKey: ['eleves-full'] });
-        setSelected({ ...eleve, photo_url: url });
+        setSelected({ ...eleve, photo_url: result.photoUrl, photo_thumbnail_url: result.thumbUrl });
       }
     }
     setUploadingPhoto(false);
@@ -956,8 +984,8 @@ export default function Eleves() {
                     />
                   </TableCell>
                   <TableCell>
-                    {e.photo_url ? (
-                      <img src={e.photo_url} alt={`${e.prenom} ${e.nom}`} loading="lazy" decoding="async" className="w-8 h-8 rounded-full object-cover border border-border" />
+                    {(e as any).photo_thumbnail_url || e.photo_url ? (
+                      <img src={(e as any).photo_thumbnail_url || e.photo_url} alt={`${e.prenom} ${e.nom}`} loading="lazy" decoding="async" className="w-8 h-8 rounded-full object-cover border border-border" />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                         <User className="h-4 w-4 text-muted-foreground" />
