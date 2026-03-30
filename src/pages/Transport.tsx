@@ -594,17 +594,9 @@ export default function Transport() {
                     <path d="M0,40 C80,0 160,70 240,35 C300,10 360,50 400,25 L400,90 L0,90 Z" fill="#F87171" opacity="0.5" />
                     <path d="M0,55 C60,30 140,75 220,50 C290,30 350,65 400,40 L400,90 L0,90 Z" fill="#4ADE80" opacity="0.4" />
                   </svg>
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-[0.06]">
-                    <svg width="140" height="90" viewBox="0 0 140 90" fill="none">
-                      <rect x="10" y="15" width="110" height="50" rx="8" fill="#F59E0B" />
-                      <rect x="15" y="22" width="22" height="18" rx="3" fill="#FDE68A" />
-                      <rect x="42" y="22" width="22" height="18" rx="3" fill="#FDE68A" />
-                      <rect x="69" y="22" width="22" height="18" rx="3" fill="#FDE68A" />
-                      <rect x="96" y="22" width="18" height="18" rx="3" fill="#FDE68A" />
-                      <circle cx="35" cy="70" r="10" fill="#374151" /><circle cx="35" cy="70" r="5" fill="#9CA3AF" />
-                      <circle cx="95" cy="70" r="10" fill="#374151" /><circle cx="95" cy="70" r="5" fill="#9CA3AF" />
-                    </svg>
-                  </div>
+                   <div className="absolute inset-0 flex items-center justify-center opacity-[0.06] pointer-events-none">
+                     <img src={transportMapWatermark} alt="" className="w-[85%] h-[85%] object-contain" crossOrigin="anonymous" />
+                   </div>
                    <div className="flex items-center justify-center gap-2 px-4 pt-3 pb-1 relative z-10">
                      {schoolConfig?.logo_url ? (
                        <img src={schoolConfig.logo_url} alt="Logo" className="h-10 w-10 rounded-full object-cover" crossOrigin="anonymous" />

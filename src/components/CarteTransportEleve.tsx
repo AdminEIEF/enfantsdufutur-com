@@ -328,22 +328,9 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                    />
                 </svg>
 
-                {/* Bus watermark */}
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-[0.06]">
-                  <svg width="140" height="90" viewBox="0 0 140 90" fill="none">
-                    <rect x="10" y="15" width="110" height="50" rx="8" fill="#F59E0B" />
-                    <rect x="15" y="22" width="22" height="18" rx="3" fill="#FDE68A" />
-                    <rect x="42" y="22" width="22" height="18" rx="3" fill="#FDE68A" />
-                    <rect x="69" y="22" width="22" height="18" rx="3" fill="#FDE68A" />
-                    <rect x="96" y="22" width="18" height="18" rx="3" fill="#FDE68A" />
-                    <rect x="5" y="45" width="120" height="8" rx="2" fill="#D97706" />
-                    <circle cx="35" cy="70" r="10" fill="#374151" />
-                    <circle cx="35" cy="70" r="5" fill="#9CA3AF" />
-                    <circle cx="95" cy="70" r="10" fill="#374151" />
-                    <circle cx="95" cy="70" r="5" fill="#9CA3AF" />
-                    <rect x="110" y="30" width="15" height="12" rx="2" fill="#EF4444" />
-                    <text x="65" y="42" textAnchor="middle" fontSize="8" fill="#92400E" fontWeight="bold">SCHOOL BUS</text>
-                  </svg>
+                {/* Map watermark */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-[0.06] pointer-events-none">
+                  <img src={transportMapWatermark} alt="" className="w-[85%] h-[85%] object-contain" crossOrigin="anonymous" />
                 </div>
 
                 {/* Header */}
