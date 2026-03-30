@@ -1,0 +1,1 @@
+ALTER TABLE public.eleves ADD COLUMN IF NOT EXISTS photo_thumbnail_url text;
