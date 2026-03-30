@@ -611,7 +611,7 @@ export default function Transport() {
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center"><Bus className="h-4 w-4 text-primary" /></div>
                       )}
-                      <p style={{ fontSize: 7, color: '#6B7280', fontWeight: 500 }}>{schoolConfig?.nom || 'École'}</p>
+                      <p style={{ fontSize: 9, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase' }}>{schoolConfig?.nom || 'École'}</p>
                     </div>
                     <div className="flex items-center gap-1 px-3 py-1 rounded-full" style={{ background: '#FCD34D', fontSize: 8, fontWeight: 700, color: '#92400E' }}>
                       <Bus style={{ width: 10, height: 10 }} /> TRANSPORT SCOLAIRE
@@ -620,7 +620,7 @@ export default function Transport() {
                   <div className="flex gap-3 px-4 pt-2 relative z-10" style={{ height: 140 }}>
                     <div className="flex-shrink-0 rounded-lg overflow-hidden bg-muted border" style={{ width: 72, height: 90, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
                       {selectedStudent.photo_url ? (
-                        <img src={selectedStudent.photo_url} alt="Photo" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                        <img src={selectedStudent.photo_url} alt="Photo" className="w-full h-full object-cover object-top" crossOrigin="anonymous" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-muted-foreground" style={{ fontSize: 10 }}>Photo</div>
                       )}
@@ -659,10 +659,10 @@ export default function Transport() {
                       <p style={{ fontSize: 6, color: '#9CA3AF', marginTop: 3 }}>Scanner pour valider</p>
                     </div>
                   </div>
-                  <div className="absolute bottom-1.5 left-4 right-4 flex justify-between items-center z-10">
-                    <p style={{ fontSize: 6, color: '#9CA3AF' }}>{schoolConfig?.ville || 'Conakry, Guinée'} • Année scolaire 2025-2026</p>
-                    <p style={{ fontSize: 6, color: '#9CA3AF' }}>Carte rechargeable • 30 jours</p>
-                  </div>
+                   <div className="absolute bottom-1.5 left-4 right-4 flex justify-between items-center z-10">
+                     <p style={{ fontSize: 7, color: '#111827', fontWeight: 700 }}>{schoolConfig?.ville || 'Conakry, Guinée'}</p>
+                     <p style={{ fontSize: 6, color: '#111827', fontWeight: 600 }}>Année scolaire 2025-2026</p>
+                   </div>
                 </div>
 
                 <div className="flex gap-2 justify-end">
