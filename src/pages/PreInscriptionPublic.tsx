@@ -24,6 +24,7 @@ export default function PreInscriptionPublic() {
     telephone_parent: '',
     email_parent: '',
     niveau_id: '',
+    classe_id: '',
     option_cantine: false,
     option_transport: false,
     option_uniformes: false,
@@ -39,6 +40,21 @@ export default function PreInscriptionPublic() {
       if (error) throw error;
       return data;
     },
+  });
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes-public', form.niveau_id],
+    queryFn: async () => {
+      if (!form.niveau_id) return [];
+      const { data, error } = await supabase
+        .from('classes')
+        .select('id, nom')
+        .eq('niveau_id', form.niveau_id)
+        .order('nom');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!form.niveau_id,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,6 +78,7 @@ export default function PreInscriptionPublic() {
       if (form.sexe) payload.sexe = form.sexe;
       if (form.email_parent) payload.email_parent = form.email_parent.trim();
       if (form.niveau_id) payload.niveau_id = form.niveau_id;
+      if (form.classe_id) payload.classe_id = form.classe_id;
 
       const { error } = await supabase.from('pre_inscriptions').insert(payload);
       if (error) throw error;
@@ -174,7 +191,7 @@ export default function PreInscriptionPublic() {
               </div>
               <div className="space-y-2">
                 <Label>Niveau souhaité</Label>
-                <Select value={form.niveau_id} onValueChange={v => setForm(f => ({ ...f, niveau_id: v }))}>
+                <Select value={form.niveau_id} onValueChange={v => setForm(f => ({ ...f, niveau_id: v, classe_id: '' }))}>
                   <SelectTrigger><SelectValue placeholder="Sélectionner un niveau" /></SelectTrigger>
                   <SelectContent>
                     {sortedCycles.map(([cycleId, { cycleName, niveaux: cycleNiveaux }]) => (
@@ -188,6 +205,19 @@ export default function PreInscriptionPublic() {
                   </SelectContent>
                 </Select>
               </div>
+              {form.niveau_id && classes.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Classe souhaitée</Label>
+                  <Select value={form.classe_id} onValueChange={v => setForm(f => ({ ...f, classe_id: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner une classe" /></SelectTrigger>
+                    <SelectContent>
+                      {classes.map((c: any) => (
+                        <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </CardContent>
           </Card>
 
