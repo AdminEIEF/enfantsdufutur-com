@@ -38,11 +38,13 @@ export function SupportChat() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Don't show for superviseur (they have the tab in supervision)
+  // Don't show for superviseur or admin (superviseur has the tab in supervision)
   const isSuperviseur = hasRole('superviseur');
+  const isAdmin = hasRole('admin');
+  const hideChat = isSuperviseur || isAdmin;
   
   useEffect(() => {
-    if (!user || isSuperviseur) return;
+    if (!user || hideChat) return;
     fetchMessages();
     
     // Realtime subscription for sent + received messages
@@ -58,7 +60,7 @@ export function SupportChat() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user, isSuperviseur]);
+  }, [user, hideChat]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -136,7 +138,7 @@ export function SupportChat() {
     setSending(false);
   };
 
-  if (isSuperviseur) return null;
+  if (hideChat) return null;
 
   return (
     <>
