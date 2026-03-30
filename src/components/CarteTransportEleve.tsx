@@ -455,10 +455,10 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                     {/* Zone / Ligne */}
                     <div
                       className="flex items-center gap-1 rounded-md px-2 py-1 mt-1"
-                      style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', width: 'fit-content' }}
+                      style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', maxWidth: '100%', overflow: 'hidden' }}
                     >
-                      <MapPin style={{ width: 10, height: 10, color: '#3B82F6' }} />
-                      <span style={{ fontSize: 9, fontWeight: 600, color: '#1E40AF' }}>
+                      <MapPin style={{ width: 10, height: 10, color: '#3B82F6', flexShrink: 0 }} />
+                      <span style={{ fontSize: 9, fontWeight: 600, color: '#1E40AF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         LIGNE : {(printCard.zones_transport as any)?.nom || '—'}
                       </span>
                     </div>
