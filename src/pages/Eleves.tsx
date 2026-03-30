@@ -335,7 +335,24 @@ export default function Eleves() {
     }
   };
 
-  // Camera & photo functions
+  const compressAllPhotos = async () => {
+    setCompressingPhotos(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('compress-photos');
+      if (error) throw error;
+      const result = data as any;
+      toast({
+        title: '✅ Compression terminée',
+        description: `${result.compressed} photo(s) compressée(s), ${result.skipped} déjà optimisée(s), ${result.failed} échouée(s). ${result.totalSavedKB} KB économisés.`,
+      });
+      qc.invalidateQueries({ queryKey: ['eleves-full'] });
+    } catch (err: any) {
+      toast({ title: 'Erreur compression', description: err.message, variant: 'destructive' });
+    } finally {
+      setCompressingPhotos(false);
+    }
+  };
+
   const startCamera = async () => {
     setCameraOpen(true);
     try {
