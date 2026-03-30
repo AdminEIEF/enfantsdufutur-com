@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Bus, MapPin, Users, Search, Download, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon, Settings, User, Phone, Navigation2, GraduationCap } from 'lucide-react';
+import { Bus, MapPin, Users, Search, Download, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon, Settings, User, Phone, Navigation2, GraduationCap, Printer, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { QRCodeCanvas } from 'qrcode.react';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
+import html2canvas from 'html2canvas';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { exportToExcel } from '@/lib/excelUtils';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +43,9 @@ export default function Transport() {
   const [filterClasseZone, setFilterClasseZone] = useState('all');
   const [expandedClasse, setExpandedClasse] = useState<string | null>(null);
   const [selectedZone, setSelectedZone] = useState<any>(null);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { data: schoolConfig } = useSchoolConfig();
 
   // Zones
   const { data: zones = [] } = useQuery({
@@ -60,7 +66,7 @@ export default function Transport() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, statut, zone_transport_id, classe_id, classes(nom), zones_transport:zone_transport_id(id, nom, quartiers)')
+        .select('id, nom, prenom, matricule, statut, zone_transport_id, classe_id, photo_url, classes(nom), zones_transport:zone_transport_id(id, nom, quartiers)')
         .not('zone_transport_id', 'is', null)
         .eq('statut', 'inscrit')
         .order('nom');
@@ -82,6 +88,40 @@ export default function Transport() {
       return data;
     },
   });
+
+  // Recharges transport
+  const { data: recharges = [] } = useQuery({
+    queryKey: ['transport-recharges-classes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('recharges_transport')
+        .select('*')
+        .order('date_recharge', { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const getActiveRecharge = (eleveId: string) => {
+    return recharges.find(
+      (r: any) => r.eleve_id === eleveId && r.actif && new Date(r.date_expiration) > new Date()
+    );
+  };
+
+  const getDaysRemaining = (dateExpiration: string) => {
+    const diff = new Date(dateExpiration).getTime() - new Date().getTime();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  };
+
+  const exportCard = async () => {
+    if (!cardRef.current) return;
+    const canvas = await html2canvas(cardRef.current, { scale: 4, useCORS: true, backgroundColor: null });
+    const link = document.createElement('a');
+    link.download = `carte_transport_${selectedStudent?.matricule || 'eleve'}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    toast({ title: 'Carte exportée' });
+  };
 
   // ─── Computed ─────────────────────────────────────────
   const filteredEleves = useMemo(() => {
@@ -464,12 +504,26 @@ export default function Transport() {
                         </div>
                         {expandedClasse === g.classeName && (
                           <div className="space-y-1 mt-3 pt-3 border-t max-h-[250px] overflow-y-auto">
-                            {g.eleves.sort((a: any, b: any) => a.nom.localeCompare(b.nom)).map((e: any) => (
-                              <div key={e.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50 text-sm">
-                                <span className="font-medium">{e.prenom} {e.nom}</span>
-                                <Badge variant="outline" className="text-[10px]">{(e.zones_transport as any)?.nom || '—'}</Badge>
-                              </div>
-                            ))}
+                            {g.eleves.sort((a: any, b: any) => a.nom.localeCompare(b.nom)).map((e: any) => {
+                              const recharge = getActiveRecharge(e.id);
+                              const jours = recharge ? getDaysRemaining(recharge.date_expiration) : 0;
+                              return (
+                                <div key={e.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50 text-sm cursor-pointer"
+                                  onClick={(ev) => { ev.stopPropagation(); setSelectedStudent({ ...e, recharge }); }}>
+                                  <span className="font-medium">{e.prenom} {e.nom}</span>
+                                  <div className="flex items-center gap-2">
+                                    {recharge ? (
+                                      <span className={`text-[10px] font-semibold ${jours <= 5 ? 'text-destructive' : jours <= 10 ? 'text-warning' : 'text-accent'}`}>
+                                        {jours}j restants
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] text-destructive font-semibold">Expirée</span>
+                                    )}
+                                    <Badge variant="outline" className="text-[10px]">{(e.zones_transport as any)?.nom || '—'}</Badge>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </CardContent>
@@ -484,6 +538,143 @@ export default function Transport() {
             );
           })()}
         </TabsContent>
+
+        {/* Dialog détail élève + carte transport */}
+        <Dialog open={!!selectedStudent} onOpenChange={(o) => !o && setSelectedStudent(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader><DialogTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Détail transport</DialogTitle></DialogHeader>
+            {selectedStudent && (
+              <div className="space-y-4">
+                {/* Info élève */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-[11px] text-muted-foreground mb-1">Élève</p>
+                    <p className="font-bold text-sm">{selectedStudent.prenom} {selectedStudent.nom}</p>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-[11px] text-muted-foreground mb-1">Classe</p>
+                    <p className="font-bold text-sm">{selectedStudent.classes?.nom || '—'}</p>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-[11px] text-muted-foreground mb-1">Zone</p>
+                    <p className="font-bold text-sm">{(selectedStudent.zones_transport as any)?.nom || '—'}</p>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-[11px] text-muted-foreground mb-1">Statut carte</p>
+                    {selectedStudent.recharge ? (
+                      <div>
+                        <Badge className="bg-accent/10 text-accent border-0 text-xs">Active</Badge>
+                        <p className={`text-xs mt-1 font-semibold ${getDaysRemaining(selectedStudent.recharge.date_expiration) <= 5 ? 'text-destructive' : ''}`}>
+                          <Clock className="h-3 w-3 inline mr-1" />
+                          {getDaysRemaining(selectedStudent.recharge.date_expiration)} jour(s) restant(s)
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          Expire le {new Date(selectedStudent.recharge.date_expiration).toLocaleDateString('fr-FR')}
+                        </p>
+                      </div>
+                    ) : (
+                      <Badge variant="destructive" className="text-xs">Expirée / Non rechargée</Badge>
+                    )}
+                  </div>
+                </div>
+
+                {/* Carte PVC */}
+                <div
+                  ref={cardRef}
+                  className="relative mx-auto overflow-hidden"
+                  style={{
+                    width: 400, height: 252, borderRadius: 14,
+                    fontFamily: "'Inter', 'Space Grotesk', sans-serif",
+                    background: '#FFFFFF',
+                    boxShadow: '0 4px 24px rgba(0,0,0,0.13)',
+                  }}
+                >
+                  <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 400 90" preserveAspectRatio="none" style={{ height: 90 }}>
+                    <path d="M0,40 C80,0 160,70 240,35 C300,10 360,50 400,25 L400,90 L0,90 Z" fill="#87CEEB" opacity="0.35" />
+                    <path d="M0,55 C60,30 140,75 220,50 C290,30 350,65 400,40 L400,90 L0,90 Z" fill="#5BA3D9" opacity="0.25" />
+                  </svg>
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-[0.06]">
+                    <svg width="140" height="90" viewBox="0 0 140 90" fill="none">
+                      <rect x="10" y="15" width="110" height="50" rx="8" fill="#F59E0B" />
+                      <rect x="15" y="22" width="22" height="18" rx="3" fill="#FDE68A" />
+                      <rect x="42" y="22" width="22" height="18" rx="3" fill="#FDE68A" />
+                      <rect x="69" y="22" width="22" height="18" rx="3" fill="#FDE68A" />
+                      <rect x="96" y="22" width="18" height="18" rx="3" fill="#FDE68A" />
+                      <circle cx="35" cy="70" r="10" fill="#374151" /><circle cx="35" cy="70" r="5" fill="#9CA3AF" />
+                      <circle cx="95" cy="70" r="10" fill="#374151" /><circle cx="95" cy="70" r="5" fill="#9CA3AF" />
+                    </svg>
+                  </div>
+                  <div className="flex items-center justify-between px-4 pt-3 pb-1 relative z-10">
+                    <div className="flex items-center gap-2">
+                      {schoolConfig?.logo_url ? (
+                        <img src={schoolConfig.logo_url} alt="Logo" className="h-8 w-8 rounded-full object-cover" crossOrigin="anonymous" />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center"><Bus className="h-4 w-4 text-primary" /></div>
+                      )}
+                      <p style={{ fontSize: 7, color: '#6B7280', fontWeight: 500 }}>{schoolConfig?.nom || 'École'}</p>
+                    </div>
+                    <div className="flex items-center gap-1 px-3 py-1 rounded-full" style={{ background: '#FCD34D', fontSize: 8, fontWeight: 700, color: '#92400E' }}>
+                      <Bus style={{ width: 10, height: 10 }} /> TRANSPORT SCOLAIRE
+                    </div>
+                  </div>
+                  <div className="flex gap-3 px-4 pt-2 relative z-10" style={{ height: 140 }}>
+                    <div className="flex-shrink-0 rounded-lg overflow-hidden bg-muted border" style={{ width: 72, height: 90, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+                      {selectedStudent.photo_url ? (
+                        <img src={selectedStudent.photo_url} alt="Photo" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground" style={{ fontSize: 10 }}>Photo</div>
+                      )}
+                    </div>
+                    <div className="flex-1 flex flex-col justify-between py-0.5">
+                      <div>
+                        <p style={{ fontSize: 16, fontWeight: 800, color: '#1F2937', lineHeight: 1.1 }}>{selectedStudent.prenom} {selectedStudent.nom}</p>
+                        <div className="flex gap-3 mt-1.5">
+                          <div>
+                            <p style={{ fontSize: 7, color: '#9CA3AF', textTransform: 'uppercase' }}>Matricule</p>
+                            <p style={{ fontSize: 10, fontWeight: 600, color: '#374151', fontFamily: 'monospace' }}>{selectedStudent.matricule || '—'}</p>
+                          </div>
+                          <div>
+                            <p style={{ fontSize: 7, color: '#9CA3AF', textTransform: 'uppercase' }}>Classe</p>
+                            <p style={{ fontSize: 10, fontWeight: 600, color: '#374151' }}>{selectedStudent.classes?.nom || '—'}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 rounded-md px-2 py-1 mt-1" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', width: 'fit-content' }}>
+                        <MapPin style={{ width: 10, height: 10, color: '#3B82F6' }} />
+                        <span style={{ fontSize: 9, fontWeight: 600, color: '#1E40AF' }}>LIGNE : {(selectedStudent.zones_transport as any)?.nom || '—'}</span>
+                      </div>
+                      <div className="mt-1">
+                        {selectedStudent.recharge ? (
+                          <div className="flex items-center gap-2">
+                            <div className="rounded-full px-2 py-0.5" style={{ background: '#D1FAE5', fontSize: 7, fontWeight: 600, color: '#065F46' }}>● ACTIVE</div>
+                            <span style={{ fontSize: 8, color: '#6B7280' }}>Expire le {new Date(selectedStudent.recharge.date_expiration).toLocaleDateString('fr-FR')}</span>
+                          </div>
+                        ) : (
+                          <div className="rounded-full px-2 py-0.5" style={{ background: '#FEE2E2', fontSize: 7, fontWeight: 700, color: '#991B1B', width: 'fit-content' }}>NON RECHARGÉE</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 flex flex-col items-center justify-center">
+                      <div className="bg-white rounded-lg p-1.5" style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.1)', border: '2px solid #E5E7EB' }}>
+                        <QRCodeCanvas value={JSON.stringify({ type: 'transport', matricule: selectedStudent.matricule, id: selectedStudent.id })} size={70} level="M" includeMargin={false} />
+                      </div>
+                      <p style={{ fontSize: 6, color: '#9CA3AF', marginTop: 3 }}>Scanner pour valider</p>
+                    </div>
+                  </div>
+                  <div className="absolute bottom-1.5 left-4 right-4 flex justify-between items-center z-10">
+                    <p style={{ fontSize: 6, color: '#9CA3AF' }}>{schoolConfig?.ville || 'Conakry, Guinée'} • Année scolaire 2025-2026</p>
+                    <p style={{ fontSize: 6, color: '#9CA3AF' }}>Carte rechargeable • 30 jours</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setSelectedStudent(null)}>Fermer</Button>
+                  <Button onClick={exportCard}><Download className="h-4 w-4 mr-1" /> Exporter PNG</Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Tab: Validation bus */}
         <TabsContent value="validation" className="mt-4">
