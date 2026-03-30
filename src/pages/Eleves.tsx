@@ -893,6 +893,15 @@ export default function Eleves() {
                     />
                   </TableCell>
                   <TableCell>
+                    {e.photo_url ? (
+                      <img src={e.photo_url} alt={`${e.prenom} ${e.nom}`} loading="lazy" decoding="async" className="w-8 h-8 rounded-full object-cover border border-border" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     {e.famille_id ? (
                       <Badge variant="default" className="gap-1 text-xs"><Users className="h-3 w-3" />Famille</Badge>
                     ) : (
