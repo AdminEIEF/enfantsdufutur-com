@@ -24,6 +24,7 @@ export default function PreInscriptionPublic() {
     telephone_parent: '',
     email_parent: '',
     niveau_id: '',
+    classe_id: '',
     option_cantine: false,
     option_transport: false,
     option_uniformes: false,
