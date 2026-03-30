@@ -1034,11 +1034,11 @@ export default function Eleves() {
                   <TableCell>
                   {(e as any).photo_thumbnail_url || e.photo_url ? (
                       <img 
-                        src={(e as any).photo_thumbnail_url || e.photo_url} 
+                        src={fixedUrls[e.id] || (e as any).photo_thumbnail_url || e.photo_url} 
                         alt={`${e.prenom} ${e.nom}`} 
                         loading="lazy" decoding="async" 
                         className="w-8 h-8 rounded-full object-cover border border-border cursor-pointer hover:ring-2 hover:ring-primary transition-all" 
-                        onClick={(ev) => { ev.stopPropagation(); setZoomPhotoUrl(e.photo_url); setZoomEleveId(e.id); setCropMode(false); setCrop({x:0,y:0}); setZoom(1); }}
+                        onClick={(ev) => { ev.stopPropagation(); setZoomPhotoUrl(fixedUrls[e.id] || e.photo_url); setZoomEleveId(e.id); setCropMode(false); setCrop({x:0,y:0}); setZoom(1); }}
                       />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
