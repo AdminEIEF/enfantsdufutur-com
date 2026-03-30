@@ -14,6 +14,7 @@ import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useState, useMemo } from 'react';
 import html2canvas from 'html2canvas';
+import transportMapWatermark from '@/assets/transport-map-watermark.png';
 
 interface CarteTransportEleveProps {
   zones: any[];
