@@ -66,7 +66,7 @@ export default function Transport() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, statut, zone_transport_id, classe_id, classes(nom), zones_transport:zone_transport_id(id, nom, quartiers)')
+        .select('id, nom, prenom, matricule, statut, zone_transport_id, classe_id, photo_url, classes(nom), zones_transport:zone_transport_id(id, nom, quartiers)')
         .not('zone_transport_id', 'is', null)
         .eq('statut', 'inscrit')
         .order('nom');
