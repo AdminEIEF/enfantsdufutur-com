@@ -75,9 +75,9 @@ function PasswordSection({ eleve, onUpdate }: { eleve: any; onUpdate: () => void
       ) : (
         <div className="flex gap-2">
           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditing(true)}>
-            <Edit className="h-3 w-3 mr-1" /> Modifier
+            <Edit className="h-3 w-3 mr-1" /> {hasPassword ? 'Réinitialiser' : 'Définir'}
           </Button>
-          {!currentPwd && (
+          {!hasPassword && (
             <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => save(generatePassword())}>
               <KeyRound className="h-3 w-3 mr-1" /> Générer un mot de passe
             </Button>
