@@ -260,10 +260,17 @@ export default function Eleves() {
   const { data: paiementsAll = [] } = useQuery({
     queryKey: ['paiements-all'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('paiements').select('*').eq('type_paiement', 'scolarite');
-      if (error) throw error;
-      return data;
+      const allData: any[] = [];
+      const pageSize = 1000;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase.from('paiements').select('id, montant, eleve_id, mois_concerne, date_paiement').eq('type_paiement', 'scolarite').range(from, from + pageSize - 1);
+        if (error) throw error;
+        allData.push(...(data ?? []));
+        if (!data || data.length < pageSize) break;
+      }
+      return allData;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: tranchesConfig = {} } = useQuery({

@@ -89,13 +89,21 @@ export default function Dashboard() {
   const { data: depenses = [] } = useQuery({
     queryKey: ['dashboard-depenses'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('depenses')
-        .select('id, montant, service, date_depense')
-        .order('date_depense', { ascending: false });
-      if (error) throw error;
-      return data;
+      const allData: any[] = [];
+      const pageSize = 1000;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase
+          .from('depenses')
+          .select('id, montant, service, date_depense')
+          .order('date_depense', { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        allData.push(...(data ?? []));
+        if (!data || data.length < pageSize) break;
+      }
+      return allData;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: notesCount = 0 } = useQuery({
