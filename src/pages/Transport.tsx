@@ -594,7 +594,7 @@ export default function Transport() {
                     <path d="M0,40 C80,0 160,70 240,35 C300,10 360,50 400,25 L400,90 L0,90 Z" fill="#F87171" opacity="0.5" />
                     <path d="M0,55 C60,30 140,75 220,50 C290,30 350,65 400,40 L400,90 L0,90 Z" fill="#4ADE80" opacity="0.4" />
                   </svg>
-                   <div className="absolute inset-0 flex items-center justify-center opacity-[0.06] pointer-events-none">
+                   <div className="absolute inset-0 flex items-center justify-center opacity-[0.10] pointer-events-none">
                      <img src={transportMapWatermark} alt="" className="w-[85%] h-[85%] object-contain" crossOrigin="anonymous" />
                    </div>
                    <div className="flex items-center justify-center gap-2 px-4 pt-3 pb-1 relative z-10">
