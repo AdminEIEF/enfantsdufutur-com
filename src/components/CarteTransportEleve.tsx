@@ -407,15 +407,9 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                       <p style={{ fontSize: 16, fontWeight: 800, color: '#1F2937', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
                         {printCard.prenom} {printCard.nom}
                       </p>
-                      <div className="flex gap-3 mt-1.5">
-                        <div>
-                          <p style={{ fontSize: 7, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Matricule</p>
-                          <p style={{ fontSize: 10, fontWeight: 600, color: '#374151', fontFamily: 'monospace' }}>{printCard.matricule || '—'}</p>
-                        </div>
-                        <div>
-                          <p style={{ fontSize: 7, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Classe</p>
-                          <p style={{ fontSize: 10, fontWeight: 600, color: '#374151' }}>{printCard.classes?.nom || '—'}</p>
-                        </div>
+                      <div className="mt-1.5">
+                        <p style={{ fontSize: 7, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Matricule</p>
+                        <p style={{ fontSize: 10, fontWeight: 600, color: '#374151', fontFamily: 'monospace' }}>{printCard.matricule || '—'}</p>
                       </div>
                     </div>
 

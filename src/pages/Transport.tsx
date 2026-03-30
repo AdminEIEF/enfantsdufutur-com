@@ -628,15 +628,9 @@ export default function Transport() {
                     <div className="flex-1 flex flex-col justify-between py-0.5">
                       <div>
                         <p style={{ fontSize: 16, fontWeight: 800, color: '#1F2937', lineHeight: 1.1 }}>{selectedStudent.prenom} {selectedStudent.nom}</p>
-                        <div className="flex gap-3 mt-1.5">
-                          <div>
-                            <p style={{ fontSize: 7, color: '#9CA3AF', textTransform: 'uppercase' }}>Matricule</p>
-                            <p style={{ fontSize: 10, fontWeight: 600, color: '#374151', fontFamily: 'monospace' }}>{selectedStudent.matricule || '—'}</p>
-                          </div>
-                          <div>
-                            <p style={{ fontSize: 7, color: '#9CA3AF', textTransform: 'uppercase' }}>Classe</p>
-                            <p style={{ fontSize: 10, fontWeight: 600, color: '#374151' }}>{selectedStudent.classes?.nom || '—'}</p>
-                          </div>
+                        <div className="mt-1.5">
+                          <p style={{ fontSize: 7, color: '#9CA3AF', textTransform: 'uppercase' }}>Matricule</p>
+                          <p style={{ fontSize: 10, fontWeight: 600, color: '#374151', fontFamily: 'monospace' }}>{selectedStudent.matricule || '—'}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 rounded-md px-2 py-1 mt-1" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', width: 'fit-content' }}>
