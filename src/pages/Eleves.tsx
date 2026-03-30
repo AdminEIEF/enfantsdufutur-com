@@ -1603,9 +1603,12 @@ export default function Eleves() {
                     if (!zoomPhotoUrl || !zoomEleveId) return;
                     setSavingCrop(true);
                     try {
+                      // Download image as blob to avoid CORS/tainted canvas
+                      const resp = await fetch(zoomPhotoUrl);
+                      const srcBlob = await resp.blob();
+                      const blobUrl = URL.createObjectURL(srcBlob);
                       const img = new Image();
-                      img.crossOrigin = 'anonymous';
-                      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = zoomPhotoUrl; });
+                      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = blobUrl; });
                       const canvas = document.createElement('canvas');
                       canvas.width = img.naturalWidth;
                       canvas.height = img.naturalHeight;
@@ -1613,14 +1616,17 @@ export default function Eleves() {
                       if (photoBgColor) { ctx.fillStyle = photoBgColor; ctx.fillRect(0, 0, canvas.width, canvas.height); }
                       ctx.filter = `brightness(${photoBrightness}%) contrast(${photoContrast}%)`;
                       ctx.drawImage(img, 0, 0);
+                      URL.revokeObjectURL(blobUrl);
                       const blob = await new Promise<Blob>(r => canvas.toBlob(b => r(b!), 'image/jpeg', 0.85));
                       const path = `eleves/${zoomEleveId}_edit_${Date.now()}.jpg`;
                       const { error: upErr } = await supabase.storage.from('photos').upload(path, blob, { upsert: true });
                       if (upErr) throw upErr;
-                      const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
-                      await supabase.from('eleves').update({ photo_url: urlData.publicUrl, photo_thumbnail_url: urlData.publicUrl }).eq('id', zoomEleveId);
+                      const { data: signedData, error: signErr } = await supabase.storage.from('photos').createSignedUrl(path, 31536000);
+                      if (signErr) throw signErr;
+                      const signedUrl = signedData.signedUrl;
+                      await supabase.from('eleves').update({ photo_url: signedUrl, photo_thumbnail_url: signedUrl }).eq('id', zoomEleveId);
                       toast({ title: 'Photo traitée et sauvegardée' });
-                      setZoomPhotoUrl(urlData.publicUrl);
+                      setZoomPhotoUrl(signedUrl);
                       setPhotoBrightness(100); setPhotoContrast(100); setPhotoBgColor(null);
                       qc.invalidateQueries({ queryKey: ['eleves'] });
                     } catch (err: any) {
@@ -1664,24 +1670,30 @@ export default function Eleves() {
                   if (!croppedAreaPixels || !zoomPhotoUrl || !zoomEleveId) return;
                   setSavingCrop(true);
                   try {
-                    const canvas = document.createElement('canvas');
+                    // Download image as blob to avoid CORS/tainted canvas
+                    const resp = await fetch(zoomPhotoUrl);
+                    const srcBlob = await resp.blob();
+                    const blobUrl = URL.createObjectURL(srcBlob);
                     const img = new Image();
-                    img.crossOrigin = 'anonymous';
-                    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = zoomPhotoUrl; });
+                    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = blobUrl; });
+                    const canvas = document.createElement('canvas');
                     canvas.width = croppedAreaPixels.width;
                     canvas.height = croppedAreaPixels.height;
                     const ctx = canvas.getContext('2d')!;
                     if (photoBgColor) { ctx.fillStyle = photoBgColor; ctx.fillRect(0, 0, canvas.width, canvas.height); }
                     ctx.filter = `brightness(${photoBrightness}%) contrast(${photoContrast}%)`;
                     ctx.drawImage(img, croppedAreaPixels.x, croppedAreaPixels.y, croppedAreaPixels.width, croppedAreaPixels.height, 0, 0, croppedAreaPixels.width, croppedAreaPixels.height);
+                    URL.revokeObjectURL(blobUrl);
                     const blob = await new Promise<Blob>((res) => canvas.toBlob(b => res(b!), 'image/jpeg', 0.85));
                     const path = `eleves/${zoomEleveId}_crop_${Date.now()}.jpg`;
                     const { error: upErr } = await supabase.storage.from('photos').upload(path, blob, { upsert: true });
                     if (upErr) throw upErr;
-                    const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
-                    await supabase.from('eleves').update({ photo_url: urlData.publicUrl, photo_thumbnail_url: urlData.publicUrl }).eq('id', zoomEleveId);
+                    const { data: signedData, error: signErr } = await supabase.storage.from('photos').createSignedUrl(path, 31536000);
+                    if (signErr) throw signErr;
+                    const signedUrl = signedData.signedUrl;
+                    await supabase.from('eleves').update({ photo_url: signedUrl, photo_thumbnail_url: signedUrl }).eq('id', zoomEleveId);
                     toast({ title: 'Photo recadrée et sauvegardée' });
-                    setZoomPhotoUrl(urlData.publicUrl);
+                    setZoomPhotoUrl(signedUrl);
                     setCropMode(false);
                     qc.invalidateQueries({ queryKey: ['eleves'] });
                   } catch (err: any) {
