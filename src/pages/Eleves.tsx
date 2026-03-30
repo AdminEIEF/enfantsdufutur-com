@@ -127,6 +127,7 @@ export default function Eleves() {
   const cameraRef = useRef<HTMLVideoElement>(null);
   const [generatingMatricules, setGeneratingMatricules] = useState(false);
   const [compressingPhotos, setCompressingPhotos] = useState(false);
+  const [zoomPhotoUrl, setZoomPhotoUrl] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -984,8 +985,14 @@ export default function Eleves() {
                     />
                   </TableCell>
                   <TableCell>
-                    {(e as any).photo_thumbnail_url || e.photo_url ? (
-                      <img src={(e as any).photo_thumbnail_url || e.photo_url} alt={`${e.prenom} ${e.nom}`} loading="lazy" decoding="async" className="w-8 h-8 rounded-full object-cover border border-border" />
+                  {(e as any).photo_thumbnail_url || e.photo_url ? (
+                      <img 
+                        src={(e as any).photo_thumbnail_url || e.photo_url} 
+                        alt={`${e.prenom} ${e.nom}`} 
+                        loading="lazy" decoding="async" 
+                        className="w-8 h-8 rounded-full object-cover border border-border cursor-pointer hover:ring-2 hover:ring-primary transition-all" 
+                        onClick={(ev) => { ev.stopPropagation(); setZoomPhotoUrl(e.photo_url); }}
+                      />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                         <User className="h-4 w-4 text-muted-foreground" />
@@ -1533,6 +1540,22 @@ export default function Eleves() {
           schoolLogo={schoolConfig?.logo_url}
         />
       )}
+
+      {/* Photo Zoom Dialog */}
+      <Dialog open={!!zoomPhotoUrl} onOpenChange={() => setZoomPhotoUrl(null)}>
+        <DialogContent className="max-w-2xl flex items-center justify-center p-2">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Photo élève</DialogTitle>
+          </DialogHeader>
+          {zoomPhotoUrl && (
+            <img
+              src={zoomPhotoUrl}
+              alt="Photo élève"
+              className="max-h-[80vh] max-w-full rounded-lg object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
