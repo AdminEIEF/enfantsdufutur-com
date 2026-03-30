@@ -116,26 +116,48 @@ export default function Transport() {
 
   const exportCard = async () => {
     if (!cardRef.current) return;
-    const canvas = await html2canvas(cardRef.current, {
-      scale: 6,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: '#FFFFFF',
-      imageTimeout: 15000,
-      logging: false,
-    });
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `carte_transport_${selectedStudent?.matricule || 'eleve'}.png`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-      toast({ title: 'Carte exportée en haute qualité' });
-    }, 'image/png');
+
+    try {
+      const canvas = await html2canvas(cardRef.current, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#FFFFFF',
+        imageTimeout: 15000,
+        logging: false,
+      });
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          toast({ title: 'Erreur export', description: 'Impossible de générer l’image.', variant: 'destructive' });
+          return;
+        }
+
+        const filename = `carte_transport_${selectedStudent?.matricule || 'eleve'}.png`;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        // Fallback navigateur: ouvre l'image si le téléchargement est bloqué.
+        const fallbackWin = window.open(url, '_blank', 'noopener,noreferrer');
+        if (fallbackWin) {
+          fallbackWin.focus();
+        }
+
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 10000);
+
+        toast({ title: 'Carte exportée en haute qualité' });
+      }, 'image/png', 1);
+    } catch {
+      toast({ title: 'Erreur export', description: 'Le téléchargement a échoué.', variant: 'destructive' });
+    }
   };
 
   // ─── Computed ─────────────────────────────────────────
