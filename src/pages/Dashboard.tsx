@@ -69,13 +69,21 @@ export default function Dashboard() {
   const { data: paiements = [] } = useQuery({
     queryKey: ['dashboard-paiements'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('paiements')
-        .select('id, montant, type_paiement, date_paiement, canal, eleve_id')
-        .order('date_paiement', { ascending: false });
-      if (error) throw error;
-      return data;
+      const allData: any[] = [];
+      const pageSize = 1000;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase
+          .from('paiements')
+          .select('id, montant, type_paiement, date_paiement, canal, eleve_id')
+          .order('date_paiement', { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        allData.push(...(data ?? []));
+        if (!data || data.length < pageSize) break;
+      }
+      return allData;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: depenses = [] } = useQuery({
