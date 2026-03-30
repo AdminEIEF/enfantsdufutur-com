@@ -1569,7 +1569,7 @@ export default function Eleves() {
           {zoomPhotoUrl && cropMode && (
             <div className="flex flex-col items-center gap-3 w-full">
               <div className="relative w-full" style={{ height: '60vh' }}>
-                <CropperLazy
+                <Cropper
                   image={zoomPhotoUrl}
                   crop={crop}
                   zoom={zoom}
