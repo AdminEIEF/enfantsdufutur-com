@@ -139,7 +139,42 @@ export default function Eleves() {
   const [photoContrast, setPhotoContrast] = useState(100);
   const [photoBgColor, setPhotoBgColor] = useState<string | null>(null);
   const [cropAspect, setCropAspect] = useState<number>(1);
+  const [fixedUrls, setFixedUrls] = useState<Record<string, string>>({});
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  // Fix public URLs for private bucket - generate signed URL
+  const getFixedPhotoUrl = useCallback(async (url: string): Promise<string> => {
+    if (!url) return url;
+    // If it's already a signed URL, return as-is
+    if (url.includes('/object/sign/')) return url;
+    // If it's a public URL for the photos bucket, convert to signed
+    const publicMatch = url.match(/\/object\/public\/photos\/(.+)$/);
+    if (publicMatch) {
+      const path = publicMatch[1];
+      const { data, error } = await supabase.storage.from('photos').createSignedUrl(path, 31536000);
+      if (!error && data) return data.signedUrl;
+    }
+    return url;
+  }, []);
+
+  // Auto-fix broken public URLs on load
+  useEffect(() => {
+    if (!eleves) return;
+    const broken = (eleves as any[]).filter((e: any) => {
+      const url = e.photo_thumbnail_url || e.photo_url;
+      return url && url.includes('/object/public/photos/') && !fixedUrls[e.id];
+    });
+    if (broken.length === 0) return;
+    broken.forEach(async (e: any) => {
+      const url = e.photo_thumbnail_url || e.photo_url;
+      const fixed = await getFixedPhotoUrl(url);
+      if (fixed !== url) {
+        setFixedUrls(prev => ({ ...prev, [e.id]: fixed }));
+        // Also fix in DB
+        await supabase.from('eleves').update({ photo_url: fixed, photo_thumbnail_url: fixed }).eq('id', e.id);
+      }
+    });
+  }, [eleves, fixedUrls, getFixedPhotoUrl]);
   const { toast } = useToast();
   const qc = useQueryClient();
   const { data: schoolConfig } = useSchoolConfig();
