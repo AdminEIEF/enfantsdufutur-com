@@ -985,8 +985,14 @@ export default function Eleves() {
                     />
                   </TableCell>
                   <TableCell>
-                    {(e as any).photo_thumbnail_url || e.photo_url ? (
-                      <img src={(e as any).photo_thumbnail_url || e.photo_url} alt={`${e.prenom} ${e.nom}`} loading="lazy" decoding="async" className="w-8 h-8 rounded-full object-cover border border-border" />
+                  {(e as any).photo_thumbnail_url || e.photo_url ? (
+                      <img 
+                        src={(e as any).photo_thumbnail_url || e.photo_url} 
+                        alt={`${e.prenom} ${e.nom}`} 
+                        loading="lazy" decoding="async" 
+                        className="w-8 h-8 rounded-full object-cover border border-border cursor-pointer hover:ring-2 hover:ring-primary transition-all" 
+                        onClick={(ev) => { ev.stopPropagation(); setZoomPhotoUrl(e.photo_url); }}
+                      />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                         <User className="h-4 w-4 text-muted-foreground" />
