@@ -266,10 +266,10 @@ export default function Familles() {
     },
     onSuccess: (code) => {
       qc.invalidateQueries({ queryKey: ['familles-with-children'] });
-      toast.success(`Code généré : ${code}`);
-      // Update selected famille in place
+      toast.success(`Code généré : ${code} — Notez-le maintenant, il ne sera plus visible.`);
+      // Mark as having a code without storing the hash
       if (selectedFamille) {
-        setSelectedFamille({ ...selectedFamille, code_acces: code });
+        setSelectedFamille({ ...selectedFamille, code_acces_set: true });
       }
     },
     onError: (e: any) => toast.error(e.message),
