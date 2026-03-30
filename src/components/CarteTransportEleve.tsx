@@ -346,33 +346,22 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 </div>
 
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 pt-3 pb-1 relative z-10">
-                  <div className="flex items-center gap-2">
-                    {schoolConfig?.logo_url ? (
-                      <img
-                        src={schoolConfig.logo_url}
-                        alt="Logo"
-                        className="h-8 w-8 rounded-full object-cover"
-                        crossOrigin="anonymous"
-                      />
-                    ) : (
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Bus className="h-4 w-4 text-primary" />
-                      </div>
-                    )}
-                    <div className="leading-none">
-                      <p style={{ fontSize: 9, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase' }}>
-                        {schoolConfig?.nom || 'École'}
-                      </p>
+                <div className="flex items-center gap-2 px-4 pt-3 pb-1 relative z-10">
+                  {schoolConfig?.logo_url ? (
+                    <img
+                      src={schoolConfig.logo_url}
+                      alt="Logo"
+                      className="h-9 w-9 rounded-full object-cover"
+                      crossOrigin="anonymous"
+                    />
+                  ) : (
+                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Bus className="h-4 w-4 text-primary" />
                     </div>
-                  </div>
-                  <div
-                    className="flex items-center gap-1 px-3 py-1 rounded-full mx-auto"
-                    style={{ background: '#FCD34D', fontSize: 8, fontWeight: 700, color: '#92400E' }}
-                  >
-                    <Bus style={{ width: 10, height: 10 }} />
-                    TRANSPORT SCOLAIRE
-                  </div>
+                  )}
+                  <p style={{ fontSize: 11, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2 }}>
+                    {schoolConfig?.nom || 'École'}
+                  </p>
                 </div>
 
                 {/* Body */}
