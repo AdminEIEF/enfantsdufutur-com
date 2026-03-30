@@ -136,22 +136,29 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
           return;
         }
 
+        const filename = `carte_transport_${printCard?.matricule || 'eleve'}.png`;
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `carte_transport_${printCard?.matricule || 'eleve'}.png`;
+        link.download = filename;
         link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
+        link.remove();
+
+        // Fallback navigateur: ouvre l'image si le téléchargement est bloqué.
+        const fallbackWin = window.open(url, '_blank', 'noopener,noreferrer');
+        if (fallbackWin) {
+          fallbackWin.focus();
+        }
 
         setTimeout(() => {
-          link.remove();
           URL.revokeObjectURL(url);
-        }, 1200);
+        }, 10000);
 
         toast({ title: 'Carte exportée en haute qualité' });
-      }, 'image/png');
-    } catch (error) {
+      }, 'image/png', 1);
+    } catch {
       toast({ title: 'Erreur export', description: 'Le téléchargement a échoué.', variant: 'destructive' });
     }
   };
