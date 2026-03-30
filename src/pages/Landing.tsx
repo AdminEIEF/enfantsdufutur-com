@@ -335,6 +335,8 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Tarifs */}
+      <LandingTarifs />
 
       {/* CTA */}
       <section className="bg-primary text-primary-foreground">
