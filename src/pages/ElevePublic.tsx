@@ -77,7 +77,7 @@ export default function ElevePublic() {
             <div className="flex items-center gap-4">
               <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
                 {eleve.photo_url ? (
-                  <img src={eleve.photo_url} alt="" className="h-16 w-16 rounded-full object-cover" />
+                  <img src={eleve.photo_url} alt="" loading="lazy" decoding="async" className="h-16 w-16 rounded-full object-cover" />
                 ) : (
                   <User className="h-8 w-8 text-primary" />
                 )}

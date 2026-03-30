@@ -413,7 +413,7 @@ export default function MesClasses() {
                                                     <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
                                                     <TableCell>
                                                       {eleve.photo_url ? (
-                                                        <img src={eleve.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                                                        <img src={eleve.photo_url} alt="" loading="lazy" decoding="async" className="w-8 h-8 rounded-full object-cover" />
                                                       ) : (
                                                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
                                                           {eleve.prenom?.[0]}{eleve.nom?.[0]}

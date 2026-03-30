@@ -229,7 +229,7 @@ export default function ParentDashboard() {
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                         {enfant.photo_url ? (
-                          <img src={enfant.photo_url} alt="" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shrink-0" />
+                          <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shrink-0" />
                         ) : (
                           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs sm:text-sm shrink-0">
                             {enfant.prenom[0]}{enfant.nom[0]}
