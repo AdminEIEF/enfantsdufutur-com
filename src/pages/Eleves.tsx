@@ -373,6 +373,23 @@ export default function Eleves() {
     reader.readAsDataURL(file);
   };
 
+  const compressImage = (blob: Blob, maxWidth = 400, quality = 0.7): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height, 1);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((b) => resolve(b || blob), 'image/jpeg', quality);
+      };
+      img.onerror = () => resolve(blob);
+      img.src = URL.createObjectURL(blob);
+    });
+  };
+
   const uploadElevePhoto = async (eleveId: string): Promise<string | null> => {
     let blob: Blob;
     if (capturedPhoto) {
@@ -382,9 +399,10 @@ export default function Eleves() {
     } else {
       return null;
     }
-    const ext = photoFile ? (photoFile.name.split('.').pop() || 'jpg') : 'jpg';
-    const path = `eleves/${eleveId}/photo_${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('photos').upload(path, blob, { contentType: blob.type || 'image/jpeg', upsert: true });
+    // Compress image before upload
+    blob = await compressImage(blob);
+    const path = `eleves/${eleveId}/photo_${Date.now()}.jpg`;
+    const { error } = await supabase.storage.from('photos').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
     if (error) { toast({ title: 'Erreur upload photo', description: error.message, variant: 'destructive' }); return null; }
     const { data: signedData } = await supabase.storage.from('photos').createSignedUrl(path, 31536000);
     return signedData?.signedUrl || null;
