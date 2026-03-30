@@ -493,7 +493,8 @@ export default function Eleves() {
       option_cantine: editing.option_cantine,
       famille_id: editing.famille_id || null,
       photo_url: photoUrl,
-    });
+      photo_thumbnail_url: thumbUrl,
+    } as any);
     resetPhotoState();
   };
 
