@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle, Camera, Upload, Bus, FileDown, Trash2, ChevronRight, GraduationCap } from 'lucide-react';
+import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle, Camera, Upload, Bus, FileDown, Trash2, ChevronRight, GraduationCap, ImageDown } from 'lucide-react';
 import PlancheBadgesScolaires from '@/components/PlancheBadgesScolaires';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
@@ -126,6 +126,7 @@ export default function Eleves() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const cameraRef = useRef<HTMLVideoElement>(null);
   const [generatingMatricules, setGeneratingMatricules] = useState(false);
+  const [compressingPhotos, setCompressingPhotos] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -334,7 +335,24 @@ export default function Eleves() {
     }
   };
 
-  // Camera & photo functions
+  const compressAllPhotos = async () => {
+    setCompressingPhotos(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('compress-photos');
+      if (error) throw error;
+      const result = data as any;
+      toast({
+        title: '✅ Compression terminée',
+        description: `${result.compressed} photo(s) compressée(s), ${result.skipped} déjà optimisée(s), ${result.failed} échouée(s). ${result.totalSavedKB} KB économisés.`,
+      });
+      qc.invalidateQueries({ queryKey: ['eleves-full'] });
+    } catch (err: any) {
+      toast({ title: 'Erreur compression', description: err.message, variant: 'destructive' });
+    } finally {
+      setCompressingPhotos(false);
+    }
+  };
+
   const startCamera = async () => {
     setCameraOpen(true);
     try {
@@ -859,6 +877,10 @@ export default function Eleves() {
             Générer matricules ({elevesWithoutMatricule.length})
           </Button>
         )}
+        <Button variant="outline" size="sm" onClick={compressAllPhotos} disabled={compressingPhotos} className="gap-1.5">
+          <ImageDown className={`h-4 w-4 ${compressingPhotos ? 'animate-spin' : ''}`} />
+          {compressingPhotos ? 'Compression...' : 'Optimiser photos'}
+        </Button>
         {selectedIds.size > 0 && (
           <Button size="sm" onClick={() => setShowPlanche(true)} className="gap-2">
             <FileDown className="h-4 w-4" /> Planches badges ({selectedIds.size})
