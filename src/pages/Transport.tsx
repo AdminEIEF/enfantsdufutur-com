@@ -611,7 +611,7 @@ export default function Transport() {
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center"><Bus className="h-4 w-4 text-primary" /></div>
                       )}
-                      <p style={{ fontSize: 7, color: '#6B7280', fontWeight: 500 }}>{schoolConfig?.nom || 'École'}</p>
+                      <p style={{ fontSize: 9, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase' }}>{schoolConfig?.nom || 'École'}</p>
                     </div>
                     <div className="flex items-center gap-1 px-3 py-1 rounded-full" style={{ background: '#FCD34D', fontSize: 8, fontWeight: 700, color: '#92400E' }}>
                       <Bus style={{ width: 10, height: 10 }} /> TRANSPORT SCOLAIRE
