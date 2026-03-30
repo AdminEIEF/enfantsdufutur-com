@@ -138,7 +138,7 @@ export function SupportChat() {
     setSending(false);
   };
 
-  if (isSuperviseur) return null;
+  if (hideChat) return null;
 
   return (
     <>
