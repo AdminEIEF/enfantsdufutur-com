@@ -653,8 +653,8 @@ export default function Transport() {
                       </div>
                     </div>
                     <div className="flex-shrink-0 flex flex-col items-center justify-center">
-                      <div className="bg-white rounded-lg p-1.5" style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.1)', border: '2px solid #E5E7EB' }}>
-                        <QRCodeCanvas value={JSON.stringify({ type: 'transport', matricule: selectedStudent.matricule, id: selectedStudent.id })} size={70} level="M" includeMargin={false} />
+                      <div className="bg-white rounded-lg p-2" style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.1)', border: '2px solid #E5E7EB' }}>
+                        <QRCodeCanvas value={JSON.stringify({ type: 'transport', matricule: selectedStudent.matricule, id: selectedStudent.id })} size={90} level="H" includeMargin={false} />
                       </div>
                       <p style={{ fontSize: 6, color: '#9CA3AF', marginTop: 3 }}>Scanner pour valider</p>
                     </div>

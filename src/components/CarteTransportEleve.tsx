@@ -455,8 +455,8 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                     >
                       <QRCodeCanvas
                         value={JSON.stringify({ type: 'transport', matricule: printCard.matricule, id: printCard.id })}
-                        size={70}
-                        level="M"
+                        size={90}
+                        level="H"
                         includeMargin={false}
                       />
                     </div>
