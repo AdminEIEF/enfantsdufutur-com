@@ -47,7 +47,7 @@ export function StudentAIChat() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: newMessages, userContext }),
+        body: JSON.stringify({ messages: newMessages, userContext, studentToken: session?.token }),
       });
 
       if (!resp.ok || !resp.body) throw new Error('Erreur réseau');
