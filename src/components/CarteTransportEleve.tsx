@@ -119,12 +119,19 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
 
   const exportCard = async () => {
     if (!cardRef.current) return;
-    const canvas = await html2canvas(cardRef.current, { scale: 4, useCORS: true, backgroundColor: null });
+    const canvas = await html2canvas(cardRef.current, {
+      scale: 6,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: '#FFFFFF',
+      imageTimeout: 15000,
+      logging: false,
+    });
     const link = document.createElement('a');
     link.download = `carte_transport_${printCard?.matricule || 'eleve'}.png`;
-    link.href = canvas.toDataURL('image/png');
+    link.href = canvas.toDataURL('image/png', 1.0);
     link.click();
-    toast({ title: 'Carte exportée' });
+    toast({ title: 'Carte exportée en haute qualité' });
   };
 
   const totalActives = eleves.filter((e: any) => getActiveRecharge(e.id)).length;
