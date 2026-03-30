@@ -317,13 +317,13 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 >
                     <path
                      d="M0,40 C80,0 160,70 240,35 C300,10 360,50 400,25 L400,90 L0,90 Z"
-                     fill="#4ADE80"
-                     opacity="0.35"
+                     fill="#F87171"
+                     opacity="0.5"
                    />
                    <path
                      d="M0,55 C60,30 140,75 220,50 C290,30 350,65 400,40 L400,90 L0,90 Z"
-                     fill="#FCA5A5"
-                     opacity="0.35"
+                     fill="#4ADE80"
+                     opacity="0.4"
                    />
                 </svg>
 
@@ -443,14 +443,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                             Expire le {new Date(printCard.recharge.date_expiration).toLocaleDateString('fr-FR')}
                           </span>
                         </div>
-                      ) : (
-                        <div
-                          className="rounded-full px-2 py-0.5"
-                          style={{ background: '#FEE2E2', fontSize: 7, fontWeight: 700, color: '#991B1B', width: 'fit-content' }}
-                        >
-                          NON RECHARGÉE
-                        </div>
-                      )}
+                      ) : null}
                     </div>
                   </div>
 
@@ -462,8 +455,8 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                     >
                       <QRCodeCanvas
                         value={JSON.stringify({ type: 'transport', matricule: printCard.matricule, id: printCard.id })}
-                        size={70}
-                        level="M"
+                        size={90}
+                        level="H"
                         includeMargin={false}
                       />
                     </div>
