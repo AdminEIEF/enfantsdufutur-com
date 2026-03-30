@@ -338,12 +338,35 @@ export default function Eleves() {
   const compressAllPhotos = async () => {
     setCompressingPhotos(true);
     try {
-      const { data, error } = await supabase.functions.invoke('compress-photos');
-      if (error) throw error;
-      const result = data as any;
+      const elevesWithPhotos = (eleves || []).filter(e => e.photo_url);
+      let compressed = 0, skipped = 0, failed = 0, totalSaved = 0;
+
+      for (const eleve of elevesWithPhotos) {
+        try {
+          const res = await fetch(eleve.photo_url!);
+          if (!res.ok) { failed++; continue; }
+          const originalBlob = await res.blob();
+          if (originalBlob.size < 100_000) { skipped++; continue; }
+
+          const compressedBlob = await compressImage(originalBlob, 400, 0.7);
+          if (compressedBlob.size >= originalBlob.size) { skipped++; continue; }
+
+          const path = `eleves/${eleve.id}/photo_opt_${Date.now()}.jpg`;
+          const { error: upErr } = await supabase.storage.from('photos').upload(path, compressedBlob, { contentType: 'image/jpeg', upsert: true });
+          if (upErr) { failed++; continue; }
+
+          const { data: signedData } = await supabase.storage.from('photos').createSignedUrl(path, 31536000);
+          if (signedData?.signedUrl) {
+            await supabase.from('eleves').update({ photo_url: signedData.signedUrl } as any).eq('id', eleve.id);
+            totalSaved += originalBlob.size - compressedBlob.size;
+            compressed++;
+          } else { failed++; }
+        } catch { failed++; }
+      }
+
       toast({
         title: '✅ Compression terminée',
-        description: `${result.compressed} photo(s) compressée(s), ${result.skipped} déjà optimisée(s), ${result.failed} échouée(s). ${result.totalSavedKB} KB économisés.`,
+        description: `${compressed} photo(s) compressée(s), ${skipped} déjà optimisée(s), ${failed} échouée(s). ${Math.round(totalSaved / 1024)} KB économisés.`,
       });
       qc.invalidateQueries({ queryKey: ['eleves-full'] });
     } catch (err: any) {
