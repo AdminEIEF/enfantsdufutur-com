@@ -137,7 +137,7 @@ export default function Eleves() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, matricule, nom, prenom, sexe, date_naissance, photo_url, classe_id, famille_id, statut, transport_zone, zone_transport_id, option_fournitures, option_cantine, option_robotique, robotique_paye, uniforme_scolaire, uniforme_sport, uniforme_polo_lacoste, uniforme_karate, uniforme_scout, qr_code, solde_cantine, checklist_livret, checklist_rames, checklist_marqueurs, checklist_photo, nom_prenom_pere, nom_prenom_mere, session_id, created_at, updated_at, deleted_at, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycle_id, cycles:cycle_id(nom, id))), familles(id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse)')
+        .select('id, matricule, nom, prenom, sexe, date_naissance, photo_url, photo_thumbnail_url, classe_id, famille_id, statut, transport_zone, zone_transport_id, option_fournitures, option_cantine, option_robotique, robotique_paye, uniforme_scolaire, uniforme_sport, uniforme_polo_lacoste, uniforme_karate, uniforme_scout, qr_code, solde_cantine, checklist_livret, checklist_rames, checklist_marqueurs, checklist_photo, nom_prenom_pere, nom_prenom_mere, session_id, created_at, updated_at, deleted_at, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycle_id, cycles:cycle_id(nom, id))), familles(id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse)')
         .is('deleted_at', null)
         .order('nom');
       if (error) throw error;
