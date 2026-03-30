@@ -361,7 +361,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                       </div>
                     )}
                     <div className="leading-none">
-                      <p style={{ fontSize: 7, color: '#6B7280', fontWeight: 500 }}>
+                      <p style={{ fontSize: 9, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase' }}>
                         {schoolConfig?.nom || 'École'}
                       </p>
                     </div>
