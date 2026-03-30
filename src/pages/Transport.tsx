@@ -89,6 +89,40 @@ export default function Transport() {
     },
   });
 
+  // Recharges transport
+  const { data: recharges = [] } = useQuery({
+    queryKey: ['transport-recharges-classes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('recharges_transport')
+        .select('*')
+        .order('date_recharge', { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const getActiveRecharge = (eleveId: string) => {
+    return recharges.find(
+      (r: any) => r.eleve_id === eleveId && r.actif && new Date(r.date_expiration) > new Date()
+    );
+  };
+
+  const getDaysRemaining = (dateExpiration: string) => {
+    const diff = new Date(dateExpiration).getTime() - new Date().getTime();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  };
+
+  const exportCard = async () => {
+    if (!cardRef.current) return;
+    const canvas = await html2canvas(cardRef.current, { scale: 4, useCORS: true, backgroundColor: null });
+    const link = document.createElement('a');
+    link.download = `carte_transport_${selectedStudent?.matricule || 'eleve'}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    toast({ title: 'Carte exportée' });
+  };
+
   // ─── Computed ─────────────────────────────────────────
   const filteredEleves = useMemo(() => {
     return eleves.filter((e: any) => {
