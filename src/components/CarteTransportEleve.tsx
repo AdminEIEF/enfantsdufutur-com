@@ -367,7 +367,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                     </div>
                   </div>
                   <div
-                    className="flex items-center gap-1 px-3 py-1 rounded-full"
+                    className="flex items-center gap-1 px-3 py-1 rounded-full mx-auto"
                     style={{ background: '#FCD34D', fontSize: 8, fontWeight: 700, color: '#92400E' }}
                   >
                     <Bus style={{ width: 10, height: 10 }} />
