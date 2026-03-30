@@ -12,6 +12,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
 import { motion } from 'framer-motion';
+import LandingTarifs from '@/components/LandingTarifs';
 import heroImage from '@/assets/hero-school.jpg';
 import schoolAnglais from '@/assets/school-anglais.jpg';
 import schoolBepc from '@/assets/school-bepc.jpg';
@@ -334,6 +335,8 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Tarifs */}
+      <LandingTarifs />
 
       {/* CTA */}
       <section className="bg-primary text-primary-foreground">
