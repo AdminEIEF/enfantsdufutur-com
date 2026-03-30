@@ -1,3 +1,4 @@
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import {
   GraduationCap, UsersRound, UserRoundPlus, BookOpenText, Calculator, TriangleAlert,
   Cog, BellRing, QrCode, LibraryBig, ChartColumnStacked,
@@ -16,6 +17,66 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
+// ─── Sidebar theme CSS vars ─────────────────────────────
+const SIDEBAR_THEME_VARS: Record<string, Record<string, string>> = {
+  default: {},
+  ocean: {
+    '--sidebar-background': '210 50% 15%',
+    '--sidebar-foreground': '200 20% 92%',
+    '--sidebar-primary': '190 80% 50%',
+    '--sidebar-accent': '200 40% 22%',
+    '--sidebar-accent-foreground': '195 30% 95%',
+    '--sidebar-border': '210 35% 22%',
+  },
+  forest: {
+    '--sidebar-background': '160 30% 12%',
+    '--sidebar-foreground': '150 20% 92%',
+    '--sidebar-primary': '162 63% 50%',
+    '--sidebar-accent': '155 25% 18%',
+    '--sidebar-accent-foreground': '150 30% 95%',
+    '--sidebar-border': '160 20% 20%',
+  },
+  purple: {
+    '--sidebar-background': '270 30% 15%',
+    '--sidebar-foreground': '265 20% 92%',
+    '--sidebar-primary': '270 60% 65%',
+    '--sidebar-accent': '265 25% 22%',
+    '--sidebar-accent-foreground': '260 30% 95%',
+    '--sidebar-border': '270 20% 22%',
+  },
+  slate: {
+    '--sidebar-background': '220 10% 18%',
+    '--sidebar-foreground': '215 15% 92%',
+    '--sidebar-primary': '200 80% 55%',
+    '--sidebar-accent': '218 10% 24%',
+    '--sidebar-accent-foreground': '215 15% 95%',
+    '--sidebar-border': '220 8% 25%',
+  },
+  crimson: {
+    '--sidebar-background': '350 30% 14%',
+    '--sidebar-foreground': '345 15% 92%',
+    '--sidebar-primary': '350 70% 60%',
+    '--sidebar-accent': '345 25% 20%',
+    '--sidebar-accent-foreground': '340 20% 95%',
+    '--sidebar-border': '350 20% 22%',
+  },
+};
+
+function useLocalStorageEvent(key: string, fallback: string) {
+  const subscribe = (cb: () => void) => {
+    const handler = () => cb();
+    window.addEventListener('sidebar-theme-change', handler);
+    window.addEventListener('menu-style-change', handler);
+    window.addEventListener('storage', handler);
+    return () => {
+      window.removeEventListener('sidebar-theme-change', handler);
+      window.removeEventListener('menu-style-change', handler);
+      window.removeEventListener('storage', handler);
+    };
+  };
+  return useSyncExternalStore(subscribe, () => localStorage.getItem(key) || fallback);
+}
 
 const navSections = [
   {
@@ -229,6 +290,8 @@ export function AppSidebar() {
   const { hasAnyRole, user } = useAuth();
   const { isInstallable, install } = usePWAInstall();
   const location = useLocation();
+  const sidebarTheme = useLocalStorageEvent('eief-sidebar-theme', 'default');
+  const menuStyle = useLocalStorageEvent('eief-menu-style', 'collapsible');
 
   const { data: activeSession } = useQuery({
     queryKey: ['active-session-sidebar'],
@@ -243,9 +306,46 @@ export function AppSidebar() {
     staleTime: 60000,
   });
 
+  // Build inline style from sidebar theme
+  const themeVars = SIDEBAR_THEME_VARS[sidebarTheme] || {};
+  const sidebarStyle: React.CSSProperties = {};
+  for (const [k, v] of Object.entries(themeVars)) {
+    (sidebarStyle as any)[k] = v;
+  }
+
+  const isCompact = menuStyle === 'compact';
+
+  const renderItems = (items: any[]) =>
+    items.filter((item: any) => !item.roles || hasAnyRole(item.roles)).map((item: any) => {
+      const hasQuery = item.url.includes('?');
+      if (hasQuery) {
+        const isActive = location.pathname + location.search === item.url;
+        return (
+          <SidebarMenuItem key={item.title}>
+            <SidebarMenuButton asChild className={isCompact ? 'py-1' : ''}>
+              <Link to={item.url} className={`hover:bg-sidebar-accent/50 flex items-center gap-2 px-2 ${isCompact ? 'py-1 text-xs' : 'py-1.5 text-sm'} rounded-md ${isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : ''}`}>
+                <item.icon className={`mr-2 ${isCompact ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
+                <span>{item.title}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        );
+      }
+      return (
+        <SidebarMenuItem key={item.title}>
+          <SidebarMenuButton asChild className={isCompact ? 'py-1' : ''}>
+            <NavLink to={item.url} end className={`hover:bg-sidebar-accent/50 ${isCompact ? 'text-xs' : ''}`} activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
+              <item.icon className={`mr-2 ${isCompact ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
+              <span>{item.title}</span>
+            </NavLink>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      );
+    });
+
   return (
-    <Sidebar>
-      <SidebarHeader className="p-4">
+    <Sidebar style={sidebarStyle}>
+      <SidebarHeader className={isCompact ? 'p-3' : 'p-4'}>
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
             <GraduationCap className="h-5 w-5" />
@@ -260,45 +360,32 @@ export function AppSidebar() {
       <SidebarContent>
         {navSections.map((section) => {
           if (!hasAnyRole(section.roles as unknown as ('superviseur' | 'admin' | 'secretaire' | 'service_info' | 'comptable' | 'boutique' | 'cantine' | 'librairie' | 'coordinateur' | 'chauffeur' | 'pointeur' | 'surveillant' | 'tresorier')[])) return null;
+
+          if (menuStyle === 'flat') {
+            return (
+              <SidebarGroup key={section.label}>
+                <SidebarGroupLabel className="text-sidebar-foreground/50 text-[10px] uppercase tracking-wider">
+                  {section.label}
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>{renderItems(section.items)}</SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            );
+          }
+
           return (
             <Collapsible key={section.label} defaultOpen className="group/collapsible">
               <SidebarGroup>
                 <CollapsibleTrigger asChild>
-                  <SidebarGroupLabel className="cursor-pointer hover:bg-sidebar-accent/30 rounded-md flex items-center justify-between w-full">
+                  <SidebarGroupLabel className={`cursor-pointer hover:bg-sidebar-accent/30 rounded-md flex items-center justify-between w-full ${isCompact ? 'text-[10px] py-1' : ''}`}>
                     {section.label}
                     <ChevronDown className="h-3.5 w-3.5 transition-transform group-data-[state=closed]/collapsible:rotate-[-90deg]" />
                   </SidebarGroupLabel>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarGroupContent>
-                    <SidebarMenu>
-                      {section.items.filter((item: any) => !item.roles || hasAnyRole(item.roles)).map((item) => {
-                        const hasQuery = item.url.includes('?');
-                        if (hasQuery) {
-                          const isActive = location.pathname + location.search === item.url;
-                          return (
-                            <SidebarMenuItem key={item.title}>
-                              <SidebarMenuButton asChild>
-                                <Link to={item.url} className={`hover:bg-sidebar-accent/50 flex items-center gap-2 px-2 py-1.5 rounded-md text-sm ${isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : ''}`}>
-                                  <item.icon className="mr-2 h-4 w-4" />
-                                  <span>{item.title}</span>
-                                </Link>
-                              </SidebarMenuButton>
-                            </SidebarMenuItem>
-                          );
-                        }
-                        return (
-                          <SidebarMenuItem key={item.title}>
-                            <SidebarMenuButton asChild>
-                              <NavLink to={item.url} end className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
-                                <item.icon className="mr-2 h-4 w-4" />
-                                <span>{item.title}</span>
-                              </NavLink>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        );
-                      })}
-                    </SidebarMenu>
+                    <SidebarMenu>{renderItems(section.items)}</SidebarMenu>
                   </SidebarGroupContent>
                 </CollapsibleContent>
               </SidebarGroup>
