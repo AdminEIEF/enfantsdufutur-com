@@ -443,14 +443,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                             Expire le {new Date(printCard.recharge.date_expiration).toLocaleDateString('fr-FR')}
                           </span>
                         </div>
-                      ) : (
-                        <div
-                          className="rounded-full px-2 py-0.5"
-                          style={{ background: '#FEE2E2', fontSize: 7, fontWeight: 700, color: '#991B1B', width: 'fit-content' }}
-                        >
-                          NON RECHARGÉE
-                        </div>
-                      )}
+                      ) : null}
                     </div>
                   </div>
 
