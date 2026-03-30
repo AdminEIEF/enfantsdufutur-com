@@ -1539,7 +1539,7 @@ export default function Configuration() {
           <TabsTrigger value="classe-matieres" className="text-xs sm:text-sm gap-1">📚 Mat./Classe</TabsTrigger>
           <TabsTrigger value="periodes" className="text-xs sm:text-sm gap-1">📅 Périodes</TabsTrigger>
           <TabsTrigger value="tranches" className="text-xs sm:text-sm gap-1">💳 Tranches</TabsTrigger>
-          
+          <TabsTrigger value="theme" className="text-xs sm:text-sm gap-1"><Palette className="h-4 w-4" /> Thème</TabsTrigger>
           <TabsTrigger value="corbeille" className="text-xs sm:text-sm gap-1">🗑️ Corbeille</TabsTrigger>
         </TabsList>
         <TabsContent value="ecole"><EcoleTab /></TabsContent>
@@ -1551,7 +1551,7 @@ export default function Configuration() {
         <TabsContent value="classe-matieres"><ClasseMatieresTab /></TabsContent>
         <TabsContent value="periodes"><PeriodesTab /></TabsContent>
         <TabsContent value="tranches"><TranchesTab /></TabsContent>
-        
+        <TabsContent value="theme"><ThemeTab /></TabsContent>
         <TabsContent value="corbeille"><CorbeilleTab /></TabsContent>
       </Tabs>
     </div>
