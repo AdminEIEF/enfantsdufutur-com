@@ -466,11 +466,11 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
 
                 {/* Footer */}
                 <div className="absolute bottom-1.5 left-4 right-4 flex justify-between items-center z-10">
-                  <p style={{ fontSize: 6, color: '#9CA3AF' }}>
-                    {schoolConfig?.ville || 'Conakry, Guinée'} • Année scolaire 2025-2026
+                  <p style={{ fontSize: 7, color: '#111827', fontWeight: 700 }}>
+                    {schoolConfig?.adresse || schoolConfig?.ville || 'Conakry, Guinée'}
                   </p>
-                  <p style={{ fontSize: 6, color: '#9CA3AF' }}>
-                    Carte rechargeable • 30 jours
+                  <p style={{ fontSize: 6, color: '#111827', fontWeight: 600 }}>
+                    Année scolaire 2025-2026
                   </p>
                 </div>
               </div>
