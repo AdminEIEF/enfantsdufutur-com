@@ -275,6 +275,7 @@ export default function Landing() {
                         alt={img.alt}
                         className="w-full h-48 sm:h-64 lg:h-80 object-cover transition-transform duration-700 hover:scale-110"
                         loading="lazy"
+                        decoding="async"
                       />
                     </div>
                   </div>
