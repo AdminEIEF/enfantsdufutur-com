@@ -78,6 +78,7 @@ export default function PreInscriptionPublic() {
       if (form.sexe) payload.sexe = form.sexe;
       if (form.email_parent) payload.email_parent = form.email_parent.trim();
       if (form.niveau_id) payload.niveau_id = form.niveau_id;
+      if (form.classe_id) payload.classe_id = form.classe_id;
 
       const { error } = await supabase.from('pre_inscriptions').insert(payload);
       if (error) throw error;
