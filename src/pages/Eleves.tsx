@@ -166,32 +166,25 @@ export default function Eleves() {
     queryKey: ['eleves-full'],
     queryFn: async () => {
       const selectFields = 'id, matricule, nom, prenom, sexe, date_naissance, photo_url, photo_thumbnail_url, classe_id, famille_id, statut, transport_zone, zone_transport_id, option_fournitures, option_cantine, option_robotique, robotique_paye, uniforme_scolaire, uniforme_sport, uniforme_polo_lacoste, uniforme_karate, uniforme_scout, qr_code, solde_cantine, checklist_livret, checklist_rames, checklist_marqueurs, checklist_photo, nom_prenom_pere, nom_prenom_mere, session_id, created_at, updated_at, deleted_at, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycle_id, cycles:cycle_id(nom, id))), familles(id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse)';
-      // Fetch all pages to bypass the 1000-row default limit
       const allData: any[] = [];
       const pageSize = 1000;
-      let page = 0;
-      let hasMore = true;
-      while (hasMore) {
-        const from = page * pageSize;
-        const to = from + pageSize - 1;
+      for (let from = 0; ; from += pageSize) {
         const { data, error } = await supabase
           .from('eleves')
           .select(selectFields)
           .is('deleted_at', null)
           .order('nom')
-          .range(from, to);
+          .range(from, from + pageSize - 1);
         if (error) throw error;
-        if (data && data.length > 0) {
-          allData.push(...data);
-        }
-        hasMore = (data?.length ?? 0) === pageSize;
-        page++;
+        allData.push(...(data ?? []));
+        if (!data || data.length < pageSize) break;
       }
       return allData;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Auto-fix broken public URLs for private bucket
+  // Auto-fix broken public URLs for private bucket (batched, max 5 at a time)
   useEffect(() => {
     if (!eleves || eleves.length === 0) return;
     const broken = (eleves as any[]).filter((e: any) => {
@@ -199,14 +192,24 @@ export default function Eleves() {
       return url && url.includes('/object/public/photos/') && !fixedUrls[e.id];
     });
     if (broken.length === 0) return;
-    broken.forEach(async (e: any) => {
-      const url = e.photo_thumbnail_url || e.photo_url;
-      const fixed = await getFixedPhotoUrl(url);
-      if (fixed !== url) {
-        setFixedUrls(prev => ({ ...prev, [e.id]: fixed }));
-        await supabase.from('eleves').update({ photo_url: fixed, photo_thumbnail_url: fixed }).eq('id', e.id);
+    let cancelled = false;
+    (async () => {
+      const batch = broken.slice(0, 5); // Process max 5 at a time to avoid overload
+      const updates: Record<string, string> = {};
+      for (const e of batch) {
+        if (cancelled) break;
+        const url = e.photo_thumbnail_url || e.photo_url;
+        const fixed = await getFixedPhotoUrl(url);
+        if (fixed !== url) {
+          updates[e.id] = fixed;
+          await supabase.from('eleves').update({ photo_url: fixed, photo_thumbnail_url: fixed }).eq('id', e.id);
+        }
       }
-    });
+      if (!cancelled && Object.keys(updates).length > 0) {
+        setFixedUrls(prev => ({ ...prev, ...updates }));
+      }
+    })();
+    return () => { cancelled = true; };
   }, [eleves, fixedUrls, getFixedPhotoUrl]);
 
   const { data: cycles = [] } = useQuery({
@@ -257,10 +260,17 @@ export default function Eleves() {
   const { data: paiementsAll = [] } = useQuery({
     queryKey: ['paiements-all'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('paiements').select('*').eq('type_paiement', 'scolarite');
-      if (error) throw error;
-      return data;
+      const allData: any[] = [];
+      const pageSize = 1000;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase.from('paiements').select('id, montant, eleve_id, mois_concerne, date_paiement').eq('type_paiement', 'scolarite').range(from, from + pageSize - 1);
+        if (error) throw error;
+        allData.push(...(data ?? []));
+        if (!data || data.length < pageSize) break;
+      }
+      return allData;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: tranchesConfig = {} } = useQuery({
