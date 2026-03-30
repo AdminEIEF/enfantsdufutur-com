@@ -363,9 +363,9 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 ref={cardRef}
                 className="relative mx-auto overflow-hidden"
                 style={{
-                  width: 400,
-                  height: 252,
-                  borderRadius: 14,
+                  width: 360,
+                  height: 227,
+                  borderRadius: 12,
                   fontFamily: "'Inter', 'Space Grotesk', sans-serif",
                   background: '#FFFFFF',
                   boxShadow: '0 4px 24px rgba(0,0,0,0.13)',
