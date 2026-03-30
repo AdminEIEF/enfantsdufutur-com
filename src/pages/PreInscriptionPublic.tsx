@@ -42,6 +42,21 @@ export default function PreInscriptionPublic() {
     },
   });
 
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes-public', form.niveau_id],
+    queryFn: async () => {
+      if (!form.niveau_id) return [];
+      const { data, error } = await supabase
+        .from('classes')
+        .select('id, nom')
+        .eq('niveau_id', form.niveau_id)
+        .order('nom');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!form.niveau_id,
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.prenom_eleve || !form.nom_eleve || !form.nom_parent || !form.telephone_parent) {
