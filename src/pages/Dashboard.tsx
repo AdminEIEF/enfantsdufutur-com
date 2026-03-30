@@ -47,13 +47,23 @@ export default function Dashboard() {
   const { data: eleves = [] } = useQuery({
     queryKey: ['dashboard-eleves'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('eleves')
-        .select('id, nom, prenom, statut, option_cantine, solde_cantine, classe_id, famille_id, created_at, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycles:cycle_id(nom)))')
-        .is('deleted_at', null);
-      if (error) throw error;
-      return data;
+      const selectFields = 'id, nom, prenom, statut, option_cantine, solde_cantine, classe_id, famille_id, created_at, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycles:cycle_id(nom)))';
+      const allData: any[] = [];
+      const pageSize = 1000;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase
+          .from('eleves')
+          .select(selectFields)
+          .is('deleted_at', null)
+          .order('nom')
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        allData.push(...(data ?? []));
+        if (!data || data.length < pageSize) break;
+      }
+      return allData;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: paiements = [] } = useQuery({
