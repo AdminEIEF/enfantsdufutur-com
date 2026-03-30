@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect, lazy, Suspense } from 'react';
 import Cropper from 'react-easy-crop';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -139,7 +139,25 @@ export default function Eleves() {
   const [photoContrast, setPhotoContrast] = useState(100);
   const [photoBgColor, setPhotoBgColor] = useState<string | null>(null);
   const [cropAspect, setCropAspect] = useState<number>(1);
+  const [fixedUrls, setFixedUrls] = useState<Record<string, string>>({});
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  // Fix public URLs for private bucket - generate signed URL
+  const getFixedPhotoUrl = useCallback(async (url: string): Promise<string> => {
+    if (!url) return url;
+    // If it's already a signed URL, return as-is
+    if (url.includes('/object/sign/')) return url;
+    // If it's a public URL for the photos bucket, convert to signed
+    const publicMatch = url.match(/\/object\/public\/photos\/(.+)$/);
+    if (publicMatch) {
+      const path = publicMatch[1];
+      const { data, error } = await supabase.storage.from('photos').createSignedUrl(path, 31536000);
+      if (!error && data) return data.signedUrl;
+    }
+    return url;
+  }, []);
+
+  // useEffect for fixing URLs is placed after eleves query below
   const { toast } = useToast();
   const qc = useQueryClient();
   const { data: schoolConfig } = useSchoolConfig();
@@ -156,6 +174,24 @@ export default function Eleves() {
       return data;
     },
   });
+
+  // Auto-fix broken public URLs for private bucket
+  useEffect(() => {
+    if (!eleves || eleves.length === 0) return;
+    const broken = (eleves as any[]).filter((e: any) => {
+      const url = e.photo_thumbnail_url || e.photo_url;
+      return url && url.includes('/object/public/photos/') && !fixedUrls[e.id];
+    });
+    if (broken.length === 0) return;
+    broken.forEach(async (e: any) => {
+      const url = e.photo_thumbnail_url || e.photo_url;
+      const fixed = await getFixedPhotoUrl(url);
+      if (fixed !== url) {
+        setFixedUrls(prev => ({ ...prev, [e.id]: fixed }));
+        await supabase.from('eleves').update({ photo_url: fixed, photo_thumbnail_url: fixed }).eq('id', e.id);
+      }
+    });
+  }, [eleves, fixedUrls, getFixedPhotoUrl]);
 
   const { data: cycles = [] } = useQuery({
     queryKey: ['cycles'],
@@ -998,11 +1034,11 @@ export default function Eleves() {
                   <TableCell>
                   {(e as any).photo_thumbnail_url || e.photo_url ? (
                       <img 
-                        src={(e as any).photo_thumbnail_url || e.photo_url} 
+                        src={fixedUrls[e.id] || (e as any).photo_thumbnail_url || e.photo_url} 
                         alt={`${e.prenom} ${e.nom}`} 
                         loading="lazy" decoding="async" 
                         className="w-8 h-8 rounded-full object-cover border border-border cursor-pointer hover:ring-2 hover:ring-primary transition-all" 
-                        onClick={(ev) => { ev.stopPropagation(); setZoomPhotoUrl(e.photo_url); setZoomEleveId(e.id); setCropMode(false); setCrop({x:0,y:0}); setZoom(1); }}
+                        onClick={(ev) => { ev.stopPropagation(); setZoomPhotoUrl(fixedUrls[e.id] || e.photo_url); setZoomEleveId(e.id); setCropMode(false); setCrop({x:0,y:0}); setZoom(1); }}
                       />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
