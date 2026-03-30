@@ -613,14 +613,14 @@ export default function Transport() {
                       )}
                       <p style={{ fontSize: 9, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase' }}>{schoolConfig?.nom || 'École'}</p>
                     </div>
-                    <div className="flex items-center gap-1 px-3 py-1 rounded-full" style={{ background: '#FCD34D', fontSize: 8, fontWeight: 700, color: '#92400E' }}>
+                    <div className="flex items-center gap-1 px-3 py-1 rounded-full mx-auto" style={{ background: '#FCD34D', fontSize: 8, fontWeight: 700, color: '#92400E' }}>
                       <Bus style={{ width: 10, height: 10 }} /> TRANSPORT SCOLAIRE
                     </div>
                   </div>
                   <div className="flex gap-3 px-4 pt-2 relative z-10" style={{ height: 140 }}>
                     <div className="flex-shrink-0 rounded-lg overflow-hidden bg-muted border" style={{ width: 72, height: 90, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
                       {selectedStudent.photo_url ? (
-                        <img src={selectedStudent.photo_url} alt="Photo" className="w-full h-full object-cover object-top" crossOrigin="anonymous" />
+                        <img src={selectedStudent.photo_url} alt="Photo" className="w-full h-full object-cover" style={{ objectPosition: 'center 20%' }} crossOrigin="anonymous" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-muted-foreground" style={{ fontSize: 10 }}>Photo</div>
                       )}
