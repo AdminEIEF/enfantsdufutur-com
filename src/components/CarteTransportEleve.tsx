@@ -390,7 +390,8 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                       <img
                         src={printCard.photo_url}
                         alt="Photo"
-                        className="w-full h-full object-cover object-top"
+                        className="w-full h-full object-cover"
+                        style={{ objectPosition: 'center 20%' }}
                         crossOrigin="anonymous"
                       />
                     ) : (

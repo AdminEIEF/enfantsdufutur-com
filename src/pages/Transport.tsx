@@ -620,7 +620,7 @@ export default function Transport() {
                   <div className="flex gap-3 px-4 pt-2 relative z-10" style={{ height: 140 }}>
                     <div className="flex-shrink-0 rounded-lg overflow-hidden bg-muted border" style={{ width: 72, height: 90, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
                       {selectedStudent.photo_url ? (
-                        <img src={selectedStudent.photo_url} alt="Photo" className="w-full h-full object-cover object-top" crossOrigin="anonymous" />
+                        <img src={selectedStudent.photo_url} alt="Photo" className="w-full h-full object-cover" style={{ objectPosition: 'center 20%' }} crossOrigin="anonymous" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-muted-foreground" style={{ fontSize: 10 }}>Photo</div>
                       )}
