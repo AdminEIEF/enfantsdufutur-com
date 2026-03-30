@@ -649,9 +649,7 @@ export default function Transport() {
                             <div className="rounded-full px-2 py-0.5" style={{ background: '#D1FAE5', fontSize: 7, fontWeight: 600, color: '#065F46' }}>● ACTIVE</div>
                             <span style={{ fontSize: 8, color: '#6B7280' }}>Expire le {new Date(selectedStudent.recharge.date_expiration).toLocaleDateString('fr-FR')}</span>
                           </div>
-                        ) : (
-                          <div className="rounded-full px-2 py-0.5" style={{ background: '#FEE2E2', fontSize: 7, fontWeight: 700, color: '#991B1B', width: 'fit-content' }}>NON RECHARGÉE</div>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                     <div className="flex-shrink-0 flex flex-col items-center justify-center">
