@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import Cropper from 'react-easy-crop';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -128,6 +129,12 @@ export default function Eleves() {
   const [generatingMatricules, setGeneratingMatricules] = useState(false);
   const [compressingPhotos, setCompressingPhotos] = useState(false);
   const [zoomPhotoUrl, setZoomPhotoUrl] = useState<string | null>(null);
+  const [zoomEleveId, setZoomEleveId] = useState<string | null>(null);
+  const [cropMode, setCropMode] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [savingCrop, setSavingCrop] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -991,7 +998,7 @@ export default function Eleves() {
                         alt={`${e.prenom} ${e.nom}`} 
                         loading="lazy" decoding="async" 
                         className="w-8 h-8 rounded-full object-cover border border-border cursor-pointer hover:ring-2 hover:ring-primary transition-all" 
-                        onClick={(ev) => { ev.stopPropagation(); setZoomPhotoUrl(e.photo_url); }}
+                        onClick={(ev) => { ev.stopPropagation(); setZoomPhotoUrl(e.photo_url); setZoomEleveId(e.id); setCropMode(false); setCrop({x:0,y:0}); setZoom(1); }}
                       />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
@@ -1542,17 +1549,68 @@ export default function Eleves() {
       )}
 
       {/* Photo Zoom Dialog */}
-      <Dialog open={!!zoomPhotoUrl} onOpenChange={() => setZoomPhotoUrl(null)}>
-        <DialogContent className="max-w-2xl flex items-center justify-center p-2">
+      <Dialog open={!!zoomPhotoUrl} onOpenChange={() => { setZoomPhotoUrl(null); setCropMode(false); }}>
+        <DialogContent className="max-w-2xl flex flex-col items-center justify-center p-4">
           <DialogHeader className="sr-only">
             <DialogTitle>Photo élève</DialogTitle>
           </DialogHeader>
-          {zoomPhotoUrl && (
-            <img
-              src={zoomPhotoUrl}
-              alt="Photo élève"
-              className="max-h-[80vh] max-w-full rounded-lg object-contain"
-            />
+          {zoomPhotoUrl && !cropMode && (
+            <div className="flex flex-col items-center gap-3">
+              <img
+                src={zoomPhotoUrl}
+                alt="Photo élève"
+                className="max-h-[70vh] max-w-full rounded-lg object-contain"
+              />
+              <Button variant="outline" size="sm" onClick={() => setCropMode(true)}>
+                <Edit className="w-4 h-4 mr-2" /> Recadrer la photo
+              </Button>
+            </div>
+          )}
+          {zoomPhotoUrl && cropMode && (
+            <div className="flex flex-col items-center gap-3 w-full">
+              <div className="relative w-full" style={{ height: '60vh' }}>
+                <Cropper
+                  image={zoomPhotoUrl}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={1}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={(_: any, cap: any) => setCroppedAreaPixels(cap)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setCropMode(false)}>Annuler</Button>
+                <Button size="sm" disabled={savingCrop} onClick={async () => {
+                  if (!croppedAreaPixels || !zoomPhotoUrl || !zoomEleveId) return;
+                  setSavingCrop(true);
+                  try {
+                    const canvas = document.createElement('canvas');
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = zoomPhotoUrl; });
+                    canvas.width = croppedAreaPixels.width;
+                    canvas.height = croppedAreaPixels.height;
+                    const ctx = canvas.getContext('2d')!;
+                    ctx.drawImage(img, croppedAreaPixels.x, croppedAreaPixels.y, croppedAreaPixels.width, croppedAreaPixels.height, 0, 0, croppedAreaPixels.width, croppedAreaPixels.height);
+                    const blob = await new Promise<Blob>((res) => canvas.toBlob(b => res(b!), 'image/jpeg', 0.85));
+                    const path = `eleves/${zoomEleveId}_crop_${Date.now()}.jpg`;
+                    const { error: upErr } = await supabase.storage.from('photos').upload(path, blob, { upsert: true });
+                    if (upErr) throw upErr;
+                    const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
+                    await supabase.from('eleves').update({ photo_url: urlData.publicUrl, photo_thumbnail_url: urlData.publicUrl }).eq('id', zoomEleveId);
+                    toast({ title: 'Photo recadrée et sauvegardée' });
+                    setZoomPhotoUrl(urlData.publicUrl);
+                    setCropMode(false);
+                    qc.invalidateQueries({ queryKey: ['eleves'] });
+                  } catch (err: any) {
+                    toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+                  } finally { setSavingCrop(false); }
+                }}>
+                  {savingCrop ? 'Sauvegarde...' : 'Sauvegarder'}
+                </Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
