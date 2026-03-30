@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import html2canvas from 'html2canvas';
+import transportMapWatermark from '@/assets/transport-map-watermark.png';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { exportToExcel } from '@/lib/excelUtils';
 import { useToast } from '@/hooks/use-toast';
