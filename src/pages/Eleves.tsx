@@ -46,7 +46,8 @@ function PasswordSection({ eleve, onUpdate }: { eleve: any; onUpdate: () => void
     }
   };
 
-  const currentPwd = eleve.mot_de_passe_eleve;
+  // Never display the hash - just show if password is set or not
+  const hasPassword = !!eleve.mot_de_passe_eleve;
 
   return (
     <div className="border rounded-lg p-3 space-y-2">
@@ -57,11 +58,8 @@ function PasswordSection({ eleve, onUpdate }: { eleve: any; onUpdate: () => void
       <div className="flex items-center gap-2">
         <span className="text-sm">Mot de passe :</span>
         <code className="bg-muted px-2 py-0.5 rounded text-sm font-mono">
-          {showPwd ? (currentPwd || 'Non défini') : (currentPwd ? '••••••' : 'Non défini')}
+          {hasPassword ? '✓ Configuré' : 'Non défini'}
         </code>
-        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setShowPwd(!showPwd)}>
-          {showPwd ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-        </Button>
       </div>
       {editing ? (
         <div className="flex gap-2 items-center">
