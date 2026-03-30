@@ -118,7 +118,7 @@ export default function ParentDashboard() {
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             {/* Show first child's photo or icon */}
             {eleves.length > 0 && eleves[0].photo_url ? (
-              <img src={eleves[0].photo_url} alt="" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border-2 border-primary/20 shrink-0" />
+              <img src={eleves[0].photo_url} alt="" loading="lazy" decoding="async" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border-2 border-primary/20 shrink-0" />
             ) : (
               <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
             )}
@@ -131,7 +131,7 @@ export default function ParentDashboard() {
               <div className="hidden sm:flex -space-x-2 ml-2">
                 {eleves.slice(1, 4).map((e: any) => (
                   e.photo_url ? (
-                    <img key={e.id} src={e.photo_url} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-card" />
+                    <img key={e.id} src={e.photo_url} alt="" loading="lazy" decoding="async" className="w-7 h-7 rounded-full object-cover border-2 border-card" />
                   ) : (
                     <div key={e.id} className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] border-2 border-card">
                       {e.prenom[0]}{e.nom[0]}
