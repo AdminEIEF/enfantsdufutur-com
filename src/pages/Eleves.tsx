@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect, lazy, Suspense } from 'react';
 import Cropper from 'react-easy-crop';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
