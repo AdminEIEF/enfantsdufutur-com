@@ -877,6 +877,10 @@ export default function Eleves() {
             Générer matricules ({elevesWithoutMatricule.length})
           </Button>
         )}
+        <Button variant="outline" size="sm" onClick={compressAllPhotos} disabled={compressingPhotos} className="gap-1.5">
+          <ImageDown className={`h-4 w-4 ${compressingPhotos ? 'animate-spin' : ''}`} />
+          {compressingPhotos ? 'Compression...' : 'Optimiser photos'}
+        </Button>
         {selectedIds.size > 0 && (
           <Button size="sm" onClick={() => setShowPlanche(true)} className="gap-2">
             <FileDown className="h-4 w-4" /> Planches badges ({selectedIds.size})
