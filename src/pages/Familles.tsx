@@ -22,7 +22,7 @@ function useFamilles() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('familles')
-        .select('*, eleves(id, nom, prenom, statut, matricule, date_naissance, sexe, classe_id, classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom))))')
+        .select('id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse, solde_famille, created_at, updated_at, eleves(id, nom, prenom, statut, matricule, date_naissance, sexe, classe_id, classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom))))')
         .order('nom_famille');
       if (error) throw error;
       return data;
@@ -266,10 +266,10 @@ export default function Familles() {
     },
     onSuccess: (code) => {
       qc.invalidateQueries({ queryKey: ['familles-with-children'] });
-      toast.success(`Code généré : ${code}`);
-      // Update selected famille in place
+      toast.success(`Code généré : ${code} — Notez-le maintenant, il ne sera plus visible.`);
+      // Mark as having a code without storing the hash
       if (selectedFamille) {
-        setSelectedFamille({ ...selectedFamille, code_acces: code });
+        setSelectedFamille({ ...selectedFamille, code_acces_set: true });
       }
     },
     onError: (e: any) => toast.error(e.message),
@@ -536,19 +536,11 @@ export default function Familles() {
                       <KeyRound className="h-3.5 w-3.5" /> Code d'accès Espace Parent
                     </p>
                     <div className="flex items-center gap-2">
-                      {selectedFamille.code_acces ? (
+                      {selectedFamille.code_acces_set ? (
                         <>
-                          <code className="bg-muted px-3 py-1.5 rounded font-mono text-lg tracking-widest font-bold">
-                            {selectedFamille.code_acces}
-                          </code>
-                          <Button variant="outline" size="sm" onClick={() => {
-                            navigator.clipboard.writeText(selectedFamille.code_acces);
-                            toast.success('Code copié !');
-                          }}>
-                            <Copy className="h-3 w-3" />
-                          </Button>
+                          <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">✓ Code configuré</Badge>
                           <Button variant="outline" size="sm" onClick={() => generateCode.mutate(selectedFamille.id)}>
-                            <RefreshCw className="h-3 w-3" />
+                            <RefreshCw className="h-3 w-3 mr-1" /> Régénérer
                           </Button>
                         </>
                       ) : (

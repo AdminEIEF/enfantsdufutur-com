@@ -46,7 +46,8 @@ function PasswordSection({ eleve, onUpdate }: { eleve: any; onUpdate: () => void
     }
   };
 
-  const currentPwd = eleve.mot_de_passe_eleve;
+  // Never display the hash - just show if password is set or not
+  const hasPassword = !!eleve.mot_de_passe_eleve;
 
   return (
     <div className="border rounded-lg p-3 space-y-2">
@@ -57,11 +58,8 @@ function PasswordSection({ eleve, onUpdate }: { eleve: any; onUpdate: () => void
       <div className="flex items-center gap-2">
         <span className="text-sm">Mot de passe :</span>
         <code className="bg-muted px-2 py-0.5 rounded text-sm font-mono">
-          {showPwd ? (currentPwd || 'Non défini') : (currentPwd ? '••••••' : 'Non défini')}
+          {hasPassword ? '✓ Configuré' : 'Non défini'}
         </code>
-        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setShowPwd(!showPwd)}>
-          {showPwd ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-        </Button>
       </div>
       {editing ? (
         <div className="flex gap-2 items-center">
@@ -77,9 +75,9 @@ function PasswordSection({ eleve, onUpdate }: { eleve: any; onUpdate: () => void
       ) : (
         <div className="flex gap-2">
           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditing(true)}>
-            <Edit className="h-3 w-3 mr-1" /> Modifier
+            <Edit className="h-3 w-3 mr-1" /> {hasPassword ? 'Réinitialiser' : 'Définir'}
           </Button>
-          {!currentPwd && (
+          {!hasPassword && (
             <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => save(generatePassword())}>
               <KeyRound className="h-3 w-3 mr-1" /> Générer un mot de passe
             </Button>
@@ -138,7 +136,7 @@ export default function Eleves() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('*, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycle_id, cycles:cycle_id(nom, id))), familles(id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse, code_acces)')
+        .select('id, matricule, nom, prenom, sexe, date_naissance, photo_url, classe_id, famille_id, statut, transport_zone, zone_transport_id, option_fournitures, option_cantine, option_robotique, robotique_paye, uniforme_scolaire, uniforme_sport, uniforme_polo_lacoste, uniforme_karate, uniforme_scout, qr_code, solde_cantine, checklist_livret, checklist_rames, checklist_marqueurs, checklist_photo, nom_prenom_pere, nom_prenom_mere, session_id, created_at, updated_at, deleted_at, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycle_id, cycles:cycle_id(nom, id))), familles(id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse)')
         .is('deleted_at', null)
         .order('nom');
       if (error) throw error;
@@ -1160,7 +1158,6 @@ export default function Eleves() {
                       {selected.familles.telephone_mere && <p>Tél. mère: {selected.familles.telephone_mere}</p>}
                       {selected.familles.email_parent && <p>Email: {selected.familles.email_parent}</p>}
                       {selected.familles.adresse && <p>Adresse: {selected.familles.adresse}</p>}
-                      {selected.familles.code_acces && <p>Code accès parent: <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{selected.familles.code_acces}</code></p>}
                     </div>
                   </div>
                 ) : (

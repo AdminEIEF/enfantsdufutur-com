@@ -227,7 +227,7 @@ export default function Personnel() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('employes')
-        .select('*')
+        .select('id, matricule, nom, prenom, sexe, date_naissance, telephone, email, adresse, photo_url, categorie, poste, date_embauche, date_fin_contrat, salaire_base, prix_heure, statut, coord_edit_count, created_at, updated_at')
         .order('nom');
       if (error) throw error;
       return data;

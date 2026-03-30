@@ -52,13 +52,77 @@ Les données suivantes proviennent du système et concernent l'utilisateur conne
 - Formate tes réponses en utilisant du markdown pour la lisibilité.
 - Sois concis mais complet.`;
 
+async function validateHmacToken(token: string): Promise<string | null> {
+  try {
+    const decoded = atob(token);
+    const parts = decoded.split(":");
+    if (parts.length < 3) return null;
+    const eleveId = parts[0];
+    const tokenTimestamp = parseInt(parts[1]);
+    const tokenSignature = parts.slice(2).join(":");
+
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    const tokenData = `${eleveId}:${tokenTimestamp}`;
+    const expectedSig = await crypto.subtle.sign("HMAC", key, encoder.encode(tokenData));
+    const expectedHex = Array.from(new Uint8Array(expectedSig)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+    if (tokenSignature !== expectedHex) return null;
+    if (Date.now() - tokenTimestamp > 24 * 60 * 60 * 1000) return null;
+    return eleveId;
+  } catch {
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { messages, userContext } = await req.json();
+    const body = await req.json();
+    const { messages, userContext, studentToken } = body;
+
+    // ── Authentication: JWT or HMAC student token ──
+    let authenticated = false;
+
+    // Option 1: Supabase JWT in Authorization header (staff users)
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+
+      const token = authHeader.replace("Bearer ", "");
+      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+      if (!claimsError && claimsData?.claims) {
+        authenticated = true;
+      }
+    }
+
+    // Option 2: HMAC student token in body (student users)
+    if (!authenticated && studentToken) {
+      const eleveId = await validateHmacToken(studentToken);
+      if (eleveId) {
+        authenticated = true;
+      }
+    }
+
+    if (!authenticated) {
+      return new Response(
+        JSON.stringify({ error: "Non autorisé" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -117,7 +181,7 @@ serve(async (req) => {
   } catch (e) {
     console.error("chat error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Erreur inconnue" }),
+      JSON.stringify({ error: "Erreur inconnue" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
