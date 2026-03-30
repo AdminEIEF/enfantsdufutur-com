@@ -166,29 +166,22 @@ export default function Eleves() {
     queryKey: ['eleves-full'],
     queryFn: async () => {
       const selectFields = 'id, matricule, nom, prenom, sexe, date_naissance, photo_url, photo_thumbnail_url, classe_id, famille_id, statut, transport_zone, zone_transport_id, option_fournitures, option_cantine, option_robotique, robotique_paye, uniforme_scolaire, uniforme_sport, uniforme_polo_lacoste, uniforme_karate, uniforme_scout, qr_code, solde_cantine, checklist_livret, checklist_rames, checklist_marqueurs, checklist_photo, nom_prenom_pere, nom_prenom_mere, session_id, created_at, updated_at, deleted_at, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycle_id, cycles:cycle_id(nom, id))), familles(id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse)';
-      // Fetch all pages to bypass the 1000-row default limit
       const allData: any[] = [];
       const pageSize = 1000;
-      let page = 0;
-      let hasMore = true;
-      while (hasMore) {
-        const from = page * pageSize;
-        const to = from + pageSize - 1;
+      for (let from = 0; ; from += pageSize) {
         const { data, error } = await supabase
           .from('eleves')
           .select(selectFields)
           .is('deleted_at', null)
           .order('nom')
-          .range(from, to);
+          .range(from, from + pageSize - 1);
         if (error) throw error;
-        if (data && data.length > 0) {
-          allData.push(...data);
-        }
-        hasMore = (data?.length ?? 0) === pageSize;
-        page++;
+        allData.push(...(data ?? []));
+        if (!data || data.length < pageSize) break;
       }
       return allData;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Auto-fix broken public URLs for private bucket
