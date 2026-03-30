@@ -868,6 +868,7 @@ export default function Eleves() {
                     }}
                   />
                 </TableHead>
+                <TableHead className="w-10">Photo</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Matricule</TableHead><TableHead>Nom</TableHead><TableHead>Prénom</TableHead>
                 <TableHead>Sexe</TableHead><TableHead>Cycle</TableHead><TableHead>Classe</TableHead>
@@ -890,6 +891,15 @@ export default function Eleves() {
                         setSelectedIds(newSet);
                       }}
                     />
+                  </TableCell>
+                  <TableCell>
+                    {e.photo_url ? (
+                      <img src={e.photo_url} alt={`${e.prenom} ${e.nom}`} loading="lazy" decoding="async" className="w-8 h-8 rounded-full object-cover border border-border" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell>
                     {e.famille_id ? (
