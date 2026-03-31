@@ -181,7 +181,8 @@ export default function Eleves() {
       }
       return allData;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   // Auto-fix broken public URLs for private bucket (batched, max 5 at a time)
@@ -1060,9 +1061,9 @@ export default function Eleves() {
                   <TableCell>
                   {(e as any).photo_thumbnail_url || e.photo_url ? (
                       <img 
-                        src={fixedUrls[e.id] || (e as any).photo_thumbnail_url || e.photo_url} 
+                        src={`${fixedUrls[e.id] || (e as any).photo_thumbnail_url || e.photo_url}${((fixedUrls[e.id] || (e as any).photo_thumbnail_url || e.photo_url) as string).includes('?') ? '&' : '?'}v=${encodeURIComponent(e.updated_at || '')}`}
                         alt={`${e.prenom} ${e.nom}`} 
-                        loading="lazy" decoding="async" 
+                        loading="eager" decoding="async" 
                         className="w-8 h-8 rounded-full object-cover border border-border cursor-pointer hover:ring-2 hover:ring-primary transition-all" 
                         onClick={(ev) => { ev.stopPropagation(); setZoomPhotoUrl(fixedUrls[e.id] || e.photo_url); setZoomEleveId(e.id); setCropMode(false); setCrop({x:0,y:0}); setZoom(1); }}
                       />
