@@ -44,8 +44,8 @@ Deno.serve(async (req) => {
       .select("role")
       .eq("user_id", callerId);
     const roleList = (rolesData || []).map((r: any) => r.role);
-    if (!roleList.includes("superviseur") && !roleList.includes("admin")) {
-      return new Response(JSON.stringify({ error: "Accès réservé au superviseur ou administrateur" }), {
+    if (!roleList.includes("superviseur")) {
+      return new Response(JSON.stringify({ error: "Accès réservé au superviseur" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
