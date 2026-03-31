@@ -124,6 +124,9 @@ export default function CoordinateurSecondaireDashboard() {
               </div>
               <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
               <p className="text-xs text-muted-foreground">{c.label}</p>
+              {'subtitle' in c && c.subtitle && (
+                <p className="text-[10px] text-muted-foreground mt-0.5">{c.subtitle}</p>
+              )}
             </CardContent>
           </Card>
         ))}
