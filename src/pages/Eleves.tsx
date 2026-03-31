@@ -16,6 +16,7 @@ import PlancheBadgesScolaires from '@/components/PlancheBadgesScolaires';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
 
 function PasswordSection({ eleve, onUpdate, isSuperviseur }: { eleve: any; onUpdate: () => void; isSuperviseur: boolean }) {
   const [showPwd, setShowPwd] = useState(false);
