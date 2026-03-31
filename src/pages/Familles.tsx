@@ -542,14 +542,18 @@ export default function Familles() {
                       {selectedFamille.code_acces_set ? (
                         <>
                           <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">✓ Code configuré</Badge>
-                          <Button variant="outline" size="sm" onClick={() => generateCode.mutate(selectedFamille.id)}>
-                            <RefreshCw className="h-3 w-3 mr-1" /> Régénérer
-                          </Button>
+                          {isSuperviseur && (
+                            <Button variant="outline" size="sm" onClick={() => generateCode.mutate(selectedFamille.id)}>
+                              <RefreshCw className="h-3 w-3 mr-1" /> Régénérer
+                            </Button>
+                          )}
                         </>
-                      ) : (
+                      ) : isSuperviseur ? (
                         <Button size="sm" onClick={() => generateCode.mutate(selectedFamille.id)}>
                           <KeyRound className="h-4 w-4 mr-1" /> Générer un code
                         </Button>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic">Seul le superviseur peut générer un code.</p>
                       )}
                     </div>
                   </div>
