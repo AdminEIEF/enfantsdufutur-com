@@ -58,10 +58,15 @@ export default function CoordinateurSecondaireEleves() {
   const classes = useMemo(() => {
     const map = new Map<string, string>();
     eleves.forEach(e => {
-      if (e.classes && e.classe_id) map.set(e.classe_id, e.classes.nom);
+      if (e.classes && e.classe_id) {
+        const niveauName = e.classes?.niveaux?.nom;
+        if (filterNiveau === 'all' || niveauName === filterNiveau) {
+          map.set(e.classe_id, e.classes.nom);
+        }
+      }
     });
     return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
-  }, [eleves]);
+  }, [eleves, filterNiveau]);
 
   const niveaux = useMemo(() => {
     const set = new Set<string>();
@@ -137,7 +142,7 @@ export default function CoordinateurSecondaireEleves() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Rechercher par nom, prénom ou matricule..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
         </div>
-        <Select value={filterNiveau} onValueChange={setFilterNiveau}>
+        <Select value={filterNiveau} onValueChange={(v) => { setFilterNiveau(v); setFilterClasse('all'); }}>
           <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Niveau" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les niveaux</SelectItem>
