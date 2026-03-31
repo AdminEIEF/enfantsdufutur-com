@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, UserPlus, RefreshCw, FileText, Briefcase, Loader2 } from 'lucide-react';
+import SuperviseurPasswordPanel from '@/components/SuperviseurPasswordPanel';
 
 export default function SuperviseurDashboard() {
   const [stats, setStats] = useState({
@@ -76,6 +77,8 @@ export default function SuperviseurDashboard() {
           </Card>
         ))}
       </div>
+
+      <SuperviseurPasswordPanel />
 
       <Card>
         <CardHeader>
