@@ -185,7 +185,9 @@ export default function LandingTarifs() {
 
                 {/* Total */}
                 <div className="mt-6 p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between">
-                  <span className="font-semibold text-sm sm:text-base">Total estimé (1ère année)</span>
+                  <span className="font-semibold text-sm sm:text-base">
+                    Total estimé ({mode === 'inscription' ? 'nouvelle inscription' : 'réinscription'})
+                  </span>
                   <span className="text-lg sm:text-xl font-bold text-primary" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     {fmt(totalFrais)}
                   </span>
