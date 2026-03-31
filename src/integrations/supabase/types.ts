@@ -679,6 +679,161 @@ export type Database = {
           },
         ]
       }
+      composition_questions: {
+        Row: {
+          composition_id: string
+          created_at: string
+          enonce: string
+          id: string
+          options: Json
+          ordre: number
+          points: number
+          reponse_correcte: string
+          type_question: string
+        }
+        Insert: {
+          composition_id: string
+          created_at?: string
+          enonce: string
+          id?: string
+          options?: Json
+          ordre?: number
+          points?: number
+          reponse_correcte: string
+          type_question?: string
+        }
+        Update: {
+          composition_id?: string
+          created_at?: string
+          enonce?: string
+          id?: string
+          options?: Json
+          ordre?: number
+          points?: number
+          reponse_correcte?: string
+          type_question?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "composition_questions_composition_id_fkey"
+            columns: ["composition_id"]
+            isOneToOne: false
+            referencedRelation: "compositions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      composition_reponses: {
+        Row: {
+          composition_id: string
+          created_at: string
+          debut_at: string
+          eleve_id: string
+          id: string
+          reponses: Json
+          score: number | null
+          soumis_at: string | null
+        }
+        Insert: {
+          composition_id: string
+          created_at?: string
+          debut_at?: string
+          eleve_id: string
+          id?: string
+          reponses?: Json
+          score?: number | null
+          soumis_at?: string | null
+        }
+        Update: {
+          composition_id?: string
+          created_at?: string
+          debut_at?: string
+          eleve_id?: string
+          id?: string
+          reponses?: Json
+          score?: number | null
+          soumis_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "composition_reponses_composition_id_fkey"
+            columns: ["composition_id"]
+            isOneToOne: false
+            referencedRelation: "compositions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "composition_reponses_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compositions: {
+        Row: {
+          bareme: number
+          classe_id: string
+          created_at: string
+          created_by: string | null
+          date_debut: string
+          date_fin: string
+          description: string | null
+          duree_minutes: number
+          id: string
+          matiere_id: string
+          publie: boolean
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          bareme?: number
+          classe_id: string
+          created_at?: string
+          created_by?: string | null
+          date_debut: string
+          date_fin: string
+          description?: string | null
+          duree_minutes?: number
+          id?: string
+          matiere_id: string
+          publie?: boolean
+          titre: string
+          updated_at?: string
+        }
+        Update: {
+          bareme?: number
+          classe_id?: string
+          created_at?: string
+          created_by?: string | null
+          date_debut?: string
+          date_fin?: string
+          description?: string | null
+          duree_minutes?: number
+          id?: string
+          matiere_id?: string
+          publie?: boolean
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compositions_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compositions_matiere_id_fkey"
+            columns: ["matiere_id"]
+            isOneToOne: false
+            referencedRelation: "matieres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conges: {
         Row: {
           created_at: string
