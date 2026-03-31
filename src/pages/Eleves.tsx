@@ -181,7 +181,8 @@ export default function Eleves() {
       }
       return allData;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   // Auto-fix broken public URLs for private bucket (batched, max 5 at a time)
