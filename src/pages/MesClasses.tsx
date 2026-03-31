@@ -27,6 +27,7 @@ export default function MesClasses() {
   const [selectedTab, setSelectedTab] = useState(isCoordSecondaire ? 'secondaire' : 'autres');
   const [classSorts, setClassSorts] = useState<Record<string, 'nom' | 'matricule'>>({});
   const [classSearches, setClassSearches] = useState<Record<string, string>>({});
+  const [selectedEleve, setSelectedEleve] = useState<any>(null);
   const { data: schoolConfig } = useSchoolConfig();
 
   const { data: eleves = [], isLoading } = useQuery({
