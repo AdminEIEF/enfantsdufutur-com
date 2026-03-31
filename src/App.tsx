@@ -96,6 +96,8 @@ import StudentColoriage from "./pages/student/StudentColoriage";
 import StudentSerpentAlphabet from "./pages/student/StudentSerpentAlphabet";
 import StudentAnglais from "./pages/student/StudentAnglais";
 import StudentPyramideAdditions from "./pages/student/StudentPyramideAdditions";
+import StudentCompositions from "./pages/student/StudentCompositions";
+import CompositionsAdmin from "./pages/CompositionsAdmin";
 import GestionSessions from "./pages/GestionSessions";
 
 const queryClient = new QueryClient();
@@ -211,6 +213,7 @@ const App = () => (
             <Route path="/eleve/resultats" element={<StudentAuthProvider><StudentResultats /></StudentAuthProvider>} />
             <Route path="/eleve/evaluations" element={<StudentAuthProvider><StudentEvaluations /></StudentAuthProvider>} />
             <Route path="/eleve/notifications" element={<StudentAuthProvider><StudentNotifications /></StudentAuthProvider>} />
+            <Route path="/eleve/compositions" element={<StudentAuthProvider><StudentCompositions /></StudentAuthProvider>} />
             <Route path="/employe" element={<EmployeeAuthProvider><EmployeeLogin /></EmployeeAuthProvider>} />
             <Route path="/employe/dashboard" element={<EmployeeAuthProvider><EmployeeDashboard /></EmployeeAuthProvider>} />
             <Route path="/employe/conges" element={<EmployeeAuthProvider><EmployeeConges /></EmployeeAuthProvider>} />
@@ -250,6 +253,7 @@ const App = () => (
             <Route path="/supervision" element={<ProtectedRoute><AdminMonitoring /></ProtectedRoute>} />
             <Route path="/service-info-dashboard" element={<ProtectedRoute><ServiceInfoDashboard /></ProtectedRoute>} />
             <Route path="/superviseur-dashboard" element={<ProtectedRoute><SuperviseurDashboard /></ProtectedRoute>} />
+            <Route path="/compositions-admin" element={<ProtectedRoute><CompositionsAdmin /></ProtectedRoute>} />
             <Route path="/coordinateur-dashboard" element={<ProtectedRoute><CoordinateurDashboard /></ProtectedRoute>} />
             <Route path="/coordinateur-documents" element={<ProtectedRoute><CoordinateurDocuments /></ProtectedRoute>} />
             <Route path="/coordinateur-eleves" element={<ProtectedRoute><CoordinateurEleves /></ProtectedRoute>} />

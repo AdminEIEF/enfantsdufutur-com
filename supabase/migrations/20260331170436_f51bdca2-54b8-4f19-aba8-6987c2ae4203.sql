@@ -1,0 +1,1 @@
+DROP POLICY "Staff can view questions" ON public.composition_questions;

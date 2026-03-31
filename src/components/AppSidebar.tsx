@@ -89,6 +89,7 @@ const navSections = [
       { title: 'Années Scolaires', url: '/sessions', icon: CalendarRange },
       { title: 'Supervision', url: '/supervision', icon: ShieldCheck },
       { title: 'Configuration', url: '/configuration', icon: Cog },
+      { title: 'Compositions', url: '/compositions-admin', icon: FileCheck2 },
     ],
   },
   {

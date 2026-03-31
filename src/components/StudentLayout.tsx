@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Home, FileText, ClipboardList, Award, Bot, LogOut, CalendarDays, Star, PenTool, Calculator, GraduationCap, Palette, Bug, Languages, Gamepad2, X, Pyramid } from 'lucide-react';
+import { BookOpen, Home, FileText, ClipboardList, Award, Bot, LogOut, CalendarDays, Star, PenTool, Calculator, GraduationCap, Palette, Bug, Languages, Gamepad2, X, Pyramid, FileQuestion } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { SchoolWatermark } from '@/components/SchoolWatermark';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { path: '/eleve/dashboard', icon: Home, label: 'Accueil' },
   { path: '/eleve/cours', icon: BookOpen, label: 'Cours' },
   { path: '/eleve/devoirs', icon: ClipboardList, label: 'Devoirs' },
+  { path: '/eleve/compositions', icon: FileQuestion, label: 'Compos' },
   { path: '__games__', icon: Gamepad2, label: 'Jeux' },
   { path: '/eleve/resultats', icon: Award, label: 'Résultats' },
 ];
