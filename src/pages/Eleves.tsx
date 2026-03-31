@@ -162,6 +162,11 @@ export default function Eleves() {
   const qc = useQueryClient();
   const { data: schoolConfig } = useSchoolConfig();
 
+  const refreshEleves = useCallback(async () => {
+    await qc.invalidateQueries({ queryKey: ['eleves-full'] });
+    await qc.refetchQueries({ queryKey: ['eleves-full'], type: 'active' });
+  }, [qc]);
+
   const { data: eleves = [], isLoading } = useQuery({
     queryKey: ['eleves-full'],
     queryFn: async () => {
@@ -181,7 +186,9 @@ export default function Eleves() {
       }
       return allData;
     },
-    staleTime: 30_000,
+    staleTime: 0,
+    gcTime: 60_000,
+    refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
 
@@ -292,8 +299,8 @@ export default function Eleves() {
       const { error } = await supabase.from('eleves').update(rest).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['eleves-full'] });
+    onSuccess: async () => {
+      await refreshEleves();
       setEditing(null);
       toast({ title: 'Élève mis à jour' });
     },
@@ -340,7 +347,7 @@ export default function Eleves() {
 
     toast({ title: 'Élève marqué en abandon', description: 'L\'élève est maintenant visible chez le coordinateur pour la gestion de ses documents.' });
     setAbandonDialog(null);
-    qc.invalidateQueries({ queryKey: ['eleves-full'] });
+    await refreshEleves();
   };
 
   const filteredClasses = filterCycle === 'all'
@@ -402,7 +409,7 @@ export default function Eleves() {
         if (!error) updated++;
       }
       toast({ title: 'Matricules générés', description: `${updated} matricule(s) ajouté(s)` });
-      qc.invalidateQueries({ queryKey: ['eleves-full'] });
+      await refreshEleves();
     } catch (err: any) {
       toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
     } finally {
@@ -455,7 +462,7 @@ export default function Eleves() {
         title: '✅ Compression terminée',
         description: `${compressed} photo(s) compressée(s) + miniatures, ${skipped} déjà optimisée(s), ${failed} échouée(s). ${Math.round(totalSaved / 1024)} KB économisés.`,
       });
-      qc.invalidateQueries({ queryKey: ['eleves-full'] });
+      await refreshEleves();
     } catch (err: any) {
       toast({ title: 'Erreur compression', description: err.message, variant: 'destructive' });
     } finally {
@@ -596,6 +603,7 @@ export default function Eleves() {
       } else {
         toast({ title: 'Photo mise à jour' });
         qc.invalidateQueries({ predicate: (query) => typeof query.queryKey[0] === 'string' && (query.queryKey[0].includes('eleve') || query.queryKey[0].includes('transport') || query.queryKey[0].includes('mes-classes') || query.queryKey[0].includes('dashboard') || query.queryKey[0].includes('cantine') || query.queryKey[0].includes('chauffeur')) });
+        await refreshEleves();
         setSelected({ ...eleve, photo_url: result.photoUrl, photo_thumbnail_url: result.thumbUrl });
       }
     }
@@ -1171,7 +1179,7 @@ export default function Eleves() {
                   {selected.famille_id ? <Badge className="gap-1"><Users className="h-3 w-3" />En famille — {selected.familles?.nom_famille}</Badge> : <Badge variant="outline" className="gap-1"><UserCheck className="h-3 w-3" />Individuel</Badge>}
                 </div>
                 {/* Mot de passe élève */}
-                <PasswordSection eleve={selected} onUpdate={() => { qc.invalidateQueries({ queryKey: ['eleves-full'] }); setSelected({ ...selected }); }} />
+                <PasswordSection eleve={selected} onUpdate={() => { void refreshEleves(); setSelected({ ...selected }); }} />
               </TabsContent>
 
               {/* Scolarité tab - month-by-month status */}
@@ -1273,7 +1281,7 @@ export default function Eleves() {
                             toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
                           } else {
                             toast({ title: zoneId ? 'Transport assigné' : 'Transport retiré', description: zoneId ? `${selected.prenom} ${selected.nom} a été affecté(e) à la zone sélectionnée.` : `${selected.prenom} ${selected.nom} a été retiré(e) du transport.` });
-                            qc.invalidateQueries({ queryKey: ['eleves-full'] });
+                            void refreshEleves();
                             qc.invalidateQueries({ queryKey: ['transport-eleves'] });
                             qc.invalidateQueries({ queryKey: ['transport-card-eleves'] });
                             setSelected({ ...selected, zone_transport_id: zoneId });
@@ -1308,7 +1316,7 @@ export default function Eleves() {
                           toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
                         } else {
                           toast({ title: checked ? 'Inscrit à la cantine' : 'Retiré de la cantine', description: `${selected.prenom} ${selected.nom} a été ${checked ? 'inscrit(e) à' : 'retiré(e) de'} la cantine.` });
-                          qc.invalidateQueries({ queryKey: ['eleves-full'] });
+                          void refreshEleves();
                           setSelected({ ...selected, option_cantine: checked });
                         }
                       }}
@@ -1581,7 +1589,7 @@ export default function Eleves() {
                 toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
               } else {
                 toast({ title: 'Élève supprimé', description: `${deleteDialog.prenom} ${deleteDialog.nom} a été placé dans la corbeille.` });
-                qc.invalidateQueries({ queryKey: ['eleves-full'] });
+                void refreshEleves();
               }
               setDeleteDialog(null);
             }}>
