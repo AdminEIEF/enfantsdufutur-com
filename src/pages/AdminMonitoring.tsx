@@ -1312,6 +1312,7 @@ export default function AdminMonitoring() {
                       {actionLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5" />}
                       Déconnecter
                     </Button>
+                    {isSuperviseur && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -1321,6 +1322,7 @@ export default function AdminMonitoring() {
                       <KeyRound className="h-3.5 w-3.5" />
                       Changer MDP
                     </Button>
+                    )}
                   </div>
                 )}
               </div>
