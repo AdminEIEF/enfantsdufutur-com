@@ -417,7 +417,7 @@ export default function MesClasses() {
                                               </TableHeader>
                                               <TableBody>
                                                 {classEleves.map((eleve: any, idx: number) => (
-                                                  <TableRow key={eleve.id}>
+                                                  <TableRow key={eleve.id} className="cursor-pointer hover:bg-muted/40" onClick={() => setSelectedEleve(eleve)}>
                                                     <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
                                                     <TableCell>
                                                       {eleve.photo_url ? (
