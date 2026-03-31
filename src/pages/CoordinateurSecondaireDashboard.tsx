@@ -52,6 +52,14 @@ export default function CoordinateurSecondaireDashboard() {
         const cycle = e.classes?.niveaux?.cycles?.nom?.toLowerCase() || '';
         return cycle.includes('secondaire') || cycle.includes('collège') || cycle.includes('lycée');
       });
+      const elevesCollege = secEleves.filter((e: any) => {
+        const cycle = e.classes?.niveaux?.cycles?.nom?.toLowerCase() || '';
+        return cycle.includes('collège');
+      }).length;
+      const elevesLycee = secEleves.filter((e: any) => {
+        const cycle = e.classes?.niveaux?.cycles?.nom?.toLowerCase() || '';
+        return cycle.includes('lycée');
+      }).length;
 
       setStats({
         totalEnseignants: secondary.length,
@@ -60,6 +68,8 @@ export default function CoordinateurSecondaireDashboard() {
         nonAffectes: secondary.length - affectes.length,
         totalClasses: secClasses.length,
         totalEleves: secEleves.length,
+        elevesCollege,
+        elevesLycee,
       });
       setLoading(false);
     };
