@@ -85,7 +85,7 @@ export default function CoordinateurSecondaireDashboard() {
   }
 
   const cards = [
-    { label: 'Élèves Secondaire', value: stats.totalEleves, icon: GraduationCap, color: 'text-purple-600', borderColor: 'border-purple-200 dark:border-purple-800', gradient: 'from-purple-500/10 via-purple-500/5 to-transparent', iconBg: 'bg-purple-500/15', onClick: () => navigate('/coordinateur-secondaire-eleves') },
+    { label: 'Élèves Secondaire', value: stats.totalEleves, icon: GraduationCap, color: 'text-purple-600', borderColor: 'border-purple-200 dark:border-purple-800', gradient: 'from-purple-500/10 via-purple-500/5 to-transparent', iconBg: 'bg-purple-500/15', onClick: () => navigate('/coordinateur-secondaire-eleves'), subtitle: `${stats.elevesCollege} Collège · ${stats.elevesLycee} Lycée` },
     { label: 'Enseignants', value: stats.totalEnseignants, icon: Users, color: 'text-blue-600', borderColor: 'border-blue-200 dark:border-blue-800', gradient: 'from-blue-500/10 via-blue-500/5 to-transparent', iconBg: 'bg-blue-500/15', onClick: () => navigate('/coordinateur-secondaire-personnel') },
     { label: 'Actifs', value: stats.actifs, icon: TrendingUp, color: 'text-emerald-600', borderColor: 'border-emerald-200 dark:border-emerald-800', gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent', iconBg: 'bg-emerald-500/15' },
     { label: 'Affectés', value: stats.affectes, icon: ClipboardList, color: 'text-teal-600', borderColor: 'border-teal-200 dark:border-teal-800', gradient: 'from-teal-500/10 via-teal-500/5 to-transparent', iconBg: 'bg-teal-500/15' },
