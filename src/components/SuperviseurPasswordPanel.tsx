@@ -95,22 +95,34 @@ export default function SuperviseurPasswordPanel() {
         .select('id, nom, prenom, matricule, classe_id, famille_id, classes(nom, niveau_id)')
         .is('deleted_at', null)
         .order('nom')
-        .limit(1000)
-        .then(({ data }) => { setEleves(data || []); setLoading(false); });
+        .then(async ({ data, count }) => {
+          let all = data || [];
+          // Handle pagination if more than 1000 rows
+          if (all.length === 1000) {
+            let offset = 1000;
+            let more = true;
+            while (more) {
+              const { data: next } = await supabase.from('eleves')
+                .select('id, nom, prenom, matricule, classe_id, famille_id, classes(nom, niveau_id)')
+                .is('deleted_at', null).order('nom').range(offset, offset + 999);
+              if (next && next.length > 0) { all = [...all, ...next]; offset += next.length; } else { more = false; }
+            }
+          }
+          setEleves(all);
+          setLoading(false);
+        });
     } else if (tab === 'employes') {
       supabase
         .from('employes')
         .select('id, nom, prenom, matricule, poste, categorie, telephone, email')
         .eq('statut', 'actif')
         .order('nom')
-        .limit(1000)
         .then(({ data }) => { setEmployes(data || []); setLoading(false); });
     } else if (tab === 'familles') {
       supabase
         .from('familles')
         .select('id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse')
         .order('nom_famille')
-        .limit(1000)
         .then(({ data }) => { setFamilles(data || []); setLoading(false); });
     }
   }, [tab]);
