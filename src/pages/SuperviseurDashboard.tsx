@@ -78,6 +78,8 @@ export default function SuperviseurDashboard() {
         ))}
       </div>
 
+      <SuperviseurPasswordPanel />
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Accès rapides</CardTitle>
