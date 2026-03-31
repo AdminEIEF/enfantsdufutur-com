@@ -1184,7 +1184,7 @@ export default function Eleves() {
                   {selected.famille_id ? <Badge className="gap-1"><Users className="h-3 w-3" />En famille — {selected.familles?.nom_famille}</Badge> : <Badge variant="outline" className="gap-1"><UserCheck className="h-3 w-3" />Individuel</Badge>}
                 </div>
                 {/* Mot de passe élève */}
-                <PasswordSection eleve={selected} onUpdate={() => { void refreshEleves(); setSelected({ ...selected }); }} />
+                <PasswordSection eleve={selected} onUpdate={() => { void refreshEleves(); setSelected({ ...selected }); }} isSuperviseur={isSuperviseur} />
               </TabsContent>
 
               {/* Scolarité tab - month-by-month status */}

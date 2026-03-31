@@ -176,7 +176,7 @@ function EvalForm({ employes, user, onDone }: { employes: any[]; user: any; onDo
 
 export default function Personnel() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const qc = useQueryClient();
   const { data: schoolConfig } = useSchoolConfig();
   const [search, setSearch] = useState('');
