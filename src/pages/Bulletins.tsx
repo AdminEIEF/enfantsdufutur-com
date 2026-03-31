@@ -330,6 +330,21 @@ export default function Bulletins() {
   }, [filteredClasses]);
 
   return (
+  if (isCoordSecondaire) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <Award className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+            <p className="text-muted-foreground font-medium">Accès non autorisé</p>
+            <p className="text-sm text-muted-foreground mt-1">Les bulletins ne sont pas accessibles pour votre rôle.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+    return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
         <Award className="h-7 w-7 text-primary" /> Bulletins Scolaires
