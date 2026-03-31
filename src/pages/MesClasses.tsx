@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Users, GraduationCap, ArrowDownAZ, Hash, Download, TrendingUp, BarChart3, School } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Search, Users, GraduationCap, ArrowDownAZ, Hash, Download, TrendingUp, BarChart3, School, Phone, Mail, MapPin, Calendar } from 'lucide-react';
 import { exportToExcel } from '@/lib/excelUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -15,6 +16,7 @@ import { sortClasses } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { Progress } from '@/components/ui/progress';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const SECONDAIRE_CYCLES = ['collège', 'lycée', 'college', 'lycee'];
 const isSecondaireCycle = (cycleName: string) => SECONDAIRE_CYCLES.some(c => (cycleName || '').toLowerCase().includes(c));
@@ -25,6 +27,7 @@ export default function MesClasses() {
   const [selectedTab, setSelectedTab] = useState(isCoordSecondaire ? 'secondaire' : 'autres');
   const [classSorts, setClassSorts] = useState<Record<string, 'nom' | 'matricule'>>({});
   const [classSearches, setClassSearches] = useState<Record<string, string>>({});
+  const [selectedEleve, setSelectedEleve] = useState<any>(null);
   const { data: schoolConfig } = useSchoolConfig();
 
   const { data: eleves = [], isLoading } = useQuery({
@@ -32,7 +35,7 @@ export default function MesClasses() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, sexe, photo_url, classe_id, classes(id, nom, niveau_id, capacite, niveaux:niveau_id(id, nom, ordre, cycle_id, cycles:cycle_id(id, nom, ordre)))')
+        .select('id, nom, prenom, matricule, sexe, photo_url, classe_id, date_naissance, nom_prenom_pere, nom_prenom_mere, famille_id, classes(id, nom, niveau_id, capacite, niveaux:niveau_id(id, nom, ordre, cycle_id, cycles:cycle_id(id, nom, ordre))), familles:famille_id(nom_famille, telephone_pere, telephone_mere, email_parent, adresse)')
         .is('deleted_at', null)
         .order('nom');
       if (error) throw error;
@@ -414,7 +417,7 @@ export default function MesClasses() {
                                               </TableHeader>
                                               <TableBody>
                                                 {classEleves.map((eleve: any, idx: number) => (
-                                                  <TableRow key={eleve.id}>
+                                                  <TableRow key={eleve.id} className="cursor-pointer hover:bg-muted/40" onClick={() => setSelectedEleve(eleve)}>
                                                     <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
                                                     <TableCell>
                                                       {eleve.photo_url ? (
@@ -458,6 +461,84 @@ export default function MesClasses() {
           </TabsContent>
         ))}
       </Tabs>
+      {/* Dialog Détail élève */}
+      <Dialog open={!!selectedEleve} onOpenChange={() => setSelectedEleve(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Détail de l'élève</DialogTitle>
+          </DialogHeader>
+          {selectedEleve && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={selectedEleve.photo_url || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
+                    {selectedEleve.prenom?.[0]}{selectedEleve.nom?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-lg font-bold">{selectedEleve.prenom} {selectedEleve.nom}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="font-mono text-xs">{selectedEleve.matricule || '—'}</Badge>
+                    <Badge className={`text-xs border-0 ${selectedEleve.sexe === 'M' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400'}`}>
+                      {selectedEleve.sexe === 'M' ? 'Garçon' : selectedEleve.sexe === 'F' ? 'Fille' : '—'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Classe</p>
+                    <p className="font-medium">{selectedEleve.classes?.nom || '—'}</p>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Niveau</p>
+                    <p className="font-medium">{selectedEleve.classes?.niveaux?.nom || '—'}</p>
+                  </div>
+                </div>
+
+                {selectedEleve.date_naissance && (
+                  <div className="bg-muted/30 rounded-lg p-3 flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Date de naissance</p>
+                      <p className="font-medium">{new Date(selectedEleve.date_naissance).toLocaleDateString('fr-FR')}</p>
+                    </div>
+                  </div>
+                )}
+
+                {(selectedEleve.nom_prenom_pere || selectedEleve.nom_prenom_mere) && (
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground mb-2">Parents</p>
+                    {selectedEleve.nom_prenom_pere && <p className="text-sm">👨 {selectedEleve.nom_prenom_pere}</p>}
+                    {selectedEleve.nom_prenom_mere && <p className="text-sm mt-1">👩 {selectedEleve.nom_prenom_mere}</p>}
+                  </div>
+                )}
+
+                {selectedEleve.familles && (
+                  <div className="bg-muted/30 rounded-lg p-3 space-y-1.5">
+                    <p className="text-xs text-muted-foreground mb-1">Contact famille</p>
+                    {selectedEleve.familles.telephone_pere && (
+                      <p className="text-sm flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-muted-foreground" /> Père : {selectedEleve.familles.telephone_pere}</p>
+                    )}
+                    {selectedEleve.familles.telephone_mere && (
+                      <p className="text-sm flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-muted-foreground" /> Mère : {selectedEleve.familles.telephone_mere}</p>
+                    )}
+                    {selectedEleve.familles.email_parent && (
+                      <p className="text-sm flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 text-muted-foreground" /> {selectedEleve.familles.email_parent}</p>
+                    )}
+                    {selectedEleve.familles.adresse && (
+                      <p className="text-sm flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-muted-foreground" /> {selectedEleve.familles.adresse}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
