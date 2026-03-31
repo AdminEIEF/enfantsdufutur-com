@@ -37,29 +37,41 @@ export default function SuperviseurPasswordPanel() {
     setSearching(true);
     setResults([]);
     try {
+      const terms = search.trim().split(/\s+/).filter(Boolean);
+      
       if (tab === 'eleves') {
+        // Fetch all active students then filter client-side for multi-term search
         const { data } = await supabase
           .from('eleves')
           .select('id, nom, prenom, matricule, classe_id, classes(nom)')
           .is('deleted_at', null)
-          .or(`nom.ilike.%${search}%,prenom.ilike.%${search}%,matricule.ilike.%${search}%`)
-          .limit(20);
-        setResults(data || []);
+          .limit(1000);
+        const filtered = (data || []).filter(e => {
+          const haystack = `${e.prenom} ${e.nom} ${e.matricule || ''}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          return terms.every(t => haystack.includes(t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")));
+        });
+        setResults(filtered.slice(0, 20));
       } else if (tab === 'employes') {
         const { data } = await supabase
           .from('employes')
           .select('id, nom, prenom, matricule, poste, categorie')
           .eq('statut', 'actif')
-          .or(`nom.ilike.%${search}%,prenom.ilike.%${search}%,matricule.ilike.%${search}%`)
-          .limit(20);
-        setResults(data || []);
+          .limit(1000);
+        const filtered = (data || []).filter(e => {
+          const haystack = `${e.prenom} ${e.nom} ${e.matricule || ''} ${e.poste || ''}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          return terms.every(t => haystack.includes(t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")));
+        });
+        setResults(filtered.slice(0, 20));
       } else if (tab === 'familles') {
         const { data } = await supabase
           .from('familles')
           .select('id, nom_famille, telephone_pere, telephone_mere, email_parent')
-          .ilike('nom_famille', `%${search}%`)
-          .limit(20);
-        setResults(data || []);
+          .limit(1000);
+        const filtered = (data || []).filter(f => {
+          const haystack = `${f.nom_famille} ${f.telephone_pere || ''} ${f.telephone_mere || ''} ${f.email_parent || ''}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          return terms.every(t => haystack.includes(t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")));
+        });
+        setResults(filtered.slice(0, 20));
       }
     } catch (err: any) {
       toast.error(err.message);
