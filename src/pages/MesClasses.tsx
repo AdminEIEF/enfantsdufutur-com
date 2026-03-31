@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Users, GraduationCap, ArrowDownAZ, Hash, Download, TrendingUp, BarChart3, School } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Search, Users, GraduationCap, ArrowDownAZ, Hash, Download, TrendingUp, BarChart3, School, Phone, Mail, MapPin, Calendar } from 'lucide-react';
 import { exportToExcel } from '@/lib/excelUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -15,6 +16,7 @@ import { sortClasses } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { Progress } from '@/components/ui/progress';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const SECONDAIRE_CYCLES = ['collège', 'lycée', 'college', 'lycee'];
 const isSecondaireCycle = (cycleName: string) => SECONDAIRE_CYCLES.some(c => (cycleName || '').toLowerCase().includes(c));
