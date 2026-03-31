@@ -330,7 +330,7 @@ serve(async (req) => {
     }
 
     if (action === "submit_composition") {
-      const { composition_id, reponses: studentAnswers } = await req.json().catch(() => ({}));
+      const studentAnswers = studentReponses || {};
       
       const { data: comp } = await supabaseAdmin
         .from("compositions")
