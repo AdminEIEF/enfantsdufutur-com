@@ -30,6 +30,7 @@ const fmt = (n: number) =>
 
 export default function LandingTarifs() {
   const [selectedNiveauId, setSelectedNiveauId] = useState<string>('');
+  const [mode, setMode] = useState<'inscription' | 'reinscription'>('inscription');
 
   const { data: cycles } = useQuery({
     queryKey: ['landing-cycles'],
