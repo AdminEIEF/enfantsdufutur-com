@@ -149,6 +149,7 @@ const navSections = [
     items: [
       { title: 'Tableau de bord', url: '/coordinateur-secondaire-dashboard', icon: LayoutDashboard },
       { title: 'Personnel Secondaire', url: '/coordinateur-secondaire-personnel', icon: BriefcaseBusiness },
+      { title: 'Élèves Secondaire', url: '/coordinateur-secondaire-eleves', icon: UsersRound },
     ],
   },
   {

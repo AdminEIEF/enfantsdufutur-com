@@ -74,6 +74,7 @@ import CoordinateurEleves from "./pages/CoordinateurEleves";
 import CoordinateurPersonnel from "./pages/CoordinateurPersonnel";
 import CoordinateurSecondaireDashboard from "./pages/CoordinateurSecondaireDashboard";
 import CoordinateurSecondairePersonnel from "./pages/CoordinateurSecondairePersonnel";
+import CoordinateurSecondaireEleves from "./pages/CoordinateurSecondaireEleves";
 import MesClasses from "./pages/MesClasses";
 import Robotique from "./pages/Robotique";
 import Performance from "./pages/Performance";
@@ -255,6 +256,7 @@ const App = () => (
             <Route path="/coordinateur-personnel" element={<ProtectedRoute><CoordinateurPersonnel /></ProtectedRoute>} />
             <Route path="/coordinateur-secondaire-dashboard" element={<ProtectedRoute><CoordinateurSecondaireDashboard /></ProtectedRoute>} />
             <Route path="/coordinateur-secondaire-personnel" element={<ProtectedRoute><CoordinateurSecondairePersonnel /></ProtectedRoute>} />
+            <Route path="/coordinateur-secondaire-eleves" element={<ProtectedRoute><CoordinateurSecondaireEleves /></ProtectedRoute>} />
             <Route path="/robotique" element={<ProtectedRoute><Robotique /></ProtectedRoute>} />
             <Route path="/robotique-dashboard" element={<ProtectedRoute><RobotiqueDashboard /></ProtectedRoute>} />
             <Route path="/pointage-eleves" element={<ProtectedRoute><PointageEleves /></ProtectedRoute>} />
