@@ -215,6 +215,7 @@ export default function Orientation() {
 
       {/* Section tabs */}
       <Tabs value={sectionTab} onValueChange={handleTabChange}>
+        {!isCoordSecondaire && (
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="autres" className="gap-2">
             <School className="h-4 w-4" /> Préscolaire & Primaire
@@ -223,6 +224,7 @@ export default function Orientation() {
             <GraduationCap className="h-4 w-4" /> Secondaire
           </TabsTrigger>
         </TabsList>
+        )}
       </Tabs>
 
       {/* Filters */}

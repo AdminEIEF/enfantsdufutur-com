@@ -371,6 +371,7 @@ export default function EmploiDuTemps() {
       </div>
 
       <Tabs value={cycleTab} onValueChange={handleCycleChange} className="w-full">
+        {!isCoordSecondaire && (
         <TabsList>
           <TabsTrigger value="primaire" className="gap-1.5">
             <School className="h-4 w-4" /> Primaire / Maternelle
@@ -379,6 +380,7 @@ export default function EmploiDuTemps() {
             <GraduationCap className="h-4 w-4" /> Secondaire
           </TabsTrigger>
         </TabsList>
+        )}
       </Tabs>
 
       {!selectedClasseId ? (

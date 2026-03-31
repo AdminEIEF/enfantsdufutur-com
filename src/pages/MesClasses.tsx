@@ -169,6 +169,7 @@ export default function MesClasses() {
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+        {!isCoordSecondaire && (
         <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
           <TabsTrigger value="autres" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
             <Users className="h-4 w-4 mr-1.5" />
@@ -185,6 +186,7 @@ export default function MesClasses() {
             </Badge>
           </TabsTrigger>
         </TabsList>
+        )}
 
         {['secondaire', 'autres'].map(tabValue => (
           <TabsContent key={tabValue} value={tabValue} className="mt-4 space-y-5">

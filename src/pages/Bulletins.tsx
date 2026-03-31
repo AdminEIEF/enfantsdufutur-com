@@ -21,7 +21,9 @@ const SECONDAIRE_CYCLES = ['collège', 'lycée', 'college', 'lycee'];
 const isSecondaireCycle = (cycleName: string) => SECONDAIRE_CYCLES.some(c => cycleName.toLowerCase().includes(c));
 
 export default function Bulletins() {
-  const [sectionTab, setSectionTab] = useState<string>('autres');
+  const { hasRole } = useAuth();
+  const isCoordSecondaire = hasRole('coordinateur_secondaire' as any);
+  const [sectionTab, setSectionTab] = useState<string>(isCoordSecondaire ? 'secondaire' : 'autres');
   const [classeId, setClasseId] = useState('');
   const [periodeId, setPeriodeId] = useState('');
   const [selectedEleve, setSelectedEleve] = useState('');

@@ -263,6 +263,7 @@ export default function Notes() {
 
       {/* Tabs Secondaire vs Préscolaire & Primaire */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+        {!isCoordSecondaire && (
         <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
           <TabsTrigger value="secondaire" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
             <GraduationCap className="h-4 w-4 mr-1.5" />
@@ -273,6 +274,7 @@ export default function Notes() {
             Préscolaire & Primaire
           </TabsTrigger>
         </TabsList>
+        )}
 
         {['secondaire', 'autres'].map(tabValue => (
           <TabsContent key={tabValue} value={tabValue} className="mt-4 space-y-4">

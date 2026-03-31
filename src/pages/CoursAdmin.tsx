@@ -663,10 +663,12 @@ export default function CoursAdmin() {
 
       {/* Cycle Tabs */}
       <Tabs value={cycleTab} onValueChange={(v) => { setCycleTab(v); setFilterClasse('all'); setSearch(''); }}>
+        {!isCoordSecondaire && (
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="primaire" className="gap-2"><School className="h-4 w-4" /> Primaire / Maternelle</TabsTrigger>
           <TabsTrigger value="secondaire" className="gap-2"><GraduationCap className="h-4 w-4" /> Secondaire</TabsTrigger>
         </TabsList>
+        )}
       </Tabs>
 
       {/* Filters */}
