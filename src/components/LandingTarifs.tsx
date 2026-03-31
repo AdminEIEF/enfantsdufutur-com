@@ -62,8 +62,10 @@ export default function LandingTarifs() {
   const fraisItems = selectedNiveau
     ? [
         { label: 'Frais de scolarité (annuel)', value: selectedNiveau.frais_scolarite, icon: BookOpen, color: 'text-blue-600 bg-blue-100' },
-        { label: "Frais d'inscription", value: selectedNiveau.frais_inscription, icon: FileText, color: 'text-emerald-600 bg-emerald-100' },
-        { label: 'Frais de réinscription', value: selectedNiveau.frais_reinscription, icon: GraduationCap, color: 'text-violet-600 bg-violet-100' },
+        ...(mode === 'inscription'
+          ? [{ label: "Frais d'inscription", value: selectedNiveau.frais_inscription, icon: FileText, color: 'text-emerald-600 bg-emerald-100' }]
+          : [{ label: 'Frais de réinscription', value: selectedNiveau.frais_reinscription, icon: GraduationCap, color: 'text-violet-600 bg-violet-100' }]
+        ),
         { label: 'Frais de dossier', value: selectedNiveau.frais_dossier, icon: Banknote, color: 'text-amber-600 bg-amber-100' },
         { label: 'Frais d\'assurance', value: selectedNiveau.frais_assurance, icon: Shield, color: 'text-rose-600 bg-rose-100' },
       ]
