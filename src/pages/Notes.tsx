@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,8 @@ const SECONDAIRE_CYCLES = ['collège', 'lycée', 'college', 'lycee'];
 const isSecondaireCycle = (cycleName: string) => SECONDAIRE_CYCLES.some(c => (cycleName || '').toLowerCase().includes(c));
 
 export default function Notes() {
+  const { hasRole } = useAuth();
+  const isCoordSecondaire = hasRole('coordinateur_secondaire' as any);
   const [selectedTab, setSelectedTab] = useState('secondaire');
   const [cycleId, setCycleId] = useState('');
   const [classeId, setClasseId] = useState('');
@@ -260,6 +263,7 @@ export default function Notes() {
 
       {/* Tabs Secondaire vs Préscolaire & Primaire */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+        {!isCoordSecondaire && (
         <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
           <TabsTrigger value="secondaire" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
             <GraduationCap className="h-4 w-4 mr-1.5" />
@@ -270,6 +274,7 @@ export default function Notes() {
             Préscolaire & Primaire
           </TabsTrigger>
         </TabsList>
+        )}
 
         {['secondaire', 'autres'].map(tabValue => (
           <TabsContent key={tabValue} value={tabValue} className="mt-4 space-y-4">

@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +20,9 @@ const SECONDAIRE_CYCLES = ['collège', 'lycée', 'college', 'lycee'];
 const isSecondaireCycle = (cycleName: string) => SECONDAIRE_CYCLES.some(c => (cycleName || '').toLowerCase().includes(c));
 
 export default function MesClasses() {
-  const [selectedTab, setSelectedTab] = useState('autres');
+  const { hasRole } = useAuth();
+  const isCoordSecondaire = hasRole('coordinateur_secondaire' as any);
+  const [selectedTab, setSelectedTab] = useState(isCoordSecondaire ? 'secondaire' : 'autres');
   const [classSorts, setClassSorts] = useState<Record<string, 'nom' | 'matricule'>>({});
   const [classSearches, setClassSearches] = useState<Record<string, string>>({});
   const { data: schoolConfig } = useSchoolConfig();
@@ -166,6 +169,7 @@ export default function MesClasses() {
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+        {!isCoordSecondaire && (
         <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
           <TabsTrigger value="autres" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
             <Users className="h-4 w-4 mr-1.5" />
@@ -182,6 +186,7 @@ export default function MesClasses() {
             </Badge>
           </TabsTrigger>
         </TabsList>
+        )}
 
         {['secondaire', 'autres'].map(tabValue => (
           <TabsContent key={tabValue} value={tabValue} className="mt-4 space-y-5">

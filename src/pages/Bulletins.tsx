@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -20,7 +21,9 @@ const SECONDAIRE_CYCLES = ['collège', 'lycée', 'college', 'lycee'];
 const isSecondaireCycle = (cycleName: string) => SECONDAIRE_CYCLES.some(c => cycleName.toLowerCase().includes(c));
 
 export default function Bulletins() {
-  const [sectionTab, setSectionTab] = useState<string>('autres');
+  const { hasRole } = useAuth();
+  const isCoordSecondaire = hasRole('coordinateur_secondaire' as any);
+  const [sectionTab, setSectionTab] = useState<string>(isCoordSecondaire ? 'secondaire' : 'autres');
   const [classeId, setClasseId] = useState('');
   const [periodeId, setPeriodeId] = useState('');
   const [selectedEleve, setSelectedEleve] = useState('');
@@ -325,6 +328,20 @@ export default function Bulletins() {
     });
     return Object.values(groups).sort((a, b) => a.ordre - b.ordre);
   }, [filteredClasses]);
+
+  if (isCoordSecondaire) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <Award className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+            <p className="text-muted-foreground font-medium">Accès non autorisé</p>
+            <p className="text-sm text-muted-foreground mt-1">Les bulletins ne sont pas accessibles pour votre rôle.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

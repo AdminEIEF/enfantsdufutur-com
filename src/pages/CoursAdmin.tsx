@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +28,9 @@ interface QuizQuestion {
 }
 
 export default function CoursAdmin() {
-  const [cycleTab, setCycleTab] = useState('primaire');
+  const { hasRole } = useAuth();
+  const isCoordSecondaire = hasRole('coordinateur_secondaire' as any);
+  const [cycleTab, setCycleTab] = useState(isCoordSecondaire ? 'secondaire' : 'primaire');
   const [tab, setTab] = useState('cours');
   const [filterClasse, setFilterClasse] = useState('all');
   const [search, setSearch] = useState('');
@@ -660,10 +663,12 @@ export default function CoursAdmin() {
 
       {/* Cycle Tabs */}
       <Tabs value={cycleTab} onValueChange={(v) => { setCycleTab(v); setFilterClasse('all'); setSearch(''); }}>
+        {!isCoordSecondaire && (
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="primaire" className="gap-2"><School className="h-4 w-4" /> Primaire / Maternelle</TabsTrigger>
           <TabsTrigger value="secondaire" className="gap-2"><GraduationCap className="h-4 w-4" /> Secondaire</TabsTrigger>
         </TabsList>
+        )}
       </Tabs>
 
       {/* Filters */}

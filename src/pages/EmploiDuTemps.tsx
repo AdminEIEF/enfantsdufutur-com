@@ -53,9 +53,10 @@ const emptySlot: SlotForm = {
 };
 
 export default function EmploiDuTemps() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const isCoordSecondaire = hasRole('coordinateur_secondaire' as any);
   const queryClient = useQueryClient();
-  const [cycleTab, setCycleTab] = useState<'primaire' | 'secondaire'>('primaire');
+  const [cycleTab, setCycleTab] = useState<'primaire' | 'secondaire'>(isCoordSecondaire ? 'secondaire' : 'primaire');
   const [selectedNiveauId, setSelectedNiveauId] = useState('');
   const [selectedClasseId, setSelectedClasseId] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -370,6 +371,7 @@ export default function EmploiDuTemps() {
       </div>
 
       <Tabs value={cycleTab} onValueChange={handleCycleChange} className="w-full">
+        {!isCoordSecondaire && (
         <TabsList>
           <TabsTrigger value="primaire" className="gap-1.5">
             <School className="h-4 w-4" /> Primaire / Maternelle
@@ -378,6 +380,7 @@ export default function EmploiDuTemps() {
             <GraduationCap className="h-4 w-4" /> Secondaire
           </TabsTrigger>
         </TabsList>
+        )}
       </Tabs>
 
       {!selectedClasseId ? (

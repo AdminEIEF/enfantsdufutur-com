@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -105,9 +106,11 @@ function getSuggestion(radarData: { pole: string; moyenne: number }[], bareme: n
 }
 
 export default function Orientation() {
+  const { hasRole } = useAuth();
+  const isCoordSecondaire = hasRole('coordinateur_secondaire' as any);
   const { data: classes = [] } = useClasses();
   const { data: periodes = [] } = usePeriodes();
-  const [sectionTab, setSectionTab] = useState('autres');
+  const [sectionTab, setSectionTab] = useState(isCoordSecondaire ? 'secondaire' : 'autres');
   const [classeId, setClasseId] = useState('');
   const [eleveId, setEleveId] = useState('');
   const [periodeId, setPeriodeId] = useState('');
@@ -212,6 +215,7 @@ export default function Orientation() {
 
       {/* Section tabs */}
       <Tabs value={sectionTab} onValueChange={handleTabChange}>
+        {!isCoordSecondaire && (
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="autres" className="gap-2">
             <School className="h-4 w-4" /> Préscolaire & Primaire
@@ -220,6 +224,7 @@ export default function Orientation() {
             <GraduationCap className="h-4 w-4" /> Secondaire
           </TabsTrigger>
         </TabsList>
+        )}
       </Tabs>
 
       {/* Filters */}
