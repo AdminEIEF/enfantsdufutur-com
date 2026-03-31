@@ -329,7 +329,6 @@ export default function Bulletins() {
     return Object.values(groups).sort((a, b) => a.ordre - b.ordre);
   }, [filteredClasses]);
 
-  return (
   if (isCoordSecondaire) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -344,7 +343,7 @@ export default function Bulletins() {
     );
   }
 
-    return (
+  return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
         <Award className="h-7 w-7 text-primary" /> Bulletins Scolaires
