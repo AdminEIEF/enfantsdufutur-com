@@ -246,6 +246,159 @@ serve(async (req) => {
       );
     }
 
+    if (action === "compositions") {
+      const now = new Date().toISOString();
+      const { data: comps } = await supabaseAdmin
+        .from("compositions")
+        .select("id, titre, description, matiere_id, duree_minutes, date_debut, date_fin, bareme, matieres:matiere_id(nom)")
+        .eq("classe_id", classeId)
+        .eq("publie", true)
+        .order("date_debut", { ascending: false });
+
+      const { data: reps } = await supabaseAdmin
+        .from("composition_reponses")
+        .select("id, composition_id, score, soumis_at, debut_at")
+        .eq("eleve_id", eleveId);
+
+      return new Response(JSON.stringify({ compositions: comps || [], reponses: reps || [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "start_composition") {
+      const { composition_id } = await req.json().catch(() => ({}));
+      // Verify composition exists and is published for this class
+      const { data: comp } = await supabaseAdmin
+        .from("compositions")
+        .select("id, duree_minutes, date_debut, date_fin, classe_id, publie")
+        .eq("id", composition_id)
+        .eq("publie", true)
+        .maybeSingle();
+
+      if (!comp || comp.classe_id !== classeId) {
+        return new Response(JSON.stringify({ error: "Composition non disponible" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const now = new Date();
+      if (now < new Date(comp.date_debut) || now > new Date(comp.date_fin)) {
+        return new Response(JSON.stringify({ error: "Cette composition n'est pas dans la période autorisée" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Check existing attempt
+      const { data: existing } = await supabaseAdmin
+        .from("composition_reponses")
+        .select("id, soumis_at, debut_at")
+        .eq("composition_id", composition_id)
+        .eq("eleve_id", eleveId)
+        .maybeSingle();
+
+      if (existing?.soumis_at) {
+        return new Response(JSON.stringify({ error: "Vous avez déjà soumis cette composition" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      let debutAt: string;
+      if (existing) {
+        debutAt = existing.debut_at;
+      } else {
+        const { data: newRep } = await supabaseAdmin
+          .from("composition_reponses")
+          .insert({ composition_id, eleve_id: eleveId, reponses: {} })
+          .select("debut_at")
+          .single();
+        debutAt = newRep!.debut_at;
+      }
+
+      // Get questions (strip correct answers)
+      const { data: questions } = await supabaseAdmin
+        .from("composition_questions")
+        .select("id, type_question, enonce, options, points, ordre")
+        .eq("composition_id", composition_id)
+        .order("ordre");
+
+      const cleanQuestions = (questions || []).map((q: any) => ({
+        ...q,
+        options: (q.options as any[]).map((o: any) => ({ label: o.label })),
+      }));
+
+      return new Response(JSON.stringify({ questions: cleanQuestions, debut_at: debutAt }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "submit_composition") {
+      const { composition_id, reponses: studentAnswers } = await req.json().catch(() => ({}));
+      
+      const { data: comp } = await supabaseAdmin
+        .from("compositions")
+        .select("id, duree_minutes, bareme, classe_id")
+        .eq("id", composition_id)
+        .maybeSingle();
+
+      if (!comp || comp.classe_id !== classeId) {
+        return new Response(JSON.stringify({ error: "Composition non trouvée" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: existing } = await supabaseAdmin
+        .from("composition_reponses")
+        .select("id, soumis_at, debut_at")
+        .eq("composition_id", composition_id)
+        .eq("eleve_id", eleveId)
+        .maybeSingle();
+
+      if (!existing) {
+        return new Response(JSON.stringify({ error: "Session non trouvée" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (existing.soumis_at) {
+        return new Response(JSON.stringify({ error: "Déjà soumis" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Check time (allow 30s grace)
+      const elapsed = Date.now() - new Date(existing.debut_at).getTime();
+      if (elapsed > (comp.duree_minutes * 60 + 30) * 1000) {
+        return new Response(JSON.stringify({ error: "Temps écoulé" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Calculate score
+      const { data: questions } = await supabaseAdmin
+        .from("composition_questions")
+        .select("id, reponse_correcte, points")
+        .eq("composition_id", composition_id);
+
+      let totalPoints = 0;
+      const totalPossible = (questions || []).reduce((s: number, q: any) => s + q.points, 0);
+
+      for (const q of (questions || [])) {
+        if (studentAnswers[q.id] === q.reponse_correcte) {
+          totalPoints += q.points;
+        }
+      }
+
+      // Scale to bareme
+      const score = totalPossible > 0 ? Math.round((totalPoints / totalPossible) * comp.bareme * 100) / 100 : 0;
+
+      await supabaseAdmin
+        .from("composition_reponses")
+        .update({ reponses: studentAnswers, score, soumis_at: new Date().toISOString() })
+        .eq("id", existing.id);
+
+      return new Response(JSON.stringify({ score, bareme: comp.bareme }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "emploi_du_temps") {
       const { data: edt } = await supabaseAdmin
         .from("emploi_du_temps")
