@@ -62,7 +62,9 @@ function PasswordSection({ eleve, onUpdate, isSuperviseur }: { eleve: any; onUpd
           {hasPassword ? '✓ Configuré' : 'Non défini'}
         </code>
       </div>
-      {editing ? (
+      {!isSuperviseur ? (
+        <p className="text-xs text-muted-foreground italic">Seul le superviseur peut gérer les mots de passe.</p>
+      ) : editing ? (
         <div className="flex gap-2 items-center">
           <Input value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="Nouveau mot de passe" className="h-8 text-sm w-40" />
           <Button size="sm" variant="outline" className="h-8" onClick={() => setNewPwd(generatePassword())}>

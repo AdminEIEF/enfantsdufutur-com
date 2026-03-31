@@ -14,6 +14,7 @@ import { Users, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, UserPlus, Chevr
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 // ─── Hooks ───────────────────────────────────────────────
 function useFamilles() {
