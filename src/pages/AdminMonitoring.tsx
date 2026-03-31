@@ -82,7 +82,8 @@ const TYPE_CONFIG: Record<string, { label: string; icon: any; color: string }> =
 };
 
 export default function AdminMonitoring() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const isSuperviseur = hasRole('superviseur');
   const [connections, setConnections] = useState<ActiveConnection[]>([]);
   const [sessions, setSessions] = useState<UserSession[]>([]);
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
@@ -1311,6 +1312,7 @@ export default function AdminMonitoring() {
                       {actionLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5" />}
                       Déconnecter
                     </Button>
+                    {isSuperviseur && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -1320,6 +1322,7 @@ export default function AdminMonitoring() {
                       <KeyRound className="h-3.5 w-3.5" />
                       Changer MDP
                     </Button>
+                    )}
                   </div>
                 )}
               </div>

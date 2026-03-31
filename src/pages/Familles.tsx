@@ -14,6 +14,7 @@ import { Users, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, UserPlus, Chevr
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 // ─── Hooks ───────────────────────────────────────────────
 function useFamilles() {
@@ -46,6 +47,8 @@ function useClassesAll() {
 
 export default function Familles() {
   const qc = useQueryClient();
+  const { hasRole } = useAuth();
+  const isSuperviseur = hasRole('superviseur');
   const { data: familles = [], isLoading } = useFamilles();
   const { data: allClasses = [] } = useClassesAll();
   const [searchParams] = useSearchParams();
@@ -539,14 +542,18 @@ export default function Familles() {
                       {selectedFamille.code_acces_set ? (
                         <>
                           <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">✓ Code configuré</Badge>
-                          <Button variant="outline" size="sm" onClick={() => generateCode.mutate(selectedFamille.id)}>
-                            <RefreshCw className="h-3 w-3 mr-1" /> Régénérer
-                          </Button>
+                          {isSuperviseur && (
+                            <Button variant="outline" size="sm" onClick={() => generateCode.mutate(selectedFamille.id)}>
+                              <RefreshCw className="h-3 w-3 mr-1" /> Régénérer
+                            </Button>
+                          )}
                         </>
-                      ) : (
+                      ) : isSuperviseur ? (
                         <Button size="sm" onClick={() => generateCode.mutate(selectedFamille.id)}>
                           <KeyRound className="h-4 w-4 mr-1" /> Générer un code
                         </Button>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic">Seul le superviseur peut générer un code.</p>
                       )}
                     </div>
                   </div>

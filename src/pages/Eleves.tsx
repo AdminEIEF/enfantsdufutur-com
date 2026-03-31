@@ -16,8 +16,9 @@ import PlancheBadgesScolaires from '@/components/PlancheBadgesScolaires';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
 
-function PasswordSection({ eleve, onUpdate }: { eleve: any; onUpdate: () => void }) {
+function PasswordSection({ eleve, onUpdate, isSuperviseur }: { eleve: any; onUpdate: () => void; isSuperviseur: boolean }) {
   const [showPwd, setShowPwd] = useState(false);
   const [editing, setEditing] = useState(false);
   const [newPwd, setNewPwd] = useState('');
@@ -62,7 +63,9 @@ function PasswordSection({ eleve, onUpdate }: { eleve: any; onUpdate: () => void
           {hasPassword ? '✓ Configuré' : 'Non défini'}
         </code>
       </div>
-      {editing ? (
+      {!isSuperviseur ? (
+        <p className="text-xs text-muted-foreground italic">Seul le superviseur peut gérer les mots de passe.</p>
+      ) : editing ? (
         <div className="flex gap-2 items-center">
           <Input value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="Nouveau mot de passe" className="h-8 text-sm w-40" />
           <Button size="sm" variant="outline" className="h-8" onClick={() => setNewPwd(generatePassword())}>
@@ -102,6 +105,8 @@ type TrancheConfig = { label: string; mois: string[]; montant: number };
 
 export default function Eleves() {
   const navigate = useNavigate();
+  const { hasRole } = useAuth();
+  const isSuperviseur = hasRole('superviseur');
   const [search, setSearch] = useState('');
   const [filterCycle, setFilterCycle] = useState('all');
   const [filterClasse, setFilterClasse] = useState('all');
@@ -1179,7 +1184,7 @@ export default function Eleves() {
                   {selected.famille_id ? <Badge className="gap-1"><Users className="h-3 w-3" />En famille — {selected.familles?.nom_famille}</Badge> : <Badge variant="outline" className="gap-1"><UserCheck className="h-3 w-3" />Individuel</Badge>}
                 </div>
                 {/* Mot de passe élève */}
-                <PasswordSection eleve={selected} onUpdate={() => { void refreshEleves(); setSelected({ ...selected }); }} />
+                <PasswordSection eleve={selected} onUpdate={() => { void refreshEleves(); setSelected({ ...selected }); }} isSuperviseur={isSuperviseur} />
               </TabsContent>
 
               {/* Scolarité tab - month-by-month status */}

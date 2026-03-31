@@ -176,7 +176,7 @@ function EvalForm({ employes, user, onDone }: { employes: any[]; user: any; onDo
 
 export default function Personnel() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const qc = useQueryClient();
   const { data: schoolConfig } = useSchoolConfig();
   const [search, setSearch] = useState('');
@@ -1609,7 +1609,8 @@ export default function Personnel() {
                   </div>
                 )}
 
-                {/* Generate / Modify password */}
+                {/* Generate / Modify password - superviseur only */}
+                {hasRole('superviseur') && (
                 <div className="border-t pt-3 space-y-2">
                   <Button size="sm" variant="outline" className="w-full" onClick={() => setPasswordGenOpen(true)}>
                     <Key className="h-4 w-4 mr-1" /> Générer un mot de passe portail
@@ -1618,6 +1619,7 @@ export default function Personnel() {
                     <Key className="h-4 w-4 mr-1" /> Modifier le mot de passe
                   </Button>
                 </div>
+                )}
 
                 {/* Badge PVC */}
                 <div className="border-t pt-3">
