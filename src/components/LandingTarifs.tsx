@@ -88,6 +88,30 @@ export default function LandingTarifs() {
         </p>
       </div>
 
+      {/* Mode Toggle */}
+      <div className="flex justify-center gap-2 mb-6">
+        <button
+          onClick={() => setMode('inscription')}
+          className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
+            mode === 'inscription'
+              ? 'bg-primary text-primary-foreground shadow-md'
+              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+          }`}
+        >
+          Nouvelle inscription
+        </button>
+        <button
+          onClick={() => setMode('reinscription')}
+          className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
+            mode === 'reinscription'
+              ? 'bg-primary text-primary-foreground shadow-md'
+              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+          }`}
+        >
+          Réinscription
+        </button>
+      </div>
+
       {/* Level Selector */}
       <div className="max-w-md mx-auto mb-10">
         <Select value={selectedNiveauId} onValueChange={setSelectedNiveauId}>
