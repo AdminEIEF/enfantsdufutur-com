@@ -16,6 +16,8 @@ export default function CoordinateurSecondaireDashboard() {
     nonAffectes: 0,
     totalClasses: 0,
     totalEleves: 0,
+    elevesCollege: 0,
+    elevesLycee: 0,
   });
 
   useEffect(() => {
