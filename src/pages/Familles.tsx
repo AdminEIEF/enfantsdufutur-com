@@ -47,6 +47,8 @@ function useClassesAll() {
 
 export default function Familles() {
   const qc = useQueryClient();
+  const { hasRole } = useAuth();
+  const isSuperviseur = hasRole('superviseur');
   const { data: familles = [], isLoading } = useFamilles();
   const { data: allClasses = [] } = useClassesAll();
   const [searchParams] = useSearchParams();
