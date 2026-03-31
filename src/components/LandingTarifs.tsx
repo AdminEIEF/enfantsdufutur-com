@@ -30,6 +30,7 @@ const fmt = (n: number) =>
 
 export default function LandingTarifs() {
   const [selectedNiveauId, setSelectedNiveauId] = useState<string>('');
+  const [mode, setMode] = useState<'inscription' | 'reinscription'>('inscription');
 
   const { data: cycles } = useQuery({
     queryKey: ['landing-cycles'],
@@ -61,8 +62,10 @@ export default function LandingTarifs() {
   const fraisItems = selectedNiveau
     ? [
         { label: 'Frais de scolarité (annuel)', value: selectedNiveau.frais_scolarite, icon: BookOpen, color: 'text-blue-600 bg-blue-100' },
-        { label: "Frais d'inscription", value: selectedNiveau.frais_inscription, icon: FileText, color: 'text-emerald-600 bg-emerald-100' },
-        { label: 'Frais de réinscription', value: selectedNiveau.frais_reinscription, icon: GraduationCap, color: 'text-violet-600 bg-violet-100' },
+        ...(mode === 'inscription'
+          ? [{ label: "Frais d'inscription", value: selectedNiveau.frais_inscription, icon: FileText, color: 'text-emerald-600 bg-emerald-100' }]
+          : [{ label: 'Frais de réinscription', value: selectedNiveau.frais_reinscription, icon: GraduationCap, color: 'text-violet-600 bg-violet-100' }]
+        ),
         { label: 'Frais de dossier', value: selectedNiveau.frais_dossier, icon: Banknote, color: 'text-amber-600 bg-amber-100' },
         { label: 'Frais d\'assurance', value: selectedNiveau.frais_assurance, icon: Shield, color: 'text-rose-600 bg-rose-100' },
       ]
@@ -83,6 +86,30 @@ export default function LandingTarifs() {
         <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto">
           Consultez les frais détaillés pour chaque niveau. Sélectionnez un niveau pour afficher la fiche de renseignements.
         </p>
+      </div>
+
+      {/* Mode Toggle */}
+      <div className="flex justify-center gap-2 mb-6">
+        <button
+          onClick={() => setMode('inscription')}
+          className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
+            mode === 'inscription'
+              ? 'bg-primary text-primary-foreground shadow-md'
+              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+          }`}
+        >
+          Nouvelle inscription
+        </button>
+        <button
+          onClick={() => setMode('reinscription')}
+          className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
+            mode === 'reinscription'
+              ? 'bg-primary text-primary-foreground shadow-md'
+              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+          }`}
+        >
+          Réinscription
+        </button>
       </div>
 
       {/* Level Selector */}
@@ -158,7 +185,9 @@ export default function LandingTarifs() {
 
                 {/* Total */}
                 <div className="mt-6 p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between">
-                  <span className="font-semibold text-sm sm:text-base">Total estimé (1ère année)</span>
+                  <span className="font-semibold text-sm sm:text-base">
+                    Total estimé ({mode === 'inscription' ? 'nouvelle inscription' : 'réinscription'})
+                  </span>
                   <span className="text-lg sm:text-xl font-bold text-primary" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     {fmt(totalFrais)}
                   </span>
