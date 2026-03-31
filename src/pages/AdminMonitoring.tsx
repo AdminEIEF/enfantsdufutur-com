@@ -82,7 +82,8 @@ const TYPE_CONFIG: Record<string, { label: string; icon: any; color: string }> =
 };
 
 export default function AdminMonitoring() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const isSuperviseur = hasRole('superviseur');
   const [connections, setConnections] = useState<ActiveConnection[]>([]);
   const [sessions, setSessions] = useState<UserSession[]>([]);
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
