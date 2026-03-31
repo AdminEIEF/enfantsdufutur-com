@@ -17,7 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-function PasswordSection({ eleve, onUpdate }: { eleve: any; onUpdate: () => void }) {
+function PasswordSection({ eleve, onUpdate, isSuperviseur }: { eleve: any; onUpdate: () => void; isSuperviseur: boolean }) {
   const [showPwd, setShowPwd] = useState(false);
   const [editing, setEditing] = useState(false);
   const [newPwd, setNewPwd] = useState('');
