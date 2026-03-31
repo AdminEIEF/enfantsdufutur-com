@@ -58,10 +58,15 @@ export default function CoordinateurSecondaireEleves() {
   const classes = useMemo(() => {
     const map = new Map<string, string>();
     eleves.forEach(e => {
-      if (e.classes && e.classe_id) map.set(e.classe_id, e.classes.nom);
+      if (e.classes && e.classe_id) {
+        const niveauName = e.classes?.niveaux?.nom;
+        if (filterNiveau === 'all' || niveauName === filterNiveau) {
+          map.set(e.classe_id, e.classes.nom);
+        }
+      }
     });
     return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
-  }, [eleves]);
+  }, [eleves, filterNiveau]);
 
   const niveaux = useMemo(() => {
     const set = new Set<string>();
