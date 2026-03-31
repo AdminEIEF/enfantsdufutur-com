@@ -1690,8 +1690,7 @@ export default function Eleves() {
                       toast({ title: 'Photo traitée et sauvegardée' });
                       setZoomPhotoUrl(signedUrl);
                       setPhotoBrightness(100); setPhotoContrast(100); setPhotoBgColor(null);
-                      qc.invalidateQueries({ queryKey: ['eleves-full'] });
-                      qc.invalidateQueries({ queryKey: ['transport-card-eleves'] });
+                      qc.invalidateQueries({ predicate: (query) => typeof query.queryKey[0] === 'string' && (query.queryKey[0].includes('eleve') || query.queryKey[0].includes('transport') || query.queryKey[0].includes('mes-classes') || query.queryKey[0].includes('dashboard') || query.queryKey[0].includes('cantine') || query.queryKey[0].includes('chauffeur')) });
                     } catch (err: any) {
                       toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
                     } finally { setSavingCrop(false); }
