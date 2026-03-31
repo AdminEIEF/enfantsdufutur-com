@@ -100,7 +100,16 @@ import StudentCompositions from "./pages/student/StudentCompositions";
 import CompositionsAdmin from "./pages/CompositionsAdmin";
 import GestionSessions from "./pages/GestionSessions";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 0,
+      gcTime: 60_000,
+      refetchOnMount: 'always',
+      refetchOnWindowFocus: true,
+    },
+  },
+});
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
