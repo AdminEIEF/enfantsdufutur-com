@@ -1757,7 +1757,8 @@ export default function Eleves() {
                     toast({ title: 'Photo recadrée et sauvegardée' });
                     setZoomPhotoUrl(signedUrl);
                     setCropMode(false);
-                    qc.invalidateQueries({ queryKey: ['eleves'] });
+                    qc.invalidateQueries({ queryKey: ['eleves-full'] });
+                    qc.invalidateQueries({ queryKey: ['transport-card-eleves'] });
                   } catch (err: any) {
                     toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
                   } finally { setSavingCrop(false); }
