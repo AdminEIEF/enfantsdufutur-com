@@ -106,9 +106,11 @@ function getSuggestion(radarData: { pole: string; moyenne: number }[], bareme: n
 }
 
 export default function Orientation() {
+  const { hasRole } = useAuth();
+  const isCoordSecondaire = hasRole('coordinateur_secondaire' as any);
   const { data: classes = [] } = useClasses();
   const { data: periodes = [] } = usePeriodes();
-  const [sectionTab, setSectionTab] = useState('autres');
+  const [sectionTab, setSectionTab] = useState(isCoordSecondaire ? 'secondaire' : 'autres');
   const [classeId, setClasseId] = useState('');
   const [eleveId, setEleveId] = useState('');
   const [periodeId, setPeriodeId] = useState('');

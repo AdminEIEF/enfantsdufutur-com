@@ -23,6 +23,8 @@ const SECONDAIRE_CYCLES = ['collège', 'lycée', 'college', 'lycee'];
 const isSecondaireCycle = (cycleName: string) => SECONDAIRE_CYCLES.some(c => (cycleName || '').toLowerCase().includes(c));
 
 export default function Notes() {
+  const { hasRole } = useAuth();
+  const isCoordSecondaire = hasRole('coordinateur_secondaire' as any);
   const [selectedTab, setSelectedTab] = useState('secondaire');
   const [cycleId, setCycleId] = useState('');
   const [classeId, setClasseId] = useState('');

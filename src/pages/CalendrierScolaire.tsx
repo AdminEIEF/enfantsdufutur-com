@@ -68,14 +68,15 @@ const emptyForm: EventForm = {
 };
 
 export default function CalendrierScolaire() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const isCoordSecondaire = hasRole('coordinateur_secondaire' as any);
   const queryClient = useQueryClient();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<EventForm>(emptyForm);
-  const [cycleTab, setCycleTab] = useState<'primaire' | 'secondaire'>('primaire');
+  const [cycleTab, setCycleTab] = useState<'primaire' | 'secondaire'>(isCoordSecondaire ? 'secondaire' : 'primaire');
   // Fetch events with linked classes
   const { data: events = [] } = useQuery({
     queryKey: ['evenements-calendrier'],

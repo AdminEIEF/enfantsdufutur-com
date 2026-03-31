@@ -28,7 +28,9 @@ interface QuizQuestion {
 }
 
 export default function CoursAdmin() {
-  const [cycleTab, setCycleTab] = useState('primaire');
+  const { hasRole } = useAuth();
+  const isCoordSecondaire = hasRole('coordinateur_secondaire' as any);
+  const [cycleTab, setCycleTab] = useState(isCoordSecondaire ? 'secondaire' : 'primaire');
   const [tab, setTab] = useState('cours');
   const [filterClasse, setFilterClasse] = useState('all');
   const [search, setSearch] = useState('');

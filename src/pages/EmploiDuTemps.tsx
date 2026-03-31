@@ -53,9 +53,10 @@ const emptySlot: SlotForm = {
 };
 
 export default function EmploiDuTemps() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const isCoordSecondaire = hasRole('coordinateur_secondaire' as any);
   const queryClient = useQueryClient();
-  const [cycleTab, setCycleTab] = useState<'primaire' | 'secondaire'>('primaire');
+  const [cycleTab, setCycleTab] = useState<'primaire' | 'secondaire'>(isCoordSecondaire ? 'secondaire' : 'primaire');
   const [selectedNiveauId, setSelectedNiveauId] = useState('');
   const [selectedClasseId, setSelectedClasseId] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
