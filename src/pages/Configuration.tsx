@@ -1682,7 +1682,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function Configuration() {
   const { hasRole } = useAuth();
-  const canManageUsers = hasRole('superviseur') || hasRole('admin');
+  const canManageUsers = hasRole('superviseur');
 
   return (
     <div className="space-y-6">
