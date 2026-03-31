@@ -266,7 +266,6 @@ serve(async (req) => {
     }
 
     if (action === "start_composition") {
-      const { composition_id } = await req.json().catch(() => ({}));
       // Verify composition exists and is published for this class
       const { data: comp } = await supabaseAdmin
         .from("compositions")
