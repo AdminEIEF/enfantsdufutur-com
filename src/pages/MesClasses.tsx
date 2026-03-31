@@ -35,7 +35,7 @@ export default function MesClasses() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, sexe, photo_url, classe_id, classes(id, nom, niveau_id, capacite, niveaux:niveau_id(id, nom, ordre, cycle_id, cycles:cycle_id(id, nom, ordre)))')
+        .select('id, nom, prenom, matricule, sexe, photo_url, classe_id, date_naissance, nom_prenom_pere, nom_prenom_mere, famille_id, classes(id, nom, niveau_id, capacite, niveaux:niveau_id(id, nom, ordre, cycle_id, cycles:cycle_id(id, nom, ordre))), familles:famille_id(nom_famille, telephone_pere, telephone_mere, email_parent, adresse)')
         .is('deleted_at', null)
         .order('nom');
       if (error) throw error;
