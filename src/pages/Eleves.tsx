@@ -395,6 +395,8 @@ export default function Eleves() {
     return matchCycle && matchClasse && matchType;
   });
 
+  const { paginatedData: paginatedEleves, currentPage: elevesPage, totalPages: elevesTotalPages, totalItems: elevesTotalItems, pageSize: elevesPageSize, setCurrentPage: setElevesPage, resetPage: resetElevesPage } = usePagination(filtered);
+
   const totalFamille = eleves.filter((e: any) => !!e.famille_id).length;
   const totalIndividuel = eleves.filter((e: any) => !e.famille_id).length;
   const totalAbandons = eleves.filter((e: any) => e.statut === 'abandon').length;
