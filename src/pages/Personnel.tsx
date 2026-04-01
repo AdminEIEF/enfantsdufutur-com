@@ -1610,9 +1610,9 @@ export default function Personnel() {
                     <div><span className="text-muted-foreground">Embauche:</span> {selectedEmp.date_embauche ? format(new Date(selectedEmp.date_embauche), 'dd/MM/yyyy') : '—'}</div>
                     <div><span className="text-muted-foreground">Salaire:</span> <span className="font-bold">{Number(selectedEmp.salaire_base).toLocaleString()} GNF</span></div>
                     <div><span className="text-muted-foreground">Statut:</span> <Badge variant={selectedEmp.statut === 'actif' ? 'default' : 'destructive'}>{selectedEmp.statut}</Badge></div>
-                  </div>
-                )}
-
+            </div>
+            <PaginationControls currentPage={personnelPage} totalPages={personnelTotalPages} totalItems={personnelTotalItems} pageSize={personnelPageSize} onPageChange={setPersonnelPage} />
+          )}
                 {/* Generate / Modify password - superviseur only */}
                 {hasRole('superviseur') && (
                 <div className="border-t pt-3 space-y-2">
