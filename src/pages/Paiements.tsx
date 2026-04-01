@@ -1219,6 +1219,7 @@ function CommandesParentPanel({ eleves, familles }: { eleves: any[]; familles: a
   );
 }
 
+  const { paginatedData: paginatedPaiements, currentPage: paiementsPage, totalPages: paiementsTotalPages, totalItems: paiementsTotalItems, pageSize: paiementsPageSize, setCurrentPage: setPaiementsPage } = usePagination(filtered);
 
 export default function Paiements() {
   const [search, setSearch] = useState('');
