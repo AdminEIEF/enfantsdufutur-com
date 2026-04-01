@@ -325,6 +325,8 @@ export default function Familles() {
       `${f.nom_famille} ${f.email_parent || ''} ${f.telephone_pere || ''} ${f.telephone_mere || ''} ${f.adresse || ''}`.toLowerCase().includes(search.toLowerCase())
     ), [familles, search]);
 
+  const { paginatedData: paginatedFamilles, currentPage: famillesPage, totalPages: famillesTotalPages, totalItems: famillesTotalItems, pageSize: famillesPageSize, setCurrentPage: setFamillesPage } = usePagination(filtered);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

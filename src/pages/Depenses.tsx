@@ -251,6 +251,8 @@ export default function Depenses() {
     return matchSearch && matchService && matchStatut && matchMois;
   });
 
+  const { paginatedData: paginatedDepenses, currentPage: depensesPage, totalPages: depensesTotalPages, totalItems: depensesTotalItems, pageSize: depensesPageSize, setCurrentPage: setDepensesPage } = usePagination(filtered);
+
   const pendingCount = depenses.filter((d: any) => d.statut === 'soumise').length;
   const totalFiltered = filtered.filter((d: any) => d.statut === 'validee').reduce((s: number, d: any) => s + Number(d.montant), 0);
   const totalGeneral = depenses.filter((d: any) => d.statut === 'validee').reduce((s: number, d: any) => s + Number(d.montant), 0);
