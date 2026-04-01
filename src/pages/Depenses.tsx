@@ -1,4 +1,6 @@
 import { useState, useMemo } from 'react';
+import { usePagination } from '@/hooks/usePaginatedQuery';
+import PaginationControls from '@/components/PaginationControls';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -249,6 +251,8 @@ export default function Depenses() {
     return matchSearch && matchService && matchStatut && matchMois;
   });
 
+  const { paginatedData: paginatedDepenses, currentPage: depensesPage, totalPages: depensesTotalPages, totalItems: depensesTotalItems, pageSize: depensesPageSize, setCurrentPage: setDepensesPage } = usePagination(filtered);
+
   const pendingCount = depenses.filter((d: any) => d.statut === 'soumise').length;
   const totalFiltered = filtered.filter((d: any) => d.statut === 'validee').reduce((s: number, d: any) => s + Number(d.montant), 0);
   const totalGeneral = depenses.filter((d: any) => d.statut === 'validee').reduce((s: number, d: any) => s + Number(d.montant), 0);
@@ -494,7 +498,7 @@ export default function Depenses() {
                     <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
                   ) : filtered.length === 0 ? (
                     <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucune dépense trouvée</TableCell></TableRow>
-                  ) : filtered.map((d: any) => {
+                  ) : paginatedDepenses.map((d: any) => {
                     const st = STATUT_BADGE[d.statut] || STATUT_BADGE['validee'];
                     const StIcon = st.icon;
                     return (
@@ -531,6 +535,7 @@ export default function Depenses() {
                 </TableBody>
               </Table>
             </CardContent>
+            <PaginationControls currentPage={depensesPage} totalPages={depensesTotalPages} totalItems={depensesTotalItems} pageSize={depensesPageSize} onPageChange={setDepensesPage} />
           </Card>
           <p className="text-sm text-muted-foreground">{filtered.length} dépense(s) affichée(s)</p>
         </TabsContent>

@@ -1,4 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
+import { usePagination } from '@/hooks/usePaginatedQuery';
+import PaginationControls from '@/components/PaginationControls';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -1218,6 +1220,7 @@ function CommandesParentPanel({ eleves, familles }: { eleves: any[]; familles: a
 }
 
 
+
 export default function Paiements() {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -1273,6 +1276,8 @@ export default function Paiements() {
     const matchCanal = filterCanal === 'all' || p.canal === filterCanal;
     return matchSearch && matchType && matchCanal;
   });
+
+  const { paginatedData: paginatedPaiements, currentPage: paiementsPage, totalPages: paiementsTotalPages, totalItems: paiementsTotalItems, pageSize: paiementsPageSize, setCurrentPage: setPaiementsPage } = usePagination(filtered);
 
   const totalRecettes = filtered.reduce((sum: number, p: any) => sum + Number(p.montant), 0);
 
@@ -1454,7 +1459,7 @@ export default function Paiements() {
                      <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
                    ) : filtered.length === 0 ? (
                      <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Aucun paiement</TableCell></TableRow>
-                   ) : filtered.map((p: any) => {
+                   ) : paginatedPaiements.map((p: any) => {
                      const eleveForReceipt = eleves.find((e: any) => e.id === p.eleve_id);
                      return (
                      <TableRow key={p.id}>
@@ -1520,6 +1525,7 @@ export default function Paiements() {
                 </TableBody>
               </Table>
             </CardContent>
+            <PaginationControls currentPage={paiementsPage} totalPages={paiementsTotalPages} totalItems={paiementsTotalItems} pageSize={paiementsPageSize} onPageChange={setPaiementsPage} />
           </Card>
           <p className="text-sm text-muted-foreground">{filtered.length} paiement(s)</p>
         </TabsContent>

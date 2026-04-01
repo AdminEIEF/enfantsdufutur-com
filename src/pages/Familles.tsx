@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
+import { usePagination } from '@/hooks/usePaginatedQuery';
+import PaginationControls from '@/components/PaginationControls';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -323,6 +325,8 @@ export default function Familles() {
       `${f.nom_famille} ${f.email_parent || ''} ${f.telephone_pere || ''} ${f.telephone_mere || ''} ${f.adresse || ''}`.toLowerCase().includes(search.toLowerCase())
     ), [familles, search]);
 
+  const { paginatedData: paginatedFamilles, currentPage: famillesPage, totalPages: famillesTotalPages, totalItems: famillesTotalItems, pageSize: famillesPageSize, setCurrentPage: setFamillesPage } = usePagination(filtered);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -397,7 +401,7 @@ export default function Familles() {
           <p className="text-muted-foreground col-span-full text-center py-8">Chargement…</p>
         ) : filtered.length === 0 ? (
           <p className="text-muted-foreground col-span-full text-center py-8">Aucune famille trouvée</p>
-        ) : filtered.map((f: any) => (
+        ) : paginatedFamilles.map((f: any) => (
           <Card key={f.id} className={`cursor-pointer hover:shadow-md transition-shadow group ${selectedIds.has(f.id) ? 'ring-2 ring-primary' : ''}`}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
@@ -430,6 +434,8 @@ export default function Familles() {
           </Card>
         ))}
       </div>
+      <PaginationControls currentPage={famillesPage} totalPages={famillesTotalPages} totalItems={famillesTotalItems} pageSize={famillesPageSize} onPageChange={setFamillesPage} />
+
 
       {/* Bulk Delete Confirmation */}
       <Dialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>

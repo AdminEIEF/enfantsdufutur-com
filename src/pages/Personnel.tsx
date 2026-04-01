@@ -1,4 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
+import { usePagination } from '@/hooks/usePaginatedQuery';
+import PaginationControls from '@/components/PaginationControls';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -373,7 +375,7 @@ export default function Personnel() {
       return data;
     },
   });
-  
+
 
   const addEmployee = useMutation({
     mutationFn: async () => {
@@ -675,6 +677,8 @@ export default function Personnel() {
     const matchCat = filterCategorie === 'all' || effectiveCat === filterCategorie;
     return matchSearch && matchCat;
   });
+
+  const { paginatedData: paginatedPersonnel, currentPage: personnelPage, totalPages: personnelTotalPages, totalItems: personnelTotalItems, pageSize: personnelPageSize, setCurrentPage: setPersonnelPage } = usePagination(filtered);
 
   const categorieLabel: Record<string, string> = {
     enseignant_primaire: 'Enseignant Primaire', enseignant_secondaire: 'Enseignant Secondaire',
@@ -1040,8 +1044,9 @@ export default function Personnel() {
           ) : filtered.length === 0 ? (
             <Card><CardContent className="py-12 text-center text-muted-foreground">Aucun employé trouvé</CardContent></Card>
           ) : (
+            <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filtered.map((emp: any) => {
+              {paginatedPersonnel.map((emp: any) => {
                 const photoSrc = emp.photo_url
                   ? (emp.photo_url.startsWith('http') ? emp.photo_url : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/photos/${emp.photo_url}`)
                   : null;
@@ -1131,6 +1136,8 @@ export default function Personnel() {
                 );
               })}
             </div>
+            <PaginationControls currentPage={personnelPage} totalPages={personnelTotalPages} totalItems={personnelTotalItems} pageSize={personnelPageSize} onPageChange={setPersonnelPage} />
+            </>
           )}
         </TabsContent>
 
@@ -1606,9 +1613,8 @@ export default function Personnel() {
                     <div><span className="text-muted-foreground">Embauche:</span> {selectedEmp.date_embauche ? format(new Date(selectedEmp.date_embauche), 'dd/MM/yyyy') : '—'}</div>
                     <div><span className="text-muted-foreground">Salaire:</span> <span className="font-bold">{Number(selectedEmp.salaire_base).toLocaleString()} GNF</span></div>
                     <div><span className="text-muted-foreground">Statut:</span> <Badge variant={selectedEmp.statut === 'actif' ? 'default' : 'destructive'}>{selectedEmp.statut}</Badge></div>
-                  </div>
-                )}
-
+            </div>
+          )}
                 {/* Generate / Modify password - superviseur only */}
                 {hasRole('superviseur') && (
                 <div className="border-t pt-3 space-y-2">

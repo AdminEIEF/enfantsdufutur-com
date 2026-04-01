@@ -1,4 +1,6 @@
 import { useState, useMemo, useRef, useCallback, useEffect, lazy, Suspense } from 'react';
+import { usePagination } from '@/hooks/usePaginatedQuery';
+import PaginationControls from '@/components/PaginationControls';
 import Cropper from 'react-easy-crop';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -392,6 +394,8 @@ export default function Eleves() {
 
     return matchCycle && matchClasse && matchType;
   });
+
+  const { paginatedData: paginatedEleves, currentPage: elevesPage, totalPages: elevesTotalPages, totalItems: elevesTotalItems, pageSize: elevesPageSize, setCurrentPage: setElevesPage, resetPage: resetElevesPage } = usePagination(filtered);
 
   const totalFamille = eleves.filter((e: any) => !!e.famille_id).length;
   const totalIndividuel = eleves.filter((e: any) => !e.famille_id).length;
@@ -1059,7 +1063,7 @@ export default function Eleves() {
                 <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
-              ) : filtered.map((e: any) => (
+              ) : paginatedEleves.map((e: any) => (
                 <TableRow key={e.id} className="cursor-pointer" onClick={() => setSelected(e)}>
                   <TableCell onClick={ev => ev.stopPropagation()}>
                     <Checkbox
@@ -1119,6 +1123,7 @@ export default function Eleves() {
             </TableBody>
           </Table>
         </CardContent>
+        <PaginationControls currentPage={elevesPage} totalPages={elevesTotalPages} totalItems={elevesTotalItems} pageSize={elevesPageSize} onPageChange={setElevesPage} />
       </Card>
 
       <div className="text-sm text-muted-foreground">{filtered.length} élève(s) trouvé(s)</div>
