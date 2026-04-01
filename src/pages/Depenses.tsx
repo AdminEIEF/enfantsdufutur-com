@@ -498,7 +498,7 @@ export default function Depenses() {
                     <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
                   ) : filtered.length === 0 ? (
                     <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucune dépense trouvée</TableCell></TableRow>
-                  ) : filtered.map((d: any) => {
+                  ) : paginatedDepenses.map((d: any) => {
                     const st = STATUT_BADGE[d.statut] || STATUT_BADGE['validee'];
                     const StIcon = st.icon;
                     return (
