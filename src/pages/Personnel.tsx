@@ -1045,7 +1045,7 @@ export default function Personnel() {
             <Card><CardContent className="py-12 text-center text-muted-foreground">Aucun employé trouvé</CardContent></Card>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filtered.map((emp: any) => {
+              {paginatedPersonnel.map((emp: any) => {
                 const photoSrc = emp.photo_url
                   ? (emp.photo_url.startsWith('http') ? emp.photo_url : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/photos/${emp.photo_url}`)
                   : null;
