@@ -1277,6 +1277,8 @@ export default function Paiements() {
     return matchSearch && matchType && matchCanal;
   });
 
+  const { paginatedData: paginatedPaiements, currentPage: paiementsPage, totalPages: paiementsTotalPages, totalItems: paiementsTotalItems, pageSize: paiementsPageSize, setCurrentPage: setPaiementsPage } = usePagination(filtered);
+
   const totalRecettes = filtered.reduce((sum: number, p: any) => sum + Number(p.montant), 0);
 
   const statsByType = TYPES.map(t => ({
