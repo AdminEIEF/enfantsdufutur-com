@@ -1525,6 +1525,7 @@ export default function Paiements() {
                 </TableBody>
               </Table>
             </CardContent>
+            <PaginationControls currentPage={paiementsPage} totalPages={paiementsTotalPages} totalItems={paiementsTotalItems} pageSize={paiementsPageSize} onPageChange={setPaiementsPage} />
           </Card>
           <p className="text-sm text-muted-foreground">{filtered.length} paiement(s)</p>
         </TabsContent>
