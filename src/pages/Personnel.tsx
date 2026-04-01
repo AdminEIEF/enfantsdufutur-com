@@ -376,7 +376,6 @@ export default function Personnel() {
     },
   });
 
-  const { paginatedData: paginatedPersonnel, currentPage: personnelPage, totalPages: personnelTotalPages, totalItems: personnelTotalItems, pageSize: personnelPageSize, setCurrentPage: setPersonnelPage } = usePagination(filtered);
 
   const addEmployee = useMutation({
     mutationFn: async () => {
