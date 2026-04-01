@@ -1063,7 +1063,7 @@ export default function Eleves() {
                 <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Aucun élève trouvé</TableCell></TableRow>
-              ) : filtered.map((e: any) => (
+              ) : paginatedEleves.map((e: any) => (
                 <TableRow key={e.id} className="cursor-pointer" onClick={() => setSelected(e)}>
                   <TableCell onClick={ev => ev.stopPropagation()}>
                     <Checkbox
