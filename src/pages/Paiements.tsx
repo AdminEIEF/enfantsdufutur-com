@@ -1456,7 +1456,7 @@ export default function Paiements() {
                      <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
                    ) : filtered.length === 0 ? (
                      <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Aucun paiement</TableCell></TableRow>
-                   ) : filtered.map((p: any) => {
+                   ) : paginatedPaiements.map((p: any) => {
                      const eleveForReceipt = eleves.find((e: any) => e.id === p.eleve_id);
                      return (
                      <TableRow key={p.id}>
