@@ -434,6 +434,8 @@ export default function Familles() {
           </Card>
         ))}
       </div>
+      <PaginationControls currentPage={famillesPage} totalPages={famillesTotalPages} totalItems={famillesTotalItems} pageSize={famillesPageSize} onPageChange={setFamillesPage} />
+
 
       {/* Bulk Delete Confirmation */}
       <Dialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>
