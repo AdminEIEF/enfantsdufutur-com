@@ -1137,6 +1137,7 @@ export default function Personnel() {
               })}
             </div>
             <PaginationControls currentPage={personnelPage} totalPages={personnelTotalPages} totalItems={personnelTotalItems} pageSize={personnelPageSize} onPageChange={setPersonnelPage} />
+            </>
           )}
         </TabsContent>
 
