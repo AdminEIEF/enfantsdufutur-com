@@ -1611,7 +1611,6 @@ export default function Personnel() {
                     <div><span className="text-muted-foreground">Salaire:</span> <span className="font-bold">{Number(selectedEmp.salaire_base).toLocaleString()} GNF</span></div>
                     <div><span className="text-muted-foreground">Statut:</span> <Badge variant={selectedEmp.statut === 'actif' ? 'default' : 'destructive'}>{selectedEmp.statut}</Badge></div>
             </div>
-            <PaginationControls currentPage={personnelPage} totalPages={personnelTotalPages} totalItems={personnelTotalItems} pageSize={personnelPageSize} onPageChange={setPersonnelPage} />
           )}
                 {/* Generate / Modify password - superviseur only */}
                 {hasRole('superviseur') && (
