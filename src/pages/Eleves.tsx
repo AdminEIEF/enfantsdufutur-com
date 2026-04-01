@@ -1123,6 +1123,7 @@ export default function Eleves() {
             </TableBody>
           </Table>
         </CardContent>
+        <PaginationControls currentPage={elevesPage} totalPages={elevesTotalPages} totalItems={elevesTotalItems} pageSize={elevesPageSize} onPageChange={setElevesPage} />
       </Card>
 
       <div className="text-sm text-muted-foreground">{filtered.length} élève(s) trouvé(s)</div>
