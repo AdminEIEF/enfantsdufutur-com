@@ -678,6 +678,8 @@ export default function Personnel() {
     return matchSearch && matchCat;
   });
 
+  const { paginatedData: paginatedPersonnel, currentPage: personnelPage, totalPages: personnelTotalPages, totalItems: personnelTotalItems, pageSize: personnelPageSize, setCurrentPage: setPersonnelPage } = usePagination(filtered);
+
   const categorieLabel: Record<string, string> = {
     enseignant_primaire: 'Enseignant Primaire', enseignant_secondaire: 'Enseignant Secondaire',
     enseignant: 'Enseignant', administration: 'Administration', service: 'Service', direction: 'Direction',
