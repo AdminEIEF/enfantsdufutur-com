@@ -401,7 +401,7 @@ export default function Familles() {
           <p className="text-muted-foreground col-span-full text-center py-8">Chargement…</p>
         ) : filtered.length === 0 ? (
           <p className="text-muted-foreground col-span-full text-center py-8">Aucune famille trouvée</p>
-        ) : filtered.map((f: any) => (
+        ) : paginatedFamilles.map((f: any) => (
           <Card key={f.id} className={`cursor-pointer hover:shadow-md transition-shadow group ${selectedIds.has(f.id) ? 'ring-2 ring-primary' : ''}`}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
