@@ -535,6 +535,7 @@ export default function Depenses() {
                 </TableBody>
               </Table>
             </CardContent>
+            <PaginationControls currentPage={depensesPage} totalPages={depensesTotalPages} totalItems={depensesTotalItems} pageSize={depensesPageSize} onPageChange={setDepensesPage} />
           </Card>
           <p className="text-sm text-muted-foreground">{filtered.length} dépense(s) affichée(s)</p>
         </TabsContent>
