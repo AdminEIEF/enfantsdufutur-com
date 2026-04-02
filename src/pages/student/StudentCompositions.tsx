@@ -32,6 +32,34 @@ export default function StudentCompositions() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const blockedRef = useRef(false);
+  const [photos, setPhotos] = useState<{ id: string; dataUrl: string }[]>([]);
+
+  const capturePhoto = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.onchange = (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Image trop volumineuse (max 10 Mo)');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const id = `photo_${Date.now()}`;
+        setPhotos(prev => [...prev, { id, dataUrl: ev.target?.result as string }]);
+        toast.success('📸 Photo ajoutée !');
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  };
+
+  const removePhoto = (id: string) => {
+    setPhotos(prev => prev.filter(p => p.id !== id));
+  };
 
   const handleSecurityViolation = useCallback((reason: string) => {
     if (blockedRef.current) return;
