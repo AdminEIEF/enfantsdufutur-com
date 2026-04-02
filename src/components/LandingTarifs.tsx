@@ -48,7 +48,7 @@ export default function LandingTarifs() {
     queryFn: async () => {
       const { data } = await supabase
         .from('niveaux')
-        .select('id, nom, ordre, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, frais_examen, cycle_id')
+        .select('id, nom, ordre, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, frais_examen, total_inscription_fixe, total_reinscription_fixe, cycle_id')
         .order('ordre');
       return (data ?? []) as Niveau[];
     },
