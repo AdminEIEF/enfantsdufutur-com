@@ -8,7 +8,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { Loader2, Clock, CheckCircle2, Timer, FileText, Bold, Italic, Underline, List, Image, Superscript, Subscript, Send } from 'lucide-react';
+import { Loader2, Clock, CheckCircle2, Timer, FileText, Bold, Italic, Underline, List, Image, Superscript, Subscript, Send, ShieldAlert } from 'lucide-react';
+import { useExamSecurity } from '@/hooks/useExamSecurity';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function StudentCompositions() {
   const { session } = useStudentAuth();
@@ -22,8 +24,43 @@ export default function StudentCompositions() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [violations, setViolations] = useState(0);
+  const [warningOpen, setWarningOpen] = useState(false);
+  const [warningReason, setWarningReason] = useState('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  const blockedRef = useRef(false);
+
+  const handleSecurityViolation = useCallback((reason: string) => {
+    if (blockedRef.current) return;
+    setViolations(prev => {
+      const newCount = prev + 1;
+      if (newCount >= 2) {
+        blockedRef.current = true;
+        setBlocked(true);
+        // Auto-submit
+        handleSubmit(true);
+        toast.error('⛔ Accès bloqué ! Vous avez quitté l\'application pendant la composition.');
+      } else {
+        const reasons: Record<string, string> = {
+          tab_switch: 'Vous avez quitté l\'onglet',
+          window_blur: 'Vous avez quitté la fenêtre',
+          screenshot_attempt: 'Tentative de capture d\'écran détectée',
+        };
+        setWarningReason(reasons[reason] || 'Activité suspecte détectée');
+        setWarningOpen(true);
+        toast.warning(`⚠️ Avertissement ${newCount}/2 — Ne quittez pas l'application !`);
+      }
+      return newCount;
+    });
+  }, []);
+
+  useExamSecurity({
+    isActive: !!activeComp && !blocked,
+    onViolation: handleSecurityViolation,
+    maxViolations: 2,
+  });
 
   useEffect(() => {
     if (session) fetchCompositions();
@@ -189,6 +226,62 @@ export default function StudentCompositions() {
     execCmd('insertHTML', `<span style="font-family: 'Times New Roman', serif; font-style: italic;">${symbol}</span>`);
   };
 
+  // Blocked screen
+  if (blocked && activeComp) {
+    return (
+      <StudentLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="max-w-md w-full border-destructive/50">
+            <CardContent className="p-8 text-center space-y-4">
+              <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+                <ShieldAlert className="h-10 w-10 text-destructive" />
+              </div>
+              <h2 className="text-xl font-bold text-destructive">Accès Bloqué</h2>
+              <p className="text-muted-foreground">
+                Vous avez quitté l'application pendant la composition. 
+                Votre copie a été automatiquement soumise.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Contactez votre superviseur si vous pensez qu'il s'agit d'une erreur.
+              </p>
+              <Button variant="outline" onClick={() => { setBlocked(false); setActiveComp(null); blockedRef.current = false; setViolations(0); fetchCompositions(); }}>
+                Retour aux compositions
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </StudentLayout>
+    );
+  }
+
+  // Warning dialog for first violation
+  const violationWarningDialog = (
+    <Dialog open={warningOpen} onOpenChange={setWarningOpen}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-destructive">
+            <ShieldAlert className="h-5 w-5" />
+            Avertissement !
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <p className="font-medium">{warningReason}</p>
+          <p className="text-sm text-muted-foreground">
+            <strong>Attention :</strong> Si vous quittez l'application une deuxième fois, 
+            votre composition sera automatiquement soumise et votre accès sera bloqué.
+          </p>
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/5 border border-destructive/20">
+            <span className="text-2xl">⚠️</span>
+            <p className="text-xs font-semibold text-destructive">Avertissement {violations}/2 — Prochain = Blocage</p>
+          </div>
+        </div>
+        <Button onClick={() => setWarningOpen(false)} className="w-full">
+          J'ai compris, continuer
+        </Button>
+      </DialogContent>
+    </Dialog>
+  );
+
   // Active exam view - Document type
   if (activeComp && activeType === 'document') {
     const isUrgent = timeLeft < 60;
@@ -200,16 +293,25 @@ export default function StudentCompositions() {
 
     return (
       <StudentLayout>
-        <div className="flex flex-col h-[calc(100vh-80px)]">
+        {violationWarningDialog}
+        <div className="flex flex-col h-[calc(100vh-80px)] exam-secure-content">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
             <div>
               <h2 className="font-bold text-lg">{activeComp.titre}</h2>
               <p className="text-sm text-muted-foreground">{activeComp.matieres?.nom} • /{activeComp.bareme}</p>
             </div>
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-lg font-bold ${isUrgent ? 'bg-destructive/10 text-destructive animate-pulse' : 'bg-primary/10 text-primary'}`}>
-              <Timer className="h-5 w-5" />
-              {formatTime(timeLeft)}
+            <div className="flex items-center gap-2">
+              {violations > 0 && (
+                <Badge variant="destructive" className="text-xs">⚠️ {violations}/2</Badge>
+              )}
+              <Badge variant="outline" className="text-xs gap-1">
+                <ShieldAlert className="h-3 w-3" /> Surveillé
+              </Badge>
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-lg font-bold ${isUrgent ? 'bg-destructive/10 text-destructive animate-pulse' : 'bg-primary/10 text-primary'}`}>
+                <Timer className="h-5 w-5" />
+                {formatTime(timeLeft)}
+              </div>
             </div>
           </div>
 
@@ -294,15 +396,24 @@ export default function StudentCompositions() {
 
     return (
       <StudentLayout>
-        <div className="max-w-3xl mx-auto space-y-4 p-4">
+        {violationWarningDialog}
+        <div className="max-w-3xl mx-auto space-y-4 p-4 exam-secure-content">
           <div className="flex items-center justify-between sticky top-0 z-10 bg-background py-3 border-b">
             <div>
               <h2 className="font-bold text-lg">{activeComp.titre}</h2>
               <p className="text-sm text-muted-foreground">{activeComp.matieres?.nom}</p>
             </div>
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-lg font-bold ${isUrgent ? 'bg-destructive/10 text-destructive animate-pulse' : 'bg-primary/10 text-primary'}`}>
-              <Timer className="h-5 w-5" />
-              {formatTime(timeLeft)}
+            <div className="flex items-center gap-2">
+              {violations > 0 && (
+                <Badge variant="destructive" className="text-xs">⚠️ {violations}/2</Badge>
+              )}
+              <Badge variant="outline" className="text-xs gap-1">
+                <ShieldAlert className="h-3 w-3" /> Surveillé
+              </Badge>
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-lg font-bold ${isUrgent ? 'bg-destructive/10 text-destructive animate-pulse' : 'bg-primary/10 text-primary'}`}>
+                <Timer className="h-5 w-5" />
+                {formatTime(timeLeft)}
+              </div>
             </div>
           </div>
 
