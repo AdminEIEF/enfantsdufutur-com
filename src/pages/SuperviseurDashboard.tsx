@@ -79,6 +79,7 @@ export default function SuperviseurDashboard() {
 
       const totalPaiements = (paiementsRes.data || []).reduce((s: number, p: any) => s + (p.montant || 0), 0);
       const preInscritsEnAttente = (preInsRes.data || []).filter((p: any) => p.statut === 'en_attente').length;
+      const totalDepensesValidees = (depensesRes.data || []).filter((d: any) => d.statut === 'validee').reduce((s: number, d: any) => s + (d.montant || 0), 0);
 
       setStats({
         inscrits,
@@ -88,6 +89,10 @@ export default function SuperviseurDashboard() {
         totalFamilles: famillesRes.count || 0,
         totalPaiements,
         totalEleves: eleves.length,
+        totalNotes: notesRes.count || 0,
+        totalDepenses: totalDepensesValidees,
+        totalCompositions: composRes.count || 0,
+        totalConnectes: connectesRes.count || 0,
       });
       setCycleStats(cycleArr);
       setEmployeCategories(catArr);
