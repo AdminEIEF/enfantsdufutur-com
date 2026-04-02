@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Loader2, Clock, CheckCircle2, Timer, FileText, Bold, Italic, Underline, List, Image, Superscript, Subscript, Send, ShieldAlert } from 'lucide-react';
+import { Loader2, Clock, CheckCircle2, Timer, FileText, Bold, Italic, Underline, List, Image, Superscript, Subscript, Send, ShieldAlert, PenLine } from 'lucide-react';
 import { useExamSecurity } from '@/hooks/useExamSecurity';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -153,6 +154,25 @@ export default function StudentCompositions() {
         const data = await callApi('submit_composition', {
           composition_id: activeComp.id,
           reponse_texte: htmlContent,
+        });
+        toast.success(data.message || 'Composition soumise !');
+      } else if (activeType === 'texte') {
+        // Build HTML from text answers
+        const textParts = activeQuestions.map((q: any, idx: number) => {
+          const answer = answers[q.id] || '';
+          return `<div><strong>Q${idx + 1}: ${q.enonce}</strong><br/>${answer.replace(/\n/g, '<br/>')}</div>`;
+        }).join('<hr/>');
+        
+        if (!autoSubmit) {
+          const unanswered = activeQuestions.filter((q: any) => !answers[q.id]?.trim());
+          if (unanswered.length > 0 && !confirm(`${unanswered.length} question(s) sans réponse. Soumettre quand même ?`)) {
+            setSubmitting(false);
+            return;
+          }
+        }
+        const data = await callApi('submit_composition', {
+          composition_id: activeComp.id,
+          reponse_texte: textParts,
         });
         toast.success(data.message || 'Composition soumise !');
       } else {
@@ -388,6 +408,74 @@ export default function StudentCompositions() {
     );
   }
 
+  // Active exam view - Texte type (questions with free text answers)
+  if (activeComp && activeType === 'texte') {
+    const progress = activeQuestions.length > 0
+      ? (Object.keys(answers).filter(k => answers[k]?.trim()).length / activeQuestions.length) * 100 : 0;
+    const isUrgent = timeLeft < 60;
+
+    return (
+      <StudentLayout>
+        {violationWarningDialog}
+        <div className="max-w-3xl mx-auto space-y-4 p-4 exam-secure-content">
+          <div className="flex items-center justify-between sticky top-0 z-10 bg-background py-3 border-b">
+            <div>
+              <h2 className="font-bold text-lg">{activeComp.titre}</h2>
+              <p className="text-sm text-muted-foreground">{activeComp.matieres?.nom} • /{activeComp.bareme}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {violations > 0 && (
+                <Badge variant="destructive" className="text-xs">⚠️ {violations}/2</Badge>
+              )}
+              <Badge variant="outline" className="text-xs gap-1">
+                <ShieldAlert className="h-3 w-3" /> Surveillé
+              </Badge>
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-lg font-bold ${isUrgent ? 'bg-destructive/10 text-destructive animate-pulse' : 'bg-primary/10 text-primary'}`}>
+                <Timer className="h-5 w-5" />
+                {formatTime(timeLeft)}
+              </div>
+            </div>
+          </div>
+
+          <Progress value={progress} className="h-2" />
+          <p className="text-xs text-muted-foreground text-right">{Object.keys(answers).filter(k => answers[k]?.trim()).length}/{activeQuestions.length} répondue(s)</p>
+
+          <div className="space-y-4">
+            {activeQuestions.map((q: any, idx: number) => (
+              <Card key={q.id} className={answers[q.id]?.trim() ? 'border-primary/30' : ''}>
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <Badge variant="outline" className="shrink-0 mt-1">{idx + 1}</Badge>
+                      <div className="flex-1">
+                        <p className="font-medium">{q.enonce}</p>
+                        <Badge variant="secondary" className="text-xs mt-1">{q.points} pt{q.points > 1 ? 's' : ''}</Badge>
+                      </div>
+                    </div>
+                    <Textarea
+                      placeholder="Rédigez votre réponse ici..."
+                      value={answers[q.id] || ''}
+                      onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+                      rows={4}
+                      className="resize-y"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="sticky bottom-0 bg-background py-4 border-t">
+            <Button className="w-full" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+              Soumettre la composition
+            </Button>
+          </div>
+        </div>
+      </StudentLayout>
+    );
+  }
+
   // Active exam view - QCM type
   if (activeComp) {
     const progress = activeQuestions.length > 0
@@ -470,6 +558,7 @@ export default function StudentCompositions() {
               const status = getStatus(comp);
               const rep = reponses.find((r: any) => r.composition_id === comp.id);
               const isDocument = comp.type_composition === 'document';
+              const isTexte = comp.type_composition === 'texte';
 
               return (
                 <Card key={comp.id} className="overflow-hidden">
@@ -479,7 +568,7 @@ export default function StudentCompositions() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold">{comp.titre}</h3>
                           <Badge variant="outline" className="text-xs">
-                            {isDocument ? '📄 Document' : '📝 QCM'}
+                            {isDocument ? '📄 Document' : comp.type_composition === 'texte' ? '✍️ Texte' : '📝 QCM'}
                           </Badge>
                           {status === 'done' && <Badge className="bg-emerald-100 text-emerald-700">Terminée</Badge>}
                           {status === 'in_progress' && <Badge className="bg-amber-100 text-amber-700">En cours</Badge>}
@@ -492,10 +581,10 @@ export default function StudentCompositions() {
                           <Clock className="h-3 w-3 inline mr-1" />
                           {new Date(comp.date_debut).toLocaleDateString('fr')} → {new Date(comp.date_fin).toLocaleDateString('fr')}
                         </p>
-                        {status === 'done' && rep && !isDocument && (
+                        {status === 'done' && rep && !isDocument && !isTexte && (
                           <p className="text-sm font-bold mt-2 text-primary">Score : {rep.score}/{comp.bareme}</p>
                         )}
-                        {status === 'done' && rep && isDocument && (
+                        {status === 'done' && rep && (isDocument || isTexte) && (
                           <p className="text-sm font-bold mt-2 text-primary">
                             {rep.score != null ? `Note : ${rep.score}/${comp.bareme}` : 'En attente de correction'}
                           </p>

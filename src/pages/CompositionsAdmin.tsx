@@ -36,7 +36,7 @@ interface Composition {
 interface Question {
   id?: string;
   composition_id?: string;
-  type_question: 'qcm' | 'vrai_faux';
+  type_question: 'qcm' | 'vrai_faux' | 'texte';
   enonce: string;
   options: { label: string; correct?: boolean }[];
   reponse_correcte: string;
@@ -123,6 +123,7 @@ export default function CompositionsAdmin() {
     if (form.type_composition === 'document' && !form.sujet_url && !editComp?.sujet_url) {
       toast.error('Veuillez uploader un fichier sujet (PDF ou Word)'); return;
     }
+    // texte type needs questions but validated at publish time
     const payload: any = {
       titre: form.titre, description: form.description || null,
       classe_id: form.classe_id, matiere_id: form.matiere_id,
@@ -152,7 +153,7 @@ export default function CompositionsAdmin() {
 
   async function togglePublie(comp: Composition) {
     if (!comp.publie) {
-      if (comp.type_composition === 'qcm') {
+      if (comp.type_composition === 'qcm' || comp.type_composition === 'texte') {
         const { count } = await supabase.from('composition_questions').select('id', { count: 'exact', head: true }).eq('composition_id', comp.id);
         if (!count || count === 0) {
           toast.error('Ajoutez des questions avant de publier'); return;
@@ -186,14 +187,16 @@ export default function CompositionsAdmin() {
     setQuestionsLoading(false);
   }
 
-  function addQuestion(type: 'qcm' | 'vrai_faux') {
+  function addQuestion(type: 'qcm' | 'vrai_faux' | 'texte') {
     const newQ: Question = {
       type_question: type,
       enonce: '',
       options: type === 'vrai_faux'
         ? [{ label: 'Vrai' }, { label: 'Faux' }]
+        : type === 'texte'
+        ? []
         : [{ label: '' }, { label: '' }, { label: '' }, { label: '' }],
-      reponse_correcte: '',
+      reponse_correcte: type === 'texte' ? '_texte_' : '',
       points: 1,
       ordre: questions.length,
     };
@@ -213,7 +216,7 @@ export default function CompositionsAdmin() {
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       if (!q.enonce.trim()) { toast.error(`Question ${i + 1}: énoncé requis`); return; }
-      if (!q.reponse_correcte) { toast.error(`Question ${i + 1}: réponse correcte requise`); return; }
+      if (q.type_question !== 'texte' && !q.reponse_correcte) { toast.error(`Question ${i + 1}: réponse correcte requise`); return; }
       if (q.type_question === 'qcm' && q.options.some(o => !o.label.trim())) {
         toast.error(`Question ${i + 1}: toutes les options doivent être remplies`); return;
       }
@@ -258,7 +261,7 @@ export default function CompositionsAdmin() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Compositions en ligne</h1>
-          <p className="text-sm text-muted-foreground">Gérer les examens QCM, Vrai/Faux et Documents</p>
+          <p className="text-sm text-muted-foreground">Gérer les examens QCM, Vrai/Faux, Texte et Documents</p>
         </div>
         <Button onClick={() => { setEditComp(null); resetForm(); setShowForm(true); }}>
           <Plus className="h-4 w-4 mr-2" /> Nouvelle composition
@@ -287,9 +290,9 @@ export default function CompositionsAdmin() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-lg">{comp.titre}</h3>
-                      <Badge variant="outline" className="text-xs">
-                        {comp.type_composition === 'document' ? '📄 Document' : '📝 QCM'}
-                      </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {comp.type_composition === 'document' ? '📄 Document' : comp.type_composition === 'texte' ? '✍️ Texte' : '📝 QCM'}
+                          </Badge>
                       {comp.publie ? (
                         <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Publiée</Badge>
                       ) : (
@@ -311,7 +314,7 @@ export default function CompositionsAdmin() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {comp.type_composition === 'qcm' && (
+                    {(comp.type_composition === 'qcm' || comp.type_composition === 'texte') && (
                       <Button variant="outline" size="sm" onClick={() => openQuestions(comp.id)}>
                         <FileQuestion className="h-4 w-4 mr-1" /> Questions
                       </Button>
@@ -363,6 +366,7 @@ export default function CompositionsAdmin() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="qcm">📝 QCM / Vrai-Faux</SelectItem>
+                    <SelectItem value="texte">✍️ Questions texte — Réponse libre</SelectItem>
                     <SelectItem value="document">📄 Document (PDF/Word) — Réponse texte</SelectItem>
                   </SelectContent>
                 </Select>
@@ -433,7 +437,7 @@ export default function CompositionsAdmin() {
         </DialogContent>
       </Dialog>
 
-      {/* Questions Dialog - only for QCM type */}
+      {/* Questions Dialog - for QCM and Texte types */}
       <Dialog open={!!showQuestions} onOpenChange={() => setShowQuestions(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -448,7 +452,9 @@ export default function CompositionsAdmin() {
                 <Card key={idx} className="border">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center justify-between gap-2">
-                      <Badge variant="outline">{q.type_question === 'qcm' ? 'QCM' : 'Vrai/Faux'} — Q{idx + 1}</Badge>
+                      <Badge variant="outline">
+                        {q.type_question === 'qcm' ? 'QCM' : q.type_question === 'texte' ? '✍️ Texte' : 'Vrai/Faux'} — Q{idx + 1}
+                      </Badge>
                       <div className="flex items-center gap-2">
                         <Label className="text-xs">Points:</Label>
                         <Input type="number" className="w-16 h-8" value={q.points} onChange={e => updateQuestion(idx, { points: Number(e.target.value) })} min={0.5} step={0.5} />
@@ -458,47 +464,66 @@ export default function CompositionsAdmin() {
                       </div>
                     </div>
                     <Textarea placeholder="Énoncé de la question" value={q.enonce} onChange={e => updateQuestion(idx, { enonce: e.target.value })} rows={2} />
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">Réponse correcte :</Label>
-                      <RadioGroup value={q.reponse_correcte} onValueChange={v => updateQuestion(idx, { reponse_correcte: v })}>
-                        {q.options.map((opt, oi) => (
-                          <div key={oi} className="flex items-center gap-2">
-                            <RadioGroupItem value={opt.label || `opt_${oi}`} id={`q${idx}_o${oi}`} />
-                            {q.type_question === 'vrai_faux' ? (
-                              <Label htmlFor={`q${idx}_o${oi}`} className="cursor-pointer">{opt.label}</Label>
-                            ) : (
-                              <Input
-                                className="flex-1 h-8"
-                                placeholder={`Option ${oi + 1}`}
-                                value={opt.label}
-                                onChange={e => {
-                                  const newOpts = [...q.options];
-                                  const oldLabel = newOpts[oi].label;
-                                  newOpts[oi] = { ...newOpts[oi], label: e.target.value };
-                                  const updatedCorrect = q.reponse_correcte === oldLabel ? e.target.value : q.reponse_correcte;
-                                  updateQuestion(idx, { options: newOpts, reponse_correcte: updatedCorrect });
-                                }}
-                              />
-                            )}
-                            {q.reponse_correcte === (opt.label || `opt_${oi}`) && (
-                              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                            )}
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </div>
+                    {q.type_question === 'texte' ? (
+                      <p className="text-xs text-muted-foreground italic">L'élève répondra en texte libre à cette question. La correction sera manuelle.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Réponse correcte :</Label>
+                        <RadioGroup value={q.reponse_correcte} onValueChange={v => updateQuestion(idx, { reponse_correcte: v })}>
+                          {q.options.map((opt, oi) => (
+                            <div key={oi} className="flex items-center gap-2">
+                              <RadioGroupItem value={opt.label || `opt_${oi}`} id={`q${idx}_o${oi}`} />
+                              {q.type_question === 'vrai_faux' ? (
+                                <Label htmlFor={`q${idx}_o${oi}`} className="cursor-pointer">{opt.label}</Label>
+                              ) : (
+                                <Input
+                                  className="flex-1 h-8"
+                                  placeholder={`Option ${oi + 1}`}
+                                  value={opt.label}
+                                  onChange={e => {
+                                    const newOpts = [...q.options];
+                                    const oldLabel = newOpts[oi].label;
+                                    newOpts[oi] = { ...newOpts[oi], label: e.target.value };
+                                    const updatedCorrect = q.reponse_correcte === oldLabel ? e.target.value : q.reponse_correcte;
+                                    updateQuestion(idx, { options: newOpts, reponse_correcte: updatedCorrect });
+                                  }}
+                                />
+                              )}
+                              {q.reponse_correcte === (opt.label || `opt_${oi}`) && (
+                                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                              )}
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
 
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => addQuestion('qcm')}>
-                  <Plus className="h-4 w-4 mr-1" /> QCM
-                </Button>
-                <Button variant="outline" onClick={() => addQuestion('vrai_faux')}>
-                  <Plus className="h-4 w-4 mr-1" /> Vrai/Faux
-                </Button>
-              </div>
+              {(() => {
+                const compForQuestions = compositions.find(c => c.id === showQuestions);
+                const isTexteType = compForQuestions?.type_composition === 'texte';
+                return (
+                  <div className="flex gap-2">
+                    {!isTexteType && (
+                      <>
+                        <Button variant="outline" onClick={() => addQuestion('qcm')}>
+                          <Plus className="h-4 w-4 mr-1" /> QCM
+                        </Button>
+                        <Button variant="outline" onClick={() => addQuestion('vrai_faux')}>
+                          <Plus className="h-4 w-4 mr-1" /> Vrai/Faux
+                        </Button>
+                      </>
+                    )}
+                    {isTexteType && (
+                      <Button variant="outline" onClick={() => addQuestion('texte')}>
+                        <Plus className="h-4 w-4 mr-1" /> Question texte
+                      </Button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           )}
           <DialogFooter>
@@ -525,7 +550,7 @@ export default function CompositionsAdmin() {
                         <p className="text-xs text-muted-foreground">{r.eleves?.matricule}</p>
                       </div>
                       <div className="text-right">
-                        {currentResultComp?.type_composition === 'document' ? (
+                        {(currentResultComp?.type_composition === 'document' || currentResultComp?.type_composition === 'texte') ? (
                           <>
                             <Badge variant={r.score != null ? 'default' : 'secondary'}>
                               {r.score != null ? `${r.score}/${currentResultComp.bareme}` : 'À noter'}
@@ -544,7 +569,7 @@ export default function CompositionsAdmin() {
                         )}
                       </div>
                     </div>
-                    {currentResultComp?.type_composition === 'document' && r.reponse_texte && (
+                    {(currentResultComp?.type_composition === 'document' || currentResultComp?.type_composition === 'texte') && r.reponse_texte && (
                       <details className="mt-2">
                         <summary className="text-xs text-primary cursor-pointer">Voir la réponse de l'élève</summary>
                         <div className="mt-2 p-3 bg-muted/50 rounded text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: r.reponse_texte }} />

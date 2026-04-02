@@ -333,6 +333,19 @@ serve(async (req) => {
         });
       }
 
+      // For texte type, return questions without options
+      if (comp.type_composition === 'texte') {
+        const { data: questions } = await supabaseAdmin
+          .from("composition_questions")
+          .select("id, type_question, enonce, points, ordre")
+          .eq("composition_id", composition_id)
+          .order("ordre");
+
+        return new Response(JSON.stringify({ type_composition: 'texte', questions: questions || [], debut_at: debutAt }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       // Get questions (strip correct answers) for QCM type
       const { data: questions } = await supabaseAdmin
         .from("composition_questions")
@@ -391,8 +404,8 @@ serve(async (req) => {
         });
       }
 
-      // Document type: save text response, no auto-scoring
-      if (comp.type_composition === 'document') {
+      // Document or Texte type: save text response, no auto-scoring
+      if (comp.type_composition === 'document' || comp.type_composition === 'texte') {
         await supabaseAdmin
           .from("composition_reponses")
           .update({ reponse_texte: reponse_texte || '', soumis_at: new Date().toISOString() })
