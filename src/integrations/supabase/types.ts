@@ -3303,6 +3303,33 @@ export type Database = {
           },
         ]
       }
+      security_logs: {
+        Row: {
+          attempted_route: string
+          created_at: string
+          id: string
+          ip_info: string | null
+          user_identifier: string | null
+          user_type: string
+        }
+        Insert: {
+          attempted_route: string
+          created_at?: string
+          id?: string
+          ip_info?: string | null
+          user_identifier?: string | null
+          user_type?: string
+        }
+        Update: {
+          attempted_route?: string
+          created_at?: string
+          id?: string
+          ip_info?: string | null
+          user_identifier?: string | null
+          user_type?: string
+        }
+        Relationships: []
+      }
       sessions_scolaires: {
         Row: {
           active: boolean
