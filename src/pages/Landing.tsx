@@ -267,6 +267,10 @@ export default function Landing() {
             <CarouselContent>
               {[
                 { src: schoolAnglais, alt: "Anglais et Informatique dès la maternelle" },
+                { src: schoolCantine, alt: "La cantine scolaire" },
+                { src: schoolMaternelle, alt: "Activités en maternelle" },
+                { src: schoolClasse, alt: "Salle de classe décorée" },
+                { src: schoolJeux, alt: "Espace jeux et détente" },
                 { src: schoolBepc, alt: "100% d'admission au BEPC" },
                 { src: schoolDrapeau, alt: "Cérémonie du drapeau" },
                 { src: schoolGraduation, alt: "Cérémonie de graduation" },
