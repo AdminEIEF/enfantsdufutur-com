@@ -24,8 +24,43 @@ export default function StudentCompositions() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [violations, setViolations] = useState(0);
+  const [warningOpen, setWarningOpen] = useState(false);
+  const [warningReason, setWarningReason] = useState('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  const blockedRef = useRef(false);
+
+  const handleSecurityViolation = useCallback((reason: string) => {
+    if (blockedRef.current) return;
+    setViolations(prev => {
+      const newCount = prev + 1;
+      if (newCount >= 2) {
+        blockedRef.current = true;
+        setBlocked(true);
+        // Auto-submit
+        handleSubmit(true);
+        toast.error('⛔ Accès bloqué ! Vous avez quitté l\'application pendant la composition.');
+      } else {
+        const reasons: Record<string, string> = {
+          tab_switch: 'Vous avez quitté l\'onglet',
+          window_blur: 'Vous avez quitté la fenêtre',
+          screenshot_attempt: 'Tentative de capture d\'écran détectée',
+        };
+        setWarningReason(reasons[reason] || 'Activité suspecte détectée');
+        setWarningOpen(true);
+        toast.warning(`⚠️ Avertissement ${newCount}/2 — Ne quittez pas l'application !`);
+      }
+      return newCount;
+    });
+  }, []);
+
+  useExamSecurity({
+    isActive: !!activeComp && !blocked,
+    onViolation: handleSecurityViolation,
+    maxViolations: 2,
+  });
 
   useEffect(() => {
     if (session) fetchCompositions();
