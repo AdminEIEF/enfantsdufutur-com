@@ -550,7 +550,7 @@ export default function CompositionsAdmin() {
                         <p className="text-xs text-muted-foreground">{r.eleves?.matricule}</p>
                       </div>
                       <div className="text-right">
-                        {currentResultComp?.type_composition === 'document' ? (
+                        {(currentResultComp?.type_composition === 'document' || currentResultComp?.type_composition === 'texte') ? (
                           <>
                             <Badge variant={r.score != null ? 'default' : 'secondary'}>
                               {r.score != null ? `${r.score}/${currentResultComp.bareme}` : 'À noter'}
@@ -569,7 +569,7 @@ export default function CompositionsAdmin() {
                         )}
                       </div>
                     </div>
-                    {currentResultComp?.type_composition === 'document' && r.reponse_texte && (
+                    {(currentResultComp?.type_composition === 'document' || currentResultComp?.type_composition === 'texte') && r.reponse_texte && (
                       <details className="mt-2">
                         <summary className="text-xs text-primary cursor-pointer">Voir la réponse de l'élève</summary>
                         <div className="mt-2 p-3 bg-muted/50 rounded text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: r.reponse_texte }} />
