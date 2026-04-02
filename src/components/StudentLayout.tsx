@@ -100,6 +100,62 @@ export function StudentLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
+      {/* Profile Dialog */}
+      <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center">Mon Profil</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            {eleve.photo_url ? (
+              <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} className="w-28 h-28 rounded-full object-cover border-4 border-primary/20 shadow-lg" />
+            ) : (
+              <div className="w-28 h-28 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-3xl shadow-lg">
+                {eleve.prenom[0]}{eleve.nom[0]}
+              </div>
+            )}
+            <div className="text-center">
+              <h2 className="text-xl font-bold">{eleve.prenom} {eleve.nom}</h2>
+              {eleve.classes?.nom && (
+                <p className="text-sm text-muted-foreground mt-1 flex items-center justify-center gap-1.5">
+                  <GraduationCap className="h-4 w-4" />
+                  {eleve.classes.nom}
+                </p>
+              )}
+            </div>
+            <div className="w-full space-y-2 mt-2">
+              {eleve.matricule && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <Hash className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-[11px] text-muted-foreground">Matricule</p>
+                    <p className="text-sm font-semibold">{eleve.matricule}</p>
+                  </div>
+                </div>
+              )}
+              {eleve.date_naissance && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-[11px] text-muted-foreground">Date de naissance</p>
+                    <p className="text-sm font-semibold">{new Date(eleve.date_naissance).toLocaleDateString('fr-FR')}</p>
+                  </div>
+                </div>
+              )}
+              {eleve.sexe && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-[11px] text-muted-foreground">Sexe</p>
+                    <p className="text-sm font-semibold">{eleve.sexe === 'M' ? 'Masculin' : 'Féminin'}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Games Overlay */}
       <AnimatePresence>
         {gamesOpen && (
