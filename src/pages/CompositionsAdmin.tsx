@@ -216,7 +216,7 @@ export default function CompositionsAdmin() {
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       if (!q.enonce.trim()) { toast.error(`Question ${i + 1}: énoncé requis`); return; }
-      if (!q.reponse_correcte) { toast.error(`Question ${i + 1}: réponse correcte requise`); return; }
+      if (q.type_question !== 'texte' && !q.reponse_correcte) { toast.error(`Question ${i + 1}: réponse correcte requise`); return; }
       if (q.type_question === 'qcm' && q.options.some(o => !o.label.trim())) {
         toast.error(`Question ${i + 1}: toutes les options doivent être remplies`); return;
       }
