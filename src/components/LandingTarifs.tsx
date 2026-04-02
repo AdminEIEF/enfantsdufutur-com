@@ -19,6 +19,7 @@ interface Niveau {
   frais_examen: number;
   total_inscription_fixe: number;
   total_reinscription_fixe: number;
+  remise_reinscription: number;
   cycle_id: string;
 }
 
