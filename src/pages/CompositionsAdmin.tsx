@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit, Eye, Loader2, FileQuestion, CheckCircle2, Clock, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Edit, Eye, Loader2, FileQuestion, CheckCircle2, Clock, GripVertical, Upload, FileText } from 'lucide-react';
 
 interface Composition {
   id: string;
@@ -26,6 +26,9 @@ interface Composition {
   bareme: number;
   publie: boolean;
   created_at: string;
+  type_composition: string;
+  sujet_url: string | null;
+  sujet_nom: string | null;
   classes?: { nom: string };
   matieres?: { nom: string };
 }
@@ -53,11 +56,15 @@ export default function CompositionsAdmin() {
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [showResults, setShowResults] = useState<string | null>(null);
   const [results, setResults] = useState<any[]>([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   // Form state
   const [form, setForm] = useState({
     titre: '', description: '', classe_id: '', matiere_id: '',
     duree_minutes: 30, date_debut: '', date_fin: '', bareme: 20,
+    type_composition: 'qcm' as string,
+    sujet_url: '' as string,
+    sujet_nom: '' as string,
   });
   const [filterClasse, setFilterClasse] = useState('all');
 
@@ -85,15 +92,45 @@ export default function CompositionsAdmin() {
       .then(({ data }) => setClasseMatieres(data || []));
   }, [form.classe_id]);
 
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Seuls les fichiers PDF et Word sont acceptés');
+      return;
+    }
+    setUploadingFile(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `compositions/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from('cours').upload(fileName, file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from('cours').getPublicUrl(fileName);
+      setForm(prev => ({ ...prev, sujet_url: urlData.publicUrl, sujet_nom: file.name }));
+      toast.success('Fichier uploadé');
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setUploadingFile(false);
+    }
+  }
+
   async function handleSave() {
     if (!form.titre || !form.classe_id || !form.matiere_id || !form.date_debut || !form.date_fin) {
       toast.error('Remplissez tous les champs obligatoires'); return;
     }
-    const payload = {
+    if (form.type_composition === 'document' && !form.sujet_url && !editComp?.sujet_url) {
+      toast.error('Veuillez uploader un fichier sujet (PDF ou Word)'); return;
+    }
+    const payload: any = {
       titre: form.titre, description: form.description || null,
       classe_id: form.classe_id, matiere_id: form.matiere_id,
       duree_minutes: form.duree_minutes, date_debut: form.date_debut,
       date_fin: form.date_fin, bareme: form.bareme,
+      type_composition: form.type_composition,
+      sujet_url: form.sujet_url || null,
+      sujet_nom: form.sujet_nom || null,
     };
     if (editComp) {
       const { error } = await supabase.from('compositions').update(payload).eq('id', editComp.id);
@@ -105,16 +142,23 @@ export default function CompositionsAdmin() {
       toast.success('Composition créée');
     }
     setShowForm(false); setEditComp(null);
-    setForm({ titre: '', description: '', classe_id: '', matiere_id: '', duree_minutes: 30, date_debut: '', date_fin: '', bareme: 20 });
+    resetForm();
     fetchAll();
   }
 
+  function resetForm() {
+    setForm({ titre: '', description: '', classe_id: '', matiere_id: '', duree_minutes: 30, date_debut: '', date_fin: '', bareme: 20, type_composition: 'qcm', sujet_url: '', sujet_nom: '' });
+  }
+
   async function togglePublie(comp: Composition) {
-    // Check if there are questions before publishing
     if (!comp.publie) {
-      const { count } = await supabase.from('composition_questions').select('id', { count: 'exact', head: true }).eq('composition_id', comp.id);
-      if (!count || count === 0) {
-        toast.error('Ajoutez des questions avant de publier'); return;
+      if (comp.type_composition === 'qcm') {
+        const { count } = await supabase.from('composition_questions').select('id', { count: 'exact', head: true }).eq('composition_id', comp.id);
+        if (!count || count === 0) {
+          toast.error('Ajoutez des questions avant de publier'); return;
+        }
+      } else if (!comp.sujet_url) {
+        toast.error('Ajoutez un fichier sujet avant de publier'); return;
       }
     }
     const { error } = await supabase.from('compositions').update({ publie: !comp.publie }).eq('id', comp.id);
@@ -166,7 +210,6 @@ export default function CompositionsAdmin() {
 
   async function saveQuestions() {
     if (!showQuestions) return;
-    // Validate
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       if (!q.enonce.trim()) { toast.error(`Question ${i + 1}: énoncé requis`); return; }
@@ -175,9 +218,7 @@ export default function CompositionsAdmin() {
         toast.error(`Question ${i + 1}: toutes les options doivent être remplies`); return;
       }
     }
-    // Delete existing
     await supabase.from('composition_questions').delete().eq('composition_id', showQuestions);
-    // Insert new
     const rows = questions.map((q, i) => ({
       composition_id: showQuestions,
       type_question: q.type_question,
@@ -198,15 +239,17 @@ export default function CompositionsAdmin() {
   // Results
   async function openResults(compId: string) {
     setShowResults(compId);
+    const comp = compositions.find(c => c.id === compId);
     const { data } = await supabase.from('composition_reponses')
       .select('*, eleves:eleve_id(nom, prenom, matricule)')
       .eq('composition_id', compId)
       .order('score', { ascending: false });
-    setResults(data || []);
+    setResults((data || []).map((r: any) => ({ ...r, _type: comp?.type_composition })));
   }
 
   const filtered = filterClasse === 'all' ? compositions : compositions.filter(c => c.classe_id === filterClasse);
   const totalPoints = questions.reduce((s, q) => s + q.points, 0);
+  const currentResultComp = compositions.find(c => c.id === showResults);
 
   if (loading) return <div className="flex items-center justify-center min-h-[300px]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
@@ -215,9 +258,9 @@ export default function CompositionsAdmin() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Compositions en ligne</h1>
-          <p className="text-sm text-muted-foreground">Gérer les examens QCM et Vrai/Faux</p>
+          <p className="text-sm text-muted-foreground">Gérer les examens QCM, Vrai/Faux et Documents</p>
         </div>
-        <Button onClick={() => { setEditComp(null); setForm({ titre: '', description: '', classe_id: '', matiere_id: '', duree_minutes: 30, date_debut: '', date_fin: '', bareme: 20 }); setShowForm(true); }}>
+        <Button onClick={() => { setEditComp(null); resetForm(); setShowForm(true); }}>
           <Plus className="h-4 w-4 mr-2" /> Nouvelle composition
         </Button>
       </div>
@@ -244,6 +287,9 @@ export default function CompositionsAdmin() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-lg">{comp.titre}</h3>
+                      <Badge variant="outline" className="text-xs">
+                        {comp.type_composition === 'document' ? '📄 Document' : '📝 QCM'}
+                      </Badge>
                       {comp.publie ? (
                         <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Publiée</Badge>
                       ) : (
@@ -253,15 +299,23 @@ export default function CompositionsAdmin() {
                     <p className="text-sm text-muted-foreground mt-1">
                       {(comp as any).classes?.nom} • {(comp as any).matieres?.nom} • {comp.duree_minutes} min • /{comp.bareme}
                     </p>
+                    {comp.sujet_nom && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        <FileText className="h-3 w-3 inline mr-1" />
+                        Sujet : {comp.sujet_nom}
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground mt-1">
                       <Clock className="h-3 w-3 inline mr-1" />
                       {new Date(comp.date_debut).toLocaleDateString('fr')} → {new Date(comp.date_fin).toLocaleDateString('fr')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Button variant="outline" size="sm" onClick={() => openQuestions(comp.id)}>
-                      <FileQuestion className="h-4 w-4 mr-1" /> Questions
-                    </Button>
+                    {comp.type_composition === 'qcm' && (
+                      <Button variant="outline" size="sm" onClick={() => openQuestions(comp.id)}>
+                        <FileQuestion className="h-4 w-4 mr-1" /> Questions
+                      </Button>
+                    )}
                     <Button variant="outline" size="sm" onClick={() => openResults(comp.id)}>
                       <Eye className="h-4 w-4 mr-1" /> Résultats
                     </Button>
@@ -274,6 +328,9 @@ export default function CompositionsAdmin() {
                         date_debut: comp.date_debut.slice(0, 16),
                         date_fin: comp.date_fin.slice(0, 16),
                         bareme: comp.bareme,
+                        type_composition: comp.type_composition || 'qcm',
+                        sujet_url: comp.sujet_url || '',
+                        sujet_nom: comp.sujet_nom || '',
                       });
                       setShowForm(true);
                     }}>
@@ -299,6 +356,18 @@ export default function CompositionsAdmin() {
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>{editComp ? 'Modifier la composition' : 'Nouvelle composition'}</DialogTitle></DialogHeader>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+            {!editComp && (
+              <div>
+                <Label>Type de composition *</Label>
+                <Select value={form.type_composition} onValueChange={v => setForm({ ...form, type_composition: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="qcm">📝 QCM / Vrai-Faux</SelectItem>
+                    <SelectItem value="document">📄 Document (PDF/Word) — Réponse texte</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div><Label>Titre *</Label><Input value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} /></div>
             <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} /></div>
             <div className="grid grid-cols-2 gap-4">
@@ -329,6 +398,33 @@ export default function CompositionsAdmin() {
               <div><Label>Début *</Label><Input type="datetime-local" value={form.date_debut} onChange={e => setForm({ ...form, date_debut: e.target.value })} /></div>
               <div><Label>Fin *</Label><Input type="datetime-local" value={form.date_fin} onChange={e => setForm({ ...form, date_fin: e.target.value })} /></div>
             </div>
+            {form.type_composition === 'document' && (
+              <div className="space-y-2 border rounded-lg p-3 bg-muted/30">
+                <Label>📄 Fichier sujet (PDF ou Word) *</Label>
+                {form.sujet_nom ? (
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-primary" />
+                    <span className="text-sm truncate flex-1">{form.sujet_nom}</span>
+                    <Button variant="outline" size="sm" onClick={() => setForm(prev => ({ ...prev, sujet_url: '', sujet_nom: '' }))}>
+                      Changer
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    <Input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleFileUpload}
+                      disabled={uploadingFile}
+                    />
+                    {uploadingFile && <p className="text-xs text-muted-foreground mt-1"><Loader2 className="h-3 w-3 animate-spin inline mr-1" />Upload en cours...</p>}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Les élèves verront ce document et répondront en texte avec possibilité d'insérer des images et formules mathématiques.
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowForm(false)}>Annuler</Button>
@@ -337,7 +433,7 @@ export default function CompositionsAdmin() {
         </DialogContent>
       </Dialog>
 
-      {/* Questions Dialog */}
+      {/* Questions Dialog - only for QCM type */}
       <Dialog open={!!showQuestions} onOpenChange={() => setShowQuestions(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -414,25 +510,66 @@ export default function CompositionsAdmin() {
 
       {/* Results Dialog */}
       <Dialog open={!!showResults} onOpenChange={() => setShowResults(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Résultats</DialogTitle></DialogHeader>
           {results.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">Aucun élève n'a encore passé cette composition</p>
           ) : (
-            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-2">
               {results.map((r: any) => (
-                <div key={r.id} className="flex items-center justify-between p-3 rounded-lg border">
-                  <div>
-                    <p className="font-medium">{r.eleves?.prenom} {r.eleves?.nom}</p>
-                    <p className="text-xs text-muted-foreground">{r.eleves?.matricule}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg">{r.score ?? '—'}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {r.soumis_at ? new Date(r.soumis_at).toLocaleString('fr') : 'En cours...'}
-                    </p>
-                  </div>
-                </div>
+                <Card key={r.id} className="border">
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{r.eleves?.prenom} {r.eleves?.nom}</p>
+                        <p className="text-xs text-muted-foreground">{r.eleves?.matricule}</p>
+                      </div>
+                      <div className="text-right">
+                        {currentResultComp?.type_composition === 'document' ? (
+                          <>
+                            <Badge variant={r.score != null ? 'default' : 'secondary'}>
+                              {r.score != null ? `${r.score}/${currentResultComp.bareme}` : 'À noter'}
+                            </Badge>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {r.soumis_at ? new Date(r.soumis_at).toLocaleString('fr') : 'En cours...'}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="font-bold text-lg">{r.score ?? '—'}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {r.soumis_at ? new Date(r.soumis_at).toLocaleString('fr') : 'En cours...'}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {currentResultComp?.type_composition === 'document' && r.reponse_texte && (
+                      <details className="mt-2">
+                        <summary className="text-xs text-primary cursor-pointer">Voir la réponse de l'élève</summary>
+                        <div className="mt-2 p-3 bg-muted/50 rounded text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: r.reponse_texte }} />
+                        {r.score == null && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <Input type="number" placeholder="Note" className="w-20" min={0} max={currentResultComp.bareme}
+                              id={`note-${r.id}`} />
+                            <Button size="sm" onClick={async () => {
+                              const noteEl = document.getElementById(`note-${r.id}`) as HTMLInputElement;
+                              const note = Number(noteEl?.value);
+                              if (isNaN(note)) { toast.error('Saisissez une note valide'); return; }
+                              const { error } = await supabase.from('composition_reponses')
+                                .update({ score: note } as any).eq('id', r.id);
+                              if (error) { toast.error(error.message); return; }
+                              toast.success('Note enregistrée');
+                              openResults(showResults!);
+                            }}>
+                              Noter
+                            </Button>
+                          </div>
+                        )}
+                      </details>
+                    )}
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
