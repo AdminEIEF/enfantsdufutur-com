@@ -199,8 +199,10 @@ function NiveauxTab() {
   const [fraisDossier, setFraisDossier] = useState(0);
   const [fraisAssurance, setFraisAssurance] = useState(0);
   const [fraisExamen, setFraisExamen] = useState(0);
+  const [totalInscriptionFixe, setTotalInscriptionFixe] = useState(0);
+  const [totalReinscriptionFixe, setTotalReinscriptionFixe] = useState(0);
 
-  const reset = () => { setEditId(null); setNom(''); setCycleId(''); setOrdre(1); setFrais(0); setFraisInscription(100000); setFraisReinscription(150000); setFraisDossier(0); setFraisAssurance(0); setFraisExamen(0); setOpen(false); };
+  const reset = () => { setEditId(null); setNom(''); setCycleId(''); setOrdre(1); setFrais(0); setFraisInscription(100000); setFraisReinscription(150000); setFraisDossier(0); setFraisAssurance(0); setFraisExamen(0); setTotalInscriptionFixe(0); setTotalReinscriptionFixe(0); setOpen(false); };
 
   const save = useMutation({
     mutationFn: async () => {
