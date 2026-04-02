@@ -346,7 +346,7 @@ serve(async (req) => {
       
       const { data: comp } = await supabaseAdmin
         .from("compositions")
-        .select("id, duree_minutes, bareme, classe_id")
+        .select("id, duree_minutes, bareme, classe_id, type_composition")
         .eq("id", composition_id)
         .maybeSingle();
 
@@ -382,7 +382,19 @@ serve(async (req) => {
         });
       }
 
-      // Calculate score
+      // Document type: save text response, no auto-scoring
+      if (comp.type_composition === 'document') {
+        await supabaseAdmin
+          .from("composition_reponses")
+          .update({ reponse_texte: reponse_texte || '', soumis_at: new Date().toISOString() })
+          .eq("id", existing.id);
+
+        return new Response(JSON.stringify({ submitted: true, message: "Réponse soumise. Le superviseur notera votre copie.", bareme: comp.bareme }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // QCM type: Calculate score
       const { data: questions } = await supabaseAdmin
         .from("composition_questions")
         .select("id, reponse_correcte, points")
