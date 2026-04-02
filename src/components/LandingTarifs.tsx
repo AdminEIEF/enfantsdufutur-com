@@ -206,6 +206,7 @@ export default function LandingTarifs() {
                       Total estimé ({mode === 'inscription' ? 'nouvelle inscription' : 'réinscription'})
                     </span>
                     {isFixe && <Badge variant="secondary" className="ml-2 text-[10px]">Forfait classe d'examen</Badge>}
+                    {mode === 'reinscription' && remise > 0 && <Badge className="ml-2 text-[10px] bg-green-100 text-green-700 hover:bg-green-100">Remise anciens élèves : -{fmt(remise)}</Badge>}
                   </div>
                   <span className="text-lg sm:text-xl font-bold text-primary" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     {fmt(totalFrais)}
