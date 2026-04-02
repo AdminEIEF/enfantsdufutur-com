@@ -404,8 +404,8 @@ serve(async (req) => {
         });
       }
 
-      // Document type: save text response, no auto-scoring
-      if (comp.type_composition === 'document') {
+      // Document or Texte type: save text response, no auto-scoring
+      if (comp.type_composition === 'document' || comp.type_composition === 'texte') {
         await supabaseAdmin
           .from("composition_reponses")
           .update({ reponse_texte: reponse_texte || '', soumis_at: new Date().toISOString() })
