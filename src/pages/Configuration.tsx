@@ -266,8 +266,11 @@ function NiveauxTab() {
               <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground">Aucun niveau configuré</TableCell></TableRow>
             ) : niveaux?.map((n: any) => {
               const examen = Number(n.frais_examen ?? 0);
-              const totalInscr = Number(n.frais_scolarite) + Number(n.frais_inscription ?? 100000) + Number(n.frais_dossier ?? 0) + Number(n.frais_assurance ?? 0) + examen;
-              const totalReinscr = Number(n.frais_scolarite) + Number(n.frais_reinscription ?? 150000) + Number(n.frais_dossier ?? 0) + Number(n.frais_assurance ?? 0) + examen;
+              const calcInscr = Number(n.frais_scolarite) + Number(n.frais_inscription ?? 100000) + Number(n.frais_dossier ?? 0) + Number(n.frais_assurance ?? 0) + examen;
+              const calcReinscr = Number(n.frais_scolarite) + Number(n.frais_reinscription ?? 150000) + Number(n.frais_dossier ?? 0) + Number(n.frais_assurance ?? 0) + examen;
+              const totalInscr = Number(n.total_inscription_fixe ?? 0) > 0 ? Number(n.total_inscription_fixe) : calcInscr;
+              const totalReinscr = Number(n.total_reinscription_fixe ?? 0) > 0 ? Number(n.total_reinscription_fixe) : calcReinscr;
+              const isFixe = Number(n.total_inscription_fixe ?? 0) > 0 || Number(n.total_reinscription_fixe ?? 0) > 0;
               return (
               <TableRow key={n.id}>
                 <TableCell className="font-medium">{n.nom}</TableCell>
