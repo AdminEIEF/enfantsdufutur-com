@@ -320,6 +320,13 @@ function NiveauxTab() {
               <div><Label>Assurance scolaire (GNF)</Label><Input type="number" value={fraisAssurance} onChange={e => setFraisAssurance(Number(e.target.value))} /></div>
             </div>
             <div><Label>Frais d'examen — classe d'examen (GNF)</Label><Input type="number" value={fraisExamen} onChange={e => setFraisExamen(Number(e.target.value))} placeholder="0 si pas classe d'examen" /></div>
+            <div className="border-t pt-3 mt-2">
+              <p className="text-xs text-muted-foreground mb-2 font-semibold">📌 Totaux fixes (classes d'examen — laissez 0 pour calcul automatique)</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Total Inscription Fixe (GNF)</Label><Input type="number" value={totalInscriptionFixe} onChange={e => setTotalInscriptionFixe(Number(e.target.value))} placeholder="0 = calcul auto" /></div>
+                <div><Label>Total Réinscription Fixe (GNF)</Label><Input type="number" value={totalReinscriptionFixe} onChange={e => setTotalReinscriptionFixe(Number(e.target.value))} placeholder="0 = calcul auto" /></div>
+              </div>
+            </div>
           </div>
           <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
         </DialogContent>
