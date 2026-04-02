@@ -388,7 +388,8 @@ export default function StudentCompositions() {
 
     return (
       <StudentLayout>
-        <div className="max-w-3xl mx-auto space-y-4 p-4">
+        {violationWarningDialog}
+        <div className="max-w-3xl mx-auto space-y-4 p-4 exam-secure-content">
           <div className="flex items-center justify-between sticky top-0 z-10 bg-background py-3 border-b">
             <div>
               <h2 className="font-bold text-lg">{activeComp.titre}</h2>
