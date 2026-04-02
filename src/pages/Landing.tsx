@@ -355,31 +355,25 @@ export default function Landing() {
               Découvrez l'ambiance et les activités de l'École Internationale Les Enfants du Futur.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div className="rounded-2xl overflow-hidden shadow-xl bg-background">
-              <iframe
-                src="https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F3512882682204390&show_text=false"
-                className="w-full aspect-[9/16]"
-                style={{ border: 'none', overflow: 'hidden' }}
-                scrolling="no"
-                frameBorder="0"
-                allowFullScreen
-                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                title="Vidéo de l'école 1"
-              />
-            </div>
-            <div className="rounded-2xl overflow-hidden shadow-xl bg-background">
-              <iframe
-                src="https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F1617863476248678&show_text=false"
-                className="w-full aspect-[9/16]"
-                style={{ border: 'none', overflow: 'hidden' }}
-                scrolling="no"
-                frameBorder="0"
-                allowFullScreen
-                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                title="Vidéo de l'école 2"
-              />
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+            {[
+              { id: '3512882682204390', title: 'Vidéo de l\'école 1' },
+              { id: '1617863476248678', title: 'Vidéo de l\'école 2' },
+              { id: '3843230585974453', title: 'Vidéo de l\'école 3' },
+            ].map((video) => (
+              <div key={video.id} className="rounded-2xl overflow-hidden shadow-xl bg-background">
+                <iframe
+                  src={`https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F${video.id}&show_text=false`}
+                  className="w-full aspect-[9/16]"
+                  style={{ border: 'none', overflow: 'hidden' }}
+                  scrolling="no"
+                  frameBorder="0"
+                  allowFullScreen
+                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                  title={video.title}
+                />
+              </div>
+            ))}
           </div>
         </div>
       </section>
