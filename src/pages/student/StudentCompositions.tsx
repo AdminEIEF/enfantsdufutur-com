@@ -558,6 +558,7 @@ export default function StudentCompositions() {
               const status = getStatus(comp);
               const rep = reponses.find((r: any) => r.composition_id === comp.id);
               const isDocument = comp.type_composition === 'document';
+              const isTexte = comp.type_composition === 'texte';
 
               return (
                 <Card key={comp.id} className="overflow-hidden">
