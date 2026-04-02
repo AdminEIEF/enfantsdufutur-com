@@ -1,15 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { StudentLayout } from '@/components/StudentLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { Loader2, Clock, FileQuestion, CheckCircle2, AlertTriangle, Timer } from 'lucide-react';
+import { Loader2, Clock, CheckCircle2, Timer, FileText, Bold, Italic, Underline, List, Image, Superscript, Subscript, Send } from 'lucide-react';
 
 export default function StudentCompositions() {
   const { session } = useStudentAuth();
@@ -17,11 +16,14 @@ export default function StudentCompositions() {
   const [reponses, setReponses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeComp, setActiveComp] = useState<any>(null);
+  const [activeType, setActiveType] = useState<string>('qcm');
   const [activeQuestions, setActiveQuestions] = useState<any[]>([]);
+  const [activeSujet, setActiveSujet] = useState<{ url: string; nom: string } | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (session) fetchCompositions();
@@ -62,8 +64,16 @@ export default function StudentCompositions() {
     try {
       const data = await callApi('start_composition', { composition_id: comp.id });
       setActiveComp(comp);
-      setActiveQuestions(data.questions || []);
+      setActiveType(data.type_composition || 'qcm');
       setAnswers({});
+
+      if (data.type_composition === 'document') {
+        setActiveSujet({ url: data.sujet_url, nom: data.sujet_nom });
+        setActiveQuestions([]);
+      } else {
+        setActiveQuestions(data.questions || []);
+        setActiveSujet(null);
+      }
 
       // Calculate time left
       const debut = new Date(data.debut_at).getTime();
@@ -94,29 +104,44 @@ export default function StudentCompositions() {
     setSubmitting(true);
     if (timerRef.current) clearInterval(timerRef.current);
 
-    if (!autoSubmit) {
-      const unanswered = activeQuestions.filter(q => !answers[q.id]);
-      if (unanswered.length > 0 && !confirm(`${unanswered.length} question(s) sans réponse. Soumettre quand même ?`)) {
-        setSubmitting(false);
-        return;
-      }
-    }
-
     try {
-      const data = await callApi('submit_composition', {
-        composition_id: activeComp.id,
-        reponses: answers,
-      });
-      toast.success(`Composition soumise ! Score : ${data.score}/${data.bareme}`);
+      if (activeType === 'document') {
+        const htmlContent = editorRef.current?.innerHTML || '';
+        if (!autoSubmit && !htmlContent.trim()) {
+          if (!confirm('Votre réponse est vide. Soumettre quand même ?')) {
+            setSubmitting(false);
+            return;
+          }
+        }
+        const data = await callApi('submit_composition', {
+          composition_id: activeComp.id,
+          reponse_texte: htmlContent,
+        });
+        toast.success(data.message || 'Composition soumise !');
+      } else {
+        if (!autoSubmit) {
+          const unanswered = activeQuestions.filter(q => !answers[q.id]);
+          if (unanswered.length > 0 && !confirm(`${unanswered.length} question(s) sans réponse. Soumettre quand même ?`)) {
+            setSubmitting(false);
+            return;
+          }
+        }
+        const data = await callApi('submit_composition', {
+          composition_id: activeComp.id,
+          reponses: answers,
+        });
+        toast.success(`Composition soumise ! Score : ${data.score}/${data.bareme}`);
+      }
       setActiveComp(null);
       setActiveQuestions([]);
+      setActiveSujet(null);
       fetchCompositions();
     } catch (e: any) {
       toast.error(e.message);
     } finally {
       setSubmitting(false);
     }
-  }, [activeComp, activeQuestions, answers, submitting, session]);
+  }, [activeComp, activeQuestions, answers, submitting, session, activeType]);
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -134,7 +159,134 @@ export default function StudentCompositions() {
     return 'available';
   };
 
-  // Active exam view
+  // Rich text editor commands
+  const execCmd = (cmd: string, value?: string) => {
+    document.execCommand(cmd, false, value);
+    editorRef.current?.focus();
+  };
+
+  const insertImage = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image trop volumineuse (max 5 Mo)');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        execCmd('insertImage', ev.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  };
+
+  const insertMathSymbol = (symbol: string) => {
+    execCmd('insertHTML', `<span style="font-family: 'Times New Roman', serif; font-style: italic;">${symbol}</span>`);
+  };
+
+  // Active exam view - Document type
+  if (activeComp && activeType === 'document') {
+    const isUrgent = timeLeft < 60;
+    const sujetUrl = activeSujet?.url || '';
+    const isPdf = sujetUrl.toLowerCase().includes('.pdf');
+    const viewerUrl = isPdf
+      ? sujetUrl
+      : `https://docs.google.com/gview?url=${encodeURIComponent(sujetUrl)}&embedded=true`;
+
+    return (
+      <StudentLayout>
+        <div className="flex flex-col h-[calc(100vh-80px)]">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
+            <div>
+              <h2 className="font-bold text-lg">{activeComp.titre}</h2>
+              <p className="text-sm text-muted-foreground">{activeComp.matieres?.nom} • /{activeComp.bareme}</p>
+            </div>
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-lg font-bold ${isUrgent ? 'bg-destructive/10 text-destructive animate-pulse' : 'bg-primary/10 text-primary'}`}>
+              <Timer className="h-5 w-5" />
+              {formatTime(timeLeft)}
+            </div>
+          </div>
+
+          {/* Content: Subject viewer + Editor */}
+          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+            {/* Subject viewer */}
+            <div className="lg:w-1/2 h-[40vh] lg:h-full border-b lg:border-b-0 lg:border-r">
+              <div className="px-3 py-2 bg-muted/30 border-b flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                <span className="text-sm font-medium">Sujet : {activeSujet?.nom}</span>
+              </div>
+              <iframe src={viewerUrl} className="w-full h-[calc(100%-40px)]" title="Sujet" />
+            </div>
+
+            {/* Rich text editor */}
+            <div className="lg:w-1/2 flex flex-col flex-1">
+              {/* Toolbar */}
+              <div className="px-3 py-2 border-b bg-muted/20 flex items-center gap-1 flex-wrap">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => execCmd('bold')} title="Gras">
+                  <Bold className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => execCmd('italic')} title="Italique">
+                  <Italic className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => execCmd('underline')} title="Souligné">
+                  <Underline className="h-4 w-4" />
+                </Button>
+                <div className="w-px h-5 bg-border mx-1" />
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => execCmd('insertUnorderedList')} title="Liste">
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => execCmd('superscript')} title="Exposant">
+                  <Superscript className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => execCmd('subscript')} title="Indice">
+                  <Subscript className="h-4 w-4" />
+                </Button>
+                <div className="w-px h-5 bg-border mx-1" />
+                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={insertImage} title="Insérer image">
+                  <Image className="h-4 w-4 mr-1" /> Image
+                </Button>
+                <div className="w-px h-5 bg-border mx-1" />
+                {/* Math symbols */}
+                <div className="flex items-center gap-0.5">
+                  <span className="text-xs text-muted-foreground mr-1">Maths:</span>
+                  {['√', '∑', '∫', 'π', '∞', '≤', '≥', '≠', '±', 'α', 'β', 'Δ', 'θ', '∈', '∪', '∩', '→', '⇒', 'ƒ', '∂'].map(sym => (
+                    <Button key={sym} variant="ghost" size="icon" className="h-7 w-7 text-xs font-mono" onClick={() => insertMathSymbol(sym)}>
+                      {sym}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Editor area */}
+              <div
+                ref={editorRef}
+                contentEditable
+                className="flex-1 p-4 overflow-y-auto outline-none prose prose-sm max-w-none [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded"
+                style={{ minHeight: '200px' }}
+                data-placeholder="Rédigez votre réponse ici..."
+              />
+
+              {/* Submit */}
+              <div className="px-4 py-3 border-t bg-background">
+                <Button className="w-full" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+                  Soumettre ma réponse
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </StudentLayout>
+    );
+  }
+
+  // Active exam view - QCM type
   if (activeComp) {
     const progress = activeQuestions.length > 0
       ? (Object.keys(answers).length / activeQuestions.length) * 100 : 0;
@@ -206,6 +358,7 @@ export default function StudentCompositions() {
             {compositions.map((comp: any) => {
               const status = getStatus(comp);
               const rep = reponses.find((r: any) => r.composition_id === comp.id);
+              const isDocument = comp.type_composition === 'document';
 
               return (
                 <Card key={comp.id} className="overflow-hidden">
@@ -214,6 +367,9 @@ export default function StudentCompositions() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold">{comp.titre}</h3>
+                          <Badge variant="outline" className="text-xs">
+                            {isDocument ? '📄 Document' : '📝 QCM'}
+                          </Badge>
                           {status === 'done' && <Badge className="bg-emerald-100 text-emerald-700">Terminée</Badge>}
                           {status === 'in_progress' && <Badge className="bg-amber-100 text-amber-700">En cours</Badge>}
                           {status === 'expired' && <Badge variant="destructive">Expirée</Badge>}
@@ -225,8 +381,13 @@ export default function StudentCompositions() {
                           <Clock className="h-3 w-3 inline mr-1" />
                           {new Date(comp.date_debut).toLocaleDateString('fr')} → {new Date(comp.date_fin).toLocaleDateString('fr')}
                         </p>
-                        {status === 'done' && rep && (
+                        {status === 'done' && rep && !isDocument && (
                           <p className="text-sm font-bold mt-2 text-primary">Score : {rep.score}/{comp.bareme}</p>
+                        )}
+                        {status === 'done' && rep && isDocument && (
+                          <p className="text-sm font-bold mt-2 text-primary">
+                            {rep.score != null ? `Note : ${rep.score}/${comp.bareme}` : 'En attente de correction'}
+                          </p>
                         )}
                       </div>
                       <div>

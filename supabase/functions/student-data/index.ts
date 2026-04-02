@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { token, action, notification_id, composition_id, reponses: studentReponses } = await req.json();
+    const { token, action, notification_id, composition_id, reponses: studentReponses, reponse_texte } = await req.json();
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -250,7 +250,7 @@ serve(async (req) => {
       const now = new Date().toISOString();
       const { data: comps } = await supabaseAdmin
         .from("compositions")
-        .select("id, titre, description, matiere_id, duree_minutes, date_debut, date_fin, bareme, matieres:matiere_id(nom)")
+        .select("id, titre, description, matiere_id, duree_minutes, date_debut, date_fin, bareme, type_composition, sujet_url, sujet_nom, matieres:matiere_id(nom)")
         .eq("classe_id", classeId)
         .eq("publie", true)
         .order("date_debut", { ascending: false });
@@ -269,7 +269,7 @@ serve(async (req) => {
       // Verify composition exists and is published for this class
       const { data: comp } = await supabaseAdmin
         .from("compositions")
-        .select("id, duree_minutes, date_debut, date_fin, classe_id, publie")
+        .select("id, duree_minutes, date_debut, date_fin, classe_id, publie, type_composition, sujet_url, sujet_nom")
         .eq("id", composition_id)
         .eq("publie", true)
         .maybeSingle();
@@ -312,7 +312,19 @@ serve(async (req) => {
         debutAt = newRep!.debut_at;
       }
 
-      // Get questions (strip correct answers)
+      // For document type, return sujet info instead of questions
+      if (comp.type_composition === 'document') {
+        return new Response(JSON.stringify({ 
+          type_composition: 'document',
+          sujet_url: comp.sujet_url,
+          sujet_nom: comp.sujet_nom,
+          debut_at: debutAt 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get questions (strip correct answers) for QCM type
       const { data: questions } = await supabaseAdmin
         .from("composition_questions")
         .select("id, type_question, enonce, options, points, ordre")
@@ -324,7 +336,7 @@ serve(async (req) => {
         options: (q.options as any[]).map((o: any) => ({ label: o.label })),
       }));
 
-      return new Response(JSON.stringify({ questions: cleanQuestions, debut_at: debutAt }), {
+      return new Response(JSON.stringify({ type_composition: 'qcm', questions: cleanQuestions, debut_at: debutAt }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -334,7 +346,7 @@ serve(async (req) => {
       
       const { data: comp } = await supabaseAdmin
         .from("compositions")
-        .select("id, duree_minutes, bareme, classe_id")
+        .select("id, duree_minutes, bareme, classe_id, type_composition")
         .eq("id", composition_id)
         .maybeSingle();
 
@@ -370,7 +382,19 @@ serve(async (req) => {
         });
       }
 
-      // Calculate score
+      // Document type: save text response, no auto-scoring
+      if (comp.type_composition === 'document') {
+        await supabaseAdmin
+          .from("composition_reponses")
+          .update({ reponse_texte: reponse_texte || '', soumis_at: new Date().toISOString() })
+          .eq("id", existing.id);
+
+        return new Response(JSON.stringify({ submitted: true, message: "Réponse soumise. Le superviseur notera votre copie.", bareme: comp.bareme }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // QCM type: Calculate score
       const { data: questions } = await supabaseAdmin
         .from("composition_questions")
         .select("id, reponse_correcte, points")
