@@ -62,6 +62,14 @@ const roleMeta: Record<AppRole, { label: string; color: string }> = {
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, roles, signOut } = useAuth();
+  const [showSplash, setShowSplash] = useState(() => {
+    const seen = sessionStorage.getItem('splash-admin-seen');
+    return !seen;
+  });
+  const handleSplashDone = useCallback(() => {
+    sessionStorage.setItem('splash-admin-seen', '1');
+    setShowSplash(false);
+  }, []);
 
   const { data: activeSession } = useQuery({
     queryKey: ['active-session-header'],
