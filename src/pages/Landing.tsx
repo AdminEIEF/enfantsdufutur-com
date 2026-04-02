@@ -27,6 +27,14 @@ import schoolClasse from '@/assets/school-classe.jpg';
 
 export default function Landing() {
   const { data: schoolConfig } = useSchoolConfig();
+  const [showSplash, setShowSplash] = useState(() => {
+    const seen = sessionStorage.getItem('splash-landing-seen');
+    return !seen;
+  });
+  const handleSplashComplete = useCallback(() => {
+    sessionStorage.setItem('splash-landing-seen', '1');
+    setShowSplash(false);
+  }, []);
 
   const handleDownloadLogo = async () => {
     if (!schoolConfig?.logo_url) return;
