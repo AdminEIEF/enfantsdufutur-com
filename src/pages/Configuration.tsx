@@ -332,6 +332,10 @@ function NiveauxTab() {
                 <div><Label>Total Réinscription Fixe (GNF)</Label><Input type="number" value={totalReinscriptionFixe} onChange={e => setTotalReinscriptionFixe(Number(e.target.value))} placeholder="0 = calcul auto" /></div>
               </div>
             </div>
+            <div className="border-t pt-3 mt-2">
+              <p className="text-xs text-muted-foreground mb-2 font-semibold">🎁 Remise réinscription (anciens élèves — laissez 0 si pas de remise)</p>
+              <div><Label>Remise Réinscription (GNF)</Label><Input type="number" value={remiseReinscription} onChange={e => setRemiseReinscription(Number(e.target.value))} placeholder="0 = pas de remise" /></div>
+            </div>
           </div>
           <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
         </DialogContent>
