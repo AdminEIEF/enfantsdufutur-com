@@ -16,11 +16,15 @@ export default function ParentLogin() {
   const [code, setCode] = useState('');
   const [showCode, setShowCode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('splash-parent-login-seen'));
+  const handleSplashComplete = useCallback(() => { sessionStorage.setItem('splash-parent-login-seen', '1'); setShowSplash(false); }, []);
 
   if (!loading && session) {
     navigate('/parent/dashboard', { replace: true });
     return null;
   }
+
+  if (showSplash) return <SplashScreen onComplete={handleSplashComplete} subtitle="Espace Parent" />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

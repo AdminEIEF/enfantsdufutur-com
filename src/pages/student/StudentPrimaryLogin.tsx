@@ -14,11 +14,15 @@ export default function StudentPrimaryLogin() {
   const [matricule, setMatricule] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('splash-primary-login-seen'));
+  const handleSplashComplete = useCallback(() => { sessionStorage.setItem('splash-primary-login-seen', '1'); setShowSplash(false); }, []);
 
   if (session) {
     navigate('/eleve/dashboard', { replace: true });
     return null;
   }
+
+  if (showSplash) return <SplashScreen onComplete={handleSplashComplete} subtitle="Espace Élève - Primaire" />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

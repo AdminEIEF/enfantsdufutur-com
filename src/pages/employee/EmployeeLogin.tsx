@@ -16,11 +16,15 @@ export default function EmployeeLogin() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('splash-employee-login-seen'));
+  const handleSplashComplete = useCallback(() => { sessionStorage.setItem('splash-employee-login-seen', '1'); setShowSplash(false); }, []);
 
   if (!loading && session) {
     navigate('/employe/dashboard', { replace: true });
     return null;
   }
+
+  if (showSplash) return <SplashScreen onComplete={handleSplashComplete} subtitle="Espace Employé" />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
