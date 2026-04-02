@@ -102,7 +102,7 @@ const navSections = [
   },
   {
     label: 'Principal',
-    roles: ['admin', 'secretaire', 'comptable'] as const,
+    roles: ['admin', 'secretaire', 'comptable', 'superviseur'] as const,
     items: [
       { title: 'Tableau de bord', url: '/dashboard', icon: LayoutDashboard },
       { title: 'Notifications', url: '/notifications', icon: BellRing },
@@ -110,7 +110,7 @@ const navSections = [
   },
   {
     label: 'Scolarité',
-    roles: ['admin', 'secretaire'] as const,
+    roles: ['admin', 'secretaire', 'superviseur'] as const,
     items: [
       { title: 'Pré-inscriptions', url: '/pre-inscriptions', icon: FileCheck2 },
       { title: 'Inscriptions', url: '/inscriptions', icon: UserRoundPlus },
@@ -122,7 +122,7 @@ const navSections = [
   },
   {
     label: 'Académique',
-    roles: ['admin', 'service_info'] as const,
+    roles: ['admin', 'service_info', 'superviseur'] as const,
     items: [
       { title: 'Mes Classes', url: '/mes-classes', icon: UsersRound },
       { title: 'Saisie des notes', url: '/notes', icon: BookOpenText },
@@ -180,7 +180,7 @@ const navSections = [
   },
   {
     label: 'Finances',
-    roles: ['admin', 'comptable'] as const,
+    roles: ['admin', 'comptable', 'superviseur'] as const,
     items: [
       { title: 'Paiements', url: '/paiements', icon: Landmark },
       { title: 'Dépenses', url: '/depenses', icon: Calculator },
@@ -190,14 +190,14 @@ const navSections = [
   },
   {
     label: 'Cantine',
-    roles: ['admin', 'cantine', 'secretaire', 'comptable'] as const,
+    roles: ['admin', 'cantine', 'secretaire', 'comptable', 'superviseur'] as const,
     items: [
       { title: 'Cantine & QR', url: '/cantine', icon: QrCode },
     ],
   },
   {
     label: 'Services',
-    roles: ['admin', 'secretaire', 'chauffeur'] as const,
+    roles: ['admin', 'secretaire', 'chauffeur', 'superviseur'] as const,
     items: [
       { title: 'Transport', url: '/transport', icon: BusFront },
       { title: 'Scan Bus', url: '/transport?tab=validation', icon: ScanLine, roles: ['chauffeur'] as const },
@@ -205,28 +205,28 @@ const navSections = [
   },
   {
     label: 'Librairie',
-    roles: ['admin', 'librairie', 'secretaire'] as const,
+    roles: ['admin', 'librairie', 'secretaire', 'superviseur'] as const,
     items: [
       { title: 'Librairie', url: '/librairie', icon: BookOpenText },
     ],
   },
   {
     label: 'Bibliothèque',
-    roles: ['admin', 'secretaire'] as const,
+    roles: ['admin', 'secretaire', 'superviseur'] as const,
     items: [
       { title: 'Bibliothèque', url: '/bibliotheque', icon: LibraryBig },
     ],
   },
   {
     label: 'Boutique',
-    roles: ['admin', 'boutique'] as const,
+    roles: ['admin', 'boutique', 'superviseur'] as const,
     items: [
       { title: 'Boutique', url: '/boutique', icon: Store },
     ],
   },
   {
     label: 'Surveillance',
-    roles: ['admin', 'secretaire', 'surveillant'] as const,
+    roles: ['admin', 'secretaire', 'surveillant', 'superviseur'] as const,
     items: [
       { title: 'Pointage Élèves', url: '/pointage-eleves', icon: QrCode },
     ],
@@ -240,7 +240,7 @@ const navSections = [
   },
   {
     label: 'Scolarité - Coordination',
-    roles: ['admin', 'secretaire'] as any,
+    roles: ['admin', 'secretaire', 'superviseur'] as any,
     items: [
       { title: 'Élèves inscrits', url: '/coordinateur-eleves', icon: ClipboardCheck },
       { title: 'Documents coordinateur', url: '/coordinateur-documents', icon: FileCheck2 },
@@ -248,7 +248,7 @@ const navSections = [
   },
   {
     label: 'Robotique',
-    roles: ['admin', 'secretaire'] as any,
+    roles: ['admin', 'secretaire', 'superviseur'] as any,
     items: [
       { title: 'Gestion Robotique', url: '/robotique', icon: Sparkles },
     ],
