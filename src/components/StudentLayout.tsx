@@ -107,13 +107,15 @@ export function StudentLayout({ children }: { children: ReactNode }) {
             <DialogTitle className="text-center">Mon Profil</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
-            {eleve.photo_url ? (
-              <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} className="w-28 h-28 rounded-full object-cover border-4 border-primary/20 shadow-lg" />
-            ) : (
-              <div className="w-28 h-28 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-3xl shadow-lg">
-                {eleve.prenom[0]}{eleve.nom[0]}
-              </div>
-            )}
+            <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-primary via-accent to-secondary p-1 shadow-xl">
+              {eleve.photo_url ? (
+                <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} className="w-full h-full rounded-[20px] object-cover bg-white" />
+              ) : (
+                <div className="w-full h-full rounded-[20px] bg-card flex items-center justify-center text-primary font-bold text-3xl">
+                  {eleve.prenom[0]}{eleve.nom[0]}
+                </div>
+              )}
+            </div>
             <div className="text-center">
               <h2 className="text-xl font-bold">{eleve.prenom} {eleve.nom}</h2>
               {eleve.classes?.nom && (
