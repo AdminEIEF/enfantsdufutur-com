@@ -730,6 +730,7 @@ export type Database = {
           debut_at: string
           eleve_id: string
           id: string
+          reponse_texte: string | null
           reponses: Json
           score: number | null
           soumis_at: string | null
@@ -740,6 +741,7 @@ export type Database = {
           debut_at?: string
           eleve_id: string
           id?: string
+          reponse_texte?: string | null
           reponses?: Json
           score?: number | null
           soumis_at?: string | null
@@ -750,6 +752,7 @@ export type Database = {
           debut_at?: string
           eleve_id?: string
           id?: string
+          reponse_texte?: string | null
           reponses?: Json
           score?: number | null
           soumis_at?: string | null
@@ -784,7 +787,10 @@ export type Database = {
           id: string
           matiere_id: string
           publie: boolean
+          sujet_nom: string | null
+          sujet_url: string | null
           titre: string
+          type_composition: string
           updated_at: string
         }
         Insert: {
@@ -799,7 +805,10 @@ export type Database = {
           id?: string
           matiere_id: string
           publie?: boolean
+          sujet_nom?: string | null
+          sujet_url?: string | null
           titre: string
+          type_composition?: string
           updated_at?: string
         }
         Update: {
@@ -814,7 +823,10 @@ export type Database = {
           id?: string
           matiere_id?: string
           publie?: boolean
+          sujet_nom?: string | null
+          sujet_url?: string | null
           titre?: string
+          type_composition?: string
           updated_at?: string
         }
         Relationships: [
