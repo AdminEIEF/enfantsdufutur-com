@@ -226,6 +226,62 @@ export default function StudentCompositions() {
     execCmd('insertHTML', `<span style="font-family: 'Times New Roman', serif; font-style: italic;">${symbol}</span>`);
   };
 
+  // Blocked screen
+  if (blocked && activeComp) {
+    return (
+      <StudentLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="max-w-md w-full border-destructive/50">
+            <CardContent className="p-8 text-center space-y-4">
+              <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+                <ShieldAlert className="h-10 w-10 text-destructive" />
+              </div>
+              <h2 className="text-xl font-bold text-destructive">Accès Bloqué</h2>
+              <p className="text-muted-foreground">
+                Vous avez quitté l'application pendant la composition. 
+                Votre copie a été automatiquement soumise.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Contactez votre superviseur si vous pensez qu'il s'agit d'une erreur.
+              </p>
+              <Button variant="outline" onClick={() => { setBlocked(false); setActiveComp(null); blockedRef.current = false; setViolations(0); fetchCompositions(); }}>
+                Retour aux compositions
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </StudentLayout>
+    );
+  }
+
+  // Warning dialog for first violation
+  const violationWarningDialog = (
+    <Dialog open={warningOpen} onOpenChange={setWarningOpen}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-destructive">
+            <ShieldAlert className="h-5 w-5" />
+            Avertissement !
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <p className="font-medium">{warningReason}</p>
+          <p className="text-sm text-muted-foreground">
+            <strong>Attention :</strong> Si vous quittez l'application une deuxième fois, 
+            votre composition sera automatiquement soumise et votre accès sera bloqué.
+          </p>
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/5 border border-destructive/20">
+            <span className="text-2xl">⚠️</span>
+            <p className="text-xs font-semibold text-destructive">Avertissement {violations}/2 — Prochain = Blocage</p>
+          </div>
+        </div>
+        <Button onClick={() => setWarningOpen(false)} className="w-full">
+          J'ai compris, continuer
+        </Button>
+      </DialogContent>
+    </Dialog>
+  );
+
   // Active exam view - Document type
   if (activeComp && activeType === 'document') {
     const isUrgent = timeLeft < 60;
