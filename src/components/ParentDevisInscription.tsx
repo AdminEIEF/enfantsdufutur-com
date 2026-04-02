@@ -27,7 +27,8 @@ interface DevisProps {
 }
 
 export default function ParentDevisInscription({ eleves, paiements, tarifs = [], nbEnfantsFamille }: DevisProps) {
-  const reduction = nbEnfantsFamille >= 3 ? 0.10 : 0;
+  const reductionFratrie = nbEnfantsFamille >= 3 ? 0.10 : 0;
+  const REMISE_REINSCRIPTION_PCT = 0.15; // 15% pour anciens élèves
 
   return (
     <div className="space-y-4">
@@ -35,9 +36,12 @@ export default function ParentDevisInscription({ eleves, paiements, tarifs = [],
         const niveaux = enfant.classes?.niveaux;
         const fraisScolarite = niveaux?.frais_scolarite || 0;
         const fraisInscription = niveaux?.frais_inscription ?? 100000;
+        const fraisReinscription = niveaux?.frais_reinscription ?? fraisInscription;
         const fraisDossier = niveaux?.frais_dossier ?? 0;
         const fraisAssurance = niveaux?.frais_assurance ?? 0;
-        const fraisApresReduction = fraisScolarite * (1 - reduction);
+        const remiseNiveau = niveaux?.remise_reinscription ?? 0;
+        const isReinscription = (enfant as any).est_reinscription === true;
+        const fraisApresReduction = fraisScolarite * (1 - reductionFratrie);
         const transportMensuel = enfant.zones_transport?.prix_mensuel || 0;
 
         // Get uniform fees from tarifs
@@ -71,8 +75,12 @@ export default function ParentDevisInscription({ eleves, paiements, tarifs = [],
           .filter((p: any) => p.type_paiement === 'transport')
           .reduce((s: number, p: any) => s + p.montant, 0);
 
-        const totalImmediatInitial = fraisInscription + fraisDossier + fraisAssurance + fraisUniformes + fraisFournitures;
-        const scolariteAnnuelle = fraisApresReduction; // frais_scolarite is already annual
+        // Reinscription discount (15% for returning students)
+        const remiseReinscription = isReinscription ? Math.round(fraisScolarite * REMISE_REINSCRIPTION_PCT) : 0;
+        const scolariteApresRemise = fraisApresReduction - remiseReinscription;
+
+        const totalImmediatInitial = (isReinscription ? fraisReinscription : fraisInscription) + fraisDossier + fraisAssurance + fraisUniformes + fraisFournitures;
+        const scolariteAnnuelle = scolariteApresRemise;
         const transportAnnuel = transportMensuel * 10;
         const totalGlobal = totalImmediatInitial + scolariteAnnuelle + transportAnnuel;
         const totalPaye = payeInscription + payeScolarite + payeTransport;
@@ -81,7 +89,7 @@ export default function ParentDevisInscription({ eleves, paiements, tarifs = [],
         const lignesDevis: Array<{ label: string; montant: number; type: 'immediat' | 'echeancier' }> = [];
 
         // Immediate fees
-        lignesDevis.push({ label: "Frais d'inscription", montant: fraisInscription, type: 'immediat' });
+        lignesDevis.push({ label: isReinscription ? "Frais de réinscription" : "Frais d'inscription", montant: isReinscription ? fraisReinscription : fraisInscription, type: 'immediat' });
         if (fraisDossier > 0) lignesDevis.push({ label: 'Frais de dossier', montant: fraisDossier, type: 'immediat' });
         if (fraisAssurance > 0) lignesDevis.push({ label: '🛡️ Assurance scolaire', montant: fraisAssurance, type: 'immediat' });
         if (fraisUniformes > 0) lignesDevis.push({ label: '👕 Uniformes', montant: fraisUniformes, type: 'immediat' });
@@ -154,8 +162,11 @@ export default function ParentDevisInscription({ eleves, paiements, tarifs = [],
                     ))}
                   </TableBody>
                 </Table>
-                {reduction > 0 && (
-                  <p className="text-xs text-accent mt-1">✨ Réduction fratrie de {reduction * 100}% appliquée ({nbEnfantsFamille} enfants)</p>
+                {reductionFratrie > 0 && (
+                  <p className="text-xs text-accent mt-1">✨ Réduction fratrie de {reductionFratrie * 100}% appliquée ({nbEnfantsFamille} enfants)</p>
+                )}
+                {isReinscription && remiseReinscription > 0 && (
+                  <p className="text-xs text-accent mt-1">🎉 Remise anciens élèves de {REMISE_REINSCRIPTION_PCT * 100}% appliquée : -{remiseReinscription.toLocaleString()} GNF</p>
                 )}
               </div>
 
