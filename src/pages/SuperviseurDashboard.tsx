@@ -25,6 +25,10 @@ export default function SuperviseurDashboard() {
     totalFamilles: 0,
     totalPaiements: 0,
     totalEleves: 0,
+    totalNotes: 0,
+    totalDepenses: 0,
+    totalCompositions: 0,
+    totalConnectes: 0,
   });
   const [cycleStats, setCycleStats] = useState<CycleStats[]>([]);
   const [employeCategories, setEmployeCategories] = useState<EmployeCategorie[]>([]);
