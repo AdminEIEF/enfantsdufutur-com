@@ -198,13 +198,14 @@ function NiveauxTab() {
   const [fraisReinscription, setFraisReinscription] = useState(150000);
   const [fraisDossier, setFraisDossier] = useState(0);
   const [fraisAssurance, setFraisAssurance] = useState(0);
+  const [fraisExamen, setFraisExamen] = useState(0);
 
-  const reset = () => { setEditId(null); setNom(''); setCycleId(''); setOrdre(1); setFrais(0); setFraisInscription(100000); setFraisReinscription(150000); setFraisDossier(0); setFraisAssurance(0); setOpen(false); };
+  const reset = () => { setEditId(null); setNom(''); setCycleId(''); setOrdre(1); setFrais(0); setFraisInscription(100000); setFraisReinscription(150000); setFraisDossier(0); setFraisAssurance(0); setFraisExamen(0); setOpen(false); };
 
   const save = useMutation({
     mutationFn: async () => {
       if (!nom || !cycleId) throw new Error('Champs requis');
-      const payload = { nom, cycle_id: cycleId, ordre, frais_scolarite: frais, frais_inscription: fraisInscription, frais_reinscription: fraisReinscription, frais_dossier: fraisDossier, frais_assurance: fraisAssurance };
+      const payload = { nom, cycle_id: cycleId, ordre, frais_scolarite: frais, frais_inscription: fraisInscription, frais_reinscription: fraisReinscription, frais_dossier: fraisDossier, frais_assurance: fraisAssurance, frais_examen: fraisExamen };
       if (editId) {
         const { error } = await supabase.from('niveaux').update(payload).eq('id', editId);
         if (error) throw error;
@@ -230,7 +231,7 @@ function NiveauxTab() {
     setEditId(n.id); setNom(n.nom); setCycleId(n.cycle_id); setOrdre(n.ordre); setFrais(n.frais_scolarite);
     setFraisInscription(n.frais_inscription ?? 100000); setFraisReinscription(n.frais_reinscription ?? 150000);
     setFraisDossier(n.frais_dossier ?? 0); setFraisAssurance(n.frais_assurance ?? 0);
-    setOpen(true);
+    setFraisExamen(n.frais_examen ?? 0); setOpen(true);
   };
 
   return (
@@ -250,15 +251,22 @@ function NiveauxTab() {
               <TableHead>Inscription</TableHead>
               <TableHead>Dossier</TableHead>
               <TableHead>Assurance</TableHead>
+              <TableHead>Examen</TableHead>
+              <TableHead>Total (Inscr.)</TableHead>
+              <TableHead>Total (Réinscr.)</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Chargement…</TableCell></TableRow>
-            ) : niveaux?.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Aucun niveau configuré</TableCell></TableRow>
-            ) : niveaux?.map((n: any) => (
+             ) : niveaux?.length === 0 ? (
+              <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground">Aucun niveau configuré</TableCell></TableRow>
+            ) : niveaux?.map((n: any) => {
+              const examen = Number(n.frais_examen ?? 0);
+              const totalInscr = Number(n.frais_scolarite) + Number(n.frais_inscription ?? 100000) + Number(n.frais_dossier ?? 0) + Number(n.frais_assurance ?? 0) + examen;
+              const totalReinscr = Number(n.frais_scolarite) + Number(n.frais_reinscription ?? 150000) + Number(n.frais_dossier ?? 0) + Number(n.frais_assurance ?? 0) + examen;
+              return (
               <TableRow key={n.id}>
                 <TableCell className="font-medium">{n.nom}</TableCell>
                 <TableCell>{n.cycles?.nom}</TableCell>
@@ -267,6 +275,9 @@ function NiveauxTab() {
                 <TableCell>{Number(n.frais_inscription ?? 100000).toLocaleString()} GNF</TableCell>
                 <TableCell>{Number(n.frais_dossier ?? 0).toLocaleString()} GNF</TableCell>
                 <TableCell>{Number(n.frais_assurance ?? 0).toLocaleString()} GNF</TableCell>
+                <TableCell className={examen > 0 ? 'font-semibold text-indigo-600' : ''}>{examen > 0 ? examen.toLocaleString() + ' GNF' : '—'}</TableCell>
+                <TableCell className="font-bold text-emerald-600">{totalInscr.toLocaleString()} GNF</TableCell>
+                <TableCell className="font-bold text-violet-600">{totalReinscr.toLocaleString()} GNF</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(n)}><Pencil className="h-4 w-4" /></Button>
@@ -274,7 +285,8 @@ function NiveauxTab() {
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </CardContent>
@@ -302,6 +314,7 @@ function NiveauxTab() {
               <div><Label>Frais de dossier (GNF)</Label><Input type="number" value={fraisDossier} onChange={e => setFraisDossier(Number(e.target.value))} /></div>
               <div><Label>Assurance scolaire (GNF)</Label><Input type="number" value={fraisAssurance} onChange={e => setFraisAssurance(Number(e.target.value))} /></div>
             </div>
+            <div><Label>Frais d'examen — classe d'examen (GNF)</Label><Input type="number" value={fraisExamen} onChange={e => setFraisExamen(Number(e.target.value))} placeholder="0 si pas classe d'examen" /></div>
           </div>
           <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
         </DialogContent>
