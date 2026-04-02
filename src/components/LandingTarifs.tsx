@@ -78,7 +78,13 @@ export default function LandingTarifs() {
       ]
     : [];
 
-  const totalFrais = fraisItems.reduce((s, f) => s + f.value, 0);
+  const calcTotal = fraisItems.reduce((s, f) => s + f.value, 0);
+  const fixeInscr = selectedNiveau ? Number(selectedNiveau.total_inscription_fixe ?? 0) : 0;
+  const fixeReinscr = selectedNiveau ? Number(selectedNiveau.total_reinscription_fixe ?? 0) : 0;
+  const totalFrais = mode === 'inscription'
+    ? (fixeInscr > 0 ? fixeInscr : calcTotal)
+    : (fixeReinscr > 0 ? fixeReinscr : calcTotal);
+  const isFixe = mode === 'inscription' ? fixeInscr > 0 : fixeReinscr > 0;
 
   return (
     <section id="tarifs" className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
