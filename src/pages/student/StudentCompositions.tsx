@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Loader2, Clock, CheckCircle2, Timer, FileText, Bold, Italic, Underline, List, Image, Superscript, Subscript, Send, ShieldAlert, PenLine } from 'lucide-react';
+import { Loader2, Clock, CheckCircle2, Timer, FileText, Bold, Italic, Underline, List, Image, Superscript, Subscript, Send, ShieldAlert, PenLine, Camera, X } from 'lucide-react';
 import { useExamSecurity } from '@/hooks/useExamSecurity';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -32,6 +32,34 @@ export default function StudentCompositions() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const blockedRef = useRef(false);
+  const [photos, setPhotos] = useState<{ id: string; dataUrl: string }[]>([]);
+
+  const capturePhoto = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.onchange = (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Image trop volumineuse (max 10 Mo)');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const id = `photo_${Date.now()}`;
+        setPhotos(prev => [...prev, { id, dataUrl: ev.target?.result as string }]);
+        toast.success('📸 Photo ajoutée !');
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  };
+
+  const removePhoto = (id: string) => {
+    setPhotos(prev => prev.filter(p => p.id !== id));
+  };
 
   const handleSecurityViolation = useCallback((reason: string) => {
     if (blockedRef.current) return;
@@ -143,9 +171,14 @@ export default function StudentCompositions() {
     if (timerRef.current) clearInterval(timerRef.current);
 
     try {
+      // Build photos HTML
+      const photosHtml = photos.length > 0
+        ? '<hr/><h3>📸 Photos jointes</h3>' + photos.map((p, i) => `<div><p>Photo ${i + 1}:</p><img src="${p.dataUrl}" style="max-width:100%;margin:8px 0;border-radius:8px;" /></div>`).join('')
+        : '';
+
       if (activeType === 'document') {
-        const htmlContent = editorRef.current?.innerHTML || '';
-        if (!autoSubmit && !htmlContent.trim()) {
+        const htmlContent = (editorRef.current?.innerHTML || '') + photosHtml;
+        if (!autoSubmit && !htmlContent.trim() && photos.length === 0) {
           if (!confirm('Votre réponse est vide. Soumettre quand même ?')) {
             setSubmitting(false);
             return;
@@ -172,7 +205,7 @@ export default function StudentCompositions() {
         }
         const data = await callApi('submit_composition', {
           composition_id: activeComp.id,
-          reponse_texte: textParts,
+          reponse_texte: textParts + photosHtml,
         });
         toast.success(data.message || 'Composition soumise !');
       } else {
@@ -192,13 +225,14 @@ export default function StudentCompositions() {
       setActiveComp(null);
       setActiveQuestions([]);
       setActiveSujet(null);
+      setPhotos([]);
       fetchCompositions();
     } catch (e: any) {
       toast.error(e.message);
     } finally {
       setSubmitting(false);
     }
-  }, [activeComp, activeQuestions, answers, submitting, session, activeType]);
+  }, [activeComp, activeQuestions, answers, submitting, session, activeType, photos]);
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -394,6 +428,28 @@ export default function StudentCompositions() {
                 data-placeholder="Rédigez votre réponse ici..."
               />
 
+              {/* Photo capture */}
+              <div className="px-3 py-2 border-t bg-muted/20">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium">📸 Joindre des photos</span>
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={capturePhoto}>
+                    <Camera className="h-3 w-3 mr-1" /> Photo
+                  </Button>
+                </div>
+                {photos.length > 0 && (
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {photos.map(p => (
+                      <div key={p.id} className="relative shrink-0 group">
+                        <img src={p.dataUrl} alt="Photo" className="h-16 w-20 object-cover rounded border" />
+                        <Button variant="destructive" size="icon" className="absolute -top-1 -right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removePhoto(p.id)}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Submit */}
               <div className="px-4 py-3 border-t bg-background">
                 <Button className="w-full" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
@@ -464,6 +520,38 @@ export default function StudentCompositions() {
               </Card>
             ))}
           </div>
+
+          {/* Photos section */}
+          <Card className="border-dashed">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Camera className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">📸 Photos de votre travail</span>
+                </div>
+                <Button variant="outline" size="sm" onClick={capturePhoto}>
+                  <Camera className="h-4 w-4 mr-1" /> Prendre une photo
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Vous pouvez prendre en photo votre brouillon ou travail écrit pour le joindre à votre réponse.</p>
+              {photos.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {photos.map(p => (
+                    <div key={p.id} className="relative group">
+                      <img src={p.dataUrl} alt="Photo" className="w-full h-32 object-cover rounded-lg border" />
+                      <Button
+                        variant="destructive" size="icon"
+                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removePhoto(p.id)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <div className="sticky bottom-0 bg-background py-4 border-t">
             <Button className="w-full" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
