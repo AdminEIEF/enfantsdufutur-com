@@ -2210,6 +2210,7 @@ export type Database = {
           id: string
           nom: string
           ordre: number
+          remise_reinscription: number | null
           total_inscription_fixe: number | null
           total_reinscription_fixe: number | null
         }
@@ -2225,6 +2226,7 @@ export type Database = {
           id?: string
           nom: string
           ordre?: number
+          remise_reinscription?: number | null
           total_inscription_fixe?: number | null
           total_reinscription_fixe?: number | null
         }
@@ -2240,6 +2242,7 @@ export type Database = {
           id?: string
           nom?: string
           ordre?: number
+          remise_reinscription?: number | null
           total_inscription_fixe?: number | null
           total_reinscription_fixe?: number | null
         }

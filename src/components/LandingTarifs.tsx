@@ -19,6 +19,7 @@ interface Niveau {
   frais_examen: number;
   total_inscription_fixe: number;
   total_reinscription_fixe: number;
+  remise_reinscription: number;
   cycle_id: string;
 }
 
@@ -48,7 +49,7 @@ export default function LandingTarifs() {
     queryFn: async () => {
       const { data } = await supabase
         .from('niveaux')
-        .select('id, nom, ordre, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, frais_examen, total_inscription_fixe, total_reinscription_fixe, cycle_id')
+        .select('id, nom, ordre, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, frais_examen, total_inscription_fixe, total_reinscription_fixe, remise_reinscription, cycle_id')
         .order('ordre');
       return (data ?? []) as Niveau[];
     },
@@ -81,9 +82,11 @@ export default function LandingTarifs() {
   const calcTotal = fraisItems.reduce((s, f) => s + f.value, 0);
   const fixeInscr = selectedNiveau ? Number(selectedNiveau.total_inscription_fixe ?? 0) : 0;
   const fixeReinscr = selectedNiveau ? Number(selectedNiveau.total_reinscription_fixe ?? 0) : 0;
-  const totalFrais = mode === 'inscription'
+  const remise = selectedNiveau ? Number(selectedNiveau.remise_reinscription ?? 0) : 0;
+  const totalBrut = mode === 'inscription'
     ? (fixeInscr > 0 ? fixeInscr : calcTotal)
     : (fixeReinscr > 0 ? fixeReinscr : calcTotal);
+  const totalFrais = mode === 'reinscription' && remise > 0 ? totalBrut - remise : totalBrut;
   const isFixe = mode === 'inscription' ? fixeInscr > 0 : fixeReinscr > 0;
 
   return (
@@ -203,6 +206,7 @@ export default function LandingTarifs() {
                       Total estimé ({mode === 'inscription' ? 'nouvelle inscription' : 'réinscription'})
                     </span>
                     {isFixe && <Badge variant="secondary" className="ml-2 text-[10px]">Forfait classe d'examen</Badge>}
+                    {mode === 'reinscription' && remise > 0 && <Badge className="ml-2 text-[10px] bg-green-100 text-green-700 hover:bg-green-100">Remise anciens élèves : -{fmt(remise)}</Badge>}
                   </div>
                   <span className="text-lg sm:text-xl font-bold text-primary" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     {fmt(totalFrais)}

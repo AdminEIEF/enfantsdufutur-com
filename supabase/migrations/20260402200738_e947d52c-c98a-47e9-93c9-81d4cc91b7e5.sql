@@ -1,0 +1,1 @@
+ALTER TABLE public.niveaux ADD COLUMN remise_reinscription numeric DEFAULT 0;

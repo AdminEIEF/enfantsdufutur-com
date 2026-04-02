@@ -201,13 +201,14 @@ function NiveauxTab() {
   const [fraisExamen, setFraisExamen] = useState(0);
   const [totalInscriptionFixe, setTotalInscriptionFixe] = useState(0);
   const [totalReinscriptionFixe, setTotalReinscriptionFixe] = useState(0);
+  const [remiseReinscription, setRemiseReinscription] = useState(0);
 
-  const reset = () => { setEditId(null); setNom(''); setCycleId(''); setOrdre(1); setFrais(0); setFraisInscription(100000); setFraisReinscription(150000); setFraisDossier(0); setFraisAssurance(0); setFraisExamen(0); setTotalInscriptionFixe(0); setTotalReinscriptionFixe(0); setOpen(false); };
+  const reset = () => { setEditId(null); setNom(''); setCycleId(''); setOrdre(1); setFrais(0); setFraisInscription(100000); setFraisReinscription(150000); setFraisDossier(0); setFraisAssurance(0); setFraisExamen(0); setTotalInscriptionFixe(0); setTotalReinscriptionFixe(0); setRemiseReinscription(0); setOpen(false); };
 
   const save = useMutation({
     mutationFn: async () => {
       if (!nom || !cycleId) throw new Error('Champs requis');
-      const payload = { nom, cycle_id: cycleId, ordre, frais_scolarite: frais, frais_inscription: fraisInscription, frais_reinscription: fraisReinscription, frais_dossier: fraisDossier, frais_assurance: fraisAssurance, frais_examen: fraisExamen, total_inscription_fixe: totalInscriptionFixe, total_reinscription_fixe: totalReinscriptionFixe };
+      const payload = { nom, cycle_id: cycleId, ordre, frais_scolarite: frais, frais_inscription: fraisInscription, frais_reinscription: fraisReinscription, frais_dossier: fraisDossier, frais_assurance: fraisAssurance, frais_examen: fraisExamen, total_inscription_fixe: totalInscriptionFixe, total_reinscription_fixe: totalReinscriptionFixe, remise_reinscription: remiseReinscription };
       if (editId) {
         const { error } = await supabase.from('niveaux').update(payload).eq('id', editId);
         if (error) throw error;
@@ -233,7 +234,7 @@ function NiveauxTab() {
     setEditId(n.id); setNom(n.nom); setCycleId(n.cycle_id); setOrdre(n.ordre); setFrais(n.frais_scolarite);
     setFraisInscription(n.frais_inscription ?? 100000); setFraisReinscription(n.frais_reinscription ?? 150000);
     setFraisDossier(n.frais_dossier ?? 0); setFraisAssurance(n.frais_assurance ?? 0);
-    setFraisExamen(n.frais_examen ?? 0); setTotalInscriptionFixe(n.total_inscription_fixe ?? 0); setTotalReinscriptionFixe(n.total_reinscription_fixe ?? 0); setOpen(true);
+    setFraisExamen(n.frais_examen ?? 0); setTotalInscriptionFixe(n.total_inscription_fixe ?? 0); setTotalReinscriptionFixe(n.total_reinscription_fixe ?? 0); setRemiseReinscription(n.remise_reinscription ?? 0); setOpen(true);
   };
 
   return (
@@ -255,7 +256,8 @@ function NiveauxTab() {
               <TableHead>Assurance</TableHead>
               <TableHead>Examen</TableHead>
               <TableHead>Total (Inscr.)</TableHead>
-              <TableHead>Total (Réinscr.)</TableHead>
+                <TableHead>Total (Réinscr.)</TableHead>
+                <TableHead>Remise Réinscr.</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -269,8 +271,10 @@ function NiveauxTab() {
               const calcInscr = Number(n.frais_scolarite) + Number(n.frais_inscription ?? 100000) + Number(n.frais_dossier ?? 0) + Number(n.frais_assurance ?? 0) + examen;
               const calcReinscr = Number(n.frais_scolarite) + Number(n.frais_reinscription ?? 150000) + Number(n.frais_dossier ?? 0) + Number(n.frais_assurance ?? 0) + examen;
               const totalInscr = Number(n.total_inscription_fixe ?? 0) > 0 ? Number(n.total_inscription_fixe) : calcInscr;
-              const totalReinscr = Number(n.total_reinscription_fixe ?? 0) > 0 ? Number(n.total_reinscription_fixe) : calcReinscr;
-              const isFixe = Number(n.total_inscription_fixe ?? 0) > 0 || Number(n.total_reinscription_fixe ?? 0) > 0;
+               const remise = Number(n.remise_reinscription ?? 0);
+               const totalReinscr = Number(n.total_reinscription_fixe ?? 0) > 0 ? Number(n.total_reinscription_fixe) : calcReinscr;
+               const totalReinscrApresRemise = remise > 0 ? totalReinscr - remise : totalReinscr;
+               const isFixe = Number(n.total_inscription_fixe ?? 0) > 0 || Number(n.total_reinscription_fixe ?? 0) > 0;
               return (
               <TableRow key={n.id}>
                 <TableCell className="font-medium">{n.nom}</TableCell>
@@ -282,7 +286,8 @@ function NiveauxTab() {
                 <TableCell>{Number(n.frais_assurance ?? 0).toLocaleString()} GNF</TableCell>
                 <TableCell className={examen > 0 ? 'font-semibold text-indigo-600' : ''}>{examen > 0 ? examen.toLocaleString() + ' GNF' : '—'}</TableCell>
                 <TableCell className="font-bold text-emerald-600">{totalInscr.toLocaleString()} GNF {isFixe && <Badge variant="outline" className="ml-1 text-[10px]">Fixe</Badge>}</TableCell>
-                <TableCell className="font-bold text-violet-600">{totalReinscr.toLocaleString()} GNF {isFixe && <Badge variant="outline" className="ml-1 text-[10px]">Fixe</Badge>}</TableCell>
+                <TableCell className="font-bold text-violet-600">{totalReinscrApresRemise.toLocaleString()} GNF {isFixe && <Badge variant="outline" className="ml-1 text-[10px]">Fixe</Badge>}{remise > 0 && <Badge variant="outline" className="ml-1 text-[10px] text-green-600">-{remise.toLocaleString()}</Badge>}</TableCell>
+                <TableCell className={remise > 0 ? 'font-semibold text-green-600' : ''}>{remise > 0 ? `-${remise.toLocaleString()} GNF` : '—'}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(n)}><Pencil className="h-4 w-4" /></Button>
@@ -326,6 +331,10 @@ function NiveauxTab() {
                 <div><Label>Total Inscription Fixe (GNF)</Label><Input type="number" value={totalInscriptionFixe} onChange={e => setTotalInscriptionFixe(Number(e.target.value))} placeholder="0 = calcul auto" /></div>
                 <div><Label>Total Réinscription Fixe (GNF)</Label><Input type="number" value={totalReinscriptionFixe} onChange={e => setTotalReinscriptionFixe(Number(e.target.value))} placeholder="0 = calcul auto" /></div>
               </div>
+            </div>
+            <div className="border-t pt-3 mt-2">
+              <p className="text-xs text-muted-foreground mb-2 font-semibold">🎁 Remise réinscription (anciens élèves — laissez 0 si pas de remise)</p>
+              <div><Label>Remise Réinscription (GNF)</Label><Input type="number" value={remiseReinscription} onChange={e => setRemiseReinscription(Number(e.target.value))} placeholder="0 = pas de remise" /></div>
             </div>
           </div>
           <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
