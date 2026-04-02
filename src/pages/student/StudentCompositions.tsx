@@ -205,7 +205,7 @@ export default function StudentCompositions() {
         }
         const data = await callApi('submit_composition', {
           composition_id: activeComp.id,
-          reponse_texte: textParts,
+          reponse_texte: textParts + photosHtml,
         });
         toast.success(data.message || 'Composition soumise !');
       } else {
