@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GraduationCap } from 'lucide-react';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
+import schoolLogo from '@/assets/school-logo.png';
 
 interface SplashScreenProps {
   onComplete: () => void;
