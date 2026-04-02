@@ -171,9 +171,14 @@ export default function StudentCompositions() {
     if (timerRef.current) clearInterval(timerRef.current);
 
     try {
+      // Build photos HTML
+      const photosHtml = photos.length > 0
+        ? '<hr/><h3>📸 Photos jointes</h3>' + photos.map((p, i) => `<div><p>Photo ${i + 1}:</p><img src="${p.dataUrl}" style="max-width:100%;margin:8px 0;border-radius:8px;" /></div>`).join('')
+        : '';
+
       if (activeType === 'document') {
-        const htmlContent = editorRef.current?.innerHTML || '';
-        if (!autoSubmit && !htmlContent.trim()) {
+        const htmlContent = (editorRef.current?.innerHTML || '') + photosHtml;
+        if (!autoSubmit && !htmlContent.trim() && photos.length === 0) {
           if (!confirm('Votre réponse est vide. Soumettre quand même ?')) {
             setSubmitting(false);
             return;
