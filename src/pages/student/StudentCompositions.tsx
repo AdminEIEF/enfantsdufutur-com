@@ -581,10 +581,10 @@ export default function StudentCompositions() {
                           <Clock className="h-3 w-3 inline mr-1" />
                           {new Date(comp.date_debut).toLocaleDateString('fr')} → {new Date(comp.date_fin).toLocaleDateString('fr')}
                         </p>
-                        {status === 'done' && rep && !isDocument && (
+                        {status === 'done' && rep && !isDocument && !isTexte && (
                           <p className="text-sm font-bold mt-2 text-primary">Score : {rep.score}/{comp.bareme}</p>
                         )}
-                        {status === 'done' && rep && isDocument && (
+                        {status === 'done' && rep && (isDocument || isTexte) && (
                           <p className="text-sm font-bold mt-2 text-primary">
                             {rep.score != null ? `Note : ${rep.score}/${comp.bareme}` : 'En attente de correction'}
                           </p>
