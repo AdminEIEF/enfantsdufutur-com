@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Briefcase, Lock, Loader2, User, Eye, EyeOff, ArrowLeft } from 'lucide-r
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import employeeIllustration from '@/assets/employee-login-illustration.jpg';
+import SplashScreen from '@/components/SplashScreen';
 
 export default function EmployeeLogin() {
   const { session, login, loading } = useEmployeeAuth();
@@ -15,11 +16,15 @@ export default function EmployeeLogin() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('splash-employee-login-seen'));
+  const handleSplashComplete = useCallback(() => { sessionStorage.setItem('splash-employee-login-seen', '1'); setShowSplash(false); }, []);
 
   if (!loading && session) {
     navigate('/employe/dashboard', { replace: true });
     return null;
   }
+
+  if (showSplash) return <SplashScreen onComplete={handleSplashComplete} subtitle="Espace Employé" />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

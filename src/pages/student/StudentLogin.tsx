@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { BookOpen, Lock, Loader2, User, Eye, EyeOff, ArrowLeft, AlertTriangle } 
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import studentIllustration from '@/assets/student-login-illustration.jpg';
+import SplashScreen from '@/components/SplashScreen';
 
 interface StudentPreview {
   found: boolean;
@@ -31,6 +32,8 @@ export default function StudentLogin() {
   const [loadingPreview, setLoadingPreview] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const initializedFromUrl = useRef(false);
+  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('splash-student-login-seen'));
+  const handleSplashComplete = useCallback(() => { sessionStorage.setItem('splash-student-login-seen', '1'); setShowSplash(false); }, []);
 
   // Pre-fill matricule from QR code URL param
   useEffect(() => {
@@ -48,6 +51,8 @@ export default function StudentLogin() {
     navigate('/eleve/dashboard', { replace: true });
     return null;
   }
+
+  if (showSplash) return <SplashScreen onComplete={handleSplashComplete} subtitle="Espace Élève" />;
 
   const fetchPreview = async (mat: string) => {
     if (mat.length < 3) { setPreview(null); return; }

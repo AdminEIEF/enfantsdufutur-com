@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { KeyRound, Loader2, ArrowLeft, Eye, EyeOff, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import parentIllustration from '@/assets/parent-login-illustration.jpg';
+import SplashScreen from '@/components/SplashScreen';
 
 export default function ParentLogin() {
   const { session, login, loading } = useParentAuth();
@@ -15,11 +16,15 @@ export default function ParentLogin() {
   const [code, setCode] = useState('');
   const [showCode, setShowCode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('splash-parent-login-seen'));
+  const handleSplashComplete = useCallback(() => { sessionStorage.setItem('splash-parent-login-seen', '1'); setShowSplash(false); }, []);
 
   if (!loading && session) {
     navigate('/parent/dashboard', { replace: true });
     return null;
   }
+
+  if (showSplash) return <SplashScreen onComplete={handleSplashComplete} subtitle="Espace Parent" />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

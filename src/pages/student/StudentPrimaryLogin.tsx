@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,7 @@ import { Loader2, ArrowLeft, Backpack, Star, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
+import SplashScreen from '@/components/SplashScreen';
 
 export default function StudentPrimaryLogin() {
   const { session } = useStudentAuth();
@@ -13,11 +14,15 @@ export default function StudentPrimaryLogin() {
   const [matricule, setMatricule] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('splash-primary-login-seen'));
+  const handleSplashComplete = useCallback(() => { sessionStorage.setItem('splash-primary-login-seen', '1'); setShowSplash(false); }, []);
 
   if (session) {
     navigate('/eleve/dashboard', { replace: true });
     return null;
   }
+
+  if (showSplash) return <SplashScreen onComplete={handleSplashComplete} subtitle="Espace Élève - Primaire" />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
