@@ -18,6 +18,10 @@ import schoolAnglais from '@/assets/school-anglais.jpg';
 import schoolBepc from '@/assets/school-bepc.jpg';
 import schoolDrapeau from '@/assets/school-drapeau.jpg';
 import schoolGraduation from '@/assets/school-graduation.jpg';
+import schoolCantine from '@/assets/school-cantine.jpg';
+import schoolJeux from '@/assets/school-jeux.jpg';
+import schoolMaternelle from '@/assets/school-maternelle.jpg';
+import schoolClasse from '@/assets/school-classe.jpg';
 
 export default function Landing() {
   const { data: schoolConfig } = useSchoolConfig();
