@@ -37,12 +37,16 @@ export default function SuperviseurDashboard() {
   useEffect(() => {
     async function fetchStats() {
       setLoading(true);
-      const [elevesRes, preInsRes, employesRes, famillesRes, paiementsRes] = await Promise.all([
+      const [elevesRes, preInsRes, employesRes, famillesRes, paiementsRes, notesRes, depensesRes, composRes, connectesRes] = await Promise.all([
         supabase.from('eleves').select('statut, classe_id, classes!inner(niveau_id, nom, niveaux!inner(nom, ordre, cycle_id, cycles!inner(nom, ordre)))').is('deleted_at', null),
         supabase.from('pre_inscriptions').select('id, statut', { count: 'exact', head: false }),
         supabase.from('employes').select('id, categorie').eq('statut', 'actif'),
         supabase.from('familles').select('id', { count: 'exact', head: true }),
         supabase.from('paiements').select('montant'),
+        supabase.from('notes').select('id', { count: 'exact', head: true }),
+        supabase.from('depenses').select('montant, statut'),
+        supabase.from('compositions').select('id', { count: 'exact', head: true }),
+        supabase.from('active_connections').select('id', { count: 'exact', head: true }),
       ]);
 
       const eleves = elevesRes.data || [];
