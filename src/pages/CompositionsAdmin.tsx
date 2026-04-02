@@ -314,7 +314,7 @@ export default function CompositionsAdmin() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {comp.type_composition === 'qcm' && (
+                    {(comp.type_composition === 'qcm' || comp.type_composition === 'texte') && (
                       <Button variant="outline" size="sm" onClick={() => openQuestions(comp.id)}>
                         <FileQuestion className="h-4 w-4 mr-1" /> Questions
                       </Button>
