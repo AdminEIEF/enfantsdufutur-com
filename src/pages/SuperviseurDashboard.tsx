@@ -25,6 +25,10 @@ export default function SuperviseurDashboard() {
     totalFamilles: 0,
     totalPaiements: 0,
     totalEleves: 0,
+    totalNotes: 0,
+    totalDepenses: 0,
+    totalCompositions: 0,
+    totalConnectes: 0,
   });
   const [cycleStats, setCycleStats] = useState<CycleStats[]>([]);
   const [employeCategories, setEmployeCategories] = useState<EmployeCategorie[]>([]);
@@ -33,12 +37,16 @@ export default function SuperviseurDashboard() {
   useEffect(() => {
     async function fetchStats() {
       setLoading(true);
-      const [elevesRes, preInsRes, employesRes, famillesRes, paiementsRes] = await Promise.all([
+      const [elevesRes, preInsRes, employesRes, famillesRes, paiementsRes, notesRes, depensesRes, composRes, connectesRes] = await Promise.all([
         supabase.from('eleves').select('statut, classe_id, classes!inner(niveau_id, nom, niveaux!inner(nom, ordre, cycle_id, cycles!inner(nom, ordre)))').is('deleted_at', null),
         supabase.from('pre_inscriptions').select('id, statut', { count: 'exact', head: false }),
         supabase.from('employes').select('id, categorie').eq('statut', 'actif'),
         supabase.from('familles').select('id', { count: 'exact', head: true }),
         supabase.from('paiements').select('montant'),
+        supabase.from('notes').select('id', { count: 'exact', head: true }),
+        supabase.from('depenses').select('montant, statut'),
+        supabase.from('compositions').select('id', { count: 'exact', head: true }),
+        supabase.from('active_connections').select('id', { count: 'exact', head: true }),
       ]);
 
       const eleves = elevesRes.data || [];
@@ -71,6 +79,7 @@ export default function SuperviseurDashboard() {
 
       const totalPaiements = (paiementsRes.data || []).reduce((s: number, p: any) => s + (p.montant || 0), 0);
       const preInscritsEnAttente = (preInsRes.data || []).filter((p: any) => p.statut === 'en_attente').length;
+      const totalDepensesValidees = (depensesRes.data || []).filter((d: any) => d.statut === 'validee').reduce((s: number, d: any) => s + (d.montant || 0), 0);
 
       setStats({
         inscrits,
@@ -80,6 +89,10 @@ export default function SuperviseurDashboard() {
         totalFamilles: famillesRes.count || 0,
         totalPaiements,
         totalEleves: eleves.length,
+        totalNotes: notesRes.count || 0,
+        totalDepenses: totalDepensesValidees,
+        totalCompositions: composRes.count || 0,
+        totalConnectes: connectesRes.count || 0,
       });
       setCycleStats(cycleArr);
       setEmployeCategories(catArr);
@@ -107,6 +120,10 @@ export default function SuperviseurDashboard() {
     { label: 'Inscrits', value: stats.inscrits, icon: UserPlus, color: 'text-green-600', borderColor: 'border-green-200 dark:border-green-800', gradient: 'from-green-500/10 via-green-500/5 to-transparent', iconBg: 'bg-green-500/15' },
     { label: 'Réinscrits', value: stats.reinscrits, icon: RefreshCw, color: 'text-emerald-600', borderColor: 'border-emerald-200 dark:border-emerald-800', gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent', iconBg: 'bg-emerald-500/15' },
     { label: 'Paiements totaux', value: `${stats.totalPaiements.toLocaleString('fr-FR')} F`, icon: DollarSign, color: 'text-teal-600', borderColor: 'border-teal-200 dark:border-teal-800', gradient: 'from-teal-500/10 via-teal-500/5 to-transparent', iconBg: 'bg-teal-500/15' },
+    { label: 'Dépenses validées', value: `${stats.totalDepenses.toLocaleString('fr-FR')} F`, icon: DollarSign, color: 'text-red-600', borderColor: 'border-red-200 dark:border-red-800', gradient: 'from-red-500/10 via-red-500/5 to-transparent', iconBg: 'bg-red-500/15' },
+    { label: 'Notes saisies', value: stats.totalNotes, icon: BookOpen, color: 'text-cyan-600', borderColor: 'border-cyan-200 dark:border-cyan-800', gradient: 'from-cyan-500/10 via-cyan-500/5 to-transparent', iconBg: 'bg-cyan-500/15' },
+    { label: 'Compositions', value: stats.totalCompositions, icon: FileText, color: 'text-violet-600', borderColor: 'border-violet-200 dark:border-violet-800', gradient: 'from-violet-500/10 via-violet-500/5 to-transparent', iconBg: 'bg-violet-500/15' },
+    { label: 'Connectés maintenant', value: stats.totalConnectes, icon: ShieldCheck, color: 'text-lime-600', borderColor: 'border-lime-200 dark:border-lime-800', gradient: 'from-lime-500/10 via-lime-500/5 to-transparent', iconBg: 'bg-lime-500/15' },
   ];
 
   const cycleOrder = ['Crèche', 'Maternelle', 'Primaire', 'Collège', 'Lycée'];
@@ -171,7 +188,7 @@ export default function SuperviseurDashboard() {
       </div>
 
       {/* Status + Finance */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {statusCards.map((c) => (
           <Card key={c.label} className={`overflow-hidden border ${c.borderColor} bg-gradient-to-br ${c.gradient} shadow-sm`}>
             <CardContent className="pt-5 pb-4">

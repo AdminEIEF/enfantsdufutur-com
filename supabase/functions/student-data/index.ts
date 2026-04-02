@@ -314,9 +314,18 @@ serve(async (req) => {
 
       // For document type, return sujet info instead of questions
       if (comp.type_composition === 'document') {
+        // Generate signed URL if sujet_url contains storage path
+        let sujetUrl = comp.sujet_url || '';
+        if (sujetUrl.includes('/storage/v1/object/public/cours/')) {
+          const storagePath = sujetUrl.split('/storage/v1/object/public/cours/')[1];
+          if (storagePath) {
+            const { data: signedData } = await supabaseAdmin.storage.from('cours').createSignedUrl(storagePath, 3600);
+            if (signedData?.signedUrl) sujetUrl = signedData.signedUrl;
+          }
+        }
         return new Response(JSON.stringify({ 
           type_composition: 'document',
-          sujet_url: comp.sujet_url,
+          sujet_url: sujetUrl,
           sujet_nom: comp.sujet_nom,
           debut_at: debutAt 
         }), {
