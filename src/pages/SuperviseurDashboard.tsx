@@ -188,7 +188,7 @@ export default function SuperviseurDashboard() {
       </div>
 
       {/* Status + Finance */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {statusCards.map((c) => (
           <Card key={c.label} className={`overflow-hidden border ${c.borderColor} bg-gradient-to-br ${c.gradient} shadow-sm`}>
             <CardContent className="pt-5 pb-4">
