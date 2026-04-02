@@ -27,7 +27,8 @@ interface DevisProps {
 }
 
 export default function ParentDevisInscription({ eleves, paiements, tarifs = [], nbEnfantsFamille }: DevisProps) {
-  const reduction = nbEnfantsFamille >= 3 ? 0.10 : 0;
+  const reductionFratrie = nbEnfantsFamille >= 3 ? 0.10 : 0;
+  const REMISE_REINSCRIPTION_PCT = 0.15; // 15% pour anciens élèves
 
   return (
     <div className="space-y-4">
@@ -35,9 +36,12 @@ export default function ParentDevisInscription({ eleves, paiements, tarifs = [],
         const niveaux = enfant.classes?.niveaux;
         const fraisScolarite = niveaux?.frais_scolarite || 0;
         const fraisInscription = niveaux?.frais_inscription ?? 100000;
+        const fraisReinscription = niveaux?.frais_reinscription ?? fraisInscription;
         const fraisDossier = niveaux?.frais_dossier ?? 0;
         const fraisAssurance = niveaux?.frais_assurance ?? 0;
-        const fraisApresReduction = fraisScolarite * (1 - reduction);
+        const remiseNiveau = niveaux?.remise_reinscription ?? 0;
+        const isReinscription = (enfant as any).est_reinscription === true;
+        const fraisApresReduction = fraisScolarite * (1 - reductionFratrie);
         const transportMensuel = enfant.zones_transport?.prix_mensuel || 0;
 
         // Get uniform fees from tarifs
