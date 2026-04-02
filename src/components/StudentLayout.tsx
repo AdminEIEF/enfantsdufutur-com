@@ -102,58 +102,89 @@ export function StudentLayout({ children }: { children: ReactNode }) {
 
       {/* Profile Dialog */}
       <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-center">Mon Profil</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center gap-4 py-4">
-            <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-primary via-accent to-secondary p-1 shadow-xl">
+        <DialogContent className="max-w-sm p-0 overflow-hidden rounded-3xl border-0 shadow-2xl">
+          {/* Gradient Header */}
+          <div className="relative bg-gradient-to-br from-primary via-primary/80 to-accent pt-10 pb-16 px-6">
+            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 30% 20%, white 1px, transparent 1px), radial-gradient(circle at 70% 80%, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+            <DialogHeader>
+              <DialogTitle className="text-center text-primary-foreground text-lg font-bold tracking-wide">
+                Mon Profil
+              </DialogTitle>
+            </DialogHeader>
+          </div>
+
+          {/* Photo overlapping the gradient */}
+          <div className="flex flex-col items-center -mt-14 px-6 pb-6">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', damping: 15, stiffness: 200 }}
+              className="w-28 h-28 rounded-3xl bg-gradient-to-br from-secondary via-primary to-accent p-[3px] shadow-xl ring-4 ring-background"
+            >
               {eleve.photo_url ? (
-                <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} className="w-full h-full rounded-[20px] object-cover bg-white" />
+                <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} className="w-full h-full rounded-[21px] object-cover bg-background" />
               ) : (
-                <div className="w-full h-full rounded-[20px] bg-card flex items-center justify-center text-primary font-bold text-3xl">
+                <div className="w-full h-full rounded-[21px] bg-card flex items-center justify-center text-primary font-bold text-3xl">
                   {eleve.prenom[0]}{eleve.nom[0]}
                 </div>
               )}
-            </div>
-            <div className="text-center">
-              <h2 className="text-xl font-bold">{eleve.prenom} {eleve.nom}</h2>
+            </motion.div>
+
+            <motion.div
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="text-center mt-4"
+            >
+              <h2 className="text-xl font-bold text-foreground">{eleve.prenom} {eleve.nom}</h2>
               {eleve.classes?.nom && (
-                <p className="text-sm text-muted-foreground mt-1 flex items-center justify-center gap-1.5">
-                  <GraduationCap className="h-4 w-4" />
+                <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                  <GraduationCap className="h-3.5 w-3.5" />
                   {eleve.classes.nom}
-                </p>
+                </span>
               )}
-            </div>
-            <div className="w-full space-y-2 mt-2">
+            </motion.div>
+
+            <motion.div
+              initial={{ y: 15, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="w-full mt-5 space-y-2"
+            >
               {eleve.matricule && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <Hash className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-muted/40 border border-border/50 hover:bg-muted/60 transition-colors">
+                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Hash className="h-4 w-4 text-primary" />
+                  </div>
                   <div>
-                    <p className="text-[11px] text-muted-foreground">Matricule</p>
-                    <p className="text-sm font-semibold">{eleve.matricule}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Matricule</p>
+                    <p className="text-sm font-bold text-foreground">{eleve.matricule}</p>
                   </div>
                 </div>
               )}
               {eleve.date_naissance && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-muted/40 border border-border/50 hover:bg-muted/60 transition-colors">
+                  <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                    <Calendar className="h-4 w-4 text-accent" />
+                  </div>
                   <div>
-                    <p className="text-[11px] text-muted-foreground">Date de naissance</p>
-                    <p className="text-sm font-semibold">{new Date(eleve.date_naissance).toLocaleDateString('fr-FR')}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Date de naissance</p>
+                    <p className="text-sm font-bold text-foreground">{new Date(eleve.date_naissance).toLocaleDateString('fr-FR')}</p>
                   </div>
                 </div>
               )}
               {eleve.sexe && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <User className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-muted/40 border border-border/50 hover:bg-muted/60 transition-colors">
+                  <div className="w-9 h-9 rounded-xl bg-secondary/10 flex items-center justify-center shrink-0">
+                    <User className="h-4 w-4 text-secondary" />
+                  </div>
                   <div>
-                    <p className="text-[11px] text-muted-foreground">Sexe</p>
-                    <p className="text-sm font-semibold">{eleve.sexe === 'M' ? 'Masculin' : 'Féminin'}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Sexe</p>
+                    <p className="text-sm font-bold text-foreground">{eleve.sexe === 'M' ? 'Masculin' : 'Féminin'}</p>
                   </div>
                 </div>
               )}
-            </div>
+            </motion.div>
           </div>
         </DialogContent>
       </Dialog>
