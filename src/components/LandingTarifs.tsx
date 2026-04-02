@@ -82,9 +82,11 @@ export default function LandingTarifs() {
   const calcTotal = fraisItems.reduce((s, f) => s + f.value, 0);
   const fixeInscr = selectedNiveau ? Number(selectedNiveau.total_inscription_fixe ?? 0) : 0;
   const fixeReinscr = selectedNiveau ? Number(selectedNiveau.total_reinscription_fixe ?? 0) : 0;
-  const totalFrais = mode === 'inscription'
+  const remise = selectedNiveau ? Number(selectedNiveau.remise_reinscription ?? 0) : 0;
+  const totalBrut = mode === 'inscription'
     ? (fixeInscr > 0 ? fixeInscr : calcTotal)
     : (fixeReinscr > 0 ? fixeReinscr : calcTotal);
+  const totalFrais = mode === 'reinscription' && remise > 0 ? totalBrut - remise : totalBrut;
   const isFixe = mode === 'inscription' ? fixeInscr > 0 : fixeReinscr > 0;
 
   return (
