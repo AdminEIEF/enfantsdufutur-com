@@ -1,4 +1,5 @@
 import { ReactNode, useState, useCallback } from 'react';
+import SplashScreen from '@/components/SplashScreen';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { AIChatBubble } from '@/components/AIChatBubble';
