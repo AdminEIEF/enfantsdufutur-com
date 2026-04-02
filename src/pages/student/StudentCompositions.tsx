@@ -225,6 +225,7 @@ export default function StudentCompositions() {
       setActiveComp(null);
       setActiveQuestions([]);
       setActiveSujet(null);
+      setPhotos([]);
       fetchCompositions();
     } catch (e: any) {
       toast.error(e.message);
