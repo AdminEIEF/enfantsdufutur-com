@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,7 @@ import { Loader2, ArrowLeft, Backpack, Star, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
+import SplashScreen from '@/components/SplashScreen';
 
 export default function StudentPrimaryLogin() {
   const { session } = useStudentAuth();
