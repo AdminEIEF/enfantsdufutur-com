@@ -120,3 +120,4 @@ export default function SplashScreen({ onComplete, subtitle }: SplashScreenProps
     </AnimatePresence>
   );
 }
+
