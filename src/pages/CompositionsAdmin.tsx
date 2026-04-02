@@ -36,7 +36,7 @@ interface Composition {
 interface Question {
   id?: string;
   composition_id?: string;
-  type_question: 'qcm' | 'vrai_faux';
+  type_question: 'qcm' | 'vrai_faux' | 'texte';
   enonce: string;
   options: { label: string; correct?: boolean }[];
   reponse_correcte: string;
