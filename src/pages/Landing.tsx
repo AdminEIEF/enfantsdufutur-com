@@ -291,6 +291,12 @@ export default function Landing() {
                 { src: schoolBepc, alt: "100% d'admission au BEPC" },
                 { src: schoolDrapeau, alt: "Cérémonie du drapeau" },
                 { src: schoolGraduation, alt: "Cérémonie de graduation" },
+                { src: schoolEvent1, alt: "Présentation et conférence" },
+                { src: schoolEvent2, alt: "Notre équipe pédagogique" },
+                { src: schoolEvent3, alt: "Intervention du directeur" },
+                { src: schoolEvent4, alt: "Réunion avec les parents" },
+                { src: schoolEvent5, alt: "Membre de l'équipe" },
+                { src: schoolEvent6, alt: "Accueil des familles" },
               ].map((img, i) => (
                 <CarouselItem key={i} className="basis-full sm:basis-1/2">
                   <div className="p-1 sm:p-2">
