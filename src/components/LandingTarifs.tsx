@@ -206,12 +206,18 @@ export default function LandingTarifs() {
                       Total estimé ({mode === 'inscription' ? 'nouvelle inscription' : 'réinscription'})
                     </span>
                     {isFixe && <Badge variant="secondary" className="ml-2 text-[10px]">Forfait classe d'examen</Badge>}
-                    {mode === 'reinscription' && remise > 0 && <Badge className="ml-2 text-[10px] bg-green-100 text-green-700 hover:bg-green-100">Remise anciens élèves : -{fmt(remise)}</Badge>}
+                {mode === 'reinscription' && remise > 0 && <Badge className="ml-2 text-[10px] bg-green-100 text-green-700 hover:bg-green-100">Remise anciens élèves : -{fmt(remise)}</Badge>}
                   </div>
                   <span className="text-lg sm:text-xl font-bold text-primary" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     {fmt(totalFrais)}
                   </span>
                 </div>
+
+                {mode === 'reinscription' && remise > 0 && (
+                  <p className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2 text-center">
+                    📌 NB : Remise de 15% accordée à nos anciens élèves, c'est ce qui donne cette somme.
+                  </p>
+                )}
 
                 <p className="text-[11px] text-muted-foreground mt-3 text-center italic">
                   * Les frais de transport, cantine et uniformes ne sont pas inclus. Contactez l'administration pour plus de détails.
