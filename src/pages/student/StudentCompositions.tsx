@@ -403,9 +403,17 @@ export default function StudentCompositions() {
               <h2 className="font-bold text-lg">{activeComp.titre}</h2>
               <p className="text-sm text-muted-foreground">{activeComp.matieres?.nom}</p>
             </div>
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-lg font-bold ${isUrgent ? 'bg-destructive/10 text-destructive animate-pulse' : 'bg-primary/10 text-primary'}`}>
-              <Timer className="h-5 w-5" />
-              {formatTime(timeLeft)}
+            <div className="flex items-center gap-2">
+              {violations > 0 && (
+                <Badge variant="destructive" className="text-xs">⚠️ {violations}/2</Badge>
+              )}
+              <Badge variant="outline" className="text-xs gap-1">
+                <ShieldAlert className="h-3 w-3" /> Surveillé
+              </Badge>
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-lg font-bold ${isUrgent ? 'bg-destructive/10 text-destructive animate-pulse' : 'bg-primary/10 text-primary'}`}>
+                <Timer className="h-5 w-5" />
+                {formatTime(timeLeft)}
+              </div>
             </div>
           </div>
 
