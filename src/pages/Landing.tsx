@@ -344,6 +344,34 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Vidéos */}
+      <section className="py-12 sm:py-20 bg-muted/30">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              Notre école en vidéo
+            </h2>
+            <p className="text-muted-foreground text-sm sm:text-lg max-w-2xl mx-auto">
+              Découvrez l'ambiance et les activités de l'École Internationale Les Enfants du Futur.
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <div className="w-full max-w-2xl rounded-2xl overflow-hidden shadow-xl bg-background">
+              <iframe
+                src="https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F3512882682204390&show_text=false"
+                className="w-full aspect-[9/16] sm:aspect-video"
+                style={{ border: 'none', overflow: 'hidden' }}
+                scrolling="no"
+                frameBorder="0"
+                allowFullScreen
+                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                title="Vidéo de l'école"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Tarifs */}
       <LandingTarifs />
 
