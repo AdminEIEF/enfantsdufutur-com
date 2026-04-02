@@ -102,7 +102,7 @@ const navSections = [
   },
   {
     label: 'Principal',
-    roles: ['admin', 'secretaire', 'comptable'] as const,
+    roles: ['admin', 'secretaire', 'comptable', 'superviseur'] as const,
     items: [
       { title: 'Tableau de bord', url: '/dashboard', icon: LayoutDashboard },
       { title: 'Notifications', url: '/notifications', icon: BellRing },
@@ -110,7 +110,7 @@ const navSections = [
   },
   {
     label: 'Scolarité',
-    roles: ['admin', 'secretaire'] as const,
+    roles: ['admin', 'secretaire', 'superviseur'] as const,
     items: [
       { title: 'Pré-inscriptions', url: '/pre-inscriptions', icon: FileCheck2 },
       { title: 'Inscriptions', url: '/inscriptions', icon: UserRoundPlus },
@@ -122,7 +122,7 @@ const navSections = [
   },
   {
     label: 'Académique',
-    roles: ['admin', 'service_info'] as const,
+    roles: ['admin', 'service_info', 'superviseur'] as const,
     items: [
       { title: 'Mes Classes', url: '/mes-classes', icon: UsersRound },
       { title: 'Saisie des notes', url: '/notes', icon: BookOpenText },
