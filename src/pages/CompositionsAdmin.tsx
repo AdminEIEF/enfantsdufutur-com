@@ -261,7 +261,7 @@ export default function CompositionsAdmin() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Compositions en ligne</h1>
-          <p className="text-sm text-muted-foreground">Gérer les examens QCM, Vrai/Faux et Documents</p>
+          <p className="text-sm text-muted-foreground">Gérer les examens QCM, Vrai/Faux, Texte et Documents</p>
         </div>
         <Button onClick={() => { setEditComp(null); resetForm(); setShowForm(true); }}>
           <Plus className="h-4 w-4 mr-2" /> Nouvelle composition
