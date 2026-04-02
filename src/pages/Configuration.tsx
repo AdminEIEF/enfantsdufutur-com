@@ -286,7 +286,8 @@ function NiveauxTab() {
                 <TableCell>{Number(n.frais_assurance ?? 0).toLocaleString()} GNF</TableCell>
                 <TableCell className={examen > 0 ? 'font-semibold text-indigo-600' : ''}>{examen > 0 ? examen.toLocaleString() + ' GNF' : '—'}</TableCell>
                 <TableCell className="font-bold text-emerald-600">{totalInscr.toLocaleString()} GNF {isFixe && <Badge variant="outline" className="ml-1 text-[10px]">Fixe</Badge>}</TableCell>
-                <TableCell className="font-bold text-violet-600">{totalReinscr.toLocaleString()} GNF {isFixe && <Badge variant="outline" className="ml-1 text-[10px]">Fixe</Badge>}</TableCell>
+                <TableCell className="font-bold text-violet-600">{totalReinscrApresRemise.toLocaleString()} GNF {isFixe && <Badge variant="outline" className="ml-1 text-[10px]">Fixe</Badge>}{remise > 0 && <Badge variant="outline" className="ml-1 text-[10px] text-green-600">-{remise.toLocaleString()}</Badge>}</TableCell>
+                <TableCell className={remise > 0 ? 'font-semibold text-green-600' : ''}>{remise > 0 ? `-${remise.toLocaleString()} GNF` : '—'}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(n)}><Pencil className="h-4 w-4" /></Button>
