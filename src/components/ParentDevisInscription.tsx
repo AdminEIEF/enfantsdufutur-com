@@ -75,8 +75,12 @@ export default function ParentDevisInscription({ eleves, paiements, tarifs = [],
           .filter((p: any) => p.type_paiement === 'transport')
           .reduce((s: number, p: any) => s + p.montant, 0);
 
-        const totalImmediatInitial = fraisInscription + fraisDossier + fraisAssurance + fraisUniformes + fraisFournitures;
-        const scolariteAnnuelle = fraisApresReduction; // frais_scolarite is already annual
+        // Reinscription discount (15% for returning students)
+        const remiseReinscription = isReinscription ? Math.round(fraisScolarite * REMISE_REINSCRIPTION_PCT) : 0;
+        const scolariteApresRemise = fraisApresReduction - remiseReinscription;
+
+        const totalImmediatInitial = (isReinscription ? fraisReinscription : fraisInscription) + fraisDossier + fraisAssurance + fraisUniformes + fraisFournitures;
+        const scolariteAnnuelle = scolariteApresRemise;
         const transportAnnuel = transportMensuel * 10;
         const totalGlobal = totalImmediatInitial + scolariteAnnuelle + transportAnnuel;
         const totalPaye = payeInscription + payeScolarite + payeTransport;
@@ -85,7 +89,7 @@ export default function ParentDevisInscription({ eleves, paiements, tarifs = [],
         const lignesDevis: Array<{ label: string; montant: number; type: 'immediat' | 'echeancier' }> = [];
 
         // Immediate fees
-        lignesDevis.push({ label: "Frais d'inscription", montant: fraisInscription, type: 'immediat' });
+        lignesDevis.push({ label: isReinscription ? "Frais de réinscription" : "Frais d'inscription", montant: isReinscription ? fraisReinscription : fraisInscription, type: 'immediat' });
         if (fraisDossier > 0) lignesDevis.push({ label: 'Frais de dossier', montant: fraisDossier, type: 'immediat' });
         if (fraisAssurance > 0) lignesDevis.push({ label: '🛡️ Assurance scolaire', montant: fraisAssurance, type: 'immediat' });
         if (fraisUniformes > 0) lignesDevis.push({ label: '👕 Uniformes', montant: fraisUniformes, type: 'immediat' });
