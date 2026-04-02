@@ -162,8 +162,11 @@ export default function ParentDevisInscription({ eleves, paiements, tarifs = [],
                     ))}
                   </TableBody>
                 </Table>
-                {reduction > 0 && (
-                  <p className="text-xs text-accent mt-1">✨ Réduction fratrie de {reduction * 100}% appliquée ({nbEnfantsFamille} enfants)</p>
+                {reductionFratrie > 0 && (
+                  <p className="text-xs text-accent mt-1">✨ Réduction fratrie de {reductionFratrie * 100}% appliquée ({nbEnfantsFamille} enfants)</p>
+                )}
+                {isReinscription && remiseReinscription > 0 && (
+                  <p className="text-xs text-accent mt-1">🎉 Remise anciens élèves de {REMISE_REINSCRIPTION_PCT * 100}% appliquée : -{remiseReinscription.toLocaleString()} GNF</p>
                 )}
               </div>
 
