@@ -123,6 +123,7 @@ export default function CompositionsAdmin() {
     if (form.type_composition === 'document' && !form.sujet_url && !editComp?.sujet_url) {
       toast.error('Veuillez uploader un fichier sujet (PDF ou Word)'); return;
     }
+    // texte type needs questions but validated at publish time
     const payload: any = {
       titre: form.titre, description: form.description || null,
       classe_id: form.classe_id, matiere_id: form.matiere_id,
