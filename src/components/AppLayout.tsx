@@ -85,6 +85,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
   });
 
   return (
+    <>
+      {showSplash && <SplashScreen onComplete={handleSplashDone} subtitle="Espace Administration" />}
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
