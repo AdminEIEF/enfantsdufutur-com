@@ -270,8 +270,10 @@ function NiveauxTab() {
               const calcInscr = Number(n.frais_scolarite) + Number(n.frais_inscription ?? 100000) + Number(n.frais_dossier ?? 0) + Number(n.frais_assurance ?? 0) + examen;
               const calcReinscr = Number(n.frais_scolarite) + Number(n.frais_reinscription ?? 150000) + Number(n.frais_dossier ?? 0) + Number(n.frais_assurance ?? 0) + examen;
               const totalInscr = Number(n.total_inscription_fixe ?? 0) > 0 ? Number(n.total_inscription_fixe) : calcInscr;
-              const totalReinscr = Number(n.total_reinscription_fixe ?? 0) > 0 ? Number(n.total_reinscription_fixe) : calcReinscr;
-              const isFixe = Number(n.total_inscription_fixe ?? 0) > 0 || Number(n.total_reinscription_fixe ?? 0) > 0;
+               const remise = Number(n.remise_reinscription ?? 0);
+               const totalReinscr = Number(n.total_reinscription_fixe ?? 0) > 0 ? Number(n.total_reinscription_fixe) : calcReinscr;
+               const totalReinscrApresRemise = remise > 0 ? totalReinscr - remise : totalReinscr;
+               const isFixe = Number(n.total_inscription_fixe ?? 0) > 0 || Number(n.total_reinscription_fixe ?? 0) > 0;
               return (
               <TableRow key={n.id}>
                 <TableCell className="font-medium">{n.nom}</TableCell>
