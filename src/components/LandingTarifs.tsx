@@ -16,6 +16,7 @@ interface Niveau {
   frais_reinscription: number;
   frais_dossier: number;
   frais_assurance: number;
+  frais_examen: number;
   cycle_id: string;
 }
 
