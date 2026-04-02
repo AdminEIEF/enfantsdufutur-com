@@ -251,6 +251,9 @@ function NiveauxTab() {
               <TableHead>Inscription</TableHead>
               <TableHead>Dossier</TableHead>
               <TableHead>Assurance</TableHead>
+              <TableHead>Examen</TableHead>
+              <TableHead>Total (Inscr.)</TableHead>
+              <TableHead>Total (Réinscr.)</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
