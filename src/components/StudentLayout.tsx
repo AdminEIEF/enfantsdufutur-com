@@ -2,7 +2,8 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Home, FileText, ClipboardList, Award, Bot, LogOut, CalendarDays, Star, PenTool, Calculator, GraduationCap, Palette, Bug, Languages, Gamepad2, X, Pyramid, FileQuestion } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { BookOpen, Home, FileText, ClipboardList, Award, Bot, LogOut, CalendarDays, Star, PenTool, Calculator, GraduationCap, Palette, Bug, Languages, Gamepad2, X, Pyramid, FileQuestion, User, Calendar, Hash } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { SchoolWatermark } from '@/components/SchoolWatermark';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,6 +32,7 @@ export function StudentLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [gamesOpen, setGamesOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     if (!session) {
@@ -61,15 +63,15 @@ export function StudentLayout({ children }: { children: ReactNode }) {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b">
         <div className="max-w-4xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">
+          <button onClick={() => setProfileOpen(true)} className="flex items-center gap-2 min-w-0 cursor-pointer hover:opacity-80 transition-opacity">
             {eleve.photo_url ? (
-              <img src={eleve.photo_url} alt="" loading="lazy" decoding="async" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border-2 border-blue-200 shrink-0" />
+              <img src={eleve.photo_url} alt="" loading="lazy" decoding="async" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border-2 border-primary/20 shrink-0" />
             ) : (
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-[10px] sm:text-xs shrink-0">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] sm:text-xs shrink-0">
                 {eleve.prenom[0]}{eleve.nom[0]}
               </div>
             )}
-            <div className="min-w-0">
+            <div className="min-w-0 text-left">
               <h1 className="font-bold text-xs sm:text-sm leading-tight truncate">
                 {eleve.prenom} {eleve.nom}
               </h1>
@@ -77,7 +79,7 @@ export function StudentLayout({ children }: { children: ReactNode }) {
                 {eleve.classes?.nom || 'Espace Élève'}
               </p>
             </div>
-          </div>
+          </button>
           <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
             <NotificationBell
               mode="student"
@@ -97,6 +99,62 @@ export function StudentLayout({ children }: { children: ReactNode }) {
       <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-24">
         {children}
       </main>
+
+      {/* Profile Dialog */}
+      <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center">Mon Profil</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            {eleve.photo_url ? (
+              <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} className="w-28 h-28 rounded-full object-cover border-4 border-primary/20 shadow-lg" />
+            ) : (
+              <div className="w-28 h-28 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-3xl shadow-lg">
+                {eleve.prenom[0]}{eleve.nom[0]}
+              </div>
+            )}
+            <div className="text-center">
+              <h2 className="text-xl font-bold">{eleve.prenom} {eleve.nom}</h2>
+              {eleve.classes?.nom && (
+                <p className="text-sm text-muted-foreground mt-1 flex items-center justify-center gap-1.5">
+                  <GraduationCap className="h-4 w-4" />
+                  {eleve.classes.nom}
+                </p>
+              )}
+            </div>
+            <div className="w-full space-y-2 mt-2">
+              {eleve.matricule && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <Hash className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-[11px] text-muted-foreground">Matricule</p>
+                    <p className="text-sm font-semibold">{eleve.matricule}</p>
+                  </div>
+                </div>
+              )}
+              {eleve.date_naissance && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-[11px] text-muted-foreground">Date de naissance</p>
+                    <p className="text-sm font-semibold">{new Date(eleve.date_naissance).toLocaleDateString('fr-FR')}</p>
+                  </div>
+                </div>
+              )}
+              {eleve.sexe && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-[11px] text-muted-foreground">Sexe</p>
+                    <p className="text-sm font-semibold">{eleve.sexe === 'M' ? 'Masculin' : 'Féminin'}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Games Overlay */}
       <AnimatePresence>
