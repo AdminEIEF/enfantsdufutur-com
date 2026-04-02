@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +14,7 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 import Autoplay from 'embla-carousel-autoplay';
 import { motion } from 'framer-motion';
 import LandingTarifs from '@/components/LandingTarifs';
+import SplashScreen from '@/components/SplashScreen';
 import heroImage from '@/assets/hero-school.jpg';
 import schoolAnglais from '@/assets/school-anglais.jpg';
 import schoolBepc from '@/assets/school-bepc.jpg';
@@ -25,6 +27,14 @@ import schoolClasse from '@/assets/school-classe.jpg';
 
 export default function Landing() {
   const { data: schoolConfig } = useSchoolConfig();
+  const [showSplash, setShowSplash] = useState(() => {
+    const seen = sessionStorage.getItem('splash-landing-seen');
+    return !seen;
+  });
+  const handleSplashComplete = useCallback(() => {
+    sessionStorage.setItem('splash-landing-seen', '1');
+    setShowSplash(false);
+  }, []);
 
   const handleDownloadLogo = async () => {
     if (!schoolConfig?.logo_url) return;
@@ -98,6 +108,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
