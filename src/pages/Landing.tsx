@@ -18,6 +18,10 @@ import schoolAnglais from '@/assets/school-anglais.jpg';
 import schoolBepc from '@/assets/school-bepc.jpg';
 import schoolDrapeau from '@/assets/school-drapeau.jpg';
 import schoolGraduation from '@/assets/school-graduation.jpg';
+import schoolCantine from '@/assets/school-cantine.jpg';
+import schoolJeux from '@/assets/school-jeux.jpg';
+import schoolMaternelle from '@/assets/school-maternelle.jpg';
+import schoolClasse from '@/assets/school-classe.jpg';
 
 export default function Landing() {
   const { data: schoolConfig } = useSchoolConfig();
@@ -263,6 +267,10 @@ export default function Landing() {
             <CarouselContent>
               {[
                 { src: schoolAnglais, alt: "Anglais et Informatique dès la maternelle" },
+                { src: schoolCantine, alt: "La cantine scolaire" },
+                { src: schoolMaternelle, alt: "Activités en maternelle" },
+                { src: schoolClasse, alt: "Salle de classe décorée" },
+                { src: schoolJeux, alt: "Espace jeux et détente" },
                 { src: schoolBepc, alt: "100% d'admission au BEPC" },
                 { src: schoolDrapeau, alt: "Cérémonie du drapeau" },
                 { src: schoolGraduation, alt: "Cérémonie de graduation" },
