@@ -355,17 +355,29 @@ export default function Landing() {
               Découvrez l'ambiance et les activités de l'École Internationale Les Enfants du Futur.
             </p>
           </div>
-          <div className="flex justify-center">
-            <div className="w-full max-w-2xl rounded-2xl overflow-hidden shadow-xl bg-background">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <div className="rounded-2xl overflow-hidden shadow-xl bg-background">
               <iframe
                 src="https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F3512882682204390&show_text=false"
-                className="w-full aspect-[9/16] sm:aspect-video"
+                className="w-full aspect-[9/16]"
                 style={{ border: 'none', overflow: 'hidden' }}
                 scrolling="no"
                 frameBorder="0"
                 allowFullScreen
                 allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                title="Vidéo de l'école"
+                title="Vidéo de l'école 1"
+              />
+            </div>
+            <div className="rounded-2xl overflow-hidden shadow-xl bg-background">
+              <iframe
+                src="https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F1617863476248678&show_text=false"
+                className="w-full aspect-[9/16]"
+                style={{ border: 'none', overflow: 'hidden' }}
+                scrolling="no"
+                frameBorder="0"
+                allowFullScreen
+                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                title="Vidéo de l'école 2"
               />
             </div>
           </div>
