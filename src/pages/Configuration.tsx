@@ -208,7 +208,7 @@ function NiveauxTab() {
   const save = useMutation({
     mutationFn: async () => {
       if (!nom || !cycleId) throw new Error('Champs requis');
-      const payload = { nom, cycle_id: cycleId, ordre, frais_scolarite: frais, frais_inscription: fraisInscription, frais_reinscription: fraisReinscription, frais_dossier: fraisDossier, frais_assurance: fraisAssurance, frais_examen: fraisExamen, total_inscription_fixe: totalInscriptionFixe, total_reinscription_fixe: totalReinscriptionFixe };
+      const payload = { nom, cycle_id: cycleId, ordre, frais_scolarite: frais, frais_inscription: fraisInscription, frais_reinscription: fraisReinscription, frais_dossier: fraisDossier, frais_assurance: fraisAssurance, frais_examen: fraisExamen, total_inscription_fixe: totalInscriptionFixe, total_reinscription_fixe: totalReinscriptionFixe, remise_reinscription: remiseReinscription };
       if (editId) {
         const { error } = await supabase.from('niveaux').update(payload).eq('id', editId);
         if (error) throw error;
