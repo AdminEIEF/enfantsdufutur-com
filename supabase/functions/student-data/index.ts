@@ -250,7 +250,7 @@ serve(async (req) => {
       const now = new Date().toISOString();
       const { data: comps } = await supabaseAdmin
         .from("compositions")
-        .select("id, titre, description, matiere_id, duree_minutes, date_debut, date_fin, bareme, matieres:matiere_id(nom)")
+        .select("id, titre, description, matiere_id, duree_minutes, date_debut, date_fin, bareme, type_composition, sujet_url, sujet_nom, matieres:matiere_id(nom)")
         .eq("classe_id", classeId)
         .eq("publie", true)
         .order("date_debut", { ascending: false });
