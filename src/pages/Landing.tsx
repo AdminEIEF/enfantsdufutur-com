@@ -58,8 +58,8 @@ export default function Landing() {
 
   const stats = [
     { label: 'Élèves inscrits', value: `${dbStats?.eleves ?? 0}`, icon: Users },
-    { label: "Années d'excellence", value: `${anneesExcellence}`, icon: Award },
-    { label: 'Taux de réussite', value: '98%', icon: Star },
+    { label: "Années d'excellence", value: `+${anneesExcellence}`, icon: Award },
+    { label: 'Taux de réussite', value: '100%', icon: Star },
     { label: 'Enseignants qualifiés', value: `${dbStats?.enseignants ?? 0}`, icon: BookOpen },
   ];
 
