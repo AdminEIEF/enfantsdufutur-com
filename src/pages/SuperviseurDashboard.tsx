@@ -120,6 +120,10 @@ export default function SuperviseurDashboard() {
     { label: 'Inscrits', value: stats.inscrits, icon: UserPlus, color: 'text-green-600', borderColor: 'border-green-200 dark:border-green-800', gradient: 'from-green-500/10 via-green-500/5 to-transparent', iconBg: 'bg-green-500/15' },
     { label: 'Réinscrits', value: stats.reinscrits, icon: RefreshCw, color: 'text-emerald-600', borderColor: 'border-emerald-200 dark:border-emerald-800', gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent', iconBg: 'bg-emerald-500/15' },
     { label: 'Paiements totaux', value: `${stats.totalPaiements.toLocaleString('fr-FR')} F`, icon: DollarSign, color: 'text-teal-600', borderColor: 'border-teal-200 dark:border-teal-800', gradient: 'from-teal-500/10 via-teal-500/5 to-transparent', iconBg: 'bg-teal-500/15' },
+    { label: 'Dépenses validées', value: `${stats.totalDepenses.toLocaleString('fr-FR')} F`, icon: DollarSign, color: 'text-red-600', borderColor: 'border-red-200 dark:border-red-800', gradient: 'from-red-500/10 via-red-500/5 to-transparent', iconBg: 'bg-red-500/15' },
+    { label: 'Notes saisies', value: stats.totalNotes, icon: BookOpen, color: 'text-cyan-600', borderColor: 'border-cyan-200 dark:border-cyan-800', gradient: 'from-cyan-500/10 via-cyan-500/5 to-transparent', iconBg: 'bg-cyan-500/15' },
+    { label: 'Compositions', value: stats.totalCompositions, icon: FileText, color: 'text-violet-600', borderColor: 'border-violet-200 dark:border-violet-800', gradient: 'from-violet-500/10 via-violet-500/5 to-transparent', iconBg: 'bg-violet-500/15' },
+    { label: 'Connectés maintenant', value: stats.totalConnectes, icon: ShieldCheck, color: 'text-lime-600', borderColor: 'border-lime-200 dark:border-lime-800', gradient: 'from-lime-500/10 via-lime-500/5 to-transparent', iconBg: 'bg-lime-500/15' },
   ];
 
   const cycleOrder = ['Crèche', 'Maternelle', 'Primaire', 'Collège', 'Lycée'];
