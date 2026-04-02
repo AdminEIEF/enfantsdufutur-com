@@ -63,15 +63,15 @@ export function StudentLayout({ children }: { children: ReactNode }) {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b">
         <div className="max-w-4xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">
+          <button onClick={() => setProfileOpen(true)} className="flex items-center gap-2 min-w-0 cursor-pointer hover:opacity-80 transition-opacity">
             {eleve.photo_url ? (
-              <img src={eleve.photo_url} alt="" loading="lazy" decoding="async" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border-2 border-blue-200 shrink-0" />
+              <img src={eleve.photo_url} alt="" loading="lazy" decoding="async" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border-2 border-primary/20 shrink-0" />
             ) : (
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-[10px] sm:text-xs shrink-0">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] sm:text-xs shrink-0">
                 {eleve.prenom[0]}{eleve.nom[0]}
               </div>
             )}
-            <div className="min-w-0">
+            <div className="min-w-0 text-left">
               <h1 className="font-bold text-xs sm:text-sm leading-tight truncate">
                 {eleve.prenom} {eleve.nom}
               </h1>
@@ -79,7 +79,7 @@ export function StudentLayout({ children }: { children: ReactNode }) {
                 {eleve.classes?.nom || 'Espace Élève'}
               </p>
             </div>
-          </div>
+          </button>
           <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
             <NotificationBell
               mode="student"
