@@ -24,6 +24,12 @@ import schoolCantine from '@/assets/school-cantine.jpg';
 import schoolJeux from '@/assets/school-jeux.jpg';
 import schoolMaternelle from '@/assets/school-maternelle.jpg';
 import schoolClasse from '@/assets/school-classe.jpg';
+import schoolEvent1 from '@/assets/school-event1.jpg';
+import schoolEvent2 from '@/assets/school-event2.jpg';
+import schoolEvent3 from '@/assets/school-event3.jpg';
+import schoolEvent4 from '@/assets/school-event4.jpg';
+import schoolEvent5 from '@/assets/school-event5.jpg';
+import schoolEvent6 from '@/assets/school-event6.jpg';
 
 export default function Landing() {
   const { data: schoolConfig } = useSchoolConfig();
