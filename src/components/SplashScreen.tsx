@@ -59,9 +59,9 @@ export default function SplashScreen({ onComplete, subtitle }: SplashScreenProps
               className="mb-6"
             >
               {logoUrl ? (
-                <img src={logoUrl} alt="Logo" className="h-24 w-24 rounded-2xl shadow-2xl object-contain bg-white/10 p-2" />
+                <img src={logoUrl} alt="Logo" className="h-24 w-24 rounded-2xl shadow-2xl object-contain bg-white p-2" />
               ) : (
-                <img src={schoolLogo} alt="Logo" className="h-24 w-24 rounded-2xl shadow-2xl object-contain bg-white/10 p-2" />
+                <img src={schoolLogo} alt="Logo" className="h-24 w-24 rounded-2xl shadow-2xl object-contain bg-white p-2" />
               )}
             </motion.div>
 
