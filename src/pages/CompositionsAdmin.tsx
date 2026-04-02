@@ -187,14 +187,16 @@ export default function CompositionsAdmin() {
     setQuestionsLoading(false);
   }
 
-  function addQuestion(type: 'qcm' | 'vrai_faux') {
+  function addQuestion(type: 'qcm' | 'vrai_faux' | 'texte') {
     const newQ: Question = {
       type_question: type,
       enonce: '',
       options: type === 'vrai_faux'
         ? [{ label: 'Vrai' }, { label: 'Faux' }]
+        : type === 'texte'
+        ? []
         : [{ label: '' }, { label: '' }, { label: '' }, { label: '' }],
-      reponse_correcte: '',
+      reponse_correcte: type === 'texte' ? '_texte_' : '',
       points: 1,
       ordre: questions.length,
     };
