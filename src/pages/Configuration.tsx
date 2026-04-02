@@ -234,7 +234,7 @@ function NiveauxTab() {
     setEditId(n.id); setNom(n.nom); setCycleId(n.cycle_id); setOrdre(n.ordre); setFrais(n.frais_scolarite);
     setFraisInscription(n.frais_inscription ?? 100000); setFraisReinscription(n.frais_reinscription ?? 150000);
     setFraisDossier(n.frais_dossier ?? 0); setFraisAssurance(n.frais_assurance ?? 0);
-    setFraisExamen(n.frais_examen ?? 0); setTotalInscriptionFixe(n.total_inscription_fixe ?? 0); setTotalReinscriptionFixe(n.total_reinscription_fixe ?? 0); setOpen(true);
+    setFraisExamen(n.frais_examen ?? 0); setTotalInscriptionFixe(n.total_inscription_fixe ?? 0); setTotalReinscriptionFixe(n.total_reinscription_fixe ?? 0); setRemiseReinscription(n.remise_reinscription ?? 0); setOpen(true);
   };
 
   return (
