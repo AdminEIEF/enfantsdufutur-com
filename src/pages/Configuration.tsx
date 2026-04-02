@@ -260,9 +260,13 @@ function NiveauxTab() {
           <TableBody>
             {isLoading ? (
                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Chargement…</TableCell></TableRow>
-            ) : niveaux?.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Aucun niveau configuré</TableCell></TableRow>
-            ) : niveaux?.map((n: any) => (
+             ) : niveaux?.length === 0 ? (
+              <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground">Aucun niveau configuré</TableCell></TableRow>
+            ) : niveaux?.map((n: any) => {
+              const examen = Number(n.frais_examen ?? 0);
+              const totalInscr = Number(n.frais_scolarite) + Number(n.frais_inscription ?? 100000) + Number(n.frais_dossier ?? 0) + Number(n.frais_assurance ?? 0) + examen;
+              const totalReinscr = Number(n.frais_scolarite) + Number(n.frais_reinscription ?? 150000) + Number(n.frais_dossier ?? 0) + Number(n.frais_assurance ?? 0) + examen;
+              return (
               <TableRow key={n.id}>
                 <TableCell className="font-medium">{n.nom}</TableCell>
                 <TableCell>{n.cycles?.nom}</TableCell>
@@ -271,6 +275,9 @@ function NiveauxTab() {
                 <TableCell>{Number(n.frais_inscription ?? 100000).toLocaleString()} GNF</TableCell>
                 <TableCell>{Number(n.frais_dossier ?? 0).toLocaleString()} GNF</TableCell>
                 <TableCell>{Number(n.frais_assurance ?? 0).toLocaleString()} GNF</TableCell>
+                <TableCell className={examen > 0 ? 'font-semibold text-indigo-600' : ''}>{examen > 0 ? examen.toLocaleString() + ' GNF' : '—'}</TableCell>
+                <TableCell className="font-bold text-emerald-600">{totalInscr.toLocaleString()} GNF</TableCell>
+                <TableCell className="font-bold text-violet-600">{totalReinscr.toLocaleString()} GNF</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(n)}><Pencil className="h-4 w-4" /></Button>
