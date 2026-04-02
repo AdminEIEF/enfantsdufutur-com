@@ -69,6 +69,10 @@ export default function LandingTarifs() {
         ),
         { label: 'Frais de dossier', value: selectedNiveau.frais_dossier, icon: Banknote, color: 'text-amber-600 bg-amber-100' },
         { label: 'Frais d\'assurance', value: selectedNiveau.frais_assurance, icon: Shield, color: 'text-rose-600 bg-rose-100' },
+        ...(selectedNiveau.frais_examen > 0
+          ? [{ label: 'Frais d\'examen (classe d\'examen)', value: selectedNiveau.frais_examen, icon: GraduationCap, color: 'text-indigo-600 bg-indigo-100' }]
+          : []
+        ),
       ]
     : [];
 
