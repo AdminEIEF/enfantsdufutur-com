@@ -499,6 +499,38 @@ export default function StudentCompositions() {
             ))}
           </div>
 
+          {/* Photos section */}
+          <Card className="border-dashed">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Camera className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">📸 Photos de votre travail</span>
+                </div>
+                <Button variant="outline" size="sm" onClick={capturePhoto}>
+                  <Camera className="h-4 w-4 mr-1" /> Prendre une photo
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Vous pouvez prendre en photo votre brouillon ou travail écrit pour le joindre à votre réponse.</p>
+              {photos.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {photos.map(p => (
+                    <div key={p.id} className="relative group">
+                      <img src={p.dataUrl} alt="Photo" className="w-full h-32 object-cover rounded-lg border" />
+                      <Button
+                        variant="destructive" size="icon"
+                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removePhoto(p.id)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <div className="sticky bottom-0 bg-background py-4 border-t">
             <Button className="w-full" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
               {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
