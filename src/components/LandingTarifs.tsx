@@ -198,9 +198,12 @@ export default function LandingTarifs() {
 
                 {/* Total */}
                 <div className="mt-6 p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between">
-                  <span className="font-semibold text-sm sm:text-base">
-                    Total estimé ({mode === 'inscription' ? 'nouvelle inscription' : 'réinscription'})
-                  </span>
+                  <div>
+                    <span className="font-semibold text-sm sm:text-base">
+                      Total estimé ({mode === 'inscription' ? 'nouvelle inscription' : 'réinscription'})
+                    </span>
+                    {isFixe && <Badge variant="secondary" className="ml-2 text-[10px]">Forfait classe d'examen</Badge>}
+                  </div>
                   <span className="text-lg sm:text-xl font-bold text-primary" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     {fmt(totalFrais)}
                   </span>
