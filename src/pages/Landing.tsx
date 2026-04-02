@@ -14,6 +14,7 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 import Autoplay from 'embla-carousel-autoplay';
 import { motion } from 'framer-motion';
 import LandingTarifs from '@/components/LandingTarifs';
+import SplashScreen from '@/components/SplashScreen';
 import heroImage from '@/assets/hero-school.jpg';
 import schoolAnglais from '@/assets/school-anglais.jpg';
 import schoolBepc from '@/assets/school-bepc.jpg';
