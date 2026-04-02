@@ -156,6 +156,25 @@ export default function StudentCompositions() {
           reponse_texte: htmlContent,
         });
         toast.success(data.message || 'Composition soumise !');
+      } else if (activeType === 'texte') {
+        // Build HTML from text answers
+        const textParts = activeQuestions.map((q: any, idx: number) => {
+          const answer = answers[q.id] || '';
+          return `<div><strong>Q${idx + 1}: ${q.enonce}</strong><br/>${answer.replace(/\n/g, '<br/>')}</div>`;
+        }).join('<hr/>');
+        
+        if (!autoSubmit) {
+          const unanswered = activeQuestions.filter((q: any) => !answers[q.id]?.trim());
+          if (unanswered.length > 0 && !confirm(`${unanswered.length} question(s) sans réponse. Soumettre quand même ?`)) {
+            setSubmitting(false);
+            return;
+          }
+        }
+        const data = await callApi('submit_composition', {
+          composition_id: activeComp.id,
+          reponse_texte: textParts,
+        });
+        toast.success(data.message || 'Composition soumise !');
       } else {
         if (!autoSubmit) {
           const unanswered = activeQuestions.filter(q => !answers[q.id]);
