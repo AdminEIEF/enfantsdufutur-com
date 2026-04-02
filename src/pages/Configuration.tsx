@@ -314,6 +314,7 @@ function NiveauxTab() {
               <div><Label>Frais de dossier (GNF)</Label><Input type="number" value={fraisDossier} onChange={e => setFraisDossier(Number(e.target.value))} /></div>
               <div><Label>Assurance scolaire (GNF)</Label><Input type="number" value={fraisAssurance} onChange={e => setFraisAssurance(Number(e.target.value))} /></div>
             </div>
+            <div><Label>Frais d'examen — classe d'examen (GNF)</Label><Input type="number" value={fraisExamen} onChange={e => setFraisExamen(Number(e.target.value))} placeholder="0 si pas classe d'examen" /></div>
           </div>
           <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button></DialogFooter>
         </DialogContent>
