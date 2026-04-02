@@ -437,7 +437,7 @@ export default function CompositionsAdmin() {
         </DialogContent>
       </Dialog>
 
-      {/* Questions Dialog - only for QCM type */}
+      {/* Questions Dialog - for QCM and Texte types */}
       <Dialog open={!!showQuestions} onOpenChange={() => setShowQuestions(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -452,7 +452,9 @@ export default function CompositionsAdmin() {
                 <Card key={idx} className="border">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center justify-between gap-2">
-                      <Badge variant="outline">{q.type_question === 'qcm' ? 'QCM' : 'Vrai/Faux'} — Q{idx + 1}</Badge>
+                      <Badge variant="outline">
+                        {q.type_question === 'qcm' ? 'QCM' : q.type_question === 'texte' ? '✍️ Texte' : 'Vrai/Faux'} — Q{idx + 1}
+                      </Badge>
                       <div className="flex items-center gap-2">
                         <Label className="text-xs">Points:</Label>
                         <Input type="number" className="w-16 h-8" value={q.points} onChange={e => updateQuestion(idx, { points: Number(e.target.value) })} min={0.5} step={0.5} />
@@ -462,47 +464,66 @@ export default function CompositionsAdmin() {
                       </div>
                     </div>
                     <Textarea placeholder="Énoncé de la question" value={q.enonce} onChange={e => updateQuestion(idx, { enonce: e.target.value })} rows={2} />
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">Réponse correcte :</Label>
-                      <RadioGroup value={q.reponse_correcte} onValueChange={v => updateQuestion(idx, { reponse_correcte: v })}>
-                        {q.options.map((opt, oi) => (
-                          <div key={oi} className="flex items-center gap-2">
-                            <RadioGroupItem value={opt.label || `opt_${oi}`} id={`q${idx}_o${oi}`} />
-                            {q.type_question === 'vrai_faux' ? (
-                              <Label htmlFor={`q${idx}_o${oi}`} className="cursor-pointer">{opt.label}</Label>
-                            ) : (
-                              <Input
-                                className="flex-1 h-8"
-                                placeholder={`Option ${oi + 1}`}
-                                value={opt.label}
-                                onChange={e => {
-                                  const newOpts = [...q.options];
-                                  const oldLabel = newOpts[oi].label;
-                                  newOpts[oi] = { ...newOpts[oi], label: e.target.value };
-                                  const updatedCorrect = q.reponse_correcte === oldLabel ? e.target.value : q.reponse_correcte;
-                                  updateQuestion(idx, { options: newOpts, reponse_correcte: updatedCorrect });
-                                }}
-                              />
-                            )}
-                            {q.reponse_correcte === (opt.label || `opt_${oi}`) && (
-                              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                            )}
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </div>
+                    {q.type_question === 'texte' ? (
+                      <p className="text-xs text-muted-foreground italic">L'élève répondra en texte libre à cette question. La correction sera manuelle.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Réponse correcte :</Label>
+                        <RadioGroup value={q.reponse_correcte} onValueChange={v => updateQuestion(idx, { reponse_correcte: v })}>
+                          {q.options.map((opt, oi) => (
+                            <div key={oi} className="flex items-center gap-2">
+                              <RadioGroupItem value={opt.label || `opt_${oi}`} id={`q${idx}_o${oi}`} />
+                              {q.type_question === 'vrai_faux' ? (
+                                <Label htmlFor={`q${idx}_o${oi}`} className="cursor-pointer">{opt.label}</Label>
+                              ) : (
+                                <Input
+                                  className="flex-1 h-8"
+                                  placeholder={`Option ${oi + 1}`}
+                                  value={opt.label}
+                                  onChange={e => {
+                                    const newOpts = [...q.options];
+                                    const oldLabel = newOpts[oi].label;
+                                    newOpts[oi] = { ...newOpts[oi], label: e.target.value };
+                                    const updatedCorrect = q.reponse_correcte === oldLabel ? e.target.value : q.reponse_correcte;
+                                    updateQuestion(idx, { options: newOpts, reponse_correcte: updatedCorrect });
+                                  }}
+                                />
+                              )}
+                              {q.reponse_correcte === (opt.label || `opt_${oi}`) && (
+                                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                              )}
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
 
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => addQuestion('qcm')}>
-                  <Plus className="h-4 w-4 mr-1" /> QCM
-                </Button>
-                <Button variant="outline" onClick={() => addQuestion('vrai_faux')}>
-                  <Plus className="h-4 w-4 mr-1" /> Vrai/Faux
-                </Button>
-              </div>
+              {(() => {
+                const compForQuestions = compositions.find(c => c.id === showQuestions);
+                const isTexteType = compForQuestions?.type_composition === 'texte';
+                return (
+                  <div className="flex gap-2">
+                    {!isTexteType && (
+                      <>
+                        <Button variant="outline" onClick={() => addQuestion('qcm')}>
+                          <Plus className="h-4 w-4 mr-1" /> QCM
+                        </Button>
+                        <Button variant="outline" onClick={() => addQuestion('vrai_faux')}>
+                          <Plus className="h-4 w-4 mr-1" /> Vrai/Faux
+                        </Button>
+                      </>
+                    )}
+                    {isTexteType && (
+                      <Button variant="outline" onClick={() => addQuestion('texte')}>
+                        <Plus className="h-4 w-4 mr-1" /> Question texte
+                      </Button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           )}
           <DialogFooter>
