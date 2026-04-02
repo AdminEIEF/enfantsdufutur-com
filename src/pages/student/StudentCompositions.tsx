@@ -567,7 +567,7 @@ export default function StudentCompositions() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold">{comp.titre}</h3>
                           <Badge variant="outline" className="text-xs">
-                            {isDocument ? '📄 Document' : '📝 QCM'}
+                            {isDocument ? '📄 Document' : comp.type_composition === 'texte' ? '✍️ Texte' : '📝 QCM'}
                           </Badge>
                           {status === 'done' && <Badge className="bg-emerald-100 text-emerald-700">Terminée</Badge>}
                           {status === 'in_progress' && <Badge className="bg-amber-100 text-amber-700">En cours</Badge>}
