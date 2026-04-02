@@ -366,6 +366,7 @@ export default function CompositionsAdmin() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="qcm">📝 QCM / Vrai-Faux</SelectItem>
+                    <SelectItem value="texte">✍️ Questions texte — Réponse libre</SelectItem>
                     <SelectItem value="document">📄 Document (PDF/Word) — Réponse texte</SelectItem>
                   </SelectContent>
                 </Select>
