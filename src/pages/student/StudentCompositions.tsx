@@ -232,7 +232,7 @@ export default function StudentCompositions() {
     } finally {
       setSubmitting(false);
     }
-  }, [activeComp, activeQuestions, answers, submitting, session, activeType]);
+  }, [activeComp, activeQuestions, answers, submitting, session, activeType, photos]);
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
