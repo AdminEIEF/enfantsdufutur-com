@@ -17,6 +17,8 @@ interface Niveau {
   frais_dossier: number;
   frais_assurance: number;
   frais_examen: number;
+  total_inscription_fixe: number;
+  total_reinscription_fixe: number;
   cycle_id: string;
 }
 
@@ -46,7 +48,7 @@ export default function LandingTarifs() {
     queryFn: async () => {
       const { data } = await supabase
         .from('niveaux')
-        .select('id, nom, ordre, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, frais_examen, cycle_id')
+        .select('id, nom, ordre, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, frais_examen, total_inscription_fixe, total_reinscription_fixe, cycle_id')
         .order('ordre');
       return (data ?? []) as Niveau[];
     },
@@ -76,7 +78,13 @@ export default function LandingTarifs() {
       ]
     : [];
 
-  const totalFrais = fraisItems.reduce((s, f) => s + f.value, 0);
+  const calcTotal = fraisItems.reduce((s, f) => s + f.value, 0);
+  const fixeInscr = selectedNiveau ? Number(selectedNiveau.total_inscription_fixe ?? 0) : 0;
+  const fixeReinscr = selectedNiveau ? Number(selectedNiveau.total_reinscription_fixe ?? 0) : 0;
+  const totalFrais = mode === 'inscription'
+    ? (fixeInscr > 0 ? fixeInscr : calcTotal)
+    : (fixeReinscr > 0 ? fixeReinscr : calcTotal);
+  const isFixe = mode === 'inscription' ? fixeInscr > 0 : fixeReinscr > 0;
 
   return (
     <section id="tarifs" className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
@@ -190,9 +198,12 @@ export default function LandingTarifs() {
 
                 {/* Total */}
                 <div className="mt-6 p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between">
-                  <span className="font-semibold text-sm sm:text-base">
-                    Total estimé ({mode === 'inscription' ? 'nouvelle inscription' : 'réinscription'})
-                  </span>
+                  <div>
+                    <span className="font-semibold text-sm sm:text-base">
+                      Total estimé ({mode === 'inscription' ? 'nouvelle inscription' : 'réinscription'})
+                    </span>
+                    {isFixe && <Badge variant="secondary" className="ml-2 text-[10px]">Forfait classe d'examen</Badge>}
+                  </div>
                   <span className="text-lg sm:text-xl font-bold text-primary" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     {fmt(totalFrais)}
                   </span>

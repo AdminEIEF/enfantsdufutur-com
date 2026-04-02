@@ -2210,6 +2210,8 @@ export type Database = {
           id: string
           nom: string
           ordre: number
+          total_inscription_fixe: number | null
+          total_reinscription_fixe: number | null
         }
         Insert: {
           created_at?: string
@@ -2223,6 +2225,8 @@ export type Database = {
           id?: string
           nom: string
           ordre?: number
+          total_inscription_fixe?: number | null
+          total_reinscription_fixe?: number | null
         }
         Update: {
           created_at?: string
@@ -2236,6 +2240,8 @@ export type Database = {
           id?: string
           nom?: string
           ordre?: number
+          total_inscription_fixe?: number | null
+          total_reinscription_fixe?: number | null
         }
         Relationships: [
           {
