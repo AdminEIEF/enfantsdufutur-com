@@ -2203,6 +2203,7 @@ export type Database = {
           cycle_id: string
           frais_assurance: number
           frais_dossier: number
+          frais_examen: number
           frais_inscription: number
           frais_reinscription: number
           frais_scolarite: number
@@ -2215,6 +2216,7 @@ export type Database = {
           cycle_id: string
           frais_assurance?: number
           frais_dossier?: number
+          frais_examen?: number
           frais_inscription?: number
           frais_reinscription?: number
           frais_scolarite?: number
@@ -2227,6 +2229,7 @@ export type Database = {
           cycle_id?: string
           frais_assurance?: number
           frais_dossier?: number
+          frais_examen?: number
           frais_inscription?: number
           frais_reinscription?: number
           frais_scolarite?: number

@@ -1,0 +1,1 @@
+ALTER TABLE public.niveaux ADD COLUMN frais_examen numeric NOT NULL DEFAULT 0;

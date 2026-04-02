@@ -16,6 +16,7 @@ interface Niveau {
   frais_reinscription: number;
   frais_dossier: number;
   frais_assurance: number;
+  frais_examen: number;
   cycle_id: string;
 }
 
@@ -45,7 +46,7 @@ export default function LandingTarifs() {
     queryFn: async () => {
       const { data } = await supabase
         .from('niveaux')
-        .select('id, nom, ordre, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, cycle_id')
+        .select('id, nom, ordre, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, frais_examen, cycle_id')
         .order('ordre');
       return (data ?? []) as Niveau[];
     },
@@ -68,6 +69,10 @@ export default function LandingTarifs() {
         ),
         { label: 'Frais de dossier', value: selectedNiveau.frais_dossier, icon: Banknote, color: 'text-amber-600 bg-amber-100' },
         { label: 'Frais d\'assurance', value: selectedNiveau.frais_assurance, icon: Shield, color: 'text-rose-600 bg-rose-100' },
+        ...(selectedNiveau.frais_examen > 0
+          ? [{ label: 'Frais d\'examen (classe d\'examen)', value: selectedNiveau.frais_examen, icon: GraduationCap, color: 'text-indigo-600 bg-indigo-100' }]
+          : []
+        ),
       ]
     : [];
 

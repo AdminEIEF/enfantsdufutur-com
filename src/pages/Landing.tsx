@@ -58,8 +58,8 @@ export default function Landing() {
 
   const stats = [
     { label: 'Élèves inscrits', value: `${dbStats?.eleves ?? 0}`, icon: Users },
-    { label: "Années d'excellence", value: `${anneesExcellence}`, icon: Award },
-    { label: 'Taux de réussite', value: '98%', icon: Star },
+    { label: "Années d'excellence", value: `+${anneesExcellence}`, icon: Award },
+    { label: 'Taux de réussite', value: '100%', icon: Star },
     { label: 'Enseignants qualifiés', value: `${dbStats?.enseignants ?? 0}`, icon: BookOpen },
   ];
 
@@ -355,16 +355,16 @@ export default function Landing() {
               Découvrez l'ambiance et les activités de l'École Internationale Les Enfants du Futur.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
             {[
               { id: '3512882682204390', title: 'Vidéo de l\'école 1' },
               { id: '1617863476248678', title: 'Vidéo de l\'école 2' },
               { id: '3843230585974453', title: 'Vidéo de l\'école 3' },
             ].map((video) => (
-              <div key={video.id} className="rounded-2xl overflow-hidden shadow-xl bg-background">
+              <div key={video.id} className="rounded-2xl overflow-hidden shadow-xl bg-background border border-border/40">
                 <iframe
-                  src={`https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F${video.id}&show_text=false`}
-                  className="w-full aspect-[9/16]"
+                  src={`https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F${video.id}&show_text=false&width=300`}
+                  className="w-full aspect-[9/16] min-h-[400px] sm:min-h-[450px]"
                   style={{ border: 'none', overflow: 'hidden' }}
                   scrolling="no"
                   frameBorder="0"
