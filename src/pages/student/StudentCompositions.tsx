@@ -92,10 +92,25 @@ export default function StudentCompositions() {
     allowPasteInEditable: true,
   });
 
+  // Auto-refresh compositions list every 10s
   useEffect(() => {
-    if (session) fetchCompositions();
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [session]);
+    if (!session) return;
+    fetchCompositions();
+    const refreshId = setInterval(() => {
+      if (!activeComp) fetchCompositions();
+    }, 10000);
+    return () => {
+      clearInterval(refreshId);
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [session, activeComp]);
+
+  // Live countdown tick every second for upcoming compositions
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const callApi = async (action: string, extra: any = {}) => {
     const resp = await fetch(
@@ -262,10 +277,23 @@ export default function StudentCompositions() {
     const rep = reponses.find((r: any) => r.composition_id === comp.id);
     if (rep?.soumis_at) return 'done';
     if (rep) return 'in_progress';
-    const now = new Date();
-    if (new Date(comp.date_fin) < now) return 'expired';
-    if (new Date(comp.date_debut) > now) return 'upcoming';
+    const now = Date.now();
+    if (new Date(comp.date_fin).getTime() < now) return 'expired';
+    if (new Date(comp.date_debut).getTime() > now) return 'upcoming';
     return 'available';
+  };
+
+  const getCountdown = (comp: any) => {
+    const diff = new Date(comp.date_debut).getTime() - Date.now();
+    if (diff <= 0) return null;
+    const totalSec = Math.floor(diff / 1000);
+    const d = Math.floor(totalSec / 86400);
+    const h = Math.floor((totalSec % 86400) / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (d > 0) return `${d}j ${h}h ${m}m ${s}s`;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    return `${m}m ${s}s`;
   };
 
   // Rich text editor commands
@@ -687,8 +715,17 @@ export default function StudentCompositions() {
                         <p className="text-sm text-muted-foreground mt-1">{comp.matieres?.nom} • {comp.duree_minutes} min • /{comp.bareme}</p>
                         <p className="text-xs text-muted-foreground mt-1">
                           <Clock className="h-3 w-3 inline mr-1" />
-                          {new Date(comp.date_debut).toLocaleDateString('fr')} → {new Date(comp.date_fin).toLocaleDateString('fr')}
+                          {new Date(comp.date_debut).toLocaleDateString('fr')} {new Date(comp.date_debut).toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' })} → {new Date(comp.date_fin).toLocaleDateString('fr')} {new Date(comp.date_fin).toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' })}
                         </p>
+                        {status === 'upcoming' && (() => {
+                          const countdown = getCountdown(comp);
+                          return countdown ? (
+                            <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/5 border border-primary/20 animate-pulse">
+                              <Timer className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-bold font-mono text-primary">Début dans {countdown}</span>
+                            </div>
+                          ) : null;
+                        })()}
                         {status === 'done' && rep && !isDocument && !isTexte && (
                           <p className="text-sm font-bold mt-2 text-primary">Score : {rep.score}/{comp.bareme}</p>
                         )}
