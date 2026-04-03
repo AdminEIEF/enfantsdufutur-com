@@ -392,7 +392,7 @@ export default function Landing() {
               <div key={video.id} className="rounded-3xl overflow-hidden shadow-xl bg-background border border-border/30">
                 <iframe
                   src={`https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F${video.id}&show_text=false&width=300`}
-                  className="w-full aspect-[9/16] min-h-[400px] sm:min-h-[450px]"
+                  className="w-full aspect-[9/16]"
                   style={{ border: 'none', overflow: 'hidden' }}
                   scrolling="no"
                   frameBorder="0"
