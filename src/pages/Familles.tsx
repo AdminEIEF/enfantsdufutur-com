@@ -25,7 +25,7 @@ function useFamilles() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('familles')
-        .select('id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse, solde_famille, created_at, updated_at, eleves(id, nom, prenom, statut, matricule, date_naissance, sexe, classe_id, classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom))))')
+        .select('id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse, solde_famille, created_at, updated_at, eleves(id, nom, prenom, statut, matricule, date_naissance, sexe, photo_url, photo_thumbnail_url, classe_id, classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom))))')
         .order('nom_famille');
       if (error) throw error;
       return data;
