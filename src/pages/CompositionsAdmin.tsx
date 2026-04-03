@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { Plus, Trash2, Edit, Eye, Loader2, FileQuestion, CheckCircle2, Clock, GripVertical, Upload, FileText, Wifi, Users, ChevronDown, ChevronUp, Monitor } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { MathText } from '@/components/MathText';
 
 interface ConnectedStudent {
   id: string;
