@@ -44,7 +44,7 @@ function ConnectedStudentsDashboard() {
         .order('classe_nom');
       return (data || []) as ConnectedStudent[];
     },
-    refetchInterval: 2000,
+    refetchInterval: 1000,
   });
 
   // Fetch total students per class with niveau info
