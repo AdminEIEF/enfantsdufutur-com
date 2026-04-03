@@ -856,7 +856,25 @@ export default function CompositionsAdmin() {
                       <details className="mt-2">
                         <summary className="text-xs text-primary cursor-pointer">Voir la réponse de l'élève</summary>
                         <div className="mt-2 p-3 bg-muted/50 rounded text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: r.reponse_texte }} />
-                        {r.score == null && (
+                        {r.score != null ? (
+                          <div className="mt-2 flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">Note IA</Badge>
+                            <Input type="number" placeholder="Corriger" className="w-20" min={0} max={currentResultComp.bareme}
+                              id={`note-${r.id}`} defaultValue={r.score} />
+                            <Button size="sm" variant="outline" onClick={async () => {
+                              const noteEl = document.getElementById(`note-${r.id}`) as HTMLInputElement;
+                              const note = Number(noteEl?.value);
+                              if (isNaN(note)) { toast.error('Saisissez une note valide'); return; }
+                              const { error } = await supabase.from('composition_reponses')
+                                .update({ score: note } as any).eq('id', r.id);
+                              if (error) { toast.error(error.message); return; }
+                              toast.success('Note corrigée');
+                              openResults(showResults!);
+                            }}>
+                              Corriger
+                            </Button>
+                          </div>
+                        ) : (
                           <div className="mt-2 flex items-center gap-2">
                             <Input type="number" placeholder="Note" className="w-20" min={0} max={currentResultComp.bareme}
                               id={`note-${r.id}`} />
