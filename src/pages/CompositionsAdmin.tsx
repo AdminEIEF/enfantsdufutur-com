@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,134 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit, Eye, Loader2, FileQuestion, CheckCircle2, Clock, GripVertical, Upload, FileText } from 'lucide-react';
+import { Plus, Trash2, Edit, Eye, Loader2, FileQuestion, CheckCircle2, Clock, GripVertical, Upload, FileText, Wifi, Users, ChevronDown, ChevronUp, Monitor } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
+interface ConnectedStudent {
+  id: string;
+  display_name: string;
+  classe_nom: string | null;
+  niveau_nom: string | null;
+  connected_at: string;
+  last_seen_at: string;
+}
+
+function ConnectedStudentsDashboard() {
+  const [expandedClass, setExpandedClass] = useState<string | null>(null);
+
+  const { data: connections = [], isLoading } = useQuery({
+    queryKey: ['connected-students-compositions'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('active_connections')
+        .select('id, type, display_name, classe_nom, niveau_nom, connected_at, last_seen_at')
+        .eq('type', 'eleve')
+        .order('classe_nom');
+      return (data || []) as ConnectedStudent[];
+    },
+    refetchInterval: 10000,
+  });
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, ConnectedStudent[]>();
+    connections.forEach(c => {
+      const key = c.classe_nom || 'Sans classe';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(c);
+    });
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [connections]);
+
+  const totalOnline = connections.length;
+
+  if (isLoading) {
+    return (
+      <Card className="border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent">
+        <CardContent className="py-4 flex items-center justify-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm text-muted-foreground">Chargement des connexions...</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent overflow-hidden">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <div className="relative">
+              <Monitor className="h-5 w-5 text-emerald-600" />
+              {totalOnline > 0 && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
+              )}
+            </div>
+            Élèves connectés en temps réel
+          </CardTitle>
+          <Badge className={`${totalOnline > 0 ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'} text-sm px-3`}>
+            <Wifi className="h-3.5 w-3.5 mr-1.5" />
+            {totalOnline} en ligne
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {totalOnline === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">Aucun élève connecté actuellement</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {grouped.map(([className, students]) => (
+              <Collapsible
+                key={className}
+                open={expandedClass === className}
+                onOpenChange={(open) => setExpandedClass(open ? className : null)}
+              >
+                <CollapsibleTrigger asChild>
+                  <button className="w-full text-left border rounded-xl p-3 bg-card hover:bg-accent/50 transition-colors group">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
+                          <Users className="h-4 w-4 text-emerald-600" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm truncate">{className}</p>
+                          <p className="text-xs text-muted-foreground">{students.length} élève{students.length > 1 ? 's' : ''}</p>
+                        </div>
+                      </div>
+                      {expandedClass === className ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                      )}
+                    </div>
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="mt-1 border rounded-lg bg-muted/30 divide-y max-h-48 overflow-y-auto">
+                    {students.map(s => {
+                      const ago = Math.round((Date.now() - new Date(s.last_seen_at).getTime()) / 60000);
+                      return (
+                        <div key={s.id} className="px-3 py-2 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                            <span className="text-sm truncate">{s.display_name}</span>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                            {ago < 1 ? 'à l\'instant' : `il y a ${ago}m`}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 interface Composition {
   id: string;
@@ -258,6 +385,9 @@ export default function CompositionsAdmin() {
 
   return (
     <div className="space-y-6">
+      {/* Connected Students Dashboard */}
+      <ConnectedStudentsDashboard />
+
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Compositions en ligne</h1>
