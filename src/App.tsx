@@ -108,9 +108,19 @@ const queryClient = new QueryClient({
       gcTime: 60_000,
       refetchOnMount: 'always',
       refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
     },
   },
 });
+
+// Force refetch all queries when app becomes visible (tab switch, phone unlock)
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      queryClient.invalidateQueries();
+    }
+  });
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
