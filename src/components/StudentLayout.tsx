@@ -103,23 +103,13 @@ export function StudentLayout({ children }: { children: ReactNode }) {
       {/* Profile Dialog */}
       <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
         <DialogContent className="max-w-sm p-0 overflow-hidden rounded-3xl border-0 shadow-2xl">
-          {/* Gradient Header */}
-          <div className="relative bg-gradient-to-br from-primary via-primary/80 to-accent pt-8 pb-12 px-6">
-            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 30% 20%, white 1px, transparent 1px), radial-gradient(circle at 70% 80%, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-            <DialogHeader>
-              <DialogTitle className="text-center text-primary-foreground text-lg font-bold tracking-wide">
-                Mon Profil
-              </DialogTitle>
-            </DialogHeader>
-          </div>
-
-          {/* Photo overlapping the gradient */}
-          <div className="flex flex-col items-center -mt-14 px-6 pb-6">
+          {/* Photo above gradient */}
+          <div className="flex justify-center pt-6 pb-2 bg-card">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', damping: 15, stiffness: 200 }}
-              className="w-28 h-28 rounded-3xl bg-gradient-to-br from-secondary via-primary to-accent p-[3px] shadow-xl ring-4 ring-background"
+              className="w-28 h-28 rounded-3xl bg-gradient-to-br from-secondary via-primary to-accent p-[3px] shadow-xl"
             >
               {eleve.photo_url ? (
                 <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} className="w-full h-full rounded-[21px] object-cover bg-background" />
@@ -129,6 +119,20 @@ export function StudentLayout({ children }: { children: ReactNode }) {
                 </div>
               )}
             </motion.div>
+          </div>
+
+          {/* Gradient Header */}
+          <div className="relative bg-gradient-to-br from-primary via-primary/80 to-accent py-4 px-6">
+            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 30% 20%, white 1px, transparent 1px), radial-gradient(circle at 70% 80%, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+            <DialogHeader>
+              <DialogTitle className="text-center text-primary-foreground text-lg font-bold tracking-wide">
+                Mon Profil
+              </DialogTitle>
+            </DialogHeader>
+          </div>
+
+          {/* Info section */}
+          <div className="flex flex-col items-center px-6 pb-6">
 
             <motion.div
               initial={{ y: 10, opacity: 0 }}
