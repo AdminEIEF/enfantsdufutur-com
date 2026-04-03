@@ -89,6 +89,7 @@ export default function StudentCompositions() {
     isActive: !!activeComp && !blocked,
     onViolation: handleSecurityViolation,
     maxViolations: 2,
+    allowPasteInEditable: true,
   });
 
   useEffect(() => {
@@ -190,10 +191,26 @@ export default function StudentCompositions() {
         });
         toast.success(data.message || 'Composition soumise !');
       } else if (activeType === 'texte') {
-        // Build HTML from text answers
-        const textParts = activeQuestions.map((q: any, idx: number) => {
-          const answer = answers[q.id] || '';
-          return `<div><strong>Q${idx + 1}: ${q.enonce}</strong><br/>${answer.replace(/\n/g, '<br/>')}</div>`;
+        const textPayload = activeQuestions.map((q: any, idx: number) => ({
+          question_id: q.id,
+          ordre: idx + 1,
+          question: q.enonce,
+          answer: (answers[q.id] || '').trim(),
+          points: q.points,
+        }));
+
+        const textParts = textPayload.map((item) => {
+          const safeQuestion = item.question
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+          const safeAnswer = item.answer
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br/>');
+
+          return `<div><strong>Q${item.ordre}: ${safeQuestion}</strong><br/>${safeAnswer || '<em>Aucune réponse</em>'}</div>`;
         }).join('<hr/>');
         
         if (!autoSubmit) {
@@ -206,6 +223,7 @@ export default function StudentCompositions() {
         const data = await callApi('submit_composition', {
           composition_id: activeComp.id,
           reponse_texte: textParts + photosHtml,
+          reponses: textPayload,
         });
         toast.success(data.message || 'Composition soumise !');
       } else {
@@ -512,8 +530,10 @@ export default function StudentCompositions() {
                       placeholder="Rédigez votre réponse ici..."
                       value={answers[q.id] || ''}
                       onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+                      onPaste={() => toast.success('Formule collée')}
                       rows={4}
                       className="resize-y"
+                      data-allow-exam-paste="true"
                     />
                   </div>
                 </CardContent>
