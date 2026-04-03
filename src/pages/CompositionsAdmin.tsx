@@ -356,7 +356,7 @@ export default function CompositionsAdmin() {
 
   // Get common matieres for selected classes via classe_matieres
   const [classeMatieres, setClasseMatieres] = useState<any[]>([]);
-  const activeClasseIds = editComp ? [form.classe_id] : form.classe_ids;
+  const activeClasseIds = form.classe_ids.length > 0 ? form.classe_ids : (form.classe_id ? [form.classe_id] : []);
   useEffect(() => {
     if (activeClasseIds.length === 0) { setClasseMatieres([]); return; }
     // Get matières for all selected classes and find common ones
