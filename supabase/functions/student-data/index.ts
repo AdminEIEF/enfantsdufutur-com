@@ -366,7 +366,7 @@ serve(async (req) => {
     if (action === "submit_composition") {
       const { data: comp } = await supabaseAdmin
         .from("compositions")
-        .select("id, duree_minutes, bareme, classe_id, type_composition")
+        .select("id, titre, duree_minutes, bareme, classe_id, type_composition, matieres:matiere_id(nom)")
         .eq("id", composition_id)
         .maybeSingle();
 
@@ -413,6 +413,13 @@ serve(async (req) => {
           .from("composition_reponses")
           .update({ reponse_texte: reponse_texte || '', soumis_at: new Date().toISOString() })
           .eq("id", existing.id);
+
+        await supabaseAdmin.from("student_notifications").insert({
+          eleve_id: eleveId,
+          titre: '📝 Composition soumise',
+          message: `Votre composition "${comp.titre}" en ${comp.matieres?.nom || 'matière'} a été soumise. En attente de correction.`,
+          type: 'info',
+        });
 
         return new Response(JSON.stringify({ submitted: true, message: "Réponse soumise. Le superviseur notera votre copie.", bareme: comp.bareme }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -502,6 +509,13 @@ serve(async (req) => {
                     .update({ score: scaledScore })
                     .eq("id", existing.id);
 
+                  await supabaseAdmin.from("student_notifications").insert({
+                    eleve_id: eleveId,
+                    titre: '📝 Composition corrigée',
+                    message: `Votre composition "${comp.titre}" en ${comp.matieres?.nom || 'matière'} a été notée : ${scaledScore}/${comp.bareme}. ${gradeResult.commentaire}`,
+                    type: 'info',
+                  });
+
                   return new Response(JSON.stringify({ submitted: true, score: scaledScore, bareme: comp.bareme, message: `Composition notée par IA : ${scaledScore}/${comp.bareme}. ${gradeResult.commentaire}` }), {
                     headers: { ...corsHeaders, "Content-Type": "application/json" },
                   });
@@ -512,6 +526,13 @@ serve(async (req) => {
             console.error("AI grading error:", aiErr);
           }
         }
+
+        await supabaseAdmin.from("student_notifications").insert({
+          eleve_id: eleveId,
+          titre: '📝 Composition soumise',
+          message: `Votre composition "${comp.titre}" en ${comp.matieres?.nom || 'matière'} a été soumise. En attente de correction.`,
+          type: 'info',
+        });
 
         return new Response(JSON.stringify({ submitted: true, message: "Réponse soumise. Le superviseur notera votre copie.", bareme: comp.bareme }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -540,6 +561,13 @@ serve(async (req) => {
         .from("composition_reponses")
         .update({ reponses: studentAnswers, score, soumis_at: new Date().toISOString() })
         .eq("id", existing.id);
+
+      await supabaseAdmin.from("student_notifications").insert({
+        eleve_id: eleveId,
+        titre: '📝 Composition corrigée',
+        message: `Votre composition "${comp.titre}" en ${comp.matieres?.nom || 'matière'} a été corrigée : ${score}/${comp.bareme}.`,
+        type: 'info',
+      });
 
       return new Response(JSON.stringify({ score, bareme: comp.bareme }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
