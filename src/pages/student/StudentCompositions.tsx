@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Loader2, Clock, CheckCircle2, Timer, FileText, Bold, Italic, Underline, List, Image, Superscript, Subscript, Send, ShieldAlert, PenLine, Camera, X } from 'lucide-react';
 import { useExamSecurity } from '@/hooks/useExamSecurity';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { MathText } from '@/components/MathText';
 
 export default function StudentCompositions() {
   const { session } = useStudentAuth();
