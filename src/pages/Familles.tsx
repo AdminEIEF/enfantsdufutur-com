@@ -659,11 +659,13 @@ export default function Familles() {
                           </div>
                         ))}
                       </div>
-                ) : (
-                  <p className="text-muted-foreground text-sm text-center py-4">Aucun enfant rattaché à cette famille</p>
-                )}
-              </TabsContent>
-            </Tabs>
+                    ) : (
+                      <p className="text-muted-foreground text-sm text-center py-4">Aucun enfant rattaché à cette famille</p>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
