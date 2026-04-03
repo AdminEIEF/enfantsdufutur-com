@@ -275,45 +275,77 @@ export function StudentLayout({ children }: { children: ReactNode }) {
       </AnimatePresence>
 
       {/* ─── Bottom Nav ─── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-card shadow-[0_-2px_12px_rgba(0,0,0,0.08)] safe-area-bottom">
-        <div className="max-w-4xl mx-auto flex">
-          {NAV_ITEMS.map((item) => {
-            const isGames = item.path === '__games__';
-            const isActive = isGames ? isGameRoute || gamesOpen : location.pathname === item.path;
-            return (
-              <button
-                key={item.path}
-                onClick={() => {
-                  if (isGames) {
-                    setGamesOpen(!gamesOpen);
-                  } else {
-                    setGamesOpen(false);
-                    navigate(item.path);
-                  }
-                }}
-                className="flex-1 flex flex-col items-center gap-0.5 py-2 relative group"
-              >
-                <div className={`absolute top-1 w-12 h-[3px] rounded-full transition-all duration-200 ${
-                  isActive ? 'bg-primary scale-100' : 'scale-0'
-                }`} />
-                <div className={`flex items-center justify-center w-10 h-7 rounded-full transition-all duration-200 ${
-                  isActive ? 'bg-primary/12' : ''
-                }`}>
-                  <item.icon className={`h-[18px] w-[18px] transition-colors duration-200 ${
-                    isActive ? 'text-primary' : 'text-muted-foreground'
-                  }`} />
-                  {isGames && isGameRoute && (
-                    <span className="absolute top-1.5 right-1/4 w-1.5 h-1.5 rounded-full bg-primary" />
-                  )}
-                </div>
-                <span className={`text-[10px] leading-tight transition-colors duration-200 ${
-                  isActive ? 'text-primary font-semibold' : 'text-muted-foreground font-medium'
-                }`}>
-                  {item.label}
-                </span>
-              </button>
-            );
-          })}
+      <nav className="fixed bottom-0 left-0 right-0 z-30 safe-area-bottom">
+        <div className="max-w-4xl mx-auto px-2 pb-2">
+          <div className="relative overflow-hidden rounded-2xl bg-card/95 backdrop-blur-xl shadow-[0_-4px_24px_rgba(0,0,0,0.12)] border border-border/50">
+            {/* Decorative shapes */}
+            <div className="absolute -top-6 -left-6 w-16 h-16 rounded-full bg-primary/5" />
+            <div className="absolute -bottom-4 -right-4 w-12 h-12 rounded-full bg-accent/5" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-8 rounded-full bg-primary/3 blur-xl" />
+
+            <div className="relative z-10 flex items-center py-1.5 px-1">
+              {NAV_ITEMS.map((item, idx) => {
+                const isGames = item.path === '__games__';
+                const isActive = isGames ? isGameRoute || gamesOpen : location.pathname === item.path;
+
+                const navColors = [
+                  'from-blue-500 to-blue-600',
+                  'from-emerald-500 to-emerald-600',
+                  'from-amber-500 to-amber-600',
+                  'from-rose-500 to-rose-600',
+                  'from-violet-500 to-violet-600',
+                  'from-primary to-accent',
+                ];
+                const activeGradient = navColors[idx % navColors.length];
+
+                return (
+                  <motion.button
+                    key={item.path}
+                    whileTap={{ scale: 0.88 }}
+                    onClick={() => {
+                      if (isGames) {
+                        setGamesOpen(!gamesOpen);
+                      } else {
+                        setGamesOpen(false);
+                        navigate(item.path);
+                      }
+                    }}
+                    className="flex-1 flex flex-col items-center gap-0.5 py-1.5 relative"
+                  >
+                    <div className="relative">
+                      {isActive && (
+                        <motion.div
+                          layoutId="navActiveIndicator"
+                          className={`absolute inset-0 -m-1 rounded-xl bg-gradient-to-br ${activeGradient} opacity-15`}
+                          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                        />
+                      )}
+                      <div className={`relative flex items-center justify-center w-10 h-7 rounded-xl transition-all duration-200`}>
+                        <item.icon className={`h-[18px] w-[18px] transition-colors duration-200 ${
+                          isActive ? 'text-primary' : 'text-muted-foreground'
+                        }`} />
+                        {isGames && isGameRoute && (
+                          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary ring-2 ring-card" />
+                        )}
+                      </div>
+                    </div>
+                    <span className={`text-[10px] leading-tight transition-colors duration-200 ${
+                      isActive ? 'text-primary font-bold' : 'text-muted-foreground font-medium'
+                    }`}>
+                      {item.label}
+                    </span>
+                    {isActive && (
+                      <motion.div
+                        layoutId="navDot"
+                        className="w-1 h-1 rounded-full bg-primary mt-0.5"
+                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                      />
+                    )}
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </nav>
     </div>
