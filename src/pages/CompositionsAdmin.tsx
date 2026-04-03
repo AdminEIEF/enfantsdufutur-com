@@ -766,18 +766,23 @@ export default function CompositionsAdmin() {
                               {q.type_question === 'vrai_faux' ? (
                                 <Label htmlFor={`q${idx}_o${oi}`} className="cursor-pointer">{opt.label}</Label>
                               ) : (
-                                <Input
-                                  className="flex-1 h-8"
-                                  placeholder={`Option ${oi + 1}`}
-                                  value={opt.label}
-                                  onChange={e => {
-                                    const newOpts = [...q.options];
-                                    const oldLabel = newOpts[oi].label;
-                                    newOpts[oi] = { ...newOpts[oi], label: e.target.value };
-                                    const updatedCorrect = q.reponse_correcte === oldLabel ? e.target.value : q.reponse_correcte;
-                                    updateQuestion(idx, { options: newOpts, reponse_correcte: updatedCorrect });
-                                  }}
-                                />
+                                <div className="flex-1 space-y-1">
+                                  <Input
+                                    className="h-8"
+                                    placeholder={`Option ${oi + 1} (ex: $\\frac{1}{2}$)`}
+                                    value={opt.label}
+                                    onChange={e => {
+                                      const newOpts = [...q.options];
+                                      const oldLabel = newOpts[oi].label;
+                                      newOpts[oi] = { ...newOpts[oi], label: e.target.value };
+                                      const updatedCorrect = q.reponse_correcte === oldLabel ? e.target.value : q.reponse_correcte;
+                                      updateQuestion(idx, { options: newOpts, reponse_correcte: updatedCorrect });
+                                    }}
+                                  />
+                                  {opt.label && /[\$\\]/.test(opt.label) && (
+                                    <span className="text-xs text-muted-foreground"><MathText text={opt.label} /></span>
+                                  )}
+                                </div>
                               )}
                               {q.reponse_correcte === (opt.label || `opt_${oi}`) && (
                                 <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
