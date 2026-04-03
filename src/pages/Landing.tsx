@@ -389,11 +389,11 @@ export default function Landing() {
               { id: '1617863476248678', title: "Vidéo de l'école 2" },
               { id: '3843230585974453', title: "Vidéo de l'école 3" },
             ].map((video) => (
-              <div key={video.id} className="rounded-3xl overflow-hidden shadow-xl bg-background border border-border/30">
+              <div key={video.id} className="rounded-3xl overflow-hidden shadow-xl border border-border/30">
                 <iframe
-                  src={`https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F${video.id}&show_text=false&width=300`}
-                  className="w-full aspect-[9/16]"
-                  style={{ border: 'none', overflow: 'hidden' }}
+                  src={`https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F${video.id}&show_text=false&width=300&height=530`}
+                  className="w-full"
+                  style={{ border: 'none', overflow: 'hidden', height: '530px' }}
                   scrolling="no"
                   frameBorder="0"
                   allowFullScreen
