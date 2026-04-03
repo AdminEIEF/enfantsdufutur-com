@@ -551,7 +551,7 @@ export default function StudentCompositions() {
                     <div className="flex items-start gap-3">
                       <Badge variant="outline" className="shrink-0 mt-1">{idx + 1}</Badge>
                       <div className="flex-1">
-                        <p className="font-medium">{q.enonce}</p>
+                        <p className="font-medium"><MathText text={q.enonce} /></p>
                         <Badge variant="secondary" className="text-xs mt-1">{q.points} pt{q.points > 1 ? 's' : ''}</Badge>
                       </div>
                     </div>
