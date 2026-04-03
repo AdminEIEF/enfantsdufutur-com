@@ -1,0 +1,2 @@
+ALTER TABLE public.composition_questions DROP CONSTRAINT composition_questions_type_question_check;
+ALTER TABLE public.composition_questions ADD CONSTRAINT composition_questions_type_question_check CHECK (type_question = ANY (ARRAY['qcm'::text, 'vrai_faux'::text, 'texte'::text]));
