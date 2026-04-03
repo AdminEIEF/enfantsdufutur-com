@@ -98,7 +98,7 @@ export default function StudentCompositions() {
     fetchCompositions();
     const refreshId = setInterval(() => { // Refresh every 2s
       if (!activeComp) fetchCompositions();
-    }, 10000);
+    }, 2000);
     return () => {
       clearInterval(refreshId);
       if (timerRef.current) clearInterval(timerRef.current);
