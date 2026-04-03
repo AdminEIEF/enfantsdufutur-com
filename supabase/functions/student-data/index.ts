@@ -366,7 +366,7 @@ serve(async (req) => {
     if (action === "submit_composition") {
       const { data: comp } = await supabaseAdmin
         .from("compositions")
-        .select("id, duree_minutes, bareme, classe_id, type_composition")
+        .select("id, titre, duree_minutes, bareme, classe_id, type_composition, matieres:matiere_id(nom)")
         .eq("id", composition_id)
         .maybeSingle();
 
