@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { Plus, Trash2, Edit, Eye, Loader2, FileQuestion, CheckCircle2, Clock, GripVertical, Upload, FileText, Wifi, Users, ChevronDown, ChevronUp, Monitor } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { MathText } from '@/components/MathText';
 
 interface ConnectedStudent {
   id: string;
@@ -735,7 +736,13 @@ export default function CompositionsAdmin() {
                         </Button>
                       </div>
                     </div>
-                    <Textarea placeholder="Énoncé de la question" value={q.enonce} onChange={e => updateQuestion(idx, { enonce: e.target.value })} rows={2} />
+                    <Textarea placeholder="Énoncé de la question (utilisez $...$ pour les formules math, ex: $\frac{a}{b}$, $\sqrt{x}$, $\pi$)" value={q.enonce} onChange={e => updateQuestion(idx, { enonce: e.target.value })} rows={2} />
+                    {q.enonce && /[\$\\]/.test(q.enonce) && (
+                      <div className="p-2 rounded-lg bg-muted/50 border border-border/50">
+                        <p className="text-[10px] text-muted-foreground mb-1">Aperçu :</p>
+                        <p className="text-sm font-medium"><MathText text={q.enonce} /></p>
+                      </div>
+                    )}
                     {q.type_question === 'texte' ? (
                       <div className="space-y-2">
                         <Label className="text-xs text-muted-foreground">Réponse attendue (référence pour la correction IA) :</Label>
@@ -759,18 +766,23 @@ export default function CompositionsAdmin() {
                               {q.type_question === 'vrai_faux' ? (
                                 <Label htmlFor={`q${idx}_o${oi}`} className="cursor-pointer">{opt.label}</Label>
                               ) : (
-                                <Input
-                                  className="flex-1 h-8"
-                                  placeholder={`Option ${oi + 1}`}
-                                  value={opt.label}
-                                  onChange={e => {
-                                    const newOpts = [...q.options];
-                                    const oldLabel = newOpts[oi].label;
-                                    newOpts[oi] = { ...newOpts[oi], label: e.target.value };
-                                    const updatedCorrect = q.reponse_correcte === oldLabel ? e.target.value : q.reponse_correcte;
-                                    updateQuestion(idx, { options: newOpts, reponse_correcte: updatedCorrect });
-                                  }}
-                                />
+                                <div className="flex-1 space-y-1">
+                                  <Input
+                                    className="h-8"
+                                    placeholder={`Option ${oi + 1} (ex: $\\frac{1}{2}$)`}
+                                    value={opt.label}
+                                    onChange={e => {
+                                      const newOpts = [...q.options];
+                                      const oldLabel = newOpts[oi].label;
+                                      newOpts[oi] = { ...newOpts[oi], label: e.target.value };
+                                      const updatedCorrect = q.reponse_correcte === oldLabel ? e.target.value : q.reponse_correcte;
+                                      updateQuestion(idx, { options: newOpts, reponse_correcte: updatedCorrect });
+                                    }}
+                                  />
+                                  {opt.label && /[\$\\]/.test(opt.label) && (
+                                    <span className="text-xs text-muted-foreground"><MathText text={opt.label} /></span>
+                                  )}
+                                </div>
                               )}
                               {q.reponse_correcte === (opt.label || `opt_${oi}`) && (
                                 <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
