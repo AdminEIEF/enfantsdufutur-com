@@ -67,6 +67,16 @@ export function StudentLayout({ children }: { children: ReactNode }) {
     setGamesOpen(false);
   }, [location.pathname]);
 
+  // Fetch matières when profile opens
+  useEffect(() => {
+    if (!profileOpen || !session?.eleve?.classe_id) return;
+    supabase
+      .from('classe_matieres')
+      .select('id, matieres:matiere_id(id, nom, pole, coefficient)')
+      .eq('classe_id', session.eleve.classe_id)
+      .then(({ data }) => setMatieres(data || []));
+  }, [profileOpen, session?.eleve?.classe_id]);
+
   if (!session) return null;
 
   const handleLogout = () => {
