@@ -4,6 +4,7 @@ interface ExamSecurityOptions {
   isActive: boolean;
   onViolation: (reason: string) => void;
   maxViolations?: number;
+  allowPasteInEditable?: boolean;
 }
 
 /**
@@ -15,9 +16,28 @@ interface ExamSecurityOptions {
  * 5. Warn before closing the browser tab
  * 6. Auto-submit after max violations
  */
-export function useExamSecurity({ isActive, onViolation, maxViolations = 2 }: ExamSecurityOptions) {
+export function useExamSecurity({ isActive, onViolation, maxViolations = 2, allowPasteInEditable = true }: ExamSecurityOptions) {
   const violationCount = useRef(0);
   const wasHidden = useRef(false);
+
+  const isEditableTarget = useCallback((target: EventTarget | null) => {
+    const candidate = target instanceof HTMLElement
+      ? target
+      : target instanceof Node
+      ? target.parentElement
+      : null;
+    const activeElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    return [candidate, activeElement].some((element) => {
+      if (!element) return false;
+      if (element instanceof HTMLTextAreaElement) return !element.readOnly && !element.disabled;
+      if (element instanceof HTMLInputElement) {
+        const blockedTypes = ['checkbox', 'radio', 'button', 'submit', 'reset', 'file'];
+        return !blockedTypes.includes(element.type) && !element.readOnly && !element.disabled;
+      }
+      return element.isContentEditable || !!element.closest('[contenteditable="true"], [data-allow-exam-paste="true"]');
+    });
+  }, []);
 
   const handleViolation = useCallback((reason: string) => {
     violationCount.current += 1;
@@ -59,14 +79,23 @@ export function useExamSecurity({ isActive, onViolation, maxViolations = 2 }: Ex
 
     // --- 4. Block keyboard shortcuts (copy, paste, print, screenshot) ---
     const onKeyDown = (e: KeyboardEvent) => {
-      // Block: Ctrl+C, Ctrl+V, Ctrl+P, Ctrl+S, Ctrl+A, Ctrl+Shift+S, PrintScreen
-      if (
-        (e.ctrlKey || e.metaKey) &&
-        ['c', 'v', 'p', 's', 'a', 'u'].includes(e.key.toLowerCase())
-      ) {
+      const lowerKey = e.key.toLowerCase();
+
+      // Allow paste in answer fields so students can insert mathematical formulas
+      if ((e.ctrlKey || e.metaKey) && lowerKey === 'v') {
+        if (allowPasteInEditable && isEditableTarget(e.target)) {
+          return;
+        }
         e.preventDefault();
         return false;
       }
+
+      // Block: Ctrl+C, Ctrl+P, Ctrl+S, Ctrl+A, Ctrl+U
+      if ((e.ctrlKey || e.metaKey) && ['c', 'p', 's', 'a', 'u'].includes(lowerKey)) {
+        e.preventDefault();
+        return false;
+      }
+
       // Block PrintScreen
       if (e.key === 'PrintScreen' || e.code === 'PrintScreen') {
         e.preventDefault();
@@ -136,7 +165,7 @@ export function useExamSecurity({ isActive, onViolation, maxViolations = 2 }: Ex
       const existingStyle = document.getElementById('exam-security-styles');
       if (existingStyle) existingStyle.remove();
     };
-  }, [isActive, handleViolation]);
+  }, [allowPasteInEditable, handleViolation, isActive, isEditableTarget]);
 
   return {
     violationCount: violationCount.current,
