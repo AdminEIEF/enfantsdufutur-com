@@ -541,7 +541,7 @@ export default function Landing() {
             </div>
           </div>
           <div className="mt-12 pt-8 text-center text-xs text-white/30" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-            © {new Date().getFullYear()} École Internationale Les Enfants du Futur — Tous droits réservés.
+            © {new Date().getFullYear()} Edugestion — Tous droits réservés.
           </div>
         </div>
       </footer>
