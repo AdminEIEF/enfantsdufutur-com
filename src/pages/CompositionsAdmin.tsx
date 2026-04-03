@@ -27,6 +27,13 @@ interface ConnectedStudent {
 
 function ConnectedStudentsDashboard() {
   const [expandedClass, setExpandedClass] = useState<string | null>(null);
+  const [now, setNow] = useState(Date.now());
+
+  // Force re-render every 2s for live timers
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   const { data: connections = [], isLoading } = useQuery({
     queryKey: ['connected-students-compositions'],
@@ -38,7 +45,7 @@ function ConnectedStudentsDashboard() {
         .order('classe_nom');
       return (data || []) as ConnectedStudent[];
     },
-    refetchInterval: 10000,
+    refetchInterval: 2000, // Refresh every 2 seconds
   });
 
   // Deduplicate: keep only the most recent entry per display_name
@@ -54,17 +61,28 @@ function ConnectedStudentsDashboard() {
     return Array.from(map.values());
   }, [connections]);
 
+  // Consider offline if last_seen > 30 seconds ago
+  const OFFLINE_THRESHOLD_MS = 30000;
+  const onlineStudents = uniqueConnections.filter(c => (now - new Date(c.last_seen_at).getTime()) < OFFLINE_THRESHOLD_MS);
+  const offlineStudents = uniqueConnections.filter(c => (now - new Date(c.last_seen_at).getTime()) >= OFFLINE_THRESHOLD_MS);
+
   const grouped = useMemo(() => {
-    const map = new Map<string, ConnectedStudent[]>();
-    uniqueConnections.forEach(c => {
+    const allStudents = [...onlineStudents, ...offlineStudents];
+    const map = new Map<string, (ConnectedStudent & { isOnline: boolean })[]>();
+    allStudents.forEach(c => {
       const key = c.classe_nom || 'Sans classe';
       if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(c);
+      const isOnline = (now - new Date(c.last_seen_at).getTime()) < OFFLINE_THRESHOLD_MS;
+      map.get(key)!.push({ ...c, isOnline });
+    });
+    // Sort: online first within each class
+    map.forEach((students, key) => {
+      map.set(key, students.sort((a, b) => (a.isOnline === b.isOnline ? 0 : a.isOnline ? -1 : 1)));
     });
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [uniqueConnections]);
+  }, [uniqueConnections, now]);
 
-  const totalOnline = uniqueConnections.length;
+  const totalOnline = onlineStudents.length;
 
   if (isLoading) {
     return (
@@ -116,7 +134,9 @@ function ConnectedStudentsDashboard() {
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-sm truncate">{className}</p>
-                          <p className="text-xs text-muted-foreground">{students.length} élève{students.length > 1 ? 's' : ''}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {students.filter(s => s.isOnline).length} en ligne / {students.length} total
+                          </p>
                         </div>
                       </div>
                       {expandedClass === className ? (
@@ -130,16 +150,23 @@ function ConnectedStudentsDashboard() {
                 <CollapsibleContent>
                   <div className="mt-1 border rounded-lg bg-muted/30 divide-y max-h-48 overflow-y-auto">
                     {students.map(s => {
-                      const ago = Math.round((Date.now() - new Date(s.last_seen_at).getTime()) / 60000);
+                      const lastSeenMs = now - new Date(s.last_seen_at).getTime();
+                      const agoMin = Math.round(lastSeenMs / 60000);
                       return (
                         <div key={s.id} className="px-3 py-2 flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                            <span className="text-sm truncate">{s.display_name}</span>
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${s.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
+                            <span className={`text-sm truncate ${!s.isOnline ? 'text-muted-foreground' : ''}`}>{s.display_name}</span>
                           </div>
-                          <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                            {ago < 1 ? 'à l\'instant' : `il y a ${ago}m`}
-                          </span>
+                          {s.isOnline ? (
+                            <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 px-1.5 py-0">
+                              En ligne
+                            </Badge>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                              Hors ligne • {agoMin < 1 ? '<1m' : `${agoMin}m`}
+                            </span>
+                          )}
                         </div>
                       );
                     })}
