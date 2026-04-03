@@ -104,7 +104,7 @@ export function StudentLayout({ children }: { children: ReactNode }) {
       <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
         <DialogContent className="max-w-sm p-0 overflow-hidden rounded-3xl border-0 shadow-2xl">
           {/* Gradient Header */}
-          <div className="relative bg-gradient-to-br from-primary via-primary/80 to-accent pt-10 pb-16 px-6">
+          <div className="relative bg-gradient-to-br from-primary via-primary/80 to-accent pt-8 pb-12 px-6">
             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 30% 20%, white 1px, transparent 1px), radial-gradient(circle at 70% 80%, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
             <DialogHeader>
               <DialogTitle className="text-center text-primary-foreground text-lg font-bold tracking-wide">
