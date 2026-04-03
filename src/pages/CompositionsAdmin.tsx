@@ -135,7 +135,7 @@ function ConnectedStudentsDashboard() {
   return (
     <Card className="border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent overflow-hidden">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <div className="relative">
               <Monitor className="h-5 w-5 text-emerald-600" />
@@ -145,29 +145,33 @@ function ConnectedStudentsDashboard() {
             </div>
             Élèves connectés en temps réel
           </CardTitle>
-          <Badge className={`${totalOnline > 0 ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'} text-sm px-3`}>
-            <Wifi className="h-3.5 w-3.5 mr-1.5" />
-            {totalOnline} en ligne
-          </Badge>
-          <Badge variant="outline" className="text-sm px-3 border-orange-300 text-orange-600">
-            {totalOffline} hors ligne
-          </Badge>
-          <Badge variant="outline" className="text-sm px-3 border-gray-300 text-muted-foreground">
-            {totalNever} jamais connecté{totalNever > 1 ? 's' : ''}
-          </Badge>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge className={`${totalOnline > 0 ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'} text-sm px-3`}>
+              <Wifi className="h-3.5 w-3.5 mr-1.5" />
+              {totalOnline} en ligne
+            </Badge>
+            <Badge variant="outline" className="text-sm px-3 border-orange-300 text-orange-600">
+              {totalOffline} hors ligne
+            </Badge>
+            <Badge variant="outline" className="text-sm px-3 border-gray-300 text-muted-foreground">
+              {totalNever} jamais connecté{totalNever > 1 ? 's' : ''}
+            </Badge>
+          </div>
+        </div>
+      </CardHeader>
       <CardContent className="pt-0">
-        {totalOnline === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">Aucun élève connecté actuellement</p>
+        {classStats.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">Aucune donnée de connexion</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {grouped.map(([className, students]) => (
+            {classStats.map(({ className, effectif, online, offline, neverConnected, students }) => (
               <Collapsible
                 key={className}
                 open={expandedClass === className}
                 onOpenChange={(open) => setExpandedClass(open ? className : null)}
               >
                 <CollapsibleTrigger asChild>
-                  <button className="w-full text-left border rounded-xl p-3 bg-card hover:bg-accent/50 transition-colors group">
+                  <button className="w-full text-left border rounded-xl p-3 bg-card hover:bg-accent/50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
@@ -175,8 +179,11 @@ function ConnectedStudentsDashboard() {
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-sm truncate">{className}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {students.filter(s => s.isOnline).length} en ligne / {students.length} total
+                          <p className="text-[10px] text-muted-foreground leading-tight">
+                            <span className="text-emerald-600">{online}🟢</span>
+                            {' '}<span className="text-orange-500">{offline}🟠</span>
+                            {' '}<span>{neverConnected}⚪</span>
+                            {' '}/ {effectif}
                           </p>
                         </div>
                       </div>
@@ -211,6 +218,11 @@ function ConnectedStudentsDashboard() {
                         </div>
                       );
                     })}
+                    {neverConnected > 0 && (
+                      <div className="px-3 py-2 text-xs text-muted-foreground italic">
+                        + {neverConnected} élève{neverConnected > 1 ? 's' : ''} jamais connecté{neverConnected > 1 ? 's' : ''}
+                      </div>
+                    )}
                   </div>
                 </CollapsibleContent>
               </Collapsible>
