@@ -123,6 +123,9 @@ export function useExamSecurity({ isActive, onViolation, maxViolations = 2, allo
 
     // --- 6. Block copy/cut events ---
     const onCopy = (e: Event) => {
+      if (allowPasteInEditable && isEditableTarget(e.target)) {
+        return;
+      }
       e.preventDefault();
       return false;
     };
