@@ -9,13 +9,13 @@ import { SchoolWatermark } from '@/components/SchoolWatermark';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const GAME_ITEMS = [
-  { path: '/eleve/ecriture', icon: PenTool, label: 'Écriture', color: 'bg-pink-500', emoji: '✏️' },
-  { path: '/eleve/calcul', icon: Calculator, label: 'Calcul', color: 'bg-orange-500', emoji: '🔢' },
-  { path: '/eleve/pyramide', icon: Pyramid, label: 'Pyramide', color: 'bg-amber-500', emoji: '🔺' },
-  { path: '/eleve/culture', icon: GraduationCap, label: 'Culture', color: 'bg-purple-500', emoji: '🧠' },
-  { path: '/eleve/coloriage', icon: Palette, label: 'Coloriage', color: 'bg-green-500', emoji: '🎨' },
-  { path: '/eleve/serpent', icon: Bug, label: 'Serpent ABC', color: 'bg-teal-500', emoji: '🐍' },
-  { path: '/eleve/anglais', icon: Languages, label: 'Anglais', color: 'bg-blue-500', emoji: '🇬🇧' },
+  { path: '/eleve/ecriture', icon: PenTool, label: 'Écriture', emoji: '✏️' },
+  { path: '/eleve/calcul', icon: Calculator, label: 'Calcul', emoji: '🔢' },
+  { path: '/eleve/pyramide', icon: Pyramid, label: 'Pyramide', emoji: '🔺' },
+  { path: '/eleve/culture', icon: GraduationCap, label: 'Culture', emoji: '🧠' },
+  { path: '/eleve/coloriage', icon: Palette, label: 'Coloriage', emoji: '🎨' },
+  { path: '/eleve/serpent', icon: Bug, label: 'Serpent ABC', emoji: '🐍' },
+  { path: '/eleve/anglais', icon: Languages, label: 'Anglais', emoji: '🇬🇧' },
 ];
 
 const NAV_ITEMS = [
@@ -40,7 +40,6 @@ export function StudentLayout({ children }: { children: ReactNode }) {
     }
   }, [session, navigate]);
 
-  // Close games menu on route change
   useEffect(() => {
     setGamesOpen(false);
   }, [location.pathname]);
@@ -58,38 +57,38 @@ export function StudentLayout({ children }: { children: ReactNode }) {
   const isGameRoute = GAME_ITEMS.some(g => location.pathname === g.path);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500/5 via-background to-indigo-500/5 relative">
+    <div className="min-h-screen bg-background relative">
       <SchoolWatermark />
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b">
-        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
-          <button onClick={() => setProfileOpen(true)} className="flex items-center gap-2 min-w-0 cursor-pointer hover:opacity-80 transition-opacity">
+
+      {/* ─── Material-style Top App Bar ─── */}
+      <header className="sticky top-0 z-30 bg-primary shadow-md">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button onClick={() => setProfileOpen(true)} className="flex items-center gap-3 min-w-0 cursor-pointer active:scale-[0.97] transition-transform">
             {eleve.photo_url ? (
-              <img src={eleve.photo_url} alt="" loading="lazy" decoding="async" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border-2 border-primary/20 shrink-0" />
+              <img src={eleve.photo_url} alt="" loading="lazy" decoding="async" className="w-9 h-9 rounded-full object-cover ring-2 ring-primary-foreground/30 shrink-0" />
             ) : (
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] sm:text-xs shrink-0">
+              <div className="w-9 h-9 rounded-full bg-primary-foreground/20 flex items-center justify-center text-primary-foreground font-bold text-xs shrink-0">
                 {eleve.prenom[0]}{eleve.nom[0]}
               </div>
             )}
             <div className="min-w-0 text-left">
-              <h1 className="font-bold text-xs sm:text-sm leading-tight truncate">
+              <h1 className="font-semibold text-sm text-primary-foreground leading-tight truncate">
                 {eleve.prenom} {eleve.nom}
               </h1>
-              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+              <p className="text-[11px] text-primary-foreground/70 truncate">
                 {eleve.classes?.nom || 'Espace Élève'}
               </p>
             </div>
           </button>
-          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             <NotificationBell
               mode="student"
               targetId={eleve.id}
               token={session.token}
               onViewAll={() => navigate('/eleve/notifications')}
             />
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-xs px-2 sm:px-3">
-              <LogOut className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Déconnexion</span>
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-primary-foreground hover:bg-primary-foreground/10 h-9 w-9 rounded-full">
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -100,46 +99,36 @@ export function StudentLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      {/* Profile Dialog */}
+      {/* ─── Profile Bottom Sheet ─── */}
       <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
         <DialogContent className="max-w-sm p-0 overflow-hidden rounded-3xl border-0 shadow-2xl">
-          {/* Photo above gradient */}
           <div className="flex justify-center pt-6 pb-2 bg-card">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', damping: 15, stiffness: 200 }}
-              className="w-28 h-28 rounded-3xl bg-gradient-to-br from-secondary via-primary to-accent p-[3px] shadow-xl"
+              className="w-28 h-28 rounded-full bg-gradient-to-br from-primary via-primary/80 to-accent p-[3px] shadow-xl"
             >
               {eleve.photo_url ? (
-                <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} className="w-full h-full rounded-[21px] object-cover bg-background" />
+                <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} className="w-full h-full rounded-full object-cover bg-background" />
               ) : (
-                <div className="w-full h-full rounded-[21px] bg-card flex items-center justify-center text-primary font-bold text-3xl">
+                <div className="w-full h-full rounded-full bg-card flex items-center justify-center text-primary font-bold text-3xl">
                   {eleve.prenom[0]}{eleve.nom[0]}
                 </div>
               )}
             </motion.div>
           </div>
 
-          {/* Gradient Header */}
-          <div className="relative bg-gradient-to-br from-primary via-primary/80 to-accent py-4 px-6">
-            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 30% 20%, white 1px, transparent 1px), radial-gradient(circle at 70% 80%, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+          <div className="relative bg-primary py-3 px-6">
             <DialogHeader>
-              <DialogTitle className="text-center text-primary-foreground text-lg font-bold tracking-wide">
+              <DialogTitle className="text-center text-primary-foreground text-base font-semibold">
                 Mon Profil
               </DialogTitle>
             </DialogHeader>
           </div>
 
-          {/* Info section */}
-          <div className="flex flex-col items-center px-6 pb-6">
-
-            <motion.div
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="text-center mt-4"
-            >
+          <div className="flex flex-col items-center px-5 pb-6">
+            <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="text-center mt-4">
               <h2 className="text-xl font-bold text-foreground">{eleve.prenom} {eleve.nom}</h2>
               {eleve.classes?.nom && (
                 <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
@@ -149,15 +138,10 @@ export function StudentLayout({ children }: { children: ReactNode }) {
               )}
             </motion.div>
 
-            <motion.div
-              initial={{ y: 15, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="w-full mt-5 space-y-2"
-            >
+            <motion.div initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="w-full mt-5 space-y-2">
               {eleve.matricule && (
-                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-muted/40 border border-border/50 hover:bg-muted/60 transition-colors">
-                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <Hash className="h-4 w-4 text-primary" />
                   </div>
                   <div>
@@ -167,8 +151,8 @@ export function StudentLayout({ children }: { children: ReactNode }) {
                 </div>
               )}
               {eleve.date_naissance && (
-                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-muted/40 border border-border/50 hover:bg-muted/60 transition-colors">
-                  <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
+                  <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
                     <Calendar className="h-4 w-4 text-accent" />
                   </div>
                   <div>
@@ -178,8 +162,8 @@ export function StudentLayout({ children }: { children: ReactNode }) {
                 </div>
               )}
               {eleve.sexe && (
-                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-muted/40 border border-border/50 hover:bg-muted/60 transition-colors">
-                  <div className="w-9 h-9 rounded-xl bg-secondary/10 flex items-center justify-center shrink-0">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
+                  <div className="w-9 h-9 rounded-full bg-secondary/10 flex items-center justify-center shrink-0">
                     <User className="h-4 w-4 text-secondary" />
                   </div>
                   <div>
@@ -193,33 +177,30 @@ export function StudentLayout({ children }: { children: ReactNode }) {
         </DialogContent>
       </Dialog>
 
-      {/* Games Overlay */}
+      {/* ─── Games Bottom Sheet ─── */}
       <AnimatePresence>
         {gamesOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              className="fixed inset-0 z-40 bg-black/50"
               onClick={() => setGamesOpen(false)}
             />
-            {/* Games Panel */}
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl shadow-2xl border-t max-h-[70vh] overflow-y-auto"
+              className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-[28px] shadow-2xl border-t max-h-[65vh] overflow-y-auto"
             >
-              <div className="max-w-lg mx-auto px-4 pt-3 pb-6">
-                {/* Handle bar */}
-                <div className="flex justify-center mb-3">
-                  <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+              <div className="max-w-lg mx-auto px-4 pt-2 pb-6">
+                <div className="flex justify-center py-2">
+                  <div className="w-9 h-1 rounded-full bg-muted-foreground/25" />
                 </div>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold flex items-center gap-2">
+                  <h2 className="text-base font-bold flex items-center gap-2 text-foreground">
                     <Gamepad2 className="h-5 w-5 text-primary" />
                     Jeux éducatifs
                   </h2>
@@ -227,26 +208,26 @@ export function StudentLayout({ children }: { children: ReactNode }) {
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-4 gap-2">
                   {GAME_ITEMS.map((game) => {
                     const isActive = location.pathname === game.path;
                     return (
                       <motion.button
                         key={game.path}
-                        whileTap={{ scale: 0.92 }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => {
                           navigate(game.path);
                           setGamesOpen(false);
                         }}
-                        className={`flex flex-col items-center gap-1.5 p-3 sm:p-4 rounded-2xl border-2 transition-all ${
+                        className={`flex flex-col items-center gap-1 py-3 px-1 rounded-2xl transition-all ${
                           isActive
-                            ? 'border-primary bg-primary/10 shadow-md'
-                            : 'border-transparent bg-muted/50 hover:bg-muted hover:border-muted-foreground/20'
+                            ? 'bg-primary/10 ring-2 ring-primary'
+                            : 'hover:bg-muted/60 active:bg-muted'
                         }`}
                       >
-                        <span className="text-2xl sm:text-3xl">{game.emoji}</span>
-                        <span className={`text-[11px] sm:text-xs font-semibold leading-tight text-center ${
-                          isActive ? 'text-primary' : 'text-foreground'
+                        <span className="text-2xl">{game.emoji}</span>
+                        <span className={`text-[10px] font-medium leading-tight text-center ${
+                          isActive ? 'text-primary' : 'text-muted-foreground'
                         }`}>
                           {game.label}
                         </span>
@@ -260,8 +241,8 @@ export function StudentLayout({ children }: { children: ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur border-t safe-area-bottom">
+      {/* ─── Android Material Bottom Nav ─── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-card shadow-[0_-2px_12px_rgba(0,0,0,0.08)] safe-area-bottom">
         <div className="max-w-4xl mx-auto flex">
           {NAV_ITEMS.map((item) => {
             const isGames = item.path === '__games__';
@@ -277,15 +258,29 @@ export function StudentLayout({ children }: { children: ReactNode }) {
                     navigate(item.path);
                   }
                 }}
-                className={`flex-1 flex flex-col items-center gap-0.5 py-2 sm:py-2.5 text-[10px] sm:text-xs transition-colors relative ${
-                  isActive ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-foreground'
-                }`}
+                className="flex-1 flex flex-col items-center gap-0.5 py-2 relative group"
               >
-                {isGames && isGameRoute && (
-                  <span className="absolute top-1 right-1/4 w-1.5 h-1.5 rounded-full bg-primary" />
-                )}
-                <item.icon className="h-5 w-5" />
-                {item.label}
+                {/* Active indicator pill */}
+                <div className={`absolute top-1 w-12 h-[3px] rounded-full transition-all duration-200 ${
+                  isActive ? 'bg-primary scale-100' : 'scale-0'
+                }`} />
+
+                <div className={`flex items-center justify-center w-10 h-7 rounded-full transition-all duration-200 ${
+                  isActive ? 'bg-primary/12' : ''
+                }`}>
+                  <item.icon className={`h-[18px] w-[18px] transition-colors duration-200 ${
+                    isActive ? 'text-primary' : 'text-muted-foreground'
+                  }`} />
+                  {isGames && isGameRoute && (
+                    <span className="absolute top-1.5 right-1/4 w-1.5 h-1.5 rounded-full bg-primary" />
+                  )}
+                </div>
+
+                <span className={`text-[10px] leading-tight transition-colors duration-200 ${
+                  isActive ? 'text-primary font-semibold' : 'text-muted-foreground font-medium'
+                }`}>
+                  {item.label}
+                </span>
               </button>
             );
           })}
