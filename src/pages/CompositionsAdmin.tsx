@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Plus, Trash2, Edit, Eye, Loader2, FileQuestion, CheckCircle2, Clock, GripVertical, Upload, FileText, Wifi, Users, ChevronDown, ChevronUp, Monitor } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useQuery } from '@tanstack/react-query';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { MathText } from '@/components/MathText';
@@ -330,7 +331,7 @@ export default function CompositionsAdmin() {
 
   // Form state
   const [form, setForm] = useState({
-    titre: '', description: '', classe_id: '', matiere_id: '',
+    titre: '', description: '', classe_id: '', classe_ids: [] as string[], matiere_id: '',
     duree_minutes: 30, date_debut: '', date_fin: '', bareme: 20,
     type_composition: 'qcm' as string,
     sujet_url: '' as string,
@@ -353,14 +354,29 @@ export default function CompositionsAdmin() {
     setLoading(false);
   }
 
-  // Get matieres for selected classe via classe_matieres
+  // Get common matieres for selected classes via classe_matieres
   const [classeMatieres, setClasseMatieres] = useState<any[]>([]);
+  const activeClasseIds = editComp ? [form.classe_id] : form.classe_ids;
   useEffect(() => {
-    if (!form.classe_id) { setClasseMatieres([]); return; }
-    supabase.from('classe_matieres').select('matiere_id, matieres:matiere_id(id, nom)')
-      .eq('classe_id', form.classe_id)
-      .then(({ data }) => setClasseMatieres(data || []));
-  }, [form.classe_id]);
+    if (activeClasseIds.length === 0) { setClasseMatieres([]); return; }
+    // Get matières for all selected classes and find common ones
+    Promise.all(
+      activeClasseIds.map(cid =>
+        supabase.from('classe_matieres').select('matiere_id, matieres:matiere_id(id, nom)')
+          .eq('classe_id', cid)
+          .then(({ data }) => data || [])
+      )
+    ).then(results => {
+      if (results.length === 1) {
+        setClasseMatieres(results[0]);
+      } else {
+        // Find common matiere_ids across all classes
+        const sets = results.map(r => new Set(r.map((m: any) => m.matiere_id)));
+        const common = [...sets[0]].filter(id => sets.every(s => s.has(id)));
+        setClasseMatieres(results[0].filter((m: any) => common.includes(m.matiere_id)));
+      }
+    });
+  }, [JSON.stringify(activeClasseIds)]);
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -387,30 +403,40 @@ export default function CompositionsAdmin() {
   }
 
   async function handleSave() {
-    if (!form.titre || !form.classe_id || !form.matiere_id || !form.date_debut || !form.date_fin) {
+    const targetClasseIds = editComp ? [form.classe_id] : form.classe_ids;
+    if (!form.titre || targetClasseIds.length === 0 || !form.matiere_id || !form.date_debut || !form.date_fin) {
       toast.error('Remplissez tous les champs obligatoires'); return;
     }
     if (form.type_composition === 'document' && !form.sujet_url && !editComp?.sujet_url) {
       toast.error('Veuillez uploader un fichier sujet (PDF ou Word)'); return;
     }
-    // texte type needs questions but validated at publish time
-    const payload: any = {
-      titre: form.titre, description: form.description || null,
-      classe_id: form.classe_id, matiere_id: form.matiere_id,
-      duree_minutes: form.duree_minutes, date_debut: form.date_debut,
-      date_fin: form.date_fin, bareme: form.bareme,
-      type_composition: form.type_composition,
-      sujet_url: form.sujet_url || null,
-      sujet_nom: form.sujet_nom || null,
-    };
     if (editComp) {
+      const payload: any = {
+        titre: form.titre, description: form.description || null,
+        classe_id: form.classe_id, matiere_id: form.matiere_id,
+        duree_minutes: form.duree_minutes, date_debut: form.date_debut,
+        date_fin: form.date_fin, bareme: form.bareme,
+        type_composition: form.type_composition,
+        sujet_url: form.sujet_url || null,
+        sujet_nom: form.sujet_nom || null,
+      };
       const { error } = await supabase.from('compositions').update(payload).eq('id', editComp.id);
       if (error) { toast.error(error.message); return; }
       toast.success('Composition modifiée');
     } else {
-      const { error } = await supabase.from('compositions').insert(payload);
+      // Create one composition per selected class
+      const rows = targetClasseIds.map(cid => ({
+        titre: form.titre, description: form.description || null,
+        classe_id: cid, matiere_id: form.matiere_id,
+        duree_minutes: form.duree_minutes, date_debut: form.date_debut,
+        date_fin: form.date_fin, bareme: form.bareme,
+        type_composition: form.type_composition,
+        sujet_url: form.sujet_url || null,
+        sujet_nom: form.sujet_nom || null,
+      }));
+      const { data: inserted, error } = await supabase.from('compositions').insert(rows).select('id');
       if (error) { toast.error(error.message); return; }
-      toast.success('Composition créée');
+      toast.success(`Composition créée pour ${targetClasseIds.length} classe(s)`);
     }
     setShowForm(false); setEditComp(null);
     resetForm();
@@ -418,7 +444,7 @@ export default function CompositionsAdmin() {
   }
 
   function resetForm() {
-    setForm({ titre: '', description: '', classe_id: '', matiere_id: '', duree_minutes: 30, date_debut: '', date_fin: '', bareme: 20, type_composition: 'qcm', sujet_url: '', sujet_nom: '' });
+    setForm({ titre: '', description: '', classe_id: '', classe_ids: [], matiere_id: '', duree_minutes: 30, date_debut: '', date_fin: '', bareme: 20, type_composition: 'qcm', sujet_url: '', sujet_nom: '' });
   }
 
   async function togglePublie(comp: Composition) {
@@ -599,7 +625,7 @@ export default function CompositionsAdmin() {
                       setEditComp(comp);
                       setForm({
                         titre: comp.titre, description: comp.description || '',
-                        classe_id: comp.classe_id, matiere_id: comp.matiere_id,
+                        classe_id: comp.classe_id, classe_ids: [comp.classe_id], matiere_id: comp.matiere_id,
                         duree_minutes: comp.duree_minutes,
                         date_debut: comp.date_debut.slice(0, 16),
                         date_fin: comp.date_fin.slice(0, 16),
@@ -649,11 +675,38 @@ export default function CompositionsAdmin() {
             <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} /></div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Classe *</Label>
-                <Select value={form.classe_id} onValueChange={v => setForm({ ...form, classe_id: v, matiere_id: '' })}>
-                  <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
-                  <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}</SelectContent>
-                </Select>
+                <Label>{editComp ? 'Classe *' : 'Classe(s) *'}</Label>
+                {editComp ? (
+                  <Select value={form.classe_id} onValueChange={v => setForm({ ...form, classe_id: v, matiere_id: '' })}>
+                    <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                    <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <div className="border rounded-md p-2 max-h-40 overflow-y-auto space-y-1 bg-background">
+                    {form.classe_ids.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-1">
+                        {form.classe_ids.map(cid => {
+                          const cl = classes.find((c: any) => c.id === cid);
+                          return <Badge key={cid} variant="secondary" className="text-[10px]">{cl?.nom}</Badge>;
+                        })}
+                      </div>
+                    )}
+                    {classes.map((c: any) => (
+                      <label key={c.id} className="flex items-center gap-2 px-1 py-0.5 rounded hover:bg-muted/50 cursor-pointer text-sm">
+                        <Checkbox
+                          checked={form.classe_ids.includes(c.id)}
+                          onCheckedChange={(checked) => {
+                            const newIds = checked
+                              ? [...form.classe_ids, c.id]
+                              : form.classe_ids.filter(id => id !== c.id);
+                            setForm({ ...form, classe_ids: newIds, matiere_id: '' });
+                          }}
+                        />
+                        <span>{c.niveaux?.nom} — {c.nom}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <Label>Matière *</Label>
