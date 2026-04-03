@@ -28,12 +28,29 @@ const normalize = (v = '') => v.toLowerCase().normalize('NFD').replace(/[\u0300-
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
+// Helpers to persist generated passwords/codes in localStorage
+const STORAGE_KEY_ELEVES = 'sup_pwd_eleves';
+const STORAGE_KEY_FAMILLES = 'sup_pwd_familles';
+
+function getSavedPasswords(key: string): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(key) || '{}');
+  } catch { return {}; }
+}
+
+function savePassword(key: string, id: string, pwd: string) {
+  const all = getSavedPasswords(key);
+  all[id] = pwd;
+  localStorage.setItem(key, JSON.stringify(all));
+}
+
 export default function SuperviseurPasswordPanel() {
   const [tab, setTab] = useState('eleves');
   const [search, setSearch] = useState('');
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [generatedPwd, setGeneratedPwd] = useState<{ id: string; pwd: string } | null>(null);
   const [showPwd, setShowPwd] = useState(false);
+  const [showPwdIds, setShowPwdIds] = useState<Set<string>>(new Set());
 
   // Data stores
   const [eleves, setEleves] = useState<any[]>([]);
