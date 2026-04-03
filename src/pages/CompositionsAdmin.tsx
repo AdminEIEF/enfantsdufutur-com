@@ -47,22 +47,31 @@ function ConnectedStudentsDashboard() {
     refetchInterval: 2000,
   });
 
-  // Fetch total students per class
+  // Fetch total students per class with niveau info
   const { data: classeEffectifs = [] } = useQuery({
     queryKey: ['classe-effectifs-compositions'],
     queryFn: async () => {
       const { data } = await supabase
         .from('eleves')
-        .select('classe_id, classes:classe_id(nom)')
+        .select('classe_id, classes:classe_id(nom, niveaux:niveau_id(nom, ordre, cycles:cycle_id(nom, ordre)))')
         .eq('statut', 'inscrit')
         .is('deleted_at', null)
         .not('classe_id', 'is', null);
-      const map = new Map<string, number>();
+      const map = new Map<string, { total: number; niveau: string; niveauOrdre: number; cycle: string; cycleOrdre: number }>();
       (data || []).forEach((e: any) => {
         const nom = e.classes?.nom || 'Sans classe';
-        map.set(nom, (map.get(nom) || 0) + 1);
+        const niveau = e.classes?.niveaux?.nom || '';
+        const niveauOrdre = e.classes?.niveaux?.ordre || 0;
+        const cycle = e.classes?.niveaux?.cycles?.nom || '';
+        const cycleOrdre = e.classes?.niveaux?.cycles?.ordre || 0;
+        const existing = map.get(nom);
+        if (existing) {
+          existing.total++;
+        } else {
+          map.set(nom, { total: 1, niveau, niveauOrdre, cycle, cycleOrdre });
+        }
       });
-      return Array.from(map.entries()).map(([nom, total]) => ({ nom, total }));
+      return Array.from(map.entries()).map(([nom, info]) => ({ nom, ...info }));
     },
     staleTime: 30000,
   });
