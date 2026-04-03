@@ -364,16 +364,16 @@ serve(async (req) => {
     }
 
     if (action === "submit_composition") {
-      const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
-      const studentAnswers = comp?.type_composition === 'texte'
-        ? (Array.isArray(studentReponses) ? studentReponses : [])
-        : (isObject(studentReponses) ? studentReponses : {});
-      
       const { data: comp } = await supabaseAdmin
         .from("compositions")
         .select("id, duree_minutes, bareme, classe_id, type_composition")
         .eq("id", composition_id)
         .maybeSingle();
+
+      const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
+      const studentAnswers = comp?.type_composition === 'texte'
+        ? (Array.isArray(studentReponses) ? studentReponses : [])
+        : (isObject(studentReponses) ? studentReponses : {});
 
       if (!comp || comp.classe_id !== classeId) {
         return new Response(JSON.stringify({ error: "Composition non trouvée" }), {
