@@ -652,7 +652,7 @@ export default function StudentCompositions() {
                   <div className="flex items-start gap-3">
                     <Badge variant="outline" className="shrink-0 mt-1">{idx + 1}</Badge>
                     <div className="flex-1 space-y-3">
-                      <p className="font-medium">{q.enonce}</p>
+                      <p className="font-medium"><MathText text={q.enonce} /></p>
                       <Badge variant="secondary" className="text-xs">{q.points} pt{q.points > 1 ? 's' : ''}</Badge>
                       <RadioGroup value={answers[q.id] || ''} onValueChange={v => setAnswers(prev => ({ ...prev, [q.id]: v }))}>
                         {(q.options || []).map((opt: any, oi: number) => (
