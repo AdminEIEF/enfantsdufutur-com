@@ -393,7 +393,7 @@ export default function Landing() {
                 <iframe
                   src={`https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F${video.id}&show_text=false&width=300&height=530`}
                   className="w-full"
-                  style={{ border: 'none', overflow: 'hidden', height: '530px' }}
+                  style={{ border: 'none', overflow: 'hidden', height: '265px' }}
                   scrolling="no"
                   frameBorder="0"
                   allowFullScreen
