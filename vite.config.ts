@@ -4,14 +4,22 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
+const isLovablePreview = Boolean(process.env.LOVABLE || process.env.LOVABLE_SANDBOX);
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    hmr: {
-      overlay: false,
-    },
+    hmr: isLovablePreview
+      ? {
+          protocol: "wss",
+          clientPort: 443,
+          overlay: false,
+        }
+      : {
+          overlay: false,
+        },
   },
   plugins: [
     react(),
@@ -48,6 +56,7 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
+        cleanupOutdatedCaches: true,
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         navigateFallbackDenylist: [/^\/~oauth/],
