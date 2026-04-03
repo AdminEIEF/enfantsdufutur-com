@@ -669,7 +669,7 @@ export default function StudentCompositions() {
             ))}
           </div>
 
-          <div className="sticky bottom-0 bg-background py-4 border-t">
+          <div className="sticky bottom-0 z-30 bg-background py-4 px-2 border-t shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
             <Button className="w-full" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
               {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
               Soumettre la composition
