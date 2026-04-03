@@ -41,17 +41,30 @@ function ConnectedStudentsDashboard() {
     refetchInterval: 10000,
   });
 
+  // Deduplicate: keep only the most recent entry per display_name
+  const uniqueConnections = useMemo(() => {
+    const map = new Map<string, ConnectedStudent>();
+    connections.forEach(c => {
+      const key = c.display_name;
+      const existing = map.get(key);
+      if (!existing || new Date(c.last_seen_at) > new Date(existing.last_seen_at)) {
+        map.set(key, c);
+      }
+    });
+    return Array.from(map.values());
+  }, [connections]);
+
   const grouped = useMemo(() => {
     const map = new Map<string, ConnectedStudent[]>();
-    connections.forEach(c => {
+    uniqueConnections.forEach(c => {
       const key = c.classe_nom || 'Sans classe';
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(c);
     });
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [connections]);
+  }, [uniqueConnections]);
 
-  const totalOnline = connections.length;
+  const totalOnline = uniqueConnections.length;
 
   if (isLoading) {
     return (
