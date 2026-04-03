@@ -150,16 +150,23 @@ function ConnectedStudentsDashboard() {
                 <CollapsibleContent>
                   <div className="mt-1 border rounded-lg bg-muted/30 divide-y max-h-48 overflow-y-auto">
                     {students.map(s => {
-                      const ago = Math.round((Date.now() - new Date(s.last_seen_at).getTime()) / 60000);
+                      const lastSeenMs = now - new Date(s.last_seen_at).getTime();
+                      const agoMin = Math.round(lastSeenMs / 60000);
                       return (
                         <div key={s.id} className="px-3 py-2 flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                            <span className="text-sm truncate">{s.display_name}</span>
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${s.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
+                            <span className={`text-sm truncate ${!s.isOnline ? 'text-muted-foreground' : ''}`}>{s.display_name}</span>
                           </div>
-                          <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                            {ago < 1 ? 'à l\'instant' : `il y a ${ago}m`}
-                          </span>
+                          {s.isOnline ? (
+                            <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 px-1.5 py-0">
+                              En ligne
+                            </Badge>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                              Hors ligne • {agoMin < 1 ? '<1m' : `${agoMin}m`}
+                            </span>
+                          )}
                         </div>
                       );
                     })}
