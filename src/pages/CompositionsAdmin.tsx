@@ -47,22 +47,31 @@ function ConnectedStudentsDashboard() {
     refetchInterval: 2000,
   });
 
-  // Fetch total students per class
+  // Fetch total students per class with niveau info
   const { data: classeEffectifs = [] } = useQuery({
     queryKey: ['classe-effectifs-compositions'],
     queryFn: async () => {
       const { data } = await supabase
         .from('eleves')
-        .select('classe_id, classes:classe_id(nom)')
+        .select('classe_id, classes:classe_id(nom, niveaux:niveau_id(nom, ordre, cycles:cycle_id(nom, ordre)))')
         .eq('statut', 'inscrit')
         .is('deleted_at', null)
         .not('classe_id', 'is', null);
-      const map = new Map<string, number>();
+      const map = new Map<string, { total: number; niveau: string; niveauOrdre: number; cycle: string; cycleOrdre: number }>();
       (data || []).forEach((e: any) => {
         const nom = e.classes?.nom || 'Sans classe';
-        map.set(nom, (map.get(nom) || 0) + 1);
+        const niveau = e.classes?.niveaux?.nom || '';
+        const niveauOrdre = e.classes?.niveaux?.ordre || 0;
+        const cycle = e.classes?.niveaux?.cycles?.nom || '';
+        const cycleOrdre = e.classes?.niveaux?.cycles?.ordre || 0;
+        const existing = map.get(nom);
+        if (existing) {
+          existing.total++;
+        } else {
+          map.set(nom, { total: 1, niveau, niveauOrdre, cycle, cycleOrdre });
+        }
       });
-      return Array.from(map.entries()).map(([nom, total]) => ({ nom, total }));
+      return Array.from(map.entries()).map(([nom, info]) => ({ nom, ...info }));
     },
     staleTime: 30000,
   });
@@ -95,7 +104,7 @@ function ConnectedStudentsDashboard() {
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [uniqueConnections, now]);
 
-  // Build full class stats including classes with 0 connections
+  // Build full class stats including classes with 0 connections, grouped by niveau
   const classStats = useMemo(() => {
     const connectedMap = new Map<string, { online: number; offline: number; students: (ConnectedStudent & { isOnline: boolean })[] }>();
     grouped.forEach(([className, students]) => {
@@ -109,17 +118,42 @@ function ConnectedStudentsDashboard() {
       ...connectedMap.keys(),
     ]);
 
-    return Array.from(allClasses).sort().map(className => {
-      const effectif = classeEffectifs.find(c => c.nom === className)?.total || 0;
+    const classItems = Array.from(allClasses).map(className => {
+      const info = classeEffectifs.find(c => c.nom === className);
+      const effectif = info?.total || 0;
+      const niveau = info?.niveau || 'Autre';
+      const niveauOrdre = info?.niveauOrdre || 999;
+      const cycle = info?.cycle || '';
+      const cycleOrdre = info?.cycleOrdre || 999;
       const conn = connectedMap.get(className) || { online: 0, offline: 0, students: [] };
       const neverConnected = Math.max(0, effectif - conn.online - conn.offline);
-      return { className, effectif, ...conn, neverConnected };
+      return { className, effectif, niveau, niveauOrdre, cycle, cycleOrdre, ...conn, neverConnected };
     });
+
+    // Group by niveau
+    const niveauMap = new Map<string, { niveauOrdre: number; cycleOrdre: number; cycle: string; classes: typeof classItems }>();
+    classItems.forEach(item => {
+      const key = item.niveau;
+      if (!niveauMap.has(key)) {
+        niveauMap.set(key, { niveauOrdre: item.niveauOrdre, cycleOrdre: item.cycleOrdre, cycle: item.cycle, classes: [] });
+      }
+      niveauMap.get(key)!.classes.push(item);
+    });
+
+    // Sort niveaux by cycle order then niveau order
+    return Array.from(niveauMap.entries())
+      .sort((a, b) => (a[1].cycleOrdre - b[1].cycleOrdre) || (a[1].niveauOrdre - b[1].niveauOrdre))
+      .map(([niveau, data]) => ({
+        niveau,
+        cycle: data.cycle,
+        classes: data.classes.sort((a, b) => a.className.localeCompare(b.className)),
+      }));
   }, [grouped, classeEffectifs]);
 
-  const totalOnline = classStats.reduce((s, c) => s + c.online, 0);
-  const totalOffline = classStats.reduce((s, c) => s + c.offline, 0);
-  const totalNever = classStats.reduce((s, c) => s + c.neverConnected, 0);
+  const allClassItems = classStats.flatMap(n => n.classes);
+  const totalOnline = allClassItems.reduce((s, c) => s + c.online, 0);
+  const totalOffline = allClassItems.reduce((s, c) => s + c.offline, 0);
+  const totalNever = allClassItems.reduce((s, c) => s + c.neverConnected, 0);
 
   if (isLoading) {
     return (
@@ -163,70 +197,85 @@ function ConnectedStudentsDashboard() {
         {classStats.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Aucune donnée de connexion</p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {classStats.map(({ className, effectif, online, offline, neverConnected, students }) => (
-              <Collapsible
-                key={className}
-                open={expandedClass === className}
-                onOpenChange={(open) => setExpandedClass(open ? className : null)}
-              >
-                <CollapsibleTrigger asChild>
-                  <button className="w-full text-left border rounded-xl p-3 bg-card hover:bg-accent/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
-                          <Users className="h-4 w-4 text-emerald-600" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-sm truncate">{className}</p>
-                          <p className="text-[10px] text-muted-foreground leading-tight">
-                            <span className="text-emerald-600">{online}🟢</span>
-                            {' '}<span className="text-orange-500">{offline}🟠</span>
-                            {' '}<span>{neverConnected}⚪</span>
-                            {' '}/ {effectif}
-                          </p>
-                        </div>
-                      </div>
-                      {expandedClass === className ? (
-                        <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-                      )}
-                    </div>
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="mt-1 border rounded-lg bg-muted/30 divide-y max-h-48 overflow-y-auto">
-                    {students.map(s => {
-                      const lastSeenMs = now - new Date(s.last_seen_at).getTime();
-                      const agoMin = Math.round(lastSeenMs / 60000);
-                      return (
-                        <div key={s.id} className="px-3 py-2 flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className={`w-2 h-2 rounded-full shrink-0 ${s.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
-                            <span className={`text-sm truncate ${!s.isOnline ? 'text-muted-foreground' : ''}`}>{s.display_name}</span>
-                          </div>
-                          {s.isOnline ? (
-                            <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 px-1.5 py-0">
-                              En ligne
-                            </Badge>
-                          ) : (
-                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                              Hors ligne • {agoMin < 1 ? '<1m' : `${agoMin}m`}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                    {neverConnected > 0 && (
-                      <div className="px-3 py-2 text-xs text-muted-foreground italic">
-                        + {neverConnected} élève{neverConnected > 1 ? 's' : ''} jamais connecté{neverConnected > 1 ? 's' : ''}
-                      </div>
-                    )}
+          <div className="space-y-5">
+            {classStats.map(({ niveau, cycle, classes: niveauClasses }) => {
+              const nOnline = niveauClasses.reduce((s, c) => s + c.online, 0);
+              const nTotal = niveauClasses.reduce((s, c) => s + c.effectif, 0);
+              return (
+                <div key={niveau}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-sm font-bold text-foreground">{niveau}</h3>
+                    <Badge variant="secondary" className="text-[10px]">{cycle}</Badge>
+                    <span className="text-xs text-muted-foreground ml-auto">{nOnline}/{nTotal} en ligne</span>
                   </div>
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                    {niveauClasses.map(({ className, effectif, online, offline, neverConnected, students }) => (
+                      <Collapsible
+                        key={className}
+                        open={expandedClass === className}
+                        onOpenChange={(open) => setExpandedClass(open ? className : null)}
+                      >
+                        <CollapsibleTrigger asChild>
+                          <button className="w-full text-left border rounded-xl p-3 bg-card hover:bg-accent/50 transition-colors">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
+                                  <Users className="h-4 w-4 text-emerald-600" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-sm truncate">{className}</p>
+                                  <p className="text-[10px] text-muted-foreground leading-tight">
+                                    <span className="text-emerald-600">{online}🟢</span>
+                                    {' '}<span className="text-orange-500">{offline}🟠</span>
+                                    {' '}<span>{neverConnected}⚪</span>
+                                    {' '}/ {effectif}
+                                  </p>
+                                </div>
+                              </div>
+                              {expandedClass === className ? (
+                                <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                              )}
+                            </div>
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="mt-1 border rounded-lg bg-muted/30 divide-y max-h-48 overflow-y-auto">
+                            {students.map(s => {
+                              const lastSeenMs = now - new Date(s.last_seen_at).getTime();
+                              const agoMin = Math.round(lastSeenMs / 60000);
+                              return (
+                                <div key={s.id} className="px-3 py-2 flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className={`w-2 h-2 rounded-full shrink-0 ${s.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
+                                    <span className={`text-sm truncate ${!s.isOnline ? 'text-muted-foreground' : ''}`}>{s.display_name}</span>
+                                  </div>
+                                  {s.isOnline ? (
+                                    <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 px-1.5 py-0">
+                                      En ligne
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                      Hors ligne • {agoMin < 1 ? '<1m' : `${agoMin}m`}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            {neverConnected > 0 && (
+                              <div className="px-3 py-2 text-xs text-muted-foreground italic">
+                                + {neverConnected} élève{neverConnected > 1 ? 's' : ''} jamais connecté{neverConnected > 1 ? 's' : ''}
+                              </div>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </CardContent>
