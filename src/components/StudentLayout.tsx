@@ -127,16 +127,22 @@ export function StudentLayout({ children }: { children: ReactNode }) {
 
       {/* ─── Profile Dialog ─── */}
       <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
-        <DialogContent className="max-w-sm p-0 overflow-hidden rounded-3xl border-0 shadow-2xl">
+        <DialogContent className="max-w-sm p-0 overflow-hidden rounded-3xl border-0 shadow-2xl max-h-[85vh] overflow-y-auto">
           <div className="flex justify-center pt-6 pb-2 bg-card">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', damping: 15, stiffness: 200 }}
-              className="w-28 h-28 rounded-full bg-gradient-to-br from-primary via-primary/80 to-accent p-[3px] shadow-xl"
+              className="relative w-28 h-28 rounded-full bg-gradient-to-br from-primary via-primary/80 to-accent p-[3px] shadow-xl cursor-pointer group"
+              onClick={() => eleve.photo_url && setPhotoZoom(true)}
             >
               {eleve.photo_url ? (
-                <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} className="w-full h-full rounded-full object-cover bg-background" />
+                <>
+                  <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} className="w-full h-full rounded-full object-cover bg-background" />
+                  <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                    <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                  </div>
+                </>
               ) : (
                 <div className="w-full h-full rounded-full bg-card flex items-center justify-center text-primary font-bold text-3xl">
                   {eleve.prenom[0]}{eleve.nom[0]}
@@ -197,9 +203,78 @@ export function StudentLayout({ children }: { children: ReactNode }) {
                 </div>
               )}
             </motion.div>
+
+            {/* ─── Mes Matières (decorative blocks) ─── */}
+            {matieres.length > 0 && (
+              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="w-full mt-5">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3 flex items-center gap-1.5">
+                  <BookOpen className="h-3.5 w-3.5" /> Mes Matières
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {(() => {
+                    const matColors = [
+                      'from-blue-500 to-blue-600',
+                      'from-emerald-500 to-emerald-600',
+                      'from-amber-500 to-amber-600',
+                      'from-rose-500 to-rose-600',
+                      'from-violet-500 to-violet-600',
+                      'from-indigo-500 to-indigo-600',
+                      'from-pink-500 to-pink-600',
+                      'from-teal-500 to-teal-600',
+                      'from-orange-500 to-orange-600',
+                      'from-cyan-500 to-cyan-600',
+                    ];
+                    const matEmojis = ['📐', '📖', '🔬', '🌍', '🇬🇧', '🎨', '⚽', '💻', '🎵', '📊', '🧪', '📝', '🧮', '🏛️', '🌱'];
+                    return matieres.map((m: any, i: number) => {
+                      const nom = m.matieres?.nom || 'Matière';
+                      const coeff = m.matieres?.coefficient;
+                      const color = matColors[i % matColors.length];
+                      const emoji = matEmojis[i % matEmojis.length];
+                      return (
+                        <motion.div
+                          key={m.id}
+                          initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          transition={{ delay: 0.35 + i * 0.04, type: 'spring', damping: 18 }}
+                          className="relative overflow-hidden rounded-2xl p-3 shadow-md"
+                        >
+                          <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-90`} />
+                          <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-white/10" />
+                          <div className="absolute -bottom-2 -left-2 w-8 h-8 rounded-full bg-white/5" />
+                          <div className="relative z-10">
+                            <span className="text-lg drop-shadow-md">{emoji}</span>
+                            <p className="text-xs font-bold text-white leading-tight mt-1 drop-shadow-sm">{nom}</p>
+                            {coeff && <p className="text-[10px] text-white/70 mt-0.5">Coeff. {coeff}</p>}
+                          </div>
+                        </motion.div>
+                      );
+                    });
+                  })()}
+                </div>
+              </motion.div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ─── Photo Zoom Dialog ─── */}
+      <AnimatePresence>
+        {photoZoom && eleve.photo_url && (
+          <Dialog open={photoZoom} onOpenChange={setPhotoZoom}>
+            <DialogContent className="max-w-md p-2 bg-black/95 border-0 rounded-3xl">
+              <motion.img
+                src={eleve.photo_url}
+                alt={`${eleve.prenom} ${eleve.nom}`}
+                initial={{ scale: 0.7, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+                className="w-full h-auto max-h-[70vh] object-contain rounded-2xl"
+              />
+              <p className="text-center text-white/80 text-sm font-medium mt-2">{eleve.prenom} {eleve.nom}</p>
+            </DialogContent>
+          </Dialog>
+        )}
+      </AnimatePresence>
 
       {/* ─── Games Bottom Sheet ─── */}
       <AnimatePresence>
