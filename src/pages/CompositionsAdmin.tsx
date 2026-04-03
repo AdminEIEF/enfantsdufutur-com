@@ -674,11 +674,38 @@ export default function CompositionsAdmin() {
             <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} /></div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Classe *</Label>
-                <Select value={form.classe_id} onValueChange={v => setForm({ ...form, classe_id: v, matiere_id: '' })}>
-                  <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
-                  <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}</SelectContent>
-                </Select>
+                <Label>{editComp ? 'Classe *' : 'Classe(s) *'}</Label>
+                {editComp ? (
+                  <Select value={form.classe_id} onValueChange={v => setForm({ ...form, classe_id: v, matiere_id: '' })}>
+                    <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                    <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <div className="border rounded-md p-2 max-h-40 overflow-y-auto space-y-1 bg-background">
+                    {form.classe_ids.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-1">
+                        {form.classe_ids.map(cid => {
+                          const cl = classes.find((c: any) => c.id === cid);
+                          return <Badge key={cid} variant="secondary" className="text-[10px]">{cl?.nom}</Badge>;
+                        })}
+                      </div>
+                    )}
+                    {classes.map((c: any) => (
+                      <label key={c.id} className="flex items-center gap-2 px-1 py-0.5 rounded hover:bg-muted/50 cursor-pointer text-sm">
+                        <Checkbox
+                          checked={form.classe_ids.includes(c.id)}
+                          onCheckedChange={(checked) => {
+                            const newIds = checked
+                              ? [...form.classe_ids, c.id]
+                              : form.classe_ids.filter(id => id !== c.id);
+                            setForm({ ...form, classe_ids: newIds, matiere_id: '' });
+                          }}
+                        />
+                        <span>{c.niveaux?.nom} — {c.nom}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <Label>Matière *</Label>
