@@ -414,6 +414,13 @@ serve(async (req) => {
           .update({ reponse_texte: reponse_texte || '', soumis_at: new Date().toISOString() })
           .eq("id", existing.id);
 
+        await supabaseAdmin.from("student_notifications").insert({
+          eleve_id: eleveId,
+          titre: '📝 Composition soumise',
+          message: `Votre composition "${comp.titre}" en ${comp.matieres?.nom || 'matière'} a été soumise. En attente de correction.`,
+          type: 'info',
+        });
+
         return new Response(JSON.stringify({ submitted: true, message: "Réponse soumise. Le superviseur notera votre copie.", bareme: comp.bareme }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
