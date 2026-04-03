@@ -736,7 +736,13 @@ export default function CompositionsAdmin() {
                         </Button>
                       </div>
                     </div>
-                    <Textarea placeholder="Énoncé de la question" value={q.enonce} onChange={e => updateQuestion(idx, { enonce: e.target.value })} rows={2} />
+                    <Textarea placeholder="Énoncé de la question (utilisez $...$ pour les formules math, ex: $\frac{a}{b}$, $\sqrt{x}$, $\pi$)" value={q.enonce} onChange={e => updateQuestion(idx, { enonce: e.target.value })} rows={2} />
+                    {q.enonce && /[\$\\]/.test(q.enonce) && (
+                      <div className="p-2 rounded-lg bg-muted/50 border border-border/50">
+                        <p className="text-[10px] text-muted-foreground mb-1">Aperçu :</p>
+                        <p className="text-sm font-medium"><MathText text={q.enonce} /></p>
+                      </div>
+                    )}
                     {q.type_question === 'texte' ? (
                       <div className="space-y-2">
                         <Label className="text-xs text-muted-foreground">Réponse attendue (référence pour la correction IA) :</Label>
