@@ -53,6 +53,8 @@ export function StudentLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const [gamesOpen, setGamesOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [photoZoom, setPhotoZoom] = useState(false);
+  const [matieres, setMatieres] = useState<any[]>([]);
 
   const level = useMemo(() => detectLevel(session), [session]);
   const filteredGames = useMemo(() => ALL_GAMES.filter(g => g.levels.includes(level)), [level]);
