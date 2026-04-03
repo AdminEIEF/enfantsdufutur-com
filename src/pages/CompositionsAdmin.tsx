@@ -134,7 +134,9 @@ function ConnectedStudentsDashboard() {
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-sm truncate">{className}</p>
-                          <p className="text-xs text-muted-foreground">{students.length} élève{students.length > 1 ? 's' : ''}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {students.filter(s => s.isOnline).length} en ligne / {students.length} total
+                          </p>
                         </div>
                       </div>
                       {expandedClass === className ? (
