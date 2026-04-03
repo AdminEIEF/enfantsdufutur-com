@@ -364,7 +364,10 @@ serve(async (req) => {
     }
 
     if (action === "submit_composition") {
-      const studentAnswers = studentReponses || {};
+      const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
+      const studentAnswers = comp?.type_composition === 'texte'
+        ? (Array.isArray(studentReponses) ? studentReponses : [])
+        : (isObject(studentReponses) ? studentReponses : {});
       
       const { data: comp } = await supabaseAdmin
         .from("compositions")
@@ -424,14 +427,31 @@ serve(async (req) => {
           .eq("composition_id", composition_id)
           .order("ordre");
 
+        if (!texteQuestions || texteQuestions.length === 0) {
+          return new Response(JSON.stringify({ error: "Aucune question enregistrée pour cette composition" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const normalizedAnswers = studentAnswers.map((entry: any) => ({
+          question_id: typeof entry?.question_id === 'string' ? entry.question_id : '',
+          question: typeof entry?.question === 'string' ? entry.question.slice(0, 2000) : '',
+          answer: typeof entry?.answer === 'string' ? entry.answer.slice(0, 12000) : '',
+          ordre: typeof entry?.ordre === 'number' ? entry.ordre : null,
+          points: typeof entry?.points === 'number' ? entry.points : null,
+        })).filter((entry: any) => entry.question_id || entry.answer || entry.question);
+
+        const normalizedTextResponse = typeof reponse_texte === 'string' ? reponse_texte.slice(0, 200000) : '';
+
         await supabaseAdmin
           .from("composition_reponses")
-          .update({ reponse_texte: reponse_texte || '', soumis_at: new Date().toISOString() })
+          .update({ reponse_texte: normalizedTextResponse, reponses: normalizedAnswers, soumis_at: new Date().toISOString() })
           .eq("id", existing.id);
 
         // Try AI grading if reference answers exist
         const hasRefs = (texteQuestions || []).some(q => q.reponse_correcte && q.reponse_correcte !== '_texte_');
-        if (hasRefs && reponse_texte) {
+        if (hasRefs && normalizedTextResponse) {
           try {
             const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
             if (LOVABLE_API_KEY) {
@@ -447,7 +467,7 @@ serve(async (req) => {
                   model: "google/gemini-3-flash-preview",
                   messages: [
                     { role: "system", content: `Tu es un correcteur d'examen scolaire. Compare les réponses de l'élève avec les réponses attendues. Évalue la pertinence des idées, pas la formulation exacte. Sois juste mais bienveillant. Le total possible est ${totalPossiblePts} points.` },
-                    { role: "user", content: `Voici les questions et réponses attendues:\n\n${gradingPrompt}\n\nVoici la copie de l'élève:\n${reponse_texte}\n\nAttribue un score total sur ${totalPossiblePts} points. Réponds UNIQUEMENT avec un JSON: {"score": <nombre>, "commentaire": "<bref commentaire>"}` }
+                    { role: "user", content: `Voici les questions et réponses attendues:\n\n${gradingPrompt}\n\nVoici la copie de l'élève:\n${normalizedTextResponse}\n\nAttribue un score total sur ${totalPossiblePts} points. Réponds UNIQUEMENT avec un JSON: {"score": <nombre>, "commentaire": "<bref commentaire>"}` }
                   ],
                   tools: [{
                     type: "function",
