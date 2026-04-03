@@ -29,7 +29,6 @@ function ConnectedStudentsDashboard() {
   const [expandedClass, setExpandedClass] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
 
-  // Force re-render every 2s for live timers
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 2000);
     return () => clearInterval(interval);
@@ -45,10 +44,29 @@ function ConnectedStudentsDashboard() {
         .order('classe_nom');
       return (data || []) as ConnectedStudent[];
     },
-    refetchInterval: 2000, // Refresh every 2 seconds
+    refetchInterval: 2000,
   });
 
-  // Deduplicate: keep only the most recent entry per display_name
+  // Fetch total students per class
+  const { data: classeEffectifs = [] } = useQuery({
+    queryKey: ['classe-effectifs-compositions'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('eleves')
+        .select('classe_id, classes:classe_id(nom)')
+        .eq('statut', 'inscrit')
+        .is('deleted_at', null)
+        .not('classe_id', 'is', null);
+      const map = new Map<string, number>();
+      (data || []).forEach((e: any) => {
+        const nom = e.classes?.nom || 'Sans classe';
+        map.set(nom, (map.get(nom) || 0) + 1);
+      });
+      return Array.from(map.entries()).map(([nom, total]) => ({ nom, total }));
+    },
+    staleTime: 30000,
+  });
+
   const uniqueConnections = useMemo(() => {
     const map = new Map<string, ConnectedStudent>();
     connections.forEach(c => {
@@ -61,28 +79,47 @@ function ConnectedStudentsDashboard() {
     return Array.from(map.values());
   }, [connections]);
 
-  // Consider offline if last_seen > 30 seconds ago
   const OFFLINE_THRESHOLD_MS = 30000;
-  const onlineStudents = uniqueConnections.filter(c => (now - new Date(c.last_seen_at).getTime()) < OFFLINE_THRESHOLD_MS);
-  const offlineStudents = uniqueConnections.filter(c => (now - new Date(c.last_seen_at).getTime()) >= OFFLINE_THRESHOLD_MS);
 
   const grouped = useMemo(() => {
-    const allStudents = [...onlineStudents, ...offlineStudents];
     const map = new Map<string, (ConnectedStudent & { isOnline: boolean })[]>();
-    allStudents.forEach(c => {
+    uniqueConnections.forEach(c => {
       const key = c.classe_nom || 'Sans classe';
       if (!map.has(key)) map.set(key, []);
       const isOnline = (now - new Date(c.last_seen_at).getTime()) < OFFLINE_THRESHOLD_MS;
       map.get(key)!.push({ ...c, isOnline });
     });
-    // Sort: online first within each class
     map.forEach((students, key) => {
       map.set(key, students.sort((a, b) => (a.isOnline === b.isOnline ? 0 : a.isOnline ? -1 : 1)));
     });
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [uniqueConnections, now]);
 
-  const totalOnline = onlineStudents.length;
+  // Build full class stats including classes with 0 connections
+  const classStats = useMemo(() => {
+    const connectedMap = new Map<string, { online: number; offline: number; students: (ConnectedStudent & { isOnline: boolean })[] }>();
+    grouped.forEach(([className, students]) => {
+      const online = students.filter(s => s.isOnline).length;
+      const offline = students.filter(s => !s.isOnline).length;
+      connectedMap.set(className, { online, offline, students });
+    });
+
+    const allClasses = new Set([
+      ...classeEffectifs.map(c => c.nom),
+      ...connectedMap.keys(),
+    ]);
+
+    return Array.from(allClasses).sort().map(className => {
+      const effectif = classeEffectifs.find(c => c.nom === className)?.total || 0;
+      const conn = connectedMap.get(className) || { online: 0, offline: 0, students: [] };
+      const neverConnected = Math.max(0, effectif - conn.online - conn.offline);
+      return { className, effectif, ...conn, neverConnected };
+    });
+  }, [grouped, classeEffectifs]);
+
+  const totalOnline = classStats.reduce((s, c) => s + c.online, 0);
+  const totalOffline = classStats.reduce((s, c) => s + c.offline, 0);
+  const totalNever = classStats.reduce((s, c) => s + c.neverConnected, 0);
 
   if (isLoading) {
     return (
@@ -98,7 +135,7 @@ function ConnectedStudentsDashboard() {
   return (
     <Card className="border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent overflow-hidden">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <div className="relative">
               <Monitor className="h-5 w-5 text-emerald-600" />
@@ -108,25 +145,33 @@ function ConnectedStudentsDashboard() {
             </div>
             Élèves connectés en temps réel
           </CardTitle>
-          <Badge className={`${totalOnline > 0 ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'} text-sm px-3`}>
-            <Wifi className="h-3.5 w-3.5 mr-1.5" />
-            {totalOnline} en ligne
-          </Badge>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge className={`${totalOnline > 0 ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'} text-sm px-3`}>
+              <Wifi className="h-3.5 w-3.5 mr-1.5" />
+              {totalOnline} en ligne
+            </Badge>
+            <Badge variant="outline" className="text-sm px-3 border-orange-300 text-orange-600">
+              {totalOffline} hors ligne
+            </Badge>
+            <Badge variant="outline" className="text-sm px-3 border-gray-300 text-muted-foreground">
+              {totalNever} jamais connecté{totalNever > 1 ? 's' : ''}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        {totalOnline === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">Aucun élève connecté actuellement</p>
+        {classStats.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">Aucune donnée de connexion</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {grouped.map(([className, students]) => (
+            {classStats.map(({ className, effectif, online, offline, neverConnected, students }) => (
               <Collapsible
                 key={className}
                 open={expandedClass === className}
                 onOpenChange={(open) => setExpandedClass(open ? className : null)}
               >
                 <CollapsibleTrigger asChild>
-                  <button className="w-full text-left border rounded-xl p-3 bg-card hover:bg-accent/50 transition-colors group">
+                  <button className="w-full text-left border rounded-xl p-3 bg-card hover:bg-accent/50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
@@ -134,8 +179,11 @@ function ConnectedStudentsDashboard() {
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-sm truncate">{className}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {students.filter(s => s.isOnline).length} en ligne / {students.length} total
+                          <p className="text-[10px] text-muted-foreground leading-tight">
+                            <span className="text-emerald-600">{online}🟢</span>
+                            {' '}<span className="text-orange-500">{offline}🟠</span>
+                            {' '}<span>{neverConnected}⚪</span>
+                            {' '}/ {effectif}
                           </p>
                         </div>
                       </div>
@@ -170,6 +218,11 @@ function ConnectedStudentsDashboard() {
                         </div>
                       );
                     })}
+                    {neverConnected > 0 && (
+                      <div className="px-3 py-2 text-xs text-muted-foreground italic">
+                        + {neverConnected} élève{neverConnected > 1 ? 's' : ''} jamais connecté{neverConnected > 1 ? 's' : ''}
+                      </div>
+                    )}
                   </div>
                 </CollapsibleContent>
               </Collapsible>
