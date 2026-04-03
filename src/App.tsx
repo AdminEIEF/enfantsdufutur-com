@@ -56,6 +56,7 @@ import StudentResultats from "./pages/student/StudentResultats";
 import StudentEvaluations from "./pages/student/StudentEvaluations";
 import ParentNotifications from "./pages/parent/ParentNotifications";
 import StudentNotifications from "./pages/student/StudentNotifications";
+import StudentQuizMatieres from "./pages/student/StudentQuizMatieres";
 import Personnel from "./pages/Personnel";
 import PreInscriptionsAdmin from "./pages/PreInscriptionsAdmin";
 import EmployeeLogin from "./pages/employee/EmployeeLogin";
