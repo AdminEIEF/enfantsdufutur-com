@@ -576,34 +576,52 @@ export default function SuperviseurPasswordPanel() {
               <div className="pt-2 border-t">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Code d'accès parent</span>
-                  {generatedPwd?.id === familleDetail.id ? (
-                    <div className="flex items-center gap-1">
-                      <code className="text-sm font-mono font-bold bg-muted px-2 py-0.5 rounded">
-                        {showPwd ? generatedPwd.pwd : '••••••'}
-                      </code>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowPwd(!showPwd)}>
-                        {showPwd ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  {(() => {
+                    const savedCode = getSavedPasswords(STORAGE_KEY_FAMILLES)[familleDetail.id];
+                    const displayCode = generatedPwd?.id === familleDetail.id ? generatedPwd.pwd : savedCode;
+                    const isVisible = showPwdIds.has(familleDetail.id);
+
+                    if (displayCode) {
+                      return (
+                        <div className="flex items-center gap-1">
+                          <code className="text-sm font-mono font-bold bg-muted px-2 py-0.5 rounded">
+                            {isVisible ? displayCode : '••••••'}
+                          </code>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                            setShowPwdIds(prev => {
+                              const next = new Set(prev);
+                              if (next.has(familleDetail.id)) next.delete(familleDetail.id); else next.add(familleDetail.id);
+                              return next;
+                            });
+                          }}>
+                            {isVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(displayCode); toast.success('Copié !'); }}>
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={generatingId === familleDetail.id} onClick={() => handleGenerate({ ...familleDetail, nom_famille: familleDetail.nom_famille })} title="Régénérer">
+                            {generatingId === familleDetail.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                          </Button>
+                        </div>
+                      );
+                    }
+                    return (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs h-7"
+                        disabled={generatingId === familleDetail.id}
+                        onClick={() => handleGenerate({ ...familleDetail, nom_famille: familleDetail.nom_famille })}
+                      >
+                        {generatingId === familleDetail.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                        ) : (
+                          <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                        )}
+                        Générer
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(generatedPwd.pwd); toast.success('Copié !'); }}>
-                        <Copy className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs h-7"
-                      disabled={generatingId === familleDetail.id}
-                      onClick={() => handleGenerate({ ...familleDetail, nom_famille: familleDetail.nom_famille })}
-                    >
-                      {generatingId === familleDetail.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-                      ) : (
-                        <RefreshCw className="h-3.5 w-3.5 mr-1" />
-                      )}
-                      Générer
-                    </Button>
-                  )}
+                    );
+                  })()}
                 </div>
               </div>
             </div>
