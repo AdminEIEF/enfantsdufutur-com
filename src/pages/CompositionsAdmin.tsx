@@ -599,7 +599,7 @@ export default function CompositionsAdmin() {
                       setEditComp(comp);
                       setForm({
                         titre: comp.titre, description: comp.description || '',
-                        classe_id: comp.classe_id, matiere_id: comp.matiere_id,
+                        classe_id: comp.classe_id, classe_ids: [comp.classe_id], matiere_id: comp.matiere_id,
                         duree_minutes: comp.duree_minutes,
                         date_debut: comp.date_debut.slice(0, 16),
                         date_fin: comp.date_fin.slice(0, 16),
