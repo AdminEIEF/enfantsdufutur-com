@@ -404,12 +404,94 @@ serve(async (req) => {
         });
       }
 
-      // Document or Texte type: save text response, no auto-scoring
-      if (comp.type_composition === 'document' || comp.type_composition === 'texte') {
+      // Document type: save text response, no auto-scoring
+      if (comp.type_composition === 'document') {
         await supabaseAdmin
           .from("composition_reponses")
           .update({ reponse_texte: reponse_texte || '', soumis_at: new Date().toISOString() })
           .eq("id", existing.id);
+
+        return new Response(JSON.stringify({ submitted: true, message: "Réponse soumise. Le superviseur notera votre copie.", bareme: comp.bareme }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Texte type: save response then auto-grade with AI
+      if (comp.type_composition === 'texte') {
+        const { data: texteQuestions } = await supabaseAdmin
+          .from("composition_questions")
+          .select("id, enonce, reponse_correcte, points")
+          .eq("composition_id", composition_id)
+          .order("ordre");
+
+        await supabaseAdmin
+          .from("composition_reponses")
+          .update({ reponse_texte: reponse_texte || '', soumis_at: new Date().toISOString() })
+          .eq("id", existing.id);
+
+        // Try AI grading if reference answers exist
+        const hasRefs = (texteQuestions || []).some(q => q.reponse_correcte && q.reponse_correcte !== '_texte_');
+        if (hasRefs && reponse_texte) {
+          try {
+            const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+            if (LOVABLE_API_KEY) {
+              const totalPossiblePts = (texteQuestions || []).reduce((s, q) => s + q.points, 0);
+              const gradingPrompt = (texteQuestions || []).map((q, i) => 
+                `Question ${i+1} (${q.points} pts): ${q.enonce}\nRéponse attendue: ${q.reponse_correcte}`
+              ).join('\n\n');
+
+              const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  model: "google/gemini-3-flash-preview",
+                  messages: [
+                    { role: "system", content: `Tu es un correcteur d'examen scolaire. Compare les réponses de l'élève avec les réponses attendues. Évalue la pertinence des idées, pas la formulation exacte. Sois juste mais bienveillant. Le total possible est ${totalPossiblePts} points.` },
+                    { role: "user", content: `Voici les questions et réponses attendues:\n\n${gradingPrompt}\n\nVoici la copie de l'élève:\n${reponse_texte}\n\nAttribue un score total sur ${totalPossiblePts} points. Réponds UNIQUEMENT avec un JSON: {"score": <nombre>, "commentaire": "<bref commentaire>"}` }
+                  ],
+                  tools: [{
+                    type: "function",
+                    function: {
+                      name: "grade_composition",
+                      description: "Return the grade for a student composition",
+                      parameters: {
+                        type: "object",
+                        properties: {
+                          score: { type: "number", description: "Total score" },
+                          commentaire: { type: "string", description: "Brief feedback" }
+                        },
+                        required: ["score", "commentaire"],
+                        additionalProperties: false
+                      }
+                    }
+                  }],
+                  tool_choice: { type: "function", function: { name: "grade_composition" } }
+                }),
+              });
+
+              if (aiRes.ok) {
+                const aiData = await aiRes.json();
+                const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+                if (toolCall) {
+                  const gradeResult = JSON.parse(toolCall.function.arguments);
+                  const rawScore = Math.max(0, Math.min(gradeResult.score, totalPossiblePts));
+                  const scaledScore = totalPossiblePts > 0 ? Math.round((rawScore / totalPossiblePts) * comp.bareme * 100) / 100 : 0;
+                  
+                  await supabaseAdmin
+                    .from("composition_reponses")
+                    .update({ score: scaledScore })
+                    .eq("id", existing.id);
+
+                  return new Response(JSON.stringify({ submitted: true, score: scaledScore, bareme: comp.bareme, message: `Composition notée par IA : ${scaledScore}/${comp.bareme}. ${gradeResult.commentaire}` }), {
+                    headers: { ...corsHeaders, "Content-Type": "application/json" },
+                  });
+                }
+              }
+            }
+          } catch (aiErr) {
+            console.error("AI grading error:", aiErr);
+          }
+        }
 
         return new Response(JSON.stringify({ submitted: true, message: "Réponse soumise. Le superviseur notera votre copie.", bareme: comp.bareme }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
