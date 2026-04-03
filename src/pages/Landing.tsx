@@ -104,8 +104,8 @@ export default function Landing() {
   ];
 
   const portalButtons = [
-    { to: '/eleve', icon: GraduationCap, label: 'Élève', sub: 'Notes & Cours', gradient: 'linear-gradient(135deg, #7C3AED, #9333EA)', shadow: 'rgba(124,58,237,0.4)' },
-    { to: '/parent', icon: Users, label: 'Parent', sub: 'Suivi scolaire', gradient: 'linear-gradient(135deg, #F59E0B, #D97706)', shadow: 'rgba(245,158,11,0.4)' },
+    { to: '/eleve', icon: GraduationCap, label: 'Espace Élève', sub: 'Notes & Cours', gradient: 'linear-gradient(135deg, #7C3AED, #9333EA)', shadow: 'rgba(124,58,237,0.4)' },
+    { to: '/parent', icon: Users, label: 'Espace Parent', sub: 'Suivi scolaire', gradient: 'linear-gradient(135deg, #F59E0B, #D97706)', shadow: 'rgba(245,158,11,0.4)' },
     { to: '/employe', icon: Briefcase, label: 'Employé', sub: 'Espace RH', gradient: 'linear-gradient(135deg, #059669, #047857)', shadow: 'rgba(5,150,105,0.4)' },
     { to: '/auth', icon: Shield, label: 'Admin', sub: 'Gestion', gradient: 'linear-gradient(135deg, #2563EB, #1D4ED8)', shadow: 'rgba(37,99,235,0.4)' },
   ];
