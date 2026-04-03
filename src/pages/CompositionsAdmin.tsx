@@ -418,7 +418,7 @@ export default function CompositionsAdmin() {
   }
 
   function resetForm() {
-    setForm({ titre: '', description: '', classe_id: '', matiere_id: '', duree_minutes: 30, date_debut: '', date_fin: '', bareme: 20, type_composition: 'qcm', sujet_url: '', sujet_nom: '' });
+    setForm({ titre: '', description: '', classe_id: '', classe_ids: [], matiere_id: '', duree_minutes: 30, date_debut: '', date_fin: '', bareme: 20, type_composition: 'qcm', sujet_url: '', sujet_nom: '' });
   }
 
   async function togglePublie(comp: Composition) {
