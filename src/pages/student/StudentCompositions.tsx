@@ -92,10 +92,25 @@ export default function StudentCompositions() {
     allowPasteInEditable: true,
   });
 
+  // Auto-refresh compositions list every 10s
   useEffect(() => {
-    if (session) fetchCompositions();
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [session]);
+    if (!session) return;
+    fetchCompositions();
+    const refreshId = setInterval(() => {
+      if (!activeComp) fetchCompositions();
+    }, 10000);
+    return () => {
+      clearInterval(refreshId);
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [session, activeComp]);
+
+  // Live countdown tick every second for upcoming compositions
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const callApi = async (action: string, extra: any = {}) => {
     const resp = await fetch(
