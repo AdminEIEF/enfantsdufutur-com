@@ -1,21 +1,31 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BookOpen, Home, FileText, ClipboardList, Award, Bot, LogOut, CalendarDays, Star, PenTool, Calculator, GraduationCap, Palette, Bug, Languages, Gamepad2, X, Pyramid, FileQuestion, User, Calendar, Hash } from 'lucide-react';
+import { BookOpen, Home, ClipboardList, Award, LogOut, PenTool, Calculator, GraduationCap, Palette, Bug, Languages, Gamepad2, X, Pyramid, FileQuestion, User, Calendar, Hash, Sparkles } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { SchoolWatermark } from '@/components/SchoolWatermark';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const GAME_ITEMS = [
-  { path: '/eleve/ecriture', icon: PenTool, label: 'Écriture', emoji: '✏️' },
-  { path: '/eleve/calcul', icon: Calculator, label: 'Calcul', emoji: '🔢' },
-  { path: '/eleve/pyramide', icon: Pyramid, label: 'Pyramide', emoji: '🔺' },
-  { path: '/eleve/culture', icon: GraduationCap, label: 'Culture', emoji: '🧠' },
-  { path: '/eleve/coloriage', icon: Palette, label: 'Coloriage', emoji: '🎨' },
-  { path: '/eleve/serpent', icon: Bug, label: 'Serpent ABC', emoji: '🐍' },
-  { path: '/eleve/anglais', icon: Languages, label: 'Anglais', emoji: '🇬🇧' },
+interface GameItem {
+  path: string;
+  label: string;
+  emoji: string;
+  color: string;
+  levels: string[]; // which cycle levels can see this
+}
+
+// levels: 'creche', 'maternelle', 'primaire', 'college', 'lycee'
+const ALL_GAMES: GameItem[] = [
+  { path: '/eleve/ecriture', label: 'Écriture', emoji: '✏️', color: 'from-blue-400 to-blue-600', levels: ['creche', 'maternelle', 'primaire'] },
+  { path: '/eleve/calcul', label: 'Calcul Mental', emoji: '🔢', color: 'from-emerald-400 to-emerald-600', levels: ['primaire', 'college', 'lycee'] },
+  { path: '/eleve/pyramide', label: 'Pyramide', emoji: '🔺', color: 'from-amber-400 to-amber-600', levels: ['primaire', 'college'] },
+  { path: '/eleve/culture', label: 'Culture Gén.', emoji: '🧠', color: 'from-violet-400 to-violet-600', levels: ['primaire', 'college', 'lycee'] },
+  { path: '/eleve/coloriage', label: 'Coloriage', emoji: '🎨', color: 'from-pink-400 to-pink-600', levels: ['creche', 'maternelle', 'primaire'] },
+  { path: '/eleve/serpent', label: 'Serpent ABC', emoji: '🐍', color: 'from-green-400 to-green-600', levels: ['creche', 'maternelle', 'primaire'] },
+  { path: '/eleve/anglais', label: 'Anglais', emoji: '🇬🇧', color: 'from-indigo-400 to-indigo-600', levels: ['primaire', 'college', 'lycee'] },
+  { path: '/eleve/quiz-matieres', label: 'Quiz Matières', emoji: '📝', color: 'from-rose-400 to-rose-600', levels: ['primaire', 'college', 'lycee'] },
 ];
 
 const NAV_ITEMS = [
@@ -27,6 +37,15 @@ const NAV_ITEMS = [
   { path: '/eleve/resultats', icon: Award, label: 'Résultats' },
 ];
 
+function detectLevel(session: any): string {
+  const cycleName = (session?.eleve?.classes?.niveaux?.cycles?.nom || session?.eleve?.classes?.cycle_nom || '').toLowerCase();
+  if (cycleName.includes('crèche') || cycleName.includes('creche')) return 'creche';
+  if (cycleName.includes('maternelle')) return 'maternelle';
+  if (cycleName.includes('lycée') || cycleName.includes('lycee')) return 'lycee';
+  if (cycleName.includes('collège') || cycleName.includes('college') || cycleName.includes('secondaire')) return 'college';
+  return 'primaire';
+}
+
 export function StudentLayout({ children }: { children: ReactNode }) {
   const { session, logout } = useStudentAuth();
   const navigate = useNavigate();
@@ -34,19 +53,18 @@ export function StudentLayout({ children }: { children: ReactNode }) {
   const [gamesOpen, setGamesOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
+  const level = useMemo(() => detectLevel(session), [session]);
+  const filteredGames = useMemo(() => ALL_GAMES.filter(g => g.levels.includes(level)), [level]);
+
   useEffect(() => {
-    if (!session) {
-      navigate('/eleve', { replace: true });
-    }
+    if (!session) navigate('/eleve', { replace: true });
   }, [session, navigate]);
 
   useEffect(() => {
     setGamesOpen(false);
   }, [location.pathname]);
 
-  if (!session) {
-    return null;
-  }
+  if (!session) return null;
 
   const handleLogout = () => {
     logout();
@@ -54,13 +72,13 @@ export function StudentLayout({ children }: { children: ReactNode }) {
   };
 
   const eleve = session.eleve;
-  const isGameRoute = GAME_ITEMS.some(g => location.pathname === g.path);
+  const isGameRoute = filteredGames.some(g => location.pathname === g.path);
 
   return (
     <div className="min-h-screen bg-background relative">
       <SchoolWatermark />
 
-      {/* ─── Material-style Top App Bar ─── */}
+      {/* ─── Top App Bar ─── */}
       <header className="sticky top-0 z-30 bg-primary shadow-md">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <button onClick={() => setProfileOpen(true)} className="flex items-center gap-3 min-w-0 cursor-pointer active:scale-[0.97] transition-transform">
@@ -81,12 +99,7 @@ export function StudentLayout({ children }: { children: ReactNode }) {
             </div>
           </button>
           <div className="flex items-center gap-1 shrink-0">
-            <NotificationBell
-              mode="student"
-              targetId={eleve.id}
-              token={session.token}
-              onViewAll={() => navigate('/eleve/notifications')}
-            />
+            <NotificationBell mode="student" targetId={eleve.id} token={session.token} onViewAll={() => navigate('/eleve/notifications')} />
             <Button variant="ghost" size="icon" onClick={handleLogout} className="text-primary-foreground hover:bg-primary-foreground/10 h-9 w-9 rounded-full">
               <LogOut className="h-4 w-4" />
             </Button>
@@ -99,7 +112,7 @@ export function StudentLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      {/* ─── Profile Bottom Sheet ─── */}
+      {/* ─── Profile Dialog ─── */}
       <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
         <DialogContent className="max-w-sm p-0 overflow-hidden rounded-3xl border-0 shadow-2xl">
           <div className="flex justify-center pt-6 pb-2 bg-card">
@@ -119,11 +132,9 @@ export function StudentLayout({ children }: { children: ReactNode }) {
             </motion.div>
           </div>
 
-          <div className="relative bg-primary py-3 px-6">
+          <div className="relative bg-gradient-to-br from-primary via-primary/80 to-accent py-4 px-6">
             <DialogHeader>
-              <DialogTitle className="text-center text-primary-foreground text-base font-semibold">
-                Mon Profil
-              </DialogTitle>
+              <DialogTitle className="text-center text-primary-foreground text-base font-semibold">Mon Profil</DialogTitle>
             </DialogHeader>
           </div>
 
@@ -193,7 +204,7 @@ export function StudentLayout({ children }: { children: ReactNode }) {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-[28px] shadow-2xl border-t max-h-[65vh] overflow-y-auto"
+              className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-[28px] shadow-2xl border-t max-h-[75vh] overflow-y-auto"
             >
               <div className="max-w-lg mx-auto px-4 pt-2 pb-6">
                 <div className="flex justify-center py-2">
@@ -201,36 +212,58 @@ export function StudentLayout({ children }: { children: ReactNode }) {
                 </div>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-bold flex items-center gap-2 text-foreground">
-                    <Gamepad2 className="h-5 w-5 text-primary" />
+                    <Sparkles className="h-5 w-5 text-primary" />
                     Jeux éducatifs
                   </h2>
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setGamesOpen(false)}>
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {GAME_ITEMS.map((game) => {
+
+                <div className="grid grid-cols-2 gap-3">
+                  {filteredGames.map((game, i) => {
                     const isActive = location.pathname === game.path;
                     return (
                       <motion.button
                         key={game.path}
-                        whileTap={{ scale: 0.9 }}
+                        initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ delay: i * 0.05, type: 'spring', damping: 18 }}
+                        whileTap={{ scale: 0.93 }}
+                        whileHover={{ y: -3 }}
                         onClick={() => {
                           navigate(game.path);
                           setGamesOpen(false);
                         }}
-                        className={`flex flex-col items-center gap-1 py-3 px-1 rounded-2xl transition-all ${
-                          isActive
-                            ? 'bg-primary/10 ring-2 ring-primary'
-                            : 'hover:bg-muted/60 active:bg-muted'
+                        className={`relative overflow-hidden rounded-2xl p-4 text-left transition-shadow ${
+                          isActive ? 'ring-2 ring-primary shadow-xl' : 'shadow-md hover:shadow-lg'
                         }`}
                       >
-                        <span className="text-2xl">{game.emoji}</span>
-                        <span className={`text-[10px] font-medium leading-tight text-center ${
-                          isActive ? 'text-primary' : 'text-muted-foreground'
-                        }`}>
-                          {game.label}
-                        </span>
+                        {/* Gradient background */}
+                        <div className={`absolute inset-0 bg-gradient-to-br ${game.color} opacity-90`} />
+                        {/* Decorative shape */}
+                        <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-white/10" />
+                        <div className="absolute -bottom-2 -left-2 w-10 h-10 rounded-full bg-white/5" />
+
+                        <div className="relative z-10 flex flex-col gap-2">
+                          <motion.span
+                            className="text-3xl drop-shadow-md"
+                            animate={{ rotate: [0, 5, -5, 0] }}
+                            transition={{ repeat: Infinity, duration: 3, delay: i * 0.3, ease: 'easeInOut' }}
+                          >
+                            {game.emoji}
+                          </motion.span>
+                          <span className="text-sm font-bold text-white leading-tight drop-shadow-sm">
+                            {game.label}
+                          </span>
+                        </div>
+
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeGameDot"
+                            className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-white shadow-lg"
+                          />
+                        )}
                       </motion.button>
                     );
                   })}
@@ -241,7 +274,7 @@ export function StudentLayout({ children }: { children: ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* ─── Android Material Bottom Nav ─── */}
+      {/* ─── Bottom Nav ─── */}
       <nav className="fixed bottom-0 left-0 right-0 z-30 bg-card shadow-[0_-2px_12px_rgba(0,0,0,0.08)] safe-area-bottom">
         <div className="max-w-4xl mx-auto flex">
           {NAV_ITEMS.map((item) => {
@@ -260,11 +293,9 @@ export function StudentLayout({ children }: { children: ReactNode }) {
                 }}
                 className="flex-1 flex flex-col items-center gap-0.5 py-2 relative group"
               >
-                {/* Active indicator pill */}
                 <div className={`absolute top-1 w-12 h-[3px] rounded-full transition-all duration-200 ${
                   isActive ? 'bg-primary scale-100' : 'scale-0'
                 }`} />
-
                 <div className={`flex items-center justify-center w-10 h-7 rounded-full transition-all duration-200 ${
                   isActive ? 'bg-primary/12' : ''
                 }`}>
@@ -275,7 +306,6 @@ export function StudentLayout({ children }: { children: ReactNode }) {
                     <span className="absolute top-1.5 right-1/4 w-1.5 h-1.5 rounded-full bg-primary" />
                   )}
                 </div>
-
                 <span className={`text-[10px] leading-tight transition-colors duration-200 ${
                   isActive ? 'text-primary font-semibold' : 'text-muted-foreground font-medium'
                 }`}>
