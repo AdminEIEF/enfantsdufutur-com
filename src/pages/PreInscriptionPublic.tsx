@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,14 +6,34 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { GraduationCap, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { GraduationCap, CheckCircle2, ArrowLeft, Upload, Camera, X, FileText, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+const DOCUMENTS_REQUIS = [
+  { key: 'extrait_naissance', label: 'Extrait de naissance', required: true },
+  { key: 'certificat_scolarite', label: 'Certificat de scolarité (ancienne école)', required: false },
+  { key: 'bulletins', label: 'Bulletins scolaires (année précédente)', required: false },
+  { key: 'photos_identite', label: "Photos d'identité (4 photos)", required: true },
+  { key: 'carnet_vaccination', label: 'Carnet de vaccination', required: true },
+  { key: 'certificat_medical', label: 'Certificat médical', required: false },
+  { key: 'piece_identite_parent', label: "Pièce d'identité du parent/tuteur", required: true },
+  { key: 'justificatif_domicile', label: 'Justificatif de domicile', required: false },
+];
+
+interface UploadedDoc {
+  key: string;
+  file: File;
+  preview?: string;
+}
+
 export default function PreInscriptionPublic() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploadedDocs, setUploadedDocs] = useState<UploadedDoc[]>([]);
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const [form, setForm] = useState({
     prenom_eleve: '',
@@ -57,12 +77,54 @@ export default function PreInscriptionPublic() {
     enabled: !!form.niveau_id,
   });
 
+  const handleFileSelect = (docKey: string, file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Le fichier ne doit pas dépasser 10 Mo');
+      return;
+    }
+    const preview = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined;
+    setUploadedDocs(prev => {
+      const filtered = prev.filter(d => d.key !== docKey);
+      return [...filtered, { key: docKey, file, preview }];
+    });
+  };
+
+  const handleCapture = (docKey: string) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) handleFileSelect(docKey, file);
+    };
+    input.click();
+  };
+
+  const removeDoc = (docKey: string) => {
+    setUploadedDocs(prev => {
+      const doc = prev.find(d => d.key === docKey);
+      if (doc?.preview) URL.revokeObjectURL(doc.preview);
+      return prev.filter(d => d.key !== docKey);
+    });
+  };
+
+  const getDocForKey = (key: string) => uploadedDocs.find(d => d.key === key);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.prenom_eleve || !form.nom_eleve || !form.nom_parent || !form.telephone_parent) {
       toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
+
+    // Check required documents
+    const missingRequired = DOCUMENTS_REQUIS.filter(d => d.required && !getDocForKey(d.key));
+    if (missingRequired.length > 0) {
+      toast.error(`Documents manquants : ${missingRequired.map(d => d.label).join(', ')}`);
+      return;
+    }
+
     setLoading(true);
     try {
       const payload: any = {
@@ -80,8 +142,23 @@ export default function PreInscriptionPublic() {
       if (form.niveau_id) payload.niveau_id = form.niveau_id;
       if (form.classe_id) payload.classe_id = form.classe_id;
 
-      const { error } = await supabase.from('pre_inscriptions').insert(payload);
+      const { data: insertedRow, error } = await supabase.from('pre_inscriptions').insert(payload).select('id').single();
       if (error) throw error;
+
+      const preInscriptionId = insertedRow.id;
+
+      // Upload documents
+      for (const doc of uploadedDocs) {
+        const ext = doc.file.name.split('.').pop() || 'jpg';
+        const path = `${preInscriptionId}/${doc.key}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from('pre-inscriptions-docs')
+          .upload(path, doc.file, { upsert: true });
+        if (uploadError) {
+          console.error('Upload error for', doc.key, uploadError);
+        }
+      }
+
       setSubmitted(true);
     } catch (err: any) {
       toast.error(err.message || 'Erreur lors de la soumission');
@@ -102,6 +179,9 @@ export default function PreInscriptionPublic() {
             <p className="text-muted-foreground">
               Votre demande de pré-inscription a été enregistrée avec succès. 
               L'administration vous contactera pour fixer un rendez-vous.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              📎 {uploadedDocs.length} document(s) joint(s)
             </p>
             <p className="text-sm text-muted-foreground">
               Un membre de l'équipe vous rappellera au <strong>{form.telephone_parent}</strong>.
@@ -240,6 +320,140 @@ export default function PreInscriptionPublic() {
                   <Label>Email</Label>
                   <Input type="email" value={form.email_parent} onChange={e => setForm(f => ({ ...f, email_parent: e.target.value }))} placeholder="optionnel" />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Documents à fournir */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Dossier à fournir
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Scannez ou prenez en photo chaque document. Les documents marqués <span className="text-destructive font-medium">*</span> sont obligatoires.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {DOCUMENTS_REQUIS.map((doc) => {
+                const uploaded = getDocForKey(doc.key);
+                return (
+                  <div
+                    key={doc.key}
+                    className={`rounded-xl border p-3 transition-all ${
+                      uploaded
+                        ? 'border-green-300 bg-green-50 dark:border-green-800 dark:bg-green-950/30'
+                        : 'border-border bg-background'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium">{doc.label}</span>
+                          {doc.required && (
+                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                              Obligatoire
+                            </Badge>
+                          )}
+                          {uploaded && (
+                            <Badge className="text-[10px] px-1.5 py-0 bg-green-600">
+                              <CheckCircle2 className="h-3 w-3 mr-0.5" /> Ajouté
+                            </Badge>
+                          )}
+                        </div>
+
+                        {uploaded && (
+                          <div className="mt-2 flex items-center gap-2">
+                            {uploaded.preview ? (
+                              <img
+                                src={uploaded.preview}
+                                alt={doc.label}
+                                className="h-14 w-14 rounded-lg object-cover border"
+                              />
+                            ) : (
+                              <div className="h-14 w-14 rounded-lg bg-muted flex items-center justify-center">
+                                <FileText className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                            )}
+                            <span className="text-xs text-muted-foreground truncate max-w-[150px]">
+                              {uploaded.file.name}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {uploaded && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => removeDoc(doc.key)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs gap-1"
+                          onClick={() => handleCapture(doc.key)}
+                        >
+                          <Camera className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Photo</span>
+                        </Button>
+                        <div className="relative">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs gap-1"
+                            onClick={() => fileInputRefs.current[doc.key]?.click()}
+                          >
+                            <Upload className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">Fichier</span>
+                          </Button>
+                          <input
+                            ref={el => { fileInputRefs.current[doc.key] = el; }}
+                            type="file"
+                            accept="image/*,.pdf"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleFileSelect(doc.key, file);
+                              e.target.value = '';
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Progress */}
+              <div className="mt-4 p-3 rounded-xl bg-muted/50 border border-border">
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-muted-foreground">Documents ajoutés</span>
+                  <span className="font-semibold">
+                    {uploadedDocs.length} / {DOCUMENTS_REQUIS.length}
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all duration-500"
+                    style={{ width: `${(uploadedDocs.length / DOCUMENTS_REQUIS.length) * 100}%` }}
+                  />
+                </div>
+                {DOCUMENTS_REQUIS.filter(d => d.required && !getDocForKey(d.key)).length > 0 && (
+                  <div className="flex items-center gap-1.5 mt-2 text-xs text-destructive">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {DOCUMENTS_REQUIS.filter(d => d.required && !getDocForKey(d.key)).length} document(s) obligatoire(s) manquant(s)
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
