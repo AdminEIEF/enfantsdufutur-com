@@ -149,8 +149,12 @@ function ConnectedStudentsDashboard() {
             <Wifi className="h-3.5 w-3.5 mr-1.5" />
             {totalOnline} en ligne
           </Badge>
-        </div>
-      </CardHeader>
+          <Badge variant="outline" className="text-sm px-3 border-orange-300 text-orange-600">
+            {totalOffline} hors ligne
+          </Badge>
+          <Badge variant="outline" className="text-sm px-3 border-gray-300 text-muted-foreground">
+            {totalNever} jamais connecté{totalNever > 1 ? 's' : ''}
+          </Badge>
       <CardContent className="pt-0">
         {totalOnline === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Aucun élève connecté actuellement</p>
