@@ -277,10 +277,23 @@ export default function StudentCompositions() {
     const rep = reponses.find((r: any) => r.composition_id === comp.id);
     if (rep?.soumis_at) return 'done';
     if (rep) return 'in_progress';
-    const now = new Date();
-    if (new Date(comp.date_fin) < now) return 'expired';
-    if (new Date(comp.date_debut) > now) return 'upcoming';
+    const now = Date.now();
+    if (new Date(comp.date_fin).getTime() < now) return 'expired';
+    if (new Date(comp.date_debut).getTime() > now) return 'upcoming';
     return 'available';
+  };
+
+  const getCountdown = (comp: any) => {
+    const diff = new Date(comp.date_debut).getTime() - Date.now();
+    if (diff <= 0) return null;
+    const totalSec = Math.floor(diff / 1000);
+    const d = Math.floor(totalSec / 86400);
+    const h = Math.floor((totalSec % 86400) / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (d > 0) return `${d}j ${h}h ${m}m ${s}s`;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    return `${m}m ${s}s`;
   };
 
   // Rich text editor commands
