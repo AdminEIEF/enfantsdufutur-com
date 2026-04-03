@@ -402,30 +402,40 @@ export default function CompositionsAdmin() {
   }
 
   async function handleSave() {
-    if (!form.titre || !form.classe_id || !form.matiere_id || !form.date_debut || !form.date_fin) {
+    const targetClasseIds = editComp ? [form.classe_id] : form.classe_ids;
+    if (!form.titre || targetClasseIds.length === 0 || !form.matiere_id || !form.date_debut || !form.date_fin) {
       toast.error('Remplissez tous les champs obligatoires'); return;
     }
     if (form.type_composition === 'document' && !form.sujet_url && !editComp?.sujet_url) {
       toast.error('Veuillez uploader un fichier sujet (PDF ou Word)'); return;
     }
-    // texte type needs questions but validated at publish time
-    const payload: any = {
-      titre: form.titre, description: form.description || null,
-      classe_id: form.classe_id, matiere_id: form.matiere_id,
-      duree_minutes: form.duree_minutes, date_debut: form.date_debut,
-      date_fin: form.date_fin, bareme: form.bareme,
-      type_composition: form.type_composition,
-      sujet_url: form.sujet_url || null,
-      sujet_nom: form.sujet_nom || null,
-    };
     if (editComp) {
+      const payload: any = {
+        titre: form.titre, description: form.description || null,
+        classe_id: form.classe_id, matiere_id: form.matiere_id,
+        duree_minutes: form.duree_minutes, date_debut: form.date_debut,
+        date_fin: form.date_fin, bareme: form.bareme,
+        type_composition: form.type_composition,
+        sujet_url: form.sujet_url || null,
+        sujet_nom: form.sujet_nom || null,
+      };
       const { error } = await supabase.from('compositions').update(payload).eq('id', editComp.id);
       if (error) { toast.error(error.message); return; }
       toast.success('Composition modifiée');
     } else {
-      const { error } = await supabase.from('compositions').insert(payload);
+      // Create one composition per selected class
+      const rows = targetClasseIds.map(cid => ({
+        titre: form.titre, description: form.description || null,
+        classe_id: cid, matiere_id: form.matiere_id,
+        duree_minutes: form.duree_minutes, date_debut: form.date_debut,
+        date_fin: form.date_fin, bareme: form.bareme,
+        type_composition: form.type_composition,
+        sujet_url: form.sujet_url || null,
+        sujet_nom: form.sujet_nom || null,
+      }));
+      const { data: inserted, error } = await supabase.from('compositions').insert(rows).select('id');
       if (error) { toast.error(error.message); return; }
-      toast.success('Composition créée');
+      toast.success(`Composition créée pour ${targetClasseIds.length} classe(s)`);
     }
     setShowForm(false); setEditComp(null);
     resetForm();
