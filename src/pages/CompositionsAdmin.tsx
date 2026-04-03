@@ -737,7 +737,18 @@ export default function CompositionsAdmin() {
                     </div>
                     <Textarea placeholder="Énoncé de la question" value={q.enonce} onChange={e => updateQuestion(idx, { enonce: e.target.value })} rows={2} />
                     {q.type_question === 'texte' ? (
-                      <p className="text-xs text-muted-foreground italic">L'élève répondra en texte libre à cette question. La correction sera manuelle.</p>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Réponse attendue (référence pour la correction IA) :</Label>
+                        <Textarea
+                          placeholder="Saisissez la réponse attendue ou les idées clés que l'élève doit mentionner..."
+                          value={q.reponse_correcte === '_texte_' ? '' : q.reponse_correcte}
+                          onChange={e => updateQuestion(idx, { reponse_correcte: e.target.value || '_texte_' })}
+                          rows={3}
+                        />
+                        <p className="text-xs text-muted-foreground italic">
+                          💡 L'IA comparera la réponse de l'élève avec cette référence et attribuera une note automatiquement.
+                        </p>
+                      </div>
                     ) : (
                       <div className="space-y-2">
                         <Label className="text-xs text-muted-foreground">Réponse correcte :</Label>
