@@ -356,7 +356,7 @@ export default function CompositionsAdmin() {
 
   // Get common matieres for selected classes via classe_matieres
   const [classeMatieres, setClasseMatieres] = useState<any[]>([]);
-  const activeClasseIds = editComp ? [form.classe_id] : form.classe_ids;
+  const activeClasseIds = form.classe_ids.length > 0 ? form.classe_ids : (form.classe_id ? [form.classe_id] : []);
   useEffect(() => {
     if (activeClasseIds.length === 0) { setClasseMatieres([]); return; }
     // Get matières for all selected classes and find common ones
@@ -403,38 +403,52 @@ export default function CompositionsAdmin() {
   }
 
   async function handleSave() {
-    const targetClasseIds = editComp ? [form.classe_id] : form.classe_ids;
+    const targetClasseIds = form.classe_ids;
     if (!form.titre || targetClasseIds.length === 0 || !form.matiere_id || !form.date_debut || !form.date_fin) {
       toast.error('Remplissez tous les champs obligatoires'); return;
     }
     if (form.type_composition === 'document' && !form.sujet_url && !editComp?.sujet_url) {
       toast.error('Veuillez uploader un fichier sujet (PDF ou Word)'); return;
     }
+    const basePayload = {
+      titre: form.titre, description: form.description || null,
+      matiere_id: form.matiere_id,
+      duree_minutes: form.duree_minutes, date_debut: form.date_debut,
+      date_fin: form.date_fin, bareme: form.bareme,
+      type_composition: form.type_composition,
+      sujet_url: form.sujet_url || null,
+      sujet_nom: form.sujet_nom || null,
+    };
+
     if (editComp) {
-      const payload: any = {
-        titre: form.titre, description: form.description || null,
-        classe_id: form.classe_id, matiere_id: form.matiere_id,
-        duree_minutes: form.duree_minutes, date_debut: form.date_debut,
-        date_fin: form.date_fin, bareme: form.bareme,
-        type_composition: form.type_composition,
-        sujet_url: form.sujet_url || null,
-        sujet_nom: form.sujet_nom || null,
-      };
-      const { error } = await supabase.from('compositions').update(payload).eq('id', editComp.id);
+      // Update the original composition
+      const { error } = await supabase.from('compositions').update({ ...basePayload, classe_id: editComp.classe_id }).eq('id', editComp.id);
       if (error) { toast.error(error.message); return; }
-      toast.success('Composition modifiée');
+
+      // Create copies for newly added classes (exclude original)
+      const newClasseIds = targetClasseIds.filter(cid => cid !== editComp.classe_id);
+      if (newClasseIds.length > 0) {
+        const newRows = newClasseIds.map(cid => ({ ...basePayload, classe_id: cid }));
+        const { data: inserted, error: insertErr } = await supabase.from('compositions').insert(newRows).select('id');
+        if (insertErr) { toast.error(insertErr.message); return; }
+
+        // Copy existing questions to new compositions
+        const { data: existingQuestions } = await supabase.from('composition_questions')
+          .select('type_question, enonce, options, reponse_correcte, points, ordre')
+          .eq('composition_id', editComp.id);
+        if (existingQuestions && existingQuestions.length > 0 && inserted) {
+          const questionRows = inserted.flatMap((comp: any) =>
+            existingQuestions.map((q: any) => ({ ...q, composition_id: comp.id }))
+          );
+          await supabase.from('composition_questions').insert(questionRows);
+        }
+        toast.success(`Composition modifiée + dupliquée vers ${newClasseIds.length} classe(s) supplémentaire(s)`);
+      } else {
+        toast.success('Composition modifiée');
+      }
     } else {
-      // Create one composition per selected class
-      const rows = targetClasseIds.map(cid => ({
-        titre: form.titre, description: form.description || null,
-        classe_id: cid, matiere_id: form.matiere_id,
-        duree_minutes: form.duree_minutes, date_debut: form.date_debut,
-        date_fin: form.date_fin, bareme: form.bareme,
-        type_composition: form.type_composition,
-        sujet_url: form.sujet_url || null,
-        sujet_nom: form.sujet_nom || null,
-      }));
-      const { data: inserted, error } = await supabase.from('compositions').insert(rows).select('id');
+      const rows = targetClasseIds.map(cid => ({ ...basePayload, classe_id: cid }));
+      const { error } = await supabase.from('compositions').insert(rows).select('id');
       if (error) { toast.error(error.message); return; }
       toast.success(`Composition créée pour ${targetClasseIds.length} classe(s)`);
     }
@@ -673,119 +687,108 @@ export default function CompositionsAdmin() {
             )}
             <div><Label>Titre *</Label><Input value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} /></div>
             <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} /></div>
-            {editComp ? (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Classe *</Label>
-                  <Select value={form.classe_id} onValueChange={v => setForm({ ...form, classe_id: v, matiere_id: '' })}>
-                    <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
-                    <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}</SelectContent>
-                  </Select>
+            <div>
+              <Label className="mb-2 block">
+                Classes ciblées * 
+                <span className="text-xs text-muted-foreground ml-1">({form.classe_ids.length} sélectionnée{form.classe_ids.length > 1 ? 's' : ''})</span>
+                {editComp && <span className="text-[10px] text-primary ml-2">💡 Ajoutez des classes pour dupliquer le sujet + questions</span>}
+              </Label>
+              {form.classe_ids.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {form.classe_ids.map(cid => {
+                    const cl = classes.find((c: any) => c.id === cid);
+                    const isOriginal = editComp && cid === editComp.classe_id;
+                    return (
+                      <Badge key={cid} variant={isOriginal ? 'default' : 'secondary'} className={`text-[10px] gap-1 ${isOriginal ? '' : 'cursor-pointer hover:bg-destructive/20'}`} onClick={() => {
+                        if (isOriginal) return; // Can't remove the original class in edit mode
+                        setForm({ ...form, classe_ids: form.classe_ids.filter(id => id !== cid), matiere_id: '' });
+                      }}>
+                        {cl?.niveaux?.nom} — {cl?.nom} {isOriginal ? '(original)' : '✕'}
+                      </Badge>
+                    );
+                  })}
+                  {!editComp && (
+                    <button className="text-[10px] text-destructive hover:underline ml-1" onClick={() => setForm({ ...form, classe_ids: [], matiere_id: '' })}>
+                      Tout effacer
+                    </button>
+                  )}
                 </div>
-                <div>
-                  <Label>Matière *</Label>
-                  <Select value={form.matiere_id} onValueChange={v => setForm({ ...form, matiere_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
-                    <SelectContent>
-                      {classeMatieres.map((cm: any) => (
-                        <SelectItem key={cm.matiere_id} value={cm.matiere_id}>{cm.matieres?.nom}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div>
-                  <Label className="mb-2 block">Classes ciblées * <span className="text-xs text-muted-foreground ml-1">({form.classe_ids.length} sélectionnée{form.classe_ids.length > 1 ? 's' : ''})</span></Label>
-                  {form.classe_ids.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {form.classe_ids.map(cid => {
-                        const cl = classes.find((c: any) => c.id === cid);
+              )}
+              <div className="border rounded-lg max-h-52 overflow-y-auto bg-background">
+                {(() => {
+                  const grouped: Record<string, Record<string, typeof classes>> = {};
+                  classes.forEach((c: any) => {
+                    const cycle = c.niveaux?.cycles?.nom || 'Autre';
+                    const niveau = c.niveaux?.nom || 'Autre';
+                    if (!grouped[cycle]) grouped[cycle] = {};
+                    if (!grouped[cycle][niveau]) grouped[cycle][niveau] = [];
+                    grouped[cycle][niveau].push(c);
+                  });
+                  return Object.entries(grouped).map(([cycle, niveaux]) => (
+                    <div key={cycle}>
+                      <div className="px-3 py-1.5 bg-muted/60 text-[10px] font-bold uppercase tracking-wider text-muted-foreground sticky top-0">{cycle}</div>
+                      {Object.entries(niveaux).map(([niveau, nClasses]) => {
+                        const allSelected = nClasses.every((c: any) => form.classe_ids.includes(c.id));
+                        const someSelected = nClasses.some((c: any) => form.classe_ids.includes(c.id));
                         return (
-                          <Badge key={cid} variant="secondary" className="text-[10px] gap-1 cursor-pointer hover:bg-destructive/20" onClick={() => {
-                            setForm({ ...form, classe_ids: form.classe_ids.filter(id => id !== cid), matiere_id: '' });
-                          }}>
-                            {cl?.niveaux?.nom} — {cl?.nom} ✕
-                          </Badge>
+                          <div key={niveau}>
+                            <label className="flex items-center gap-2 px-3 py-1.5 hover:bg-accent/50 cursor-pointer border-b border-dashed">
+                              <Checkbox
+                                checked={allSelected}
+                                className={someSelected && !allSelected ? 'opacity-60' : ''}
+                                onCheckedChange={(checked) => {
+                                  const niveauIds = nClasses.map((c: any) => c.id);
+                                  let newIds = checked
+                                    ? [...new Set([...form.classe_ids, ...niveauIds])]
+                                    : form.classe_ids.filter(id => !niveauIds.includes(id));
+                                  // Keep original class in edit mode
+                                  if (editComp && !newIds.includes(editComp.classe_id)) newIds = [editComp.classe_id, ...newIds];
+                                  setForm({ ...form, classe_ids: newIds, matiere_id: '' });
+                                }}
+                              />
+                              <span className="text-xs font-semibold text-foreground">{niveau}</span>
+                              <span className="text-[10px] text-muted-foreground ml-auto">{nClasses.filter((c: any) => form.classe_ids.includes(c.id)).length}/{nClasses.length}</span>
+                            </label>
+                            <div className="pl-6">
+                              {nClasses.map((c: any) => {
+                                const isOriginal = editComp && c.id === editComp.classe_id;
+                                return (
+                                  <label key={c.id} className="flex items-center gap-2 px-2 py-1 hover:bg-muted/40 cursor-pointer text-sm">
+                                    <Checkbox
+                                      checked={form.classe_ids.includes(c.id)}
+                                      disabled={isOriginal}
+                                      onCheckedChange={(checked) => {
+                                        const newIds = checked
+                                          ? [...form.classe_ids, c.id]
+                                          : form.classe_ids.filter(id => id !== c.id);
+                                        setForm({ ...form, classe_ids: newIds, matiere_id: '' });
+                                      }}
+                                    />
+                                    <span>{c.nom}</span>
+                                    {isOriginal && <span className="text-[10px] text-primary">(actuelle)</span>}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
                         );
                       })}
-                      <button className="text-[10px] text-destructive hover:underline ml-1" onClick={() => setForm({ ...form, classe_ids: [], matiere_id: '' })}>
-                        Tout effacer
-                      </button>
                     </div>
-                  )}
-                  <div className="border rounded-lg max-h-52 overflow-y-auto bg-background">
-                    {(() => {
-                      // Group classes by cycle > niveau
-                      const grouped: Record<string, Record<string, typeof classes>> = {};
-                      classes.forEach((c: any) => {
-                        const cycle = c.niveaux?.cycles?.nom || 'Autre';
-                        const niveau = c.niveaux?.nom || 'Autre';
-                        if (!grouped[cycle]) grouped[cycle] = {};
-                        if (!grouped[cycle][niveau]) grouped[cycle][niveau] = [];
-                        grouped[cycle][niveau].push(c);
-                      });
-                      return Object.entries(grouped).map(([cycle, niveaux]) => (
-                        <div key={cycle}>
-                          <div className="px-3 py-1.5 bg-muted/60 text-[10px] font-bold uppercase tracking-wider text-muted-foreground sticky top-0">{cycle}</div>
-                          {Object.entries(niveaux).map(([niveau, nClasses]) => {
-                            const allSelected = nClasses.every((c: any) => form.classe_ids.includes(c.id));
-                            const someSelected = nClasses.some((c: any) => form.classe_ids.includes(c.id));
-                            return (
-                              <div key={niveau}>
-                                <label className="flex items-center gap-2 px-3 py-1.5 hover:bg-accent/50 cursor-pointer border-b border-dashed">
-                                  <Checkbox
-                                    checked={allSelected}
-                                    className={someSelected && !allSelected ? 'opacity-60' : ''}
-                                    onCheckedChange={(checked) => {
-                                      const niveauIds = nClasses.map((c: any) => c.id);
-                                      const newIds = checked
-                                        ? [...new Set([...form.classe_ids, ...niveauIds])]
-                                        : form.classe_ids.filter(id => !niveauIds.includes(id));
-                                      setForm({ ...form, classe_ids: newIds, matiere_id: '' });
-                                    }}
-                                  />
-                                  <span className="text-xs font-semibold text-foreground">{niveau}</span>
-                                  <span className="text-[10px] text-muted-foreground ml-auto">{nClasses.filter((c: any) => form.classe_ids.includes(c.id)).length}/{nClasses.length}</span>
-                                </label>
-                                <div className="pl-6">
-                                  {nClasses.map((c: any) => (
-                                    <label key={c.id} className="flex items-center gap-2 px-2 py-1 hover:bg-muted/40 cursor-pointer text-sm">
-                                      <Checkbox
-                                        checked={form.classe_ids.includes(c.id)}
-                                        onCheckedChange={(checked) => {
-                                          const newIds = checked
-                                            ? [...form.classe_ids, c.id]
-                                            : form.classe_ids.filter(id => id !== c.id);
-                                          setForm({ ...form, classe_ids: newIds, matiere_id: '' });
-                                        }}
-                                      />
-                                      <span>{c.nom}</span>
-                                    </label>
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                </div>
-                <div>
-                  <Label>Matière commune * {form.classe_ids.length === 0 && <span className="text-[10px] text-muted-foreground">(sélectionnez d'abord les classes)</span>}</Label>
-                  <Select value={form.matiere_id} onValueChange={v => setForm({ ...form, matiere_id: v })} disabled={form.classe_ids.length === 0}>
-                    <SelectTrigger><SelectValue placeholder={form.classe_ids.length === 0 ? 'Sélectionnez les classes d\'abord' : 'Choisir'} /></SelectTrigger>
-                    <SelectContent>
-                      {classeMatieres.map((cm: any) => (
-                        <SelectItem key={cm.matiere_id} value={cm.matiere_id}>{cm.matieres?.nom}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
-            )}
+                  ));
+                })()}
+              </div>
+            </div>
+            <div>
+              <Label>Matière {form.classe_ids.length > 1 ? 'commune' : ''} * {form.classe_ids.length === 0 && <span className="text-[10px] text-muted-foreground">(sélectionnez d'abord les classes)</span>}</Label>
+              <Select value={form.matiere_id} onValueChange={v => setForm({ ...form, matiere_id: v })} disabled={form.classe_ids.length === 0}>
+                <SelectTrigger><SelectValue placeholder={form.classe_ids.length === 0 ? 'Sélectionnez les classes d\'abord' : 'Choisir'} /></SelectTrigger>
+                <SelectContent>
+                  {classeMatieres.map((cm: any) => (
+                    <SelectItem key={cm.matiere_id} value={cm.matiere_id}>{cm.matieres?.nom}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Durée (min)</Label><Input type="number" value={form.duree_minutes} onChange={e => setForm({ ...form, duree_minutes: Number(e.target.value) })} /></div>
               <div><Label>Barème</Label><Input type="number" value={form.bareme} onChange={e => setForm({ ...form, bareme: Number(e.target.value) })} /></div>
