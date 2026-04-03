@@ -56,6 +56,7 @@ import StudentResultats from "./pages/student/StudentResultats";
 import StudentEvaluations from "./pages/student/StudentEvaluations";
 import ParentNotifications from "./pages/parent/ParentNotifications";
 import StudentNotifications from "./pages/student/StudentNotifications";
+import StudentQuizMatieres from "./pages/student/StudentQuizMatieres";
 import Personnel from "./pages/Personnel";
 import PreInscriptionsAdmin from "./pages/PreInscriptionsAdmin";
 import EmployeeLogin from "./pages/employee/EmployeeLogin";
@@ -286,6 +287,7 @@ const App = () => (
             <Route path="/eleve/serpent" element={<StudentAuthProvider><StudentSerpentAlphabet /></StudentAuthProvider>} />
             <Route path="/eleve/anglais" element={<StudentAuthProvider><StudentAnglais /></StudentAuthProvider>} />
             <Route path="/eleve/pyramide" element={<StudentAuthProvider><StudentPyramideAdditions /></StudentAuthProvider>} />
+            <Route path="/eleve/quiz-matieres" element={<StudentAuthProvider><StudentQuizMatieres /></StudentAuthProvider>} />
             <Route path="/sessions" element={<ProtectedRoute><GestionSessions /></ProtectedRoute>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
