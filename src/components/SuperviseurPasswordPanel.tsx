@@ -226,6 +226,7 @@ export default function SuperviseurPasswordPanel() {
         const pwd = generateSimpleCode();
         const { error } = await supabase.from('eleves').update({ mot_de_passe_eleve: pwd } as any).eq('id', item.id);
         if (error) throw error;
+        savePassword(STORAGE_KEY_ELEVES, item.id, pwd);
         setGeneratedPwd({ id: item.id, pwd });
         toast.success(`Mot de passe généré pour ${item.prenom} ${item.nom}`);
       } else if (tab === 'employes') {
@@ -238,6 +239,7 @@ export default function SuperviseurPasswordPanel() {
         const code = generateSimpleCode();
         const { error } = await supabase.from('familles').update({ code_acces: code } as any).eq('id', item.id);
         if (error) throw error;
+        savePassword(STORAGE_KEY_FAMILLES, item.id, code);
         setGeneratedPwd({ id: item.id, pwd: code });
         toast.success(`Code d'accès généré pour ${item.nom_famille}`);
       }
