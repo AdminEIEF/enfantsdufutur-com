@@ -446,33 +446,57 @@ export default function SuperviseurPasswordPanel() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {generatedPwd?.id === item.id ? (
-                      <div className="flex items-center gap-1">
-                        <code className="text-sm font-mono font-bold bg-muted px-2 py-0.5 rounded">
-                          {showPwd ? generatedPwd.pwd : '••••••'}
-                        </code>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowPwd(!showPwd)}>
-                          {showPwd ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(generatedPwd.pwd); toast.success('Copié !'); }}>
-                          <Copy className="h-3.5 w-3.5" />
-                        </Button>
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      </div>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs h-7"
-                        disabled={generatingId === item.id}
-                        onClick={() => handleGenerate(item)}
-                      >
-                        {generatingId === item.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-                        ) : (
-                          <RefreshCw className="h-3.5 w-3.5 mr-1" />
-                        )}
-                        Générer
+                    {(() => {
+                      const storageKey = tab === 'eleves' ? STORAGE_KEY_ELEVES : tab === 'familles' ? STORAGE_KEY_FAMILLES : null;
+                      const savedPwd = storageKey ? getSavedPasswords(storageKey)[item.id] : null;
+                      const displayPwd = generatedPwd?.id === item.id ? generatedPwd.pwd : savedPwd;
+                      const isVisible = showPwdIds.has(item.id);
+
+                      if (displayPwd) {
+                        return (
+                          <div className="flex items-center gap-1">
+                            <code className="text-sm font-mono font-bold bg-muted px-2 py-0.5 rounded">
+                              {isVisible ? displayPwd : '••••••'}
+                            </code>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                              setShowPwdIds(prev => {
+                                const next = new Set(prev);
+                                if (next.has(item.id)) next.delete(item.id); else next.add(item.id);
+                                return next;
+                              });
+                            }}>
+                              {isVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(displayPwd); toast.success('Copié !'); }}>
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs h-7 px-1"
+                              disabled={generatingId === item.id}
+                              onClick={() => handleGenerate(item)}
+                              title="Régénérer"
+                            >
+                              {generatingId === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                            </Button>
+                          </div>
+                        );
+                      }
+                      return (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-7"
+                          disabled={generatingId === item.id}
+                          onClick={() => handleGenerate(item)}
+                        >
+                          {generatingId === item.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                          ) : (
+                            <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                          )}
+                          Générer
                       </Button>
                     )}
                   </div>
