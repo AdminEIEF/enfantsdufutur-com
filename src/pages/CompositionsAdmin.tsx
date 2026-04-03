@@ -29,7 +29,6 @@ function ConnectedStudentsDashboard() {
   const [expandedClass, setExpandedClass] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
 
-  // Force re-render every 2s for live timers
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 2000);
     return () => clearInterval(interval);
@@ -45,10 +44,29 @@ function ConnectedStudentsDashboard() {
         .order('classe_nom');
       return (data || []) as ConnectedStudent[];
     },
-    refetchInterval: 2000, // Refresh every 2 seconds
+    refetchInterval: 2000,
   });
 
-  // Deduplicate: keep only the most recent entry per display_name
+  // Fetch total students per class
+  const { data: classeEffectifs = [] } = useQuery({
+    queryKey: ['classe-effectifs-compositions'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('eleves')
+        .select('classe_id, classes:classe_id(nom)')
+        .eq('statut', 'inscrit')
+        .is('deleted_at', null)
+        .not('classe_id', 'is', null);
+      const map = new Map<string, number>();
+      (data || []).forEach((e: any) => {
+        const nom = e.classes?.nom || 'Sans classe';
+        map.set(nom, (map.get(nom) || 0) + 1);
+      });
+      return Array.from(map.entries()).map(([nom, total]) => ({ nom, total }));
+    },
+    staleTime: 30000,
+  });
+
   const uniqueConnections = useMemo(() => {
     const map = new Map<string, ConnectedStudent>();
     connections.forEach(c => {
@@ -61,28 +79,47 @@ function ConnectedStudentsDashboard() {
     return Array.from(map.values());
   }, [connections]);
 
-  // Consider offline if last_seen > 30 seconds ago
   const OFFLINE_THRESHOLD_MS = 30000;
-  const onlineStudents = uniqueConnections.filter(c => (now - new Date(c.last_seen_at).getTime()) < OFFLINE_THRESHOLD_MS);
-  const offlineStudents = uniqueConnections.filter(c => (now - new Date(c.last_seen_at).getTime()) >= OFFLINE_THRESHOLD_MS);
 
   const grouped = useMemo(() => {
-    const allStudents = [...onlineStudents, ...offlineStudents];
     const map = new Map<string, (ConnectedStudent & { isOnline: boolean })[]>();
-    allStudents.forEach(c => {
+    uniqueConnections.forEach(c => {
       const key = c.classe_nom || 'Sans classe';
       if (!map.has(key)) map.set(key, []);
       const isOnline = (now - new Date(c.last_seen_at).getTime()) < OFFLINE_THRESHOLD_MS;
       map.get(key)!.push({ ...c, isOnline });
     });
-    // Sort: online first within each class
     map.forEach((students, key) => {
       map.set(key, students.sort((a, b) => (a.isOnline === b.isOnline ? 0 : a.isOnline ? -1 : 1)));
     });
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [uniqueConnections, now]);
 
-  const totalOnline = onlineStudents.length;
+  // Build full class stats including classes with 0 connections
+  const classStats = useMemo(() => {
+    const connectedMap = new Map<string, { online: number; offline: number; students: (ConnectedStudent & { isOnline: boolean })[] }>();
+    grouped.forEach(([className, students]) => {
+      const online = students.filter(s => s.isOnline).length;
+      const offline = students.filter(s => !s.isOnline).length;
+      connectedMap.set(className, { online, offline, students });
+    });
+
+    const allClasses = new Set([
+      ...classeEffectifs.map(c => c.nom),
+      ...connectedMap.keys(),
+    ]);
+
+    return Array.from(allClasses).sort().map(className => {
+      const effectif = classeEffectifs.find(c => c.nom === className)?.total || 0;
+      const conn = connectedMap.get(className) || { online: 0, offline: 0, students: [] };
+      const neverConnected = Math.max(0, effectif - conn.online - conn.offline);
+      return { className, effectif, ...conn, neverConnected };
+    });
+  }, [grouped, classeEffectifs]);
+
+  const totalOnline = classStats.reduce((s, c) => s + c.online, 0);
+  const totalOffline = classStats.reduce((s, c) => s + c.offline, 0);
+  const totalNever = classStats.reduce((s, c) => s + c.neverConnected, 0);
 
   if (isLoading) {
     return (
