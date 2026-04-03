@@ -33,6 +33,15 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
+    if (data) {
+      // Update last_seen_at to keep the student "online"
+      await supabaseAdmin
+        .from("active_connections")
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq("type", type)
+        .eq("ref_id", ref_id);
+    }
+
     return new Response(JSON.stringify({ active: !!data }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

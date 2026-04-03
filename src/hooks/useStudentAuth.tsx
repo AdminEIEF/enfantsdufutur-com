@@ -72,7 +72,7 @@ export function StudentAuthProvider({ children }: { children: ReactNode }) {
           window.location.href = '/eleve';
         }
       } catch { /* ignore network errors */ }
-    }, 10000);
+    }, 5000); // Heartbeat every 5s to keep last_seen_at fresh
     return () => clearInterval(intervalId);
   }, [session?.eleve?.id]);
 

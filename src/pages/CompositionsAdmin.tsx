@@ -30,7 +30,7 @@ function ConnectedStudentsDashboard() {
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 2000);
+    const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -44,7 +44,7 @@ function ConnectedStudentsDashboard() {
         .order('classe_nom');
       return (data || []) as ConnectedStudent[];
     },
-    refetchInterval: 2000,
+    refetchInterval: 1000,
   });
 
   // Fetch total students per class with niveau info
