@@ -715,8 +715,17 @@ export default function StudentCompositions() {
                         <p className="text-sm text-muted-foreground mt-1">{comp.matieres?.nom} • {comp.duree_minutes} min • /{comp.bareme}</p>
                         <p className="text-xs text-muted-foreground mt-1">
                           <Clock className="h-3 w-3 inline mr-1" />
-                          {new Date(comp.date_debut).toLocaleDateString('fr')} → {new Date(comp.date_fin).toLocaleDateString('fr')}
+                          {new Date(comp.date_debut).toLocaleDateString('fr')} {new Date(comp.date_debut).toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' })} → {new Date(comp.date_fin).toLocaleDateString('fr')} {new Date(comp.date_fin).toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' })}
                         </p>
+                        {status === 'upcoming' && (() => {
+                          const countdown = getCountdown(comp);
+                          return countdown ? (
+                            <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/5 border border-primary/20 animate-pulse">
+                              <Timer className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-bold font-mono text-primary">Début dans {countdown}</span>
+                            </div>
+                          ) : null;
+                        })()}
                         {status === 'done' && rep && !isDocument && !isTexte && (
                           <p className="text-sm font-bold mt-2 text-primary">Score : {rep.score}/{comp.bareme}</p>
                         )}
