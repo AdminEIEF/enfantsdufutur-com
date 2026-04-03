@@ -330,7 +330,7 @@ export default function CompositionsAdmin() {
 
   // Form state
   const [form, setForm] = useState({
-    titre: '', description: '', classe_id: '', matiere_id: '',
+    titre: '', description: '', classe_id: '', classe_ids: [] as string[], matiere_id: '',
     duree_minutes: 30, date_debut: '', date_fin: '', bareme: 20,
     type_composition: 'qcm' as string,
     sujet_url: '' as string,
