@@ -658,7 +658,7 @@ export default function StudentCompositions() {
                         {(q.options || []).map((opt: any, oi: number) => (
                           <div key={oi} className="flex items-center gap-2 p-2 rounded hover:bg-accent/50 transition-colors">
                             <RadioGroupItem value={opt.label} id={`q${q.id}_${oi}`} />
-                            <Label htmlFor={`q${q.id}_${oi}`} className="cursor-pointer flex-1">{opt.label}</Label>
+                            <Label htmlFor={`q${q.id}_${oi}`} className="cursor-pointer flex-1"><MathText text={opt.label} /></Label>
                           </div>
                         ))}
                       </RadioGroup>
