@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   GraduationCap, Users, BookOpen, Shield, Bus, Utensils,
-  ArrowRight, Phone, Mail, MapPin, Download, Star, Clock, Award, Image, Briefcase
+  ArrowRight, Phone, Mail, MapPin, Download, Star, Clock, Award, Image, Briefcase,
+  ChevronRight, Sparkles
 } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
@@ -16,6 +17,7 @@ import { motion } from 'framer-motion';
 import LandingTarifs from '@/components/LandingTarifs';
 import SplashScreen from '@/components/SplashScreen';
 import heroImage from '@/assets/hero-school.jpg';
+import schoolLogo from '@/assets/school-logo.png';
 import schoolAnglais from '@/assets/school-anglais.jpg';
 import schoolBepc from '@/assets/school-bepc.jpg';
 import schoolDrapeau from '@/assets/school-drapeau.jpg';
@@ -30,6 +32,20 @@ import schoolEvent3 from '@/assets/school-event3.jpg';
 import schoolEvent4 from '@/assets/school-event4.jpg';
 import schoolEvent5 from '@/assets/school-event5.jpg';
 import schoolEvent6 from '@/assets/school-event6.jpg';
+
+// Logo-inspired color palette
+const COLORS = {
+  green: '#1B8B3D',
+  greenLight: '#22A94A',
+  greenBg: 'rgba(27,139,61,0.08)',
+  red: '#C41E3A',
+  redLight: '#E02B4A',
+  redBg: 'rgba(196,30,58,0.08)',
+  gold: '#F5A623',
+  goldLight: '#FFB840',
+  goldBg: 'rgba(245,166,35,0.08)',
+  dark: '#1a1a2e',
+};
 
 export default function Landing() {
   const { data: schoolConfig } = useSchoolConfig();
@@ -61,7 +77,6 @@ export default function Landing() {
   };
   const { isInstallable, install } = usePWAInstall();
 
-  // Données dynamiques
   const { data: dbStats } = useQuery({
     queryKey: ['landing-stats'],
     queryFn: async () => {
@@ -70,181 +85,154 @@ export default function Landing() {
     },
   });
 
-  const anneesExcellence = new Date().getFullYear() - 2020; // Fondée en 2020
+  const anneesExcellence = new Date().getFullYear() - 2020;
 
   const stats = [
-    { label: 'Élèves inscrits', value: `${dbStats?.eleves ?? 0}`, icon: Users },
-    { label: "Années d'excellence", value: `+${anneesExcellence}`, icon: Award },
-    { label: 'Taux de réussite', value: '100%', icon: Star },
-    { label: 'Enseignants qualifiés', value: `${dbStats?.enseignants ?? 0}`, icon: BookOpen },
+    { label: 'Élèves inscrits', value: `${dbStats?.eleves ?? 0}`, icon: Users, color: COLORS.green, bg: COLORS.greenBg },
+    { label: "Années d'excellence", value: `+${anneesExcellence}`, icon: Award, color: COLORS.gold, bg: COLORS.goldBg },
+    { label: 'Taux de réussite', value: '100%', icon: Star, color: COLORS.red, bg: COLORS.redBg },
+    { label: 'Enseignants qualifiés', value: `${dbStats?.enseignants ?? 0}`, icon: BookOpen, color: COLORS.green, bg: COLORS.greenBg },
   ];
 
   const services = [
-    {
-      icon: BookOpen,
-      title: 'Excellence Académique',
-      description: 'Un programme rigoureux de la Crèche au Lycée, avec un suivi personnalisé de chaque élève.',
-    },
-    {
-      icon: Shield,
-      title: 'Environnement Sécurisé',
-      description: 'Un campus surveillé et sécurisé pour le bien-être et la tranquillité de vos enfants.',
-    },
-    {
-      icon: Utensils,
-      title: 'Cantine Scolaire',
-      description: 'Des repas équilibrés et variés préparés quotidiennement par notre équipe de cuisine.',
-    },
-    {
-      icon: Bus,
-      title: 'Transport Scolaire',
-      description: 'Un service de ramassage couvrant les principaux quartiers de la ville.',
-    },
-    {
-      icon: Clock,
-      title: 'Activités Parascolaires',
-      description: 'Karaté, sport, art et culture pour l\'épanouissement complet de chaque enfant.',
-    },
-    {
-      icon: GraduationCap,
-      title: 'Suivi Numérique',
-      description: 'Accès en ligne aux notes, bulletins et informations scolaires via EduGestion Pro.',
-    },
+    { icon: BookOpen, title: 'Excellence Académique', description: 'Un programme rigoureux de la Crèche au Lycée, avec un suivi personnalisé de chaque élève.', color: COLORS.green, bg: COLORS.greenBg },
+    { icon: Shield, title: 'Environnement Sécurisé', description: 'Un campus surveillé et sécurisé pour le bien-être et la tranquillité de vos enfants.', color: COLORS.red, bg: COLORS.redBg },
+    { icon: Utensils, title: 'Cantine Scolaire', description: 'Des repas équilibrés et variés préparés quotidiennement par notre équipe de cuisine.', color: COLORS.gold, bg: COLORS.goldBg },
+    { icon: Bus, title: 'Transport Scolaire', description: "Un service de ramassage couvrant les principaux quartiers de la ville.", color: COLORS.green, bg: COLORS.greenBg },
+    { icon: Clock, title: 'Activités Parascolaires', description: "Karaté, sport, art et culture pour l'épanouissement complet de chaque enfant.", color: COLORS.red, bg: COLORS.redBg },
+    { icon: GraduationCap, title: 'Suivi Numérique', description: "Accès en ligne aux notes, bulletins et informations scolaires via EduGestion Pro.", color: COLORS.gold, bg: COLORS.goldBg },
+  ];
+
+  const portalButtons = [
+    { to: '/eleve', icon: GraduationCap, label: 'Élève', sub: 'Notes & Cours', gradient: 'linear-gradient(135deg, #7C3AED, #9333EA)', shadow: 'rgba(124,58,237,0.4)' },
+    { to: '/parent', icon: Users, label: 'Parent', sub: 'Suivi scolaire', gradient: 'linear-gradient(135deg, #F59E0B, #D97706)', shadow: 'rgba(245,158,11,0.4)' },
+    { to: '/employe', icon: Briefcase, label: 'Employé', sub: 'Espace RH', gradient: 'linear-gradient(135deg, #059669, #047857)', shadow: 'rgba(5,150,105,0.4)' },
+    { to: '/auth', icon: Shield, label: 'Admin', sub: 'Gestion', gradient: 'linear-gradient(135deg, #2563EB, #1D4ED8)', shadow: 'rgba(37,99,235,0.4)' },
+  ];
+
+  const carouselImages = [
+    { src: schoolAnglais, alt: "Anglais et Informatique dès la maternelle" },
+    { src: schoolCantine, alt: "La cantine scolaire" },
+    { src: schoolMaternelle, alt: "Activités en maternelle" },
+    { src: schoolClasse, alt: "Salle de classe décorée" },
+    { src: schoolJeux, alt: "Espace jeux et détente" },
+    { src: schoolBepc, alt: "100% d'admission au BEPC" },
+    { src: schoolDrapeau, alt: "Cérémonie du drapeau" },
+    { src: schoolGraduation, alt: "Cérémonie de graduation" },
+    { src: schoolEvent1, alt: "Présentation et conférence" },
+    { src: schoolEvent2, alt: "Notre équipe pédagogique" },
+    { src: schoolEvent3, alt: "Intervention du directeur" },
+    { src: schoolEvent4, alt: "Réunion avec les parents" },
+    { src: schoolEvent5, alt: "Membre de l'équipe" },
+    { src: schoolEvent6, alt: "Accueil des familles" },
   ];
 
   return (
     <div className="min-h-screen bg-background">
       {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
+
+      {/* ─── Navigation ─── */}
+      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b border-border/50" style={{ background: 'rgba(255,255,255,0.92)' }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
-            <Link to="/" onClick={() => window.scrollTo(0, 0)} className="flex items-center hover:opacity-80 transition-opacity">
-              {schoolConfig?.logo_url ? (
-                <img src={schoolConfig.logo_url} alt="Logo" className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-contain shrink-0" />
-              ) : (
-                <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary text-primary-foreground shrink-0">
-                  <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5" />
-                </div>
-              )}
+            <Link to="/" onClick={() => window.scrollTo(0, 0)} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <img src={schoolConfig?.logo_url || schoolLogo} alt="Logo EIEF" className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl object-contain bg-white shadow-sm border border-border/30 p-0.5" />
+              <span className="hidden md:block font-bold text-sm" style={{ color: COLORS.green, fontFamily: 'Space Grotesk, sans-serif' }}>
+                E.I.E.F
+              </span>
             </Link>
-            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {isInstallable && (
-                <Button variant="ghost" size="sm" onClick={install} className="hidden lg:flex">
-                  <Download className="mr-2 h-4 w-4" />
-                  Installer
+                <Button variant="ghost" size="sm" onClick={install} className="hidden lg:flex text-xs">
+                  <Download className="mr-1.5 h-3.5 w-3.5" /> Installer
                 </Button>
               )}
-              <Link to="/eleve">
-                <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9 bg-violet-600 hover:bg-violet-700 text-white border-0">
-                  <GraduationCap className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Espace </span>Élève
-                </Button>
-              </Link>
-              <Link to="/parent">
-                <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9 bg-amber-500 hover:bg-amber-600 text-white border-0">
-                  <Users className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Espace </span>Parent
-                </Button>
-              </Link>
-              <Link to="/employe">
-                <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9 bg-emerald-600 hover:bg-emerald-700 text-white border-0">
-                  <Briefcase className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Portail </span>Employé
-                </Button>
-              </Link>
-              <Link to="/auth">
-                <Button size="sm" className="text-[10px] sm:text-sm px-1.5 sm:px-3 h-7 sm:h-9 bg-blue-600 hover:bg-blue-700 text-white border-0">
-                  <Shield className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Espace </span>Admin
-                  <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
-                </Button>
-              </Link>
+              {portalButtons.map(p => (
+                <Link key={p.to} to={p.to}>
+                  <button
+                    className="flex items-center gap-1 text-white text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl transition-all hover:scale-105 hover:shadow-lg active:scale-95"
+                    style={{ background: p.gradient, boxShadow: `0 2px 8px ${p.shadow}` }}
+                  >
+                    <p.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    <span className="hidden sm:inline">{p.label}</span>
+                  </button>
+                </Link>
+              ))}
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Hero */}
+      {/* ─── Hero ─── */}
       <section className="relative pt-14 sm:pt-16 overflow-hidden">
         <div className="absolute inset-0">
-          <img src={heroImage} alt="Campus de l'école" className="w-full h-full object-cover" decoding="async" fetchPriority="high" />
-          <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/30" />
+          <img src={heroImage} alt="Campus" className="w-full h-full object-cover" decoding="async" fetchPriority="high" />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(27,139,61,0.85) 0%, rgba(26,26,46,0.80) 50%, rgba(196,30,58,0.70) 100%)' }} />
         </div>
-        {/* Globe watermark - large & blurred above content */}
-        <div className="absolute top-4 sm:top-8 left-1/2 -translate-x-1/2 w-64 h-64 sm:w-96 sm:h-96 lg:w-[28rem] lg:h-[28rem] opacity-[0.15] pointer-events-none z-[1] blur-[2px]">
-          <svg viewBox="0 0 100 100" className="w-full h-full">
-            <circle cx="50" cy="50" r="26" fill="hsl(var(--muted))" />
-            <circle cx="50" cy="50" r="26" fill="none" stroke="white" strokeWidth="2.5" />
-            <ellipse cx="50" cy="50" rx="26" ry="9" fill="none" stroke="white" strokeWidth="1.5" />
-            <ellipse cx="50" cy="50" rx="9" ry="26" fill="none" stroke="white" strokeWidth="1.5" />
-            <path d="M38 35 Q45 30 55 33 Q58 38 52 42 Q45 40 38 35Z" fill="white" opacity="0.4" />
-            <path d="M42 52 Q48 48 56 50 Q58 56 50 60 Q44 58 42 52Z" fill="white" opacity="0.4" />
-            <ellipse cx="50" cy="50" rx="42" ry="14" fill="none" stroke="white" strokeWidth="1.8" transform="rotate(-25 50 50)" />
-            <ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="#eab308" strokeWidth="2" opacity="0.7" transform="rotate(35 50 50)" />
-            <ellipse cx="50" cy="50" rx="44" ry="12" fill="none" stroke="#16a34a" strokeWidth="1.5" opacity="0.6" transform="rotate(-60 50 50)" />
-          </svg>
+
+        {/* Floating logo watermark */}
+        <div className="absolute top-20 right-8 sm:right-16 w-32 h-32 sm:w-48 sm:h-48 opacity-10 pointer-events-none z-[1]">
+          <img src={schoolLogo} alt="" className="w-full h-full object-contain" />
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 lg:py-32 z-[2]">
-          <div className="w-full mb-6 sm:mb-10">
-            <motion.p
-              initial={{ opacity: 0, y: -50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
-              className="text-2xl sm:text-4xl lg:text-[3.5rem] font-extrabold text-[hsl(var(--destructive))] uppercase tracking-widest text-center mb-1 sm:mb-2"
-              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
-            >
-              Ecole Internationale
-            </motion.p>
-            <motion.h1
-              initial={{ opacity: 0, y: -40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.15, ease: 'easeOut' }}
-              className="text-2xl sm:text-4xl lg:text-[3.5rem] font-extrabold leading-none mb-1 sm:mb-2 text-center whitespace-nowrap"
-              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
-            >
-              <span className="text-[hsl(var(--warning))]">LES ENFANTS </span>
-              <span className="text-[hsl(var(--success))]">DU FUTUR</span>
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-xl sm:text-3xl lg:text-4xl font-bold text-white italic text-center"
-              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
-            >
-              Faisons plus!
-            </motion.p>
-          </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 lg:py-28 z-[2]">
           <div className="max-w-3xl">
+            {/* Badge */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-              className="inline-flex items-center gap-1.5 sm:gap-2 bg-secondary/20 text-secondary rounded-full px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm font-medium mb-4 sm:mb-6 backdrop-blur-sm"
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs sm:text-sm font-semibold mb-6 backdrop-blur-md"
+              style={{ background: 'rgba(245,166,35,0.2)', color: COLORS.goldLight, border: `1px solid ${COLORS.gold}40` }}
             >
-              <Star className="h-3 w-3 sm:h-4 sm:w-4" />
+              <Sparkles className="h-3.5 w-3.5" />
               Inscriptions 2025-2026 ouvertes
             </motion.div>
+
+            {/* School Name */}
+            <motion.div
+              initial={{ opacity: 0, y: -40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.3 }}
+              className="mb-2"
+            >
+              <p className="text-lg sm:text-2xl lg:text-3xl font-extrabold uppercase tracking-[0.15em]" style={{ color: COLORS.redLight, fontFamily: 'Space Grotesk, sans-serif' }}>
+                Ecole Internationale
+              </p>
+              <h1 className="text-2xl sm:text-4xl lg:text-[3.2rem] font-extrabold leading-none" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                <span style={{ color: COLORS.goldLight }}>LES ENFANTS </span>
+                <span style={{ color: '#4ADE80' }}>DU FUTUR</span>
+              </h1>
+            </motion.div>
+
+            <motion.p
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="text-xl sm:text-3xl font-bold text-white/90 italic mb-6"
+              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+            >
+              Faisons plus !
+            </motion.p>
 
             <motion.h2
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.7 }}
-              className="text-xl sm:text-3xl lg:text-5xl font-bold text-white leading-tight mb-4 sm:mb-6 text-left"
+              className="text-xl sm:text-3xl lg:text-5xl font-bold text-white leading-tight mb-5"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
               Investir maintenant<br />
-              <span className="text-secondary">pour Sourire</span> demain !
+              <span style={{ color: COLORS.goldLight }}>pour Sourire</span> demain !
             </motion.h2>
 
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.9 }}
-              className="text-sm sm:text-lg lg:text-xl text-white/80 mb-6 sm:mb-8 max-w-lg"
+              className="text-sm sm:text-lg text-white/75 mb-8 max-w-lg leading-relaxed"
             >
-              L'École Internationale Enfant du Futur offre un enseignement d'excellence 
+              L'École Internationale Enfant du Futur offre un enseignement d'excellence
               dans un environnement moderne et bienveillant, de la Crèche au Lycée.
             </motion.p>
 
@@ -252,59 +240,81 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 1.1 }}
-              className="flex flex-wrap gap-2 sm:gap-4"
+              className="flex flex-wrap gap-3"
             >
               <Link to="/pre-inscription">
-                <Button size="sm" className="sm:text-base sm:px-8 sm:h-11 text-xs px-4 h-9">
-                  <GraduationCap className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                <button
+                  className="flex items-center gap-2 text-white font-bold text-sm sm:text-base px-6 sm:px-8 py-3 sm:py-3.5 rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-xl"
+                  style={{ background: `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenLight})`, boxShadow: `0 8px 25px rgba(27,139,61,0.4)` }}
+                >
+                  <GraduationCap className="h-5 w-5" />
                   Pré-inscrire mon enfant
-                </Button>
+                </button>
               </Link>
               <a href="#services">
-                <Button size="sm" variant="outline" className="sm:text-base sm:px-8 sm:h-11 text-xs px-4 h-9 bg-white/10 border-white/30 text-white hover:bg-white/20">
+                <button className="flex items-center gap-2 text-white font-semibold text-sm sm:text-base px-6 sm:px-8 py-3 sm:py-3.5 rounded-2xl backdrop-blur-md transition-all hover:scale-105 active:scale-95" style={{ background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)' }}>
                   Découvrir l'école
-                </Button>
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </a>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Image Carousel */}
-      <section className="py-8 sm:py-12 bg-muted/30">
+      {/* ─── Stats (Material Cards) ─── */}
+      <section className="relative -mt-10 sm:-mt-14 z-10 max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          {stats.map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 * i }}
+            >
+              <Card className="border-none shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1 overflow-hidden" style={{ borderBottom: `3px solid ${stat.color}` }}>
+                <CardContent className="flex items-center gap-3 p-3.5 sm:p-5">
+                  <div className="flex-shrink-0 w-10 h-10 sm:w-13 sm:h-13 rounded-2xl flex items-center justify-center" style={{ background: stat.bg }}>
+                    <stat.icon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: stat.color }} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xl sm:text-2xl font-extrabold" style={{ color: stat.color, fontFamily: 'Space Grotesk, sans-serif' }}>
+                      {stat.value}
+                    </div>
+                    <div className="text-[10px] sm:text-xs text-muted-foreground truncate">{stat.label}</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── Image Carousel ─── */}
+      <section className="py-10 sm:py-16">
         <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-center mb-6 sm:mb-8" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Notre école en images
-          </h2>
+          <div className="text-center mb-8">
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold mb-3" style={{ background: COLORS.greenBg, color: COLORS.green }}>
+              <Image className="h-3.5 w-3.5" /> Galerie
+            </motion.div>
+            <h2 className="text-xl sm:text-3xl font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              Notre école en images
+            </h2>
+          </div>
           <Carousel
             opts={{ loop: true, align: 'start' }}
             plugins={[Autoplay({ delay: 4000, stopOnInteraction: false })]}
             className="w-full"
           >
             <CarouselContent>
-              {[
-                { src: schoolAnglais, alt: "Anglais et Informatique dès la maternelle" },
-                { src: schoolCantine, alt: "La cantine scolaire" },
-                { src: schoolMaternelle, alt: "Activités en maternelle" },
-                { src: schoolClasse, alt: "Salle de classe décorée" },
-                { src: schoolJeux, alt: "Espace jeux et détente" },
-                { src: schoolBepc, alt: "100% d'admission au BEPC" },
-                { src: schoolDrapeau, alt: "Cérémonie du drapeau" },
-                { src: schoolGraduation, alt: "Cérémonie de graduation" },
-                { src: schoolEvent1, alt: "Présentation et conférence" },
-                { src: schoolEvent2, alt: "Notre équipe pédagogique" },
-                { src: schoolEvent3, alt: "Intervention du directeur" },
-                { src: schoolEvent4, alt: "Réunion avec les parents" },
-                { src: schoolEvent5, alt: "Membre de l'équipe" },
-                { src: schoolEvent6, alt: "Accueil des familles" },
-              ].map((img, i) => (
-                <CarouselItem key={i} className="basis-full sm:basis-1/2">
-                  <div className="p-1 sm:p-2">
-                    <div className="overflow-hidden rounded-xl sm:rounded-2xl shadow-lg">
+              {carouselImages.map((img, i) => (
+                <CarouselItem key={i} className="basis-full sm:basis-1/2 lg:basis-1/3">
+                  <div className="p-1.5">
+                    <div className="overflow-hidden rounded-3xl shadow-lg group">
                       <img
                         src={img.src}
                         alt={img.alt}
-                        className="w-full h-48 sm:h-64 lg:h-80 object-cover transition-transform duration-700 hover:scale-110"
+                        className="w-full h-48 sm:h-56 lg:h-64 object-cover transition-transform duration-700 group-hover:scale-110"
                         loading="lazy"
                         decoding="async"
                       />
@@ -317,60 +327,55 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="relative -mt-10 sm:-mt-16 z-10 max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-          {stats.map((stat) => (
-            <Card key={stat.label} className="border-none shadow-lg">
-              <CardContent className="flex items-center gap-2 sm:gap-4 p-3 sm:p-5">
-                <div className="flex-shrink-0 w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center">
-                  <stat.icon className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-lg sm:text-2xl font-bold text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                    {stat.value}
-                  </div>
-                  <div className="text-[10px] sm:text-xs text-muted-foreground truncate">{stat.label}</div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+      {/* ─── Services (Android Material Cards) ─── */}
+      <section id="services" className="py-16 sm:py-24" style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(27,139,61,0.03) 50%, transparent 100%)' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 sm:mb-16">
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold mb-3" style={{ background: COLORS.redBg, color: COLORS.red }}>
+              <Star className="h-3.5 w-3.5" /> Nos services
+            </motion.div>
+            <h2 className="text-2xl sm:text-4xl font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              Pourquoi choisir notre école ?
+            </h2>
+            <p className="text-muted-foreground text-sm sm:text-lg max-w-2xl mx-auto">
+              Un cadre exceptionnel et des méthodes pédagogiques modernes pour accompagner chaque enfant vers la réussite.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {services.map((service, i) => (
+              <motion.div
+                key={service.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.08 * i }}
+              >
+                <Card className="group border-border/40 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 rounded-3xl overflow-hidden">
+                  <CardContent className="p-6 sm:p-7">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg" style={{ background: service.bg, boxShadow: `0 4px 15px ${service.color}15` }}>
+                      <service.icon className="h-7 w-7" style={{ color: service.color }} />
+                    </div>
+                    <h3 className="text-lg font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                      {service.title}
+                    </h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      {service.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Services */}
-      <section id="services" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Pourquoi choisir notre école ?
-          </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Un cadre exceptionnel et des méthodes pédagogiques modernes pour accompagner chaque enfant vers la réussite.
-          </p>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {services.map((service) => (
-            <Card key={service.title} className="group hover:shadow-lg transition-shadow border-border/60">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors flex items-center justify-center mb-4">
-                  <service.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                  {service.title}
-                </h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  {service.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* Vidéos */}
+      {/* ─── Vidéos ─── */}
       <section className="py-12 sm:py-20 bg-muted/30">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12">
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold mb-3" style={{ background: COLORS.goldBg, color: COLORS.gold }}>
+              <Sparkles className="h-3.5 w-3.5" /> Vidéos
+            </motion.div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Notre école en vidéo
             </h2>
@@ -380,11 +385,11 @@ export default function Landing() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
             {[
-              { id: '3512882682204390', title: 'Vidéo de l\'école 1' },
-              { id: '1617863476248678', title: 'Vidéo de l\'école 2' },
-              { id: '3843230585974453', title: 'Vidéo de l\'école 3' },
+              { id: '3512882682204390', title: "Vidéo de l'école 1" },
+              { id: '1617863476248678', title: "Vidéo de l'école 2" },
+              { id: '3843230585974453', title: "Vidéo de l'école 3" },
             ].map((video) => (
-              <div key={video.id} className="rounded-2xl overflow-hidden shadow-xl bg-background border border-border/40">
+              <div key={video.id} className="rounded-3xl overflow-hidden shadow-xl bg-background border border-border/30">
                 <iframe
                   src={`https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F${video.id}&show_text=false&width=300`}
                   className="w-full aspect-[9/16] min-h-[400px] sm:min-h-[450px]"
@@ -401,117 +406,142 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Tarifs */}
+      {/* ─── Tarifs ─── */}
       <LandingTarifs />
 
-      {/* CTA */}
-      <section className="bg-primary text-primary-foreground">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Investir maintenant pour Sourire demain !
-          </h2>
-          <p className="text-lg max-w-xl mx-auto mb-8" style={{ color: 'hsl(0 0% 100% / 0.85)' }}>
-            Rejoignez la communauté de l'Ecole Internationale Les Enfants du Futur et donnez à votre enfant les outils pour réussir.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link to="/eleve">
-              <Button size="lg" className="text-base px-8 bg-violet-600 hover:bg-violet-700 text-white border-0">
-                <GraduationCap className="mr-2 h-5 w-5" />
-                Espace Élève
-              </Button>
-            </Link>
-            <Link to="/parent">
-              <Button size="lg" className="text-base px-8 bg-amber-500 hover:bg-amber-600 text-white border-0">
-                <Users className="mr-2 h-5 w-5" />
-                Espace Parent
-                <motion.span
-                  animate={{ x: [0, 6, 0] }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
-                  className="inline-flex ml-2"
-                >
-                  <ArrowRight className="h-5 w-5" />
-                </motion.span>
-              </Button>
-            </Link>
-            <Link to="/employe">
-              <Button size="lg" className="text-base px-8 bg-emerald-600 hover:bg-emerald-700 text-white border-0">
-                <Briefcase className="mr-2 h-5 w-5" />
-                Portail Employé
-              </Button>
-            </Link>
-            <Link to="/auth">
-              <Button size="lg" className="text-base px-8 bg-blue-600 hover:bg-blue-700 text-white border-0">
-                <Shield className="mr-2 h-5 w-5" />
-                Espace Admin
-              </Button>
+      {/* ─── Portal CTA (Android App Grid) ─── */}
+      <section className="relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${COLORS.dark} 0%, #16213e 50%, ${COLORS.dark} 100%)` }}>
+        {/* Decorative circles */}
+        <div className="absolute top-0 left-0 w-64 h-64 rounded-full opacity-10" style={{ background: COLORS.green, filter: 'blur(80px)' }} />
+        <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full opacity-10" style={{ background: COLORS.red, filter: 'blur(100px)' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full opacity-5" style={{ background: COLORS.gold, filter: 'blur(60px)' }} />
+
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center z-10">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              Accédez à votre espace
+            </h2>
+            <p className="text-white/60 text-sm sm:text-lg max-w-xl mx-auto mb-10">
+              Connectez-vous à votre portail pour accéder à vos informations scolaires.
+            </p>
+          </motion.div>
+
+          {/* App-style grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-2xl mx-auto mb-10">
+            {portalButtons.map((p, i) => (
+              <motion.div
+                key={p.to}
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 * i }}
+              >
+                <Link to={p.to} className="group block">
+                  <div className="flex flex-col items-center gap-3">
+                    <div
+                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-[1.5rem] flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-active:scale-95"
+                      style={{ background: p.gradient, boxShadow: `0 8px 30px ${p.shadow}` }}
+                    >
+                      <p.icon className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm sm:text-base">{p.label}</p>
+                      <p className="text-white/50 text-[10px] sm:text-xs">{p.sub}</p>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Install & Pre-inscription */}
+          <div className="flex flex-wrap justify-center gap-3">
+            <Link to="/pre-inscription">
+              <button
+                className="flex items-center gap-2 text-white font-bold text-sm px-6 py-3 rounded-2xl transition-all hover:scale-105 active:scale-95"
+                style={{ background: `linear-gradient(135deg, ${COLORS.gold}, ${COLORS.goldLight})`, boxShadow: `0 6px 20px rgba(245,166,35,0.35)` }}
+              >
+                <GraduationCap className="h-4 w-4" />
+                Pré-inscrire mon enfant
+                <ArrowRight className="h-4 w-4" />
+              </button>
             </Link>
             <Link to="/download">
-              <Button size="lg" className="text-base px-8 bg-green-500 hover:bg-green-600 text-white border-0">
-                <Download className="mr-2 h-5 w-5" />
+              <button
+                className="flex items-center gap-2 text-white font-semibold text-sm px-6 py-3 rounded-2xl transition-all hover:scale-105 active:scale-95"
+                style={{ background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.2)' }}
+              >
+                <Download className="h-4 w-4" />
                 Installer l'Appli
-              </Button>
+              </button>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Contact / Footer */}
-      <footer className="bg-foreground text-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      {/* ─── Footer ─── */}
+      <footer style={{ background: COLORS.dark }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
             <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-                  <GraduationCap className="h-5 w-5 text-primary-foreground" />
+              <div className="flex items-center gap-3 mb-5">
+                <img src={schoolLogo} alt="Logo" className="w-12 h-12 rounded-2xl bg-white p-1 shadow-lg" />
+                <div>
+                  <span className="font-bold text-sm text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                    École Internationale
+                  </span>
+                  <p className="text-xs font-semibold" style={{ color: COLORS.greenLight }}>Les Enfants du Futur</p>
                 </div>
-                <span className="font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                  Ecole Internationale Les Enfants du Futur
-                </span>
               </div>
-              <p className="text-background/60 text-sm leading-relaxed">
-                L'École Internationale Enfant du Futur, un établissement d'excellence 
-                dédié à l'épanouissement et à la réussite de chaque enfant.
+              <p className="text-white/50 text-sm leading-relaxed">
+                Un établissement d'excellence dédié à l'épanouissement et à la réussite de chaque enfant.
               </p>
             </div>
             <div>
-              <h3 className="font-semibold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <h3 className="font-bold text-white mb-4 text-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 Liens rapides
               </h3>
-              <ul className="space-y-2 text-sm text-background/60">
-                <li><Link to="/auth" className="hover:text-background transition-colors">Espace Admin</Link></li>
-                <li><Link to="/employe" className="hover:text-background transition-colors">Portail Employé</Link></li>
-                <li><Link to="/download" className="hover:text-background transition-colors">Télécharger l'Appli</Link></li>
+              <ul className="space-y-2.5 text-sm text-white/50">
+                <li><Link to="/auth" className="hover:text-white transition-colors flex items-center gap-2"><ChevronRight className="h-3 w-3" style={{ color: COLORS.green }} /> Espace Admin</Link></li>
+                <li><Link to="/employe" className="hover:text-white transition-colors flex items-center gap-2"><ChevronRight className="h-3 w-3" style={{ color: COLORS.green }} /> Portail Employé</Link></li>
+                <li><Link to="/download" className="hover:text-white transition-colors flex items-center gap-2"><ChevronRight className="h-3 w-3" style={{ color: COLORS.green }} /> Télécharger l'Appli</Link></li>
                 {schoolConfig?.logo_url && (
                   <li>
-                    <button onClick={handleDownloadLogo} className="hover:text-background transition-colors flex items-center gap-2">
-                      <Image className="h-3 w-3" /> Télécharger le Logo (PNG)
+                    <button onClick={handleDownloadLogo} className="hover:text-white transition-colors flex items-center gap-2">
+                      <ChevronRight className="h-3 w-3" style={{ color: COLORS.green }} /> Télécharger le Logo
                     </button>
                   </li>
                 )}
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <h3 className="font-bold text-white mb-4 text-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                 Contact
               </h3>
-              <ul className="space-y-3 text-sm text-background/60">
+              <ul className="space-y-3 text-sm text-white/50">
                 <li className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 flex-shrink-0" />
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: COLORS.greenBg }}>
+                    <Phone className="h-3.5 w-3.5" style={{ color: COLORS.greenLight }} />
+                  </div>
                   <span>+224 625 549 579 / 628 848 437</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 flex-shrink-0" />
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: COLORS.redBg }}>
+                    <Mail className="h-3.5 w-3.5" style={{ color: COLORS.redLight }} />
+                  </div>
                   <span>eiefinfos@enfantsdufutur.com</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <MapPin className="h-4 w-4 flex-shrink-0" />
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: COLORS.goldBg }}>
+                    <MapPin className="h-3.5 w-3.5" style={{ color: COLORS.goldLight }} />
+                  </div>
                   <span>C/Sanoyah - Sanoyah Rails, Guinée</span>
                 </li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-background/10 mt-12 pt-8 text-center text-xs text-background/40">
-            © {new Date().getFullYear()} — Tous droits réservés.
+          <div className="mt-12 pt-8 text-center text-xs text-white/30" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            © {new Date().getFullYear()} École Internationale Les Enfants du Futur — Tous droits réservés.
           </div>
         </div>
       </footer>
