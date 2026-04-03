@@ -509,6 +509,13 @@ serve(async (req) => {
                     .update({ score: scaledScore })
                     .eq("id", existing.id);
 
+                  await supabaseAdmin.from("student_notifications").insert({
+                    eleve_id: eleveId,
+                    titre: '📝 Composition corrigée',
+                    message: `Votre composition "${comp.titre}" en ${comp.matieres?.nom || 'matière'} a été notée : ${scaledScore}/${comp.bareme}. ${gradeResult.commentaire}`,
+                    type: 'info',
+                  });
+
                   return new Response(JSON.stringify({ submitted: true, score: scaledScore, bareme: comp.bareme, message: `Composition notée par IA : ${scaledScore}/${comp.bareme}. ${gradeResult.commentaire}` }), {
                     headers: { ...corsHeaders, "Content-Type": "application/json" },
                   });
