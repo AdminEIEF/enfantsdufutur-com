@@ -3,10 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BookOpen, Home, ClipboardList, Award, LogOut, PenTool, Calculator, GraduationCap, Palette, Bug, Languages, Gamepad2, X, Pyramid, FileQuestion, User, Calendar, Hash, Sparkles } from 'lucide-react';
+import { BookOpen, Home, ClipboardList, Award, LogOut, PenTool, Calculator, GraduationCap, Palette, Bug, Languages, Gamepad2, X, Pyramid, FileQuestion, User, Calendar, Hash, Sparkles, ZoomIn } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { SchoolWatermark } from '@/components/SchoolWatermark';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GameItem {
   path: string;
