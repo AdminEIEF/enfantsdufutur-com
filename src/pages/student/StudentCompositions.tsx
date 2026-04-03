@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Loader2, Clock, CheckCircle2, Timer, FileText, Bold, Italic, Underline, List, Image, Superscript, Subscript, Send, ShieldAlert, PenLine, Camera, X } from 'lucide-react';
 import { useExamSecurity } from '@/hooks/useExamSecurity';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { MathText } from '@/components/MathText';
 
 export default function StudentCompositions() {
   const { session } = useStudentAuth();
@@ -550,7 +551,7 @@ export default function StudentCompositions() {
                     <div className="flex items-start gap-3">
                       <Badge variant="outline" className="shrink-0 mt-1">{idx + 1}</Badge>
                       <div className="flex-1">
-                        <p className="font-medium">{q.enonce}</p>
+                        <p className="font-medium"><MathText text={q.enonce} /></p>
                         <Badge variant="secondary" className="text-xs mt-1">{q.points} pt{q.points > 1 ? 's' : ''}</Badge>
                       </div>
                     </div>
@@ -651,13 +652,13 @@ export default function StudentCompositions() {
                   <div className="flex items-start gap-3">
                     <Badge variant="outline" className="shrink-0 mt-1">{idx + 1}</Badge>
                     <div className="flex-1 space-y-3">
-                      <p className="font-medium">{q.enonce}</p>
+                      <p className="font-medium"><MathText text={q.enonce} /></p>
                       <Badge variant="secondary" className="text-xs">{q.points} pt{q.points > 1 ? 's' : ''}</Badge>
                       <RadioGroup value={answers[q.id] || ''} onValueChange={v => setAnswers(prev => ({ ...prev, [q.id]: v }))}>
                         {(q.options || []).map((opt: any, oi: number) => (
                           <div key={oi} className="flex items-center gap-2 p-2 rounded hover:bg-accent/50 transition-colors">
                             <RadioGroupItem value={opt.label} id={`q${q.id}_${oi}`} />
-                            <Label htmlFor={`q${q.id}_${oi}`} className="cursor-pointer flex-1">{opt.label}</Label>
+                            <Label htmlFor={`q${q.id}_${oi}`} className="cursor-pointer flex-1"><MathText text={opt.label} /></Label>
                           </div>
                         ))}
                       </RadioGroup>
