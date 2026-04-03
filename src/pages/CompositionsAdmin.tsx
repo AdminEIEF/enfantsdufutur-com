@@ -353,14 +353,29 @@ export default function CompositionsAdmin() {
     setLoading(false);
   }
 
-  // Get matieres for selected classe via classe_matieres
+  // Get common matieres for selected classes via classe_matieres
   const [classeMatieres, setClasseMatieres] = useState<any[]>([]);
+  const activeClasseIds = editComp ? [form.classe_id] : form.classe_ids;
   useEffect(() => {
-    if (!form.classe_id) { setClasseMatieres([]); return; }
-    supabase.from('classe_matieres').select('matiere_id, matieres:matiere_id(id, nom)')
-      .eq('classe_id', form.classe_id)
-      .then(({ data }) => setClasseMatieres(data || []));
-  }, [form.classe_id]);
+    if (activeClasseIds.length === 0) { setClasseMatieres([]); return; }
+    // Get matières for all selected classes and find common ones
+    Promise.all(
+      activeClasseIds.map(cid =>
+        supabase.from('classe_matieres').select('matiere_id, matieres:matiere_id(id, nom)')
+          .eq('classe_id', cid)
+          .then(({ data }) => data || [])
+      )
+    ).then(results => {
+      if (results.length === 1) {
+        setClasseMatieres(results[0]);
+      } else {
+        // Find common matiere_ids across all classes
+        const sets = results.map(r => new Set(r.map((m: any) => m.matiere_id)));
+        const common = [...sets[0]].filter(id => sets.every(s => s.has(id)));
+        setClasseMatieres(results[0].filter((m: any) => common.includes(m.matiere_id)));
+      }
+    });
+  }, [JSON.stringify(activeClasseIds)]);
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
