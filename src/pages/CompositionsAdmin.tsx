@@ -749,11 +749,11 @@ export default function CompositionsAdmin() {
                               <span className="text-xs font-semibold text-foreground">{niveau}</span>
                               <span className="text-[10px] text-muted-foreground ml-auto">{nClasses.filter((c: any) => form.classe_ids.includes(c.id)).length}/{nClasses.length}</span>
                             </label>
-                            <div className="pl-6">
+                            <div className="pl-6 grid grid-cols-3 gap-1 py-1">
                               {nClasses.map((c: any) => {
                                 const isOriginal = editComp && c.id === editComp.classe_id;
                                 return (
-                                  <label key={c.id} className="flex items-center gap-2 px-2 py-1 hover:bg-muted/40 cursor-pointer text-sm">
+                                  <label key={c.id} className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-muted/40 cursor-pointer text-sm">
                                     <Checkbox
                                       checked={form.classe_ids.includes(c.id)}
                                       disabled={isOriginal}
@@ -764,7 +764,7 @@ export default function CompositionsAdmin() {
                                         setForm({ ...form, classe_ids: newIds, matiere_id: '' });
                                       }}
                                     />
-                                    <span>{c.nom}</span>
+                                    <span className="truncate">{c.nom}</span>
                                     {isOriginal && <span className="text-[10px] text-primary">(actuelle)</span>}
                                   </label>
                                 );
