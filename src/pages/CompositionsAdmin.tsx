@@ -197,70 +197,85 @@ function ConnectedStudentsDashboard() {
         {classStats.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Aucune donnée de connexion</p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {classStats.map(({ className, effectif, online, offline, neverConnected, students }) => (
-              <Collapsible
-                key={className}
-                open={expandedClass === className}
-                onOpenChange={(open) => setExpandedClass(open ? className : null)}
-              >
-                <CollapsibleTrigger asChild>
-                  <button className="w-full text-left border rounded-xl p-3 bg-card hover:bg-accent/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
-                          <Users className="h-4 w-4 text-emerald-600" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-sm truncate">{className}</p>
-                          <p className="text-[10px] text-muted-foreground leading-tight">
-                            <span className="text-emerald-600">{online}🟢</span>
-                            {' '}<span className="text-orange-500">{offline}🟠</span>
-                            {' '}<span>{neverConnected}⚪</span>
-                            {' '}/ {effectif}
-                          </p>
-                        </div>
-                      </div>
-                      {expandedClass === className ? (
-                        <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-                      )}
-                    </div>
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="mt-1 border rounded-lg bg-muted/30 divide-y max-h-48 overflow-y-auto">
-                    {students.map(s => {
-                      const lastSeenMs = now - new Date(s.last_seen_at).getTime();
-                      const agoMin = Math.round(lastSeenMs / 60000);
-                      return (
-                        <div key={s.id} className="px-3 py-2 flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className={`w-2 h-2 rounded-full shrink-0 ${s.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
-                            <span className={`text-sm truncate ${!s.isOnline ? 'text-muted-foreground' : ''}`}>{s.display_name}</span>
-                          </div>
-                          {s.isOnline ? (
-                            <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 px-1.5 py-0">
-                              En ligne
-                            </Badge>
-                          ) : (
-                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                              Hors ligne • {agoMin < 1 ? '<1m' : `${agoMin}m`}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                    {neverConnected > 0 && (
-                      <div className="px-3 py-2 text-xs text-muted-foreground italic">
-                        + {neverConnected} élève{neverConnected > 1 ? 's' : ''} jamais connecté{neverConnected > 1 ? 's' : ''}
-                      </div>
-                    )}
+          <div className="space-y-5">
+            {classStats.map(({ niveau, cycle, classes: niveauClasses }) => {
+              const nOnline = niveauClasses.reduce((s, c) => s + c.online, 0);
+              const nTotal = niveauClasses.reduce((s, c) => s + c.effectif, 0);
+              return (
+                <div key={niveau}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-sm font-bold text-foreground">{niveau}</h3>
+                    <Badge variant="secondary" className="text-[10px]">{cycle}</Badge>
+                    <span className="text-xs text-muted-foreground ml-auto">{nOnline}/{nTotal} en ligne</span>
                   </div>
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                    {niveauClasses.map(({ className, effectif, online, offline, neverConnected, students }) => (
+                      <Collapsible
+                        key={className}
+                        open={expandedClass === className}
+                        onOpenChange={(open) => setExpandedClass(open ? className : null)}
+                      >
+                        <CollapsibleTrigger asChild>
+                          <button className="w-full text-left border rounded-xl p-3 bg-card hover:bg-accent/50 transition-colors">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
+                                  <Users className="h-4 w-4 text-emerald-600" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-sm truncate">{className}</p>
+                                  <p className="text-[10px] text-muted-foreground leading-tight">
+                                    <span className="text-emerald-600">{online}🟢</span>
+                                    {' '}<span className="text-orange-500">{offline}🟠</span>
+                                    {' '}<span>{neverConnected}⚪</span>
+                                    {' '}/ {effectif}
+                                  </p>
+                                </div>
+                              </div>
+                              {expandedClass === className ? (
+                                <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                              )}
+                            </div>
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="mt-1 border rounded-lg bg-muted/30 divide-y max-h-48 overflow-y-auto">
+                            {students.map(s => {
+                              const lastSeenMs = now - new Date(s.last_seen_at).getTime();
+                              const agoMin = Math.round(lastSeenMs / 60000);
+                              return (
+                                <div key={s.id} className="px-3 py-2 flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className={`w-2 h-2 rounded-full shrink-0 ${s.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
+                                    <span className={`text-sm truncate ${!s.isOnline ? 'text-muted-foreground' : ''}`}>{s.display_name}</span>
+                                  </div>
+                                  {s.isOnline ? (
+                                    <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 px-1.5 py-0">
+                                      En ligne
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                      Hors ligne • {agoMin < 1 ? '<1m' : `${agoMin}m`}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            {neverConnected > 0 && (
+                              <div className="px-3 py-2 text-xs text-muted-foreground italic">
+                                + {neverConnected} élève{neverConnected > 1 ? 's' : ''} jamais connecté{neverConnected > 1 ? 's' : ''}
+                              </div>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </CardContent>
