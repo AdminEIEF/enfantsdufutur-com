@@ -104,7 +104,7 @@ function ConnectedStudentsDashboard() {
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [uniqueConnections, now]);
 
-  // Build full class stats including classes with 0 connections
+  // Build full class stats including classes with 0 connections, grouped by niveau
   const classStats = useMemo(() => {
     const connectedMap = new Map<string, { online: number; offline: number; students: (ConnectedStudent & { isOnline: boolean })[] }>();
     grouped.forEach(([className, students]) => {
@@ -118,17 +118,42 @@ function ConnectedStudentsDashboard() {
       ...connectedMap.keys(),
     ]);
 
-    return Array.from(allClasses).sort().map(className => {
-      const effectif = classeEffectifs.find(c => c.nom === className)?.total || 0;
+    const classItems = Array.from(allClasses).map(className => {
+      const info = classeEffectifs.find(c => c.nom === className);
+      const effectif = info?.total || 0;
+      const niveau = info?.niveau || 'Autre';
+      const niveauOrdre = info?.niveauOrdre || 999;
+      const cycle = info?.cycle || '';
+      const cycleOrdre = info?.cycleOrdre || 999;
       const conn = connectedMap.get(className) || { online: 0, offline: 0, students: [] };
       const neverConnected = Math.max(0, effectif - conn.online - conn.offline);
-      return { className, effectif, ...conn, neverConnected };
+      return { className, effectif, niveau, niveauOrdre, cycle, cycleOrdre, ...conn, neverConnected };
     });
+
+    // Group by niveau
+    const niveauMap = new Map<string, { niveauOrdre: number; cycleOrdre: number; cycle: string; classes: typeof classItems }>();
+    classItems.forEach(item => {
+      const key = item.niveau;
+      if (!niveauMap.has(key)) {
+        niveauMap.set(key, { niveauOrdre: item.niveauOrdre, cycleOrdre: item.cycleOrdre, cycle: item.cycle, classes: [] });
+      }
+      niveauMap.get(key)!.classes.push(item);
+    });
+
+    // Sort niveaux by cycle order then niveau order
+    return Array.from(niveauMap.entries())
+      .sort((a, b) => (a[1].cycleOrdre - b[1].cycleOrdre) || (a[1].niveauOrdre - b[1].niveauOrdre))
+      .map(([niveau, data]) => ({
+        niveau,
+        cycle: data.cycle,
+        classes: data.classes.sort((a, b) => a.className.localeCompare(b.className)),
+      }));
   }, [grouped, classeEffectifs]);
 
-  const totalOnline = classStats.reduce((s, c) => s + c.online, 0);
-  const totalOffline = classStats.reduce((s, c) => s + c.offline, 0);
-  const totalNever = classStats.reduce((s, c) => s + c.neverConnected, 0);
+  const allClassItems = classStats.flatMap(n => n.classes);
+  const totalOnline = allClassItems.reduce((s, c) => s + c.online, 0);
+  const totalOffline = allClassItems.reduce((s, c) => s + c.offline, 0);
+  const totalNever = allClassItems.reduce((s, c) => s + c.neverConnected, 0);
 
   if (isLoading) {
     return (
