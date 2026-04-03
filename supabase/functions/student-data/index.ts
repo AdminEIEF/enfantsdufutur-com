@@ -562,6 +562,13 @@ serve(async (req) => {
         .update({ reponses: studentAnswers, score, soumis_at: new Date().toISOString() })
         .eq("id", existing.id);
 
+      await supabaseAdmin.from("student_notifications").insert({
+        eleve_id: eleveId,
+        titre: '📝 Composition corrigée',
+        message: `Votre composition "${comp.titre}" en ${comp.matieres?.nom || 'matière'} a été corrigée : ${score}/${comp.bareme}.`,
+        type: 'info',
+      });
+
       return new Response(JSON.stringify({ score, bareme: comp.bareme }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
