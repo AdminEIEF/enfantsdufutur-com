@@ -96,7 +96,7 @@ export default function StudentCompositions() {
   useEffect(() => {
     if (!session) return;
     fetchCompositions();
-    const refreshId = setInterval(() => {
+    const refreshId = setInterval(() => { // Refresh every 2s
       if (!activeComp) fetchCompositions();
     }, 10000);
     return () => {
