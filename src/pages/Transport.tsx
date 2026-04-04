@@ -279,8 +279,8 @@ export default function Transport() {
           <TabsTrigger value="gestion" className="gap-1"><Settings className="h-3.5 w-3.5" /> Gestion</TabsTrigger>
         </TabsList>
 
-        {/* Tab: Zones */}
-        <TabsContent value="zones" className="space-y-4 mt-4">
+        {/* Tab: Tableau de bord */}
+        <TabsContent value="dashboard" className="space-y-4 mt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {statsParZone.length === 0 ? (
               <Card className="col-span-full">
