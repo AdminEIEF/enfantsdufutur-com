@@ -110,6 +110,8 @@ export type Database = {
         Row: {
           categorie: string
           created_at: string
+          fichier_nom: string | null
+          fichier_url: string | null
           id: string
           niveau_id: string | null
           nom: string
@@ -121,6 +123,8 @@ export type Database = {
         Insert: {
           categorie: string
           created_at?: string
+          fichier_nom?: string | null
+          fichier_url?: string | null
           id?: string
           niveau_id?: string | null
           nom: string
@@ -132,6 +136,8 @@ export type Database = {
         Update: {
           categorie?: string
           created_at?: string
+          fichier_nom?: string | null
+          fichier_url?: string | null
           id?: string
           niveau_id?: string | null
           nom?: string
