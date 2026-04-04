@@ -329,7 +329,7 @@ serve(async (req) => {
 
       const { data: eleves } = await supabaseAdmin
         .from("eleves")
-        .select("id, nom, prenom, matricule, solde_cantine, classe_id, option_cantine, option_fournitures, uniforme_scolaire, uniforme_sport, uniforme_polo_lacoste, uniforme_karate, zone_transport_id, classes(nom, niveaux:niveau_id(nom, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, cycles:cycle_id(nom))), zones_transport:zone_transport_id(nom, prix_mensuel)")
+        .select("id, nom, prenom, matricule, photo_url, photo_thumbnail_url, sexe, date_naissance, solde_cantine, classe_id, option_cantine, option_fournitures, uniforme_scolaire, uniforme_sport, uniforme_polo_lacoste, uniforme_karate, zone_transport_id, classes(nom, niveaux:niveau_id(nom, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, cycles:cycle_id(nom, bareme))), zones_transport:zone_transport_id(nom, prix_mensuel)")
         .eq("famille_id", familleId)
         .is("deleted_at", null);
 
