@@ -1072,6 +1072,85 @@ export default function CompositionsAdmin() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Results by Class Dialog */}
+      <Dialog open={!!resultsByClassComp} onOpenChange={() => setResultsByClassComp(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Résultats par classe — {compositions.find(c => c.id === resultsByClassComp)?.titre}
+            </DialogTitle>
+          </DialogHeader>
+          {resultsByClassLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+          ) : resultsByClassGrouped.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">Aucun résultat pour cette composition</p>
+          ) : (
+            <div className="space-y-6">
+              {resultsByClassGrouped.map(([className, students]) => {
+                const scored = students.filter((s: any) => s.score != null);
+                const avg = scored.length > 0 ? (scored.reduce((sum: number, s: any) => sum + s.score, 0) / scored.length).toFixed(1) : '—';
+                const max = scored.length > 0 ? Math.max(...scored.map((s: any) => s.score)) : '—';
+                const min = scored.length > 0 ? Math.min(...scored.map((s: any) => s.score)) : '—';
+                const bareme = students[0]?.bareme || 20;
+                return (
+                  <Card key={className} className="border">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Users className="h-4 w-4 text-primary" />
+                          {className}
+                          <Badge variant="secondary" className="text-xs">{students.length} élève{students.length > 1 ? 's' : ''}</Badge>
+                        </CardTitle>
+                        <div className="flex items-center gap-3 text-sm">
+                          <span className="text-muted-foreground">Moy: <strong className="text-foreground">{avg}/{bareme}</strong></span>
+                          <span className="text-muted-foreground">Max: <strong className="text-emerald-600">{max}</strong></span>
+                          <span className="text-muted-foreground">Min: <strong className="text-destructive">{min}</strong></span>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-8">#</TableHead>
+                            <TableHead>Élève</TableHead>
+                            <TableHead>Matricule</TableHead>
+                            <TableHead className="text-right">Note</TableHead>
+                            <TableHead className="text-right">Soumis le</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {students.sort((a: any, b: any) => (b.score ?? -1) - (a.score ?? -1)).map((r: any, i: number) => (
+                            <TableRow key={r.id}>
+                              <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
+                              <TableCell className="font-medium">{r.eleves?.prenom} {r.eleves?.nom}</TableCell>
+                              <TableCell className="text-xs text-muted-foreground">{r.eleves?.matricule}</TableCell>
+                              <TableCell className="text-right">
+                                {r.score != null ? (
+                                  <Badge variant={r.score >= bareme * 0.5 ? 'default' : 'destructive'} className="text-xs">
+                                    {r.score}/{bareme}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary" className="text-xs">À noter</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right text-xs text-muted-foreground">
+                                {r.soumis_at ? new Date(r.soumis_at).toLocaleString('fr') : 'En cours...'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
