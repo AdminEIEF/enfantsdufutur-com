@@ -28,7 +28,6 @@ const TABS = [
   { key: 'emploi', label: 'Emploi', icon: Calendar, gradient: 'from-emerald-500 to-green-600', emoji: '📅' },
   { key: 'commandes', label: 'Commandes', icon: Package, gradient: 'from-purple-500 to-violet-600', emoji: '📦' },
   { key: 'cantine', label: 'Cantine', icon: UtensilsCrossed, gradient: 'from-rose-500 to-pink-600', emoji: '🍽️' },
-  { key: 'fournitures', label: 'Achats', icon: BookOpen, gradient: 'from-amber-500 to-yellow-600', emoji: '📚' },
   { key: 'bulletins', label: 'Bulletins', icon: FileText, gradient: 'from-teal-500 to-cyan-600', emoji: '🎓' },
   { key: 'profil', label: 'Profil', icon: BarChart3, gradient: 'from-indigo-500 to-blue-600', emoji: '📊' },
 ];
@@ -210,7 +209,7 @@ export default function ParentEnfant() {
                 {activeTab === 'emploi' && <ParentEnfantEmploiDuTemps emploiDuTemps={data?.emploiDuTemps || []} />}
                 {activeTab === 'commandes' && <ParentEnfantCommandes commandesArticles={data?.commandesArticles || []} enfant={enfant} />}
                 {activeTab === 'cantine' && <ParentEnfantCantine repas={data?.repas || []} soldeCantine={data?.solde_cantine ?? enfant.solde_cantine ?? 0} />}
-                {activeTab === 'fournitures' && <ParentEnfantFournitures articlesNiveau={data?.articlesNiveau || []} ventesArticles={data?.ventesArticles || []} boutiqueVentes={data?.boutiqueVentes || []} />}
+                
                 {activeTab === 'bulletins' && <ParentEnfantBulletins bulletinPublications={data?.bulletinPublications || []} />}
                 {activeTab === 'profil' && <ParentEnfantProfilRadar notes={data?.notes || []} periodes={data?.periodes || []} bareme={enfant.classes?.niveaux?.cycles?.bareme || 20} eleve={enfant} schoolConfig={schoolConfig} famille={session?.famille} />}
               </motion.div>
