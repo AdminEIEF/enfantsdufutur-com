@@ -12,7 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit, Eye, Loader2, FileQuestion, CheckCircle2, Clock, GripVertical, Upload, FileText, Wifi, Users, ChevronDown, ChevronUp, Monitor } from 'lucide-react';
+import { Plus, Trash2, Edit, Eye, Loader2, FileQuestion, CheckCircle2, Clock, GripVertical, Upload, FileText, Wifi, Users, ChevronDown, ChevronUp, Monitor, BarChart3 } from 'lucide-react';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useQuery } from '@tanstack/react-query';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -328,6 +329,9 @@ export default function CompositionsAdmin() {
   const [showResults, setShowResults] = useState<string | null>(null);
   const [results, setResults] = useState<any[]>([]);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [resultsByClassComp, setResultsByClassComp] = useState<string | null>(null);
+  const [resultsByClassData, setResultsByClassData] = useState<any[]>([]);
+  const [resultsByClassLoading, setResultsByClassLoading] = useState(false);
 
   // Form state
   const [form, setForm] = useState({
@@ -560,17 +564,44 @@ export default function CompositionsAdmin() {
     setResults((data || []).map((r: any) => ({ ...r, _type: comp?.type_composition })));
   }
 
+  async function openResultsByClass(compId: string) {
+    setResultsByClassComp(compId);
+    setResultsByClassLoading(true);
+    const comp = compositions.find(c => c.id === compId);
+    // Find all compositions with same titre (grouped across classes)
+    const siblingComps = compositions.filter(c => c.titre === comp?.titre);
+    const allResults: any[] = [];
+    for (const sc of siblingComps) {
+      const { data } = await supabase.from('composition_reponses')
+        .select('*, eleves:eleve_id(nom, prenom, matricule, classe_id, classes:classe_id(nom))')
+        .eq('composition_id', sc.id)
+        .order('score', { ascending: false });
+      (data || []).forEach((r: any) => allResults.push({ ...r, comp_classe: sc.classes?.nom, comp_id: sc.id, bareme: sc.bareme }));
+    }
+    setResultsByClassData(allResults);
+    setResultsByClassLoading(false);
+  }
+
   const filtered = filterClasse === 'all' ? compositions : compositions.filter(c => c.classe_id === filterClasse);
   const totalPoints = questions.reduce((s, q) => s + q.points, 0);
   const currentResultComp = compositions.find(c => c.id === showResults);
+
+  // Group resultsByClass data by class
+  const resultsByClassGrouped = useMemo(() => {
+    const map = new Map<string, any[]>();
+    resultsByClassData.forEach(r => {
+      const className = r.eleves?.classes?.nom || r.comp_classe || 'Sans classe';
+      if (!map.has(className)) map.set(className, []);
+      map.get(className)!.push(r);
+    });
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [resultsByClassData]);
 
   if (loading) return <div className="flex items-center justify-center min-h-[300px]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
     <div className="space-y-6">
-      {/* Connected Students Dashboard */}
-      <ConnectedStudentsDashboard />
-
+      {/* Header + Compositions first */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Compositions en ligne</h1>
@@ -635,6 +666,9 @@ export default function CompositionsAdmin() {
                     <Button variant="outline" size="sm" onClick={() => openResults(comp.id)}>
                       <Eye className="h-4 w-4 mr-1" /> Résultats
                     </Button>
+                    <Button variant="outline" size="sm" className="border-primary/30 text-primary" onClick={() => openResultsByClass(comp.id)}>
+                      <BarChart3 className="h-4 w-4 mr-1" /> Par classe
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => {
                       setEditComp(comp);
                       setForm({
@@ -666,6 +700,9 @@ export default function CompositionsAdmin() {
           ))}
         </div>
       )}
+
+      {/* Connected Students Dashboard - after compositions */}
+      <ConnectedStudentsDashboard />
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -1031,6 +1068,85 @@ export default function CompositionsAdmin() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Results by Class Dialog */}
+      <Dialog open={!!resultsByClassComp} onOpenChange={() => setResultsByClassComp(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Résultats par classe — {compositions.find(c => c.id === resultsByClassComp)?.titre}
+            </DialogTitle>
+          </DialogHeader>
+          {resultsByClassLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+          ) : resultsByClassGrouped.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">Aucun résultat pour cette composition</p>
+          ) : (
+            <div className="space-y-6">
+              {resultsByClassGrouped.map(([className, students]) => {
+                const scored = students.filter((s: any) => s.score != null);
+                const avg = scored.length > 0 ? (scored.reduce((sum: number, s: any) => sum + s.score, 0) / scored.length).toFixed(1) : '—';
+                const max = scored.length > 0 ? Math.max(...scored.map((s: any) => s.score)) : '—';
+                const min = scored.length > 0 ? Math.min(...scored.map((s: any) => s.score)) : '—';
+                const bareme = students[0]?.bareme || 20;
+                return (
+                  <Card key={className} className="border">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Users className="h-4 w-4 text-primary" />
+                          {className}
+                          <Badge variant="secondary" className="text-xs">{students.length} élève{students.length > 1 ? 's' : ''}</Badge>
+                        </CardTitle>
+                        <div className="flex items-center gap-3 text-sm">
+                          <span className="text-muted-foreground">Moy: <strong className="text-foreground">{avg}/{bareme}</strong></span>
+                          <span className="text-muted-foreground">Max: <strong className="text-emerald-600">{max}</strong></span>
+                          <span className="text-muted-foreground">Min: <strong className="text-destructive">{min}</strong></span>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-8">#</TableHead>
+                            <TableHead>Élève</TableHead>
+                            <TableHead>Matricule</TableHead>
+                            <TableHead className="text-right">Note</TableHead>
+                            <TableHead className="text-right">Soumis le</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {students.sort((a: any, b: any) => (b.score ?? -1) - (a.score ?? -1)).map((r: any, i: number) => (
+                            <TableRow key={r.id}>
+                              <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
+                              <TableCell className="font-medium">{r.eleves?.prenom} {r.eleves?.nom}</TableCell>
+                              <TableCell className="text-xs text-muted-foreground">{r.eleves?.matricule}</TableCell>
+                              <TableCell className="text-right">
+                                {r.score != null ? (
+                                  <Badge variant={r.score >= bareme * 0.5 ? 'default' : 'destructive'} className="text-xs">
+                                    {r.score}/{bareme}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary" className="text-xs">À noter</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right text-xs text-muted-foreground">
+                                {r.soumis_at ? new Date(r.soumis_at).toLocaleString('fr') : 'En cours...'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </DialogContent>
