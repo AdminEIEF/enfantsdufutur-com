@@ -406,7 +406,7 @@ export default function PreInscriptionPublic() {
                 Dossier à fournir
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Scannez ou prenez en photo chaque document. Les documents marqués <span className="text-destructive font-medium">*</span> sont obligatoires.
+                Scannez ou prenez en photo chaque document.
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
