@@ -27,8 +27,8 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   const [search, setSearch] = useState('');
   const [filterZone, setFilterZone] = useState('all');
   const [rechargeDialog, setRechargeDialog] = useState<any>(null);
-  const [montantRecharge, setMontantRecharge] = useState('');
   const [printCard, setPrintCard] = useState<any>(null);
+  const [cashPayDialog, setCashPayDialog] = useState<any>(null);
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
