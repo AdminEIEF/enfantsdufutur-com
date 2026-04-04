@@ -13,13 +13,13 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 const DOCUMENTS_REQUIS = [
-  { key: 'extrait_naissance', label: 'Extrait de naissance', required: true },
+  { key: 'extrait_naissance', label: 'Extrait de naissance', required: false },
   { key: 'certificat_scolarite', label: 'Certificat de scolarité (ancienne école)', required: false },
   { key: 'bulletins', label: 'Bulletins scolaires (année précédente)', required: false },
-  { key: 'photos_identite', label: "Photos d'identité (4 photos)", required: true },
-  { key: 'carnet_vaccination', label: 'Carnet de vaccination', required: true },
+  { key: 'photos_identite', label: "Photos d'identité (4 photos)", required: false },
+  { key: 'carnet_vaccination', label: 'Carnet de vaccination', required: false },
   { key: 'certificat_medical', label: 'Certificat médical', required: false },
-  { key: 'piece_identite_parent', label: "Pièce d'identité du parent/tuteur", required: true },
+  { key: 'piece_identite_parent', label: "Pièce d'identité du parent/tuteur", required: false },
   { key: 'justificatif_domicile', label: 'Justificatif de domicile', required: false },
 ];
 
