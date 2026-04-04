@@ -12,7 +12,7 @@ import { Loader2, Clock, CheckCircle2, Timer, FileText, Bold, Italic, Underline,
 import { useExamSecurity } from '@/hooks/useExamSecurity';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MathText } from '@/components/MathText';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function StudentCompositions() {
   const { session } = useStudentAuth();
