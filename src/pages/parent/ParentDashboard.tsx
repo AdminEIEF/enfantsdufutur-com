@@ -528,23 +528,25 @@ export default function ParentDashboard() {
             {/* Children gallery */}
             <div className="space-y-2">
               <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Enfants</h3>
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-3 gap-2">
                 {eleves.map((enfant: any) => (
                   <button
                     key={enfant.id}
                     onClick={() => { setFamilyDetailsOpen(false); navigate(`/parent/enfant/${enfant.id}`); }}
-                    className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-muted/40 hover:bg-muted/60 transition-all active:scale-95"
+                    className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl bg-muted/40 hover:bg-muted/60 transition-all active:scale-95 relative"
                   >
-                    {enfant.photo_url ? (
-                      <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-14 h-14 rounded-2xl object-cover shadow-md ring-2 ring-border/30" />
-                    ) : (
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary font-bold shadow-md">
-                        {enfant.prenom[0]}{enfant.nom[0]}
-                      </div>
-                    )}
+                    <div className="relative">
+                      {enfant.photo_url ? (
+                        <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-16 h-16 rounded-2xl object-cover shadow-md ring-2 ring-border/30" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary font-bold text-lg shadow-md">
+                          {enfant.prenom[0]}{enfant.nom[0]}
+                        </div>
+                      )}
+                    </div>
                     <div className="text-center">
-                      <p className="text-xs font-bold truncate max-w-[100px]">{enfant.prenom} {enfant.nom}</p>
-                      <p className="text-[10px] text-muted-foreground">{enfant.classes?.nom}</p>
+                      <p className="text-[10px] font-semibold truncate max-w-[80px]">{enfant.prenom}</p>
+                      <Badge variant="secondary" className="text-[8px] px-1.5 py-0 rounded-full font-bold">{enfant.classes?.nom || '—'}</Badge>
                     </div>
                   </button>
                 ))}
