@@ -64,6 +64,20 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     },
   });
 
+  // Paiements transport pour vérifier si le parent a payé
+  const { data: paiementsTransport = [] } = useQuery({
+    queryKey: ['paiements-transport'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('paiements')
+        .select('*')
+        .eq('type_paiement', 'transport')
+        .order('date_paiement', { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
   const rechargeMutation = useMutation({
     mutationFn: async ({ eleveId, montant }: { eleveId: string; montant: number }) => {
       await supabase
@@ -104,7 +118,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   };
 
   const toggleSelectAll = () => {
-    const eligible = filteredEleves.filter((e: any) => !hasRechargeThisMonth(e.id));
+    const eligible = filteredEleves.filter((e: any) => !hasRechargeThisMonth(e.id) && hasTransportPaidThisMonth(e.id));
     if (selectedIds.size === eligible.length) {
       setSelectedIds(new Set());
     } else {
@@ -164,6 +178,15 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   const getDaysRemaining = (dateExpiration: string) => {
     const diff = new Date(dateExpiration).getTime() - new Date().getTime();
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  };
+
+  const hasTransportPaidThisMonth = (eleveId: string) => {
+    const now = new Date();
+    return paiementsTransport.some(
+      (p: any) => p.eleve_id === eleveId &&
+        new Date(p.date_paiement).getMonth() === now.getMonth() &&
+        new Date(p.date_paiement).getFullYear() === now.getFullYear()
+    );
   };
 
   const filteredEleves = useMemo(() => {
@@ -359,6 +382,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 <TableHead>Classe</TableHead>
                 <TableHead>Zone</TableHead>
                 {bulkMode && <TableHead className="text-right">Montant</TableHead>}
+                <TableHead className="text-center">Paiement parent</TableHead>
                 <TableHead className="text-center">Statut carte</TableHead>
                 <TableHead className="text-center">Jours restants</TableHead>
                 {!bulkMode && <TableHead className="text-right">Actions</TableHead>}
@@ -371,6 +395,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 const recharge = getActiveRecharge(e.id);
                 const jours = recharge ? getDaysRemaining(recharge.date_expiration) : 0;
                 const alreadyThisMonth = hasRechargeThisMonth(e.id);
+                const parentPaid = hasTransportPaidThisMonth(e.id);
                 const prixZone = (e.zones_transport as any)?.prix_mensuel || 0;
                 return (
                   <TableRow key={e.id} className={bulkMode && selectedIds.has(e.id) ? 'bg-primary/5' : ''}>
@@ -379,7 +404,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                         <input
                           type="checkbox"
                           className="rounded border-muted-foreground"
-                          disabled={alreadyThisMonth}
+                          disabled={alreadyThisMonth || !parentPaid}
                           checked={selectedIds.has(e.id)}
                           onChange={() => toggleSelect(e.id)}
                         />
@@ -399,6 +424,11 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                       </TableCell>
                     )}
                     <TableCell className="text-center">
+                      <Badge variant={parentPaid ? 'default' : 'secondary'} className={parentPaid ? 'bg-emerald-600' : ''}>
+                        {parentPaid ? '✓ Payé' : 'Non payé'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
                       <Badge variant={recharge ? 'default' : 'destructive'}>
                         {recharge ? 'Active' : 'Expirée'}
                       </Badge>
@@ -413,18 +443,22 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                     {!bulkMode && (
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={alreadyThisMonth}
-                            title={alreadyThisMonth ? 'Déjà rechargé ce mois' : ''}
-                            onClick={() => {
-                              setRechargeDialog(e);
-                              setMontantRecharge(String(prixZone));
-                            }}
-                          >
-                            <Wallet className="h-3 w-3 mr-1" /> {alreadyThisMonth ? 'Rechargé' : 'Recharger'}
-                          </Button>
+                          {parentPaid && !alreadyThisMonth ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setRechargeDialog(e);
+                                setMontantRecharge(String(prixZone));
+                              }}
+                            >
+                              <Wallet className="h-3 w-3 mr-1" /> Recharger
+                            </Button>
+                          ) : alreadyThisMonth ? (
+                            <Badge variant="secondary" className="text-[10px]">✓ Rechargé</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] text-muted-foreground">En attente paiement</Badge>
+                          )}
                           <Button size="sm" variant="ghost" onClick={() => setPrintCard({ ...e, recharge })}>
                             <Printer className="h-3 w-3" />
                           </Button>

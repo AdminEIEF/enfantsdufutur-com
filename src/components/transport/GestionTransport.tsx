@@ -43,15 +43,17 @@ function ZonesTab() {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [nom, setNom] = useState('');
+  const [prixMensuel, setPrixMensuel] = useState(0);
   const [quartiersInput, setQuartiersInput] = useState('');
 
-  const reset = () => { setEditId(null); setNom(''); setQuartiersInput(''); setOpen(false); };
+  const reset = () => { setEditId(null); setNom(''); setPrixMensuel(0); setQuartiersInput(''); setOpen(false); };
 
   const save = useMutation({
     mutationFn: async () => {
       if (!nom) throw new Error('Le nom est requis');
+      if (prixMensuel <= 0) throw new Error('Le prix mensuel est requis');
       const quartiers = quartiersInput.split(',').map(q => q.trim()).filter(Boolean);
-      const payload = { nom, quartiers };
+      const payload = { nom, prix_mensuel: prixMensuel, quartiers };
       if (editId) {
         const { error } = await supabase.from('zones_transport' as any).update(payload).eq('id', editId);
         if (error) throw error;
@@ -74,7 +76,7 @@ function ZonesTab() {
   });
 
   const openEdit = (z: any) => {
-    setEditId(z.id); setNom(z.nom);
+    setEditId(z.id); setNom(z.nom); setPrixMensuel(z.prix_mensuel || 0);
     setQuartiersInput((z.quartiers ?? []).join(', ')); setOpen(true);
   };
 
@@ -94,6 +96,7 @@ function ZonesTab() {
           <TableHeader>
             <TableRow>
               <TableHead>Zone</TableHead>
+              <TableHead className="text-right">Prix mensuel</TableHead>
               <TableHead>Bus assigné</TableHead>
               <TableHead>Chauffeur</TableHead>
               <TableHead>Quartiers</TableHead>
@@ -102,15 +105,16 @@ function ZonesTab() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
             ) : zones.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Aucune zone</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Aucune zone</TableCell></TableRow>
             ) : zones.map((z: any) => {
               const veh = getVehiculeForZone(z.id);
               const chauffeur = veh?.employes;
               return (
                 <TableRow key={z.id}>
                   <TableCell className="font-medium">{z.nom}</TableCell>
+                  <TableCell className="text-right font-semibold">{(z.prix_mensuel || 0).toLocaleString('fr-FR')} GNF</TableCell>
                   <TableCell>
                     {veh ? (
                       <div className="text-sm">
@@ -148,7 +152,8 @@ function ZonesTab() {
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>{editId ? 'Modifier' : 'Ajouter'} une zone</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Nom *</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Zone Nord" /></div>
+            <div><Label>Nom *</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Petit trajet / Long trajet" /></div>
+            <div><Label>Prix mensuel (GNF) *</Label><Input type="number" value={prixMensuel} onChange={e => setPrixMensuel(Number(e.target.value))} placeholder="Ex: 300000" min={0} /></div>
             <div><Label>Quartiers (séparés par virgules)</Label><Input value={quartiersInput} onChange={e => setQuartiersInput(e.target.value)} placeholder="Quartier A, Quartier B" /></div>
           </div>
           <p className="text-xs text-muted-foreground mt-2">💡 Pour assigner un chauffeur, allez dans l'onglet <strong>Assignation</strong> après avoir créé un véhicule lié à cette zone.</p>

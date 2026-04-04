@@ -61,7 +61,7 @@ const WALLET_SERVICES = [
 export default function ParentPaymentDialog({ open, onOpenChange, enfants, code, onSuccess, soldeFamille = 0, initialMode }: PaymentDialogProps) {
   const isSingle = enfants.length === 1;
   const [activeMode, setActiveMode] = useState<'select' | 'mobile' | 'wallet'>('select');
-  const [walletSubMode, setWalletSubMode] = useState<'menu' | 'cantine' | 'catalogue' | 'debit'>('menu');
+  const [walletSubMode, setWalletSubMode] = useState<'menu' | 'cantine' | 'catalogue' | 'debit' | 'transport'>('menu');
   const [eleveId, setEleveId] = useState(isSingle ? enfants[0]?.id || '' : '');
   const [typePaiement, setTypePaiement] = useState('');
   const [montant, setMontant] = useState('');
@@ -87,6 +87,10 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
   const [cantineMontant, setCantineMontant] = useState(CANTINE_MENSUEL.toString());
   const [cantineLoading, setCantineLoading] = useState(false);
 
+  // Transport state
+  const [transportSelectedIds, setTransportSelectedIds] = useState<string[]>(isSingle ? [enfants[0]?.id || ''] : []);
+  const [transportLoading, setTransportLoading] = useState(false);
+
   // Catalogue state
   const [catalogueType, setCatalogueType] = useState<'librairie' | 'boutique'>('librairie');
   const [catalogueEleveId, setCatalogueEleveId] = useState(isSingle ? enfants[0]?.id || '' : '');
@@ -108,6 +112,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
       setManuelPurpose(''); setManuelMontant(''); setDebitType(''); setDebitMontant('');
       setCart([]); setCantineMontant(CANTINE_MENSUEL.toString());
       setCantineSelectedIds(isSingle ? [enfants[0]?.id || ''] : []);
+      setTransportSelectedIds(isSingle ? [enfants[0]?.id || ''] : []);
     }
   }, [open, initialMode]);
 
@@ -257,6 +262,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
     if (activeMode === 'select') return 'Paiements';
     if (activeMode === 'mobile') return 'Mobile Money';
     if (walletSubMode === 'cantine') return 'Recharge Cantine';
+    if (walletSubMode === 'transport') return 'Transport Scolaire';
     if (walletSubMode === 'catalogue') return catalogueType === 'librairie' ? 'Librairie' : 'Boutique';
     if (walletSubMode === 'debit') return 'Payer un service';
     return 'Portefeuille';
@@ -274,6 +280,8 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
   const handleWalletServiceClick = (svc: string) => {
     if (svc === 'cantine') {
       setWalletSubMode('cantine');
+    } else if (svc === 'transport') {
+      setWalletSubMode('transport');
     } else if (svc === 'librairie' || svc === 'boutique') {
       setCatalogueType(svc as any);
       setWalletSubMode('catalogue');
@@ -282,6 +290,38 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
       handleDebitTypeSelect(svc);
       setWalletSubMode('debit');
     }
+  };
+
+  // Transport enfants with zone
+  const transportEnfants = enfants.filter(e => e.zone_transport_id && e.zones_transport);
+  const MOIS_FR_LABELS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const moisCourantLabel = MOIS_FR_LABELS[new Date().getMonth()];
+  const anneeCourante = new Date().getFullYear();
+  const transportTotal = transportSelectedIds.reduce((sum, id) => {
+    const e = enfants.find(x => x.id === id);
+    return sum + (e?.zones_transport?.prix_mensuel || 0);
+  }, 0);
+
+  const handleTransportPayment = async () => {
+    if (transportSelectedIds.length === 0) { toast.error('Sélectionnez au moins un enfant'); return; }
+    if (transportTotal > soldeFamille) { toast.error('Solde insuffisant'); return; }
+    setTransportLoading(true);
+    try {
+      for (const eid of transportSelectedIds) {
+        const enf = enfants.find(x => x.id === eid);
+        const montant = enf?.zones_transport?.prix_mensuel || 0;
+        const description = `Transport du mois de ${moisCourantLabel} ${anneeCourante}`;
+        const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parent-data`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+          body: JSON.stringify({ code, action: 'debit_wallet', eleve_id: eid, montant, type_paiement: 'transport', description }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error);
+      }
+      toast.success(`Transport payé pour ${transportSelectedIds.length} enfant(s) !`);
+      onOpenChange(false); onSuccess?.();
+    } catch (err: any) { toast.error(err.message || 'Erreur'); } finally { setTransportLoading(false); }
   };
 
   return (
@@ -651,7 +691,86 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                   </motion.div>
                 )}
 
-                {/* ─── DEBIT SUB-MODE (transport, autre) ─── */}
+                {/* ─── TRANSPORT SUB-MODE ─── */}
+                {walletSubMode === 'transport' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                    {transportEnfants.length === 0 ? (
+                      <div className="text-center py-6">
+                        <Bus className="h-10 w-10 mx-auto text-muted-foreground/40 mb-2" />
+                        <p className="text-sm text-muted-foreground">Aucun enfant inscrit au transport scolaire</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">L'option transport doit être activée lors de l'inscription</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-bold">Enfant(s) à payer</Label>
+                            {transportEnfants.length > 1 && (
+                              <button onClick={() => setTransportSelectedIds(prev => prev.length === transportEnfants.length ? [] : transportEnfants.map(e => e.id))} className="text-[10px] font-bold text-primary hover:underline">
+                                {transportSelectedIds.length === transportEnfants.length ? 'Désélectionner' : 'Tous'}
+                              </button>
+                            )}
+                          </div>
+                          <div className="space-y-1.5">
+                            {transportEnfants.map(e => {
+                              const prix = e.zones_transport?.prix_mensuel || 0;
+                              const zoneName = e.zones_transport?.nom || '—';
+                              return (
+                                <label key={e.id} className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${transportSelectedIds.includes(e.id) ? 'border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 shadow-sm' : 'border-border hover:bg-muted/50'}`}>
+                                  <Checkbox checked={transportSelectedIds.includes(e.id)} onCheckedChange={() => setTransportSelectedIds(prev => prev.includes(e.id) ? prev.filter(x => x !== e.id) : [...prev, e.id])} />
+                                  {e.photo_url ? (
+                                    <img src={e.photo_url} alt="" className="w-9 h-9 rounded-xl object-cover" />
+                                  ) : (
+                                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-700 font-bold text-xs">{e.prenom[0]}{e.nom[0]}</div>
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-sm truncate">{e.prenom} {e.nom}</p>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <Badge variant="outline" className="text-[9px] px-1.5 rounded-full">{zoneName}</Badge>
+                                      <span className="text-[10px] font-bold text-amber-700">{prix.toLocaleString()} GNF</span>
+                                    </div>
+                                  </div>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="bg-muted/40 rounded-2xl p-3 text-xs text-muted-foreground">
+                          <p className="font-bold text-foreground mb-1">📅 {moisCourantLabel} {anneeCourante}</p>
+                          <p>Le montant est calculé automatiquement selon le trajet de chaque enfant.</p>
+                        </div>
+
+                        {transportSelectedIds.length > 0 && (
+                          <Card className="border-0 shadow-md rounded-2xl bg-amber-50 dark:bg-amber-950/20">
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Total à débiter</p>
+                                  <p className="text-xl font-extrabold text-amber-700">{transportTotal.toLocaleString()} GNF</p>
+                                  {transportSelectedIds.length > 1 && <p className="text-[10px] text-muted-foreground">{transportSelectedIds.length} enfant(s)</p>}
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-[10px] text-muted-foreground">Solde après</p>
+                                  <p className={`text-sm font-bold ${soldeFamille - transportTotal < 0 ? 'text-destructive' : 'text-emerald-600'}`}>{(soldeFamille - transportTotal).toLocaleString()} GNF</p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+
+                        {transportTotal > soldeFamille && <p className="text-xs text-destructive font-medium text-center">⚠️ Solde insuffisant</p>}
+
+                        <Button onClick={handleTransportPayment} disabled={transportLoading || transportSelectedIds.length === 0 || transportTotal <= 0 || transportTotal > soldeFamille} className="w-full rounded-2xl h-12 font-bold bg-amber-600 hover:bg-amber-700" size="lg">
+                          {transportLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Bus className="h-4 w-4 mr-2" />}
+                          Payer le transport
+                        </Button>
+                      </>
+                    )}
+                  </motion.div>
+                )}
+
+                {/* ─── DEBIT SUB-MODE (autre) ─── */}
                 {walletSubMode === 'debit' && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                     {!isSingle ? (
