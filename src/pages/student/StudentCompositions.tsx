@@ -150,6 +150,7 @@ export default function StudentCompositions() {
       setActiveComp(comp);
       setActiveType(data.type_composition || 'qcm');
       setAnswers({});
+      setCurrentQIndex(0);
 
       if (data.type_composition === 'document') {
         setActiveSujet({ url: data.sujet_url, nom: data.sujet_nom });
