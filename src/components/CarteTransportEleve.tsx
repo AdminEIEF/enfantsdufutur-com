@@ -108,7 +108,33 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     },
   });
 
-  const toggleSelect = (id: string) => {
+  // Cash payment by comptable (creates paiement + recharge in one step)
+  const cashPayMutation = useMutation({
+    mutationFn: async ({ eleveId, montant }: { eleveId: string; montant: number }) => {
+      // 1. Create paiement record
+      const { error: payErr } = await supabase.from('paiements').insert({
+        eleve_id: eleveId,
+        type_paiement: 'transport',
+        montant,
+        canal: 'especes',
+        mois_concerne: `Transport du mois de ${moisCourant} ${anneeCourante}`,
+      });
+      if (payErr) throw payErr;
+      // 2. Deactivate old recharge
+      await supabase.from('recharges_transport').update({ actif: false } as any).eq('eleve_id', eleveId).eq('actif', true);
+      // 3. Create new recharge
+      const { error: rechErr } = await supabase.from('recharges_transport').insert({ eleve_id: eleveId, montant, actif: true } as any);
+      if (rechErr) throw rechErr;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recharges-transport'] });
+      queryClient.invalidateQueries({ queryKey: ['paiements-transport'] });
+      toast({ title: 'Paiement enregistré', description: 'Paiement espèces + carte rechargée.' });
+      setCashPayDialog(null);
+    },
+    onError: (err: any) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
+  });
+
     setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
