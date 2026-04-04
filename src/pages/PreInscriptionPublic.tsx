@@ -608,8 +608,8 @@ export default function PreInscriptionPublic() {
                       <span className="text-xl">🍽️</span>
                       <p className="text-sm font-bold">Cantine scolaire</p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">Repas chauds et équilibrés servis chaque jour à l'école. Système de portefeuille rechargeable, débit par repas consommé.</p>
-                    <p className="text-xs font-semibold text-primary mt-1">💰 Rechargeable — repas à partir de 500 GNF</p>
+                    <p className="text-xs text-muted-foreground mt-1">Repas chauds et équilibrés servis chaque jour à l'école. Système de portefeuille rechargeable.</p>
+                     <p className="text-xs font-semibold text-primary mt-1">💰 400 000 GNF / mois</p>
                   </div>
                 </label>
                 <label htmlFor="transport" className={`cursor-pointer flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${form.option_transport ? 'border-primary bg-primary/5 shadow-md' : 'border-muted hover:border-primary/30'}`}>
