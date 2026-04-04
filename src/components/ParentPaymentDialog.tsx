@@ -279,6 +279,8 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
   const handleWalletServiceClick = (svc: string) => {
     if (svc === 'cantine') {
       setWalletSubMode('cantine');
+    } else if (svc === 'transport') {
+      setWalletSubMode('transport');
     } else if (svc === 'librairie' || svc === 'boutique') {
       setCatalogueType(svc as any);
       setWalletSubMode('catalogue');
@@ -287,6 +289,38 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
       handleDebitTypeSelect(svc);
       setWalletSubMode('debit');
     }
+  };
+
+  // Transport enfants with zone
+  const transportEnfants = enfants.filter(e => e.zone_transport_id && e.zones_transport);
+  const MOIS_FR_LABELS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const moisCourantLabel = MOIS_FR_LABELS[new Date().getMonth()];
+  const anneeCourante = new Date().getFullYear();
+  const transportTotal = transportSelectedIds.reduce((sum, id) => {
+    const e = enfants.find(x => x.id === id);
+    return sum + (e?.zones_transport?.prix_mensuel || 0);
+  }, 0);
+
+  const handleTransportPayment = async () => {
+    if (transportSelectedIds.length === 0) { toast.error('Sélectionnez au moins un enfant'); return; }
+    if (transportTotal > soldeFamille) { toast.error('Solde insuffisant'); return; }
+    setTransportLoading(true);
+    try {
+      for (const eid of transportSelectedIds) {
+        const enf = enfants.find(x => x.id === eid);
+        const montant = enf?.zones_transport?.prix_mensuel || 0;
+        const description = `Transport du mois de ${moisCourantLabel} ${anneeCourante}`;
+        const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parent-data`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+          body: JSON.stringify({ code, action: 'debit_wallet', eleve_id: eid, montant, type_paiement: 'transport', description }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error);
+      }
+      toast.success(`Transport payé pour ${transportSelectedIds.length} enfant(s) !`);
+      onOpenChange(false); onSuccess?.();
+    } catch (err: any) { toast.error(err.message || 'Erreur'); } finally { setTransportLoading(false); }
   };
 
   return (
