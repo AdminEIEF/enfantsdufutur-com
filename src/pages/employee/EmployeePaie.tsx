@@ -1,18 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmployeeLayout } from '@/components/EmployeeLayout';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
-import { Loader2, FileText, DollarSign, Download, PenTool } from 'lucide-react';
+import { Loader2, FileText, DollarSign, Download, PenTool, Wallet, TrendingDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { generateBulletinPaiePDF } from '@/lib/generateBulletinPaiePDF';
+import { motion } from 'framer-motion';
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-
-function fmtNum(n: number): string {
-  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-}
-
+const fmtNum = (n: number) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 export default function EmployeePaie() {
   const { session } = useEmployeeAuth();
@@ -23,148 +18,136 @@ export default function EmployeePaie() {
     if (!session) return;
     fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/employee-data`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
       body: JSON.stringify({ token: session.token, action: 'dashboard' }),
-    })
-      .then(r => r.json())
-      .then(setData)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    }).then(r => r.json()).then(setData).catch(console.error).finally(() => setLoading(false));
   }, [session]);
 
   if (!session) return null;
 
-  const handleDownload = async (b: any) => {
+  const handleDownload = (b: any) => {
     generateBulletinPaiePDF({
-      employe: {
-        nom: session.employe.nom,
-        prenom: session.employe.prenom,
-        matricule: session.employe.matricule,
-        poste: session.employe.poste,
-        categorie: session.employe.categorie,
-        date_embauche: session.employe.date_embauche,
-      },
-      mois: b.mois,
-      annee: b.annee,
-      salaire_brut: Number(b.salaire_brut),
-      primes: Number(b.primes),
-      retenues: Number(b.retenues),
-      avances_deduites: Number(b.avances_deduites),
-      salaire_net: Number(b.salaire_net),
-      commentaire: b.commentaire,
-      signatureEmploye: b.signature_employe || undefined,
+      employe: { nom: session.employe.nom, prenom: session.employe.prenom, matricule: session.employe.matricule, poste: session.employe.poste, categorie: session.employe.categorie, date_embauche: session.employe.date_embauche },
+      mois: b.mois, annee: b.annee, salaire_brut: Number(b.salaire_brut), primes: Number(b.primes), retenues: Number(b.retenues), avances_deduites: Number(b.avances_deduites), salaire_net: Number(b.salaire_net), commentaire: b.commentaire, signatureEmploye: b.signature_employe || undefined,
     });
   };
 
   return (
     <EmployeeLayout>
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-        </div>
+        <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-emerald-500" /></div>
       ) : (
-        <div className="space-y-6">
-          <h2 className="text-lg font-bold flex items-center gap-2"><FileText className="h-5 w-5" /> Mes bulletins de paie</h2>
+        <div className="space-y-5">
+          {/* Header */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center">
+              <FileText className="h-4.5 w-4.5 text-violet-500" />
+            </div>
+            <h2 className="text-lg font-bold text-foreground">Bulletins de paie</h2>
+          </motion.div>
 
-          {/* Salaire info */}
-          <Card className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200">
-            <CardContent className="pt-4 flex items-center gap-3">
-              <DollarSign className="h-6 w-6 text-emerald-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">Salaire de base mensuel</p>
-                <p className="text-xl font-bold">{fmtNum(Number(session.employe.salaire_base))} GNF</p>
+          {/* Salaire card */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 p-5 text-white shadow-xl shadow-emerald-600/20"
+          >
+            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
+                <Wallet className="h-6 w-6" />
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <p className="text-white/60 text-xs font-medium">Salaire de base</p>
+                <p className="text-2xl font-bold">{fmtNum(Number(session.employe.salaire_base))} GNF</p>
+              </div>
+            </div>
+          </motion.div>
 
-          {/* Widget Avance en cours */}
+          {/* Avance en cours */}
           {data?.avances?.filter((a: any) => a.statut === 'approuve' || a.statut === 'en_cours').length > 0 && (
-            <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-orange-500" /> Mon crédit / Avance en cours
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <div className="rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-500/20 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 pt-4 pb-2">
+                  <TrendingDown className="h-4 w-4 text-amber-500" />
+                  <h3 className="text-sm font-semibold text-foreground">Crédit / Avance en cours</h3>
+                </div>
+                <div className="px-4 pb-4 space-y-2">
                   {data.avances.filter((a: any) => a.statut === 'approuve' || a.statut === 'en_cours').map((a: any) => {
                     const restant = Number(a.montant) - Number(a.montant_rembourse || 0);
                     return (
-                      <div key={a.id} className="flex items-center justify-between text-sm border rounded px-3 py-2">
+                      <div key={a.id} className="flex items-center justify-between p-3 rounded-xl bg-background/60">
                         <div>
-                          <p className="font-medium">{fmtNum(Number(a.montant))} GNF</p>
-                          {a.motif && <p className="text-xs text-muted-foreground">{a.motif}</p>}
+                          <p className="font-semibold text-sm text-foreground">{fmtNum(Number(a.montant))} GNF</p>
+                          {a.motif && <p className="text-[10px] text-muted-foreground">{a.motif}</p>}
                         </div>
                         <div className="text-right">
-                          <p className="text-xs text-muted-foreground">Restant dû</p>
-                          <p className="font-bold text-orange-600">{fmtNum(restant)} GNF</p>
-                          <p className="text-[10px] text-muted-foreground">Prélevé auto. sur salaire</p>
+                          <p className="text-[10px] text-muted-foreground">Restant</p>
+                          <p className="font-bold text-amber-600 text-sm">{fmtNum(restant)} GNF</p>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </motion.div>
           )}
 
+          {/* Bulletins */}
           {(data?.bulletins || []).length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-center text-muted-foreground">Aucun bulletin de paie disponible</p>
-              </CardContent>
-            </Card>
+            <div className="rounded-2xl bg-card border border-border/40 p-8 text-center">
+              <p className="text-sm text-muted-foreground">Aucun bulletin disponible</p>
+            </div>
           ) : (
             <div className="space-y-3">
-              {data.bulletins.map((b: any) => (
-                <Card key={b.id}>
-                  <CardContent className="pt-4">
-                    <div className="flex items-center justify-between mb-3">
+              {data.bulletins.map((b: any, i: number) => (
+                <motion.div key={b.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.05 }}>
+                  <div className="rounded-2xl bg-card border border-border/40 overflow-hidden hover:shadow-lg transition-shadow">
+                    <div className="px-4 pt-4 pb-3 flex items-center justify-between">
                       <div>
-                        <h3 className="font-semibold">{MOIS_NOMS[b.mois]} {b.annee}</h3>
+                        <h3 className="font-bold text-foreground">{MOIS_NOMS[b.mois]} {b.annee}</h3>
                         {b.signature_employe && (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-accent">
+                          <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 mt-0.5">
                             <PenTool className="h-3 w-3" /> Signé
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge className="bg-emerald-500">{fmtNum(Number(b.salaire_net))} GNF</Badge>
-                        <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => handleDownload(b)} title="Télécharger reçu de paie signé">
-                          <Download className="h-3.5 w-3.5" />
-                        </Button>
+                        <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 text-xs font-bold">{fmtNum(Number(b.salaire_net))} GNF</span>
+                        <button onClick={() => handleDownload(b)} className="w-9 h-9 rounded-xl bg-muted/50 hover:bg-muted flex items-center justify-center transition-colors">
+                          <Download className="h-4 w-4 text-muted-foreground" />
+                        </button>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Salaire brut</span>
-                        <span>{fmtNum(Number(b.salaire_brut))}</span>
+                    <div className="px-4 pb-4">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/30 text-xs">
+                          <span className="text-muted-foreground">Brut</span>
+                          <span className="font-semibold text-foreground">{fmtNum(Number(b.salaire_brut))}</span>
+                        </div>
+                        {Number(b.primes) > 0 && (
+                          <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-500/5 text-xs">
+                            <span className="text-muted-foreground flex items-center gap-1"><ArrowUp className="h-3 w-3 text-emerald-500" /> Primes</span>
+                            <span className="font-semibold text-emerald-600">+{fmtNum(Number(b.primes))}</span>
+                          </div>
+                        )}
+                        {Number(b.retenues) > 0 && (
+                          <div className="flex items-center justify-between p-2.5 rounded-xl bg-destructive/5 text-xs">
+                            <span className="text-muted-foreground flex items-center gap-1"><ArrowDown className="h-3 w-3 text-destructive" /> Retenues</span>
+                            <span className="font-semibold text-destructive">-{fmtNum(Number(b.retenues))}</span>
+                          </div>
+                        )}
+                        {Number(b.avances_deduites) > 0 && (
+                          <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-500/5 text-xs">
+                            <span className="text-muted-foreground">Avances</span>
+                            <span className="font-semibold text-amber-600">-{fmtNum(Number(b.avances_deduites))}</span>
+                          </div>
+                        )}
                       </div>
-                      {b.primes > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Primes</span>
-                          <span className="text-green-600">+{fmtNum(Number(b.primes))}</span>
-                        </div>
-                      )}
-                      {b.retenues > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Retenues</span>
-                          <span className="text-red-600">-{fmtNum(Number(b.retenues))}</span>
-                        </div>
-                      )}
-                      {b.avances_deduites > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Avances déduites</span>
-                          <span className="text-orange-600">-{fmtNum(Number(b.avances_deduites))}</span>
-                        </div>
+                      {b.commentaire && (
+                        <p className="text-[10px] text-muted-foreground mt-3 border-l-2 border-emerald-500/30 pl-2 italic">{b.commentaire}</p>
                       )}
                     </div>
-                    {b.commentaire && <p className="text-xs text-muted-foreground mt-2">{b.commentaire}</p>}
-                  </CardContent>
-                </Card>
+                  </div>
+                </motion.div>
               ))}
             </div>
           )}
