@@ -696,11 +696,30 @@ export default function StudentCompositions() {
 
           {/* Progress */}
           <div className="space-y-1">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Question {currentQIndex + 1}/{total}</span>
-              <span>{answered}/{total} répondue(s)</span>
+            <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
+              <span>Question {currentQIndex + 1}/{total} — {answered}/{total} répondue(s)</span>
+              <span>{Math.round(progress)}%</span>
             </div>
-            <Progress value={progress} className="h-2" />
+            <div className="relative h-3 w-full rounded-full bg-secondary overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600 transition-all duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="flex gap-[2px]">
+              {activeQuestions.map((_: any, i: number) => (
+                <div
+                  key={i}
+                  className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                    answers[activeQuestions[i]?.id]
+                      ? 'bg-emerald-500'
+                      : i === currentQIndex
+                        ? 'bg-primary animate-pulse'
+                        : 'bg-muted'
+                  }`}
+                />
+              ))}
+            </div>
             {/* Question dots */}
             <div className="flex gap-1 justify-center pt-2 flex-wrap">
               {activeQuestions.map((_: any, i: number) => (
