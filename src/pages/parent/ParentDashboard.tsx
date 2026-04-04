@@ -18,8 +18,6 @@ import { AIChatBubble } from '@/components/AIChatBubble';
 import { SchoolWatermark } from '@/components/SchoolWatermark';
 import ParentPaymentDialog from '@/components/ParentPaymentDialog';
 import ParentDevisInscription from '@/components/ParentDevisInscription';
-import ParentCantineOrdre from '@/components/ParentCantineOrdre';
-import ParentCatalogueCommande from '@/components/ParentCatalogueCommande';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
@@ -34,7 +32,7 @@ export default function ParentDashboard() {
   const [familyDetailsOpen, setFamilyDetailsOpen] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
-  const [paymentInitMode, setPaymentInitMode] = useState<'select' | 'wallet-recharge' | null>(null);
+  const [paymentInitMode, setPaymentInitMode] = useState<'select' | 'wallet-recharge' | 'wallet-cantine' | 'wallet-librairie' | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -317,11 +315,8 @@ export default function ParentDashboard() {
               </div>
             </motion.div>
 
-            {/* Catalogue & Commande */}
-            <ParentCatalogueCommande enfants={eleves} code={session.token} soldeFamille={dashData?.solde_famille || 0} onSuccess={fetchDashboard} />
 
-            {/* Cantine Recharge */}
-            <ParentCantineOrdre enfants={eleves} code={session.token} onSuccess={fetchDashboard} />
+
 
             {/* ─── Payment Tabs ─── */}
             <Tabs defaultValue="devis">
@@ -449,7 +444,7 @@ export default function ParentDashboard() {
         code={session.token}
         onSuccess={fetchDashboard}
         soldeFamille={dashData?.solde_famille || 0}
-        initialMode={paymentInitMode === 'wallet-recharge' ? 'mobile-wallet' : undefined}
+        initialMode={paymentInitMode === 'wallet-recharge' ? 'mobile-wallet' : paymentInitMode === 'wallet-cantine' ? 'wallet-cantine' : paymentInitMode === 'wallet-librairie' ? 'wallet-librairie' : undefined}
       />
 
       {/* ─── Family Details Dialog ─── */}
