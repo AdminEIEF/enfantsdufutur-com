@@ -147,13 +147,21 @@ export default function ParentDashboard() {
       <header className="sticky top-0 z-30 bg-gradient-to-r from-primary via-primary/95 to-primary shadow-lg">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
-            {eleves.length > 0 && eleves[0].photo_url ? (
-              <img src={eleves[0].photo_url} alt="" loading="lazy" decoding="async" className="w-10 h-10 rounded-2xl object-cover ring-2 ring-primary-foreground/30 shadow-md shrink-0" />
-            ) : (
-              <div className="w-10 h-10 rounded-2xl bg-primary-foreground/20 backdrop-blur flex items-center justify-center shrink-0 shadow-md">
-                <GraduationCap className="h-5 w-5 text-primary-foreground" />
+            <button
+              onClick={(e) => { e.stopPropagation(); photoInputRef.current?.click(); }}
+              className="relative shrink-0"
+            >
+              {famille.photo_url ? (
+                <img src={famille.photo_url} alt="" loading="lazy" decoding="async" className="w-10 h-10 rounded-2xl object-cover ring-2 ring-primary-foreground/30 shadow-md" />
+              ) : (
+                <div className="w-10 h-10 rounded-2xl bg-primary-foreground/20 backdrop-blur flex items-center justify-center shadow-md">
+                  <GraduationCap className="h-5 w-5 text-primary-foreground" />
+                </div>
+              )}
+              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary-foreground/30 flex items-center justify-center">
+                {uploadingPhoto === 'parent' ? <Loader2 className="h-2.5 w-2.5 animate-spin text-primary-foreground" /> : <Camera className="h-2.5 w-2.5 text-primary-foreground" />}
               </div>
-            )}
+            </button>
             <button onClick={() => setFamilyDetailsOpen(true)} className="min-w-0 text-left hover:opacity-80 transition-opacity">
               <h1 className="font-bold text-sm text-primary-foreground leading-tight truncate">Espace Parent</h1>
               <p className="text-[11px] text-primary-foreground/60 truncate font-medium underline decoration-dotted underline-offset-2">
