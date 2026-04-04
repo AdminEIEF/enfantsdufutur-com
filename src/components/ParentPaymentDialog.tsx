@@ -541,7 +541,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                     <div className="space-y-2">
                       <Label className="text-xs font-bold">Montant par enfant (GNF)</Label>
                       <Input type="number" placeholder="400000" value={cantineMontant} onChange={e => setCantineMontant(e.target.value)} min={1000} className="rounded-xl h-11 text-lg font-bold" />
-                      <p className="text-[10px] text-muted-foreground">Tarif mensuel recommandé : <strong>{CANTINE_MENSUEL.toLocaleString()} GNF</strong></p>
+                      <p className="text-[10px] text-muted-foreground">Tarif mensuel : <strong>{CANTINE_MENSUEL.toLocaleString()} GNF</strong> — <span className="text-amber-600 font-semibold">1 recharge/mois max par enfant</span></p>
                     </div>
 
                     {cantineSelectedIds.length > 0 && Number(cantineMontant) > 0 && (

@@ -762,11 +762,12 @@ serve(async (req) => {
       });
     }
 
-    // ─── LIBRAIRIE (digital library) ───
+    // ─── LIBRAIRIE (digital library - books only) ───
     if (action === "librairie") {
       const niveauId = (eleve as any).classes?.niveau_id;
+      const LIBRAIRIE_CATEGORIES = ['roman', 'romans', 'livre', 'livres', 'manuel', 'manuels', 'lecture', 'dictionnaire', 'dictionnaires'];
 
-      // Get all articles (optionally filtered by niveau)
+      // Get all articles
       const { data: allArticles } = await supabaseAdmin
         .from("articles")
         .select("id, nom, categorie, prix, stock, fichier_url, fichier_nom, niveau_id")
@@ -781,9 +782,13 @@ serve(async (req) => {
 
       const purchasedIds = new Set((purchases || []).map((p: any) => p.article_id));
 
-      // Filter articles: show all for student's niveau + any purchased
+      // Filter: only book categories + student's niveau or purchased
       const articles = (allArticles || [])
-        .filter((a: any) => a.niveau_id === niveauId || purchasedIds.has(a.id))
+        .filter((a: any) => {
+          const isBook = LIBRAIRIE_CATEGORIES.some(cat => a.categorie.toLowerCase().includes(cat));
+          if (!isBook) return false;
+          return a.niveau_id === niveauId || purchasedIds.has(a.id);
+        })
         .map((a: any) => ({
           id: a.id,
           nom: a.nom,

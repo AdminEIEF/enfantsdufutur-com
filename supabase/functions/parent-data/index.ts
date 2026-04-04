@@ -268,23 +268,43 @@ serve(async (req) => {
     if (action === "catalogue") {
       let articles: any[] = [];
 
+      // Categories considered as "Librairie" (books only)
+      const LIBRAIRIE_CATEGORIES = ['roman', 'romans', 'livre', 'livres', 'manuel', 'manuels', 'lecture', 'dictionnaire', 'dictionnaires'];
+
       if (type_service === "librairie") {
-        // Fetch ALL librairie articles (no level filter)
+        // Fetch only book-related categories from articles
         const { data: arts } = await supabaseAdmin
           .from("articles")
           .select("id, nom, categorie, prix, stock, niveau_id")
           .gt("stock", 0)
           .order("categorie")
           .order("nom");
-        articles = arts || [];
+        // Filter to book categories only
+        articles = (arts || []).filter((a: any) => 
+          LIBRAIRIE_CATEGORIES.some(cat => a.categorie.toLowerCase().includes(cat))
+        );
       } else if (type_service === "boutique") {
-        const { data: arts } = await supabaseAdmin
+        // Fetch non-book articles from articles table (fournitures etc.)
+        const { data: fournitures } = await supabaseAdmin
+          .from("articles")
+          .select("id, nom, categorie, prix, stock, niveau_id")
+          .gt("stock", 0)
+          .order("categorie")
+          .order("nom");
+        const fournituresFiltered = (fournitures || [])
+          .filter((a: any) => !LIBRAIRIE_CATEGORIES.some(cat => a.categorie.toLowerCase().includes(cat)))
+          .map((a: any) => ({ ...a, source: 'articles' }));
+
+        // Also fetch boutique_articles (uniforms etc.)
+        const { data: boutiqueArts } = await supabaseAdmin
           .from("boutique_articles")
           .select("id, nom, categorie, prix, stock, taille")
           .gt("stock", 0)
           .order("categorie")
           .order("nom");
-        articles = arts || [];
+        const boutiqueItems = (boutiqueArts || []).map((a: any) => ({ ...a, source: 'boutique' }));
+
+        articles = [...fournituresFiltered, ...boutiqueItems];
       }
 
       return new Response(
