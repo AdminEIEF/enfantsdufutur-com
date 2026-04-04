@@ -269,7 +269,30 @@ export default function StudentCultureGenerale() {
             <span>Question {currentQ + 1}/{questions.length}</span>
             <span>{q.emoji} {QUIZ_CATEGORIES.find(c => c.key === q.category)?.label || ''}</span>
           </div>
-          <Progress value={((currentQ + 1) / questions.length) * 100} className="h-2" />
+          <div className="space-y-1">
+            <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
+              <span>Progression</span>
+              <span>{Math.round(((currentQ + (showResult ? 1 : 0)) / questions.length) * 100)}%</span>
+            </div>
+            <div className="relative h-3 w-full rounded-full bg-secondary overflow-hidden">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600"
+                initial={{ width: 0 }}
+                animate={{ width: `${((currentQ + (showResult ? 1 : 0)) / questions.length) * 100}%` }}
+                transition={{ type: 'spring', damping: 20, stiffness: 100 }}
+              />
+            </div>
+            <div className="flex gap-[2px]">
+              {questions.map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                    i < currentQ ? 'bg-emerald-500' : i === currentQ && showResult ? 'bg-emerald-500' : i === currentQ ? 'bg-primary animate-pulse' : 'bg-muted'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
         </div>
 
         <AnimatePresence mode="wait">
