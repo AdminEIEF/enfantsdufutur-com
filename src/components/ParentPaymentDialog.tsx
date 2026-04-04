@@ -730,8 +730,9 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                           </div>
                           <div className="space-y-1.5">
                             {transportEnfants.map(e => {
-                              const prix = e.zones_transport?.prix_mensuel || 0;
+                              const prix = getTransportPrix(e);
                               const zoneName = e.zones_transport?.nom || '—';
+                              const trajet = getTrajetLabel(e);
                               return (
                                 <label key={e.id} className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${transportSelectedIds.includes(e.id) ? 'border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 shadow-sm' : 'border-border hover:bg-muted/50'}`}>
                                   <Checkbox checked={transportSelectedIds.includes(e.id)} onCheckedChange={() => setTransportSelectedIds(prev => prev.includes(e.id) ? prev.filter(x => x !== e.id) : [...prev, e.id])} />
@@ -742,8 +743,9 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                                   )}
                                   <div className="flex-1 min-w-0">
                                     <p className="font-semibold text-sm truncate">{e.prenom} {e.nom}</p>
-                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                       <Badge variant="outline" className="text-[9px] px-1.5 rounded-full">{zoneName}</Badge>
+                                      <Badge variant="secondary" className="text-[9px] px-1.5 rounded-full">{trajet}</Badge>
                                       <span className="text-[10px] font-bold text-amber-700">{prix.toLocaleString()} GNF</span>
                                     </div>
                                   </div>
