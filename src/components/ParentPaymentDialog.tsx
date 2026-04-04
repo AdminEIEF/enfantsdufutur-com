@@ -37,6 +37,7 @@ const DEBIT_TYPES = [
   { value: 'autre', label: 'Autre', emoji: '📦' },
 ];
 
+const CANTINE_MENSUEL = 400000;
 const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 
 const MANUEL_PURPOSE_OPTIONS = [
