@@ -315,6 +315,25 @@ serve(async (req) => {
       });
     }
 
+    // ─── UPDATE PHOTO ───
+    if (action === "update_photo") {
+      const { photo_url } = await req.json().catch(() => ({}));
+      if (!photo_url) {
+        return new Response(JSON.stringify({ error: "URL de photo requise" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { error: updateErr } = await supabaseAdmin
+        .from("employes")
+        .update({ photo_url })
+        .eq("id", employeId);
+      if (updateErr) throw updateErr;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Action inconnue" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
