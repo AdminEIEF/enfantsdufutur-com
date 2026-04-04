@@ -262,7 +262,7 @@ export default function PreInscriptionPublic() {
               📎 {uploadedDocs.length} document(s) joint(s)
             </p>
             <p className="text-sm text-muted-foreground">
-              Un membre de l'équipe vous rappellera au <strong>{form.telephone_parent}</strong>.
+              Un membre de l'équipe vous rappellera au <strong>{form.telephone_pere}</strong>.
             </p>
             <Link to="/">
               <Button variant="outline" className="mt-4">
