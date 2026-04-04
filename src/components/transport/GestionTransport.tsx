@@ -43,9 +43,10 @@ function ZonesTab() {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [nom, setNom] = useState('');
+  const [prixMensuel, setPrixMensuel] = useState(0);
   const [quartiersInput, setQuartiersInput] = useState('');
 
-  const reset = () => { setEditId(null); setNom(''); setQuartiersInput(''); setOpen(false); };
+  const reset = () => { setEditId(null); setNom(''); setPrixMensuel(0); setQuartiersInput(''); setOpen(false); };
 
   const save = useMutation({
     mutationFn: async () => {
