@@ -619,8 +619,8 @@ export default function PreInscriptionPublic() {
                       <span className="text-xl">🚌</span>
                       <p className="text-sm font-bold">Transport scolaire</p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">Navette aller-retour sécurisée avec chauffeur dédié. Suivi GPS en temps réel et pointage automatique à chaque arrêt.</p>
-                    <p className="text-xs font-semibold text-primary mt-1">💰 À partir de 300 000 GNF / mois</p>
+                    <p className="text-xs text-muted-foreground mt-1">Navette aller-retour sécurisée avec chauffeur dédié. Suivi GPS en temps réel et pointage automatique.</p>
+                     <p className="text-xs font-semibold text-primary mt-1">💰 Petit trajet : 300 000 GNF — Long trajet : 350 000 GNF / mois</p>
                   </div>
                 </label>
                 <label htmlFor="uniformes" className={`cursor-pointer flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${form.option_uniformes ? 'border-primary bg-primary/5 shadow-md' : 'border-muted hover:border-primary/30'}`}>
