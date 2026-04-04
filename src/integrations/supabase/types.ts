@@ -1905,6 +1905,7 @@ export type Database = {
           email_parent: string | null
           id: string
           nom_famille: string
+          photo_url: string | null
           solde_famille: number
           telephone_mere: string | null
           telephone_pere: string | null
@@ -1917,6 +1918,7 @@ export type Database = {
           email_parent?: string | null
           id?: string
           nom_famille: string
+          photo_url?: string | null
           solde_famille?: number
           telephone_mere?: string | null
           telephone_pere?: string | null
@@ -1929,6 +1931,7 @@ export type Database = {
           email_parent?: string | null
           id?: string
           nom_famille?: string
+          photo_url?: string | null
           solde_famille?: number
           telephone_mere?: string | null
           telephone_pere?: string | null

@@ -19,10 +19,10 @@ serve(async (req) => {
     if (contentType.includes("multipart/form-data")) {
       const formData = await req.formData();
       const code = formData.get("code") as string;
-      const eleve_id = formData.get("eleve_id") as string;
+      const actionField = formData.get("action") as string;
       const photo = formData.get("photo") as File;
 
-      if (!code || !eleve_id || !photo) {
+      if (!code || !photo) {
         return new Response(JSON.stringify({ error: "Paramètres manquants" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -57,6 +57,44 @@ serve(async (req) => {
         });
       }
 
+      // ─── PARENT PHOTO UPLOAD ───
+      if (actionField === "upload_parent_photo") {
+        const ext = photo.name?.split(".").pop() || "jpg";
+        const path = `familles/${familleId}/parent_photo_${Date.now()}.${ext}`;
+        const buffer = await photo.arrayBuffer();
+
+        const { error: uploadErr } = await supabaseAdmin.storage
+          .from("photos")
+          .upload(path, new Uint8Array(buffer), { contentType: photo.type || "image/jpeg", upsert: true });
+
+        if (uploadErr) throw uploadErr;
+
+        const { data: signedData } = await supabaseAdmin.storage
+          .from("photos")
+          .createSignedUrl(path, 31536000);
+
+        if (signedData?.signedUrl) {
+          await supabaseAdmin
+            .from("familles")
+            .update({ photo_url: signedData.signedUrl, updated_at: new Date().toISOString() })
+            .eq("id", familleId);
+
+          return new Response(
+            JSON.stringify({ success: true, photo_url: signedData.signedUrl }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        throw new Error("Échec de l'upload");
+      }
+
+      // ─── CHILD PHOTO UPLOAD (legacy) ───
+      const eleve_id = formData.get("eleve_id") as string;
+      if (!eleve_id) {
+        return new Response(JSON.stringify({ error: "eleve_id manquant" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       // Verify child belongs to family
       const { data: enfant } = await supabaseAdmin
         .from("eleves")
@@ -73,28 +111,28 @@ serve(async (req) => {
       }
 
       // Upload photo
-      const ext = photo.name?.split(".").pop() || "jpg";
-      const path = `eleves/${eleve_id}/photo_parent_${Date.now()}.${ext}`;
-      const buffer = await photo.arrayBuffer();
+      const ext2 = photo.name?.split(".").pop() || "jpg";
+      const path2 = `eleves/${eleve_id}/photo_parent_${Date.now()}.${ext2}`;
+      const buffer2 = await photo.arrayBuffer();
 
-      const { error: uploadErr } = await supabaseAdmin.storage
+      const { error: uploadErr2 } = await supabaseAdmin.storage
         .from("photos")
-        .upload(path, new Uint8Array(buffer), { contentType: photo.type || "image/jpeg", upsert: true });
+        .upload(path2, new Uint8Array(buffer2), { contentType: photo.type || "image/jpeg", upsert: true });
 
-      if (uploadErr) throw uploadErr;
+      if (uploadErr2) throw uploadErr2;
 
-      const { data: signedData } = await supabaseAdmin.storage
+      const { data: signedData2 } = await supabaseAdmin.storage
         .from("photos")
-        .createSignedUrl(path, 31536000);
+        .createSignedUrl(path2, 31536000);
 
-      if (signedData?.signedUrl) {
+      if (signedData2?.signedUrl) {
         await supabaseAdmin
           .from("eleves")
-          .update({ photo_url: signedData.signedUrl, updated_at: new Date().toISOString() })
+          .update({ photo_url: signedData2.signedUrl, updated_at: new Date().toISOString() })
           .eq("id", eleve_id);
 
         return new Response(
-          JSON.stringify({ success: true, photo_url: signedData.signedUrl }),
+          JSON.stringify({ success: true, photo_url: signedData2.signedUrl }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -428,7 +466,7 @@ serve(async (req) => {
 
       const { data: familleData } = await supabaseAdmin
         .from("familles")
-        .select("solde_famille")
+        .select("solde_famille, photo_url")
         .eq("id", familleId)
         .maybeSingle();
 
@@ -438,6 +476,7 @@ serve(async (req) => {
           eleves: eleves || [],
           tarifs: tarifs || [],
           solde_famille: Number(familleData?.solde_famille || 0),
+          famille_photo_url: familleData?.photo_url || null,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

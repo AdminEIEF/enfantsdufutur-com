@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,10 +13,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface PaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  enfants: Array<{ id: string; nom: string; prenom: string; classes?: any; solde_cantine?: number; photo_url?: string }>;
+  enfants: Array<{ id: string; nom: string; prenom: string; classes?: any; solde_cantine?: number; photo_url?: string; option_cantine?: boolean; zone_transport_id?: string; zones_transport?: any }>;
   code: string;
   onSuccess?: () => void;
   soldeFamille?: number;
+  initialMode?: 'mobile-wallet';
 }
 
 const TYPE_OPTIONS = [
@@ -36,6 +37,7 @@ const DEBIT_TYPES = [
   { value: 'autre', label: 'Autre', emoji: '📦' },
 ];
 
+const CANTINE_MENSUEL = 400000;
 const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 
 const MANUEL_PURPOSE_OPTIONS = [
@@ -44,7 +46,7 @@ const MANUEL_PURPOSE_OPTIONS = [
   { value: 'wallet', label: 'Recharge Portefeuille', emoji: '💰' },
 ];
 
-export default function ParentPaymentDialog({ open, onOpenChange, enfants, code, onSuccess, soldeFamille = 0 }: PaymentDialogProps) {
+export default function ParentPaymentDialog({ open, onOpenChange, enfants, code, onSuccess, soldeFamille = 0, initialMode }: PaymentDialogProps) {
   const isSingle = enfants.length === 1;
   const [activeMode, setActiveMode] = useState<'select' | 'mobile' | 'wallet'>('select');
   const [eleveId, setEleveId] = useState(isSingle ? enfants[0]?.id || '' : '');
@@ -65,6 +67,39 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
   const [debitMontant, setDebitMontant] = useState('');
   const [debitDescription, setDebitDescription] = useState('');
   const [debitLoading, setDebitLoading] = useState(false);
+
+  // Handle initialMode for wallet recharge
+  useEffect(() => {
+    if (open && initialMode === 'mobile-wallet') {
+      setActiveMode('mobile');
+      setMobileMode('manuel');
+      setManuelPurpose('wallet');
+    }
+    if (!open) {
+      setActiveMode('select');
+      setMobileMode('manuel');
+      setManuelPurpose('');
+      setManuelMontant('');
+      setDebitType('');
+      setDebitMontant('');
+    }
+  }, [open, initialMode]);
+
+  // Auto-fill amount when selecting debit type
+  const handleDebitTypeSelect = (type: string) => {
+    setDebitType(type);
+    const selectedEnfantForDebit = enfants.find(e => e.id === debitEleveId);
+    if (type === 'cantine') {
+      setDebitMontant(CANTINE_MENSUEL.toString());
+      setDebitDescription('Cantine mensuel');
+    } else if (type === 'transport' && selectedEnfantForDebit?.zones_transport?.prix_mensuel) {
+      setDebitMontant(selectedEnfantForDebit.zones_transport.prix_mensuel.toString());
+      setDebitDescription('Transport mensuel');
+    } else {
+      setDebitMontant('');
+      setDebitDescription('');
+    }
+  };
 
   const handlePay = async () => {
     if (!eleveId || !typePaiement || !montant || Number(montant) <= 0) {
@@ -389,7 +424,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                     <Wallet className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
                     <p className="text-sm text-muted-foreground">Solde insuffisant</p>
                     <p className="text-xs text-muted-foreground mt-1">Rechargez via Mobile Money d'abord</p>
-                    <Button variant="outline" className="mt-3 rounded-xl" onClick={() => setActiveMode('mobile')}>
+                    <Button variant="outline" className="mt-3 rounded-xl" onClick={() => { setActiveMode('mobile'); setMobileMode('manuel'); setManuelPurpose('wallet'); }}>
                       <Smartphone className="h-4 w-4 mr-2" /> Recharger
                     </Button>
                   </div>
@@ -425,7 +460,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                         {DEBIT_TYPES.map(opt => (
                           <button
                             key={opt.value}
-                            onClick={() => setDebitType(opt.value)}
+                            onClick={() => handleDebitTypeSelect(opt.value)}
                             className={`flex flex-col items-center gap-1 p-2.5 rounded-xl text-center transition-all active:scale-95 ${
                               debitType === opt.value
                                 ? 'bg-primary/10 ring-2 ring-primary/40 shadow-sm'

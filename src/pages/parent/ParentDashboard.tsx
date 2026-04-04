@@ -34,7 +34,7 @@ export default function ParentDashboard() {
   const [familyDetailsOpen, setFamilyDetailsOpen] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
-  const [selectedChildForPhoto, setSelectedChildForPhoto] = useState<string | null>(null);
+  const [paymentInitMode, setPaymentInitMode] = useState<'select' | 'wallet-recharge' | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -69,7 +69,7 @@ export default function ParentDashboard() {
 
   if (!session) { navigate('/parent', { replace: true }); return null; }
 
-  const famille = session.famille;
+  const famille = { ...session.famille, photo_url: dashData?.famille_photo_url || session.famille.photo_url };
   const eleves = dashData?.eleves || session.eleves;
   const paiements = dashData?.paiements || [];
 
@@ -105,14 +105,14 @@ export default function ParentDashboard() {
 
   const handleLogout = () => { logout(); navigate('/parent', { replace: true }); };
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleParentPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !selectedChildForPhoto) return;
-    setUploadingPhoto(selectedChildForPhoto);
+    if (!file) return;
+    setUploadingPhoto('parent');
     try {
       const formData = new FormData();
       formData.append('code', session.token);
-      formData.append('eleve_id', selectedChildForPhoto);
+      formData.append('action', 'upload_parent_photo');
       formData.append('photo', file);
       const resp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parent-data`,
@@ -120,13 +120,19 @@ export default function ParentDashboard() {
       );
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error);
-      toast.success('Photo mise à jour !');
+      toast.success('Photo de profil mise à jour !');
+      // Update session locally
+      const stored = localStorage.getItem('parent_session');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        parsed.famille.photo_url = data.photo_url;
+        localStorage.setItem('parent_session', JSON.stringify(parsed));
+      }
       fetchDashboard();
     } catch (err: any) {
       toast.error(err.message || 'Erreur upload photo');
     } finally {
       setUploadingPhoto(null);
-      setSelectedChildForPhoto(null);
       if (photoInputRef.current) photoInputRef.current.value = '';
     }
   };
@@ -141,13 +147,21 @@ export default function ParentDashboard() {
       <header className="sticky top-0 z-30 bg-gradient-to-r from-primary via-primary/95 to-primary shadow-lg">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
-            {eleves.length > 0 && eleves[0].photo_url ? (
-              <img src={eleves[0].photo_url} alt="" loading="lazy" decoding="async" className="w-10 h-10 rounded-2xl object-cover ring-2 ring-primary-foreground/30 shadow-md shrink-0" />
-            ) : (
-              <div className="w-10 h-10 rounded-2xl bg-primary-foreground/20 backdrop-blur flex items-center justify-center shrink-0 shadow-md">
-                <GraduationCap className="h-5 w-5 text-primary-foreground" />
+            <button
+              onClick={(e) => { e.stopPropagation(); photoInputRef.current?.click(); }}
+              className="relative shrink-0"
+            >
+              {famille.photo_url ? (
+                <img src={famille.photo_url} alt="" loading="lazy" decoding="async" className="w-10 h-10 rounded-2xl object-cover ring-2 ring-primary-foreground/30 shadow-md" />
+              ) : (
+                <div className="w-10 h-10 rounded-2xl bg-primary-foreground/20 backdrop-blur flex items-center justify-center shadow-md">
+                  <GraduationCap className="h-5 w-5 text-primary-foreground" />
+                </div>
+              )}
+              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary-foreground/30 flex items-center justify-center">
+                {uploadingPhoto === 'parent' ? <Loader2 className="h-2.5 w-2.5 animate-spin text-primary-foreground" /> : <Camera className="h-2.5 w-2.5 text-primary-foreground" />}
               </div>
-            )}
+            </button>
             <button onClick={() => setFamilyDetailsOpen(true)} className="min-w-0 text-left hover:opacity-80 transition-opacity">
               <h1 className="font-bold text-sm text-primary-foreground leading-tight truncate">Espace Parent</h1>
               <p className="text-[11px] text-primary-foreground/60 truncate font-medium underline decoration-dotted underline-offset-2">
@@ -224,12 +238,12 @@ export default function ParentDashboard() {
             {/* ─── Quick Stats ─── */}
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-3 gap-2.5">
               {[
-                { label: 'Portefeuille', value: (dashData?.solde_famille || 0).toLocaleString(), icon: Wallet, gradient: 'from-emerald-500 to-teal-600', suffix: 'GNF' },
+                { label: 'Portefeuille', value: (dashData?.solde_famille || 0).toLocaleString(), icon: Wallet, gradient: 'from-emerald-500 to-teal-600', suffix: 'GNF', action: () => { setPaymentInitMode('wallet-recharge'); setPaymentOpen(true); } },
                 { label: 'Scolarité', value: totalPayeScolarite.toLocaleString(), icon: GraduationCap, gradient: 'from-blue-500 to-indigo-600', suffix: 'payé' },
                 { label: 'Transport', value: totalPayeTransport.toLocaleString(), icon: Bus, gradient: 'from-amber-500 to-orange-600', suffix: 'payé' },
               ].map((stat, i) => (
                 <motion.div key={stat.label} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 + i * 0.05 }}>
-                  <Card className="border-0 shadow-lg rounded-2xl overflow-hidden">
+                  <Card className={`border-0 shadow-lg rounded-2xl overflow-hidden ${(stat as any).action ? 'cursor-pointer active:scale-[0.97] transition-transform' : ''}`} onClick={(stat as any).action}>
                     <div className={`bg-gradient-to-br ${stat.gradient} p-3 text-white`}>
                       <stat.icon className="h-4 w-4 mb-2 opacity-70" />
                       <p className="text-lg sm:text-xl font-extrabold leading-none truncate">{stat.value}</p>
@@ -252,8 +266,8 @@ export default function ParentDashboard() {
                 <Badge variant="secondary" className="text-[10px] ml-auto rounded-full">{eleves.length}</Badge>
               </h2>
 
-              {/* Hidden file input for photo upload */}
-              <input ref={photoInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoUpload} />
+      {/* Hidden file input for parent photo upload */}
+              <input ref={photoInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleParentPhotoUpload} />
 
               <div className="grid grid-cols-3 gap-2.5">
                 {eleves.map((enfant: any, i: number) => (
@@ -277,13 +291,6 @@ export default function ParentDashboard() {
                               <span className="text-3xl font-extrabold text-primary/25">{enfant.prenom[0]}{enfant.nom[0]}</span>
                             </div>
                           )}
-                          {/* Camera button overlay */}
-                          <button
-                            className="absolute bottom-1.5 left-1.5 w-7 h-7 rounded-full bg-background/80 backdrop-blur flex items-center justify-center shadow-md hover:bg-background transition-colors z-10"
-                            onClick={(e) => { e.stopPropagation(); setSelectedChildForPhoto(enfant.id); setTimeout(() => photoInputRef.current?.click(), 50); }}
-                          >
-                            {uploadingPhoto === enfant.id ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <Camera className="h-3.5 w-3.5 text-primary" />}
-                          </button>
                           {/* Badges overlay */}
                           <div className="absolute top-1.5 right-1.5 flex gap-1">
                             {enfant.option_cantine && (
@@ -437,11 +444,12 @@ export default function ParentDashboard() {
 
       <ParentPaymentDialog
         open={paymentOpen}
-        onOpenChange={setPaymentOpen}
-        enfants={session.eleves}
+        onOpenChange={(v) => { setPaymentOpen(v); if (!v) setPaymentInitMode(null); }}
+        enfants={eleves}
         code={session.token}
         onSuccess={fetchDashboard}
         soldeFamille={dashData?.solde_famille || 0}
+        initialMode={paymentInitMode === 'wallet-recharge' ? 'mobile-wallet' : undefined}
       />
 
       {/* ─── Family Details Dialog ─── */}
