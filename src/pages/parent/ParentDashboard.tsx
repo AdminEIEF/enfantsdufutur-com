@@ -444,7 +444,7 @@ export default function ParentDashboard() {
         code={session.token}
         onSuccess={fetchDashboard}
         soldeFamille={dashData?.solde_famille || 0}
-        initialMode={paymentInitMode === 'wallet-recharge' ? 'mobile-wallet' : undefined}
+        initialMode={paymentInitMode === 'wallet-recharge' ? 'mobile-wallet' : paymentInitMode === 'wallet-cantine' ? 'wallet-cantine' : paymentInitMode === 'wallet-librairie' ? 'wallet-librairie' : undefined}
       />
 
       {/* ─── Family Details Dialog ─── */}
