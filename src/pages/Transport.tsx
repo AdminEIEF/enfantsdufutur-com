@@ -316,6 +316,9 @@ export default function Transport() {
             })}
           </div>
 
+          {/* Paiements transport récents */}
+          <TransportPaymentsRecent />
+
           {/* Graphique répartition */}
           <Card>
             <CardHeader><CardTitle className="text-base">Répartition des élèves par zone</CardTitle></CardHeader>
