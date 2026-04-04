@@ -38,6 +38,21 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   const moisCourant = MOIS_FR[new Date().getMonth()];
   const anneeCourante = new Date().getFullYear();
 
+  const getTransportPrix = (eleve: any) => {
+    const zone = (eleve.zones_transport as any);
+    if (!zone) return 0;
+    const typeTrajet = eleve.type_trajet_transport || 'aller_retour';
+    if (typeTrajet === 'aller_simple') return zone.prix_aller_simple || zone.prix_mensuel || 0;
+    if (typeTrajet === 'retour_simple') return zone.prix_retour_simple || zone.prix_mensuel || 0;
+    return zone.prix_mensuel || 0;
+  };
+
+  const getTrajetLabel = (type: string) => {
+    if (type === 'aller_simple') return 'Aller simple';
+    if (type === 'retour_simple') return 'Retour simple';
+    return 'Aller-Retour';
+  };
+
   const { data: eleves = [] } = useQuery({
     queryKey: ['transport-card-eleves'],
     queryFn: async () => {
