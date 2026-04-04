@@ -425,11 +425,6 @@ export default function PreInscriptionPublic() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-medium">{doc.label}</span>
-                          {doc.required && (
-                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                              Obligatoire
-                            </Badge>
-                          )}
                           {uploaded && (
                             <Badge className="text-[10px] px-1.5 py-0 bg-green-600">
                               <CheckCircle2 className="h-3 w-3 mr-0.5" /> Ajouté
