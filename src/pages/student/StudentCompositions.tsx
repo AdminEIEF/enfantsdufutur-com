@@ -12,7 +12,7 @@ import { Loader2, Clock, CheckCircle2, Timer, FileText, Bold, Italic, Underline,
 import { useExamSecurity } from '@/hooks/useExamSecurity';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MathText } from '@/components/MathText';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function StudentCompositions() {
   const { session } = useStudentAuth();
@@ -35,6 +35,7 @@ export default function StudentCompositions() {
   const blockedRef = useRef(false);
   const [photos, setPhotos] = useState<{ id: string; dataUrl: string }[]>([]);
   const [currentQIndex, setCurrentQIndex] = useState(0);
+  const [listTab, setListTab] = useState<'active' | 'history'>('active');
 
   const capturePhoto = () => {
     const input = document.createElement('input');
@@ -548,85 +549,139 @@ export default function StudentCompositions() {
   }
 
   // ─── Compositions list ───
+
+  const activeComps = compositions.filter((c: any) => {
+    const s = getStatus(c);
+    return s === 'available' || s === 'in_progress' || s === 'upcoming';
+  });
+  const historyComps = compositions.filter((c: any) => {
+    const s = getStatus(c);
+    return s === 'done' || s === 'expired';
+  });
+
+  const renderCompCard = (comp: any, i: number) => {
+    const status = getStatus(comp);
+    const rep = reponses.find((r: any) => r.composition_id === comp.id);
+    const isDocument = comp.type_composition === 'document';
+    const isTexte = comp.type_composition === 'texte';
+
+    const statusConfig: Record<string, { label: string; className: string }> = {
+      done: { label: '✅ Terminée', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+      in_progress: { label: '⏳ En cours', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+      expired: { label: '❌ Expirée', className: 'bg-destructive/10 text-destructive' },
+      upcoming: { label: '🕐 À venir', className: 'bg-muted text-muted-foreground' },
+      available: { label: '🟢 Disponible', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    };
+    const sc = statusConfig[status] || statusConfig.available;
+
+    return (
+      <motion.div key={comp.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+        <Card className="border-0 shadow-md rounded-2xl overflow-hidden hover:shadow-lg transition-shadow">
+          <CardContent className="p-0">
+            <div className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-bold text-sm">{comp.titre}</h3>
+                    <Badge variant="outline" className="text-[10px]">
+                      {isDocument ? '📄 Document' : isTexte ? '✍️ Texte' : '📝 QCM'}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{comp.matieres?.nom} • {comp.duree_minutes} min • /{comp.bareme}</p>
+                </div>
+                <Badge className={`text-[10px] shrink-0 ${sc.className}`}>{sc.label}</Badge>
+              </div>
+
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                {new Date(comp.date_debut).toLocaleDateString('fr')} {new Date(comp.date_debut).toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' })} → {new Date(comp.date_fin).toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+
+              {status === 'upcoming' && (() => {
+                const countdown = getCountdown(comp);
+                return countdown ? (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/5 border border-primary/20">
+                    <Timer className="h-4 w-4 text-primary animate-pulse" />
+                    <span className="text-xs font-bold font-mono text-primary">Début dans {countdown}</span>
+                  </div>
+                ) : null;
+              })()}
+
+              {status === 'done' && rep && (
+                <p className="text-sm font-bold text-primary">
+                  {!isDocument && !isTexte ? `Score : ${rep.score}/${comp.bareme}` : rep.score != null ? `Note : ${rep.score}/${comp.bareme}` : '⏳ En attente de correction'}
+                </p>
+              )}
+
+              {(status === 'available' || status === 'in_progress') && (
+                <Button size="sm" className="w-full rounded-xl h-10 font-bold" onClick={() => startComposition(comp)}>
+                  {status === 'in_progress' ? '▶️ Reprendre' : '🚀 Commencer'}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  };
+
   return (
     <StudentLayout>
       <div className="p-4 space-y-4 max-w-2xl mx-auto">
         <h1 className="text-lg font-bold text-foreground">📝 Compositions</h1>
 
+        {/* Tabs */}
+        <div className="flex gap-2 p-1 bg-muted/60 rounded-2xl">
+          <button
+            onClick={() => setListTab('active')}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              listTab === 'active'
+                ? 'bg-card shadow-md text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            🟢 Actives ({activeComps.length})
+          </button>
+          <button
+            onClick={() => setListTab('history')}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              listTab === 'history'
+                ? 'bg-card shadow-md text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            📋 Historique ({historyComps.length})
+          </button>
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-        ) : compositions.length === 0 ? (
-          <Card className="border-0 shadow-md rounded-2xl">
-            <CardContent className="py-12 text-center text-muted-foreground">Aucune composition disponible</CardContent>
-          </Card>
         ) : (
-          <div className="space-y-3">
-            {compositions.map((comp: any, i: number) => {
-              const status = getStatus(comp);
-              const rep = reponses.find((r: any) => r.composition_id === comp.id);
-              const isDocument = comp.type_composition === 'document';
-              const isTexte = comp.type_composition === 'texte';
-
-              const statusConfig: Record<string, { label: string; className: string }> = {
-                done: { label: '✅ Terminée', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
-                in_progress: { label: '⏳ En cours', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-                expired: { label: '❌ Expirée', className: 'bg-destructive/10 text-destructive' },
-                upcoming: { label: '🕐 À venir', className: 'bg-muted text-muted-foreground' },
-                available: { label: '🟢 Disponible', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-              };
-              const sc = statusConfig[status] || statusConfig.available;
-
-              return (
-                <motion.div key={comp.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                  <Card className="border-0 shadow-md rounded-2xl overflow-hidden hover:shadow-lg transition-shadow">
-                    <CardContent className="p-0">
-                      <div className="p-4 space-y-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="font-bold text-sm">{comp.titre}</h3>
-                              <Badge variant="outline" className="text-[10px]">
-                                {isDocument ? '📄 Document' : isTexte ? '✍️ Texte' : '📝 QCM'}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">{comp.matieres?.nom} • {comp.duree_minutes} min • /{comp.bareme}</p>
-                          </div>
-                          <Badge className={`text-[10px] shrink-0 ${sc.className}`}>{sc.label}</Badge>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          {new Date(comp.date_debut).toLocaleDateString('fr')} {new Date(comp.date_debut).toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' })} → {new Date(comp.date_fin).toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-
-                        {status === 'upcoming' && (() => {
-                          const countdown = getCountdown(comp);
-                          return countdown ? (
-                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/5 border border-primary/20">
-                              <Timer className="h-4 w-4 text-primary animate-pulse" />
-                              <span className="text-xs font-bold font-mono text-primary">Début dans {countdown}</span>
-                            </div>
-                          ) : null;
-                        })()}
-
-                        {status === 'done' && rep && (
-                          <p className="text-sm font-bold text-primary">
-                            {!isDocument && !isTexte ? `Score : ${rep.score}/${comp.bareme}` : rep.score != null ? `Note : ${rep.score}/${comp.bareme}` : '⏳ En attente de correction'}
-                          </p>
-                        )}
-
-                        {(status === 'available' || status === 'in_progress') && (
-                          <Button size="sm" className="w-full rounded-xl h-10 font-bold" onClick={() => startComposition(comp)}>
-                            {status === 'in_progress' ? '▶️ Reprendre' : '🚀 Commencer'}
-                          </Button>
-                        )}
-                      </div>
+          <AnimatePresence mode="wait">
+            {listTab === 'active' ? (
+              <motion.div key="active" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-3">
+                {activeComps.length === 0 ? (
+                  <Card className="border-0 shadow-md rounded-2xl">
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      <FileText className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                      <p className="text-sm">Aucune composition active</p>
                     </CardContent>
                   </Card>
-                </motion.div>
-              );
-            })}
-          </div>
+                ) : activeComps.map(renderCompCard)}
+              </motion.div>
+            ) : (
+              <motion.div key="history" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
+                {historyComps.length === 0 ? (
+                  <Card className="border-0 shadow-md rounded-2xl">
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      <FileText className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                      <p className="text-sm">Aucun historique de composition</p>
+                    </CardContent>
+                  </Card>
+                ) : historyComps.map(renderCompCard)}
+              </motion.div>
+            )}
+          </AnimatePresence>
         )}
       </div>
     </StudentLayout>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { NotificationBell } from '@/components/NotificationBell';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useParentAuth } from '@/hooks/useParentAuth';
 import {
   GraduationCap, LogOut, Wallet, TrendingDown, CreditCard, Users,
-  ChevronRight, UtensilsCrossed, BookOpen, Download, Loader2, MessageCircle, Smartphone, FileText
+  ChevronRight, UtensilsCrossed, BookOpen, Download, Loader2, MessageCircle, Smartphone, FileText,
+  Bus, ShoppingBag, CalendarDays, ArrowUpRight, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AIChatBubble } from '@/components/AIChatBubble';
@@ -17,8 +18,8 @@ import { SchoolWatermark } from '@/components/SchoolWatermark';
 import ParentPaymentDialog from '@/components/ParentPaymentDialog';
 import ParentDevisInscription from '@/components/ParentDevisInscription';
 import ParentCantineOrdre from '@/components/ParentCantineOrdre';
-
 import ParentCatalogueCommande from '@/components/ParentCatalogueCommande';
+import { motion } from 'framer-motion';
 
 const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 
@@ -33,9 +34,8 @@ export default function ParentDashboard() {
   useEffect(() => {
     if (!session) return;
     fetchDashboard();
-    // Check payment return
     const paymentStatus = searchParams.get('payment');
-    if (paymentStatus === 'success') toast.success('Paiement initié avec succès ! Vous recevrez une confirmation.');
+    if (paymentStatus === 'success') toast.success('Paiement initié avec succès !');
     if (paymentStatus === 'cancelled') toast.error('Paiement annulé.');
   }, [session]);
 
@@ -45,10 +45,7 @@ export default function ParentDashboard() {
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parent-data`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
           body: JSON.stringify({ code: session!.token, action: 'dashboard' }),
         }
       );
@@ -67,7 +64,6 @@ export default function ParentDashboard() {
 
   if (!session) { navigate('/parent', { replace: true }); return null; }
 
-  // Calculate financial summary
   const famille = session.famille;
   const eleves = dashData?.eleves || session.eleves;
   const paiements = dashData?.paiements || [];
@@ -82,7 +78,6 @@ export default function ParentDashboard() {
   eleves.forEach((e: any) => {
     const frais = e.classes?.niveaux?.frais_scolarite || 0;
     totalScolariteAnnuel += frais;
-    // Transport: 10 mois
     if (e.zones_transport || e.zone_transport_id) {
       const zt = e.zones_transport;
       if (zt) totalTransportAnnuel += (zt.prix_mensuel || 0) * 10;
@@ -101,39 +96,41 @@ export default function ParentDashboard() {
   const resteTotal = resteScolarite + resteTransport;
   const totalPaye = totalPayeScolarite + totalPayeTransport + totalPayeCantine;
 
-  // Current month installment
-  const currentMonth = new Date().getMonth(); // 0=Jan
-  const moisIndex = currentMonth >= 8 ? currentMonth - 8 : currentMonth + 4; // Sep=0, Oct=1...
+  const currentMonth = new Date().getMonth();
+  const moisIndex = currentMonth >= 8 ? currentMonth - 8 : currentMonth + 4;
   const moisActuel = MOIS_SCOLAIRES[Math.min(moisIndex, 9)] || MOIS_SCOLAIRES[0];
   const mensualiteScolarite = totalScolariteAnnuel > 0 ? Math.ceil(totalScolariteAnnuel / 10) : 0;
 
   const handleLogout = () => { logout(); navigate('/parent', { replace: true }); };
 
+  const progressScolarite = totalScolariteAnnuel > 0 ? Math.min(100, Math.round((totalPayeScolarite / totalScolariteAnnuel) * 100)) : 0;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 relative">
+    <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background relative">
       <SchoolWatermark />
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b">
-        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-1">
-          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-            {/* Show first child's photo or icon */}
+
+      {/* ─── Header — Glassmorphism style ─── */}
+      <header className="sticky top-0 z-30 bg-gradient-to-r from-primary via-primary/95 to-primary shadow-lg">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
             {eleves.length > 0 && eleves[0].photo_url ? (
-              <img src={eleves[0].photo_url} alt="" loading="lazy" decoding="async" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border-2 border-primary/20 shrink-0" />
+              <img src={eleves[0].photo_url} alt="" loading="lazy" decoding="async" className="w-10 h-10 rounded-2xl object-cover ring-2 ring-primary-foreground/30 shadow-md shrink-0" />
             ) : (
-              <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
+              <div className="w-10 h-10 rounded-2xl bg-primary-foreground/20 backdrop-blur flex items-center justify-center shrink-0 shadow-md">
+                <GraduationCap className="h-5 w-5 text-primary-foreground" />
+              </div>
             )}
             <div className="min-w-0">
-              <h1 className="font-bold text-xs sm:text-sm leading-tight truncate">Espace Parent</h1>
-              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Famille {famille.nom_famille}</p>
+              <h1 className="font-bold text-sm text-primary-foreground leading-tight truncate">Espace Parent</h1>
+              <p className="text-[11px] text-primary-foreground/60 truncate font-medium">Famille {famille.nom_famille}</p>
             </div>
-            {/* Additional children avatars */}
             {eleves.length > 1 && (
-              <div className="hidden sm:flex -space-x-2 ml-2">
+              <div className="hidden sm:flex -space-x-2 ml-1">
                 {eleves.slice(1, 4).map((e: any) => (
                   e.photo_url ? (
-                    <img key={e.id} src={e.photo_url} alt="" loading="lazy" decoding="async" className="w-7 h-7 rounded-full object-cover border-2 border-card" />
+                    <img key={e.id} src={e.photo_url} alt="" loading="lazy" decoding="async" className="w-7 h-7 rounded-full object-cover ring-2 ring-primary" />
                   ) : (
-                    <div key={e.id} className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] border-2 border-card">
+                    <div key={e.id} className="w-7 h-7 rounded-full bg-primary-foreground/20 flex items-center justify-center text-primary-foreground font-bold text-[10px] ring-2 ring-primary">
                       {e.prenom[0]}{e.nom[0]}
                     </div>
                   )
@@ -141,123 +138,143 @@ export default function ParentDashboard() {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            <NotificationBell
-              mode="parent"
-              targetId={famille.id}
-              token={session.token}
-              onViewAll={() => navigate('/parent/notifications')}
-            />
-            <Button size="sm" className="text-xs px-2 sm:px-3 h-8" onClick={() => setPaymentOpen(true)}>
-              <Smartphone className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" /> Payer
+          <div className="flex items-center gap-1 shrink-0">
+            <NotificationBell mode="parent" targetId={famille.id} token={session.token} onViewAll={() => navigate('/parent/notifications')} />
+            <Button size="sm" className="text-xs px-3 h-9 rounded-xl bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0 backdrop-blur font-bold gap-1.5" onClick={() => setPaymentOpen(true)}>
+              <Smartphone className="h-4 w-4" /> Payer
             </Button>
-            <Button variant="ghost" size="sm" className="text-xs px-2 sm:px-3 h-8" onClick={handleLogout}>
-              <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> <span className="hidden sm:inline ml-1">Déconnexion</span>
+            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/10 h-9 w-9 rounded-xl" onClick={handleLogout}>
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </header>
-      <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-24">
+
+      <main className="max-w-4xl mx-auto px-3 sm:px-4 py-5 space-y-5 pb-24">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
           <>
-            {/* Financial Summary Cards */}
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              <Card className="col-span-2 border-primary/20 bg-primary/5">
-                <CardContent className="pt-3 sm:pt-4 pb-2 sm:pb-3 px-3 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">Reste à payer</p>
-                      <p className="text-xl sm:text-2xl font-bold text-primary truncate">{resteTotal.toLocaleString()} GNF</p>
+            {/* ─── Hero Financial Card ─── */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+              <Card className="border-0 rounded-3xl overflow-hidden shadow-xl bg-gradient-to-br from-primary via-primary/90 to-accent relative">
+                <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-primary-foreground/5 -translate-y-1/3 translate-x-1/4" />
+                <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-primary-foreground/5 translate-y-1/3 -translate-x-1/4" />
+                <CardContent className="relative z-10 p-5 sm:p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <p className="text-xs text-primary-foreground/60 uppercase tracking-wider font-medium">Reste à payer</p>
+                      <p className="text-3xl sm:text-4xl font-extrabold text-primary-foreground mt-1">{resteTotal.toLocaleString()} <span className="text-lg font-bold opacity-60">GNF</span></p>
                     </div>
-                    <Wallet className="h-8 w-8 sm:h-10 sm:w-10 text-primary/30 shrink-0" />
-                  </div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                    Mensualité {moisActuel} : <span className="font-semibold text-foreground">{mensualiteScolarite.toLocaleString()} GNF</span>
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Portefeuille famille */}
-              <Card className="col-span-2 border-green-200 bg-green-50/50">
-                <CardContent className="pt-3 sm:pt-4 pb-2 sm:pb-3 px-3 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">💰 Portefeuille Famille</p>
-                      <p className="text-xl sm:text-2xl font-bold text-green-700 truncate">{(dashData?.solde_famille || 0).toLocaleString()} GNF</p>
+                    <div className="w-12 h-12 rounded-2xl bg-primary-foreground/10 flex items-center justify-center">
+                      <Wallet className="h-6 w-6 text-primary-foreground/70" />
                     </div>
-                    <Wallet className="h-8 w-8 sm:h-10 sm:w-10 text-green-300 shrink-0" />
                   </div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                    Solde rechargeable pour achats boutique, librairie, cantine
-                  </p>
+
+                  {/* Progress bar */}
+                  <div className="space-y-1.5 mb-4">
+                    <div className="flex justify-between text-[10px] text-primary-foreground/60 font-medium">
+                      <span>Progression scolarité</span>
+                      <span>{progressScolarite}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-primary-foreground/10 overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full bg-primary-foreground/80"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progressScolarite}%` }}
+                        transition={{ duration: 1, ease: 'easeOut' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-primary-foreground/10 backdrop-blur-sm">
+                    <CalendarDays className="h-4 w-4 text-primary-foreground/60 shrink-0" />
+                    <p className="text-xs text-primary-foreground/80">
+                      Mensualité <span className="font-bold text-primary-foreground">{moisActuel}</span> : <span className="font-extrabold text-primary-foreground">{mensualiteScolarite.toLocaleString()} GNF</span>
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
+            </motion.div>
 
-              <Card>
-                <CardContent className="pt-3 sm:pt-4 pb-2 sm:pb-3 px-3 sm:px-6">
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Scolarité payée</p>
-                  <p className="text-base sm:text-lg font-bold text-green-600 truncate">{totalPayeScolarite.toLocaleString()}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">/ {totalScolariteAnnuel.toLocaleString()} GNF</p>
-                </CardContent>
-              </Card>
+            {/* ─── Quick Stats Grid ─── */}
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-3 gap-2.5">
+              {[
+                { label: 'Portefeuille', value: (dashData?.solde_famille || 0).toLocaleString(), icon: Wallet, gradient: 'from-emerald-500 to-teal-600', suffix: 'GNF' },
+                { label: 'Scolarité', value: totalPayeScolarite.toLocaleString(), icon: GraduationCap, gradient: 'from-blue-500 to-indigo-600', suffix: 'payé' },
+                { label: 'Transport', value: totalPayeTransport.toLocaleString(), icon: Bus, gradient: 'from-amber-500 to-orange-600', suffix: 'payé' },
+              ].map((stat, i) => (
+                <motion.div key={stat.label} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 + i * 0.05 }}>
+                  <Card className="border-0 shadow-lg rounded-2xl overflow-hidden">
+                    <div className={`bg-gradient-to-br ${stat.gradient} p-3 text-white`}>
+                      <stat.icon className="h-4 w-4 mb-2 opacity-70" />
+                      <p className="text-lg sm:text-xl font-extrabold leading-none truncate">{stat.value}</p>
+                      <p className="text-[9px] sm:text-[10px] font-medium opacity-70 mt-0.5">{stat.suffix}</p>
+                    </div>
+                    <div className="px-3 py-1.5 bg-card">
+                      <p className="text-[10px] text-muted-foreground font-medium truncate">{stat.label}</p>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
 
-              <Card>
-                <CardContent className="pt-3 sm:pt-4 pb-2 sm:pb-3 px-3 sm:px-6">
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Transport payé</p>
-                  <p className="text-base sm:text-lg font-bold text-orange-600 truncate">{totalPayeTransport.toLocaleString()}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">/ {totalTransportAnnuel.toLocaleString()} GNF</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Children Cards */}
-            <div className="space-y-2 sm:space-y-3">
-              <h2 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
-                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" /> Mes enfants
+            {/* ─── Children Cards ─── */}
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-3">
+              <h2 className="font-bold flex items-center gap-2 text-sm sm:text-base">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Users className="h-4 w-4 text-primary" />
+                </div>
+                Mes enfants
+                <Badge variant="secondary" className="text-[10px] ml-auto rounded-full">{eleves.length}</Badge>
               </h2>
-              {eleves.map((enfant: any) => (
-                <Card
-                  key={enfant.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => navigate(`/parent/enfant/${enfant.id}`)}
-                >
-                  <CardContent className="pt-3 sm:pt-4 pb-2 sm:pb-3 px-3 sm:px-6">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              {eleves.map((enfant: any, i: number) => (
+                <motion.div key={enfant.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 + i * 0.05 }}>
+                  <Card
+                    className="cursor-pointer border-0 shadow-md rounded-2xl hover:shadow-lg transition-all active:scale-[0.98] overflow-hidden"
+                    onClick={() => navigate(`/parent/enfant/${enfant.id}`)}
+                  >
+                    <CardContent className="p-0">
+                      <div className="flex items-center gap-3 p-3.5 sm:p-4">
                         {enfant.photo_url ? (
-                          <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shrink-0" />
+                          <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-12 h-12 rounded-2xl object-cover shadow-md shrink-0 ring-2 ring-border/50" />
                         ) : (
-                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs sm:text-sm shrink-0">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary font-bold text-sm shrink-0 shadow-md">
                             {enfant.prenom[0]}{enfant.nom[0]}
                           </div>
                         )}
-                        <div className="min-w-0">
-                          <p className="font-semibold text-sm sm:text-base truncate">{enfant.prenom} {enfant.nom}</p>
-                          <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm truncate">{enfant.prenom} {enfant.nom}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">
                             {enfant.classes?.niveaux?.cycles?.nom} — {enfant.classes?.niveaux?.nom} — {enfant.classes?.nom}
                           </p>
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            {enfant.option_cantine && (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-medium">
+                                <UtensilsCrossed className="h-2.5 w-2.5" />
+                                {(enfant.solde_cantine || 0).toLocaleString()}
+                              </span>
+                            )}
+                            {enfant.zone_transport_id && (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-medium">
+                                <Bus className="h-2.5 w-2.5" /> Transport
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="shrink-0 w-8 h-8 rounded-xl bg-muted/60 flex items-center justify-center">
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                        {enfant.option_cantine && (
-                          <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5 sm:px-2">
-                            <UtensilsCrossed className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
-                            {(enfant.solde_cantine || 0).toLocaleString()}
-                          </Badge>
-                        )}
-                        <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
 
-            {/* Catalogue & Commande d'articles */}
+            {/* Catalogue & Commande */}
             <ParentCatalogueCommande
               enfants={eleves}
               code={session.token}
@@ -272,60 +289,55 @@ export default function ParentDashboard() {
               onSuccess={fetchDashboard}
             />
 
-
-            {/* Payment History */}
+            {/* ─── Payment Tabs ─── */}
             <Tabs defaultValue="devis">
-              <TabsList className="w-full grid grid-cols-3 h-9 sm:h-10">
-                <TabsTrigger value="devis" className="text-xs sm:text-sm px-1 sm:px-3">
-                  <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" /> Devis
+              <TabsList className="w-full grid grid-cols-3 h-10 rounded-2xl bg-muted/60 p-1">
+                <TabsTrigger value="devis" className="rounded-xl text-xs font-bold data-[state=active]:shadow-md">
+                  <FileText className="h-3.5 w-3.5 mr-1" /> Devis
                 </TabsTrigger>
-                <TabsTrigger value="historique" className="text-xs sm:text-sm px-1 sm:px-3">
-                  <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" /> Hist.
+                <TabsTrigger value="historique" className="rounded-xl text-xs font-bold data-[state=active]:shadow-md">
+                  <CreditCard className="h-3.5 w-3.5 mr-1" /> Hist.
                 </TabsTrigger>
-                <TabsTrigger value="echeancier" className="text-xs sm:text-sm px-1 sm:px-3">
-                  <TrendingDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" /> Éch.
+                <TabsTrigger value="echeancier" className="rounded-xl text-xs font-bold data-[state=active]:shadow-md">
+                  <TrendingDown className="h-3.5 w-3.5 mr-1" /> Éch.
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="devis" className="mt-4">
-                <ParentDevisInscription
-                  eleves={eleves}
-                  paiements={paiements}
-                  tarifs={dashData?.tarifs || []}
-                  nbEnfantsFamille={eleves.length}
-                />
+                <ParentDevisInscription eleves={eleves} paiements={paiements} tarifs={dashData?.tarifs || []} nbEnfantsFamille={eleves.length} />
               </TabsContent>
 
               <TabsContent value="historique" className="mt-4">
                 {paiements.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">Aucun paiement enregistré</p>
+                  <Card className="border-0 shadow-md rounded-2xl">
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      <CreditCard className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                      <p className="text-sm">Aucun paiement enregistré</p>
+                    </CardContent>
+                  </Card>
                 ) : (
                   <div className="space-y-2">
                     {paiements.slice(0, 20).map((p: any) => {
                       const enfant = eleves.find((e: any) => e.id === p.eleve_id);
+                      const typeEmojis: Record<string, string> = { scolarite: '🎓', transport: '🚌', cantine: '🍽️', fournitures: '📚', librairie: '📚', boutique: '👕', inscription: '📝', reinscription: '🔄' };
                       return (
-                        <Card key={p.id}>
-                          <CardContent className="py-2 sm:py-3 px-3 sm:px-6 flex items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                                <p className="text-xs sm:text-sm font-medium truncate">
-                                  {p.type_paiement === 'scolarite' ? '🎓' : p.type_paiement === 'transport' ? '🚌' : p.type_paiement === 'cantine' ? '🍽️' : p.type_paiement === 'fournitures' ? '📚' : p.type_paiement === 'librairie' ? '📚' : p.type_paiement === 'boutique' ? '👕' : p.type_paiement === 'inscription' ? '📝' : p.type_paiement === 'reinscription' ? '🔄' : '📦'}
-                                  {' '}{p.type_paiement}
+                        <Card key={p.id} className="border-0 shadow-sm rounded-2xl hover:shadow-md transition-shadow">
+                          <CardContent className="py-3 px-4 flex items-center justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <p className="text-xs sm:text-sm font-semibold truncate">
+                                  {typeEmojis[p.type_paiement] || '📦'} {p.type_paiement}
                                   {p.type_paiement === 'cantine' && p.mois_concerne === 'Recharge directe' && ' (directe)'}
                                   {p.type_paiement === 'cantine' && p.mois_concerne === 'Recharge ordonnée' && ' (ordonnée ✓)'}
                                   {p.mois_concerne && !p.mois_concerne.startsWith('Recharge') && ` — ${p.mois_concerne}`}
                                 </p>
-                                {enfant && (
-                                  <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5">
-                                    {enfant.prenom}
-                                  </Badge>
-                                )}
+                                {enfant && <Badge variant="outline" className="text-[10px] px-1.5 rounded-full">{enfant.prenom}</Badge>}
                               </div>
-                              <p className="text-[10px] sm:text-xs text-muted-foreground">
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
                                 {new Date(p.date_paiement).toLocaleDateString('fr-FR')} • {p.canal}
                               </p>
                             </div>
-                            <p className="font-bold text-green-600 text-xs sm:text-sm whitespace-nowrap shrink-0">{p.montant.toLocaleString()} GNF</p>
+                            <span className="font-extrabold text-emerald-600 text-xs sm:text-sm whitespace-nowrap shrink-0">{p.montant.toLocaleString()} GNF</span>
                           </CardContent>
                         </Card>
                       );
@@ -335,14 +347,14 @@ export default function ParentDashboard() {
               </TabsContent>
 
               <TabsContent value="echeancier" className="mt-4">
-                <Card>
-                  <CardContent className="pt-3 sm:pt-4 px-2 sm:px-6 overflow-x-auto">
+                <Card className="border-0 shadow-md rounded-2xl overflow-hidden">
+                  <CardContent className="p-0">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-xs sm:text-sm">Mois</TableHead>
-                          <TableHead className="text-right text-xs sm:text-sm">Scolarité</TableHead>
-                          <TableHead className="text-right text-xs sm:text-sm">Statut</TableHead>
+                        <TableRow className="bg-muted/40">
+                          <TableHead className="text-xs font-bold">Mois</TableHead>
+                          <TableHead className="text-right text-xs font-bold">Scolarité</TableHead>
+                          <TableHead className="text-right text-xs font-bold">Statut</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -355,19 +367,17 @@ export default function ParentDashboard() {
                           const isCurrentMonth = idx === moisIndex;
                           return (
                             <TableRow key={mois} className={isCurrentMonth ? 'bg-primary/5' : ''}>
-                              <TableCell className="font-medium text-xs sm:text-sm py-2 sm:py-3">
-                                {mois} {isCurrentMonth && <Badge variant="outline" className="ml-1 text-[10px] sm:text-xs">Actuel</Badge>}
+                              <TableCell className="font-medium text-xs py-2.5">
+                                {mois} {isCurrentMonth && <Badge variant="outline" className="ml-1 text-[10px] rounded-full">Actuel</Badge>}
                               </TableCell>
-                              <TableCell className="text-right text-xs sm:text-sm py-2 sm:py-3 whitespace-nowrap">{mensualiteScolarite.toLocaleString()} GNF</TableCell>
-                              <TableCell className="text-right py-2 sm:py-3">
+                              <TableCell className="text-right text-xs py-2.5 whitespace-nowrap">{mensualiteScolarite.toLocaleString()} GNF</TableCell>
+                              <TableCell className="text-right py-2.5">
                                 {payeMois > 0 ? (
-                                  <Badge variant={isPaid ? 'default' : 'secondary'} className={`text-[10px] sm:text-xs ${isPaid ? 'bg-green-600' : ''}`}>
+                                  <Badge variant={isPaid ? 'default' : 'secondary'} className={`text-[10px] rounded-full ${isPaid ? 'bg-emerald-600' : ''}`}>
                                     {isPaid ? '✓ Payé' : `${payeMois.toLocaleString()} / ${mensualiteScolarite.toLocaleString()}`}
                                   </Badge>
                                 ) : (
-                                  <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px] sm:text-xs">
-                                    Non payé
-                                  </Badge>
+                                  <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px] rounded-full">Non payé</Badge>
                                 )}
                               </TableCell>
                             </TableRow>
