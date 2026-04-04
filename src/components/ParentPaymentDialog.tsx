@@ -325,8 +325,9 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
     try {
       for (const eid of transportSelectedIds) {
         const enf = enfants.find(x => x.id === eid);
-        const montant = enf?.zones_transport?.prix_mensuel || 0;
-        const description = `Transport du mois de ${moisCourantLabel} ${anneeCourante}`;
+        const montant = enf ? getTransportPrix(enf) : 0;
+        const trajetLabel = enf ? getTrajetLabel(enf) : '';
+        const description = `Transport ${trajetLabel} du mois de ${moisCourantLabel} ${anneeCourante}`;
         const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parent-data`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
