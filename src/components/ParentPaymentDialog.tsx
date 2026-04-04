@@ -61,7 +61,7 @@ const WALLET_SERVICES = [
 export default function ParentPaymentDialog({ open, onOpenChange, enfants, code, onSuccess, soldeFamille = 0, initialMode }: PaymentDialogProps) {
   const isSingle = enfants.length === 1;
   const [activeMode, setActiveMode] = useState<'select' | 'mobile' | 'wallet'>('select');
-  const [walletSubMode, setWalletSubMode] = useState<'menu' | 'cantine' | 'catalogue' | 'debit'>('menu');
+  const [walletSubMode, setWalletSubMode] = useState<'menu' | 'cantine' | 'catalogue' | 'debit' | 'transport'>('menu');
   const [eleveId, setEleveId] = useState(isSingle ? enfants[0]?.id || '' : '');
   const [typePaiement, setTypePaiement] = useState('');
   const [montant, setMontant] = useState('');
