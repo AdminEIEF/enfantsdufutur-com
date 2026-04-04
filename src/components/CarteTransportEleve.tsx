@@ -29,7 +29,14 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   const [rechargeDialog, setRechargeDialog] = useState<any>(null);
   const [montantRecharge, setMontantRecharge] = useState('');
   const [printCard, setPrintCard] = useState<any>(null);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  const MOIS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const moisCourant = MOIS_FR[new Date().getMonth()];
+  const anneeCourante = new Date().getFullYear();
 
   const { data: eleves = [] } = useQuery({
     queryKey: ['transport-card-eleves'],
@@ -59,7 +66,6 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
 
   const rechargeMutation = useMutation({
     mutationFn: async ({ eleveId, montant }: { eleveId: string; montant: number }) => {
-      // Désactiver les anciennes recharges actives
       await supabase
         .from('recharges_transport')
         .update({ actif: false } as any)
@@ -88,6 +94,57 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
     },
   });
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const eligible = filteredEleves.filter((e: any) => !hasRechargeThisMonth(e.id));
+    if (selectedIds.size === eligible.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(eligible.map((e: any) => e.id)));
+    }
+  };
+
+  const handleBulkRecharge = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    let success = 0;
+    let errors = 0;
+    for (const id of selectedIds) {
+      const eleve = eleves.find((e: any) => e.id === id);
+      if (!eleve) continue;
+      const montant = (eleve as any).zones_transport?.prix_mensuel || 0;
+      try {
+        await supabase
+          .from('recharges_transport')
+          .update({ actif: false } as any)
+          .eq('eleve_id', id)
+          .eq('actif', true);
+        const { error } = await supabase.from('recharges_transport').insert({
+          eleve_id: id,
+          montant,
+          actif: true,
+        } as any);
+        if (error) { errors++; } else { success++; }
+      } catch { errors++; }
+    }
+    setBulkLoading(false);
+    queryClient.invalidateQueries({ queryKey: ['recharges-transport'] });
+    setSelectedIds(new Set());
+    setBulkMode(false);
+    toast({
+      title: `Recharge en lot terminée`,
+      description: `${success} rechargé(s) avec succès${errors > 0 ? `, ${errors} erreur(s)` : ''}.`,
+      variant: errors > 0 ? 'destructive' : 'default',
+    });
+  };
 
   const getActiveRecharge = (eleveId: string) => {
     return recharges.find(
@@ -236,8 +293,8 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         </Card>
       </div>
 
-      {/* Filtres */}
-      <div className="flex gap-3 flex-wrap">
+      {/* Filtres + Bulk */}
+      <div className="flex gap-3 flex-wrap items-center">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Rechercher…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
@@ -249,7 +306,37 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
             {zones.map((z: any) => <SelectItem key={z.id} value={z.id}>{z.nom}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Button
+          variant={bulkMode ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => { setBulkMode(!bulkMode); setSelectedIds(new Set()); }}
+        >
+          <RefreshCw className="h-3.5 w-3.5 mr-1" />
+          {bulkMode ? 'Annuler sélection' : 'Recharge en lot'}
+        </Button>
       </div>
+
+      {/* Bulk action bar */}
+      {bulkMode && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="py-3 flex items-center justify-between flex-wrap gap-2">
+            <div className="text-sm">
+              <span className="font-semibold">{selectedIds.size}</span> élève(s) sélectionné(s) — <span className="font-medium text-primary">Transport du mois de {moisCourant} {anneeCourante}</span>
+            </div>
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-muted-foreground">
+                Total : {Array.from(selectedIds).reduce((sum, id) => {
+                  const el = eleves.find((e: any) => e.id === id);
+                  return sum + ((el as any)?.zones_transport?.prix_mensuel || 0);
+                }, 0).toLocaleString('fr-FR')} GNF
+              </span>
+              <Button size="sm" disabled={selectedIds.size === 0 || bulkLoading} onClick={handleBulkRecharge}>
+                {bulkLoading ? 'Recharge en cours…' : `Recharger ${selectedIds.size} carte(s)`}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Table */}
       <Card>
@@ -257,28 +344,60 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
           <Table>
             <TableHeader>
               <TableRow>
+                {bulkMode && (
+                  <TableHead className="w-10">
+                    <input
+                      type="checkbox"
+                      className="rounded border-muted-foreground"
+                      checked={selectedIds.size > 0 && selectedIds.size === filteredEleves.filter((e: any) => !hasRechargeThisMonth(e.id)).length}
+                      onChange={toggleSelectAll}
+                    />
+                  </TableHead>
+                )}
                 <TableHead>Matricule</TableHead>
                 <TableHead>Élève</TableHead>
                 <TableHead>Classe</TableHead>
                 <TableHead>Zone</TableHead>
+                {bulkMode && <TableHead className="text-right">Montant</TableHead>}
                 <TableHead className="text-center">Statut carte</TableHead>
                 <TableHead className="text-center">Jours restants</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                {!bulkMode && <TableHead className="text-right">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredEleves.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun élève</TableCell></TableRow>
+                <TableRow><TableCell colSpan={bulkMode ? 8 : 7} className="text-center py-8 text-muted-foreground">Aucun élève</TableCell></TableRow>
               ) : filteredEleves.map((e: any) => {
                 const recharge = getActiveRecharge(e.id);
                 const jours = recharge ? getDaysRemaining(recharge.date_expiration) : 0;
                 const alreadyThisMonth = hasRechargeThisMonth(e.id);
+                const prixZone = (e.zones_transport as any)?.prix_mensuel || 0;
                 return (
-                  <TableRow key={e.id}>
+                  <TableRow key={e.id} className={bulkMode && selectedIds.has(e.id) ? 'bg-primary/5' : ''}>
+                    {bulkMode && (
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          className="rounded border-muted-foreground"
+                          disabled={alreadyThisMonth}
+                          checked={selectedIds.has(e.id)}
+                          onChange={() => toggleSelect(e.id)}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
                     <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
                     <TableCell>{e.classes?.nom || '—'}</TableCell>
                     <TableCell><Badge variant="outline">{(e.zones_transport as any)?.nom || '—'}</Badge></TableCell>
+                    {bulkMode && (
+                      <TableCell className="text-right font-medium text-sm">
+                        {alreadyThisMonth ? (
+                          <span className="text-muted-foreground text-xs">Déjà rechargé</span>
+                        ) : (
+                          <>{prixZone.toLocaleString('fr-FR')} GNF</>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell className="text-center">
                       <Badge variant={recharge ? 'default' : 'destructive'}>
                         {recharge ? 'Active' : 'Expirée'}
@@ -291,25 +410,27 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                         </span>
                       ) : '—'}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex gap-1 justify-end">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={alreadyThisMonth}
-                          title={alreadyThisMonth ? 'Déjà rechargé ce mois' : ''}
-                          onClick={() => {
-                            setRechargeDialog(e);
-                            setMontantRecharge(String((e.zones_transport as any)?.prix_mensuel || 0));
-                          }}
-                        >
-                          <Wallet className="h-3 w-3 mr-1" /> {alreadyThisMonth ? 'Rechargé' : 'Recharger'}
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setPrintCard({ ...e, recharge })}>
-                          <Printer className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
+                    {!bulkMode && (
+                      <TableCell className="text-right">
+                        <div className="flex gap-1 justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={alreadyThisMonth}
+                            title={alreadyThisMonth ? 'Déjà rechargé ce mois' : ''}
+                            onClick={() => {
+                              setRechargeDialog(e);
+                              setMontantRecharge(String(prixZone));
+                            }}
+                          >
+                            <Wallet className="h-3 w-3 mr-1" /> {alreadyThisMonth ? 'Rechargé' : 'Recharger'}
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setPrintCard({ ...e, recharge })}>
+                            <Printer className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}
@@ -323,10 +444,11 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Recharger la carte transport</DialogTitle></DialogHeader>
           {rechargeDialog && (
-            <div className="space-y-4">
+          <div className="space-y-4">
               <div className="text-sm space-y-1">
                 <p><strong>Élève :</strong> {rechargeDialog.prenom} {rechargeDialog.nom}</p>
                 <p><strong>Zone :</strong> {(rechargeDialog.zones_transport as any)?.nom}</p>
+                <p><strong>Description :</strong> Transport du mois de {moisCourant} {anneeCourante}</p>
                 <p><strong>Validité :</strong> 30 jours à partir d'aujourd'hui</p>
               </div>
               {hasRechargeThisMonth(rechargeDialog.id) && (
