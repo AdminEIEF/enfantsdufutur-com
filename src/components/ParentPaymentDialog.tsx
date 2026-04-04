@@ -209,6 +209,33 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
 
                 {mobileMode === 'manuel' ? (
                   <div className="space-y-4">
+                    {/* Purpose selector */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold">Motif du paiement</Label>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {MANUEL_PURPOSE_OPTIONS.map(opt => (
+                          <button
+                            key={opt.value}
+                            onClick={() => setManuelPurpose(opt.value)}
+                            className={`flex flex-col items-center gap-1 p-3 rounded-xl text-center transition-all active:scale-95 ${
+                              manuelPurpose === opt.value
+                                ? 'bg-primary/10 ring-2 ring-primary/40 shadow-sm'
+                                : 'bg-muted/40 hover:bg-muted/60'
+                            }`}
+                          >
+                            <span className="text-lg">{opt.emoji}</span>
+                            <span className="text-[9px] font-semibold leading-tight">{opt.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Montant */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold">Montant envoyé (GNF)</Label>
+                      <Input type="number" placeholder="Ex: 500000" value={manuelMontant} onChange={e => setManuelMontant(e.target.value)} min={1000} className="rounded-xl h-11 text-lg font-bold" />
+                    </div>
+
                     <Card className="border-0 shadow-md rounded-2xl overflow-hidden">
                       <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-4 text-center">
                         <p className="text-[10px] text-white/70 uppercase tracking-wider font-medium">Numéro Marchand</p>
@@ -230,16 +257,24 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                       <CardContent className="p-4 space-y-2">
                         <p className="font-bold text-xs">📋 Instructions :</p>
                         <ol className="list-decimal list-inside space-y-1.5 text-[11px] text-muted-foreground">
-                          <li>Ouvrez <strong className="text-orange-600">Orange Money</strong></li>
-                          <li>Envoyez le montant au <strong className="text-foreground">{NUMERO_MARCHAND}</strong></li>
-                          <li>Faites une <strong>capture d'écran</strong></li>
-                          <li>Envoyez sur <strong className="text-green-600">WhatsApp</strong></li>
+                          <li>Sélectionnez le <strong>motif</strong> et saisissez le <strong>montant</strong></li>
+                          <li>Envoyez le montant au <strong className="text-foreground">{NUMERO_MARCHAND}</strong> via <strong className="text-orange-600">Orange Money</strong></li>
+                          <li>Faites une <strong>capture d'écran</strong> de la confirmation</li>
+                          <li>Cliquez sur <strong className="text-green-600">Envoyer sur WhatsApp</strong></li>
                         </ol>
                       </CardContent>
                     </Card>
                     <Button
+                      disabled={!manuelPurpose || !manuelMontant || Number(manuelMontant) <= 0}
                       onClick={() => {
-                        const message = encodeURIComponent(`Bonjour, je viens d'effectuer un paiement Orange Money.\n\nCode famille : ${code}\nVoici ma capture d'écran.`);
+                        const purposeLabel = MANUEL_PURPOSE_OPTIONS.find(o => o.value === manuelPurpose)?.label || manuelPurpose;
+                        const message = encodeURIComponent(
+                          `Bonjour, je viens d'effectuer un paiement Orange Money.\n\n` +
+                          `📌 Motif : ${purposeLabel}\n` +
+                          `💰 Montant : ${Number(manuelMontant).toLocaleString()} GNF\n` +
+                          `👨‍👩‍👧 Code famille : ${code}\n\n` +
+                          `Voici ma capture d'écran.`
+                        );
                         window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${message}`, '_blank');
                       }}
                       className="w-full bg-green-600 hover:bg-green-700 text-white rounded-2xl h-12 font-bold" size="lg"
