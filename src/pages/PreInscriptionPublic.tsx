@@ -458,6 +458,9 @@ export default function PreInscriptionPublic() {
             </CardContent>
           </Card>
 
+          {/* Fiches de renseignements */}
+          <FichesDownloadSection />
+
           {/* Options */}
           <Card>
             <CardHeader>
