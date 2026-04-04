@@ -2,22 +2,20 @@ import { ReactNode, useEffect, useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BookOpen, Home, ClipboardList, Award, LogOut, PenTool, Calculator, GraduationCap, Palette, Bug, Languages, Gamepad2, X, Pyramid, FileQuestion, User, Calendar, Hash, Sparkles, ZoomIn } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { BookOpen, Home, ClipboardList, Award, LogOut, Gamepad2, X, FileQuestion, ZoomIn, Sparkles, GraduationCap, MapPin, Phone, Mail } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { SchoolWatermark } from '@/components/SchoolWatermark';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '@/integrations/supabase/client';
 
 interface GameItem {
   path: string;
   label: string;
   emoji: string;
   color: string;
-  levels: string[]; // which cycle levels can see this
+  levels: string[];
 }
 
-// levels: 'creche', 'maternelle', 'primaire', 'college', 'lycee'
 const ALL_GAMES: GameItem[] = [
   { path: '/eleve/ecriture', label: 'Écriture', emoji: '✏️', color: 'from-blue-400 to-blue-600', levels: ['creche', 'maternelle', 'primaire'] },
   { path: '/eleve/calcul', label: 'Calcul Mental', emoji: '🔢', color: 'from-emerald-400 to-emerald-600', levels: ['primaire', 'college', 'lycee'] },
@@ -54,7 +52,6 @@ export function StudentLayout({ children }: { children: ReactNode }) {
   const [gamesOpen, setGamesOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [photoZoom, setPhotoZoom] = useState(false);
-  const [matieres, setMatieres] = useState<any[]>([]);
 
   const level = useMemo(() => detectLevel(session), [session]);
   const filteredGames = useMemo(() => ALL_GAMES.filter(g => g.levels.includes(level)), [level]);
@@ -66,16 +63,6 @@ export function StudentLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     setGamesOpen(false);
   }, [location.pathname]);
-
-  // Fetch matières when profile opens
-  useEffect(() => {
-    if (!profileOpen || !session?.eleve?.classe_id) return;
-    supabase
-      .from('classe_matieres')
-      .select('id, matieres:matiere_id(id, nom, pole, coefficient)')
-      .eq('classe_id', session.eleve.classe_id)
-      .then(({ data }) => setMatieres(data || []));
-  }, [profileOpen, session?.eleve?.classe_id]);
 
   if (!session) return null;
 
@@ -91,29 +78,32 @@ export function StudentLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-background relative">
       <SchoolWatermark />
 
-      {/* ─── Top App Bar ─── */}
-      <header className="sticky top-0 z-30 bg-primary shadow-md">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      {/* ─── Top App Bar — Material 3 style ─── */}
+      <header className="sticky top-0 z-30 bg-gradient-to-r from-primary via-primary/95 to-primary shadow-lg">
+        <div className="max-w-4xl mx-auto px-4 py-2.5 flex items-center justify-between">
           <button onClick={() => setProfileOpen(true)} className="flex items-center gap-3 min-w-0 cursor-pointer active:scale-[0.97] transition-transform">
-            {eleve.photo_url ? (
-              <img src={eleve.photo_url} alt="" loading="lazy" decoding="async" className="w-9 h-9 rounded-full object-cover ring-2 ring-primary-foreground/30 shrink-0" />
-            ) : (
-              <div className="w-9 h-9 rounded-full bg-primary-foreground/20 flex items-center justify-center text-primary-foreground font-bold text-xs shrink-0">
-                {eleve.prenom[0]}{eleve.nom[0]}
-              </div>
-            )}
+            <div className="relative">
+              {eleve.photo_url ? (
+                <img src={eleve.photo_url} alt="" loading="eager" decoding="async" className="w-10 h-10 rounded-2xl object-cover ring-2 ring-primary-foreground/40 shadow-md shrink-0" />
+              ) : (
+                <div className="w-10 h-10 rounded-2xl bg-primary-foreground/20 backdrop-blur flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0 shadow-md">
+                  {eleve.prenom[0]}{eleve.nom[0]}
+                </div>
+              )}
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-primary" />
+            </div>
             <div className="min-w-0 text-left">
-              <h1 className="font-semibold text-sm text-primary-foreground leading-tight truncate">
+              <h1 className="font-bold text-sm text-primary-foreground leading-tight truncate">
                 {eleve.prenom} {eleve.nom}
               </h1>
-              <p className="text-[11px] text-primary-foreground/70 truncate">
+              <p className="text-[11px] text-primary-foreground/60 truncate font-medium">
                 {eleve.classes?.nom || 'Espace Élève'}
               </p>
             </div>
           </button>
           <div className="flex items-center gap-1 shrink-0">
             <NotificationBell mode="student" targetId={eleve.id} token={session.token} onViewAll={() => navigate('/eleve/notifications')} />
-            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-primary-foreground hover:bg-primary-foreground/10 h-9 w-9 rounded-full">
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-primary-foreground hover:bg-primary-foreground/10 h-9 w-9 rounded-xl">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -125,139 +115,121 @@ export function StudentLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      {/* ─── Profile Dialog ─── */}
+      {/* ─── Profile Dialog — Clean & Elegant ─── */}
       <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
-        <DialogContent className="max-w-sm p-0 overflow-hidden rounded-3xl border-0 shadow-2xl max-h-[85vh] overflow-y-auto">
-          <div className="flex justify-center pt-6 pb-2 bg-card">
+        <DialogContent className="max-w-sm p-0 overflow-hidden rounded-3xl border-0 shadow-2xl">
+          {/* Header with photo */}
+          <div className="relative bg-gradient-to-br from-primary via-primary/90 to-accent pt-8 pb-16 px-6">
+            {/* Decorative circles */}
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-primary-foreground/5 -translate-y-1/2 translate-x-1/4" />
+            <div className="absolute bottom-0 left-0 w-20 h-20 rounded-full bg-primary-foreground/5 translate-y-1/3 -translate-x-1/4" />
+            
+            <div className="relative flex flex-col items-center">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', damping: 15 }}
+                className="relative w-24 h-24 rounded-3xl bg-primary-foreground/10 p-[3px] shadow-2xl cursor-pointer group"
+                onClick={() => eleve.photo_url && setPhotoZoom(true)}
+              >
+                {eleve.photo_url ? (
+                  <>
+                    <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} className="w-full h-full rounded-[21px] object-cover" />
+                    <div className="absolute inset-0 rounded-[21px] bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full h-full rounded-[21px] bg-primary-foreground/20 flex items-center justify-center text-primary-foreground font-bold text-2xl">
+                    {eleve.prenom[0]}{eleve.nom[0]}
+                  </div>
+                )}
+              </motion.div>
+              <motion.div initial={{ y: 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="mt-3 text-center">
+                <h2 className="text-lg font-bold text-primary-foreground">{eleve.prenom} {eleve.nom}</h2>
+                {eleve.classes?.nom && (
+                  <span className="inline-flex items-center gap-1 mt-1 px-3 py-0.5 rounded-full bg-primary-foreground/15 text-primary-foreground/90 text-xs font-medium">
+                    <GraduationCap className="h-3 w-3" />
+                    {eleve.classes.nom}
+                  </span>
+                )}
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Info cards */}
+          <div className="px-5 pb-6 -mt-8 relative z-10">
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', damping: 15, stiffness: 200 }}
-              className="relative w-28 h-28 rounded-full bg-gradient-to-br from-primary via-primary/80 to-accent p-[3px] shadow-xl cursor-pointer group"
-              onClick={() => eleve.photo_url && setPhotoZoom(true)}
+              initial={{ y: 15, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.15 }}
+              className="bg-card rounded-2xl shadow-lg border border-border/50 p-4 space-y-3"
             >
-              {eleve.photo_url ? (
-                <>
-                  <img src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} className="w-full h-full rounded-full object-cover bg-background" />
-                  <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                    <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
-                  </div>
-                </>
-              ) : (
-                <div className="w-full h-full rounded-full bg-card flex items-center justify-center text-primary font-bold text-3xl">
-                  {eleve.prenom[0]}{eleve.nom[0]}
-                </div>
-              )}
-            </motion.div>
-          </div>
-
-          <div className="relative bg-gradient-to-br from-primary via-primary/80 to-accent py-4 px-6">
-            <DialogHeader>
-              <DialogTitle className="text-center text-primary-foreground text-base font-semibold">Mon Profil</DialogTitle>
-            </DialogHeader>
-          </div>
-
-          <div className="flex flex-col items-center px-5 pb-6">
-            <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="text-center mt-4">
-              <h2 className="text-xl font-bold text-foreground">{eleve.prenom} {eleve.nom}</h2>
-              {eleve.classes?.nom && (
-                <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
-                  <GraduationCap className="h-3.5 w-3.5" />
-                  {eleve.classes.nom}
-                </span>
-              )}
-            </motion.div>
-
-            <motion.div initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="w-full mt-5 space-y-2">
               {eleve.matricule && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <Hash className="h-4 w-4 text-primary" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <span className="text-sm font-bold text-primary">#</span>
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Matricule</p>
-                    <p className="text-sm font-bold text-foreground">{eleve.matricule}</p>
+                    <p className="text-sm font-bold text-foreground truncate">{eleve.matricule}</p>
                   </div>
                 </div>
               )}
               {eleve.date_naissance && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
-                  <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                    <Calendar className="h-4 w-4 text-accent" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                    <span className="text-sm">🎂</span>
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Date de naissance</p>
-                    <p className="text-sm font-bold text-foreground">{new Date(eleve.date_naissance).toLocaleDateString('fr-FR')}</p>
+                    <p className="text-sm font-bold text-foreground">{new Date(eleve.date_naissance).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                   </div>
                 </div>
               )}
               {eleve.sexe && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
-                  <div className="w-9 h-9 rounded-full bg-secondary/10 flex items-center justify-center shrink-0">
-                    <User className="h-4 w-4 text-secondary" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center shrink-0">
+                    <span className="text-sm">{eleve.sexe === 'M' ? '👦' : '👧'}</span>
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Sexe</p>
                     <p className="text-sm font-bold text-foreground">{eleve.sexe === 'M' ? 'Masculin' : 'Féminin'}</p>
                   </div>
                 </div>
               )}
+              {eleve.classes?.niveaux?.nom && (
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <GraduationCap className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Niveau</p>
+                    <p className="text-sm font-bold text-foreground">{eleve.classes.niveaux.nom}</p>
+                  </div>
+                </div>
+              )}
             </motion.div>
 
-            {/* ─── Mes Matières (decorative blocks) ─── */}
-            {matieres.length > 0 && (
-              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="w-full mt-5">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3 flex items-center gap-1.5">
-                  <BookOpen className="h-3.5 w-3.5" /> Mes Matières
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {(() => {
-                    const matColors = [
-                      'from-blue-500 to-blue-600',
-                      'from-emerald-500 to-emerald-600',
-                      'from-amber-500 to-amber-600',
-                      'from-rose-500 to-rose-600',
-                      'from-violet-500 to-violet-600',
-                      'from-indigo-500 to-indigo-600',
-                      'from-pink-500 to-pink-600',
-                      'from-teal-500 to-teal-600',
-                      'from-orange-500 to-orange-600',
-                      'from-cyan-500 to-cyan-600',
-                    ];
-                    const matEmojis = ['📐', '📖', '🔬', '🌍', '🇬🇧', '🎨', '⚽', '💻', '🎵', '📊', '🧪', '📝', '🧮', '🏛️', '🌱'];
-                    return matieres.map((m: any, i: number) => {
-                      const nom = m.matieres?.nom || 'Matière';
-                      const coeff = m.matieres?.coefficient;
-                      const color = matColors[i % matColors.length];
-                      const emoji = matEmojis[i % matEmojis.length];
-                      return (
-                        <motion.div
-                          key={m.id}
-                          initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          transition={{ delay: 0.35 + i * 0.04, type: 'spring', damping: 18 }}
-                          className="relative overflow-hidden rounded-2xl p-3 shadow-md"
-                        >
-                          <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-90`} />
-                          <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-white/10" />
-                          <div className="absolute -bottom-2 -left-2 w-8 h-8 rounded-full bg-white/5" />
-                          <div className="relative z-10">
-                            <span className="text-lg drop-shadow-md">{emoji}</span>
-                            <p className="text-xs font-bold text-white leading-tight mt-1 drop-shadow-sm">{nom}</p>
-                            {coeff && <p className="text-[10px] text-white/70 mt-0.5">Coeff. {coeff}</p>}
-                          </div>
-                        </motion.div>
-                      );
-                    });
-                  })()}
-                </div>
-              </motion.div>
-            )}
+            {/* Quick actions */}
+            <motion.div
+              initial={{ y: 15, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.25 }}
+              className="mt-3 flex gap-2"
+            >
+              <Button variant="outline" className="flex-1 rounded-xl h-11 text-xs font-semibold gap-1.5" onClick={() => { setProfileOpen(false); navigate('/eleve/resultats'); }}>
+                <Award className="h-4 w-4" /> Mes résultats
+              </Button>
+              <Button variant="outline" className="flex-1 rounded-xl h-11 text-xs font-semibold gap-1.5 text-destructive hover:text-destructive" onClick={() => { setProfileOpen(false); handleLogout(); }}>
+                <LogOut className="h-4 w-4" /> Déconnexion
+              </Button>
+            </motion.div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* ─── Photo Zoom Dialog ─── */}
+      {/* ─── Photo Zoom ─── */}
       <AnimatePresence>
         {photoZoom && eleve.photo_url && (
           <Dialog open={photoZoom} onOpenChange={setPhotoZoom}>
@@ -267,7 +239,7 @@ export function StudentLayout({ children }: { children: ReactNode }) {
                 alt={`${eleve.prenom} ${eleve.nom}`}
                 initial={{ scale: 0.7, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+                transition={{ type: 'spring', damping: 20 }}
                 className="w-full h-auto max-h-[70vh] object-contain rounded-2xl"
               />
               <p className="text-center text-white/80 text-sm font-medium mt-2">{eleve.prenom} {eleve.nom}</p>
@@ -327,12 +299,9 @@ export function StudentLayout({ children }: { children: ReactNode }) {
                           isActive ? 'ring-2 ring-primary shadow-xl' : 'shadow-md hover:shadow-lg'
                         }`}
                       >
-                        {/* Gradient background */}
                         <div className={`absolute inset-0 bg-gradient-to-br ${game.color} opacity-90`} />
-                        {/* Decorative shape */}
                         <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-white/10" />
                         <div className="absolute -bottom-2 -left-2 w-10 h-10 rounded-full bg-white/5" />
-
                         <div className="relative z-10 flex flex-col gap-2">
                           <motion.span
                             className="text-3xl drop-shadow-md"
@@ -345,7 +314,6 @@ export function StudentLayout({ children }: { children: ReactNode }) {
                             {game.label}
                           </span>
                         </div>
-
                         {isActive && (
                           <motion.div
                             layoutId="activeGameDot"
@@ -362,29 +330,14 @@ export function StudentLayout({ children }: { children: ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* ─── Bottom Nav ─── */}
+      {/* ─── Bottom Nav — Material 3 pill style ─── */}
       <nav className="fixed bottom-0 left-0 right-0 z-30 safe-area-bottom">
-        <div className="max-w-4xl mx-auto px-2 pb-2">
-          <div className="relative overflow-hidden rounded-2xl bg-card/95 backdrop-blur-xl shadow-[0_-4px_24px_rgba(0,0,0,0.12)] border border-border/50">
-            {/* Decorative shapes */}
-            <div className="absolute -top-6 -left-6 w-16 h-16 rounded-full bg-primary/5" />
-            <div className="absolute -bottom-4 -right-4 w-12 h-12 rounded-full bg-accent/5" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-8 rounded-full bg-primary/3 blur-xl" />
-
-            <div className="relative z-10 flex items-center py-1.5 px-1">
-              {NAV_ITEMS.map((item, idx) => {
+        <div className="max-w-4xl mx-auto px-3 pb-2">
+          <div className="relative overflow-hidden rounded-[20px] bg-card/95 backdrop-blur-xl shadow-[0_-2px_20px_rgba(0,0,0,0.1)] border border-border/40">
+            <div className="relative z-10 flex items-center py-1 px-0.5">
+              {NAV_ITEMS.map((item) => {
                 const isGames = item.path === '__games__';
                 const isActive = isGames ? isGameRoute || gamesOpen : location.pathname === item.path;
-
-                const navColors = [
-                  'from-blue-500 to-blue-600',
-                  'from-emerald-500 to-emerald-600',
-                  'from-amber-500 to-amber-600',
-                  'from-rose-500 to-rose-600',
-                  'from-violet-500 to-violet-600',
-                  'from-primary to-accent',
-                ];
-                const activeGradient = navColors[idx % navColors.length];
 
                 return (
                   <motion.button
@@ -398,37 +351,25 @@ export function StudentLayout({ children }: { children: ReactNode }) {
                         navigate(item.path);
                       }
                     }}
-                    className="flex-1 flex flex-col items-center gap-0.5 py-1.5 relative"
+                    className="flex-1 flex flex-col items-center gap-0.5 py-2 relative"
                   >
-                    <div className="relative">
-                      {isActive && (
-                        <motion.div
-                          layoutId="navActiveIndicator"
-                          className={`absolute inset-0 -m-1 rounded-xl bg-gradient-to-br ${activeGradient} opacity-15`}
-                          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        />
+                    <motion.div
+                      className={`flex items-center justify-center w-14 h-8 rounded-2xl transition-all duration-300 ${
+                        isActive ? 'bg-primary/12' : ''
+                      }`}
+                    >
+                      <item.icon className={`h-[18px] w-[18px] transition-all duration-200 ${
+                        isActive ? 'text-primary' : 'text-muted-foreground'
+                      }`} />
+                      {isGames && isGameRoute && (
+                        <span className="absolute top-1 right-1/4 w-2 h-2 rounded-full bg-primary ring-2 ring-card" />
                       )}
-                      <div className={`relative flex items-center justify-center w-10 h-7 rounded-xl transition-all duration-200`}>
-                        <item.icon className={`h-[18px] w-[18px] transition-colors duration-200 ${
-                          isActive ? 'text-primary' : 'text-muted-foreground'
-                        }`} />
-                        {isGames && isGameRoute && (
-                          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary ring-2 ring-card" />
-                        )}
-                      </div>
-                    </div>
-                    <span className={`text-[10px] leading-tight transition-colors duration-200 ${
+                    </motion.div>
+                    <span className={`text-[10px] leading-tight transition-all duration-200 ${
                       isActive ? 'text-primary font-bold' : 'text-muted-foreground font-medium'
                     }`}>
                       {item.label}
                     </span>
-                    {isActive && (
-                      <motion.div
-                        layoutId="navDot"
-                        className="w-1 h-1 rounded-full bg-primary mt-0.5"
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                      />
-                    )}
                   </motion.button>
                 );
               })}
