@@ -118,7 +118,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   };
 
   const toggleSelectAll = () => {
-    const eligible = filteredEleves.filter((e: any) => !hasRechargeThisMonth(e.id));
+    const eligible = filteredEleves.filter((e: any) => !hasRechargeThisMonth(e.id) && hasTransportPaidThisMonth(e.id));
     if (selectedIds.size === eligible.length) {
       setSelectedIds(new Set());
     } else {
