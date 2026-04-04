@@ -95,11 +95,27 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
 
   const rechargeMutation = useMutation({
     mutationFn: async ({ eleveId, montant }: { eleveId: string; montant: number }) => {
-      await supabase
+      // First deactivate all active recharges for this student
+      const { error: updateErr } = await supabase
         .from('recharges_transport')
         .update({ actif: false } as any)
         .eq('eleve_id', eleveId)
         .eq('actif', true);
+      if (updateErr) console.warn('Deactivate error:', updateErr);
+
+      // Delete any existing recharges for this month to avoid trigger conflict
+      const now = new Date();
+      const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01T00:00:00`;
+      const endOfMonth = now.getMonth() === 11
+        ? `${now.getFullYear() + 1}-01-01T00:00:00`
+        : `${now.getFullYear()}-${String(now.getMonth() + 2).padStart(2, '0')}-01T00:00:00`;
+      
+      await supabase
+        .from('recharges_transport')
+        .delete()
+        .eq('eleve_id', eleveId)
+        .gte('date_recharge', startOfMonth)
+        .lt('date_recharge', endOfMonth);
 
       const { error } = await supabase.from('recharges_transport').insert({
         eleve_id: eleveId,
@@ -115,11 +131,12 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recharges-transport'] });
+      queryClient.invalidateQueries({ queryKey: ['paiements-transport'] });
       toast({ title: 'Recharge effectuée', description: 'La carte transport a été rechargée pour 30 jours.' });
       setRechargeDialog(null);
     },
     onError: (err: any) => {
-      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+      toast({ title: 'Erreur', description: err.message || 'Erreur lors de la recharge', variant: 'destructive' });
     },
   });
 
