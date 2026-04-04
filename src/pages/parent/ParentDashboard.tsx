@@ -252,8 +252,8 @@ export default function ParentDashboard() {
                 <Badge variant="secondary" className="text-[10px] ml-auto rounded-full">{eleves.length}</Badge>
               </h2>
 
-              {/* Hidden file input for photo upload */}
-              <input ref={photoInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoUpload} />
+      {/* Hidden file input for parent photo upload */}
+              <input ref={photoInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleParentPhotoUpload} />
 
               <div className="grid grid-cols-3 gap-2.5">
                 {eleves.map((enfant: any, i: number) => (
