@@ -28,7 +28,6 @@ const TABS = [
   { key: 'emploi', label: 'Emploi', icon: Calendar, gradient: 'from-emerald-500 to-green-600', emoji: '📅' },
   { key: 'commandes', label: 'Commandes', icon: Package, gradient: 'from-purple-500 to-violet-600', emoji: '📦' },
   { key: 'cantine', label: 'Cantine', icon: UtensilsCrossed, gradient: 'from-rose-500 to-pink-600', emoji: '🍽️' },
-  { key: 'fournitures', label: 'Achats', icon: BookOpen, gradient: 'from-amber-500 to-yellow-600', emoji: '📚' },
   { key: 'bulletins', label: 'Bulletins', icon: FileText, gradient: 'from-teal-500 to-cyan-600', emoji: '🎓' },
   { key: 'profil', label: 'Profil', icon: BarChart3, gradient: 'from-indigo-500 to-blue-600', emoji: '📊' },
 ];
