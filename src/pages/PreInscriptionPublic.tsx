@@ -462,17 +462,19 @@ export default function PreInscriptionPublic() {
           </Card>
 
           {/* Documents à fournir */}
-          <Card>
-            <CardHeader>
+          <Card className="border-secondary/10 shadow-lg shadow-secondary/5 rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-secondary/10 to-transparent border-b border-secondary/10 pb-4">
               <CardTitle className="text-lg flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
+                <div className="w-8 h-8 rounded-lg bg-secondary/15 flex items-center justify-center">
+                  <FileText className="h-4 w-4 text-secondary-foreground" />
+                </div>
                 Dossier à fournir
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 Scannez ou prenez en photo chaque document.
               </p>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 pt-5">
               {DOCUMENTS_REQUIS.map((doc) => {
                 const uploaded = getDocForKey(doc.key);
                 return (
