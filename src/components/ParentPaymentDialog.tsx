@@ -112,6 +112,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
       setManuelPurpose(''); setManuelMontant(''); setDebitType(''); setDebitMontant('');
       setCart([]); setCantineMontant(CANTINE_MENSUEL.toString());
       setCantineSelectedIds(isSingle ? [enfants[0]?.id || ''] : []);
+      setTransportSelectedIds(isSingle ? [enfants[0]?.id || ''] : []);
     }
   }, [open, initialMode]);
 
