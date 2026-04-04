@@ -13,10 +13,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface PaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  enfants: Array<{ id: string; nom: string; prenom: string; classes?: any; solde_cantine?: number; photo_url?: string }>;
+  enfants: Array<{ id: string; nom: string; prenom: string; classes?: any; solde_cantine?: number; photo_url?: string; option_cantine?: boolean; zone_transport_id?: string; zones_transport?: any }>;
   code: string;
   onSuccess?: () => void;
   soldeFamille?: number;
+  initialMode?: 'mobile-wallet';
 }
 
 const TYPE_OPTIONS = [
