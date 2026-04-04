@@ -265,9 +265,9 @@ export default function Transport() {
       {isChauffeur ? (
         <ChauffeurDashboard />
       ) : (
-      <Tabs defaultValue={initialTab}>
+      <Tabs defaultValue={initialTab === 'zones' ? 'dashboard' : initialTab}>
         <TabsList className="flex-wrap h-auto gap-1">
-          <TabsTrigger value="zones">Zones</TabsTrigger>
+          <TabsTrigger value="dashboard" className="gap-1"><LayoutDashboard className="h-3.5 w-3.5" /> Tableau de bord</TabsTrigger>
           <TabsTrigger value="eleves">Élèves</TabsTrigger>
           <TabsTrigger value="itineraires" className="gap-1"><Route className="h-3.5 w-3.5" /> Itinéraires</TabsTrigger>
           <TabsTrigger value="cartes" className="gap-1"><CreditCard className="h-3.5 w-3.5" /> Cartes</TabsTrigger>
