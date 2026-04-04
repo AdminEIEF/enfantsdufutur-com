@@ -69,7 +69,7 @@ export default function ParentDashboard() {
 
   if (!session) { navigate('/parent', { replace: true }); return null; }
 
-  const famille = session.famille;
+  const famille = { ...session.famille, photo_url: dashData?.famille_photo_url || session.famille.photo_url };
   const eleves = dashData?.eleves || session.eleves;
   const paiements = dashData?.paiements || [];
 
