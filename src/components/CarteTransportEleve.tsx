@@ -444,10 +444,11 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Recharger la carte transport</DialogTitle></DialogHeader>
           {rechargeDialog && (
-            <div className="space-y-4">
+          <div className="space-y-4">
               <div className="text-sm space-y-1">
                 <p><strong>Élève :</strong> {rechargeDialog.prenom} {rechargeDialog.nom}</p>
                 <p><strong>Zone :</strong> {(rechargeDialog.zones_transport as any)?.nom}</p>
+                <p><strong>Description :</strong> Transport du mois de {moisCourant} {anneeCourante}</p>
                 <p><strong>Validité :</strong> 30 jours à partir d'aujourd'hui</p>
               </div>
               {hasRechargeThisMonth(rechargeDialog.id) && (
