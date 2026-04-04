@@ -8,6 +8,7 @@ interface ParentFamille {
   email_parent: string | null;
   adresse: string | null;
   code_acces: string;
+  photo_url?: string | null;
 }
 
 interface ParentEleve {

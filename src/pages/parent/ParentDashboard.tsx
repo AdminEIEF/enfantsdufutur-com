@@ -34,7 +34,7 @@ export default function ParentDashboard() {
   const [familyDetailsOpen, setFamilyDetailsOpen] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
-  const [selectedChildForPhoto, setSelectedChildForPhoto] = useState<string | null>(null);
+  const [paymentInitMode, setPaymentInitMode] = useState<'select' | 'wallet-recharge' | null>(null);
 
   useEffect(() => {
     if (!session) return;
