@@ -150,7 +150,11 @@ function ZonesTab() {
           <DialogHeader><DialogTitle>{editId ? 'Modifier' : 'Ajouter'} une zone</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Nom *</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Petit trajet / Long trajet" /></div>
-            <div><Label>Prix mensuel (GNF) *</Label><Input type="number" value={prixMensuel} onChange={e => setPrixMensuel(Number(e.target.value))} placeholder="Ex: 300000" min={0} /></div>
+            <div><Label>Prix aller-retour mensuel (GNF) *</Label><Input type="number" value={prixMensuel} onChange={e => setPrixMensuel(Number(e.target.value))} placeholder="Ex: 300000" min={0} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Prix aller simple (GNF)</Label><Input type="number" value={prixAllerSimple} onChange={e => setPrixAllerSimple(Number(e.target.value))} placeholder="Ex: 200000" min={0} /></div>
+              <div><Label>Prix retour simple (GNF)</Label><Input type="number" value={prixRetourSimple} onChange={e => setPrixRetourSimple(Number(e.target.value))} placeholder="Ex: 200000" min={0} /></div>
+            </div>
             <div><Label>Quartiers (séparés par virgules)</Label><Input value={quartiersInput} onChange={e => setQuartiersInput(e.target.value)} placeholder="Quartier A, Quartier B" /></div>
           </div>
           <p className="text-xs text-muted-foreground mt-2">💡 Pour assigner un chauffeur, allez dans l'onglet <strong>Assignation</strong> après avoir créé un véhicule lié à cette zone.</p>
