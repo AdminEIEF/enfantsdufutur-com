@@ -383,9 +383,25 @@ export default function StudentCompositions() {
     </Dialog>
   );
 
+  // Floating timer component - always visible
+  const FloatingTimer = () => {
+    const isUrgent = timeLeft < 60;
+    const isWarning = timeLeft < 180 && timeLeft >= 60;
+    return (
+      <div className={`fixed top-2 right-2 z-50 flex items-center gap-2 px-4 py-2 rounded-2xl shadow-lg border font-mono text-lg font-bold backdrop-blur-md transition-all ${
+        isUrgent ? 'bg-destructive/90 text-destructive-foreground border-destructive animate-pulse' 
+        : isWarning ? 'bg-orange-500/90 text-white border-orange-400'
+        : 'bg-primary/90 text-primary-foreground border-primary/50'
+      }`}>
+        <Timer className="h-5 w-5" />
+        {formatTime(timeLeft)}
+        {violations > 0 && <Badge variant="destructive" className="text-xs ml-1">⚠️ {violations}/2</Badge>}
+      </div>
+    );
+  };
+
   // Active exam view - Document type
   if (activeComp && activeType === 'document') {
-    const isUrgent = timeLeft < 60;
     const sujetUrl = activeSujet?.url || '';
     const isPdf = sujetUrl.toLowerCase().includes('.pdf');
     const viewerUrl = isPdf
@@ -395,6 +411,7 @@ export default function StudentCompositions() {
     return (
       <StudentLayout>
         {violationWarningDialog}
+        <FloatingTimer />
         <div className="flex flex-col h-[calc(100vh-80px)] exam-secure-content">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
@@ -403,16 +420,9 @@ export default function StudentCompositions() {
               <p className="text-sm text-muted-foreground">{activeComp.matieres?.nom} • /{activeComp.bareme}</p>
             </div>
             <div className="flex items-center gap-2">
-              {violations > 0 && (
-                <Badge variant="destructive" className="text-xs">⚠️ {violations}/2</Badge>
-              )}
               <Badge variant="outline" className="text-xs gap-1">
                 <ShieldAlert className="h-3 w-3" /> Surveillé
               </Badge>
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-lg font-bold ${isUrgent ? 'bg-destructive/10 text-destructive animate-pulse' : 'bg-primary/10 text-primary'}`}>
-                <Timer className="h-5 w-5" />
-                {formatTime(timeLeft)}
-              </div>
             </div>
           </div>
 
@@ -498,10 +508,10 @@ export default function StudentCompositions() {
               </div>
 
               {/* Submit */}
-              <div className="sticky bottom-0 z-30 px-4 py-3 border-t bg-background shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
-                <Button className="w-full" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-                  Soumettre ma réponse
+              <div className="fixed bottom-0 left-0 right-0 z-40 px-4 py-3 border-t bg-background/95 backdrop-blur-md shadow-[0_-4px_16px_rgba(0,0,0,0.15)]">
+                <Button className="w-full h-12 text-base font-bold" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
+                  {submitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Send className="h-5 w-5 mr-2" />}
+                  ✅ Soumettre ma réponse
                 </Button>
               </div>
             </div>
@@ -515,29 +525,20 @@ export default function StudentCompositions() {
   if (activeComp && activeType === 'texte') {
     const progress = activeQuestions.length > 0
       ? (Object.keys(answers).filter(k => answers[k]?.trim()).length / activeQuestions.length) * 100 : 0;
-    const isUrgent = timeLeft < 60;
 
     return (
       <StudentLayout>
         {violationWarningDialog}
-        <div className="max-w-3xl mx-auto space-y-4 p-4 exam-secure-content">
-          <div className="flex items-center justify-between sticky top-0 z-10 bg-background py-3 border-b">
+        <FloatingTimer />
+        <div className="max-w-3xl mx-auto space-y-4 p-4 pb-24 exam-secure-content">
+          <div className="flex items-center justify-between py-3 border-b">
             <div>
               <h2 className="font-bold text-lg">{activeComp.titre}</h2>
               <p className="text-sm text-muted-foreground">{activeComp.matieres?.nom} • /{activeComp.bareme}</p>
             </div>
-            <div className="flex items-center gap-2">
-              {violations > 0 && (
-                <Badge variant="destructive" className="text-xs">⚠️ {violations}/2</Badge>
-              )}
-              <Badge variant="outline" className="text-xs gap-1">
-                <ShieldAlert className="h-3 w-3" /> Surveillé
-              </Badge>
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-lg font-bold ${isUrgent ? 'bg-destructive/10 text-destructive animate-pulse' : 'bg-primary/10 text-primary'}`}>
-                <Timer className="h-5 w-5" />
-                {formatTime(timeLeft)}
-              </div>
-            </div>
+            <Badge variant="outline" className="text-xs gap-1">
+              <ShieldAlert className="h-3 w-3" /> Surveillé
+            </Badge>
           </div>
 
           <Progress value={progress} className="h-2" />
@@ -602,11 +603,14 @@ export default function StudentCompositions() {
             </CardContent>
           </Card>
 
-          <div className="sticky bottom-0 z-30 bg-background py-4 px-2 border-t shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
-            <Button className="w-full" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-              Soumettre la composition
-            </Button>
+          {/* Fixed bottom submit bar */}
+          <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md py-3 px-4 border-t shadow-[0_-4px_16px_rgba(0,0,0,0.15)]">
+            <div className="max-w-3xl mx-auto">
+              <Button className="w-full h-12 text-base font-bold" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
+                {submitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Send className="h-5 w-5 mr-2" />}
+                ✅ Soumettre la composition
+              </Button>
+            </div>
           </div>
         </div>
       </StudentLayout>
@@ -617,29 +621,20 @@ export default function StudentCompositions() {
   if (activeComp) {
     const progress = activeQuestions.length > 0
       ? (Object.keys(answers).length / activeQuestions.length) * 100 : 0;
-    const isUrgent = timeLeft < 60;
 
     return (
       <StudentLayout>
         {violationWarningDialog}
-        <div className="max-w-3xl mx-auto space-y-4 p-4 exam-secure-content">
-          <div className="flex items-center justify-between sticky top-0 z-10 bg-background py-3 border-b">
+        <FloatingTimer />
+        <div className="max-w-3xl mx-auto space-y-4 p-4 pb-24 exam-secure-content">
+          <div className="flex items-center justify-between py-3 border-b">
             <div>
               <h2 className="font-bold text-lg">{activeComp.titre}</h2>
-              <p className="text-sm text-muted-foreground">{activeComp.matieres?.nom}</p>
+              <p className="text-sm text-muted-foreground">{activeComp.matieres?.nom} • /{activeComp.bareme}</p>
             </div>
-            <div className="flex items-center gap-2">
-              {violations > 0 && (
-                <Badge variant="destructive" className="text-xs">⚠️ {violations}/2</Badge>
-              )}
-              <Badge variant="outline" className="text-xs gap-1">
-                <ShieldAlert className="h-3 w-3" /> Surveillé
-              </Badge>
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-lg font-bold ${isUrgent ? 'bg-destructive/10 text-destructive animate-pulse' : 'bg-primary/10 text-primary'}`}>
-                <Timer className="h-5 w-5" />
-                {formatTime(timeLeft)}
-              </div>
-            </div>
+            <Badge variant="outline" className="text-xs gap-1">
+              <ShieldAlert className="h-3 w-3" /> Surveillé
+            </Badge>
           </div>
 
           <Progress value={progress} className="h-2" />
@@ -669,11 +664,14 @@ export default function StudentCompositions() {
             ))}
           </div>
 
-          <div className="sticky bottom-0 z-30 bg-background py-4 px-2 border-t shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
-            <Button className="w-full" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-              Soumettre la composition
-            </Button>
+          {/* Fixed bottom submit bar */}
+          <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md py-3 px-4 border-t shadow-[0_-4px_16px_rgba(0,0,0,0.15)]">
+            <div className="max-w-3xl mx-auto">
+              <Button className="w-full h-12 text-base font-bold" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
+                {submitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <CheckCircle2 className="h-5 w-5 mr-2" />}
+                ✅ Soumettre ma composition
+              </Button>
+            </div>
           </div>
         </div>
       </StudentLayout>
