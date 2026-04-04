@@ -262,6 +262,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
     if (activeMode === 'select') return 'Paiements';
     if (activeMode === 'mobile') return 'Mobile Money';
     if (walletSubMode === 'cantine') return 'Recharge Cantine';
+    if (walletSubMode === 'transport') return 'Transport Scolaire';
     if (walletSubMode === 'catalogue') return catalogueType === 'librairie' ? 'Librairie' : 'Boutique';
     if (walletSubMode === 'debit') return 'Payer un service';
     return 'Portefeuille';
