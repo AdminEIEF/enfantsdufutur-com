@@ -214,7 +214,7 @@ export default function ParentDashboard() {
               ))}
             </motion.div>
 
-            {/* ─── Children Cards with Photos ─── */}
+            {/* ─── Children Gallery ─── */}
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-3">
               <h2 className="font-bold flex items-center gap-2 text-sm sm:text-base">
                 <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -224,82 +224,55 @@ export default function ParentDashboard() {
                 <Badge variant="secondary" className="text-[10px] ml-auto rounded-full">{eleves.length}</Badge>
               </h2>
 
-              {/* Photo gallery strip */}
-              {eleves.length > 0 && (
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
-                  {eleves.map((enfant: any, i: number) => (
-                    <motion.button
-                      key={enfant.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 + i * 0.06 }}
-                      onClick={() => navigate(`/parent/enfant/${enfant.id}`)}
-                      className="flex flex-col items-center gap-1.5 shrink-0 group"
-                    >
-                      <div className="relative">
-                        {enfant.photo_url ? (
-                          <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover shadow-lg ring-2 ring-border/40 group-hover:ring-primary/60 transition-all group-active:scale-95" />
-                        ) : (
-                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/30 flex items-center justify-center text-primary font-bold text-lg shadow-lg ring-2 ring-border/40 group-hover:ring-primary/60 transition-all group-active:scale-95">
-                            {enfant.prenom[0]}{enfant.nom[0]}
-                          </div>
-                        )}
-                        {enfant.option_cantine && (
-                          <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-md">
-                            <UtensilsCrossed className="h-2.5 w-2.5 text-white" />
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] font-semibold text-center leading-tight max-w-[72px] truncate">{enfant.prenom}</p>
-                      <p className="text-[9px] text-muted-foreground truncate max-w-[72px]">{enfant.classes?.nom}</p>
-                    </motion.button>
-                  ))}
-                </div>
-              )}
-
-              {/* Detailed child cards */}
-              {eleves.map((enfant: any, i: number) => (
-                <motion.div key={enfant.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 + i * 0.05 }}>
-                  <Card
-                    className="cursor-pointer border-0 shadow-md rounded-2xl hover:shadow-lg transition-all active:scale-[0.98] overflow-hidden"
-                    onClick={() => navigate(`/parent/enfant/${enfant.id}`)}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {eleves.map((enfant: any, i: number) => (
+                  <motion.div
+                    key={enfant.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2 + i * 0.06 }}
                   >
-                    <CardContent className="p-0">
-                      <div className="flex items-center gap-3 p-3.5 sm:p-4">
-                        {enfant.photo_url ? (
-                          <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-12 h-12 rounded-2xl object-cover shadow-md shrink-0 ring-2 ring-border/50" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary font-bold text-sm shrink-0 shadow-md">
-                            {enfant.prenom[0]}{enfant.nom[0]}
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm truncate">{enfant.prenom} {enfant.nom}</p>
-                          <p className="text-[11px] text-muted-foreground truncate">
-                            {enfant.classes?.niveaux?.cycles?.nom} — {enfant.classes?.niveaux?.nom} — {enfant.classes?.nom}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <Card
+                      className="cursor-pointer border-0 shadow-lg rounded-2xl hover:shadow-xl transition-all active:scale-[0.97] overflow-hidden group"
+                      onClick={() => navigate(`/parent/enfant/${enfant.id}`)}
+                    >
+                      <CardContent className="p-0">
+                        {/* Photo section */}
+                        <div className="relative h-28 sm:h-32 bg-gradient-to-br from-primary/15 to-accent/20 overflow-hidden">
+                          {enfant.photo_url ? (
+                            <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <span className="text-4xl font-extrabold text-primary/30">{enfant.prenom[0]}{enfant.nom[0]}</span>
+                            </div>
+                          )}
+                          {/* Badges overlay */}
+                          <div className="absolute top-2 right-2 flex gap-1">
                             {enfant.option_cantine && (
-                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-medium">
-                                <UtensilsCrossed className="h-2.5 w-2.5" />
-                                {(enfant.solde_cantine || 0).toLocaleString()}
+                              <span className="w-6 h-6 rounded-full bg-emerald-500/90 backdrop-blur flex items-center justify-center shadow-md">
+                                <UtensilsCrossed className="h-3 w-3 text-white" />
                               </span>
                             )}
                             {enfant.zone_transport_id && (
-                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-medium">
-                                <Bus className="h-2.5 w-2.5" /> Transport
+                              <span className="w-6 h-6 rounded-full bg-amber-500/90 backdrop-blur flex items-center justify-center shadow-md">
+                                <Bus className="h-3 w-3 text-white" />
                               </span>
                             )}
                           </div>
                         </div>
-                        <div className="shrink-0 w-8 h-8 rounded-xl bg-muted/60 flex items-center justify-center">
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        {/* Info */}
+                        <div className="px-3 py-2.5 flex items-center justify-between gap-1">
+                          <div className="min-w-0">
+                            <p className="font-bold text-sm truncate">{enfant.prenom}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{enfant.classes?.niveaux?.nom} — {enfant.classes?.nom}</p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
             </motion.div>
 
             {/* Catalogue & Commande */}
@@ -310,15 +283,15 @@ export default function ParentDashboard() {
 
             {/* ─── Payment Tabs ─── */}
             <Tabs defaultValue="devis">
-              <TabsList className="w-full grid grid-cols-3 h-10 rounded-2xl bg-muted/60 p-1">
-                <TabsTrigger value="devis" className="rounded-xl text-xs font-bold data-[state=active]:shadow-md">
-                  <FileText className="h-3.5 w-3.5 mr-1" /> Devis
+              <TabsList className="w-full grid grid-cols-3 h-12 rounded-2xl bg-muted/50 p-1.5 gap-1">
+                <TabsTrigger value="devis" className="rounded-xl text-xs font-bold data-[state=active]:shadow-lg data-[state=active]:bg-card gap-1.5 transition-all">
+                  <FileText className="h-4 w-4" /> Devis
                 </TabsTrigger>
-                <TabsTrigger value="historique" className="rounded-xl text-xs font-bold data-[state=active]:shadow-md">
-                  <CreditCard className="h-3.5 w-3.5 mr-1" /> Hist.
+                <TabsTrigger value="historique" className="rounded-xl text-xs font-bold data-[state=active]:shadow-lg data-[state=active]:bg-card gap-1.5 transition-all">
+                  <CreditCard className="h-4 w-4" /> Historique
                 </TabsTrigger>
-                <TabsTrigger value="echeancier" className="rounded-xl text-xs font-bold data-[state=active]:shadow-md">
-                  <TrendingDown className="h-3.5 w-3.5 mr-1" /> Éch.
+                <TabsTrigger value="echeancier" className="rounded-xl text-xs font-bold data-[state=active]:shadow-lg data-[state=active]:bg-card gap-1.5 transition-all">
+                  <TrendingDown className="h-4 w-4" /> Échéancier
                 </TabsTrigger>
               </TabsList>
 
@@ -338,25 +311,39 @@ export default function ParentDashboard() {
                   <div className="space-y-2">
                     {paiements.slice(0, 20).map((p: any) => {
                       const enfant = eleves.find((e: any) => e.id === p.eleve_id);
-                      const typeEmojis: Record<string, string> = { scolarite: '🎓', transport: '🚌', cantine: '🍽️', fournitures: '📚', librairie: '📚', boutique: '👕', inscription: '📝', reinscription: '🔄' };
+                      const typeConfig: Record<string, { emoji: string; gradient: string }> = {
+                        scolarite: { emoji: '🎓', gradient: 'from-blue-500 to-indigo-600' },
+                        transport: { emoji: '🚌', gradient: 'from-amber-500 to-orange-600' },
+                        cantine: { emoji: '🍽️', gradient: 'from-emerald-500 to-teal-600' },
+                        fournitures: { emoji: '📚', gradient: 'from-purple-500 to-violet-600' },
+                        librairie: { emoji: '📚', gradient: 'from-purple-500 to-violet-600' },
+                        boutique: { emoji: '👕', gradient: 'from-pink-500 to-rose-600' },
+                        inscription: { emoji: '📝', gradient: 'from-cyan-500 to-blue-600' },
+                        reinscription: { emoji: '🔄', gradient: 'from-cyan-500 to-blue-600' },
+                      };
+                      const cfg = typeConfig[p.type_paiement] || { emoji: '📦', gradient: 'from-gray-500 to-gray-600' };
                       return (
-                        <Card key={p.id} className="border-0 shadow-sm rounded-2xl hover:shadow-md transition-shadow">
-                          <CardContent className="py-3 px-4 flex items-center justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <p className="text-xs sm:text-sm font-semibold truncate">
-                                  {typeEmojis[p.type_paiement] || '📦'} {p.type_paiement}
-                                  {p.type_paiement === 'cantine' && p.mois_concerne === 'Recharge directe' && ' (directe)'}
-                                  {p.type_paiement === 'cantine' && p.mois_concerne === 'Recharge ordonnée' && ' (ordonnée ✓)'}
-                                  {p.mois_concerne && !p.mois_concerne.startsWith('Recharge') && ` — ${p.mois_concerne}`}
-                                </p>
-                                {enfant && <Badge variant="outline" className="text-[10px] px-1.5 rounded-full">{enfant.prenom}</Badge>}
+                        <Card key={p.id} className="border-0 shadow-md rounded-2xl overflow-hidden hover:shadow-lg transition-all">
+                          <CardContent className="p-0">
+                            <div className="flex items-center gap-3 p-3.5">
+                              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${cfg.gradient} flex items-center justify-center text-lg shrink-0 shadow-md`}>
+                                {cfg.emoji}
                               </div>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">
-                                {new Date(p.date_paiement).toLocaleDateString('fr-FR')} • {p.canal}
-                              </p>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-sm font-bold truncate capitalize">{p.type_paiement}</p>
+                                  {enfant && <Badge variant="secondary" className="text-[9px] px-1.5 rounded-full shrink-0">{enfant.prenom}</Badge>}
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  {new Date(p.date_paiement).toLocaleDateString('fr-FR')} • {p.canal}
+                                  {p.mois_concerne && !p.mois_concerne.startsWith('Recharge') && ` • ${p.mois_concerne}`}
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="font-extrabold text-emerald-600 text-sm">{p.montant.toLocaleString()}</p>
+                                <p className="text-[9px] text-muted-foreground font-medium">GNF</p>
+                              </div>
                             </div>
-                            <span className="font-extrabold text-emerald-600 text-xs sm:text-sm whitespace-nowrap shrink-0">{p.montant.toLocaleString()} GNF</span>
                           </CardContent>
                         </Card>
                       );
@@ -365,47 +352,46 @@ export default function ParentDashboard() {
                 )}
               </TabsContent>
 
-              <TabsContent value="echeancier" className="mt-4">
-                <Card className="border-0 shadow-md rounded-2xl overflow-hidden">
-                  <CardContent className="p-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/40">
-                          <TableHead className="text-xs font-bold">Mois</TableHead>
-                          <TableHead className="text-right text-xs font-bold">Scolarité</TableHead>
-                          <TableHead className="text-right text-xs font-bold">Statut</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {MOIS_SCOLAIRES.map((mois, idx) => {
-                          const paiementsMois = paiements.filter(
-                            (p: any) => p.type_paiement === 'scolarite' && p.mois_concerne?.includes(mois)
-                          );
-                          const payeMois = paiementsMois.reduce((s: number, p: any) => s + p.montant, 0);
-                          const isPaid = payeMois >= mensualiteScolarite;
-                          const isCurrentMonth = idx === moisIndex;
-                          return (
-                            <TableRow key={mois} className={isCurrentMonth ? 'bg-primary/5' : ''}>
-                              <TableCell className="font-medium text-xs py-2.5">
-                                {mois} {isCurrentMonth && <Badge variant="outline" className="ml-1 text-[10px] rounded-full">Actuel</Badge>}
-                              </TableCell>
-                              <TableCell className="text-right text-xs py-2.5 whitespace-nowrap">{mensualiteScolarite.toLocaleString()} GNF</TableCell>
-                              <TableCell className="text-right py-2.5">
-                                {payeMois > 0 ? (
-                                  <Badge variant={isPaid ? 'default' : 'secondary'} className={`text-[10px] rounded-full ${isPaid ? 'bg-emerald-600' : ''}`}>
-                                    {isPaid ? '✓ Payé' : `${payeMois.toLocaleString()} / ${mensualiteScolarite.toLocaleString()}`}
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px] rounded-full">Non payé</Badge>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
+              <TabsContent value="echeancier" className="mt-4 space-y-2">
+                {MOIS_SCOLAIRES.map((mois, idx) => {
+                  const paiementsMois = paiements.filter(
+                    (p: any) => p.type_paiement === 'scolarite' && p.mois_concerne?.includes(mois)
+                  );
+                  const payeMois = paiementsMois.reduce((s: number, p: any) => s + p.montant, 0);
+                  const isPaid = payeMois >= mensualiteScolarite;
+                  const isCurrentMonth = idx === moisIndex;
+                  const progressMois = mensualiteScolarite > 0 ? Math.min(100, Math.round((payeMois / mensualiteScolarite) * 100)) : 0;
+                  return (
+                    <Card key={mois} className={`border-0 shadow-md rounded-2xl overflow-hidden transition-all ${isCurrentMonth ? 'ring-2 ring-primary shadow-lg' : ''}`}>
+                      <CardContent className="p-3.5">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-extrabold ${isPaid ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600' : isCurrentMonth ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                              {idx + 1}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold">{mois}</p>
+                              {isCurrentMonth && <p className="text-[9px] text-primary font-semibold">Mois actuel</p>}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            {isPaid ? (
+                              <Badge className="bg-emerald-600 text-[10px] rounded-full px-2.5 shadow-sm">✓ Payé</Badge>
+                            ) : payeMois > 0 ? (
+                              <Badge variant="secondary" className="text-[10px] rounded-full px-2.5">{payeMois.toLocaleString()} / {mensualiteScolarite.toLocaleString()}</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px] rounded-full">Non payé</Badge>
+                            )}
+                          </div>
+                        </div>
+                        {/* Mini progress bar */}
+                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div className={`h-full rounded-full transition-all duration-500 ${isPaid ? 'bg-emerald-500' : payeMois > 0 ? 'bg-amber-500' : 'bg-muted-foreground/20'}`} style={{ width: `${progressMois}%` }} />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </TabsContent>
             </Tabs>
           </>
