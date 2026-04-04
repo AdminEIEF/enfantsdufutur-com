@@ -624,24 +624,16 @@ export default function StudentCompositions() {
     return (
       <StudentLayout>
         {violationWarningDialog}
-        <div className="max-w-3xl mx-auto space-y-4 p-4 exam-secure-content">
-          <div className="flex items-center justify-between sticky top-0 z-10 bg-background py-3 border-b">
+        <FloatingTimer />
+        <div className="max-w-3xl mx-auto space-y-4 p-4 pb-24 exam-secure-content">
+          <div className="flex items-center justify-between py-3 border-b">
             <div>
               <h2 className="font-bold text-lg">{activeComp.titre}</h2>
-              <p className="text-sm text-muted-foreground">{activeComp.matieres?.nom}</p>
+              <p className="text-sm text-muted-foreground">{activeComp.matieres?.nom} • /{activeComp.bareme}</p>
             </div>
-            <div className="flex items-center gap-2">
-              {violations > 0 && (
-                <Badge variant="destructive" className="text-xs">⚠️ {violations}/2</Badge>
-              )}
-              <Badge variant="outline" className="text-xs gap-1">
-                <ShieldAlert className="h-3 w-3" /> Surveillé
-              </Badge>
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-lg font-bold ${isUrgent ? 'bg-destructive/10 text-destructive animate-pulse' : 'bg-primary/10 text-primary'}`}>
-                <Timer className="h-5 w-5" />
-                {formatTime(timeLeft)}
-              </div>
-            </div>
+            <Badge variant="outline" className="text-xs gap-1">
+              <ShieldAlert className="h-3 w-3" /> Surveillé
+            </Badge>
           </div>
 
           <Progress value={progress} className="h-2" />
@@ -671,11 +663,14 @@ export default function StudentCompositions() {
             ))}
           </div>
 
-          <div className="sticky bottom-0 z-30 bg-background py-4 px-2 border-t shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
-            <Button className="w-full" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-              Soumettre la composition
-            </Button>
+          {/* Fixed bottom submit bar */}
+          <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md py-3 px-4 border-t shadow-[0_-4px_16px_rgba(0,0,0,0.15)]">
+            <div className="max-w-3xl mx-auto">
+              <Button className="w-full h-12 text-base font-bold" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
+                {submitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <CheckCircle2 className="h-5 w-5 mr-2" />}
+                ✅ Soumettre ma composition
+              </Button>
+            </div>
           </div>
         </div>
       </StudentLayout>
