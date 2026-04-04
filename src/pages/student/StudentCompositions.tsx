@@ -651,16 +651,20 @@ export default function StudentCompositions() {
     );
   }
 
-  // Active exam view - QCM type
+  // Active exam view - QCM type — one at a time
   if (activeComp) {
-    const progress = activeQuestions.length > 0
-      ? (Object.keys(answers).length / activeQuestions.length) * 100 : 0;
+    const total = activeQuestions.length;
+    const answered = Object.keys(answers).length;
+    const progress = total > 0 ? ((currentQIndex + 1) / total) * 100 : 0;
+    const q = activeQuestions[currentQIndex];
+    const isLast = currentQIndex >= total - 1;
+    const isFirst = currentQIndex === 0;
 
     return (
       <StudentLayout>
         {violationWarningDialog}
         <FloatingTimer />
-        <div className="max-w-3xl mx-auto space-y-4 p-4 pb-24 exam-secure-content">
+        <div className="max-w-3xl mx-auto space-y-4 p-4 pb-36 exam-secure-content">
           <div className="flex items-center justify-between py-3 border-b">
             <div>
               <h2 className="font-bold text-lg">{activeComp.titre}</h2>
@@ -671,40 +675,83 @@ export default function StudentCompositions() {
             </Badge>
           </div>
 
-          <Progress value={progress} className="h-2" />
-          <p className="text-xs text-muted-foreground text-right">{Object.keys(answers).length}/{activeQuestions.length} répondue(s)</p>
-
-          <div className="space-y-4">
-            {activeQuestions.map((q: any, idx: number) => (
-              <Card key={q.id} className={answers[q.id] ? 'border-primary/30' : ''}>
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <Badge variant="outline" className="shrink-0 mt-1">{idx + 1}</Badge>
-                    <div className="flex-1 space-y-3">
-                      <p className="font-medium"><MathText text={q.enonce} /></p>
-                      <Badge variant="secondary" className="text-xs">{q.points} pt{q.points > 1 ? 's' : ''}</Badge>
-                      <RadioGroup value={answers[q.id] || ''} onValueChange={v => setAnswers(prev => ({ ...prev, [q.id]: v }))}>
-                        {(q.options || []).map((opt: any, oi: number) => (
-                          <div key={oi} className="flex items-center gap-2 p-2 rounded hover:bg-accent/50 transition-colors">
-                            <RadioGroupItem value={opt.label} id={`q${q.id}_${oi}`} />
-                            <Label htmlFor={`q${q.id}_${oi}`} className="cursor-pointer flex-1"><MathText text={opt.label} /></Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          {/* Progress */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Question {currentQIndex + 1}/{total}</span>
+              <span>{answered}/{total} répondue(s)</span>
+            </div>
+            <Progress value={progress} className="h-2" />
+            {/* Question dots */}
+            <div className="flex gap-1 justify-center pt-2 flex-wrap">
+              {activeQuestions.map((_: any, i: number) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentQIndex(i)}
+                  className={`w-7 h-7 rounded-full text-xs font-bold transition-all ${
+                    i === currentQIndex
+                      ? 'bg-primary text-primary-foreground scale-110 shadow-md'
+                      : answers[activeQuestions[i]?.id]
+                        ? 'bg-primary/20 text-primary'
+                        : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Fixed bottom submit bar */}
+          {/* Current question */}
+          {q && (
+            <Card className={`border-2 ${answers[q.id] ? 'border-primary/30' : 'border-border'}`}>
+              <CardContent className="p-5">
+                <div className="flex items-start gap-3">
+                  <Badge className="shrink-0 mt-1 bg-primary text-primary-foreground">{currentQIndex + 1}</Badge>
+                  <div className="flex-1 space-y-4">
+                    <p className="font-semibold text-base"><MathText text={q.enonce} /></p>
+                    <Badge variant="secondary" className="text-xs">{q.points} pt{q.points > 1 ? 's' : ''}</Badge>
+                    <RadioGroup value={answers[q.id] || ''} onValueChange={v => {
+                      setAnswers(prev => ({ ...prev, [q.id]: v }));
+                      // Auto-advance after selecting an answer (with small delay)
+                      if (!isLast) {
+                        setTimeout(() => setCurrentQIndex(i => i + 1), 400);
+                      }
+                    }}>
+                      {(q.options || []).map((opt: any, oi: number) => (
+                        <div key={oi} className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                          answers[q.id] === opt.label
+                            ? 'border-primary bg-primary/5 shadow-sm'
+                            : 'border-border hover:border-primary/30 hover:bg-accent/30'
+                        }`}>
+                          <RadioGroupItem value={opt.label} id={`q${q.id}_${oi}`} />
+                          <Label htmlFor={`q${q.id}_${oi}`} className="cursor-pointer flex-1 text-sm font-medium"><MathText text={opt.label} /></Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Fixed bottom nav */}
           <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md py-3 px-4 border-t shadow-[0_-4px_16px_rgba(0,0,0,0.15)]">
-            <div className="max-w-3xl mx-auto">
-              <Button className="w-full h-12 text-base font-bold" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
-                {submitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <CheckCircle2 className="h-5 w-5 mr-2" />}
-                ✅ Soumettre ma composition
+            <div className="max-w-3xl mx-auto flex items-center gap-2">
+              <Button variant="outline" className="h-12 px-4" onClick={() => setCurrentQIndex(i => i - 1)} disabled={isFirst}>
+                <ChevronLeft className="h-5 w-5 mr-1" /> Précédent
               </Button>
+              <div className="flex-1" />
+              {isLast ? (
+                <Button className="h-12 px-6 text-base font-bold" onClick={() => handleSubmit(false)} disabled={submitting}>
+                  {submitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <CheckCircle2 className="h-5 w-5 mr-2" />}
+                  Soumettre ({answered}/{total})
+                </Button>
+              ) : (
+                <Button className="h-12 px-6 text-base font-bold" onClick={() => setCurrentQIndex(i => i + 1)}>
+                  Suivant <ChevronRight className="h-5 w-5 ml-1" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
