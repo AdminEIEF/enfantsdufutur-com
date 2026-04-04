@@ -96,6 +96,7 @@ const StudentSerpentAlphabet = lazy(() => import("./pages/student/StudentSerpent
 const StudentAnglais = lazy(() => import("./pages/student/StudentAnglais"));
 const StudentPyramideAdditions = lazy(() => import("./pages/student/StudentPyramideAdditions"));
 const StudentCompositions = lazy(() => import("./pages/student/StudentCompositions"));
+const StudentLibrairie = lazy(() => import("./pages/student/StudentLibrairie"));
 const CompositionsAdmin = lazy(() => import("./pages/CompositionsAdmin"));
 const GestionSessions = lazy(() => import("./pages/GestionSessions"));
 
@@ -230,6 +231,7 @@ const App = () => (
             <Route path="/eleve/evaluations" element={<StudentAuthProvider><StudentEvaluations /></StudentAuthProvider>} />
             <Route path="/eleve/notifications" element={<StudentAuthProvider><StudentNotifications /></StudentAuthProvider>} />
             <Route path="/eleve/compositions" element={<StudentAuthProvider><StudentCompositions /></StudentAuthProvider>} />
+            <Route path="/eleve/librairie" element={<StudentAuthProvider><StudentLibrairie /></StudentAuthProvider>} />
             <Route path="/employe" element={<EmployeeAuthProvider><EmployeeLogin /></EmployeeAuthProvider>} />
             <Route path="/employe/dashboard" element={<EmployeeAuthProvider><EmployeeDashboard /></EmployeeAuthProvider>} />
             <Route path="/employe/conges" element={<EmployeeAuthProvider><EmployeeConges /></EmployeeAuthProvider>} />

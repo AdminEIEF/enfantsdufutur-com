@@ -762,6 +762,44 @@ serve(async (req) => {
       });
     }
 
+    // ─── LIBRAIRIE (digital library) ───
+    if (action === "librairie") {
+      const niveauId = (eleve as any).classes?.niveau_id;
+
+      // Get all articles (optionally filtered by niveau)
+      const { data: allArticles } = await supabaseAdmin
+        .from("articles")
+        .select("id, nom, categorie, prix, stock, fichier_url, fichier_nom, niveau_id")
+        .order("categorie")
+        .order("nom");
+
+      // Get student's purchases
+      const { data: purchases } = await supabaseAdmin
+        .from("ventes_articles")
+        .select("article_id")
+        .eq("eleve_id", eleveId);
+
+      const purchasedIds = new Set((purchases || []).map((p: any) => p.article_id));
+
+      // Filter articles: show all for student's niveau + any purchased
+      const articles = (allArticles || [])
+        .filter((a: any) => a.niveau_id === niveauId || purchasedIds.has(a.id))
+        .map((a: any) => ({
+          id: a.id,
+          nom: a.nom,
+          categorie: a.categorie,
+          prix: a.prix,
+          stock: a.stock,
+          fichier_url: purchasedIds.has(a.id) ? a.fichier_url : null,
+          fichier_nom: purchasedIds.has(a.id) ? a.fichier_nom : null,
+          purchased: purchasedIds.has(a.id),
+        }));
+
+      return new Response(JSON.stringify({ articles }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Action inconnue" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

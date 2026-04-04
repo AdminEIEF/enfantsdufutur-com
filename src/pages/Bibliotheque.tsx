@@ -15,6 +15,7 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import { Progress } from '@/components/ui/progress';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { getOrientationRemarks } from '@/components/parent/ParentEnfantProfilRadar';
+import LivresNumeriquesTab from '@/components/LivresNumeriquesTab';
 
 // ─── Hooks ───────────────────────────────────────────────
 function useCycles() {
@@ -406,14 +407,17 @@ export default function Bibliotheque() {
 
       {/* Tabs Préscolaire & Primaire / Secondaire */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
           <TabsTrigger value="prescolaire-primaire" className="gap-2">
             <BookOpen className="h-4 w-4" />
-            Préscolaire & Primaire
+            Présco. & Primaire
           </TabsTrigger>
           <TabsTrigger value="secondaire" className="gap-2">
             <GraduationCap className="h-4 w-4" />
             Secondaire
+          </TabsTrigger>
+          <TabsTrigger value="livres-numeriques" className="gap-2">
+            📚 Livres Num.
           </TabsTrigger>
         </TabsList>
 
@@ -425,6 +429,10 @@ export default function Bibliotheque() {
         <TabsContent value="secondaire" className="space-y-4 mt-4">
           {renderFilters()}
           {renderElevesList()}
+        </TabsContent>
+
+        <TabsContent value="livres-numeriques" className="space-y-4 mt-4">
+          <LivresNumeriquesTab />
         </TabsContent>
       </Tabs>
 

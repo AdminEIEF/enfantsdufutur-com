@@ -31,6 +31,7 @@ const NAV_ITEMS = [
   { path: '/eleve/dashboard', icon: Home, label: 'Accueil' },
   { path: '/eleve/cours', icon: BookOpen, label: 'Cours' },
   { path: '/eleve/devoirs', icon: ClipboardList, label: 'Devoirs' },
+  { path: '/eleve/librairie', icon: BookOpen, label: 'Librairie' },
   { path: '/eleve/compositions', icon: FileQuestion, label: 'Compos' },
   { path: '__games__', icon: Gamepad2, label: 'Jeux' },
   { path: '/eleve/resultats', icon: Award, label: 'Résultats' },
