@@ -87,6 +87,10 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
   const [cantineMontant, setCantineMontant] = useState(CANTINE_MENSUEL.toString());
   const [cantineLoading, setCantineLoading] = useState(false);
 
+  // Transport state
+  const [transportSelectedIds, setTransportSelectedIds] = useState<string[]>(isSingle ? [enfants[0]?.id || ''] : []);
+  const [transportLoading, setTransportLoading] = useState(false);
+
   // Catalogue state
   const [catalogueType, setCatalogueType] = useState<'librairie' | 'boutique'>('librairie');
   const [catalogueEleveId, setCatalogueEleveId] = useState(isSingle ? enfants[0]?.id || '' : '');
