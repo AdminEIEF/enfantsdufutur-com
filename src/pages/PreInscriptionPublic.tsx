@@ -608,8 +608,8 @@ export default function PreInscriptionPublic() {
                       <span className="text-xl">🍽️</span>
                       <p className="text-sm font-bold">Cantine scolaire</p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">Repas chauds et équilibrés servis chaque jour à l'école. Système de portefeuille rechargeable, débit par repas consommé.</p>
-                    <p className="text-xs font-semibold text-primary mt-1">💰 Rechargeable — repas à partir de 500 GNF</p>
+                    <p className="text-xs text-muted-foreground mt-1">Repas chauds et équilibrés servis chaque jour à l'école. Système de portefeuille rechargeable.</p>
+                     <p className="text-xs font-semibold text-primary mt-1">💰 400 000 GNF / mois</p>
                   </div>
                 </label>
                 <label htmlFor="transport" className={`cursor-pointer flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${form.option_transport ? 'border-primary bg-primary/5 shadow-md' : 'border-muted hover:border-primary/30'}`}>
@@ -619,8 +619,8 @@ export default function PreInscriptionPublic() {
                       <span className="text-xl">🚌</span>
                       <p className="text-sm font-bold">Transport scolaire</p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">Navette aller-retour sécurisée avec chauffeur dédié. Suivi GPS en temps réel et pointage automatique à chaque arrêt.</p>
-                    <p className="text-xs font-semibold text-primary mt-1">💰 À partir de 300 000 GNF / mois</p>
+                    <p className="text-xs text-muted-foreground mt-1">Navette aller-retour sécurisée avec chauffeur dédié. Suivi GPS en temps réel et pointage automatique.</p>
+                     <p className="text-xs font-semibold text-primary mt-1">💰 Petit trajet : 300 000 GNF — Long trajet : 350 000 GNF / mois</p>
                   </div>
                 </label>
                 <label htmlFor="uniformes" className={`cursor-pointer flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${form.option_uniformes ? 'border-primary bg-primary/5 shadow-md' : 'border-muted hover:border-primary/30'}`}>
@@ -630,8 +630,12 @@ export default function PreInscriptionPublic() {
                       <span className="text-xl">👔</span>
                       <p className="text-sm font-bold">Uniformes scolaires</p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">Tenue scolaire complète, tenue de sport, polo et options (karaté, scout). Disponible à la boutique de l'école.</p>
-                    <p className="text-xs font-semibold text-primary mt-1">💰 Tarif selon le cycle et les articles choisis</p>
+                    <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                       <p>👕 2 Tenues scolaires Primaire : <span className="font-semibold text-foreground">350 000 GNF</span> — Secondaire : <span className="font-semibold text-foreground">450 000 GNF</span></p>
+                       <p>🏃 Tenue de sport (EPS) : <span className="font-semibold text-foreground">100 000 GNF</span></p>
+                       <p>⚜️ Tenue Scout : <span className="font-semibold text-foreground">250 000 GNF</span></p>
+                       <p>🥋 Tenue de Karaté (kimono) : <span className="font-semibold text-foreground">200 000 GNF</span></p>
+                     </div>
                   </div>
                 </label>
               </div>
