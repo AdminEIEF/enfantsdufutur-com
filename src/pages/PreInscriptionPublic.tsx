@@ -199,14 +199,6 @@ export default function PreInscriptionPublic() {
       toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
-
-    // Check required documents
-    const missingRequired = DOCUMENTS_REQUIS.filter(d => d.required && !getDocForKey(d.key));
-    if (missingRequired.length > 0) {
-      toast.error(`Documents manquants : ${missingRequired.map(d => d.label).join(', ')}`);
-      return;
-    }
-
     setLoading(true);
     try {
       const payload: any = {
