@@ -437,18 +437,22 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                     {!bulkMode && (
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={alreadyThisMonth}
-                            title={alreadyThisMonth ? 'Déjà rechargé ce mois' : ''}
-                            onClick={() => {
-                              setRechargeDialog(e);
-                              setMontantRecharge(String(prixZone));
-                            }}
-                          >
-                            <Wallet className="h-3 w-3 mr-1" /> {alreadyThisMonth ? 'Rechargé' : 'Recharger'}
-                          </Button>
+                          {parentPaid && !alreadyThisMonth ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setRechargeDialog(e);
+                                setMontantRecharge(String(prixZone));
+                              }}
+                            >
+                              <Wallet className="h-3 w-3 mr-1" /> Recharger
+                            </Button>
+                          ) : alreadyThisMonth ? (
+                            <Badge variant="secondary" className="text-[10px]">✓ Rechargé</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] text-muted-foreground">En attente paiement</Badge>
+                          )}
                           <Button size="sm" variant="ghost" onClick={() => setPrintCard({ ...e, recharge })}>
                             <Printer className="h-3 w-3" />
                           </Button>
