@@ -103,7 +103,7 @@ serve(async (req) => {
     // Fetch children with class info
     const { data: eleves, error: elevesErr } = await supabaseAdmin
       .from("eleves")
-      .select("id, nom, prenom, matricule, sexe, date_naissance, photo_url, statut, solde_cantine, option_cantine, option_fournitures, classe_id, classes(nom, niveaux:niveau_id(id, nom, frais_scolarite, cycles:cycle_id(nom))), zone_transport_id, zones_transport:zone_transport_id(nom, prix_mensuel, chauffeur_bus, telephone_chauffeur)")
+      .select("id, nom, prenom, matricule, sexe, date_naissance, photo_url, statut, solde_cantine, option_cantine, option_fournitures, classe_id, type_trajet_transport, classes(nom, niveaux:niveau_id(id, nom, frais_scolarite, cycles:cycle_id(nom))), zone_transport_id, zones_transport:zone_transport_id(nom, prix_mensuel, prix_aller_simple, prix_retour_simple, chauffeur_bus, telephone_chauffeur)")
       .eq("famille_id", famille.id)
       .is("deleted_at", null)
       .order("prenom");
