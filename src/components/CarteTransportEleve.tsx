@@ -29,7 +29,14 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   const [rechargeDialog, setRechargeDialog] = useState<any>(null);
   const [montantRecharge, setMontantRecharge] = useState('');
   const [printCard, setPrintCard] = useState<any>(null);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  const MOIS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const moisCourant = MOIS_FR[new Date().getMonth()];
+  const anneeCourante = new Date().getFullYear();
 
   const { data: eleves = [] } = useQuery({
     queryKey: ['transport-card-eleves'],
