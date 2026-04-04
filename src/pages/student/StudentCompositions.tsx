@@ -508,10 +508,10 @@ export default function StudentCompositions() {
               </div>
 
               {/* Submit */}
-              <div className="sticky bottom-0 z-30 px-4 py-3 border-t bg-background shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
-                <Button className="w-full" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-                  Soumettre ma réponse
+              <div className="fixed bottom-0 left-0 right-0 z-40 px-4 py-3 border-t bg-background/95 backdrop-blur-md shadow-[0_-4px_16px_rgba(0,0,0,0.15)]">
+                <Button className="w-full h-12 text-base font-bold" size="lg" onClick={() => handleSubmit(false)} disabled={submitting}>
+                  {submitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Send className="h-5 w-5 mr-2" />}
+                  ✅ Soumettre ma réponse
                 </Button>
               </div>
             </div>
