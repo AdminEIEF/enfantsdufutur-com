@@ -525,7 +525,6 @@ export default function StudentCompositions() {
   if (activeComp && activeType === 'texte') {
     const progress = activeQuestions.length > 0
       ? (Object.keys(answers).filter(k => answers[k]?.trim()).length / activeQuestions.length) * 100 : 0;
-    const isUrgent = timeLeft < 60;
 
     return (
       <StudentLayout>
