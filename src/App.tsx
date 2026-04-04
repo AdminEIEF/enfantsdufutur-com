@@ -231,6 +231,7 @@ const App = () => (
             <Route path="/eleve/evaluations" element={<StudentAuthProvider><StudentEvaluations /></StudentAuthProvider>} />
             <Route path="/eleve/notifications" element={<StudentAuthProvider><StudentNotifications /></StudentAuthProvider>} />
             <Route path="/eleve/compositions" element={<StudentAuthProvider><StudentCompositions /></StudentAuthProvider>} />
+            <Route path="/eleve/librairie" element={<StudentAuthProvider><StudentLibrairie /></StudentAuthProvider>} />
             <Route path="/employe" element={<EmployeeAuthProvider><EmployeeLogin /></EmployeeAuthProvider>} />
             <Route path="/employe/dashboard" element={<EmployeeAuthProvider><EmployeeDashboard /></EmployeeAuthProvider>} />
             <Route path="/employe/conges" element={<EmployeeAuthProvider><EmployeeConges /></EmployeeAuthProvider>} />
