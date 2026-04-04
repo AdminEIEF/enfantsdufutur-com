@@ -590,28 +590,44 @@ export default function PreInscriptionPublic() {
           <FichesDownloadSection />
 
           {/* Options */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Options souhaitées</CardTitle>
+          <Card className="border-primary/10 shadow-lg shadow-primary/5 rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-primary/10 pb-4">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <span className="text-base">⚙️</span>
+                </div>
+                Options souhaitées
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Checkbox id="cantine" checked={form.option_cantine} onCheckedChange={v => setForm(f => ({ ...f, option_cantine: !!v }))} />
-                <Label htmlFor="cantine" className="cursor-pointer">Cantine scolaire</Label>
-              </div>
-              <div className="flex items-center gap-3">
-                <Checkbox id="transport" checked={form.option_transport} onCheckedChange={v => setForm(f => ({ ...f, option_transport: !!v }))} />
-                <Label htmlFor="transport" className="cursor-pointer">Transport scolaire</Label>
-              </div>
-              <div className="flex items-center gap-3">
-                <Checkbox id="uniformes" checked={form.option_uniformes} onCheckedChange={v => setForm(f => ({ ...f, option_uniformes: !!v }))} />
-                <Label htmlFor="uniformes" className="cursor-pointer">Kit uniformes complet</Label>
+            <CardContent className="pt-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label htmlFor="cantine" className={`cursor-pointer flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${form.option_cantine ? 'border-primary bg-primary/5 shadow-sm' : 'border-muted hover:border-primary/30'}`}>
+                  <Checkbox id="cantine" checked={form.option_cantine} onCheckedChange={v => setForm(f => ({ ...f, option_cantine: !!v }))} />
+                  <div>
+                    <span className="text-lg">🍽️</span>
+                    <p className="text-sm font-medium mt-0.5">Cantine</p>
+                  </div>
+                </label>
+                <label htmlFor="transport" className={`cursor-pointer flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${form.option_transport ? 'border-primary bg-primary/5 shadow-sm' : 'border-muted hover:border-primary/30'}`}>
+                  <Checkbox id="transport" checked={form.option_transport} onCheckedChange={v => setForm(f => ({ ...f, option_transport: !!v }))} />
+                  <div>
+                    <span className="text-lg">🚌</span>
+                    <p className="text-sm font-medium mt-0.5">Transport</p>
+                  </div>
+                </label>
+                <label htmlFor="uniformes" className={`cursor-pointer flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${form.option_uniformes ? 'border-primary bg-primary/5 shadow-sm' : 'border-muted hover:border-primary/30'}`}>
+                  <Checkbox id="uniformes" checked={form.option_uniformes} onCheckedChange={v => setForm(f => ({ ...f, option_uniformes: !!v }))} />
+                  <div>
+                    <span className="text-lg">👔</span>
+                    <p className="text-sm font-medium mt-0.5">Uniformes</p>
+                  </div>
+                </label>
               </div>
             </CardContent>
           </Card>
 
-          <Button type="submit" className="w-full" size="lg" disabled={loading}>
-            {loading ? 'Envoi en cours…' : 'Soumettre ma demande de pré-inscription'}
+          <Button type="submit" className="w-full h-14 text-base font-bold rounded-2xl shadow-lg shadow-primary/20 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary transition-all" size="lg" disabled={loading}>
+            {loading ? 'Envoi en cours…' : '🚀 Soumettre ma demande de pré-inscription'}
           </Button>
         </form>
       </div>
