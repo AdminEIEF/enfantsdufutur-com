@@ -460,7 +460,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                         {DEBIT_TYPES.map(opt => (
                           <button
                             key={opt.value}
-                            onClick={() => setDebitType(opt.value)}
+                            onClick={() => handleDebitTypeSelect(opt.value)}
                             className={`flex flex-col items-center gap-1 p-2.5 rounded-xl text-center transition-all active:scale-95 ${
                               debitType === opt.value
                                 ? 'bg-primary/10 ring-2 ring-primary/40 shadow-sm'
