@@ -15,6 +15,7 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import { Progress } from '@/components/ui/progress';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { getOrientationRemarks } from '@/components/parent/ParentEnfantProfilRadar';
+import LivresNumeriquesTab from '@/components/LivresNumeriquesTab';
 
 // ─── Hooks ───────────────────────────────────────────────
 function useCycles() {
