@@ -54,6 +54,8 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
   const [loading, setLoading] = useState(false);
   const [mobileMode, setMobileMode] = useState<'manuel' | 'auto'>('manuel');
   const [copied, setCopied] = useState(false);
+  const [manuelPurpose, setManuelPurpose] = useState('');
+  const [manuelMontant, setManuelMontant] = useState('');
 
   const NUMERO_MARCHAND = '47 09 03';
   const WHATSAPP_NUMERO = '224628848437';
