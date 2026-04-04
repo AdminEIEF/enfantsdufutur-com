@@ -548,31 +548,38 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       </Card>
 
       {/* Dialog recharge — validation de carte */}
-      <Dialog open={!!rechargeDialog} onOpenChange={() => setRechargeDialog(null)}>
+      <Dialog open={!!rechargeDialog} onOpenChange={(open) => { if (!open) setRechargeDialog(null); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Valider la carte transport</DialogTitle></DialogHeader>
           {rechargeDialog && (() => {
-            const prixZoneRecharge = (rechargeDialog.zones_transport as any)?.prix_mensuel || 0;
+            const prixZoneRecharge = getTransportPrix(rechargeDialog);
             const zoneNom = (rechargeDialog.zones_transport as any)?.nom || '—';
+            const trajetType = rechargeDialog.type_trajet_transport || 'aller_retour';
             return (
               <div className="space-y-4">
                 <div className="text-sm space-y-1">
                   <p><strong>Élève :</strong> {rechargeDialog.prenom} {rechargeDialog.nom}</p>
                   <p><strong>Zone :</strong> {zoneNom}</p>
+                  <p><strong>Trajet :</strong> {getTrajetLabel(trajetType)}</p>
                   <p><strong>Description :</strong> Transport du mois de {moisCourant} {anneeCourante}</p>
                   <p><strong>Montant :</strong> <span className="font-bold text-primary">{prixZoneRecharge.toLocaleString()} GNF</span></p>
                   <p><strong>Validité :</strong> 30 jours à partir d'aujourd'hui</p>
                 </div>
                 {hasRechargeThisMonth(rechargeDialog.id) && (
                   <div className="bg-warning/10 border border-warning/30 rounded-md p-3 text-sm text-warning-foreground">
-                    ⚠️ Cet élève a déjà été rechargé ce mois-ci. Une seule recharge par mois est autorisée.
+                    ⚠️ Cet élève a déjà été rechargé ce mois-ci.
                   </div>
                 )}
                 <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setRechargeDialog(null)}>Annuler</Button>
+                  <Button type="button" variant="outline" onClick={() => setRechargeDialog(null)}>Annuler</Button>
                   <Button
+                    type="button"
                     disabled={rechargeMutation.isPending || hasRechargeThisMonth(rechargeDialog.id)}
-                    onClick={() => rechargeMutation.mutate({ eleveId: rechargeDialog.id, montant: prixZoneRecharge })}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      rechargeMutation.mutate({ eleveId: rechargeDialog.id, montant: prixZoneRecharge });
+                    }}
                   >
                     {rechargeMutation.isPending ? 'En cours…' : 'Confirmer la validation'}
                   </Button>
@@ -584,22 +591,32 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       </Dialog>
 
       {/* Dialog paiement espèce comptable */}
-      <Dialog open={!!cashPayDialog} onOpenChange={() => setCashPayDialog(null)}>
+      <Dialog open={!!cashPayDialog} onOpenChange={(open) => { if (!open) setCashPayDialog(null); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Paiement transport en espèces</DialogTitle></DialogHeader>
           {cashPayDialog && (() => {
-            const prixZoneCash = (cashPayDialog.zones_transport as any)?.prix_mensuel || 0;
+            const prixZoneCash = getTransportPrix(cashPayDialog);
+            const trajetTypeCash = cashPayDialog.type_trajet_transport || 'aller_retour';
             return (
               <div className="space-y-4">
                 <div className="text-sm space-y-1">
                   <p><strong>Élève :</strong> {cashPayDialog.prenom} {cashPayDialog.nom}</p>
                   <p><strong>Zone :</strong> {(cashPayDialog.zones_transport as any)?.nom}</p>
+                  <p><strong>Trajet :</strong> {getTrajetLabel(trajetTypeCash)}</p>
                   <p><strong>Montant :</strong> <span className="font-bold text-primary">{prixZoneCash.toLocaleString()} GNF</span></p>
                   <p><strong>Mois :</strong> {moisCourant} {anneeCourante}</p>
                 </div>
                 <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setCashPayDialog(null)}>Annuler</Button>
-                  <Button disabled={cashPayMutation.isPending} onClick={() => cashPayMutation.mutate({ eleveId: cashPayDialog.id, montant: prixZoneCash })}>
+                  <Button type="button" variant="outline" onClick={() => setCashPayDialog(null)}>Annuler</Button>
+                  <Button
+                    type="button"
+                    disabled={cashPayMutation.isPending}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      cashPayMutation.mutate({ eleveId: cashPayDialog.id, montant: prixZoneCash });
+                    }}
+                  >
                     {cashPayMutation.isPending ? 'En cours…' : 'Enregistrer le paiement'}
                   </Button>
                 </div>
