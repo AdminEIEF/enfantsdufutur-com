@@ -39,7 +39,7 @@ serve(async (req) => {
   }
 
   try {
-    const { token, action, notification_id, conge, avance, courrier } = await req.json();
+    const { token, action, notification_id, conge, avance, courrier, photo_url } = await req.json();
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     let employeId: string;
@@ -311,6 +311,24 @@ serve(async (req) => {
       // We'll handle this client-side via direct fetch with the service role
       // Just return a path for the client to use
       return new Response(JSON.stringify({ path: fileName, bucket: 'courriers-employes' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ─── UPDATE PHOTO ───
+    if (action === "update_photo") {
+      if (!photo_url) {
+        return new Response(JSON.stringify({ error: "URL de photo requise" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { error: updateErr } = await supabaseAdmin
+        .from("employes")
+        .update({ photo_url })
+        .eq("id", employeId);
+      if (updateErr) throw updateErr;
+      return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

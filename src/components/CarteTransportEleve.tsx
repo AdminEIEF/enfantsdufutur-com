@@ -38,12 +38,27 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   const moisCourant = MOIS_FR[new Date().getMonth()];
   const anneeCourante = new Date().getFullYear();
 
+  const getTransportPrix = (eleve: any) => {
+    const zone = (eleve.zones_transport as any);
+    if (!zone) return 0;
+    const typeTrajet = eleve.type_trajet_transport || 'aller_retour';
+    if (typeTrajet === 'aller_simple') return zone.prix_aller_simple || zone.prix_mensuel || 0;
+    if (typeTrajet === 'retour_simple') return zone.prix_retour_simple || zone.prix_mensuel || 0;
+    return zone.prix_mensuel || 0;
+  };
+
+  const getTrajetLabel = (type: string) => {
+    if (type === 'aller_simple') return 'Aller simple';
+    if (type === 'retour_simple') return 'Retour simple';
+    return 'Aller-Retour';
+  };
+
   const { data: eleves = [] } = useQuery({
     queryKey: ['transport-card-eleves'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, classe_id, photo_url, classes(nom), zone_transport_id, zones_transport:zone_transport_id(id, nom, prix_mensuel, chauffeur_bus)')
+        .select('id, nom, prenom, matricule, classe_id, photo_url, type_trajet_transport, classes(nom), zone_transport_id, zones_transport:zone_transport_id(id, nom, prix_mensuel, prix_aller_simple, prix_retour_simple, chauffeur_bus)')
         .not('zone_transport_id', 'is', null)
         .eq('statut', 'inscrit')
         .order('nom');
@@ -80,11 +95,27 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
 
   const rechargeMutation = useMutation({
     mutationFn: async ({ eleveId, montant }: { eleveId: string; montant: number }) => {
-      await supabase
+      // First deactivate all active recharges for this student
+      const { error: updateErr } = await supabase
         .from('recharges_transport')
         .update({ actif: false } as any)
         .eq('eleve_id', eleveId)
         .eq('actif', true);
+      if (updateErr) console.warn('Deactivate error:', updateErr);
+
+      // Delete any existing recharges for this month to avoid trigger conflict
+      const now = new Date();
+      const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01T00:00:00`;
+      const endOfMonth = now.getMonth() === 11
+        ? `${now.getFullYear() + 1}-01-01T00:00:00`
+        : `${now.getFullYear()}-${String(now.getMonth() + 2).padStart(2, '0')}-01T00:00:00`;
+      
+      await supabase
+        .from('recharges_transport')
+        .delete()
+        .eq('eleve_id', eleveId)
+        .gte('date_recharge', startOfMonth)
+        .lt('date_recharge', endOfMonth);
 
       const { error } = await supabase.from('recharges_transport').insert({
         eleve_id: eleveId,
@@ -100,11 +131,12 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recharges-transport'] });
+      queryClient.invalidateQueries({ queryKey: ['paiements-transport'] });
       toast({ title: 'Recharge effectuée', description: 'La carte transport a été rechargée pour 30 jours.' });
       setRechargeDialog(null);
     },
     onError: (err: any) => {
-      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+      toast({ title: 'Erreur', description: err.message || 'Erreur lors de la recharge', variant: 'destructive' });
     },
   });
 
@@ -516,31 +548,38 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       </Card>
 
       {/* Dialog recharge — validation de carte */}
-      <Dialog open={!!rechargeDialog} onOpenChange={() => setRechargeDialog(null)}>
+      <Dialog open={!!rechargeDialog} onOpenChange={(open) => { if (!open) setRechargeDialog(null); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Valider la carte transport</DialogTitle></DialogHeader>
           {rechargeDialog && (() => {
-            const prixZoneRecharge = (rechargeDialog.zones_transport as any)?.prix_mensuel || 0;
+            const prixZoneRecharge = getTransportPrix(rechargeDialog);
             const zoneNom = (rechargeDialog.zones_transport as any)?.nom || '—';
+            const trajetType = rechargeDialog.type_trajet_transport || 'aller_retour';
             return (
               <div className="space-y-4">
                 <div className="text-sm space-y-1">
                   <p><strong>Élève :</strong> {rechargeDialog.prenom} {rechargeDialog.nom}</p>
                   <p><strong>Zone :</strong> {zoneNom}</p>
+                  <p><strong>Trajet :</strong> {getTrajetLabel(trajetType)}</p>
                   <p><strong>Description :</strong> Transport du mois de {moisCourant} {anneeCourante}</p>
                   <p><strong>Montant :</strong> <span className="font-bold text-primary">{prixZoneRecharge.toLocaleString()} GNF</span></p>
                   <p><strong>Validité :</strong> 30 jours à partir d'aujourd'hui</p>
                 </div>
                 {hasRechargeThisMonth(rechargeDialog.id) && (
                   <div className="bg-warning/10 border border-warning/30 rounded-md p-3 text-sm text-warning-foreground">
-                    ⚠️ Cet élève a déjà été rechargé ce mois-ci. Une seule recharge par mois est autorisée.
+                    ⚠️ Cet élève a déjà été rechargé ce mois-ci.
                   </div>
                 )}
                 <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setRechargeDialog(null)}>Annuler</Button>
+                  <Button type="button" variant="outline" onClick={() => setRechargeDialog(null)}>Annuler</Button>
                   <Button
+                    type="button"
                     disabled={rechargeMutation.isPending || hasRechargeThisMonth(rechargeDialog.id)}
-                    onClick={() => rechargeMutation.mutate({ eleveId: rechargeDialog.id, montant: prixZoneRecharge })}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      rechargeMutation.mutate({ eleveId: rechargeDialog.id, montant: prixZoneRecharge });
+                    }}
                   >
                     {rechargeMutation.isPending ? 'En cours…' : 'Confirmer la validation'}
                   </Button>
@@ -552,22 +591,32 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       </Dialog>
 
       {/* Dialog paiement espèce comptable */}
-      <Dialog open={!!cashPayDialog} onOpenChange={() => setCashPayDialog(null)}>
+      <Dialog open={!!cashPayDialog} onOpenChange={(open) => { if (!open) setCashPayDialog(null); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Paiement transport en espèces</DialogTitle></DialogHeader>
           {cashPayDialog && (() => {
-            const prixZoneCash = (cashPayDialog.zones_transport as any)?.prix_mensuel || 0;
+            const prixZoneCash = getTransportPrix(cashPayDialog);
+            const trajetTypeCash = cashPayDialog.type_trajet_transport || 'aller_retour';
             return (
               <div className="space-y-4">
                 <div className="text-sm space-y-1">
                   <p><strong>Élève :</strong> {cashPayDialog.prenom} {cashPayDialog.nom}</p>
                   <p><strong>Zone :</strong> {(cashPayDialog.zones_transport as any)?.nom}</p>
+                  <p><strong>Trajet :</strong> {getTrajetLabel(trajetTypeCash)}</p>
                   <p><strong>Montant :</strong> <span className="font-bold text-primary">{prixZoneCash.toLocaleString()} GNF</span></p>
                   <p><strong>Mois :</strong> {moisCourant} {anneeCourante}</p>
                 </div>
                 <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setCashPayDialog(null)}>Annuler</Button>
-                  <Button disabled={cashPayMutation.isPending} onClick={() => cashPayMutation.mutate({ eleveId: cashPayDialog.id, montant: prixZoneCash })}>
+                  <Button type="button" variant="outline" onClick={() => setCashPayDialog(null)}>Annuler</Button>
+                  <Button
+                    type="button"
+                    disabled={cashPayMutation.isPending}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      cashPayMutation.mutate({ eleveId: cashPayDialog.id, montant: prixZoneCash });
+                    }}
+                  >
                     {cashPayMutation.isPending ? 'En cours…' : 'Enregistrer le paiement'}
                   </Button>
                 </div>
