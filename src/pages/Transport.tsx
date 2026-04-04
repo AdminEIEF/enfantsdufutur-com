@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Bus, MapPin, Users, Search, Download, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon, Settings, User, Phone, Navigation2, GraduationCap, Printer, Clock } from 'lucide-react';
+import { Bus, MapPin, Users, Search, Download, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon, Settings, User, Phone, Navigation2, GraduationCap, Printer, Clock, LayoutDashboard, Receipt, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -32,6 +32,102 @@ const COLORS = [
   'hsl(220, 70%, 45%)', 'hsl(38, 92%, 50%)', 'hsl(162, 63%, 41%)',
   'hsl(200, 80%, 50%)', 'hsl(0, 72%, 51%)', 'hsl(280, 60%, 50%)',
 ];
+
+// ─── Paiements transport récents (tableau de bord) ───
+function TransportPaymentsRecent() {
+  const { data: recentPayments = [], isLoading } = useQuery({
+    queryKey: ['transport-recent-payments'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('paiements')
+        .select('id, eleve_id, montant, canal, date_paiement, mois_concerne, eleves(nom, prenom, matricule, zone_transport_id, zones_transport:zone_transport_id(nom))')
+        .eq('type_paiement', 'transport')
+        .order('date_paiement', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const { data: rechargesAll = [] } = useQuery({
+    queryKey: ['recharges-transport'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('recharges_transport').select('*').order('date_recharge', { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const now = new Date();
+  const isRechargedThisMonth = (eleveId: string) => rechargesAll.some(
+    (r: any) => r.eleve_id === eleveId && new Date(r.date_recharge).getMonth() === now.getMonth() && new Date(r.date_recharge).getFullYear() === now.getFullYear()
+  );
+
+  const pendingCount = recentPayments.filter((p: any) => {
+    const pDate = new Date(p.date_paiement);
+    return pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear() && !isRechargedThisMonth(p.eleve_id);
+  }).length;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Receipt className="h-5 w-5 text-primary" />
+          Paiements transport récents
+          {pendingCount > 0 && (
+            <Badge className="bg-amber-100 text-amber-800 border-amber-200 ml-2 animate-pulse">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              {pendingCount} carte(s) à valider
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Date</TableHead>
+              <TableHead>Élève</TableHead>
+              <TableHead>Zone</TableHead>
+              <TableHead className="text-right">Montant</TableHead>
+              <TableHead className="text-center">Canal</TableHead>
+              <TableHead className="text-center">Carte validée</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">Chargement…</TableCell></TableRow>
+            ) : recentPayments.length === 0 ? (
+              <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">Aucun paiement transport</TableCell></TableRow>
+            ) : recentPayments.map((p: any) => {
+              const recharged = isRechargedThisMonth(p.eleve_id);
+              return (
+                <TableRow key={p.id}>
+                  <TableCell className="text-xs">{new Date(p.date_paiement).toLocaleDateString('fr-FR')}</TableCell>
+                  <TableCell className="font-medium text-sm">{p.eleves?.prenom} {p.eleves?.nom}</TableCell>
+                  <TableCell><Badge variant="outline" className="text-xs">{p.eleves?.zones_transport?.nom || '—'}</Badge></TableCell>
+                  <TableCell className="text-right font-semibold text-sm">{(p.montant || 0).toLocaleString('fr-FR')} GNF</TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant="secondary" className="text-[10px]">
+                      {p.canal === 'portefeuille' ? '💳 Portefeuille' : p.canal === 'especes' ? '💵 Espèces' : p.canal || '—'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {recharged ? (
+                      <Badge className="bg-accent/10 text-accent border-0 text-xs gap-1"><CheckCircle2 className="h-3 w-3" /> Validée</Badge>
+                    ) : (
+                      <Badge variant="destructive" className="text-xs gap-1 animate-pulse"><AlertTriangle className="h-3 w-3" /> À valider</Badge>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Transport() {
   const [searchParams] = useSearchParams();
@@ -265,9 +361,9 @@ export default function Transport() {
       {isChauffeur ? (
         <ChauffeurDashboard />
       ) : (
-      <Tabs defaultValue={initialTab}>
+      <Tabs defaultValue={initialTab === 'zones' ? 'dashboard' : initialTab}>
         <TabsList className="flex-wrap h-auto gap-1">
-          <TabsTrigger value="zones">Zones</TabsTrigger>
+          <TabsTrigger value="dashboard" className="gap-1"><LayoutDashboard className="h-3.5 w-3.5" /> Tableau de bord</TabsTrigger>
           <TabsTrigger value="eleves">Élèves</TabsTrigger>
           <TabsTrigger value="itineraires" className="gap-1"><Route className="h-3.5 w-3.5" /> Itinéraires</TabsTrigger>
           <TabsTrigger value="cartes" className="gap-1"><CreditCard className="h-3.5 w-3.5" /> Cartes</TabsTrigger>
@@ -279,8 +375,8 @@ export default function Transport() {
           <TabsTrigger value="gestion" className="gap-1"><Settings className="h-3.5 w-3.5" /> Gestion</TabsTrigger>
         </TabsList>
 
-        {/* Tab: Zones */}
-        <TabsContent value="zones" className="space-y-4 mt-4">
+        {/* Tab: Tableau de bord */}
+        <TabsContent value="dashboard" className="space-y-4 mt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {statsParZone.length === 0 ? (
               <Card className="col-span-full">
@@ -315,6 +411,9 @@ export default function Transport() {
               );
             })}
           </div>
+
+          {/* Paiements transport récents */}
+          <TransportPaymentsRecent />
 
           {/* Graphique répartition */}
           <Card>
