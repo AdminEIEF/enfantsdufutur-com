@@ -102,7 +102,6 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       queryClient.invalidateQueries({ queryKey: ['recharges-transport'] });
       toast({ title: 'Recharge effectuée', description: 'La carte transport a été rechargée pour 30 jours.' });
       setRechargeDialog(null);
-      setMontantRecharge('');
     },
     onError: (err: any) => {
       toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
