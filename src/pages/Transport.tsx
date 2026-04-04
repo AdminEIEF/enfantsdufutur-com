@@ -22,7 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import CarteTransportEleve from '@/components/CarteTransportEleve';
 import ValidationTransportBus from '@/components/ValidationTransportBus';
 import ItinerairesTransport from '@/components/transport/ItinerairesTransport';
-import PonctualiteTransport from '@/components/transport/PonctualiteTransport';
+
 import AlertesTransport from '@/components/transport/AlertesTransport';
 import ChauffeurDashboard from '@/components/transport/ChauffeurDashboard';
 import AssignationBusChauffeur from '@/components/transport/AssignationBusChauffeur';
