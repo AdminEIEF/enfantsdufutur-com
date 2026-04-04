@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import ForcePasswordChange from "@/components/ForcePasswordChange";
 import { useState, useEffect, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import Landing from "./pages/Landing";
 
 // Lazy-loaded pages
 const Auth = lazy(() => import("./pages/Auth"));
@@ -36,7 +37,6 @@ const ElevePublic = lazy(() => import("./pages/ElevePublic"));
 const Boutique = lazy(() => import("./pages/Boutique"));
 const Tracabilite = lazy(() => import("./pages/Tracabilite"));
 const DownloadPage = lazy(() => import("./pages/Download"));
-const Landing = lazy(() => import("./pages/Landing"));
 const PreInscriptionPublic = lazy(() => import("./pages/PreInscriptionPublic"));
 const CoursAdmin = lazy(() => import("./pages/CoursAdmin"));
 const CalendrierScolaire = lazy(() => import("./pages/CalendrierScolaire"));
