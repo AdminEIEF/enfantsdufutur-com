@@ -122,8 +122,12 @@ export default function PreInscriptionPublic() {
     nom_eleve: '',
     date_naissance: '',
     sexe: '',
-    nom_parent: '',
-    telephone_parent: '',
+    nom_pere: '',
+    fonction_pere: '',
+    telephone_pere: '',
+    nom_mere: '',
+    fonction_mere: '',
+    telephone_mere: '',
     email_parent: '',
     niveau_id: '',
     classe_id: '',
@@ -195,7 +199,7 @@ export default function PreInscriptionPublic() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.prenom_eleve || !form.nom_eleve || !form.nom_parent || !form.telephone_parent) {
+    if (!form.prenom_eleve || !form.nom_eleve || !form.nom_pere || !form.telephone_pere) {
       toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
@@ -204,8 +208,8 @@ export default function PreInscriptionPublic() {
       const payload: any = {
         prenom_eleve: form.prenom_eleve.trim(),
         nom_eleve: form.nom_eleve.trim(),
-        nom_parent: form.nom_parent.trim(),
-        telephone_parent: form.telephone_parent.trim(),
+        nom_parent: `${form.nom_pere.trim()} / ${form.nom_mere.trim()}`.trim(),
+        telephone_parent: form.telephone_pere.trim(),
         option_cantine: form.option_cantine,
         option_transport: form.option_transport,
         option_uniformes: form.option_uniformes,
@@ -258,7 +262,7 @@ export default function PreInscriptionPublic() {
               📎 {uploadedDocs.length} document(s) joint(s)
             </p>
             <p className="text-sm text-muted-foreground">
-              Un membre de l'équipe vous rappellera au <strong>{form.telephone_parent}</strong>.
+              Un membre de l'équipe vous rappellera au <strong>{form.telephone_pere}</strong>.
             </p>
             <Link to="/">
               <Button variant="outline" className="mt-4">
@@ -283,18 +287,18 @@ export default function PreInscriptionPublic() {
   const sortedCycles = [...cycleMap.entries()].sort((a, b) => a[1].ordre - b[1].ordre);
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
       {/* Header */}
-      <nav className="bg-background border-b border-border">
+      <nav className="bg-background/80 backdrop-blur-lg border-b border-primary/10 sticky top-0 z-50">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
-              <GraduationCap className="h-4 w-4" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center shadow-md">
+              <GraduationCap className="h-5 w-5" />
             </div>
             <span className="font-bold text-sm">EI Enfants du Futur</span>
           </Link>
           <Link to="/">
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="rounded-xl">
               <ArrowLeft className="h-4 w-4 mr-1" /> Accueil
             </Button>
           </Link>
@@ -302,13 +306,17 @@ export default function PreInscriptionPublic() {
       </nav>
 
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-4">
-            <GraduationCap className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold text-primary">Inscription simplifiée</span>
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-primary/15 to-accent/15 border border-primary/20 mb-5 shadow-sm">
+            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+              <GraduationCap className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <span className="text-sm font-bold text-primary tracking-wide">Inscription simplifiée</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2">Pré-inscription en ligne</h1>
-          <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto">
+          <h1 className="text-3xl sm:text-4xl font-extrabold mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            Pré-inscription en ligne
+          </h1>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
             Remplissez ce formulaire pour soumettre une demande de pré-inscription. 
             Notre équipe vous contactera pour un rendez-vous.
           </p>
@@ -316,40 +324,45 @@ export default function PreInscriptionPublic() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Infos Élève */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Informations de l'élève</CardTitle>
+          <Card className="border-primary/10 shadow-lg shadow-primary/5 rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-primary/10 pb-4">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <span className="text-base">👶</span>
+                </div>
+                Informations de l'élève
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Prénom *</Label>
-                  <Input value={form.prenom_eleve} onChange={e => setForm(f => ({ ...f, prenom_eleve: e.target.value }))} required />
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prénom *</Label>
+                  <Input value={form.prenom_eleve} onChange={e => setForm(f => ({ ...f, prenom_eleve: e.target.value }))} required className="h-11 rounded-xl border-2 border-muted hover:border-primary/30 focus:border-primary transition-colors" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Nom *</Label>
-                  <Input value={form.nom_eleve} onChange={e => setForm(f => ({ ...f, nom_eleve: e.target.value }))} required />
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nom *</Label>
+                  <Input value={form.nom_eleve} onChange={e => setForm(f => ({ ...f, nom_eleve: e.target.value }))} required className="h-11 rounded-xl border-2 border-muted hover:border-primary/30 focus:border-primary transition-colors" />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Date de naissance</Label>
-                  <Input type="date" value={form.date_naissance} onChange={e => setForm(f => ({ ...f, date_naissance: e.target.value }))} />
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Date de naissance</Label>
+                  <Input type="date" value={form.date_naissance} onChange={e => setForm(f => ({ ...f, date_naissance: e.target.value }))} className="h-11 rounded-xl border-2 border-muted hover:border-primary/30 focus:border-primary transition-colors" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Sexe</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sexe</Label>
                   <Select value={form.sexe} onValueChange={v => setForm(f => ({ ...f, sexe: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="M">Masculin</SelectItem>
-                      <SelectItem value="F">Féminin</SelectItem>
+                    <SelectTrigger className="h-11 rounded-xl border-2 border-muted hover:border-primary/30 transition-colors"><SelectValue placeholder="Choisir" /></SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="M">👦 Masculin</SelectItem>
+                      <SelectItem value="F">👧 Féminin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Niveau souhaité</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Niveau souhaité</Label>
                   <Select value={form.niveau_id} onValueChange={v => setForm(f => ({ ...f, niveau_id: v, classe_id: '' }))}>
                     <SelectTrigger className="h-12 rounded-xl border-2 border-primary/20 bg-background shadow-sm hover:border-primary/40 transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10">
                       <SelectValue placeholder="🎓 Choisir un niveau..." />
@@ -371,7 +384,7 @@ export default function PreInscriptionPublic() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Classe souhaitée</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Classe souhaitée</Label>
                   <Select value={form.classe_id} onValueChange={v => setForm(f => ({ ...f, classe_id: v }))} disabled={!form.niveau_id || classes.length === 0}>
                     <SelectTrigger className="h-12 rounded-xl border-2 border-primary/20 bg-background shadow-sm hover:border-primary/40 transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10">
                       <SelectValue placeholder={!form.niveau_id ? 'Choisir un niveau d\'abord' : '📚 Choisir une classe...'} />
@@ -388,40 +401,80 @@ export default function PreInscriptionPublic() {
           </Card>
 
           {/* Infos Parent */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Informations du parent/tuteur</CardTitle>
+          <Card className="border-accent/10 shadow-lg shadow-accent/5 rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-accent/10 to-transparent border-b border-accent/10 pb-4">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center">
+                  <span className="text-base">👨‍👩‍👧</span>
+                </div>
+                Informations du parent / tuteur
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Nom complet *</Label>
-                <Input value={form.nom_parent} onChange={e => setForm(f => ({ ...f, nom_parent: e.target.value }))} required />
+            <CardContent className="space-y-5 pt-5">
+              {/* Père */}
+              <div className="p-4 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 space-y-3">
+                <p className="text-sm font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
+                  <span className="text-base">👨</span> Informations du Père
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nom & Prénom *</Label>
+                    <Input value={form.nom_pere} onChange={e => setForm(f => ({ ...f, nom_pere: e.target.value }))} required placeholder="Nom complet du père" className="h-11 rounded-xl border-2 border-blue-200/50 hover:border-blue-300 focus:border-blue-500 transition-colors" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fonction / Profession</Label>
+                    <Input value={form.fonction_pere} onChange={e => setForm(f => ({ ...f, fonction_pere: e.target.value }))} placeholder="Ex: Ingénieur, Commerçant..." className="h-11 rounded-xl border-2 border-blue-200/50 hover:border-blue-300 focus:border-blue-500 transition-colors" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contact téléphonique *</Label>
+                  <Input type="tel" value={form.telephone_pere} onChange={e => setForm(f => ({ ...f, telephone_pere: e.target.value }))} required placeholder="+224 6XX XXX XXX" className="h-11 rounded-xl border-2 border-blue-200/50 hover:border-blue-300 focus:border-blue-500 transition-colors" />
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Téléphone *</Label>
-                  <Input type="tel" value={form.telephone_parent} onChange={e => setForm(f => ({ ...f, telephone_parent: e.target.value }))} required placeholder="+224 6XX XXX XXX" />
+
+              {/* Mère */}
+              <div className="p-4 rounded-xl bg-pink-50/50 dark:bg-pink-950/20 border border-pink-200/50 dark:border-pink-800/30 space-y-3">
+                <p className="text-sm font-bold text-pink-700 dark:text-pink-400 flex items-center gap-2">
+                  <span className="text-base">👩</span> Informations de la Mère
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nom & Prénom</Label>
+                    <Input value={form.nom_mere} onChange={e => setForm(f => ({ ...f, nom_mere: e.target.value }))} placeholder="Nom complet de la mère" className="h-11 rounded-xl border-2 border-pink-200/50 hover:border-pink-300 focus:border-pink-500 transition-colors" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fonction / Profession</Label>
+                    <Input value={form.fonction_mere} onChange={e => setForm(f => ({ ...f, fonction_mere: e.target.value }))} placeholder="Ex: Enseignante, Médecin..." className="h-11 rounded-xl border-2 border-pink-200/50 hover:border-pink-300 focus:border-pink-500 transition-colors" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input type="email" value={form.email_parent} onChange={e => setForm(f => ({ ...f, email_parent: e.target.value }))} placeholder="optionnel" />
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contact téléphonique</Label>
+                  <Input type="tel" value={form.telephone_mere} onChange={e => setForm(f => ({ ...f, telephone_mere: e.target.value }))} placeholder="+224 6XX XXX XXX" className="h-11 rounded-xl border-2 border-pink-200/50 hover:border-pink-300 focus:border-pink-500 transition-colors" />
                 </div>
+              </div>
+
+              {/* Email commun */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">📧 Email de contact (optionnel)</Label>
+                <Input type="email" value={form.email_parent} onChange={e => setForm(f => ({ ...f, email_parent: e.target.value }))} placeholder="email@exemple.com" className="h-11 rounded-xl border-2 border-muted hover:border-primary/30 focus:border-primary transition-colors" />
               </div>
             </CardContent>
           </Card>
 
           {/* Documents à fournir */}
-          <Card>
-            <CardHeader>
+          <Card className="border-secondary/10 shadow-lg shadow-secondary/5 rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-secondary/10 to-transparent border-b border-secondary/10 pb-4">
               <CardTitle className="text-lg flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
+                <div className="w-8 h-8 rounded-lg bg-secondary/15 flex items-center justify-center">
+                  <FileText className="h-4 w-4 text-secondary-foreground" />
+                </div>
                 Dossier à fournir
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 Scannez ou prenez en photo chaque document.
               </p>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 pt-5">
               {DOCUMENTS_REQUIS.map((doc) => {
                 const uploaded = getDocForKey(doc.key);
                 return (
@@ -537,28 +590,44 @@ export default function PreInscriptionPublic() {
           <FichesDownloadSection />
 
           {/* Options */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Options souhaitées</CardTitle>
+          <Card className="border-primary/10 shadow-lg shadow-primary/5 rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-primary/10 pb-4">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <span className="text-base">⚙️</span>
+                </div>
+                Options souhaitées
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Checkbox id="cantine" checked={form.option_cantine} onCheckedChange={v => setForm(f => ({ ...f, option_cantine: !!v }))} />
-                <Label htmlFor="cantine" className="cursor-pointer">Cantine scolaire</Label>
-              </div>
-              <div className="flex items-center gap-3">
-                <Checkbox id="transport" checked={form.option_transport} onCheckedChange={v => setForm(f => ({ ...f, option_transport: !!v }))} />
-                <Label htmlFor="transport" className="cursor-pointer">Transport scolaire</Label>
-              </div>
-              <div className="flex items-center gap-3">
-                <Checkbox id="uniformes" checked={form.option_uniformes} onCheckedChange={v => setForm(f => ({ ...f, option_uniformes: !!v }))} />
-                <Label htmlFor="uniformes" className="cursor-pointer">Kit uniformes complet</Label>
+            <CardContent className="pt-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label htmlFor="cantine" className={`cursor-pointer flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${form.option_cantine ? 'border-primary bg-primary/5 shadow-sm' : 'border-muted hover:border-primary/30'}`}>
+                  <Checkbox id="cantine" checked={form.option_cantine} onCheckedChange={v => setForm(f => ({ ...f, option_cantine: !!v }))} />
+                  <div>
+                    <span className="text-lg">🍽️</span>
+                    <p className="text-sm font-medium mt-0.5">Cantine</p>
+                  </div>
+                </label>
+                <label htmlFor="transport" className={`cursor-pointer flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${form.option_transport ? 'border-primary bg-primary/5 shadow-sm' : 'border-muted hover:border-primary/30'}`}>
+                  <Checkbox id="transport" checked={form.option_transport} onCheckedChange={v => setForm(f => ({ ...f, option_transport: !!v }))} />
+                  <div>
+                    <span className="text-lg">🚌</span>
+                    <p className="text-sm font-medium mt-0.5">Transport</p>
+                  </div>
+                </label>
+                <label htmlFor="uniformes" className={`cursor-pointer flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${form.option_uniformes ? 'border-primary bg-primary/5 shadow-sm' : 'border-muted hover:border-primary/30'}`}>
+                  <Checkbox id="uniformes" checked={form.option_uniformes} onCheckedChange={v => setForm(f => ({ ...f, option_uniformes: !!v }))} />
+                  <div>
+                    <span className="text-lg">👔</span>
+                    <p className="text-sm font-medium mt-0.5">Uniformes</p>
+                  </div>
+                </label>
               </div>
             </CardContent>
           </Card>
 
-          <Button type="submit" className="w-full" size="lg" disabled={loading}>
-            {loading ? 'Envoi en cours…' : 'Soumettre ma demande de pré-inscription'}
+          <Button type="submit" className="w-full h-14 text-base font-bold rounded-2xl shadow-lg shadow-primary/20 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary transition-all" size="lg" disabled={loading}>
+            {loading ? 'Envoi en cours…' : '🚀 Soumettre ma demande de pré-inscription'}
           </Button>
         </form>
       </div>
