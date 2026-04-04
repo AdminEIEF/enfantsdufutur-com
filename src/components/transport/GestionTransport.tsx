@@ -76,7 +76,7 @@ function ZonesTab() {
   });
 
   const openEdit = (z: any) => {
-    setEditId(z.id); setNom(z.nom);
+    setEditId(z.id); setNom(z.nom); setPrixMensuel(z.prix_mensuel || 0);
     setQuartiersInput((z.quartiers ?? []).join(', ')); setOpen(true);
   };
 
