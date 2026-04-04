@@ -238,7 +238,7 @@ export default function ParentDashboard() {
             {/* ─── Quick Stats ─── */}
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-3 gap-2.5">
               {[
-                { label: 'Portefeuille', value: (dashData?.solde_famille || 0).toLocaleString(), icon: Wallet, gradient: 'from-emerald-500 to-teal-600', suffix: 'GNF' },
+                { label: 'Portefeuille', value: (dashData?.solde_famille || 0).toLocaleString(), icon: Wallet, gradient: 'from-emerald-500 to-teal-600', suffix: 'GNF', action: () => { setPaymentInitMode('wallet-recharge'); setPaymentOpen(true); } },
                 { label: 'Scolarité', value: totalPayeScolarite.toLocaleString(), icon: GraduationCap, gradient: 'from-blue-500 to-indigo-600', suffix: 'payé' },
                 { label: 'Transport', value: totalPayeTransport.toLocaleString(), icon: Bus, gradient: 'from-amber-500 to-orange-600', suffix: 'payé' },
               ].map((stat, i) => (
