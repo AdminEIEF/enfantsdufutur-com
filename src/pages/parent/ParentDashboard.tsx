@@ -224,7 +224,7 @@ export default function ParentDashboard() {
                 <Badge variant="secondary" className="text-[10px] ml-auto rounded-full">{eleves.length}</Badge>
               </h2>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2.5">
                 {eleves.map((enfant: any, i: number) => (
                   <motion.div
                     key={enfant.id}
