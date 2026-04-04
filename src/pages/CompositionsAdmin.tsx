@@ -701,6 +701,9 @@ export default function CompositionsAdmin() {
         </div>
       )}
 
+      {/* Connected Students Dashboard - after compositions */}
+      <ConnectedStudentsDashboard />
+
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-lg">
