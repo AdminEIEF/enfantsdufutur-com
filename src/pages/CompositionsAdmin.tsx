@@ -571,14 +571,27 @@ export default function CompositionsAdmin() {
     // Find all compositions with same titre (grouped across classes)
     const siblingComps = compositions.filter(c => c.titre === comp?.titre);
     const allResults: any[] = [];
-    for (const sc of siblingComps) {
-      const { data } = await supabase.from('composition_reponses')
-        .select('*, eleves:eleve_id(nom, prenom, matricule, classe_id, classes:classe_id(nom))')
-        .eq('composition_id', sc.id)
-        .order('score', { ascending: false });
-      (data || []).forEach((r: any) => allResults.push({ ...r, comp_classe: sc.classes?.nom, comp_id: sc.id, bareme: sc.bareme }));
-    }
+    const classeIds = siblingComps.map(sc => sc.classe_id);
+    
+    // Fetch results and total students per class in parallel
+    const [resultsArr, effectifRes] = await Promise.all([
+      Promise.all(siblingComps.map(async sc => {
+        const { data } = await supabase.from('composition_reponses')
+          .select('*, eleves:eleve_id(nom, prenom, matricule, classe_id, classes:classe_id(nom, niveaux:niveau_id(nom)))')
+          .eq('composition_id', sc.id)
+          .order('score', { ascending: false });
+        return (data || []).map((r: any) => ({ ...r, comp_classe: sc.classes?.nom, comp_id: sc.id, bareme: sc.bareme }));
+      })),
+      supabase.from('eleves')
+        .select('id, nom, prenom, matricule, classe_id, classes:classe_id(nom, niveaux:niveau_id(nom))')
+        .in('classe_id', classeIds)
+        .eq('statut', 'inscrit')
+        .is('deleted_at', null),
+    ]);
+    
+    resultsArr.forEach(arr => allResults.push(...arr));
     setResultsByClassData(allResults);
+    setResultsByClassEffectif(effectifRes.data || []);
     setResultsByClassLoading(false);
   }
 
