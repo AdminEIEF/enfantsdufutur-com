@@ -287,18 +287,18 @@ export default function PreInscriptionPublic() {
   const sortedCycles = [...cycleMap.entries()].sort((a, b) => a[1].ordre - b[1].ordre);
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
       {/* Header */}
-      <nav className="bg-background border-b border-border">
+      <nav className="bg-background/80 backdrop-blur-lg border-b border-primary/10 sticky top-0 z-50">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
-              <GraduationCap className="h-4 w-4" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center shadow-md">
+              <GraduationCap className="h-5 w-5" />
             </div>
             <span className="font-bold text-sm">EI Enfants du Futur</span>
           </Link>
           <Link to="/">
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="rounded-xl">
               <ArrowLeft className="h-4 w-4 mr-1" /> Accueil
             </Button>
           </Link>
@@ -306,13 +306,17 @@ export default function PreInscriptionPublic() {
       </nav>
 
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-4">
-            <GraduationCap className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold text-primary">Inscription simplifiée</span>
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-primary/15 to-accent/15 border border-primary/20 mb-5 shadow-sm">
+            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+              <GraduationCap className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <span className="text-sm font-bold text-primary tracking-wide">Inscription simplifiée</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2">Pré-inscription en ligne</h1>
-          <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto">
+          <h1 className="text-3xl sm:text-4xl font-extrabold mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            Pré-inscription en ligne
+          </h1>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
             Remplissez ce formulaire pour soumettre une demande de pré-inscription. 
             Notre équipe vous contactera pour un rendez-vous.
           </p>
