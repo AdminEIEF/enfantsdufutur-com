@@ -8,98 +8,100 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
 import { Loader2 } from "lucide-react";
 import ForcePasswordChange from "@/components/ForcePasswordChange";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import Inscriptions from "./pages/Inscriptions";
-import Familles from "./pages/Familles";
-import Eleves from "./pages/Eleves";
-import Notes from "./pages/Notes";
-import Bulletins from "./pages/Bulletins";
-import Orientation from "./pages/Orientation";
-import Paiements from "./pages/Paiements";
-import Depenses from "./pages/Depenses";
-import Impayes from "./pages/Impayes";
-import Finances from "./pages/Finances";
-import Cantine from "./pages/Cantine";
-import Transport from "./pages/Transport";
-import Bibliotheque from "./pages/Bibliotheque";
-import Librairie from "./pages/Librairie";
-import Notifications from "./pages/Notifications";
-import Reinscription from "./pages/Reinscription";
-import Configuration from "./pages/Configuration";
-import NotFound from "./pages/NotFound";
-import ElevePublic from "./pages/ElevePublic";
-import Boutique from "./pages/Boutique";
-import Tracabilite from "./pages/Tracabilite";
-import DownloadPage from "./pages/Download";
-import Landing from "./pages/Landing";
-import PreInscriptionPublic from "./pages/PreInscriptionPublic";
-import CoursAdmin from "./pages/CoursAdmin";
-import CalendrierScolaire from "./pages/CalendrierScolaire";
-import EmploiDuTemps from "./pages/EmploiDuTemps";
-import ParentLogin from "./pages/parent/ParentLogin";
-import ParentDashboard from "./pages/parent/ParentDashboard";
-import ParentEnfant from "./pages/parent/ParentEnfant";
+// Lazy-loaded pages
+const Auth = lazy(() => import("./pages/Auth"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Inscriptions = lazy(() => import("./pages/Inscriptions"));
+const Familles = lazy(() => import("./pages/Familles"));
+const Eleves = lazy(() => import("./pages/Eleves"));
+const Notes = lazy(() => import("./pages/Notes"));
+const Bulletins = lazy(() => import("./pages/Bulletins"));
+const Orientation = lazy(() => import("./pages/Orientation"));
+const Paiements = lazy(() => import("./pages/Paiements"));
+const Depenses = lazy(() => import("./pages/Depenses"));
+const Impayes = lazy(() => import("./pages/Impayes"));
+const Finances = lazy(() => import("./pages/Finances"));
+const Cantine = lazy(() => import("./pages/Cantine"));
+const Transport = lazy(() => import("./pages/Transport"));
+const Bibliotheque = lazy(() => import("./pages/Bibliotheque"));
+const Librairie = lazy(() => import("./pages/Librairie"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const Reinscription = lazy(() => import("./pages/Reinscription"));
+const Configuration = lazy(() => import("./pages/Configuration"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const ElevePublic = lazy(() => import("./pages/ElevePublic"));
+const Boutique = lazy(() => import("./pages/Boutique"));
+const Tracabilite = lazy(() => import("./pages/Tracabilite"));
+const DownloadPage = lazy(() => import("./pages/Download"));
+const Landing = lazy(() => import("./pages/Landing"));
+const PreInscriptionPublic = lazy(() => import("./pages/PreInscriptionPublic"));
+const CoursAdmin = lazy(() => import("./pages/CoursAdmin"));
+const CalendrierScolaire = lazy(() => import("./pages/CalendrierScolaire"));
+const EmploiDuTemps = lazy(() => import("./pages/EmploiDuTemps"));
+const ParentLogin = lazy(() => import("./pages/parent/ParentLogin"));
+const ParentDashboard = lazy(() => import("./pages/parent/ParentDashboard"));
+const ParentEnfant = lazy(() => import("./pages/parent/ParentEnfant"));
+const ParentNotifications = lazy(() => import("./pages/parent/ParentNotifications"));
+const StudentLogin = lazy(() => import("./pages/student/StudentLogin"));
+const StudentPrimaryLogin = lazy(() => import("./pages/student/StudentPrimaryLogin"));
+const StudentDashboard = lazy(() => import("./pages/student/StudentDashboard"));
+const StudentCours = lazy(() => import("./pages/student/StudentCours"));
+const StudentDevoirs = lazy(() => import("./pages/student/StudentDevoirs"));
+const StudentEmploiDuTemps = lazy(() => import("./pages/student/StudentEmploiDuTemps"));
+const StudentResultats = lazy(() => import("./pages/student/StudentResultats"));
+const StudentEvaluations = lazy(() => import("./pages/student/StudentEvaluations"));
+const StudentNotifications = lazy(() => import("./pages/student/StudentNotifications"));
+const StudentQuizMatieres = lazy(() => import("./pages/student/StudentQuizMatieres"));
+const Personnel = lazy(() => import("./pages/Personnel"));
+const PreInscriptionsAdmin = lazy(() => import("./pages/PreInscriptionsAdmin"));
+const EmployeeLogin = lazy(() => import("./pages/employee/EmployeeLogin"));
+const EmployeeDashboard = lazy(() => import("./pages/employee/EmployeeDashboard"));
+const EmployeeConges = lazy(() => import("./pages/employee/EmployeeConges"));
+const EmployeePaie = lazy(() => import("./pages/employee/EmployeePaie"));
+const EmployeeNotifications = lazy(() => import("./pages/employee/EmployeeNotifications"));
+const EmployeeCourriers = lazy(() => import("./pages/employee/EmployeeCourriers"));
+const EmployeePointage = lazy(() => import("./pages/employee/EmployeePointage"));
+const EmployeeEvaluation = lazy(() => import("./pages/employee/EmployeeEvaluation"));
+const EmployeePlanning = lazy(() => import("./pages/employee/EmployeePlanning"));
+const AdminMonitoring = lazy(() => import("./pages/AdminMonitoring"));
+const CoordinateurDashboard = lazy(() => import("./pages/CoordinateurDashboard"));
+const CoordinateurDocuments = lazy(() => import("./pages/CoordinateurDocuments"));
+const CoordinateurEleves = lazy(() => import("./pages/CoordinateurEleves"));
+const CoordinateurPersonnel = lazy(() => import("./pages/CoordinateurPersonnel"));
+const CoordinateurSecondaireDashboard = lazy(() => import("./pages/CoordinateurSecondaireDashboard"));
+const CoordinateurSecondairePersonnel = lazy(() => import("./pages/CoordinateurSecondairePersonnel"));
+const CoordinateurSecondaireEleves = lazy(() => import("./pages/CoordinateurSecondaireEleves"));
+const MesClasses = lazy(() => import("./pages/MesClasses"));
+const Robotique = lazy(() => import("./pages/Robotique"));
+const Performance = lazy(() => import("./pages/Performance"));
+const RobotiqueDashboard = lazy(() => import("./pages/RobotiqueDashboard"));
+const PointageEleves = lazy(() => import("./pages/PointageEleves"));
+const PointeurPointage = lazy(() => import("./pages/PointeurPointage"));
+const SuperviseurDashboard = lazy(() => import("./pages/SuperviseurDashboard"));
+const ServiceInfoDashboard = lazy(() => import("./pages/ServiceInfoDashboard"));
+const Corbeille = lazy(() => import("./pages/Corbeille"));
+const TresorierDashboard = lazy(() => import("./pages/TresorierDashboard"));
+const TresorierGestionSalaires = lazy(() => import("./pages/TresorierGestionSalaires"));
+const TresorierAvances = lazy(() => import("./pages/TresorierAvances"));
+const TresorierAvancesSoutien = lazy(() => import("./pages/TresorierAvancesSoutien"));
+const TresorierHistorique = lazy(() => import("./pages/TresorierHistorique"));
+const StudentEcriture = lazy(() => import("./pages/student/StudentEcriture"));
+const StudentCalculMental = lazy(() => import("./pages/student/StudentCalculMental"));
+const StudentCultureGenerale = lazy(() => import("./pages/student/StudentCultureGenerale"));
+const StudentColoriage = lazy(() => import("./pages/student/StudentColoriage"));
+const StudentSerpentAlphabet = lazy(() => import("./pages/student/StudentSerpentAlphabet"));
+const StudentAnglais = lazy(() => import("./pages/student/StudentAnglais"));
+const StudentPyramideAdditions = lazy(() => import("./pages/student/StudentPyramideAdditions"));
+const StudentCompositions = lazy(() => import("./pages/student/StudentCompositions"));
+const CompositionsAdmin = lazy(() => import("./pages/CompositionsAdmin"));
+const GestionSessions = lazy(() => import("./pages/GestionSessions"));
+
 import { ParentAuthProvider } from "@/hooks/useParentAuth";
 import { StudentAuthProvider } from "@/hooks/useStudentAuth";
 import { EmployeeAuthProvider } from "@/hooks/useEmployeeAuth";
-import StudentLogin from "./pages/student/StudentLogin";
-import StudentPrimaryLogin from "./pages/student/StudentPrimaryLogin";
-import StudentDashboard from "./pages/student/StudentDashboard";
-import StudentCours from "./pages/student/StudentCours";
-import StudentDevoirs from "./pages/student/StudentDevoirs";
-import StudentEmploiDuTemps from "./pages/student/StudentEmploiDuTemps";
-import StudentResultats from "./pages/student/StudentResultats";
-import StudentEvaluations from "./pages/student/StudentEvaluations";
-import ParentNotifications from "./pages/parent/ParentNotifications";
-import StudentNotifications from "./pages/student/StudentNotifications";
-import StudentQuizMatieres from "./pages/student/StudentQuizMatieres";
-import Personnel from "./pages/Personnel";
-import PreInscriptionsAdmin from "./pages/PreInscriptionsAdmin";
-import EmployeeLogin from "./pages/employee/EmployeeLogin";
-import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
-import EmployeeConges from "./pages/employee/EmployeeConges";
-import EmployeePaie from "./pages/employee/EmployeePaie";
-import EmployeeNotifications from "./pages/employee/EmployeeNotifications";
-import EmployeeCourriers from "./pages/employee/EmployeeCourriers";
-import EmployeePointage from "./pages/employee/EmployeePointage";
-import EmployeeEvaluation from "./pages/employee/EmployeeEvaluation";
-import EmployeePlanning from "./pages/employee/EmployeePlanning";
-import AdminMonitoring from "./pages/AdminMonitoring";
-import CoordinateurDashboard from "./pages/CoordinateurDashboard";
-import CoordinateurDocuments from "./pages/CoordinateurDocuments";
-import CoordinateurEleves from "./pages/CoordinateurEleves";
-import CoordinateurPersonnel from "./pages/CoordinateurPersonnel";
-import CoordinateurSecondaireDashboard from "./pages/CoordinateurSecondaireDashboard";
-import CoordinateurSecondairePersonnel from "./pages/CoordinateurSecondairePersonnel";
-import CoordinateurSecondaireEleves from "./pages/CoordinateurSecondaireEleves";
-import MesClasses from "./pages/MesClasses";
-import Robotique from "./pages/Robotique";
-import Performance from "./pages/Performance";
-import RobotiqueDashboard from "./pages/RobotiqueDashboard";
-import PointageEleves from "./pages/PointageEleves";
-import PointeurPointage from "./pages/PointeurPointage";
-import SuperviseurDashboard from "./pages/SuperviseurDashboard";
-import ServiceInfoDashboard from "./pages/ServiceInfoDashboard";
-import Corbeille from "./pages/Corbeille";
-import TresorierDashboard from "./pages/TresorierDashboard";
-import TresorierGestionSalaires from "./pages/TresorierGestionSalaires";
-import TresorierAvances from "./pages/TresorierAvances";
-import TresorierAvancesSoutien from "./pages/TresorierAvancesSoutien";
-import TresorierHistorique from "./pages/TresorierHistorique";
-import StudentEcriture from "./pages/student/StudentEcriture";
-import StudentCalculMental from "./pages/student/StudentCalculMental";
-import StudentCultureGenerale from "./pages/student/StudentCultureGenerale";
-import StudentColoriage from "./pages/student/StudentColoriage";
-import StudentSerpentAlphabet from "./pages/student/StudentSerpentAlphabet";
-import StudentAnglais from "./pages/student/StudentAnglais";
-import StudentPyramideAdditions from "./pages/student/StudentPyramideAdditions";
-import StudentCompositions from "./pages/student/StudentCompositions";
-import CompositionsAdmin from "./pages/CompositionsAdmin";
-import GestionSessions from "./pages/GestionSessions";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -122,6 +124,12 @@ if (typeof document !== 'undefined') {
   });
 }
 
+const LazyFallback = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+);
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const [mustChange, setMustChange] = useState<boolean | null>(null);
@@ -138,11 +146,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   if (loading || (user && mustChange === null)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LazyFallback />;
   }
   if (!user) return <Navigate to="/auth" replace />;
   if (mustChange) return <ForcePasswordChange onSuccess={() => setMustChange(false)} />;
@@ -152,14 +156,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function RoleBasedRedirect() {
   const { user, roles, loading } = useAuth();
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LazyFallback />;
   }
   if (!user) return <Navigate to="/auth" replace />;
-  // Redirect to role-specific page for single-purpose roles
   if (roles.length === 1) {
     if (roles[0] === 'superviseur') return <Navigate to="/superviseur-dashboard" replace />;
     if (roles[0] === 'cantine') return <Navigate to="/cantine" replace />;
@@ -181,11 +180,7 @@ function RoleBasedRedirect() {
 function AuthRoute() {
   const { user, roles, loading } = useAuth();
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LazyFallback />;
   }
   if (user) {
     if (roles.length === 1) {
@@ -214,6 +209,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <Suspense fallback={<LazyFallback />}>
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/download" element={<DownloadPage />} />
@@ -302,6 +298,7 @@ const App = () => (
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
