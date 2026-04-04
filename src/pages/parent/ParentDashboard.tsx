@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useParentAuth } from '@/hooks/useParentAuth';
 import {
   GraduationCap, LogOut, Wallet, TrendingDown, CreditCard, Users,
-  ChevronRight, UtensilsCrossed, BookOpen, Download, Loader2, MessageCircle, Smartphone, FileText,
-  Bus, ShoppingBag, CalendarDays, ArrowUpRight, Sparkles
+  ChevronRight, UtensilsCrossed, BookOpen, Loader2, MessageCircle, Smartphone, FileText,
+  Bus, CalendarDays, Phone, Mail, MapPin, X, Eye
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AIChatBubble } from '@/components/AIChatBubble';
@@ -19,7 +20,7 @@ import ParentPaymentDialog from '@/components/ParentPaymentDialog';
 import ParentDevisInscription from '@/components/ParentDevisInscription';
 import ParentCantineOrdre from '@/components/ParentCantineOrdre';
 import ParentCatalogueCommande from '@/components/ParentCatalogueCommande';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 
@@ -30,6 +31,7 @@ export default function ParentDashboard() {
   const [dashData, setDashData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [familyDetailsOpen, setFamilyDetailsOpen] = useState(false);
 
   useEffect(() => {
     if (!session) return;
@@ -73,7 +75,6 @@ export default function ParentDashboard() {
   let totalPayeScolarite = 0;
   let totalPayeTransport = 0;
   let totalPayeCantine = 0;
-  let totalSoldeCantine = 0;
 
   eleves.forEach((e: any) => {
     const frais = e.classes?.niveaux?.frais_scolarite || 0;
@@ -82,7 +83,6 @@ export default function ParentDashboard() {
       const zt = e.zones_transport;
       if (zt) totalTransportAnnuel += (zt.prix_mensuel || 0) * 10;
     }
-    totalSoldeCantine += e.solde_cantine || 0;
   });
 
   paiements.forEach((p: any) => {
@@ -94,7 +94,6 @@ export default function ParentDashboard() {
   const resteScolarite = totalScolariteAnnuel - totalPayeScolarite;
   const resteTransport = totalTransportAnnuel - totalPayeTransport;
   const resteTotal = resteScolarite + resteTransport;
-  const totalPaye = totalPayeScolarite + totalPayeTransport + totalPayeCantine;
 
   const currentMonth = new Date().getMonth();
   const moisIndex = currentMonth >= 8 ? currentMonth - 8 : currentMonth + 4;
@@ -109,7 +108,7 @@ export default function ParentDashboard() {
     <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background relative">
       <SchoolWatermark />
 
-      {/* ─── Header — Glassmorphism style ─── */}
+      {/* ─── Header ─── */}
       <header className="sticky top-0 z-30 bg-gradient-to-r from-primary via-primary/95 to-primary shadow-lg">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
@@ -120,10 +119,12 @@ export default function ParentDashboard() {
                 <GraduationCap className="h-5 w-5 text-primary-foreground" />
               </div>
             )}
-            <div className="min-w-0">
+            <button onClick={() => setFamilyDetailsOpen(true)} className="min-w-0 text-left hover:opacity-80 transition-opacity">
               <h1 className="font-bold text-sm text-primary-foreground leading-tight truncate">Espace Parent</h1>
-              <p className="text-[11px] text-primary-foreground/60 truncate font-medium">Famille {famille.nom_famille}</p>
-            </div>
+              <p className="text-[11px] text-primary-foreground/60 truncate font-medium underline decoration-dotted underline-offset-2">
+                Famille {famille.nom_famille} ▾
+              </p>
+            </button>
             {eleves.length > 1 && (
               <div className="hidden sm:flex -space-x-2 ml-1">
                 {eleves.slice(1, 4).map((e: any) => (
@@ -172,23 +173,15 @@ export default function ParentDashboard() {
                       <Wallet className="h-6 w-6 text-primary-foreground/70" />
                     </div>
                   </div>
-
-                  {/* Progress bar */}
                   <div className="space-y-1.5 mb-4">
                     <div className="flex justify-between text-[10px] text-primary-foreground/60 font-medium">
                       <span>Progression scolarité</span>
                       <span>{progressScolarite}%</span>
                     </div>
                     <div className="h-2 rounded-full bg-primary-foreground/10 overflow-hidden">
-                      <motion.div
-                        className="h-full rounded-full bg-primary-foreground/80"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progressScolarite}%` }}
-                        transition={{ duration: 1, ease: 'easeOut' }}
-                      />
+                      <motion.div className="h-full rounded-full bg-primary-foreground/80" initial={{ width: 0 }} animate={{ width: `${progressScolarite}%` }} transition={{ duration: 1, ease: 'easeOut' }} />
                     </div>
                   </div>
-
                   <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-primary-foreground/10 backdrop-blur-sm">
                     <CalendarDays className="h-4 w-4 text-primary-foreground/60 shrink-0" />
                     <p className="text-xs text-primary-foreground/80">
@@ -199,7 +192,7 @@ export default function ParentDashboard() {
               </Card>
             </motion.div>
 
-            {/* ─── Quick Stats Grid ─── */}
+            {/* ─── Quick Stats ─── */}
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-3 gap-2.5">
               {[
                 { label: 'Portefeuille', value: (dashData?.solde_famille || 0).toLocaleString(), icon: Wallet, gradient: 'from-emerald-500 to-teal-600', suffix: 'GNF' },
@@ -221,7 +214,7 @@ export default function ParentDashboard() {
               ))}
             </motion.div>
 
-            {/* ─── Children Cards ─── */}
+            {/* ─── Children Cards with Photos ─── */}
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-3">
               <h2 className="font-bold flex items-center gap-2 text-sm sm:text-base">
                 <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -230,6 +223,41 @@ export default function ParentDashboard() {
                 Mes enfants
                 <Badge variant="secondary" className="text-[10px] ml-auto rounded-full">{eleves.length}</Badge>
               </h2>
+
+              {/* Photo gallery strip */}
+              {eleves.length > 0 && (
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+                  {eleves.map((enfant: any, i: number) => (
+                    <motion.button
+                      key={enfant.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 + i * 0.06 }}
+                      onClick={() => navigate(`/parent/enfant/${enfant.id}`)}
+                      className="flex flex-col items-center gap-1.5 shrink-0 group"
+                    >
+                      <div className="relative">
+                        {enfant.photo_url ? (
+                          <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover shadow-lg ring-2 ring-border/40 group-hover:ring-primary/60 transition-all group-active:scale-95" />
+                        ) : (
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/30 flex items-center justify-center text-primary font-bold text-lg shadow-lg ring-2 ring-border/40 group-hover:ring-primary/60 transition-all group-active:scale-95">
+                            {enfant.prenom[0]}{enfant.nom[0]}
+                          </div>
+                        )}
+                        {enfant.option_cantine && (
+                          <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-md">
+                            <UtensilsCrossed className="h-2.5 w-2.5 text-white" />
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] font-semibold text-center leading-tight max-w-[72px] truncate">{enfant.prenom}</p>
+                      <p className="text-[9px] text-muted-foreground truncate max-w-[72px]">{enfant.classes?.nom}</p>
+                    </motion.button>
+                  ))}
+                </div>
+              )}
+
+              {/* Detailed child cards */}
               {eleves.map((enfant: any, i: number) => (
                 <motion.div key={enfant.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 + i * 0.05 }}>
                   <Card
@@ -275,19 +303,10 @@ export default function ParentDashboard() {
             </motion.div>
 
             {/* Catalogue & Commande */}
-            <ParentCatalogueCommande
-              enfants={eleves}
-              code={session.token}
-              soldeFamille={dashData?.solde_famille || 0}
-              onSuccess={fetchDashboard}
-            />
+            <ParentCatalogueCommande enfants={eleves} code={session.token} soldeFamille={dashData?.solde_famille || 0} onSuccess={fetchDashboard} />
 
             {/* Cantine Recharge */}
-            <ParentCantineOrdre
-              enfants={eleves}
-              code={session.token}
-              onSuccess={fetchDashboard}
-            />
+            <ParentCantineOrdre enfants={eleves} code={session.token} onSuccess={fetchDashboard} />
 
             {/* ─── Payment Tabs ─── */}
             <Tabs defaultValue="devis">
@@ -403,6 +422,116 @@ export default function ParentDashboard() {
         onSuccess={fetchDashboard}
         soldeFamille={dashData?.solde_famille || 0}
       />
+
+      {/* ─── Family Details Dialog ─── */}
+      <Dialog open={familyDetailsOpen} onOpenChange={setFamilyDetailsOpen}>
+        <DialogContent className="max-w-md p-0 overflow-hidden rounded-3xl border-0 shadow-2xl">
+          {/* Header gradient */}
+          <div className="bg-gradient-to-br from-primary via-primary/90 to-accent p-5 pb-8 relative">
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-primary-foreground/5 -translate-y-1/2 translate-x-1/4" />
+            <button onClick={() => setFamilyDetailsOpen(false)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
+              <X className="h-4 w-4 text-primary-foreground" />
+            </button>
+            <div className="relative z-10">
+              <div className="w-14 h-14 rounded-2xl bg-primary-foreground/15 flex items-center justify-center mb-3">
+                <Users className="h-7 w-7 text-primary-foreground" />
+              </div>
+              <h2 className="text-xl font-extrabold text-primary-foreground">Famille {famille.nom_famille}</h2>
+              <p className="text-xs text-primary-foreground/60 mt-1">{eleves.length} enfant{eleves.length > 1 ? 's' : ''} inscrit{eleves.length > 1 ? 's' : ''}</p>
+            </div>
+          </div>
+
+          <div className="p-5 -mt-4 space-y-4">
+            {/* Contact info */}
+            <Card className="border-0 shadow-md rounded-2xl bg-card">
+              <CardContent className="p-4 space-y-3">
+                <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Informations</h3>
+                {famille.telephone_pere && (
+                  <a href={`tel:${famille.telephone_pere}`} className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                      <Phone className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Tél. Père</p>
+                      <p className="text-sm font-semibold">{famille.telephone_pere}</p>
+                    </div>
+                  </a>
+                )}
+                {famille.telephone_mere && (
+                  <a href={`tel:${famille.telephone_mere}`} className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                      <Phone className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Tél. Mère</p>
+                      <p className="text-sm font-semibold">{famille.telephone_mere}</p>
+                    </div>
+                  </a>
+                )}
+                {famille.email_parent && (
+                  <a href={`mailto:${famille.email_parent}`} className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors">
+                    <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                      <Mail className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Email</p>
+                      <p className="text-sm font-semibold truncate">{famille.email_parent}</p>
+                    </div>
+                  </a>
+                )}
+                {famille.adresse && (
+                  <div className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/40">
+                    <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                      <MapPin className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Adresse</p>
+                      <p className="text-sm font-semibold">{famille.adresse}</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Wallet */}
+            <Card className="border-0 shadow-md rounded-2xl overflow-hidden">
+              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] text-white/70 uppercase tracking-wider font-medium">Solde Portefeuille</p>
+                  <p className="text-2xl font-extrabold text-white">{(dashData?.solde_famille || 0).toLocaleString()} GNF</p>
+                </div>
+                <Wallet className="h-8 w-8 text-white/30" />
+              </div>
+            </Card>
+
+            {/* Children gallery */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Enfants</h3>
+              <div className="grid grid-cols-2 gap-2.5">
+                {eleves.map((enfant: any) => (
+                  <button
+                    key={enfant.id}
+                    onClick={() => { setFamilyDetailsOpen(false); navigate(`/parent/enfant/${enfant.id}`); }}
+                    className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-muted/40 hover:bg-muted/60 transition-all active:scale-95"
+                  >
+                    {enfant.photo_url ? (
+                      <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-14 h-14 rounded-2xl object-cover shadow-md ring-2 ring-border/30" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary font-bold shadow-md">
+                        {enfant.prenom[0]}{enfant.nom[0]}
+                      </div>
+                    )}
+                    <div className="text-center">
+                      <p className="text-xs font-bold truncate max-w-[100px]">{enfant.prenom} {enfant.nom}</p>
+                      <p className="text-[10px] text-muted-foreground">{enfant.classes?.nom}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
