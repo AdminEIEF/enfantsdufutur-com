@@ -277,13 +277,6 @@ export default function ParentDashboard() {
                               <span className="text-3xl font-extrabold text-primary/25">{enfant.prenom[0]}{enfant.nom[0]}</span>
                             </div>
                           )}
-                          {/* Camera button overlay */}
-                          <button
-                            className="absolute bottom-1.5 left-1.5 w-7 h-7 rounded-full bg-background/80 backdrop-blur flex items-center justify-center shadow-md hover:bg-background transition-colors z-10"
-                            onClick={(e) => { e.stopPropagation(); setSelectedChildForPhoto(enfant.id); setTimeout(() => photoInputRef.current?.click(), 50); }}
-                          >
-                            {uploadingPhoto === enfant.id ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <Camera className="h-3.5 w-3.5 text-primary" />}
-                          </button>
                           {/* Badges overlay */}
                           <div className="absolute top-1.5 right-1.5 flex gap-1">
                             {enfant.option_cantine && (
