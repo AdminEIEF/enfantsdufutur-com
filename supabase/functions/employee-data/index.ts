@@ -317,7 +317,6 @@ serve(async (req) => {
 
     // ─── UPDATE PHOTO ───
     if (action === "update_photo") {
-      const { photo_url } = await req.json().catch(() => ({}));
       if (!photo_url) {
         return new Response(JSON.stringify({ error: "URL de photo requise" }), {
           status: 400,
