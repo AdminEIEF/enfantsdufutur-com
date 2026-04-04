@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Plus, Trash2, Pencil, GraduationCap, BookOpen, School, Tag, Calendar, Bus, Ruler, RotateCcw, Archive, Sun, Moon, Monitor, Palette } from 'lucide-react';
+import { Settings, Plus, Trash2, Pencil, GraduationCap, BookOpen, School, Tag, Calendar, Bus, Ruler, RotateCcw, Archive, Sun, Moon, Monitor, Palette, FileText } from 'lucide-react';
+import FichesRenseignementsAdmin from '@/components/FichesRenseignementsAdmin';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1736,6 +1737,7 @@ export default function Configuration() {
           <TabsTrigger value="tranches" className="text-xs sm:text-sm gap-1">💳 Tranches</TabsTrigger>
           {canManageUsers && <TabsTrigger value="theme" className="text-xs sm:text-sm gap-1"><Palette className="h-4 w-4" /> Thème</TabsTrigger>}
           <TabsTrigger value="corbeille" className="text-xs sm:text-sm gap-1">🗑️ Corbeille</TabsTrigger>
+          <TabsTrigger value="fiches" className="text-xs sm:text-sm gap-1">📄 Fiches</TabsTrigger>
         </TabsList>
         <TabsContent value="ecole"><EcoleTab /></TabsContent>
         {canManageUsers && <TabsContent value="utilisateurs"><AdminUserManagement /></TabsContent>}
@@ -1748,6 +1750,7 @@ export default function Configuration() {
         <TabsContent value="tranches"><TranchesTab /></TabsContent>
         {canManageUsers && <TabsContent value="theme"><ThemeTab /></TabsContent>}
         <TabsContent value="corbeille"><CorbeilleTab /></TabsContent>
+        <TabsContent value="fiches"><FichesRenseignementsAdmin /></TabsContent>
       </Tabs>
     </div>
   );

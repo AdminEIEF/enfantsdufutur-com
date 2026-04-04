@@ -513,6 +513,7 @@ export default function Landing() {
                     </button>
                   </li>
                 )}
+                <li><Link to="/pre-inscription" className="hover:text-white transition-colors flex items-center gap-2"><ChevronRight className="h-3 w-3" style={{ color: COLORS.green }} /> Fiches de renseignements</Link></li>
               </ul>
             </div>
             <div>
