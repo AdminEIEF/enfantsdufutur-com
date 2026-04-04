@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { GraduationCap, CheckCircle2, ArrowLeft, Upload, Camera, X, FileText, AlertCircle } from 'lucide-react';
+import { GraduationCap, CheckCircle2, ArrowLeft, Upload, Camera, X, FileText, AlertCircle, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
