@@ -35,6 +35,7 @@ export default function StudentCompositions() {
   const blockedRef = useRef(false);
   const [photos, setPhotos] = useState<{ id: string; dataUrl: string }[]>([]);
   const [currentQIndex, setCurrentQIndex] = useState(0);
+  const [listTab, setListTab] = useState<'active' | 'history'>('active');
 
   const capturePhoto = () => {
     const input = document.createElement('input');
