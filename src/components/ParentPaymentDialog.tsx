@@ -691,7 +691,86 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                   </motion.div>
                 )}
 
-                {/* ─── DEBIT SUB-MODE (transport, autre) ─── */}
+                {/* ─── TRANSPORT SUB-MODE ─── */}
+                {walletSubMode === 'transport' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                    {transportEnfants.length === 0 ? (
+                      <div className="text-center py-6">
+                        <Bus className="h-10 w-10 mx-auto text-muted-foreground/40 mb-2" />
+                        <p className="text-sm text-muted-foreground">Aucun enfant inscrit au transport scolaire</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">L'option transport doit être activée lors de l'inscription</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-bold">Enfant(s) à payer</Label>
+                            {transportEnfants.length > 1 && (
+                              <button onClick={() => setTransportSelectedIds(prev => prev.length === transportEnfants.length ? [] : transportEnfants.map(e => e.id))} className="text-[10px] font-bold text-primary hover:underline">
+                                {transportSelectedIds.length === transportEnfants.length ? 'Désélectionner' : 'Tous'}
+                              </button>
+                            )}
+                          </div>
+                          <div className="space-y-1.5">
+                            {transportEnfants.map(e => {
+                              const prix = e.zones_transport?.prix_mensuel || 0;
+                              const zoneName = e.zones_transport?.nom || '—';
+                              return (
+                                <label key={e.id} className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${transportSelectedIds.includes(e.id) ? 'border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 shadow-sm' : 'border-border hover:bg-muted/50'}`}>
+                                  <Checkbox checked={transportSelectedIds.includes(e.id)} onCheckedChange={() => setTransportSelectedIds(prev => prev.includes(e.id) ? prev.filter(x => x !== e.id) : [...prev, e.id])} />
+                                  {e.photo_url ? (
+                                    <img src={e.photo_url} alt="" className="w-9 h-9 rounded-xl object-cover" />
+                                  ) : (
+                                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-700 font-bold text-xs">{e.prenom[0]}{e.nom[0]}</div>
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-sm truncate">{e.prenom} {e.nom}</p>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <Badge variant="outline" className="text-[9px] px-1.5 rounded-full">{zoneName}</Badge>
+                                      <span className="text-[10px] font-bold text-amber-700">{prix.toLocaleString()} GNF</span>
+                                    </div>
+                                  </div>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="bg-muted/40 rounded-2xl p-3 text-xs text-muted-foreground">
+                          <p className="font-bold text-foreground mb-1">📅 {moisCourantLabel} {anneeCourante}</p>
+                          <p>Le montant est calculé automatiquement selon le trajet de chaque enfant.</p>
+                        </div>
+
+                        {transportSelectedIds.length > 0 && (
+                          <Card className="border-0 shadow-md rounded-2xl bg-amber-50 dark:bg-amber-950/20">
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Total à débiter</p>
+                                  <p className="text-xl font-extrabold text-amber-700">{transportTotal.toLocaleString()} GNF</p>
+                                  {transportSelectedIds.length > 1 && <p className="text-[10px] text-muted-foreground">{transportSelectedIds.length} enfant(s)</p>}
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-[10px] text-muted-foreground">Solde après</p>
+                                  <p className={`text-sm font-bold ${soldeFamille - transportTotal < 0 ? 'text-destructive' : 'text-emerald-600'}`}>{(soldeFamille - transportTotal).toLocaleString()} GNF</p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+
+                        {transportTotal > soldeFamille && <p className="text-xs text-destructive font-medium text-center">⚠️ Solde insuffisant</p>}
+
+                        <Button onClick={handleTransportPayment} disabled={transportLoading || transportSelectedIds.length === 0 || transportTotal <= 0 || transportTotal > soldeFamille} className="w-full rounded-2xl h-12 font-bold bg-amber-600 hover:bg-amber-700" size="lg">
+                          {transportLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Bus className="h-4 w-4 mr-2" />}
+                          Payer le transport
+                        </Button>
+                      </>
+                    )}
+                  </motion.div>
+                )}
+
+                {/* ─── DEBIT SUB-MODE (autre) ─── */}
                 {walletSubMode === 'debit' && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                     {!isSingle ? (
