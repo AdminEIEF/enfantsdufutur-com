@@ -1936,6 +1936,33 @@ export type Database = {
         }
         Relationships: []
       }
+      fiches_renseignements: {
+        Row: {
+          created_at: string
+          fichier_nom: string
+          fichier_url: string
+          id: string
+          nom: string
+          ordre: number
+        }
+        Insert: {
+          created_at?: string
+          fichier_nom: string
+          fichier_url: string
+          id?: string
+          nom: string
+          ordre?: number
+        }
+        Update: {
+          created_at?: string
+          fichier_nom?: string
+          fichier_url?: string
+          id?: string
+          nom?: string
+          ordre?: number
+        }
+        Relationships: []
+      }
       fournisseurs: {
         Row: {
           adresse: string | null
