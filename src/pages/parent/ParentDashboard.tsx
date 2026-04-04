@@ -105,14 +105,14 @@ export default function ParentDashboard() {
 
   const handleLogout = () => { logout(); navigate('/parent', { replace: true }); };
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleParentPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !selectedChildForPhoto) return;
-    setUploadingPhoto(selectedChildForPhoto);
+    if (!file) return;
+    setUploadingPhoto('parent');
     try {
       const formData = new FormData();
       formData.append('code', session.token);
-      formData.append('eleve_id', selectedChildForPhoto);
+      formData.append('action', 'upload_parent_photo');
       formData.append('photo', file);
       const resp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parent-data`,
@@ -120,13 +120,19 @@ export default function ParentDashboard() {
       );
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error);
-      toast.success('Photo mise à jour !');
+      toast.success('Photo de profil mise à jour !');
+      // Update session locally
+      const stored = localStorage.getItem('parent_session');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        parsed.famille.photo_url = data.photo_url;
+        localStorage.setItem('parent_session', JSON.stringify(parsed));
+      }
       fetchDashboard();
     } catch (err: any) {
       toast.error(err.message || 'Erreur upload photo');
     } finally {
       setUploadingPhoto(null);
-      setSelectedChildForPhoto(null);
       if (photoInputRef.current) photoInputRef.current.value = '';
     }
   };
