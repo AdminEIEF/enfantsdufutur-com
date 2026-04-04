@@ -20,11 +20,8 @@ interface PaymentDialogProps {
 }
 
 const TYPE_OPTIONS = [
-  { value: 'scolarite', label: 'Scolarité', emoji: '🎓', description: 'Tranche mensuelle' },
   { value: 'cantine', label: 'Cantine', emoji: '🍽️', description: 'Recharge repas' },
   { value: 'transport', label: 'Transport', emoji: '🚌', description: 'Frais transport' },
-  { value: 'wallet', label: 'Portefeuille', emoji: '💰', description: 'Recharge solde' },
-  { value: 'inscription', label: 'Inscription', emoji: '📋', description: "Frais d'inscription" },
   { value: 'librairie', label: 'Librairie', emoji: '📚', description: 'Fournitures' },
   { value: 'boutique', label: 'Boutique', emoji: '👕', description: 'Uniformes' },
   { value: 'autre', label: 'Autre', emoji: '📦', description: 'Autre paiement' },
