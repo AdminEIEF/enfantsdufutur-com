@@ -424,7 +424,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                     <Wallet className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
                     <p className="text-sm text-muted-foreground">Solde insuffisant</p>
                     <p className="text-xs text-muted-foreground mt-1">Rechargez via Mobile Money d'abord</p>
-                    <Button variant="outline" className="mt-3 rounded-xl" onClick={() => setActiveMode('mobile')}>
+                    <Button variant="outline" className="mt-3 rounded-xl" onClick={() => { setActiveMode('mobile'); setMobileMode('manuel'); setManuelPurpose('wallet'); }}>
                       <Smartphone className="h-4 w-4 mr-2" /> Recharger
                     </Button>
                   </div>
