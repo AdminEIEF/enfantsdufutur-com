@@ -96,6 +96,7 @@ function ZonesTab() {
           <TableHeader>
             <TableRow>
               <TableHead>Zone</TableHead>
+              <TableHead className="text-right">Prix mensuel</TableHead>
               <TableHead>Bus assigné</TableHead>
               <TableHead>Chauffeur</TableHead>
               <TableHead>Quartiers</TableHead>
