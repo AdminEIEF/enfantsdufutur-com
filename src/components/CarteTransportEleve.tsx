@@ -64,6 +64,20 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     },
   });
 
+  // Paiements transport pour vérifier si le parent a payé
+  const { data: paiementsTransport = [] } = useQuery({
+    queryKey: ['paiements-transport'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('paiements')
+        .select('*')
+        .eq('type_paiement', 'transport')
+        .order('date_paiement', { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
   const rechargeMutation = useMutation({
     mutationFn: async ({ eleveId, montant }: { eleveId: string; montant: number }) => {
       await supabase
