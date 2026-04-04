@@ -3,9 +3,8 @@ import { StudentLayout } from '@/components/StudentLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
-import { Trophy, RotateCcw, Star, CheckCircle2, XCircle, Loader2, BookOpen } from 'lucide-react';
+import { Trophy, RotateCcw, Star, CheckCircle2, XCircle, Loader2, BookOpen, ArrowLeft, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
@@ -18,7 +17,7 @@ interface QuizQuestion {
 
 const TOTAL_QUESTIONS = 10;
 
-// Banque de questions par famille de matière
+// Question banks (unchanged)
 const QUESTION_BANKS: Record<string, QuizQuestion[]> = {
   mathematiques: [
     { question: "Quel est le résultat de 15 × 12 ?", options: ["160", "170", "180", "190"], correctIndex: 2, matiere: "Mathématiques" },
@@ -80,7 +79,7 @@ const QUESTION_BANKS: Record<string, QuizQuestion[]> = {
   ],
   anglais: [
     { question: "What is the past tense of 'go'?", options: ["Goed", "Gone", "Went", "Going"], correctIndex: 2, matiere: "Anglais" },
-    { question: "'She ___ to school every day.' ", options: ["go", "goes", "going", "gone"], correctIndex: 1, matiere: "Anglais" },
+    { question: "'She ___ to school every day.'", options: ["go", "goes", "going", "gone"], correctIndex: 1, matiere: "Anglais" },
     { question: "What is the plural of 'child'?", options: ["Childs", "Children", "Childes", "Childrens"], correctIndex: 1, matiere: "Anglais" },
     { question: "What does 'beautiful' mean?", options: ["Laid", "Beau/Belle", "Grand", "Petit"], correctIndex: 1, matiere: "Anglais" },
     { question: "'I ___ a student.' — correct verb?", options: ["is", "are", "am", "be"], correctIndex: 2, matiere: "Anglais" },
@@ -99,7 +98,6 @@ const QUESTION_BANKS: Record<string, QuizQuestion[]> = {
   ],
 };
 
-// Map matière names to question bank keys
 function getQuestionBankKey(matiereName: string): string | null {
   const lower = matiereName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   if (lower.includes('math')) return 'mathematiques';
@@ -117,12 +115,22 @@ function getQuestionBankKey(matiereName: string): string | null {
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
 }
+
+const MATIERE_GRADIENTS = [
+  'from-blue-500 to-indigo-600', 'from-emerald-500 to-teal-600', 'from-violet-500 to-purple-600',
+  'from-amber-500 to-orange-600', 'from-rose-500 to-pink-600', 'from-cyan-500 to-blue-600',
+  'from-fuchsia-500 to-pink-600', 'from-lime-500 to-green-600', 'from-sky-500 to-indigo-600',
+  'from-red-500 to-rose-600',
+];
+
+const MATIERE_EMOJIS: Record<string, string> = {
+  mathematiques: '🔢', francais: '📖', sciences: '🔬', histoire: '📜',
+  geographie: '🌍', physique: '⚡', chimie: '🧪', anglais: '🇬🇧',
+  arabe: '🕌', education_civique: '🏛️',
+};
 
 export default function StudentQuizMatieres() {
   const { session } = useStudentAuth();
@@ -139,30 +147,18 @@ export default function StudentQuizMatieres() {
     if (!session) return;
     (async () => {
       try {
-        const resp = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/student-data`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            },
-            body: JSON.stringify({ token: session.token, action: 'cours' }),
-          }
-        );
+        const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/student-data`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+          body: JSON.stringify({ token: session.token, action: 'cours' }),
+        });
         const data = await resp.json();
         const cms = data.classe_matieres || [];
-        const matList: { id: string; nom: string }[] = cms
-          .map((cm: any) => cm.matieres)
-          .filter((m: any) => m && getQuestionBankKey(m.nom));
-        // Deduplicate
+        const matList = cms.map((cm: any) => cm.matieres).filter((m: any) => m && getQuestionBankKey(m.nom));
         const unique = Array.from(new Map(matList.map((m: any) => [m.id, m])).values());
         setMatieres(unique);
-      } catch {
-        toast.error('Erreur de chargement');
-      } finally {
-        setLoading(false);
-      }
+      } catch { toast.error('Erreur de chargement'); }
+      finally { setLoading(false); }
     })();
   }, [session]);
 
@@ -183,148 +179,126 @@ export default function StudentQuizMatieres() {
     setAnswered(idx);
     if (idx === questions[currentQ].correctIndex) setScore(s => s + 1);
     setTimeout(() => {
-      if (currentQ + 1 >= questions.length) {
-        setFinished(true);
-      } else {
-        setCurrentQ(q => q + 1);
-        setAnswered(null);
-      }
+      if (currentQ + 1 >= questions.length) setFinished(true);
+      else { setCurrentQ(q => q + 1); setAnswered(null); }
     }, 1200);
   };
 
-  const MATIERE_COLORS = [
-    { bg: 'from-blue-500 to-blue-600', light: 'bg-blue-50 dark:bg-blue-950/30', text: 'text-blue-600' },
-    { bg: 'from-emerald-500 to-emerald-600', light: 'bg-emerald-50 dark:bg-emerald-950/30', text: 'text-emerald-600' },
-    { bg: 'from-violet-500 to-violet-600', light: 'bg-violet-50 dark:bg-violet-950/30', text: 'text-violet-600' },
-    { bg: 'from-amber-500 to-amber-600', light: 'bg-amber-50 dark:bg-amber-950/30', text: 'text-amber-600' },
-    { bg: 'from-rose-500 to-rose-600', light: 'bg-rose-50 dark:bg-rose-950/30', text: 'text-rose-600' },
-    { bg: 'from-cyan-500 to-cyan-600', light: 'bg-cyan-50 dark:bg-cyan-950/30', text: 'text-cyan-600' },
-    { bg: 'from-orange-500 to-orange-600', light: 'bg-orange-50 dark:bg-orange-950/30', text: 'text-orange-600' },
-    { bg: 'from-pink-500 to-pink-600', light: 'bg-pink-50 dark:bg-pink-950/30', text: 'text-pink-600' },
-    { bg: 'from-teal-500 to-teal-600', light: 'bg-teal-50 dark:bg-teal-950/30', text: 'text-teal-600' },
-    { bg: 'from-indigo-500 to-indigo-600', light: 'bg-indigo-50 dark:bg-indigo-950/30', text: 'text-indigo-600' },
-  ];
-
-  const MATIERE_EMOJIS: Record<string, string> = {
-    mathematiques: '🔢', francais: '📖', sciences: '🔬', histoire: '📜',
-    geographie: '🌍', physique: '⚡', chimie: '🧪', anglais: '🇬🇧',
-    arabe: '🕌', education_civique: '🏛️',
-  };
-
+  // ── Matière selection grid ──
   if (!selectedMatiere) {
+    const pages: typeof matieres[] = [];
+    for (let i = 0; i < matieres.length; i += 6) pages.push(matieres.slice(i, i + 6));
+
     return (
       <StudentLayout>
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-              <BookOpen className="h-5 w-5 text-white" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg">
+              <Zap className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold">Quiz Matières</h2>
-              <p className="text-xs text-muted-foreground">Teste tes connaissances par matière</p>
+              <h2 className="text-lg font-extrabold">Quiz Matières</h2>
+              <p className="text-xs text-muted-foreground">Teste tes connaissances !</p>
             </div>
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-16">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
+            <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
           ) : matieres.length === 0 ? (
-            <Card>
-              <CardContent className="py-10 text-center text-muted-foreground">
+            <Card className="border-0 shadow-md rounded-2xl">
+              <CardContent className="py-12 text-center text-muted-foreground">
+                <span className="text-3xl block mb-2">📚</span>
                 Aucune matière avec quiz disponible
               </CardContent>
             </Card>
-          ) : (() => {
-            // Group matieres into pages of 6 (2x3)
-            const pages: typeof matieres[] = [];
-            for (let i = 0; i < matieres.length; i += 6) {
-              pages.push(matieres.slice(i, i + 6));
-            }
-            return (
-              <div className="space-y-3">
-                <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-3 -mx-2 px-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
-                  {pages.map((page, pageIdx) => (
-                    <div key={pageIdx} className="snap-center shrink-0 w-full">
-                      <div className="grid grid-cols-3 grid-rows-2 gap-2.5">
-                        {page.map((m, i) => {
-                          const globalIdx = pageIdx * 6 + i;
-                          const color = MATIERE_COLORS[globalIdx % MATIERE_COLORS.length];
-                          const key = getQuestionBankKey(m.nom);
-                          const emoji = key ? MATIERE_EMOJIS[key] || '📚' : '📚';
-                          return (
-                            <motion.div
-                              key={m.id}
-                              initial={{ opacity: 0, scale: 0.9 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: i * 0.05, type: 'spring', damping: 20 }}
-                            >
-                              <Card
-                                className="cursor-pointer overflow-hidden border-0 shadow-md hover:shadow-xl transition-all active:scale-[0.95]"
-                                onClick={() => startQuiz(m.nom)}
-                              >
-                                <div className={`h-1.5 bg-gradient-to-r ${color.bg}`} />
-                                <CardContent className="p-3 flex flex-col items-center gap-1.5">
-                                  <motion.span
-                                    className="text-2xl"
-                                    whileHover={{ scale: 1.2, rotate: 10 }}
-                                    transition={{ type: 'spring', stiffness: 300 }}
-                                  >
-                                    {emoji}
-                                  </motion.span>
-                                  <p className="text-xs font-semibold text-center leading-tight line-clamp-2">{m.nom}</p>
-                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
-                                    {QUESTION_BANKS[key!]?.length || 0} Q
-                                  </Badge>
-                                </CardContent>
-                              </Card>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-3 -mx-2 px-2 scrollbar-hide" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+                {pages.map((page, pageIdx) => (
+                  <div key={pageIdx} className="snap-center shrink-0 w-full">
+                    <div className="grid grid-cols-3 grid-rows-2 gap-3">
+                      {page.map((m, i) => {
+                        const globalIdx = pageIdx * 6 + i;
+                        const gradient = MATIERE_GRADIENTS[globalIdx % MATIERE_GRADIENTS.length];
+                        const key = getQuestionBankKey(m.nom);
+                        const emoji = key ? MATIERE_EMOJIS[key] || '📚' : '📚';
+                        const qCount = key ? QUESTION_BANKS[key]?.length || 0 : 0;
+                        return (
+                          <motion.div key={m.id} initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.06, type: 'spring', damping: 18 }}>
+                            <Card className="cursor-pointer border-0 shadow-lg rounded-2xl overflow-hidden hover:shadow-xl transition-all active:scale-[0.93]" onClick={() => startQuiz(m.nom)}>
+                              <div className={`h-16 bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
+                                <motion.span className="text-3xl drop-shadow-lg" whileHover={{ scale: 1.3, rotate: 12 }} transition={{ type: 'spring', stiffness: 300 }}>
+                                  {emoji}
+                                </motion.span>
+                                <div className="absolute bottom-1 right-1.5 bg-white/20 backdrop-blur-sm rounded-full px-1.5 py-0.5">
+                                  <span className="text-[9px] text-white font-bold">{qCount}Q</span>
+                                </div>
+                              </div>
+                              <CardContent className="p-2.5 text-center">
+                                <p className="text-[11px] font-bold leading-tight line-clamp-2">{m.nom}</p>
+                              </CardContent>
+                            </Card>
+                          </motion.div>
+                        );
+                      })}
                     </div>
+                  </div>
+                ))}
+              </div>
+              {pages.length > 1 && (
+                <div className="flex justify-center gap-1.5">
+                  {pages.map((_, idx) => (
+                    <div key={idx} className="w-2 h-2 rounded-full bg-primary/30" />
                   ))}
                 </div>
-                {pages.length > 1 && (
-                  <div className="flex justify-center gap-1.5">
-                    {pages.map((_, idx) => (
-                      <div key={idx} className="w-2 h-2 rounded-full bg-primary/30" />
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
+              )}
+            </div>
+          )}
         </div>
       </StudentLayout>
     );
   }
 
+  // ── Result screen ──
   if (finished) {
     const pct = Math.round((score / questions.length) * 100);
     const stars = pct >= 90 ? 3 : pct >= 60 ? 2 : pct >= 40 ? 1 : 0;
     return (
       <StudentLayout>
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="max-w-md mx-auto">
-          <Card className="overflow-hidden border-0 shadow-xl">
-            <div className="bg-gradient-to-br from-primary via-primary/80 to-accent p-6 text-center text-white">
-              <Trophy className="h-12 w-12 mx-auto mb-2" />
-              <h2 className="text-xl font-bold">Quiz terminé !</h2>
-              <p className="text-sm opacity-80">{selectedMatiere}</p>
-            </div>
-            <CardContent className="p-6 space-y-4 text-center">
-              <div className="flex justify-center gap-1">
-                {[1, 2, 3].map(s => (
-                  <Star key={s} className={`h-8 w-8 ${s <= stars ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/20'}`} />
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="max-w-sm mx-auto">
+          <Card className="overflow-hidden border-0 shadow-2xl rounded-3xl">
+            <div className="bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 p-8 text-center text-white relative overflow-hidden">
+              <div className="absolute inset-0 opacity-10">
+                {[...Array(8)].map((_, i) => (
+                  <motion.div key={i} className="absolute w-16 h-16 rounded-full bg-white/20"
+                    style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }}
+                    animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.1, 0.3] }}
+                    transition={{ duration: 3, repeat: Infinity, delay: i * 0.4 }} />
                 ))}
               </div>
-              <p className="text-3xl font-extrabold">{score}/{questions.length}</p>
-              <p className="text-sm text-muted-foreground">{pct}% de bonnes réponses</p>
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }}>
+                <Trophy className="h-14 w-14 mx-auto mb-3 drop-shadow-lg" />
+              </motion.div>
+              <h2 className="text-xl font-extrabold">Quiz terminé !</h2>
+              <p className="text-sm opacity-80 mt-1">{selectedMatiere}</p>
+            </div>
+            <CardContent className="p-6 space-y-5 text-center">
+              <div className="flex justify-center gap-2">
+                {[1, 2, 3].map(s => (
+                  <motion.div key={s} initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', delay: 0.3 + s * 0.15 }}>
+                    <Star className={`h-10 w-10 ${s <= stars ? 'text-amber-400 fill-amber-400 drop-shadow-md' : 'text-muted-foreground/15'}`} />
+                  </motion.div>
+                ))}
+              </div>
+              <div>
+                <p className="text-4xl font-black">{score}<span className="text-lg text-muted-foreground font-medium">/{questions.length}</span></p>
+                <p className="text-sm text-muted-foreground mt-1">{pct}% de bonnes réponses</p>
+              </div>
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => startQuiz(selectedMatiere)}>
+                <Button variant="outline" className="flex-1 rounded-2xl h-11" onClick={() => startQuiz(selectedMatiere!)}>
                   <RotateCcw className="h-4 w-4 mr-1" /> Rejouer
                 </Button>
-                <Button className="flex-1" onClick={() => { setSelectedMatiere(null); setQuestions([]); }}>
+                <Button className="flex-1 rounded-2xl h-11 bg-gradient-to-r from-violet-500 to-purple-600 border-0 shadow-md" onClick={() => { setSelectedMatiere(null); setQuestions([]); }}>
                   Autres matières
                 </Button>
               </div>
@@ -335,81 +309,89 @@ export default function StudentQuizMatieres() {
     );
   }
 
+  // ── Quiz gameplay ──
   const q = questions[currentQ];
   const progress = ((currentQ + (answered !== null ? 1 : 0)) / questions.length) * 100;
 
   return (
     <StudentLayout>
-      <div className="max-w-md mx-auto space-y-4">
+      <div className="max-w-md mx-auto space-y-5">
+        {/* Top bar */}
         <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={() => { setSelectedMatiere(null); setQuestions([]); }}>
-            ← Retour
+          <Button variant="ghost" size="icon" className="rounded-xl h-9 w-9" onClick={() => { setSelectedMatiere(null); setQuestions([]); }}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <Badge variant="outline">{selectedMatiere}</Badge>
-          <span className="text-sm font-bold">{currentQ + 1}/{questions.length}</span>
+          <Badge className="bg-gradient-to-r from-violet-500 to-purple-600 text-white border-0 rounded-xl px-3 py-1 text-xs font-bold">{selectedMatiere}</Badge>
+          <div className="bg-muted rounded-xl px-3 py-1.5">
+            <span className="text-xs font-extrabold">{currentQ + 1}<span className="text-muted-foreground font-normal">/{questions.length}</span></span>
+          </div>
         </div>
 
-        <div className="space-y-1">
-          <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
-            <span>Progression</span>
-            <span>{Math.round(progress)}%</span>
-          </div>
-          <div className="relative h-3 w-full rounded-full bg-secondary overflow-hidden">
+        {/* Progress */}
+        <div className="space-y-2">
+          <div className="relative h-3 w-full rounded-full bg-secondary overflow-hidden shadow-inner">
             <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600"
-              initial={{ width: 0 }}
+              className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600 shadow-sm"
               animate={{ width: `${progress}%` }}
               transition={{ type: 'spring', damping: 20, stiffness: 100 }}
             />
           </div>
-          <div className="flex gap-[2px]">
+          <div className="flex gap-[3px]">
             {questions.map((_, i) => (
-              <div
+              <motion.div
                 key={i}
-                className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                  i < currentQ ? 'bg-emerald-500' : i === currentQ && answered !== null ? 'bg-emerald-500' : i === currentQ ? 'bg-primary animate-pulse' : 'bg-muted'
+                className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
+                  i < currentQ ? 'bg-emerald-500' : i === currentQ && answered !== null ? 'bg-emerald-500' : i === currentQ ? 'bg-primary' : 'bg-muted'
                 }`}
+                animate={i === currentQ && answered === null ? { opacity: [1, 0.5, 1] } : {}}
+                transition={{ duration: 1.2, repeat: Infinity }}
               />
             ))}
           </div>
         </div>
 
+        {/* Question card */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentQ}
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -40 }}
-            transition={{ type: 'spring', damping: 20 }}
+            initial={{ opacity: 0, x: 50, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -50, scale: 0.95 }}
+            transition={{ type: 'spring', damping: 22 }}
           >
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-5 space-y-4">
-                <p className="text-base font-semibold leading-relaxed">{q.question}</p>
-                <div className="grid gap-2">
+            <Card className="border-0 shadow-xl rounded-3xl overflow-hidden">
+              <div className="h-1.5 bg-gradient-to-r from-violet-500 to-purple-600" />
+              <CardContent className="p-5 space-y-5">
+                <p className="text-base font-bold leading-relaxed">{q.question}</p>
+                <div className="grid gap-2.5">
                   {q.options.map((opt, idx) => {
-                    let variant = 'outline' as const;
-                    let extraClass = 'hover:bg-muted/60 active:scale-[0.98] transition-all';
+                    const isCorrect = idx === q.correctIndex;
+                    const isSelected = idx === answered;
+                    let cardStyle = 'border-border/50 bg-background hover:bg-muted/60 hover:border-primary/30';
                     if (answered !== null) {
-                      if (idx === q.correctIndex) extraClass = 'bg-emerald-50 border-emerald-500 text-emerald-700 dark:bg-emerald-950/30';
-                      else if (idx === answered) extraClass = 'bg-red-50 border-red-500 text-red-700 dark:bg-red-950/30';
-                      else extraClass = 'opacity-50';
+                      if (isCorrect) cardStyle = 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 shadow-emerald-100 dark:shadow-none shadow-md';
+                      else if (isSelected) cardStyle = 'border-red-400 bg-red-50 dark:bg-red-950/30';
+                      else cardStyle = 'border-border/20 bg-muted/30 opacity-50';
                     }
                     return (
-                      <motion.div key={idx} whileTap={{ scale: answered === null ? 0.97 : 1 }}>
-                        <Button
-                          variant={variant}
-                          className={`w-full justify-start text-left h-auto py-3 px-4 text-sm ${extraClass}`}
-                          onClick={() => handleAnswer(idx)}
-                          disabled={answered !== null}
-                        >
-                          <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold mr-3 shrink-0">
-                            {String.fromCharCode(65 + idx)}
-                          </span>
-                          <span className="flex-1">{opt}</span>
-                          {answered !== null && idx === q.correctIndex && <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />}
-                          {answered !== null && idx === answered && idx !== q.correctIndex && <XCircle className="h-4 w-4 text-red-600 shrink-0" />}
-                        </Button>
-                      </motion.div>
+                      <motion.button
+                        key={idx}
+                        whileTap={answered === null ? { scale: 0.96 } : {}}
+                        onClick={() => handleAnswer(idx)}
+                        disabled={answered !== null}
+                        className={`w-full flex items-center gap-3 text-left p-3.5 rounded-2xl border-2 transition-all ${cardStyle}`}
+                      >
+                        <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
+                          answered !== null && isCorrect ? 'bg-emerald-500 text-white' :
+                          answered !== null && isSelected ? 'bg-red-400 text-white' :
+                          'bg-muted text-muted-foreground'
+                        }`}>
+                          {answered !== null && isCorrect ? <CheckCircle2 className="h-4 w-4" /> :
+                           answered !== null && isSelected ? <XCircle className="h-4 w-4" /> :
+                           String.fromCharCode(65 + idx)}
+                        </span>
+                        <span className="flex-1 text-sm font-medium">{opt}</span>
+                      </motion.button>
                     );
                   })}
                 </div>
@@ -418,10 +400,13 @@ export default function StudentQuizMatieres() {
           </motion.div>
         </AnimatePresence>
 
+        {/* Score badge */}
         <div className="text-center">
-          <Badge variant="secondary" className="text-xs">
-            Score : {score}/{currentQ + (answered !== null ? 1 : 0)}
-          </Badge>
+          <motion.div animate={{ scale: answered !== null && answered === questions[currentQ]?.correctIndex ? [1, 1.15, 1] : 1 }} transition={{ duration: 0.3 }}>
+            <Badge className="bg-muted border-0 rounded-xl px-4 py-1.5 text-xs font-bold">
+              ⚡ Score : {score}/{currentQ + (answered !== null ? 1 : 0)}
+            </Badge>
+          </motion.div>
         </div>
       </div>
     </StudentLayout>
