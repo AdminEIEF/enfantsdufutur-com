@@ -574,13 +574,6 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                 {/* ─── CATALOGUE SUB-MODE ─── */}
                 {walletSubMode === 'catalogue' && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-                    {/* Type toggle */}
-                    <Tabs value={catalogueType} onValueChange={(v) => setCatalogueType(v as any)}>
-                      <TabsList className="w-full grid grid-cols-2 h-9 rounded-xl">
-                        <TabsTrigger value="librairie" className="text-xs rounded-lg gap-1"><BookOpen className="h-3.5 w-3.5" /> Librairie</TabsTrigger>
-                        <TabsTrigger value="boutique" className="text-xs rounded-lg gap-1"><ShoppingBag className="h-3.5 w-3.5" /> Boutique</TabsTrigger>
-                      </TabsList>
-                    </Tabs>
 
                     {/* Child selector */}
                     {!isSingle ? (
@@ -596,28 +589,36 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                     ) : catalogue.length === 0 ? (
                       <p className="text-center text-xs text-muted-foreground py-6">{!catalogueEleveId && !isSingle ? 'Sélectionnez un enfant' : 'Aucun article disponible'}</p>
                     ) : (
-                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                         {catalogue.map(article => {
                           const inCart = cart.find(c => c.article.id === article.id);
                           return (
-                            <div key={article.id} className="flex items-center gap-2.5 p-2.5 rounded-xl border bg-card hover:bg-accent/50 transition-colors">
+                            <div key={article.id} className="flex items-center gap-3 p-3 rounded-2xl border bg-card hover:shadow-md transition-all">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${catalogueType === 'librairie' ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : 'bg-gradient-to-br from-pink-500 to-rose-600'}`}>
+                                {catalogueType === 'librairie' ? <BookOpen className="h-4 w-4 text-white" /> : <ShoppingBag className="h-4 w-4 text-white" />}
+                              </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium truncate">{article.nom}</p>
-                                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                  <Badge variant="outline" className="text-[9px] px-1">{article.categorie}</Badge>
-                                  {(article as any).taille && (article as any).taille !== 'unique' && <span>T: {(article as any).taille}</span>}
+                                <p className="text-sm font-semibold leading-tight">{article.nom}</p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <Badge variant="outline" className="text-[9px] px-1.5 rounded-full">{article.categorie}</Badge>
+                                  {(article as any).taille && (article as any).taille !== 'unique' && <span className="text-[10px] text-muted-foreground">T: {(article as any).taille}</span>}
+                                  {article.stock <= 3 && article.stock > 0 && <span className="text-[9px] text-amber-600 font-semibold">⚠ {article.stock} restant(s)</span>}
                                 </div>
                               </div>
-                              <p className="text-xs font-bold text-primary whitespace-nowrap">{article.prix.toLocaleString()}</p>
-                              {inCart ? (
-                                <div className="flex items-center gap-0.5 shrink-0">
-                                  <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => updateQuantite(article.id, -1)}><Minus className="h-2.5 w-2.5" /></Button>
-                                  <span className="w-5 text-center text-xs font-bold">{inCart.quantite}</span>
-                                  <Button size="icon" variant="outline" className="h-6 w-6" onClick={() => updateQuantite(article.id, 1)}><Plus className="h-2.5 w-2.5" /></Button>
-                                </div>
-                              ) : (
-                                <Button size="icon" variant="secondary" className="h-6 w-6" onClick={() => addToCart(article)} disabled={article.stock <= 0}><Plus className="h-3 w-3" /></Button>
-                              )}
+                              <div className="flex flex-col items-end gap-1 shrink-0">
+                                <p className="text-xs font-bold text-primary">{article.prix.toLocaleString()} <span className="text-[9px] opacity-60">GNF</span></p>
+                                {inCart ? (
+                                  <div className="flex items-center gap-0.5">
+                                    <Button size="icon" variant="outline" className="h-6 w-6 rounded-lg" onClick={() => updateQuantite(article.id, -1)}><Minus className="h-2.5 w-2.5" /></Button>
+                                    <span className="w-5 text-center text-xs font-bold">{inCart.quantite}</span>
+                                    <Button size="icon" variant="outline" className="h-6 w-6 rounded-lg" onClick={() => updateQuantite(article.id, 1)}><Plus className="h-2.5 w-2.5" /></Button>
+                                  </div>
+                                ) : (
+                                  <Button size="sm" variant="secondary" className="h-7 px-2.5 text-[10px] font-bold rounded-lg gap-1" onClick={() => addToCart(article)} disabled={article.stock <= 0}>
+                                    <Plus className="h-3 w-3" /> Ajouter
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                           );
                         })}
