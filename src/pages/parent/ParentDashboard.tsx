@@ -283,15 +283,15 @@ export default function ParentDashboard() {
 
             {/* ─── Payment Tabs ─── */}
             <Tabs defaultValue="devis">
-              <TabsList className="w-full grid grid-cols-3 h-10 rounded-2xl bg-muted/60 p-1">
-                <TabsTrigger value="devis" className="rounded-xl text-xs font-bold data-[state=active]:shadow-md">
-                  <FileText className="h-3.5 w-3.5 mr-1" /> Devis
+              <TabsList className="w-full grid grid-cols-3 h-12 rounded-2xl bg-muted/50 p-1.5 gap-1">
+                <TabsTrigger value="devis" className="rounded-xl text-xs font-bold data-[state=active]:shadow-lg data-[state=active]:bg-card gap-1.5 transition-all">
+                  <FileText className="h-4 w-4" /> Devis
                 </TabsTrigger>
-                <TabsTrigger value="historique" className="rounded-xl text-xs font-bold data-[state=active]:shadow-md">
-                  <CreditCard className="h-3.5 w-3.5 mr-1" /> Hist.
+                <TabsTrigger value="historique" className="rounded-xl text-xs font-bold data-[state=active]:shadow-lg data-[state=active]:bg-card gap-1.5 transition-all">
+                  <CreditCard className="h-4 w-4" /> Historique
                 </TabsTrigger>
-                <TabsTrigger value="echeancier" className="rounded-xl text-xs font-bold data-[state=active]:shadow-md">
-                  <TrendingDown className="h-3.5 w-3.5 mr-1" /> Éch.
+                <TabsTrigger value="echeancier" className="rounded-xl text-xs font-bold data-[state=active]:shadow-lg data-[state=active]:bg-card gap-1.5 transition-all">
+                  <TrendingDown className="h-4 w-4" /> Échéancier
                 </TabsTrigger>
               </TabsList>
 
@@ -311,25 +311,39 @@ export default function ParentDashboard() {
                   <div className="space-y-2">
                     {paiements.slice(0, 20).map((p: any) => {
                       const enfant = eleves.find((e: any) => e.id === p.eleve_id);
-                      const typeEmojis: Record<string, string> = { scolarite: '🎓', transport: '🚌', cantine: '🍽️', fournitures: '📚', librairie: '📚', boutique: '👕', inscription: '📝', reinscription: '🔄' };
+                      const typeConfig: Record<string, { emoji: string; gradient: string }> = {
+                        scolarite: { emoji: '🎓', gradient: 'from-blue-500 to-indigo-600' },
+                        transport: { emoji: '🚌', gradient: 'from-amber-500 to-orange-600' },
+                        cantine: { emoji: '🍽️', gradient: 'from-emerald-500 to-teal-600' },
+                        fournitures: { emoji: '📚', gradient: 'from-purple-500 to-violet-600' },
+                        librairie: { emoji: '📚', gradient: 'from-purple-500 to-violet-600' },
+                        boutique: { emoji: '👕', gradient: 'from-pink-500 to-rose-600' },
+                        inscription: { emoji: '📝', gradient: 'from-cyan-500 to-blue-600' },
+                        reinscription: { emoji: '🔄', gradient: 'from-cyan-500 to-blue-600' },
+                      };
+                      const cfg = typeConfig[p.type_paiement] || { emoji: '📦', gradient: 'from-gray-500 to-gray-600' };
                       return (
-                        <Card key={p.id} className="border-0 shadow-sm rounded-2xl hover:shadow-md transition-shadow">
-                          <CardContent className="py-3 px-4 flex items-center justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <p className="text-xs sm:text-sm font-semibold truncate">
-                                  {typeEmojis[p.type_paiement] || '📦'} {p.type_paiement}
-                                  {p.type_paiement === 'cantine' && p.mois_concerne === 'Recharge directe' && ' (directe)'}
-                                  {p.type_paiement === 'cantine' && p.mois_concerne === 'Recharge ordonnée' && ' (ordonnée ✓)'}
-                                  {p.mois_concerne && !p.mois_concerne.startsWith('Recharge') && ` — ${p.mois_concerne}`}
-                                </p>
-                                {enfant && <Badge variant="outline" className="text-[10px] px-1.5 rounded-full">{enfant.prenom}</Badge>}
+                        <Card key={p.id} className="border-0 shadow-md rounded-2xl overflow-hidden hover:shadow-lg transition-all">
+                          <CardContent className="p-0">
+                            <div className="flex items-center gap-3 p-3.5">
+                              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${cfg.gradient} flex items-center justify-center text-lg shrink-0 shadow-md`}>
+                                {cfg.emoji}
                               </div>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">
-                                {new Date(p.date_paiement).toLocaleDateString('fr-FR')} • {p.canal}
-                              </p>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-sm font-bold truncate capitalize">{p.type_paiement}</p>
+                                  {enfant && <Badge variant="secondary" className="text-[9px] px-1.5 rounded-full shrink-0">{enfant.prenom}</Badge>}
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  {new Date(p.date_paiement).toLocaleDateString('fr-FR')} • {p.canal}
+                                  {p.mois_concerne && !p.mois_concerne.startsWith('Recharge') && ` • ${p.mois_concerne}`}
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="font-extrabold text-emerald-600 text-sm">{p.montant.toLocaleString()}</p>
+                                <p className="text-[9px] text-muted-foreground font-medium">GNF</p>
+                              </div>
                             </div>
-                            <span className="font-extrabold text-emerald-600 text-xs sm:text-sm whitespace-nowrap shrink-0">{p.montant.toLocaleString()} GNF</span>
                           </CardContent>
                         </Card>
                       );
@@ -338,47 +352,46 @@ export default function ParentDashboard() {
                 )}
               </TabsContent>
 
-              <TabsContent value="echeancier" className="mt-4">
-                <Card className="border-0 shadow-md rounded-2xl overflow-hidden">
-                  <CardContent className="p-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/40">
-                          <TableHead className="text-xs font-bold">Mois</TableHead>
-                          <TableHead className="text-right text-xs font-bold">Scolarité</TableHead>
-                          <TableHead className="text-right text-xs font-bold">Statut</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {MOIS_SCOLAIRES.map((mois, idx) => {
-                          const paiementsMois = paiements.filter(
-                            (p: any) => p.type_paiement === 'scolarite' && p.mois_concerne?.includes(mois)
-                          );
-                          const payeMois = paiementsMois.reduce((s: number, p: any) => s + p.montant, 0);
-                          const isPaid = payeMois >= mensualiteScolarite;
-                          const isCurrentMonth = idx === moisIndex;
-                          return (
-                            <TableRow key={mois} className={isCurrentMonth ? 'bg-primary/5' : ''}>
-                              <TableCell className="font-medium text-xs py-2.5">
-                                {mois} {isCurrentMonth && <Badge variant="outline" className="ml-1 text-[10px] rounded-full">Actuel</Badge>}
-                              </TableCell>
-                              <TableCell className="text-right text-xs py-2.5 whitespace-nowrap">{mensualiteScolarite.toLocaleString()} GNF</TableCell>
-                              <TableCell className="text-right py-2.5">
-                                {payeMois > 0 ? (
-                                  <Badge variant={isPaid ? 'default' : 'secondary'} className={`text-[10px] rounded-full ${isPaid ? 'bg-emerald-600' : ''}`}>
-                                    {isPaid ? '✓ Payé' : `${payeMois.toLocaleString()} / ${mensualiteScolarite.toLocaleString()}`}
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px] rounded-full">Non payé</Badge>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
+              <TabsContent value="echeancier" className="mt-4 space-y-2">
+                {MOIS_SCOLAIRES.map((mois, idx) => {
+                  const paiementsMois = paiements.filter(
+                    (p: any) => p.type_paiement === 'scolarite' && p.mois_concerne?.includes(mois)
+                  );
+                  const payeMois = paiementsMois.reduce((s: number, p: any) => s + p.montant, 0);
+                  const isPaid = payeMois >= mensualiteScolarite;
+                  const isCurrentMonth = idx === moisIndex;
+                  const progressMois = mensualiteScolarite > 0 ? Math.min(100, Math.round((payeMois / mensualiteScolarite) * 100)) : 0;
+                  return (
+                    <Card key={mois} className={`border-0 shadow-md rounded-2xl overflow-hidden transition-all ${isCurrentMonth ? 'ring-2 ring-primary shadow-lg' : ''}`}>
+                      <CardContent className="p-3.5">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-extrabold ${isPaid ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600' : isCurrentMonth ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                              {idx + 1}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold">{mois}</p>
+                              {isCurrentMonth && <p className="text-[9px] text-primary font-semibold">Mois actuel</p>}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            {isPaid ? (
+                              <Badge className="bg-emerald-600 text-[10px] rounded-full px-2.5 shadow-sm">✓ Payé</Badge>
+                            ) : payeMois > 0 ? (
+                              <Badge variant="secondary" className="text-[10px] rounded-full px-2.5">{payeMois.toLocaleString()} / {mensualiteScolarite.toLocaleString()}</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px] rounded-full">Non payé</Badge>
+                            )}
+                          </div>
+                        </div>
+                        {/* Mini progress bar */}
+                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div className={`h-full rounded-full transition-all duration-500 ${isPaid ? 'bg-emerald-500' : payeMois > 0 ? 'bg-amber-500' : 'bg-muted-foreground/20'}`} style={{ width: `${progressMois}%` }} />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </TabsContent>
             </Tabs>
           </>
