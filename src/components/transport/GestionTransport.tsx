@@ -114,6 +114,7 @@ function ZonesTab() {
               return (
                 <TableRow key={z.id}>
                   <TableCell className="font-medium">{z.nom}</TableCell>
+                  <TableCell className="text-right font-semibold">{(z.prix_mensuel || 0).toLocaleString('fr-FR')} GNF</TableCell>
                   <TableCell>
                     {veh ? (
                       <div className="text-sm">
