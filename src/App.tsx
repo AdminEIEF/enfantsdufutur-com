@@ -96,6 +96,7 @@ const StudentSerpentAlphabet = lazy(() => import("./pages/student/StudentSerpent
 const StudentAnglais = lazy(() => import("./pages/student/StudentAnglais"));
 const StudentPyramideAdditions = lazy(() => import("./pages/student/StudentPyramideAdditions"));
 const StudentCompositions = lazy(() => import("./pages/student/StudentCompositions"));
+const StudentLibrairie = lazy(() => import("./pages/student/StudentLibrairie"));
 const CompositionsAdmin = lazy(() => import("./pages/CompositionsAdmin"));
 const GestionSessions = lazy(() => import("./pages/GestionSessions"));
 
