@@ -457,17 +457,22 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => {
-                                setRechargeDialog(e);
-                                setMontantRecharge(String(prixZone));
-                              }}
+                              onClick={() => setRechargeDialog(e)}
                             >
-                              <Wallet className="h-3 w-3 mr-1" /> Recharger
+                              <Wallet className="h-3 w-3 mr-1" /> Valider
+                            </Button>
+                          ) : !parentPaid && !alreadyThisMonth ? (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => setCashPayDialog(e)}
+                            >
+                              <Banknote className="h-3 w-3 mr-1" /> Espèces
                             </Button>
                           ) : alreadyThisMonth ? (
                             <Badge variant="secondary" className="text-[10px]">✓ Rechargé</Badge>
                           ) : (
-                            <Badge variant="outline" className="text-[10px] text-muted-foreground">En attente paiement</Badge>
+                            <Badge variant="outline" className="text-[10px] text-muted-foreground">En attente</Badge>
                           )}
                           <Button size="sm" variant="ghost" onClick={() => setPrintCard({ ...e, recharge })}>
                             <Printer className="h-3 w-3" />
