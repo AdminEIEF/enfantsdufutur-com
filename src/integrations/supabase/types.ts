@@ -2866,6 +2866,7 @@ export type Database = {
       }
       pre_inscriptions: {
         Row: {
+          adresse_transport: string | null
           classe_id: string | null
           converted_eleve_id: string | null
           converted_famille_id: string | null
@@ -2873,10 +2874,15 @@ export type Database = {
           date_naissance: string | null
           date_rdv: string | null
           email_parent: string | null
+          enfants_supplementaires: Json | null
+          fonction_mere: string | null
+          fonction_pere: string | null
           id: string
           niveau_id: string | null
           nom_eleve: string
+          nom_mere: string | null
           nom_parent: string
+          nom_pere: string | null
           notes_admin: string | null
           option_cantine: boolean | null
           option_transport: boolean | null
@@ -2884,12 +2890,19 @@ export type Database = {
           prenom_eleve: string
           sexe: string | null
           statut: string
+          telephone_mere: string | null
           telephone_parent: string
+          telephone_pere: string | null
           traite_at: string | null
           traite_par: string | null
+          uniforme_karate: boolean | null
+          uniforme_scolaire: boolean | null
+          uniforme_scout: boolean | null
+          uniforme_sport: boolean | null
           updated_at: string
         }
         Insert: {
+          adresse_transport?: string | null
           classe_id?: string | null
           converted_eleve_id?: string | null
           converted_famille_id?: string | null
@@ -2897,10 +2910,15 @@ export type Database = {
           date_naissance?: string | null
           date_rdv?: string | null
           email_parent?: string | null
+          enfants_supplementaires?: Json | null
+          fonction_mere?: string | null
+          fonction_pere?: string | null
           id?: string
           niveau_id?: string | null
           nom_eleve: string
+          nom_mere?: string | null
           nom_parent: string
+          nom_pere?: string | null
           notes_admin?: string | null
           option_cantine?: boolean | null
           option_transport?: boolean | null
@@ -2908,12 +2926,19 @@ export type Database = {
           prenom_eleve: string
           sexe?: string | null
           statut?: string
+          telephone_mere?: string | null
           telephone_parent: string
+          telephone_pere?: string | null
           traite_at?: string | null
           traite_par?: string | null
+          uniforme_karate?: boolean | null
+          uniforme_scolaire?: boolean | null
+          uniforme_scout?: boolean | null
+          uniforme_sport?: boolean | null
           updated_at?: string
         }
         Update: {
+          adresse_transport?: string | null
           classe_id?: string | null
           converted_eleve_id?: string | null
           converted_famille_id?: string | null
@@ -2921,10 +2946,15 @@ export type Database = {
           date_naissance?: string | null
           date_rdv?: string | null
           email_parent?: string | null
+          enfants_supplementaires?: Json | null
+          fonction_mere?: string | null
+          fonction_pere?: string | null
           id?: string
           niveau_id?: string | null
           nom_eleve?: string
+          nom_mere?: string | null
           nom_parent?: string
+          nom_pere?: string | null
           notes_admin?: string | null
           option_cantine?: boolean | null
           option_transport?: boolean | null
@@ -2932,9 +2962,15 @@ export type Database = {
           prenom_eleve?: string
           sexe?: string | null
           statut?: string
+          telephone_mere?: string | null
           telephone_parent?: string
+          telephone_pere?: string | null
           traite_at?: string | null
           traite_par?: string | null
+          uniforme_karate?: boolean | null
+          uniforme_scolaire?: boolean | null
+          uniforme_scout?: boolean | null
+          uniforme_sport?: boolean | null
           updated_at?: string
         }
         Relationships: [
