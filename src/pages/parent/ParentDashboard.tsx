@@ -243,7 +243,7 @@ export default function ParentDashboard() {
                 { label: 'Transport', value: totalPayeTransport.toLocaleString(), icon: Bus, gradient: 'from-amber-500 to-orange-600', suffix: 'payé' },
               ].map((stat, i) => (
                 <motion.div key={stat.label} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 + i * 0.05 }}>
-                  <Card className="border-0 shadow-lg rounded-2xl overflow-hidden">
+                  <Card className={`border-0 shadow-lg rounded-2xl overflow-hidden ${(stat as any).action ? 'cursor-pointer active:scale-[0.97] transition-transform' : ''}`} onClick={(stat as any).action}>
                     <div className={`bg-gradient-to-br ${stat.gradient} p-3 text-white`}>
                       <stat.icon className="h-4 w-4 mb-2 opacity-70" />
                       <p className="text-lg sm:text-xl font-extrabold leading-none truncate">{stat.value}</p>
