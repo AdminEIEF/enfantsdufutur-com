@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -11,7 +11,7 @@ import { useParentAuth } from '@/hooks/useParentAuth';
 import {
   GraduationCap, LogOut, Wallet, TrendingDown, CreditCard, Users,
   ChevronRight, UtensilsCrossed, BookOpen, Loader2, MessageCircle, Smartphone, FileText,
-  Bus, CalendarDays, Phone, Mail, MapPin, X, Eye
+  Bus, CalendarDays, Phone, Mail, MapPin, X, Eye, Camera
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AIChatBubble } from '@/components/AIChatBubble';
