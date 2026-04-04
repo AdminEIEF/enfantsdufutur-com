@@ -101,18 +101,19 @@ function ZonesTab() {
           <TableHeader>
             <TableRow>
               <TableHead>Zone</TableHead>
-              <TableHead className="text-right">Prix mensuel</TableHead>
-              <TableHead>Bus assigné</TableHead>
-              <TableHead>Chauffeur</TableHead>
+              <TableHead className="text-right">Aller-Retour</TableHead>
+              <TableHead className="text-right">Aller simple</TableHead>
+              <TableHead className="text-right">Retour simple</TableHead>
+              <TableHead>Bus / Chauffeur</TableHead>
               <TableHead>Quartiers</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
             ) : zones.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Aucune zone</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Aucune zone</TableCell></TableRow>
             ) : zones.map((z: any) => {
               const veh = getVehiculeForZone(z.id);
               const chauffeur = veh?.employes;
@@ -120,6 +121,8 @@ function ZonesTab() {
                 <TableRow key={z.id}>
                   <TableCell className="font-medium">{z.nom}</TableCell>
                   <TableCell className="text-right font-semibold">{(z.prix_mensuel || 0).toLocaleString('fr-FR')} GNF</TableCell>
+                  <TableCell className="text-right text-sm">{(z.prix_aller_simple || 0).toLocaleString('fr-FR')} GNF</TableCell>
+                  <TableCell className="text-right text-sm">{(z.prix_retour_simple || 0).toLocaleString('fr-FR')} GNF</TableCell>
                   <TableCell>
                     {veh ? (
                       <div className="text-sm">
