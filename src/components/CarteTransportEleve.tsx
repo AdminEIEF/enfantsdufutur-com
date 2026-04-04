@@ -180,6 +180,15 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   };
 
+  const hasTransportPaidThisMonth = (eleveId: string) => {
+    const now = new Date();
+    return paiementsTransport.some(
+      (p: any) => p.eleve_id === eleveId &&
+        new Date(p.date_paiement).getMonth() === now.getMonth() &&
+        new Date(p.date_paiement).getFullYear() === now.getFullYear()
+    );
+  };
+
   const filteredEleves = useMemo(() => {
     return eleves.filter((e: any) => {
       const matchSearch = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase());
