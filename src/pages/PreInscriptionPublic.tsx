@@ -324,40 +324,45 @@ export default function PreInscriptionPublic() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Infos Élève */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Informations de l'élève</CardTitle>
+          <Card className="border-primary/10 shadow-lg shadow-primary/5 rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-primary/10 pb-4">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <span className="text-base">👶</span>
+                </div>
+                Informations de l'élève
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Prénom *</Label>
-                  <Input value={form.prenom_eleve} onChange={e => setForm(f => ({ ...f, prenom_eleve: e.target.value }))} required />
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prénom *</Label>
+                  <Input value={form.prenom_eleve} onChange={e => setForm(f => ({ ...f, prenom_eleve: e.target.value }))} required className="h-11 rounded-xl border-2 border-muted hover:border-primary/30 focus:border-primary transition-colors" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Nom *</Label>
-                  <Input value={form.nom_eleve} onChange={e => setForm(f => ({ ...f, nom_eleve: e.target.value }))} required />
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nom *</Label>
+                  <Input value={form.nom_eleve} onChange={e => setForm(f => ({ ...f, nom_eleve: e.target.value }))} required className="h-11 rounded-xl border-2 border-muted hover:border-primary/30 focus:border-primary transition-colors" />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Date de naissance</Label>
-                  <Input type="date" value={form.date_naissance} onChange={e => setForm(f => ({ ...f, date_naissance: e.target.value }))} />
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Date de naissance</Label>
+                  <Input type="date" value={form.date_naissance} onChange={e => setForm(f => ({ ...f, date_naissance: e.target.value }))} className="h-11 rounded-xl border-2 border-muted hover:border-primary/30 focus:border-primary transition-colors" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Sexe</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sexe</Label>
                   <Select value={form.sexe} onValueChange={v => setForm(f => ({ ...f, sexe: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="M">Masculin</SelectItem>
-                      <SelectItem value="F">Féminin</SelectItem>
+                    <SelectTrigger className="h-11 rounded-xl border-2 border-muted hover:border-primary/30 transition-colors"><SelectValue placeholder="Choisir" /></SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="M">👦 Masculin</SelectItem>
+                      <SelectItem value="F">👧 Féminin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Niveau souhaité</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Niveau souhaité</Label>
                   <Select value={form.niveau_id} onValueChange={v => setForm(f => ({ ...f, niveau_id: v, classe_id: '' }))}>
                     <SelectTrigger className="h-12 rounded-xl border-2 border-primary/20 bg-background shadow-sm hover:border-primary/40 transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10">
                       <SelectValue placeholder="🎓 Choisir un niveau..." />
@@ -379,7 +384,7 @@ export default function PreInscriptionPublic() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Classe souhaitée</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Classe souhaitée</Label>
                   <Select value={form.classe_id} onValueChange={v => setForm(f => ({ ...f, classe_id: v }))} disabled={!form.niveau_id || classes.length === 0}>
                     <SelectTrigger className="h-12 rounded-xl border-2 border-primary/20 bg-background shadow-sm hover:border-primary/40 transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10">
                       <SelectValue placeholder={!form.niveau_id ? 'Choisir un niveau d\'abord' : '📚 Choisir une classe...'} />
@@ -396,24 +401,62 @@ export default function PreInscriptionPublic() {
           </Card>
 
           {/* Infos Parent */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Informations du parent/tuteur</CardTitle>
+          <Card className="border-accent/10 shadow-lg shadow-accent/5 rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-accent/10 to-transparent border-b border-accent/10 pb-4">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center">
+                  <span className="text-base">👨‍👩‍👧</span>
+                </div>
+                Informations du parent / tuteur
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Nom complet *</Label>
-                <Input value={form.nom_parent} onChange={e => setForm(f => ({ ...f, nom_parent: e.target.value }))} required />
+            <CardContent className="space-y-5 pt-5">
+              {/* Père */}
+              <div className="p-4 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 space-y-3">
+                <p className="text-sm font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
+                  <span className="text-base">👨</span> Informations du Père
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nom & Prénom *</Label>
+                    <Input value={form.nom_pere} onChange={e => setForm(f => ({ ...f, nom_pere: e.target.value }))} required placeholder="Nom complet du père" className="h-11 rounded-xl border-2 border-blue-200/50 hover:border-blue-300 focus:border-blue-500 transition-colors" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fonction / Profession</Label>
+                    <Input value={form.fonction_pere} onChange={e => setForm(f => ({ ...f, fonction_pere: e.target.value }))} placeholder="Ex: Ingénieur, Commerçant..." className="h-11 rounded-xl border-2 border-blue-200/50 hover:border-blue-300 focus:border-blue-500 transition-colors" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contact téléphonique *</Label>
+                  <Input type="tel" value={form.telephone_pere} onChange={e => setForm(f => ({ ...f, telephone_pere: e.target.value }))} required placeholder="+224 6XX XXX XXX" className="h-11 rounded-xl border-2 border-blue-200/50 hover:border-blue-300 focus:border-blue-500 transition-colors" />
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Téléphone *</Label>
-                  <Input type="tel" value={form.telephone_parent} onChange={e => setForm(f => ({ ...f, telephone_parent: e.target.value }))} required placeholder="+224 6XX XXX XXX" />
+
+              {/* Mère */}
+              <div className="p-4 rounded-xl bg-pink-50/50 dark:bg-pink-950/20 border border-pink-200/50 dark:border-pink-800/30 space-y-3">
+                <p className="text-sm font-bold text-pink-700 dark:text-pink-400 flex items-center gap-2">
+                  <span className="text-base">👩</span> Informations de la Mère
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nom & Prénom</Label>
+                    <Input value={form.nom_mere} onChange={e => setForm(f => ({ ...f, nom_mere: e.target.value }))} placeholder="Nom complet de la mère" className="h-11 rounded-xl border-2 border-pink-200/50 hover:border-pink-300 focus:border-pink-500 transition-colors" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fonction / Profession</Label>
+                    <Input value={form.fonction_mere} onChange={e => setForm(f => ({ ...f, fonction_mere: e.target.value }))} placeholder="Ex: Enseignante, Médecin..." className="h-11 rounded-xl border-2 border-pink-200/50 hover:border-pink-300 focus:border-pink-500 transition-colors" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input type="email" value={form.email_parent} onChange={e => setForm(f => ({ ...f, email_parent: e.target.value }))} placeholder="optionnel" />
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contact téléphonique</Label>
+                  <Input type="tel" value={form.telephone_mere} onChange={e => setForm(f => ({ ...f, telephone_mere: e.target.value }))} placeholder="+224 6XX XXX XXX" className="h-11 rounded-xl border-2 border-pink-200/50 hover:border-pink-300 focus:border-pink-500 transition-colors" />
                 </div>
+              </div>
+
+              {/* Email commun */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">📧 Email de contact (optionnel)</Label>
+                <Input type="email" value={form.email_parent} onChange={e => setForm(f => ({ ...f, email_parent: e.target.value }))} placeholder="email@exemple.com" className="h-11 rounded-xl border-2 border-muted hover:border-primary/30 focus:border-primary transition-colors" />
               </div>
             </CardContent>
           </Card>
