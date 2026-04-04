@@ -105,6 +105,32 @@ export default function ParentDashboard() {
 
   const handleLogout = () => { logout(); navigate('/parent', { replace: true }); };
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedChildForPhoto) return;
+    setUploadingPhoto(selectedChildForPhoto);
+    try {
+      const formData = new FormData();
+      formData.append('code', session.token);
+      formData.append('eleve_id', selectedChildForPhoto);
+      formData.append('photo', file);
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parent-data`,
+        { method: 'POST', headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` }, body: formData }
+      );
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error);
+      toast.success('Photo mise à jour !');
+      fetchDashboard();
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur upload photo');
+    } finally {
+      setUploadingPhoto(null);
+      setSelectedChildForPhoto(null);
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    }
+  };
+
   const progressScolarite = totalScolariteAnnuel > 0 ? Math.min(100, Math.round((totalPayeScolarite / totalScolariteAnnuel) * 100)) : 0;
 
   return (
