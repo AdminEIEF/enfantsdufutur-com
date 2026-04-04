@@ -209,7 +209,7 @@ export default function ParentEnfant() {
                 {activeTab === 'emploi' && <ParentEnfantEmploiDuTemps emploiDuTemps={data?.emploiDuTemps || []} />}
                 {activeTab === 'commandes' && <ParentEnfantCommandes commandesArticles={data?.commandesArticles || []} enfant={enfant} />}
                 {activeTab === 'cantine' && <ParentEnfantCantine repas={data?.repas || []} soldeCantine={data?.solde_cantine ?? enfant.solde_cantine ?? 0} />}
-                {activeTab === 'fournitures' && <ParentEnfantFournitures articlesNiveau={data?.articlesNiveau || []} ventesArticles={data?.ventesArticles || []} boutiqueVentes={data?.boutiqueVentes || []} />}
+                
                 {activeTab === 'bulletins' && <ParentEnfantBulletins bulletinPublications={data?.bulletinPublications || []} />}
                 {activeTab === 'profil' && <ParentEnfantProfilRadar notes={data?.notes || []} periodes={data?.periodes || []} bareme={enfant.classes?.niveaux?.cycles?.bareme || 20} eleve={enfant} schoolConfig={schoolConfig} famille={session?.famille} />}
               </motion.div>

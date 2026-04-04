@@ -303,10 +303,48 @@ export default function ParentDashboard() {
                             )}
                           </div>
                         </div>
-                        {/* Info - smaller name, visible class */}
-                        <div className="px-2.5 py-2">
+                        {/* Info - smaller name, visible class, cantine status */}
+                        <div className="px-2.5 py-2 space-y-1">
                           <p className="font-semibold text-[11px] truncate">{enfant.prenom} {enfant.nom}</p>
-                          <Badge variant="secondary" className="text-[9px] px-1.5 py-0 mt-0.5 rounded-full font-bold">{enfant.classes?.nom || '—'}</Badge>
+                          <Badge variant="secondary" className="text-[9px] px-1.5 py-0 rounded-full font-bold">{enfant.classes?.nom || '—'}</Badge>
+                          {enfant.option_cantine && (() => {
+                            const now = new Date();
+                            const day = now.getDate();
+                            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                            const monthProgress = Math.round((day / daysInMonth) * 100);
+                            const cantinePaidThisMonth = paiements.some((p: any) => {
+                              if (p.type_paiement !== 'cantine' || p.eleve_id !== enfant.id) return false;
+                              const pd = new Date(p.date_paiement || p.created_at);
+                              return pd.getMonth() === now.getMonth() && pd.getFullYear() === now.getFullYear();
+                            });
+                            return (
+                              <div className="mt-1">
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <span className="text-[8px] font-bold text-muted-foreground flex items-center gap-0.5">
+                                    <UtensilsCrossed className="h-2 w-2" /> Cantine
+                                  </span>
+                                  {cantinePaidThisMonth ? (
+                                    <span className="text-[7px] font-bold text-emerald-600 bg-emerald-100 px-1 rounded-full">✓ Rechargé</span>
+                                  ) : (
+                                    <span className="text-[7px] font-bold text-destructive bg-destructive/10 px-1 rounded-full">Non rechargé</span>
+                                  )}
+                                </div>
+                                <div className="relative h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all ${
+                                      cantinePaidThisMonth
+                                        ? 'bg-emerald-500'
+                                        : monthProgress > 80 ? 'bg-destructive animate-pulse' : monthProgress > 60 ? 'bg-amber-500' : 'bg-amber-400'
+                                    }`}
+                                    style={{ width: `${monthProgress}%` }}
+                                  />
+                                </div>
+                                {!cantinePaidThisMonth && monthProgress > 75 && (
+                                  <p className="text-[7px] text-destructive font-bold mt-0.5 animate-pulse">⚠ Fin de mois approche !</p>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </CardContent>
                     </Card>
