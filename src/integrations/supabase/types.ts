@@ -1336,6 +1336,7 @@ export type Database = {
           solde_cantine: number | null
           statut: string
           transport_zone: string | null
+          type_trajet_transport: string | null
           uniforme_karate: boolean | null
           uniforme_polo_lacoste: boolean | null
           uniforme_scolaire: boolean | null
@@ -1373,6 +1374,7 @@ export type Database = {
           solde_cantine?: number | null
           statut?: string
           transport_zone?: string | null
+          type_trajet_transport?: string | null
           uniforme_karate?: boolean | null
           uniforme_polo_lacoste?: boolean | null
           uniforme_scolaire?: boolean | null
@@ -1410,6 +1412,7 @@ export type Database = {
           solde_cantine?: number | null
           statut?: string
           transport_zone?: string | null
+          type_trajet_transport?: string | null
           uniforme_karate?: boolean | null
           uniforme_polo_lacoste?: boolean | null
           uniforme_scolaire?: boolean | null
@@ -4011,7 +4014,9 @@ export type Database = {
           created_at: string
           id: string
           nom: string
+          prix_aller_simple: number | null
           prix_mensuel: number
+          prix_retour_simple: number | null
           quartiers: string[] | null
           telephone_chauffeur: string | null
           updated_at: string
@@ -4021,7 +4026,9 @@ export type Database = {
           created_at?: string
           id?: string
           nom: string
+          prix_aller_simple?: number | null
           prix_mensuel?: number
+          prix_retour_simple?: number | null
           quartiers?: string[] | null
           telephone_chauffeur?: string | null
           updated_at?: string
@@ -4031,7 +4038,9 @@ export type Database = {
           created_at?: string
           id?: string
           nom?: string
+          prix_aller_simple?: number | null
           prix_mensuel?: number
+          prix_retour_simple?: number | null
           quartiers?: string[] | null
           telephone_chauffeur?: string | null
           updated_at?: string

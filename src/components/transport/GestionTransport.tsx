@@ -13,6 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import SuiviGPSBus from './SuiviGPSBus';
+import PonctualiteTransport from './PonctualiteTransport';
+import { TrendingUp } from 'lucide-react';
 
 // ─── Zones Transport ─────────────────────────────────────
 function ZonesTab() {
@@ -44,16 +46,18 @@ function ZonesTab() {
   const [editId, setEditId] = useState<string | null>(null);
   const [nom, setNom] = useState('');
   const [prixMensuel, setPrixMensuel] = useState(0);
+  const [prixAllerSimple, setPrixAllerSimple] = useState(0);
+  const [prixRetourSimple, setPrixRetourSimple] = useState(0);
   const [quartiersInput, setQuartiersInput] = useState('');
 
-  const reset = () => { setEditId(null); setNom(''); setPrixMensuel(0); setQuartiersInput(''); setOpen(false); };
+  const reset = () => { setEditId(null); setNom(''); setPrixMensuel(0); setPrixAllerSimple(0); setPrixRetourSimple(0); setQuartiersInput(''); setOpen(false); };
 
   const save = useMutation({
     mutationFn: async () => {
       if (!nom) throw new Error('Le nom est requis');
       if (prixMensuel <= 0) throw new Error('Le prix mensuel est requis');
       const quartiers = quartiersInput.split(',').map(q => q.trim()).filter(Boolean);
-      const payload = { nom, prix_mensuel: prixMensuel, quartiers };
+      const payload = { nom, prix_mensuel: prixMensuel, prix_aller_simple: prixAllerSimple, prix_retour_simple: prixRetourSimple, quartiers };
       if (editId) {
         const { error } = await supabase.from('zones_transport' as any).update(payload).eq('id', editId);
         if (error) throw error;
@@ -77,6 +81,7 @@ function ZonesTab() {
 
   const openEdit = (z: any) => {
     setEditId(z.id); setNom(z.nom); setPrixMensuel(z.prix_mensuel || 0);
+    setPrixAllerSimple(z.prix_aller_simple || 0); setPrixRetourSimple(z.prix_retour_simple || 0);
     setQuartiersInput((z.quartiers ?? []).join(', ')); setOpen(true);
   };
 
@@ -96,18 +101,19 @@ function ZonesTab() {
           <TableHeader>
             <TableRow>
               <TableHead>Zone</TableHead>
-              <TableHead className="text-right">Prix mensuel</TableHead>
-              <TableHead>Bus assigné</TableHead>
-              <TableHead>Chauffeur</TableHead>
+              <TableHead className="text-right">Aller-Retour</TableHead>
+              <TableHead className="text-right">Aller simple</TableHead>
+              <TableHead className="text-right">Retour simple</TableHead>
+              <TableHead>Bus / Chauffeur</TableHead>
               <TableHead>Quartiers</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>
             ) : zones.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Aucune zone</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Aucune zone</TableCell></TableRow>
             ) : zones.map((z: any) => {
               const veh = getVehiculeForZone(z.id);
               const chauffeur = veh?.employes;
@@ -115,22 +121,13 @@ function ZonesTab() {
                 <TableRow key={z.id}>
                   <TableCell className="font-medium">{z.nom}</TableCell>
                   <TableCell className="text-right font-semibold">{(z.prix_mensuel || 0).toLocaleString('fr-FR')} GNF</TableCell>
+                  <TableCell className="text-right text-sm">{(z.prix_aller_simple || 0).toLocaleString('fr-FR')} GNF</TableCell>
+                  <TableCell className="text-right text-sm">{(z.prix_retour_simple || 0).toLocaleString('fr-FR')} GNF</TableCell>
                   <TableCell>
                     {veh ? (
-                      <div className="text-sm">
+                      <div className="text-xs">
                         <span className="font-mono">{veh.immatriculation}</span>
-                        {veh.marque && <span className="text-muted-foreground ml-1 text-xs">({veh.marque})</span>}
-                      </div>
-                    ) : <span className="text-muted-foreground text-xs italic">Non assigné</span>}
-                  </TableCell>
-                  <TableCell>
-                    {chauffeur ? (
-                      <div className="flex items-center gap-1.5">
-                        <User className="h-3.5 w-3.5 text-primary" />
-                        <div>
-                          <p className="text-sm font-medium">{chauffeur.prenom} {chauffeur.nom}</p>
-                          {chauffeur.telephone && <p className="text-[11px] text-muted-foreground">{chauffeur.telephone}</p>}
-                        </div>
+                        {chauffeur && <p className="text-muted-foreground mt-0.5"><User className="h-3 w-3 inline mr-1" />{chauffeur.prenom} {chauffeur.nom}</p>}
                       </div>
                     ) : <span className="text-muted-foreground text-xs italic">—</span>}
                   </TableCell>
@@ -153,7 +150,11 @@ function ZonesTab() {
           <DialogHeader><DialogTitle>{editId ? 'Modifier' : 'Ajouter'} une zone</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Nom *</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Petit trajet / Long trajet" /></div>
-            <div><Label>Prix mensuel (GNF) *</Label><Input type="number" value={prixMensuel} onChange={e => setPrixMensuel(Number(e.target.value))} placeholder="Ex: 300000" min={0} /></div>
+            <div><Label>Prix aller-retour mensuel (GNF) *</Label><Input type="number" value={prixMensuel} onChange={e => setPrixMensuel(Number(e.target.value))} placeholder="Ex: 300000" min={0} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Prix aller simple (GNF)</Label><Input type="number" value={prixAllerSimple} onChange={e => setPrixAllerSimple(Number(e.target.value))} placeholder="Ex: 200000" min={0} /></div>
+              <div><Label>Prix retour simple (GNF)</Label><Input type="number" value={prixRetourSimple} onChange={e => setPrixRetourSimple(Number(e.target.value))} placeholder="Ex: 200000" min={0} /></div>
+            </div>
             <div><Label>Quartiers (séparés par virgules)</Label><Input value={quartiersInput} onChange={e => setQuartiersInput(e.target.value)} placeholder="Quartier A, Quartier B" /></div>
           </div>
           <p className="text-xs text-muted-foreground mt-2">💡 Pour assigner un chauffeur, allez dans l'onglet <strong>Assignation</strong> après avoir créé un véhicule lié à cette zone.</p>
@@ -311,13 +312,15 @@ export default function GestionTransport() {
   return (
     <div className="space-y-4">
       <Tabs defaultValue="zones">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="zones" className="gap-1"><MapPin className="h-3.5 w-3.5" /> Zones</TabsTrigger>
           <TabsTrigger value="vehicules" className="gap-1"><Bus className="h-3.5 w-3.5" /> Véhicules</TabsTrigger>
+          <TabsTrigger value="ponctualite" className="gap-1"><TrendingUp className="h-3.5 w-3.5" /> Ponctualité</TabsTrigger>
           <TabsTrigger value="gps" className="gap-1"><Navigation className="h-3.5 w-3.5" /> Suivi GPS</TabsTrigger>
         </TabsList>
         <TabsContent value="zones" className="mt-4"><ZonesTab /></TabsContent>
         <TabsContent value="vehicules" className="mt-4"><VehiculesTab /></TabsContent>
+        <TabsContent value="ponctualite" className="mt-4"><PonctualiteTransport /></TabsContent>
         <TabsContent value="gps" className="mt-4"><SuiviGPSBus /></TabsContent>
       </Tabs>
     </div>

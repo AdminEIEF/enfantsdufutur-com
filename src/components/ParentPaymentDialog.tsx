@@ -142,9 +142,10 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
   const handleDebitTypeSelect = (type: string) => {
     setDebitType(type);
     const sel = enfants.find(e => e.id === debitEleveId);
-    if (type === 'transport' && sel?.zones_transport?.prix_mensuel) {
-      setDebitMontant(sel.zones_transport.prix_mensuel.toString());
-      setDebitDescription('Transport mensuel');
+    if (type === 'transport' && sel?.zones_transport) {
+      const prix = getTransportPrix(sel);
+      setDebitMontant(prix.toString());
+      setDebitDescription(`Transport ${getTrajetLabel(sel)}`);
     } else {
       setDebitMontant(''); setDebitDescription('');
     }
@@ -297,9 +298,25 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
   const MOIS_FR_LABELS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   const moisCourantLabel = MOIS_FR_LABELS[new Date().getMonth()];
   const anneeCourante = new Date().getFullYear();
+
+  const getTransportPrix = (e: any) => {
+    const zone = e.zones_transport;
+    const typeTrajet = (e as any).type_trajet_transport || 'aller_retour';
+    if (typeTrajet === 'aller_simple') return zone?.prix_aller_simple || zone?.prix_mensuel || 0;
+    if (typeTrajet === 'retour_simple') return zone?.prix_retour_simple || zone?.prix_mensuel || 0;
+    return zone?.prix_mensuel || 0;
+  };
+
+  const getTrajetLabel = (e: any) => {
+    const typeTrajet = (e as any).type_trajet_transport || 'aller_retour';
+    if (typeTrajet === 'aller_simple') return 'Aller simple';
+    if (typeTrajet === 'retour_simple') return 'Retour simple';
+    return 'Aller-Retour';
+  };
+
   const transportTotal = transportSelectedIds.reduce((sum, id) => {
     const e = enfants.find(x => x.id === id);
-    return sum + (e?.zones_transport?.prix_mensuel || 0);
+    return sum + (e ? getTransportPrix(e) : 0);
   }, 0);
 
   const handleTransportPayment = async () => {
@@ -309,8 +326,9 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
     try {
       for (const eid of transportSelectedIds) {
         const enf = enfants.find(x => x.id === eid);
-        const montant = enf?.zones_transport?.prix_mensuel || 0;
-        const description = `Transport du mois de ${moisCourantLabel} ${anneeCourante}`;
+        const montant = enf ? getTransportPrix(enf) : 0;
+        const trajetLabel = enf ? getTrajetLabel(enf) : '';
+        const description = `Transport ${trajetLabel} du mois de ${moisCourantLabel} ${anneeCourante}`;
         const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parent-data`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
@@ -713,8 +731,9 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                           </div>
                           <div className="space-y-1.5">
                             {transportEnfants.map(e => {
-                              const prix = e.zones_transport?.prix_mensuel || 0;
+                              const prix = getTransportPrix(e);
                               const zoneName = e.zones_transport?.nom || '—';
+                              const trajet = getTrajetLabel(e);
                               return (
                                 <label key={e.id} className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${transportSelectedIds.includes(e.id) ? 'border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 shadow-sm' : 'border-border hover:bg-muted/50'}`}>
                                   <Checkbox checked={transportSelectedIds.includes(e.id)} onCheckedChange={() => setTransportSelectedIds(prev => prev.includes(e.id) ? prev.filter(x => x !== e.id) : [...prev, e.id])} />
@@ -725,8 +744,9 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                                   )}
                                   <div className="flex-1 min-w-0">
                                     <p className="font-semibold text-sm truncate">{e.prenom} {e.nom}</p>
-                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                       <Badge variant="outline" className="text-[9px] px-1.5 rounded-full">{zoneName}</Badge>
+                                      <Badge variant="secondary" className="text-[9px] px-1.5 rounded-full">{trajet}</Badge>
                                       <span className="text-[10px] font-bold text-amber-700">{prix.toLocaleString()} GNF</span>
                                     </div>
                                   </div>

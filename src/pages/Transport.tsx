@@ -22,7 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import CarteTransportEleve from '@/components/CarteTransportEleve';
 import ValidationTransportBus from '@/components/ValidationTransportBus';
 import ItinerairesTransport from '@/components/transport/ItinerairesTransport';
-import PonctualiteTransport from '@/components/transport/PonctualiteTransport';
+
 import AlertesTransport from '@/components/transport/AlertesTransport';
 import ChauffeurDashboard from '@/components/transport/ChauffeurDashboard';
 import AssignationBusChauffeur from '@/components/transport/AssignationBusChauffeur';
@@ -367,7 +367,7 @@ export default function Transport() {
           <TabsTrigger value="eleves">Élèves</TabsTrigger>
           <TabsTrigger value="itineraires" className="gap-1"><Route className="h-3.5 w-3.5" /> Itinéraires</TabsTrigger>
           <TabsTrigger value="cartes" className="gap-1"><CreditCard className="h-3.5 w-3.5" /> Cartes</TabsTrigger>
-          <TabsTrigger value="ponctualite" className="gap-1"><TrendingUp className="h-3.5 w-3.5" /> Ponctualité</TabsTrigger>
+          
           <TabsTrigger value="assignation" className="gap-1"><LinkIcon className="h-3.5 w-3.5" /> Assignation</TabsTrigger>
           <TabsTrigger value="alertes" className="gap-1"><Bell className="h-3.5 w-3.5" /> Alertes</TabsTrigger>
           <TabsTrigger value="par-classe" className="gap-1"><GraduationCap className="h-3.5 w-3.5" /> Par Classe</TabsTrigger>
@@ -596,11 +596,6 @@ export default function Transport() {
         {/* Tab: Cartes transport */}
         <TabsContent value="cartes" className="mt-4">
           <CarteTransportEleve zones={zones} />
-        </TabsContent>
-
-        {/* Tab: Ponctualité */}
-        <TabsContent value="ponctualite" className="mt-4">
-          <PonctualiteTransport />
         </TabsContent>
 
         {/* Tab: Assignation */}
