@@ -32,6 +32,9 @@ export default function ParentDashboard() {
   const [loading, setLoading] = useState(true);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [familyDetailsOpen, setFamilyDetailsOpen] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [selectedChildForPhoto, setSelectedChildForPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
