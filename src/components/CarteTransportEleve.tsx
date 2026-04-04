@@ -484,38 +484,65 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         </CardContent>
       </Card>
 
-      {/* Dialog recharge */}
+      {/* Dialog recharge — validation de carte */}
       <Dialog open={!!rechargeDialog} onOpenChange={() => setRechargeDialog(null)}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Recharger la carte transport</DialogTitle></DialogHeader>
-          {rechargeDialog && (
-          <div className="space-y-4">
-              <div className="text-sm space-y-1">
-                <p><strong>Élève :</strong> {rechargeDialog.prenom} {rechargeDialog.nom}</p>
-                <p><strong>Zone :</strong> {(rechargeDialog.zones_transport as any)?.nom}</p>
-                <p><strong>Description :</strong> Transport du mois de {moisCourant} {anneeCourante}</p>
-                <p><strong>Validité :</strong> 30 jours à partir d'aujourd'hui</p>
-              </div>
-              {hasRechargeThisMonth(rechargeDialog.id) && (
-                <div className="bg-warning/10 border border-warning/30 rounded-md p-3 text-sm text-warning-foreground">
-                  ⚠️ Cet élève a déjà été rechargé ce mois-ci. Une seule recharge par mois est autorisée.
+          <DialogHeader><DialogTitle>Valider la carte transport</DialogTitle></DialogHeader>
+          {rechargeDialog && (() => {
+            const prixZoneRecharge = (rechargeDialog.zones_transport as any)?.prix_mensuel || 0;
+            const zoneNom = (rechargeDialog.zones_transport as any)?.nom || '—';
+            return (
+              <div className="space-y-4">
+                <div className="text-sm space-y-1">
+                  <p><strong>Élève :</strong> {rechargeDialog.prenom} {rechargeDialog.nom}</p>
+                  <p><strong>Zone :</strong> {zoneNom}</p>
+                  <p><strong>Description :</strong> Transport du mois de {moisCourant} {anneeCourante}</p>
+                  <p><strong>Montant :</strong> <span className="font-bold text-primary">{prixZoneRecharge.toLocaleString()} GNF</span></p>
+                  <p><strong>Validité :</strong> 30 jours à partir d'aujourd'hui</p>
                 </div>
-              )}
-              <div>
-                <label className="text-sm font-medium">Montant (GNF)</label>
-                <Input type="number" value={montantRecharge} onChange={e => setMontantRecharge(e.target.value)} />
+                {hasRechargeThisMonth(rechargeDialog.id) && (
+                  <div className="bg-warning/10 border border-warning/30 rounded-md p-3 text-sm text-warning-foreground">
+                    ⚠️ Cet élève a déjà été rechargé ce mois-ci. Une seule recharge par mois est autorisée.
+                  </div>
+                )}
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setRechargeDialog(null)}>Annuler</Button>
+                  <Button
+                    disabled={rechargeMutation.isPending || hasRechargeThisMonth(rechargeDialog.id)}
+                    onClick={() => rechargeMutation.mutate({ eleveId: rechargeDialog.id, montant: prixZoneRecharge })}
+                  >
+                    {rechargeMutation.isPending ? 'En cours…' : 'Confirmer la validation'}
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setRechargeDialog(null)}>Annuler</Button>
-                <Button
-                  disabled={rechargeMutation.isPending || !montantRecharge || hasRechargeThisMonth(rechargeDialog.id)}
-                  onClick={() => rechargeMutation.mutate({ eleveId: rechargeDialog.id, montant: Number(montantRecharge) })}
-                >
-                  {rechargeMutation.isPending ? 'En cours…' : 'Confirmer la recharge'}
-                </Button>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog paiement espèce comptable */}
+      <Dialog open={!!cashPayDialog} onOpenChange={() => setCashPayDialog(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Paiement transport en espèces</DialogTitle></DialogHeader>
+          {cashPayDialog && (() => {
+            const prixZoneCash = (cashPayDialog.zones_transport as any)?.prix_mensuel || 0;
+            return (
+              <div className="space-y-4">
+                <div className="text-sm space-y-1">
+                  <p><strong>Élève :</strong> {cashPayDialog.prenom} {cashPayDialog.nom}</p>
+                  <p><strong>Zone :</strong> {(cashPayDialog.zones_transport as any)?.nom}</p>
+                  <p><strong>Montant :</strong> <span className="font-bold text-primary">{prixZoneCash.toLocaleString()} GNF</span></p>
+                  <p><strong>Mois :</strong> {moisCourant} {anneeCourante}</p>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setCashPayDialog(null)}>Annuler</Button>
+                  <Button disabled={cashPayMutation.isPending} onClick={() => cashPayMutation.mutate({ eleveId: cashPayDialog.id, montant: prixZoneCash })}>
+                    {cashPayMutation.isPending ? 'En cours…' : 'Enregistrer le paiement'}
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
