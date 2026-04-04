@@ -666,6 +666,9 @@ export default function CompositionsAdmin() {
                     <Button variant="outline" size="sm" onClick={() => openResults(comp.id)}>
                       <Eye className="h-4 w-4 mr-1" /> Résultats
                     </Button>
+                    <Button variant="outline" size="sm" className="border-primary/30 text-primary" onClick={() => openResultsByClass(comp.id)}>
+                      <BarChart3 className="h-4 w-4 mr-1" /> Par classe
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => {
                       setEditComp(comp);
                       setForm({
