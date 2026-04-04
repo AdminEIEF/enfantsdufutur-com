@@ -39,7 +39,7 @@ serve(async (req) => {
   }
 
   try {
-    const { token, action, notification_id, conge, avance, courrier } = await req.json();
+    const { token, action, notification_id, conge, avance, courrier, photo_url } = await req.json();
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     let employeId: string;
