@@ -18,8 +18,6 @@ import { AIChatBubble } from '@/components/AIChatBubble';
 import { SchoolWatermark } from '@/components/SchoolWatermark';
 import ParentPaymentDialog from '@/components/ParentPaymentDialog';
 import ParentDevisInscription from '@/components/ParentDevisInscription';
-import ParentCantineOrdre from '@/components/ParentCantineOrdre';
-import ParentCatalogueCommande from '@/components/ParentCatalogueCommande';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
