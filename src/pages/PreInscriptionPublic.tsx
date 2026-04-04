@@ -600,26 +600,38 @@ export default function PreInscriptionPublic() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-5">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <label htmlFor="cantine" className={`cursor-pointer flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${form.option_cantine ? 'border-primary bg-primary/5 shadow-sm' : 'border-muted hover:border-primary/30'}`}>
-                  <Checkbox id="cantine" checked={form.option_cantine} onCheckedChange={v => setForm(f => ({ ...f, option_cantine: !!v }))} />
-                  <div>
-                    <span className="text-lg">🍽️</span>
-                    <p className="text-sm font-medium mt-0.5">Cantine</p>
+              <div className="grid grid-cols-1 gap-3">
+                <label htmlFor="cantine" className={`cursor-pointer flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${form.option_cantine ? 'border-primary bg-primary/5 shadow-md' : 'border-muted hover:border-primary/30'}`}>
+                  <Checkbox id="cantine" checked={form.option_cantine} onCheckedChange={v => setForm(f => ({ ...f, option_cantine: !!v }))} className="mt-1" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🍽️</span>
+                      <p className="text-sm font-bold">Cantine scolaire</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Repas chauds et équilibrés servis chaque jour à l'école. Système de portefeuille rechargeable, débit par repas consommé.</p>
+                    <p className="text-xs font-semibold text-primary mt-1">💰 Rechargeable — repas à partir de 500 GNF</p>
                   </div>
                 </label>
-                <label htmlFor="transport" className={`cursor-pointer flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${form.option_transport ? 'border-primary bg-primary/5 shadow-sm' : 'border-muted hover:border-primary/30'}`}>
-                  <Checkbox id="transport" checked={form.option_transport} onCheckedChange={v => setForm(f => ({ ...f, option_transport: !!v }))} />
-                  <div>
-                    <span className="text-lg">🚌</span>
-                    <p className="text-sm font-medium mt-0.5">Transport</p>
+                <label htmlFor="transport" className={`cursor-pointer flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${form.option_transport ? 'border-primary bg-primary/5 shadow-md' : 'border-muted hover:border-primary/30'}`}>
+                  <Checkbox id="transport" checked={form.option_transport} onCheckedChange={v => setForm(f => ({ ...f, option_transport: !!v }))} className="mt-1" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🚌</span>
+                      <p className="text-sm font-bold">Transport scolaire</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Navette aller-retour sécurisée avec chauffeur dédié. Suivi GPS en temps réel et pointage automatique à chaque arrêt.</p>
+                    <p className="text-xs font-semibold text-primary mt-1">💰 À partir de 300 000 GNF / mois</p>
                   </div>
                 </label>
-                <label htmlFor="uniformes" className={`cursor-pointer flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${form.option_uniformes ? 'border-primary bg-primary/5 shadow-sm' : 'border-muted hover:border-primary/30'}`}>
-                  <Checkbox id="uniformes" checked={form.option_uniformes} onCheckedChange={v => setForm(f => ({ ...f, option_uniformes: !!v }))} />
-                  <div>
-                    <span className="text-lg">👔</span>
-                    <p className="text-sm font-medium mt-0.5">Uniformes</p>
+                <label htmlFor="uniformes" className={`cursor-pointer flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${form.option_uniformes ? 'border-primary bg-primary/5 shadow-md' : 'border-muted hover:border-primary/30'}`}>
+                  <Checkbox id="uniformes" checked={form.option_uniformes} onCheckedChange={v => setForm(f => ({ ...f, option_uniformes: !!v }))} className="mt-1" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">👔</span>
+                      <p className="text-sm font-bold">Uniformes scolaires</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Tenue scolaire complète, tenue de sport, polo et options (karaté, scout). Disponible à la boutique de l'école.</p>
+                    <p className="text-xs font-semibold text-primary mt-1">💰 Tarif selon le cycle et les articles choisis</p>
                   </div>
                 </label>
               </div>
