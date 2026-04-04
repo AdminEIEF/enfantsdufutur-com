@@ -466,7 +466,7 @@ serve(async (req) => {
 
       const { data: familleData } = await supabaseAdmin
         .from("familles")
-        .select("solde_famille")
+        .select("solde_famille, photo_url")
         .eq("id", familleId)
         .maybeSingle();
 
@@ -476,6 +476,7 @@ serve(async (req) => {
           eleves: eleves || [],
           tarifs: tarifs || [],
           solde_famille: Number(familleData?.solde_famille || 0),
+          famille_photo_url: familleData?.photo_url || null,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
