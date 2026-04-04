@@ -394,6 +394,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 const recharge = getActiveRecharge(e.id);
                 const jours = recharge ? getDaysRemaining(recharge.date_expiration) : 0;
                 const alreadyThisMonth = hasRechargeThisMonth(e.id);
+                const parentPaid = hasTransportPaidThisMonth(e.id);
                 const prixZone = (e.zones_transport as any)?.prix_mensuel || 0;
                 return (
                   <TableRow key={e.id} className={bulkMode && selectedIds.has(e.id) ? 'bg-primary/5' : ''}>
