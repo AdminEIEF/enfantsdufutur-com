@@ -403,7 +403,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                         <input
                           type="checkbox"
                           className="rounded border-muted-foreground"
-                          disabled={alreadyThisMonth}
+                          disabled={alreadyThisMonth || !parentPaid}
                           checked={selectedIds.has(e.id)}
                           onChange={() => toggleSelect(e.id)}
                         />
