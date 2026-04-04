@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   GraduationCap, Users, BookOpen, Shield, Bus, Utensils,
   ArrowRight, Phone, Mail, MapPin, Download, Star, Clock, Award, Image, Briefcase,
-  ChevronRight, Sparkles
+  ChevronRight, Sparkles, FileText, ChevronDown
 } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
@@ -47,6 +47,57 @@ const COLORS = {
   goldBg: 'rgba(245,166,35,0.08)',
   dark: '#1a1a2e',
 };
+
+function FichesFooterDropdown() {
+  const [open, setOpen] = useState(false);
+  const { data: fiches = [] } = useQuery({
+    queryKey: ['fiches-footer'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('fiches_renseignements').select('*').order('ordre');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  if (fiches.length === 0) {
+    return (
+      <Link to="/pre-inscription" className="hover:text-white transition-colors flex items-center gap-2">
+        <ChevronRight className="h-3 w-3" style={{ color: COLORS.green }} /> Fiches de renseignements
+      </Link>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(!open)}
+        className="hover:text-white transition-colors flex items-center gap-2 w-full"
+      >
+        <ChevronRight className="h-3 w-3" style={{ color: COLORS.green }} />
+        Fiches de renseignements
+        <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <ul className="mt-2 ml-5 space-y-2">
+          {fiches.map((f: any) => (
+            <li key={f.id}>
+              <a
+                href={f.fichier_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colors flex items-center gap-2 text-xs"
+              >
+                <FileText className="h-3 w-3" style={{ color: COLORS.red }} />
+                {f.nom}
+                <Download className="h-3 w-3 ml-auto opacity-50" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function Landing() {
   const { data: schoolConfig } = useSchoolConfig();
@@ -513,7 +564,9 @@ export default function Landing() {
                     </button>
                   </li>
                 )}
-                <li><Link to="/pre-inscription" className="hover:text-white transition-colors flex items-center gap-2"><ChevronRight className="h-3 w-3" style={{ color: COLORS.green }} /> Fiches de renseignements</Link></li>
+                <li className="relative">
+                  <FichesFooterDropdown />
+                </li>
               </ul>
             </div>
             <div>

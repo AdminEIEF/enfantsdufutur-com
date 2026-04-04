@@ -7,19 +7,19 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { GraduationCap, CheckCircle2, ArrowLeft, Upload, Camera, X, FileText, AlertCircle, Download } from 'lucide-react';
+import { GraduationCap, CheckCircle2, ArrowLeft, Upload, Camera, X, FileText, AlertCircle, Download, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 const DOCUMENTS_REQUIS = [
-  { key: 'extrait_naissance', label: 'Extrait de naissance', required: true },
+  { key: 'extrait_naissance', label: 'Extrait de naissance', required: false },
   { key: 'certificat_scolarite', label: 'Certificat de scolarité (ancienne école)', required: false },
   { key: 'bulletins', label: 'Bulletins scolaires (année précédente)', required: false },
-  { key: 'photos_identite', label: "Photos d'identité (4 photos)", required: true },
-  { key: 'carnet_vaccination', label: 'Carnet de vaccination', required: true },
+  { key: 'photos_identite', label: "Photos d'identité (4 photos)", required: false },
+  { key: 'carnet_vaccination', label: 'Carnet de vaccination', required: false },
   { key: 'certificat_medical', label: 'Certificat médical', required: false },
-  { key: 'piece_identite_parent', label: "Pièce d'identité du parent/tuteur", required: true },
+  { key: 'piece_identite_parent', label: "Pièce d'identité du parent/tuteur", required: false },
   { key: 'justificatif_domicile', label: 'Justificatif de domicile', required: false },
 ];
 
@@ -30,6 +30,7 @@ interface UploadedDoc {
 }
 
 function FichesDownloadSection() {
+  const [viewingFiche, setViewingFiche] = useState<string | null>(null);
   const { data: fiches = [] } = useQuery({
     queryKey: ['fiches-renseignements-public'],
     queryFn: async () => {
@@ -45,37 +46,68 @@ function FichesDownloadSection() {
   if (fiches.length === 0) return null;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Download className="h-5 w-5 text-primary" />
-          Fiches de renseignements à télécharger
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Téléchargez, imprimez et remplissez ces fiches avant votre rendez-vous.
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {fiches.map((f: any) => (
-          <a
-            key={f.id}
-            href={f.fichier_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/30 transition-all group"
-          >
-            <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
-              <FileText className="h-5 w-5 text-destructive" />
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Download className="h-5 w-5 text-primary" />
+            Fiches de renseignements
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Visualisez en ligne ou téléchargez ces fiches avant votre rendez-vous.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {fiches.map((f: any) => (
+            <div
+              key={f.id}
+              className="flex items-center gap-3 p-3 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/30 transition-all group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                <FileText className="h-5 w-5 text-destructive" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium group-hover:text-primary transition-colors">{f.nom}</p>
+                <p className="text-xs text-muted-foreground">{f.fichier_nom}</p>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs gap-1"
+                  onClick={() => setViewingFiche(viewingFiche === f.id ? null : f.id)}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Voir</span>
+                </Button>
+                <a href={f.fichier_url} target="_blank" rel="noopener noreferrer">
+                  <Button type="button" variant="outline" size="sm" className="h-8 text-xs gap-1">
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Télécharger</span>
+                  </Button>
+                </a>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium group-hover:text-primary transition-colors">{f.nom}</p>
-              <p className="text-xs text-muted-foreground">{f.fichier_nom}</p>
+          ))}
+          {fiches.map((f: any) => viewingFiche === f.id && (
+            <div key={`view-${f.id}`} className="rounded-xl border border-primary/20 overflow-hidden bg-background">
+              <div className="flex items-center justify-between p-2 bg-muted/50">
+                <span className="text-xs font-medium text-muted-foreground">{f.nom}</span>
+                <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setViewingFiche(null)}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <iframe
+                src={f.fichier_url}
+                className="w-full h-[500px] border-0"
+                title={f.nom}
+              />
             </div>
-            <Download className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-          </a>
-        ))}
-      </CardContent>
-    </Card>
+          ))}
+        </CardContent>
+      </Card>
+    </>
   );
 }
 
@@ -143,7 +175,7 @@ export default function PreInscriptionPublic() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.capture = 'environment';
+    input.capture = 'camera';
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) handleFileSelect(docKey, file);
@@ -167,14 +199,6 @@ export default function PreInscriptionPublic() {
       toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
-
-    // Check required documents
-    const missingRequired = DOCUMENTS_REQUIS.filter(d => d.required && !getDocForKey(d.key));
-    if (missingRequired.length > 0) {
-      toast.error(`Documents manquants : ${missingRequired.map(d => d.label).join(', ')}`);
-      return;
-    }
-
     setLoading(true);
     try {
       const payload: any = {
@@ -382,7 +406,7 @@ export default function PreInscriptionPublic() {
                 Dossier à fournir
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Scannez ou prenez en photo chaque document. Les documents marqués <span className="text-destructive font-medium">*</span> sont obligatoires.
+                Scannez ou prenez en photo chaque document.
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -401,11 +425,6 @@ export default function PreInscriptionPublic() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-medium">{doc.label}</span>
-                          {doc.required && (
-                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                              Obligatoire
-                            </Badge>
-                          )}
                           {uploaded && (
                             <Badge className="text-[10px] px-1.5 py-0 bg-green-600">
                               <CheckCircle2 className="h-3 w-3 mr-0.5" /> Ajouté
@@ -498,12 +517,6 @@ export default function PreInscriptionPublic() {
                     style={{ width: `${(uploadedDocs.length / DOCUMENTS_REQUIS.length) * 100}%` }}
                   />
                 </div>
-                {DOCUMENTS_REQUIS.filter(d => d.required && !getDocForKey(d.key)).length > 0 && (
-                  <div className="flex items-center gap-1.5 mt-2 text-xs text-destructive">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    {DOCUMENTS_REQUIS.filter(d => d.required && !getDocForKey(d.key)).length} document(s) obligatoire(s) manquant(s)
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
