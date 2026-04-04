@@ -446,25 +446,36 @@ export default function ParentDashboard() {
             <Card className="border-0 shadow-md rounded-2xl bg-card">
               <CardContent className="p-4 space-y-3">
                 <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Informations</h3>
-                {famille.telephone && (
-                  <a href={`tel:${famille.telephone}`} className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors">
+                {famille.telephone_pere && (
+                  <a href={`tel:${famille.telephone_pere}`} className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors">
                     <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
                       <Phone className="h-4 w-4 text-emerald-600" />
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Téléphone</p>
-                      <p className="text-sm font-semibold">{famille.telephone}</p>
+                      <p className="text-xs text-muted-foreground">Tél. Père</p>
+                      <p className="text-sm font-semibold">{famille.telephone_pere}</p>
                     </div>
                   </a>
                 )}
-                {famille.email && (
-                  <a href={`mailto:${famille.email}`} className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors">
+                {famille.telephone_mere && (
+                  <a href={`tel:${famille.telephone_mere}`} className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                      <Phone className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Tél. Mère</p>
+                      <p className="text-sm font-semibold">{famille.telephone_mere}</p>
+                    </div>
+                  </a>
+                )}
+                {famille.email_parent && (
+                  <a href={`mailto:${famille.email_parent}`} className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors">
                     <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                       <Mail className="h-4 w-4 text-blue-600" />
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Email</p>
-                      <p className="text-sm font-semibold truncate">{famille.email}</p>
+                      <p className="text-sm font-semibold truncate">{famille.email_parent}</p>
                     </div>
                   </a>
                 )}
