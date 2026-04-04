@@ -38,6 +38,12 @@ const DEBIT_TYPES = [
 
 const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
 
+const MANUEL_PURPOSE_OPTIONS = [
+  { value: 'scolarite', label: 'Paiement Scolarité', emoji: '🎓' },
+  { value: 'inscription', label: 'Inscription / Réinscription', emoji: '📋' },
+  { value: 'wallet', label: 'Recharge Portefeuille', emoji: '💰' },
+];
+
 export default function ParentPaymentDialog({ open, onOpenChange, enfants, code, onSuccess, soldeFamille = 0 }: PaymentDialogProps) {
   const isSingle = enfants.length === 1;
   const [activeMode, setActiveMode] = useState<'select' | 'mobile' | 'wallet'>('select');
