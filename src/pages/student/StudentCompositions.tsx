@@ -383,9 +383,25 @@ export default function StudentCompositions() {
     </Dialog>
   );
 
+  // Floating timer component - always visible
+  const FloatingTimer = () => {
+    const isUrgent = timeLeft < 60;
+    const isWarning = timeLeft < 180 && timeLeft >= 60;
+    return (
+      <div className={`fixed top-2 right-2 z-50 flex items-center gap-2 px-4 py-2 rounded-2xl shadow-lg border font-mono text-lg font-bold backdrop-blur-md transition-all ${
+        isUrgent ? 'bg-destructive/90 text-destructive-foreground border-destructive animate-pulse' 
+        : isWarning ? 'bg-orange-500/90 text-white border-orange-400'
+        : 'bg-primary/90 text-primary-foreground border-primary/50'
+      }`}>
+        <Timer className="h-5 w-5" />
+        {formatTime(timeLeft)}
+        {violations > 0 && <Badge variant="destructive" className="text-xs ml-1">⚠️ {violations}/2</Badge>}
+      </div>
+    );
+  };
+
   // Active exam view - Document type
   if (activeComp && activeType === 'document') {
-    const isUrgent = timeLeft < 60;
     const sujetUrl = activeSujet?.url || '';
     const isPdf = sujetUrl.toLowerCase().includes('.pdf');
     const viewerUrl = isPdf
@@ -395,6 +411,7 @@ export default function StudentCompositions() {
     return (
       <StudentLayout>
         {violationWarningDialog}
+        <FloatingTimer />
         <div className="flex flex-col h-[calc(100vh-80px)] exam-secure-content">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
@@ -403,16 +420,9 @@ export default function StudentCompositions() {
               <p className="text-sm text-muted-foreground">{activeComp.matieres?.nom} • /{activeComp.bareme}</p>
             </div>
             <div className="flex items-center gap-2">
-              {violations > 0 && (
-                <Badge variant="destructive" className="text-xs">⚠️ {violations}/2</Badge>
-              )}
               <Badge variant="outline" className="text-xs gap-1">
                 <ShieldAlert className="h-3 w-3" /> Surveillé
               </Badge>
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-lg font-bold ${isUrgent ? 'bg-destructive/10 text-destructive animate-pulse' : 'bg-primary/10 text-primary'}`}>
-                <Timer className="h-5 w-5" />
-                {formatTime(timeLeft)}
-              </div>
             </div>
           </div>
 
