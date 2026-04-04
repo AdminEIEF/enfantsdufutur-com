@@ -30,6 +30,7 @@ interface UploadedDoc {
 }
 
 function FichesDownloadSection() {
+  const [viewingFiche, setViewingFiche] = useState<string | null>(null);
   const { data: fiches = [] } = useQuery({
     queryKey: ['fiches-renseignements-public'],
     queryFn: async () => {
@@ -45,37 +46,68 @@ function FichesDownloadSection() {
   if (fiches.length === 0) return null;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Download className="h-5 w-5 text-primary" />
-          Fiches de renseignements à télécharger
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Téléchargez, imprimez et remplissez ces fiches avant votre rendez-vous.
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {fiches.map((f: any) => (
-          <a
-            key={f.id}
-            href={f.fichier_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/30 transition-all group"
-          >
-            <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
-              <FileText className="h-5 w-5 text-destructive" />
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Download className="h-5 w-5 text-primary" />
+            Fiches de renseignements
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Visualisez en ligne ou téléchargez ces fiches avant votre rendez-vous.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {fiches.map((f: any) => (
+            <div
+              key={f.id}
+              className="flex items-center gap-3 p-3 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/30 transition-all group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                <FileText className="h-5 w-5 text-destructive" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium group-hover:text-primary transition-colors">{f.nom}</p>
+                <p className="text-xs text-muted-foreground">{f.fichier_nom}</p>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs gap-1"
+                  onClick={() => setViewingFiche(viewingFiche === f.id ? null : f.id)}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Voir</span>
+                </Button>
+                <a href={f.fichier_url} target="_blank" rel="noopener noreferrer">
+                  <Button type="button" variant="outline" size="sm" className="h-8 text-xs gap-1">
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Télécharger</span>
+                  </Button>
+                </a>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium group-hover:text-primary transition-colors">{f.nom}</p>
-              <p className="text-xs text-muted-foreground">{f.fichier_nom}</p>
+          ))}
+          {fiches.map((f: any) => viewingFiche === f.id && (
+            <div key={`view-${f.id}`} className="rounded-xl border border-primary/20 overflow-hidden bg-background">
+              <div className="flex items-center justify-between p-2 bg-muted/50">
+                <span className="text-xs font-medium text-muted-foreground">{f.nom}</span>
+                <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setViewingFiche(null)}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <iframe
+                src={f.fichier_url}
+                className="w-full h-[500px] border-0"
+                title={f.nom}
+              />
             </div>
-            <Download className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-          </a>
-        ))}
-      </CardContent>
-    </Card>
+          ))}
+        </CardContent>
+      </Card>
+    </>
   );
 }
 
