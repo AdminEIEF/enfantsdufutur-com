@@ -78,9 +78,9 @@ export default function StudentLibrairie() {
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center mx-auto mb-3 shadow-lg">
             <BookOpen className="h-7 w-7 text-white" />
           </div>
-          <h1 className="text-xl font-extrabold">Ma Librairie</h1>
+          <h1 className="text-xl font-extrabold">Ma Bibliothèque</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {purchasedCount} livre{purchasedCount > 1 ? 's' : ''} acheté{purchasedCount > 1 ? 's' : ''} • {digitalCount} disponible{digitalCount > 1 ? 's' : ''} en numérique
+            {purchasedCount} livre{purchasedCount > 1 ? 's' : ''} acheté{purchasedCount > 1 ? 's' : ''} • Romans & manuels numériques
           </p>
         </div>
 
