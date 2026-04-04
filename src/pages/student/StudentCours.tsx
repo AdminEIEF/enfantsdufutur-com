@@ -338,6 +338,8 @@ export default function StudentCours() {
           </div>
         )}
       </div>
+      {/* Extra spacer for bottom nav on desktop */}
+      <div className="h-8 sm:h-4" />
       <StudentAIChat />
     </StudentLayout>
   );
