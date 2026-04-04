@@ -444,11 +444,12 @@ export default function ParentDashboard() {
 
       <ParentPaymentDialog
         open={paymentOpen}
-        onOpenChange={setPaymentOpen}
-        enfants={session.eleves}
+        onOpenChange={(v) => { setPaymentOpen(v); if (!v) setPaymentInitMode(null); }}
+        enfants={eleves}
         code={session.token}
         onSuccess={fetchDashboard}
         soldeFamille={dashData?.solde_famille || 0}
+        initialMode={paymentInitMode === 'wallet-recharge' ? 'mobile-wallet' : undefined}
       />
 
       {/* ─── Family Details Dialog ─── */}

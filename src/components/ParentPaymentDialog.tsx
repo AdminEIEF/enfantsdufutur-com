@@ -46,7 +46,7 @@ const MANUEL_PURPOSE_OPTIONS = [
   { value: 'wallet', label: 'Recharge Portefeuille', emoji: '💰' },
 ];
 
-export default function ParentPaymentDialog({ open, onOpenChange, enfants, code, onSuccess, soldeFamille = 0 }: PaymentDialogProps) {
+export default function ParentPaymentDialog({ open, onOpenChange, enfants, code, onSuccess, soldeFamille = 0, initialMode }: PaymentDialogProps) {
   const isSingle = enfants.length === 1;
   const [activeMode, setActiveMode] = useState<'select' | 'mobile' | 'wallet'>('select');
   const [eleveId, setEleveId] = useState(isSingle ? enfants[0]?.id || '' : '');
