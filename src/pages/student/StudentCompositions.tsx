@@ -621,7 +621,6 @@ export default function StudentCompositions() {
   if (activeComp) {
     const progress = activeQuestions.length > 0
       ? (Object.keys(answers).length / activeQuestions.length) * 100 : 0;
-    const isUrgent = timeLeft < 60;
 
     return (
       <StudentLayout>
