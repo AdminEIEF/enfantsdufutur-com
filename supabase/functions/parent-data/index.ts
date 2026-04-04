@@ -13,6 +13,95 @@ serve(async (req) => {
   }
 
   try {
+    const contentType = req.headers.get("content-type") || "";
+    
+    // Handle multipart form data for photo upload
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await req.formData();
+      const code = formData.get("code") as string;
+      const eleve_id = formData.get("eleve_id") as string;
+      const photo = formData.get("photo") as File;
+
+      if (!code || !eleve_id || !photo) {
+        return new Response(JSON.stringify({ error: "Paramètres manquants" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+
+      // Validate token
+      let familleId: string;
+      try {
+        const decoded = atob(code);
+        const parts = decoded.split(":");
+        if (parts.length < 3) throw new Error("Invalid token");
+        const tokenFamilleId = parts[0];
+        const tokenTimestamp = parseInt(parts[1]);
+        const tokenSignature = parts.slice(2).join(":");
+        const encoder = new TextEncoder();
+        const key = await crypto.subtle.importKey("raw", encoder.encode(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+        const tokenData = `${tokenFamilleId}:${tokenTimestamp}`;
+        const expectedSig = await crypto.subtle.sign("HMAC", key, encoder.encode(tokenData));
+        const expectedHex = Array.from(new Uint8Array(expectedSig)).map(b => b.toString(16).padStart(2, '0')).join('');
+        if (tokenSignature !== expectedHex) throw new Error("Bad signature");
+        if (Date.now() - tokenTimestamp > 24 * 60 * 60 * 1000) throw new Error("Token expired");
+        familleId = tokenFamilleId;
+      } catch {
+        return new Response(JSON.stringify({ error: "Session expirée" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Verify child belongs to family
+      const { data: enfant } = await supabaseAdmin
+        .from("eleves")
+        .select("id, famille_id")
+        .eq("id", eleve_id)
+        .eq("famille_id", familleId)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      if (!enfant) {
+        return new Response(JSON.stringify({ error: "Accès non autorisé" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Upload photo
+      const ext = photo.name?.split(".").pop() || "jpg";
+      const path = `eleves/${eleve_id}/photo_parent_${Date.now()}.${ext}`;
+      const buffer = await photo.arrayBuffer();
+
+      const { error: uploadErr } = await supabaseAdmin.storage
+        .from("photos")
+        .upload(path, new Uint8Array(buffer), { contentType: photo.type || "image/jpeg", upsert: true });
+
+      if (uploadErr) throw uploadErr;
+
+      const { data: signedData } = await supabaseAdmin.storage
+        .from("photos")
+        .createSignedUrl(path, 31536000);
+
+      if (signedData?.signedUrl) {
+        await supabaseAdmin
+          .from("eleves")
+          .update({ photo_url: signedData.signedUrl, updated_at: new Date().toISOString() })
+          .eq("id", eleve_id);
+
+        return new Response(
+          JSON.stringify({ success: true, photo_url: signedData.signedUrl }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      throw new Error("Échec de l'upload");
+    }
+
     const { code, action, eleve_id, montant, type_paiement, description, type_service, items, total, notification_id } = await req.json();
 
     const supabaseAdmin = createClient(
@@ -329,7 +418,7 @@ serve(async (req) => {
 
       const { data: eleves } = await supabaseAdmin
         .from("eleves")
-        .select("id, nom, prenom, matricule, solde_cantine, classe_id, option_cantine, option_fournitures, uniforme_scolaire, uniforme_sport, uniforme_polo_lacoste, uniforme_karate, zone_transport_id, classes(nom, niveaux:niveau_id(nom, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, cycles:cycle_id(nom))), zones_transport:zone_transport_id(nom, prix_mensuel)")
+        .select("id, nom, prenom, matricule, photo_url, photo_thumbnail_url, sexe, date_naissance, solde_cantine, classe_id, option_cantine, option_fournitures, uniforme_scolaire, uniforme_sport, uniforme_polo_lacoste, uniforme_karate, zone_transport_id, classes(nom, niveaux:niveau_id(nom, frais_scolarite, frais_inscription, frais_reinscription, frais_dossier, frais_assurance, cycles:cycle_id(nom, bareme))), zones_transport:zone_transport_id(nom, prix_mensuel)")
         .eq("famille_id", familleId)
         .is("deleted_at", null);
 

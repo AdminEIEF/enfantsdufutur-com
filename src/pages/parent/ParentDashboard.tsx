@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -11,7 +11,7 @@ import { useParentAuth } from '@/hooks/useParentAuth';
 import {
   GraduationCap, LogOut, Wallet, TrendingDown, CreditCard, Users,
   ChevronRight, UtensilsCrossed, BookOpen, Loader2, MessageCircle, Smartphone, FileText,
-  Bus, CalendarDays, Phone, Mail, MapPin, X, Eye
+  Bus, CalendarDays, Phone, Mail, MapPin, X, Eye, Camera
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AIChatBubble } from '@/components/AIChatBubble';
@@ -32,6 +32,9 @@ export default function ParentDashboard() {
   const [loading, setLoading] = useState(true);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [familyDetailsOpen, setFamilyDetailsOpen] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [selectedChildForPhoto, setSelectedChildForPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -101,6 +104,32 @@ export default function ParentDashboard() {
   const mensualiteScolarite = totalScolariteAnnuel > 0 ? Math.ceil(totalScolariteAnnuel / 10) : 0;
 
   const handleLogout = () => { logout(); navigate('/parent', { replace: true }); };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedChildForPhoto) return;
+    setUploadingPhoto(selectedChildForPhoto);
+    try {
+      const formData = new FormData();
+      formData.append('code', session.token);
+      formData.append('eleve_id', selectedChildForPhoto);
+      formData.append('photo', file);
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parent-data`,
+        { method: 'POST', headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` }, body: formData }
+      );
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error);
+      toast.success('Photo mise à jour !');
+      fetchDashboard();
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur upload photo');
+    } finally {
+      setUploadingPhoto(null);
+      setSelectedChildForPhoto(null);
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    }
+  };
 
   const progressScolarite = totalScolariteAnnuel > 0 ? Math.min(100, Math.round((totalPayeScolarite / totalScolariteAnnuel) * 100)) : 0;
 
@@ -214,7 +243,6 @@ export default function ParentDashboard() {
               ))}
             </motion.div>
 
-            {/* ─── Children Gallery ─── */}
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-3">
               <h2 className="font-bold flex items-center gap-2 text-sm sm:text-base">
                 <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -223,6 +251,9 @@ export default function ParentDashboard() {
                 Mes enfants
                 <Badge variant="secondary" className="text-[10px] ml-auto rounded-full">{eleves.length}</Badge>
               </h2>
+
+              {/* Hidden file input for photo upload */}
+              <input ref={photoInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoUpload} />
 
               <div className="grid grid-cols-3 gap-2.5">
                 {eleves.map((enfant: any, i: number) => (
@@ -242,31 +273,35 @@ export default function ParentDashboard() {
                           {enfant.photo_url ? (
                             <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <span className="text-4xl font-extrabold text-primary/30">{enfant.prenom[0]}{enfant.nom[0]}</span>
+                            <div className="w-full h-full flex flex-col items-center justify-center gap-1">
+                              <span className="text-3xl font-extrabold text-primary/25">{enfant.prenom[0]}{enfant.nom[0]}</span>
                             </div>
                           )}
+                          {/* Camera button overlay */}
+                          <button
+                            className="absolute bottom-1.5 left-1.5 w-7 h-7 rounded-full bg-background/80 backdrop-blur flex items-center justify-center shadow-md hover:bg-background transition-colors z-10"
+                            onClick={(e) => { e.stopPropagation(); setSelectedChildForPhoto(enfant.id); setTimeout(() => photoInputRef.current?.click(), 50); }}
+                          >
+                            {uploadingPhoto === enfant.id ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <Camera className="h-3.5 w-3.5 text-primary" />}
+                          </button>
                           {/* Badges overlay */}
-                          <div className="absolute top-2 right-2 flex gap-1">
+                          <div className="absolute top-1.5 right-1.5 flex gap-1">
                             {enfant.option_cantine && (
-                              <span className="w-6 h-6 rounded-full bg-emerald-500/90 backdrop-blur flex items-center justify-center shadow-md">
-                                <UtensilsCrossed className="h-3 w-3 text-white" />
+                              <span className="w-5 h-5 rounded-full bg-emerald-500/90 backdrop-blur flex items-center justify-center shadow-md">
+                                <UtensilsCrossed className="h-2.5 w-2.5 text-white" />
                               </span>
                             )}
                             {enfant.zone_transport_id && (
-                              <span className="w-6 h-6 rounded-full bg-amber-500/90 backdrop-blur flex items-center justify-center shadow-md">
-                                <Bus className="h-3 w-3 text-white" />
+                              <span className="w-5 h-5 rounded-full bg-amber-500/90 backdrop-blur flex items-center justify-center shadow-md">
+                                <Bus className="h-2.5 w-2.5 text-white" />
                               </span>
                             )}
                           </div>
                         </div>
-                        {/* Info */}
-                        <div className="px-3 py-2.5 flex items-center justify-between gap-1">
-                          <div className="min-w-0">
-                            <p className="font-bold text-sm truncate">{enfant.prenom}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">{enfant.classes?.niveaux?.nom} — {enfant.classes?.nom}</p>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                        {/* Info - smaller name, visible class */}
+                        <div className="px-2.5 py-2">
+                          <p className="font-semibold text-[11px] truncate">{enfant.prenom} {enfant.nom}</p>
+                          <Badge variant="secondary" className="text-[9px] px-1.5 py-0 mt-0.5 rounded-full font-bold">{enfant.classes?.nom || '—'}</Badge>
                         </div>
                       </CardContent>
                     </Card>
@@ -493,23 +528,25 @@ export default function ParentDashboard() {
             {/* Children gallery */}
             <div className="space-y-2">
               <h3 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Enfants</h3>
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-3 gap-2">
                 {eleves.map((enfant: any) => (
                   <button
                     key={enfant.id}
                     onClick={() => { setFamilyDetailsOpen(false); navigate(`/parent/enfant/${enfant.id}`); }}
-                    className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-muted/40 hover:bg-muted/60 transition-all active:scale-95"
+                    className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl bg-muted/40 hover:bg-muted/60 transition-all active:scale-95 relative"
                   >
-                    {enfant.photo_url ? (
-                      <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-14 h-14 rounded-2xl object-cover shadow-md ring-2 ring-border/30" />
-                    ) : (
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary font-bold shadow-md">
-                        {enfant.prenom[0]}{enfant.nom[0]}
-                      </div>
-                    )}
+                    <div className="relative">
+                      {enfant.photo_url ? (
+                        <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-16 h-16 rounded-2xl object-cover shadow-md ring-2 ring-border/30" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary font-bold text-lg shadow-md">
+                          {enfant.prenom[0]}{enfant.nom[0]}
+                        </div>
+                      )}
+                    </div>
                     <div className="text-center">
-                      <p className="text-xs font-bold truncate max-w-[100px]">{enfant.prenom} {enfant.nom}</p>
-                      <p className="text-[10px] text-muted-foreground">{enfant.classes?.nom}</p>
+                      <p className="text-[10px] font-semibold truncate max-w-[80px]">{enfant.prenom}</p>
+                      <Badge variant="secondary" className="text-[8px] px-1.5 py-0 rounded-full font-bold">{enfant.classes?.nom || '—'}</Badge>
                     </div>
                   </button>
                 ))}
