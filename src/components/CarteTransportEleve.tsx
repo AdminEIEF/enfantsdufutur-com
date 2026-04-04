@@ -190,12 +190,23 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   };
 
   const filteredEleves = useMemo(() => {
-    return eleves.filter((e: any) => {
+    const filtered = eleves.filter((e: any) => {
       const matchSearch = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase());
       const matchZone = filterZone === 'all' || e.zone_transport_id === filterZone;
       return matchSearch && matchZone;
     });
-  }, [eleves, search, filterZone]);
+    // Sort: pending validation (paid but not recharged) first, then not paid, then already recharged
+    return filtered.sort((a: any, b: any) => {
+      const aPaid = hasTransportPaidThisMonth(a.id);
+      const bPaid = hasTransportPaidThisMonth(b.id);
+      const aRecharged = hasRechargeThisMonth(a.id);
+      const bRecharged = hasRechargeThisMonth(b.id);
+      // Priority: paid & not recharged > not paid > recharged
+      const aScore = aPaid && !aRecharged ? 0 : !aPaid ? 1 : 2;
+      const bScore = bPaid && !bRecharged ? 0 : !bPaid ? 1 : 2;
+      return aScore - bScore;
+    });
+  }, [eleves, search, filterZone, paiementsTransport, recharges]);
 
   const exportCard = async () => {
     if (!cardRef.current) return;
