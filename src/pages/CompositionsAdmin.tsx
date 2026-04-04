@@ -564,17 +564,44 @@ export default function CompositionsAdmin() {
     setResults((data || []).map((r: any) => ({ ...r, _type: comp?.type_composition })));
   }
 
+  async function openResultsByClass(compId: string) {
+    setResultsByClassComp(compId);
+    setResultsByClassLoading(true);
+    const comp = compositions.find(c => c.id === compId);
+    // Find all compositions with same titre (grouped across classes)
+    const siblingComps = compositions.filter(c => c.titre === comp?.titre);
+    const allResults: any[] = [];
+    for (const sc of siblingComps) {
+      const { data } = await supabase.from('composition_reponses')
+        .select('*, eleves:eleve_id(nom, prenom, matricule, classe_id, classes:classe_id(nom))')
+        .eq('composition_id', sc.id)
+        .order('score', { ascending: false });
+      (data || []).forEach((r: any) => allResults.push({ ...r, comp_classe: sc.classes?.nom, comp_id: sc.id, bareme: sc.bareme }));
+    }
+    setResultsByClassData(allResults);
+    setResultsByClassLoading(false);
+  }
+
   const filtered = filterClasse === 'all' ? compositions : compositions.filter(c => c.classe_id === filterClasse);
   const totalPoints = questions.reduce((s, q) => s + q.points, 0);
   const currentResultComp = compositions.find(c => c.id === showResults);
+
+  // Group resultsByClass data by class
+  const resultsByClassGrouped = useMemo(() => {
+    const map = new Map<string, any[]>();
+    resultsByClassData.forEach(r => {
+      const className = r.eleves?.classes?.nom || r.comp_classe || 'Sans classe';
+      if (!map.has(className)) map.set(className, []);
+      map.get(className)!.push(r);
+    });
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [resultsByClassData]);
 
   if (loading) return <div className="flex items-center justify-center min-h-[300px]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
     <div className="space-y-6">
-      {/* Connected Students Dashboard */}
-      <ConnectedStudentsDashboard />
-
+      {/* Header + Compositions first */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Compositions en ligne</h1>
