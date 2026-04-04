@@ -312,13 +312,15 @@ export default function GestionTransport() {
   return (
     <div className="space-y-4">
       <Tabs defaultValue="zones">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="zones" className="gap-1"><MapPin className="h-3.5 w-3.5" /> Zones</TabsTrigger>
           <TabsTrigger value="vehicules" className="gap-1"><Bus className="h-3.5 w-3.5" /> Véhicules</TabsTrigger>
+          <TabsTrigger value="ponctualite" className="gap-1"><TrendingUp className="h-3.5 w-3.5" /> Ponctualité</TabsTrigger>
           <TabsTrigger value="gps" className="gap-1"><Navigation className="h-3.5 w-3.5" /> Suivi GPS</TabsTrigger>
         </TabsList>
         <TabsContent value="zones" className="mt-4"><ZonesTab /></TabsContent>
         <TabsContent value="vehicules" className="mt-4"><VehiculesTab /></TabsContent>
+        <TabsContent value="ponctualite" className="mt-4"><PonctualiteTransport /></TabsContent>
         <TabsContent value="gps" className="mt-4"><SuiviGPSBus /></TabsContent>
       </Tabs>
     </div>

@@ -598,11 +598,6 @@ export default function Transport() {
           <CarteTransportEleve zones={zones} />
         </TabsContent>
 
-        {/* Tab: Ponctualité */}
-        <TabsContent value="ponctualite" className="mt-4">
-          <PonctualiteTransport />
-        </TabsContent>
-
         {/* Tab: Assignation */}
         <TabsContent value="assignation" className="mt-4">
           <AssignationBusChauffeur />
