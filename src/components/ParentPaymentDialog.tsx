@@ -297,9 +297,25 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
   const MOIS_FR_LABELS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   const moisCourantLabel = MOIS_FR_LABELS[new Date().getMonth()];
   const anneeCourante = new Date().getFullYear();
+
+  const getTransportPrix = (e: any) => {
+    const zone = e.zones_transport;
+    const typeTrajet = (e as any).type_trajet_transport || 'aller_retour';
+    if (typeTrajet === 'aller_simple') return zone?.prix_aller_simple || zone?.prix_mensuel || 0;
+    if (typeTrajet === 'retour_simple') return zone?.prix_retour_simple || zone?.prix_mensuel || 0;
+    return zone?.prix_mensuel || 0;
+  };
+
+  const getTrajetLabel = (e: any) => {
+    const typeTrajet = (e as any).type_trajet_transport || 'aller_retour';
+    if (typeTrajet === 'aller_simple') return 'Aller simple';
+    if (typeTrajet === 'retour_simple') return 'Retour simple';
+    return 'Aller-Retour';
+  };
+
   const transportTotal = transportSelectedIds.reduce((sum, id) => {
     const e = enfants.find(x => x.id === id);
-    return sum + (e?.zones_transport?.prix_mensuel || 0);
+    return sum + (e ? getTransportPrix(e) : 0);
   }, 0);
 
   const handleTransportPayment = async () => {
