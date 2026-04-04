@@ -125,20 +125,9 @@ function ZonesTab() {
                   <TableCell className="text-right text-sm">{(z.prix_retour_simple || 0).toLocaleString('fr-FR')} GNF</TableCell>
                   <TableCell>
                     {veh ? (
-                      <div className="text-sm">
+                      <div className="text-xs">
                         <span className="font-mono">{veh.immatriculation}</span>
-                        {veh.marque && <span className="text-muted-foreground ml-1 text-xs">({veh.marque})</span>}
-                      </div>
-                    ) : <span className="text-muted-foreground text-xs italic">Non assigné</span>}
-                  </TableCell>
-                  <TableCell>
-                    {chauffeur ? (
-                      <div className="flex items-center gap-1.5">
-                        <User className="h-3.5 w-3.5 text-primary" />
-                        <div>
-                          <p className="text-sm font-medium">{chauffeur.prenom} {chauffeur.nom}</p>
-                          {chauffeur.telephone && <p className="text-[11px] text-muted-foreground">{chauffeur.telephone}</p>}
-                        </div>
+                        {chauffeur && <p className="text-muted-foreground mt-0.5"><User className="h-3 w-3 inline mr-1" />{chauffeur.prenom} {chauffeur.nom}</p>}
                       </div>
                     ) : <span className="text-muted-foreground text-xs italic">—</span>}
                   </TableCell>
