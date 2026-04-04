@@ -549,7 +549,6 @@ export default function StudentCompositions() {
   }
 
   // ─── Compositions list ───
-  const [listTab, setListTab] = useState<'active' | 'history'>('active');
 
   const activeComps = compositions.filter((c: any) => {
     const s = getStatus(c);
