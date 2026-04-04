@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
 import {
   Loader2, Smartphone, CreditCard, Wallet, Copy, MessageCircle, CheckCircle2, X, ArrowLeft,
   ChevronRight, UtensilsCrossed, BookOpen, ShoppingBag, Bus, Plus, Minus, ShoppingCart, Package
