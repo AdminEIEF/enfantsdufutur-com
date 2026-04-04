@@ -214,7 +214,7 @@ export default function ParentDashboard() {
               ))}
             </motion.div>
 
-            {/* ─── Children Cards with Photos ─── */}
+            {/* ─── Children Gallery ─── */}
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-3">
               <h2 className="font-bold flex items-center gap-2 text-sm sm:text-base">
                 <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -224,82 +224,55 @@ export default function ParentDashboard() {
                 <Badge variant="secondary" className="text-[10px] ml-auto rounded-full">{eleves.length}</Badge>
               </h2>
 
-              {/* Photo gallery strip */}
-              {eleves.length > 0 && (
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
-                  {eleves.map((enfant: any, i: number) => (
-                    <motion.button
-                      key={enfant.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 + i * 0.06 }}
-                      onClick={() => navigate(`/parent/enfant/${enfant.id}`)}
-                      className="flex flex-col items-center gap-1.5 shrink-0 group"
-                    >
-                      <div className="relative">
-                        {enfant.photo_url ? (
-                          <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover shadow-lg ring-2 ring-border/40 group-hover:ring-primary/60 transition-all group-active:scale-95" />
-                        ) : (
-                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/30 flex items-center justify-center text-primary font-bold text-lg shadow-lg ring-2 ring-border/40 group-hover:ring-primary/60 transition-all group-active:scale-95">
-                            {enfant.prenom[0]}{enfant.nom[0]}
-                          </div>
-                        )}
-                        {enfant.option_cantine && (
-                          <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-md">
-                            <UtensilsCrossed className="h-2.5 w-2.5 text-white" />
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] font-semibold text-center leading-tight max-w-[72px] truncate">{enfant.prenom}</p>
-                      <p className="text-[9px] text-muted-foreground truncate max-w-[72px]">{enfant.classes?.nom}</p>
-                    </motion.button>
-                  ))}
-                </div>
-              )}
-
-              {/* Detailed child cards */}
-              {eleves.map((enfant: any, i: number) => (
-                <motion.div key={enfant.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 + i * 0.05 }}>
-                  <Card
-                    className="cursor-pointer border-0 shadow-md rounded-2xl hover:shadow-lg transition-all active:scale-[0.98] overflow-hidden"
-                    onClick={() => navigate(`/parent/enfant/${enfant.id}`)}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {eleves.map((enfant: any, i: number) => (
+                  <motion.div
+                    key={enfant.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2 + i * 0.06 }}
                   >
-                    <CardContent className="p-0">
-                      <div className="flex items-center gap-3 p-3.5 sm:p-4">
-                        {enfant.photo_url ? (
-                          <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-12 h-12 rounded-2xl object-cover shadow-md shrink-0 ring-2 ring-border/50" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary font-bold text-sm shrink-0 shadow-md">
-                            {enfant.prenom[0]}{enfant.nom[0]}
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm truncate">{enfant.prenom} {enfant.nom}</p>
-                          <p className="text-[11px] text-muted-foreground truncate">
-                            {enfant.classes?.niveaux?.cycles?.nom} — {enfant.classes?.niveaux?.nom} — {enfant.classes?.nom}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <Card
+                      className="cursor-pointer border-0 shadow-lg rounded-2xl hover:shadow-xl transition-all active:scale-[0.97] overflow-hidden group"
+                      onClick={() => navigate(`/parent/enfant/${enfant.id}`)}
+                    >
+                      <CardContent className="p-0">
+                        {/* Photo section */}
+                        <div className="relative h-28 sm:h-32 bg-gradient-to-br from-primary/15 to-accent/20 overflow-hidden">
+                          {enfant.photo_url ? (
+                            <img src={enfant.photo_url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <span className="text-4xl font-extrabold text-primary/30">{enfant.prenom[0]}{enfant.nom[0]}</span>
+                            </div>
+                          )}
+                          {/* Badges overlay */}
+                          <div className="absolute top-2 right-2 flex gap-1">
                             {enfant.option_cantine && (
-                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-medium">
-                                <UtensilsCrossed className="h-2.5 w-2.5" />
-                                {(enfant.solde_cantine || 0).toLocaleString()}
+                              <span className="w-6 h-6 rounded-full bg-emerald-500/90 backdrop-blur flex items-center justify-center shadow-md">
+                                <UtensilsCrossed className="h-3 w-3 text-white" />
                               </span>
                             )}
                             {enfant.zone_transport_id && (
-                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-medium">
-                                <Bus className="h-2.5 w-2.5" /> Transport
+                              <span className="w-6 h-6 rounded-full bg-amber-500/90 backdrop-blur flex items-center justify-center shadow-md">
+                                <Bus className="h-3 w-3 text-white" />
                               </span>
                             )}
                           </div>
                         </div>
-                        <div className="shrink-0 w-8 h-8 rounded-xl bg-muted/60 flex items-center justify-center">
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        {/* Info */}
+                        <div className="px-3 py-2.5 flex items-center justify-between gap-1">
+                          <div className="min-w-0">
+                            <p className="font-bold text-sm truncate">{enfant.prenom}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{enfant.classes?.niveaux?.nom} — {enfant.classes?.nom}</p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
             </motion.div>
 
             {/* Catalogue & Commande */}
