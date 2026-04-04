@@ -43,7 +43,28 @@ serve(async (req) => {
   }
 
   try {
-    const { matricule, password } = await req.json();
+    const body = await req.json();
+    const { matricule, password, action } = body;
+
+    // Lookup action — returns photo only (no auth required)
+    if (action === "lookup") {
+      if (!matricule) {
+        return new Response(JSON.stringify({ error: "Matricule requis" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: emp } = await supabaseAdmin
+        .from("employes")
+        .select("nom, prenom, photo_url, categorie, poste")
+        .eq("matricule", matricule.trim().toUpperCase())
+        .eq("statut", "actif")
+        .maybeSingle();
+      return new Response(JSON.stringify({ employe: emp || null }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (!matricule || !password) {
       return new Response(JSON.stringify({ error: "Matricule et mot de passe requis" }), {
         status: 400,
