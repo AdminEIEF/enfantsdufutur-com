@@ -28,7 +28,6 @@ const TYPE_OPTIONS = [
 ];
 
 const DEBIT_TYPES = [
-  { value: 'scolarite', label: 'Scolarité', emoji: '🎓' },
   { value: 'cantine', label: 'Cantine', emoji: '🍽️' },
   { value: 'transport', label: 'Transport', emoji: '🚌' },
   { value: 'librairie', label: 'Librairie', emoji: '📚' },
