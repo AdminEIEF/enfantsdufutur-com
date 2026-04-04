@@ -29,6 +29,56 @@ interface UploadedDoc {
   preview?: string;
 }
 
+function FichesDownloadSection() {
+  const { data: fiches = [] } = useQuery({
+    queryKey: ['fiches-renseignements-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('fiches_renseignements')
+        .select('*')
+        .order('ordre');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  if (fiches.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Download className="h-5 w-5 text-primary" />
+          Fiches de renseignements à télécharger
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Téléchargez, imprimez et remplissez ces fiches avant votre rendez-vous.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {fiches.map((f: any) => (
+          <a
+            key={f.id}
+            href={f.fichier_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 p-3 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/30 transition-all group"
+          >
+            <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+              <FileText className="h-5 w-5 text-destructive" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium group-hover:text-primary transition-colors">{f.nom}</p>
+              <p className="text-xs text-muted-foreground">{f.fichier_nom}</p>
+            </div>
+            <Download className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+          </a>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function PreInscriptionPublic() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
