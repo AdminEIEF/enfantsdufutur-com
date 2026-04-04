@@ -343,35 +343,43 @@ export default function PreInscriptionPublic() {
                   </Select>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Niveau souhaité</Label>
-                <Select value={form.niveau_id} onValueChange={v => setForm(f => ({ ...f, niveau_id: v, classe_id: '' }))}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner un niveau" /></SelectTrigger>
-                  <SelectContent>
-                    {sortedCycles.map(([cycleId, { cycleName, niveaux: cycleNiveaux }]) => (
-                      <div key={cycleId}>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{cycleName}</div>
-                        {cycleNiveaux.map((n: any) => (
-                          <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>
-                        ))}
-                      </div>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {form.niveau_id && classes.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Classe souhaitée</Label>
-                  <Select value={form.classe_id} onValueChange={v => setForm(f => ({ ...f, classe_id: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Sélectionner une classe" /></SelectTrigger>
-                    <SelectContent>
-                      {classes.map((c: any) => (
-                        <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                  <Label>Niveau souhaité</Label>
+                  <Select value={form.niveau_id} onValueChange={v => setForm(f => ({ ...f, niveau_id: v, classe_id: '' }))}>
+                    <SelectTrigger className="h-12 rounded-xl border-2 border-primary/20 bg-background shadow-sm hover:border-primary/40 transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10">
+                      <SelectValue placeholder="🎓 Choisir un niveau..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {sortedCycles.map(([cycleId, { cycleName, niveaux: cycleNiveaux }]) => (
+                        <div key={cycleId}>
+                          <div className="px-3 py-2 text-xs font-bold text-muted-foreground uppercase tracking-widest bg-muted/50 border-b">
+                            {cycleName}
+                          </div>
+                          {cycleNiveaux.map((n: any) => (
+                            <SelectItem key={n.id} value={n.id} className="py-2.5 text-sm font-medium">
+                              {n.nom}
+                            </SelectItem>
+                          ))}
+                        </div>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
+                <div className="space-y-2">
+                  <Label>Classe souhaitée</Label>
+                  <Select value={form.classe_id} onValueChange={v => setForm(f => ({ ...f, classe_id: v }))} disabled={!form.niveau_id || classes.length === 0}>
+                    <SelectTrigger className="h-12 rounded-xl border-2 border-primary/20 bg-background shadow-sm hover:border-primary/40 transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10">
+                      <SelectValue placeholder={!form.niveau_id ? 'Choisir un niveau d\'abord' : '📚 Choisir une classe...'} />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {classes.map((c: any) => (
+                        <SelectItem key={c.id} value={c.id} className="py-2.5 text-sm font-medium">{c.nom}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
