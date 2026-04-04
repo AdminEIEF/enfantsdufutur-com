@@ -142,9 +142,10 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
   const handleDebitTypeSelect = (type: string) => {
     setDebitType(type);
     const sel = enfants.find(e => e.id === debitEleveId);
-    if (type === 'transport' && sel?.zones_transport?.prix_mensuel) {
-      setDebitMontant(sel.zones_transport.prix_mensuel.toString());
-      setDebitDescription('Transport mensuel');
+    if (type === 'transport' && sel?.zones_transport) {
+      const prix = getTransportPrix(sel);
+      setDebitMontant(prix.toString());
+      setDebitDescription(`Transport ${getTrajetLabel(sel)}`);
     } else {
       setDebitMontant(''); setDebitDescription('');
     }
