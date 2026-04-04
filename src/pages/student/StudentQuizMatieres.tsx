@@ -155,7 +155,7 @@ export default function StudentQuizMatieres() {
         const data = await resp.json();
         const cms = data.classe_matieres || [];
         const matList = cms.map((cm: any) => cm.matieres).filter((m: any) => m && getQuestionBankKey(m.nom));
-        const unique = Array.from(new Map(matList.map((m: any) => [m.id, m])).values());
+        const unique = Array.from(new Map(matList.map((m: any) => [m.id, m])).values()) as { id: string; nom: string }[];
         setMatieres(unique);
       } catch { toast.error('Erreur de chargement'); }
       finally { setLoading(false); }
