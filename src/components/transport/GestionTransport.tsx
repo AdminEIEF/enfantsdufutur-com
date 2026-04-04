@@ -57,7 +57,7 @@ function ZonesTab() {
       if (!nom) throw new Error('Le nom est requis');
       if (prixMensuel <= 0) throw new Error('Le prix mensuel est requis');
       const quartiers = quartiersInput.split(',').map(q => q.trim()).filter(Boolean);
-      const payload = { nom, prix_mensuel: prixMensuel, quartiers };
+      const payload = { nom, prix_mensuel: prixMensuel, prix_aller_simple: prixAllerSimple, prix_retour_simple: prixRetourSimple, quartiers };
       if (editId) {
         const { error } = await supabase.from('zones_transport' as any).update(payload).eq('id', editId);
         if (error) throw error;
