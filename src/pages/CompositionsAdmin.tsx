@@ -1089,25 +1089,104 @@ export default function CompositionsAdmin() {
 
       {/* Results by Class Dialog */}
       <Dialog open={!!resultsByClassComp} onOpenChange={() => setResultsByClassComp(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" />
-              Résultats par classe — {compositions.find(c => c.id === resultsByClassComp)?.titre}
-            </DialogTitle>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <DialogTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-primary" />
+                Résultats par classe — {compositions.find(c => c.id === resultsByClassComp)?.titre}
+              </DialogTitle>
+              {resultsByClassGrouped.length > 0 && (
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => window.print()}>
+                    <Printer className="h-4 w-4 mr-1" /> Imprimer
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    const comp = compositions.find(c => c.id === resultsByClassComp);
+                    import('@/lib/excelUtils').then(({ exportToExcel }) => {
+                      const rows: any[] = [];
+                      resultsByClassGrouped.forEach(([className, students]) => {
+                        const classeEleves = resultsByClassEffectif.filter((e: any) => (e.classes?.nom || '') === className);
+                        const composedIds = new Set(students.map((s: any) => s.eleve_id));
+                        const nonComposed = classeEleves.filter((e: any) => !composedIds.has(e.id));
+                        students.sort((a: any, b: any) => (b.score ?? -1) - (a.score ?? -1)).forEach((r: any, i: number) => {
+                          rows.push({ Classe: className, '#': i + 1, Prénom: r.eleves?.prenom, Nom: r.eleves?.nom, Matricule: r.eleves?.matricule, Note: r.score != null ? `${r.score}/${r.bareme}` : 'À noter', Statut: 'Composé', 'Soumis le': r.soumis_at ? new Date(r.soumis_at).toLocaleString('fr') : '' });
+                        });
+                        nonComposed.forEach((e: any) => {
+                          rows.push({ Classe: className, '#': '', Prénom: e.prenom, Nom: e.nom, Matricule: e.matricule, Note: '', Statut: 'Non composé', 'Soumis le': '' });
+                        });
+                      });
+                      exportToExcel(rows, `Résultats_${comp?.titre || 'composition'}`);
+                    });
+                  }}>
+                    <Download className="h-4 w-4 mr-1" /> Excel
+                  </Button>
+                </div>
+              )}
+            </div>
           </DialogHeader>
           {resultsByClassLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
           ) : resultsByClassGrouped.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">Aucun résultat pour cette composition</p>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-6 print:space-y-4" id="results-by-class-print">
+              {/* Global best per niveau */}
+              {(() => {
+                const niveauMap = new Map<string, { student: any; score: number; className: string; bareme: number }>();
+                resultsByClassGrouped.forEach(([className, students]) => {
+                  students.forEach((s: any) => {
+                    const niveau = s.eleves?.classes?.niveaux?.nom || '';
+                    if (niveau && s.score != null) {
+                      const existing = niveauMap.get(niveau);
+                      if (!existing || s.score > existing.score) {
+                        niveauMap.set(niveau, { student: s, score: s.score, className, bareme: s.bareme });
+                      }
+                    }
+                  });
+                });
+                if (niveauMap.size > 0) {
+                  return (
+                    <Card className="border-2 border-primary/20 bg-primary/5">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm flex items-center gap-2"><Award className="h-4 w-4 text-primary" /> Meilleure note par niveau</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {Array.from(niveauMap.entries()).map(([niveau, { student, score, className, bareme }]) => (
+                            <div key={niveau} className="flex items-center gap-3 p-3 rounded-lg bg-background border">
+                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                <Trophy className="h-5 w-5 text-primary" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-muted-foreground">{niveau}</p>
+                                <p className="font-semibold text-sm truncate">{student.eleves?.prenom} {student.eleves?.nom}</p>
+                                <p className="text-xs text-muted-foreground">{className} — <strong className="text-primary">{score}/{bareme}</strong></p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                }
+                return null;
+              })()}
+
               {resultsByClassGrouped.map(([className, students]) => {
                 const scored = students.filter((s: any) => s.score != null);
                 const avg = scored.length > 0 ? (scored.reduce((sum: number, s: any) => sum + s.score, 0) / scored.length).toFixed(1) : '—';
                 const max = scored.length > 0 ? Math.max(...scored.map((s: any) => s.score)) : '—';
                 const min = scored.length > 0 ? Math.min(...scored.map((s: any) => s.score)) : '—';
                 const bareme = students[0]?.bareme || 20;
+                const bestStudent = scored.length > 0 ? scored.reduce((best: any, s: any) => (s.score > (best?.score ?? -1) ? s : best), null) : null;
+                
+                // Effectif: composed vs not composed
+                const classeEleves = resultsByClassEffectif.filter((e: any) => (e.classes?.nom || '') === className);
+                const composedIds = new Set(students.map((s: any) => s.eleve_id));
+                const nonComposed = classeEleves.filter((e: any) => !composedIds.has(e.id));
+                const totalEffectif = classeEleves.length || students.length;
+                
                 return (
                   <Card key={className} className="border">
                     <CardHeader className="pb-2">
@@ -1115,16 +1194,25 @@ export default function CompositionsAdmin() {
                         <CardTitle className="text-base flex items-center gap-2">
                           <Users className="h-4 w-4 text-primary" />
                           {className}
-                          <Badge variant="secondary" className="text-xs">{students.length} élève{students.length > 1 ? 's' : ''}</Badge>
                         </CardTitle>
-                        <div className="flex items-center gap-3 text-sm">
-                          <span className="text-muted-foreground">Moy: <strong className="text-foreground">{avg}/{bareme}</strong></span>
-                          <span className="text-muted-foreground">Max: <strong className="text-emerald-600">{max}</strong></span>
-                          <span className="text-muted-foreground">Min: <strong className="text-destructive">{min}</strong></span>
+                        <div className="flex items-center gap-3 text-xs flex-wrap">
+                          <Badge variant="default" className="text-xs">{students.length}/{totalEffectif} composé{students.length > 1 ? 's' : ''}</Badge>
+                          {nonComposed.length > 0 && <Badge variant="destructive" className="text-xs">{nonComposed.length} absent{nonComposed.length > 1 ? 's' : ''}</Badge>}
                         </div>
                       </div>
+                      <div className="flex items-center gap-4 text-sm mt-1 flex-wrap">
+                        <span className="text-muted-foreground">Moy: <strong className="text-foreground">{avg}/{bareme}</strong></span>
+                        <span className="text-muted-foreground">Max: <strong className="text-emerald-600 dark:text-emerald-400">{max}</strong></span>
+                        <span className="text-muted-foreground">Min: <strong className="text-destructive">{min}</strong></span>
+                        {bestStudent && (
+                          <span className="flex items-center gap-1 text-primary">
+                            <Trophy className="h-3.5 w-3.5" />
+                            <strong>{bestStudent.eleves?.prenom} {bestStudent.eleves?.nom}</strong>
+                          </span>
+                        )}
+                      </div>
                     </CardHeader>
-                    <CardContent className="pt-0">
+                    <CardContent className="pt-0 space-y-3">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -1137,9 +1225,12 @@ export default function CompositionsAdmin() {
                         </TableHeader>
                         <TableBody>
                           {students.sort((a: any, b: any) => (b.score ?? -1) - (a.score ?? -1)).map((r: any, i: number) => (
-                            <TableRow key={r.id}>
+                            <TableRow key={r.id} className={i === 0 && r.score != null ? 'bg-primary/5' : ''}>
                               <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
-                              <TableCell className="font-medium">{r.eleves?.prenom} {r.eleves?.nom}</TableCell>
+                              <TableCell className="font-medium">
+                                {i === 0 && r.score != null && <Trophy className="h-3.5 w-3.5 inline mr-1 text-primary" />}
+                                {r.eleves?.prenom} {r.eleves?.nom}
+                              </TableCell>
                               <TableCell className="text-xs text-muted-foreground">{r.eleves?.matricule}</TableCell>
                               <TableCell className="text-right">
                                 {r.score != null ? (
@@ -1157,6 +1248,21 @@ export default function CompositionsAdmin() {
                           ))}
                         </TableBody>
                       </Table>
+
+                      {nonComposed.length > 0 && (
+                        <details className="mt-2">
+                          <summary className="text-xs font-medium text-destructive cursor-pointer flex items-center gap-1">
+                            ⚠️ {nonComposed.length} élève{nonComposed.length > 1 ? 's' : ''} n'ayant pas composé
+                          </summary>
+                          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1">
+                            {nonComposed.map((e: any) => (
+                              <div key={e.id} className="text-xs text-muted-foreground px-2 py-1 rounded bg-destructive/5 border border-destructive/10">
+                                {e.prenom} {e.nom} <span className="opacity-60">({e.matricule})</span>
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      )}
                     </CardContent>
                   </Card>
                 );
