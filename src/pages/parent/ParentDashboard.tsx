@@ -11,13 +11,14 @@ import { useParentAuth } from '@/hooks/useParentAuth';
 import {
   GraduationCap, LogOut, Wallet, TrendingDown, CreditCard, Users,
   ChevronRight, UtensilsCrossed, BookOpen, Loader2, MessageCircle, Smartphone, FileText,
-  Bus, CalendarDays, Phone, Mail, MapPin, X, Eye, Camera
+  Bus, CalendarDays, Phone, Mail, MapPin, X, Eye, Camera, Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AIChatBubble } from '@/components/AIChatBubble';
 import { SchoolWatermark } from '@/components/SchoolWatermark';
 import ParentPaymentDialog from '@/components/ParentPaymentDialog';
 import ParentDevisInscription from '@/components/ParentDevisInscription';
+import { generateRecuGeneriquePDF } from '@/lib/generateRecuGeneriquePDF';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const MOIS_SCOLAIRES = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
@@ -418,6 +419,29 @@ export default function ParentDashboard() {
                                 <p className="font-extrabold text-emerald-600 text-sm">{p.montant.toLocaleString()}</p>
                                 <p className="text-[9px] text-muted-foreground font-medium">GNF</p>
                               </div>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="shrink-0 h-8 w-8"
+                                onClick={(ev) => {
+                                  ev.stopPropagation();
+                                  generateRecuGeneriquePDF({
+                                    type: p.type_paiement,
+                                    typeLabel: p.type_paiement.charAt(0).toUpperCase() + p.type_paiement.slice(1),
+                                    eleve: enfant ? `${enfant.prenom} ${enfant.nom}` : '—',
+                                    matricule: enfant?.matricule || '',
+                                    classe: enfant?.classes?.nom || '—',
+                                    montant: p.montant,
+                                    mois: p.mois_concerne || null,
+                                    canal: p.canal || 'portefeuille',
+                                    reference: null,
+                                    date: new Date(p.date_paiement).toLocaleDateString('fr-FR'),
+                                    schoolConfig: dashData?.school_config,
+                                  });
+                                }}
+                              >
+                                <Download className="h-3.5 w-3.5 text-primary" />
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>

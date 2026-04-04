@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Bus, CreditCard, Download, Printer, Search, Wallet, RefreshCw, MapPin } from 'lucide-react';
+import { Bus, CreditCard, Download, Printer, Search, Wallet, RefreshCw, MapPin, Banknote } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -27,8 +27,8 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   const [search, setSearch] = useState('');
   const [filterZone, setFilterZone] = useState('all');
   const [rechargeDialog, setRechargeDialog] = useState<any>(null);
-  const [montantRecharge, setMontantRecharge] = useState('');
   const [printCard, setPrintCard] = useState<any>(null);
+  const [cashPayDialog, setCashPayDialog] = useState<any>(null);
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -102,11 +102,37 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       queryClient.invalidateQueries({ queryKey: ['recharges-transport'] });
       toast({ title: 'Recharge effectuée', description: 'La carte transport a été rechargée pour 30 jours.' });
       setRechargeDialog(null);
-      setMontantRecharge('');
     },
     onError: (err: any) => {
       toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
     },
+  });
+
+  // Cash payment by comptable (creates paiement + recharge in one step)
+  const cashPayMutation = useMutation({
+    mutationFn: async ({ eleveId, montant }: { eleveId: string; montant: number }) => {
+      // 1. Create paiement record
+      const { error: payErr } = await supabase.from('paiements').insert({
+        eleve_id: eleveId,
+        type_paiement: 'transport',
+        montant,
+        canal: 'especes',
+        mois_concerne: `Transport du mois de ${moisCourant} ${anneeCourante}`,
+      });
+      if (payErr) throw payErr;
+      // 2. Deactivate old recharge
+      await supabase.from('recharges_transport').update({ actif: false } as any).eq('eleve_id', eleveId).eq('actif', true);
+      // 3. Create new recharge
+      const { error: rechErr } = await supabase.from('recharges_transport').insert({ eleve_id: eleveId, montant, actif: true } as any);
+      if (rechErr) throw rechErr;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recharges-transport'] });
+      queryClient.invalidateQueries({ queryKey: ['paiements-transport'] });
+      toast({ title: 'Paiement enregistré', description: 'Paiement espèces + carte rechargée.' });
+      setCashPayDialog(null);
+    },
+    onError: (err: any) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
   });
 
   const toggleSelect = (id: string) => {
@@ -190,12 +216,23 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   };
 
   const filteredEleves = useMemo(() => {
-    return eleves.filter((e: any) => {
+    const filtered = eleves.filter((e: any) => {
       const matchSearch = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase());
       const matchZone = filterZone === 'all' || e.zone_transport_id === filterZone;
       return matchSearch && matchZone;
     });
-  }, [eleves, search, filterZone]);
+    // Sort: pending validation (paid but not recharged) first, then not paid, then already recharged
+    return filtered.sort((a: any, b: any) => {
+      const aPaid = hasTransportPaidThisMonth(a.id);
+      const bPaid = hasTransportPaidThisMonth(b.id);
+      const aRecharged = hasRechargeThisMonth(a.id);
+      const bRecharged = hasRechargeThisMonth(b.id);
+      // Priority: paid & not recharged > not paid > recharged
+      const aScore = aPaid && !aRecharged ? 0 : !aPaid ? 1 : 2;
+      const bScore = bPaid && !bRecharged ? 0 : !bPaid ? 1 : 2;
+      return aScore - bScore;
+    });
+  }, [eleves, search, filterZone, paiementsTransport, recharges]);
 
   const exportCard = async () => {
     if (!cardRef.current) return;
@@ -447,17 +484,22 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => {
-                                setRechargeDialog(e);
-                                setMontantRecharge(String(prixZone));
-                              }}
+                              onClick={() => setRechargeDialog(e)}
                             >
-                              <Wallet className="h-3 w-3 mr-1" /> Recharger
+                              <Wallet className="h-3 w-3 mr-1" /> Valider
+                            </Button>
+                          ) : !parentPaid && !alreadyThisMonth ? (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => setCashPayDialog(e)}
+                            >
+                              <Banknote className="h-3 w-3 mr-1" /> Espèces
                             </Button>
                           ) : alreadyThisMonth ? (
                             <Badge variant="secondary" className="text-[10px]">✓ Rechargé</Badge>
                           ) : (
-                            <Badge variant="outline" className="text-[10px] text-muted-foreground">En attente paiement</Badge>
+                            <Badge variant="outline" className="text-[10px] text-muted-foreground">En attente</Badge>
                           )}
                           <Button size="sm" variant="ghost" onClick={() => setPrintCard({ ...e, recharge })}>
                             <Printer className="h-3 w-3" />
@@ -473,38 +515,65 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         </CardContent>
       </Card>
 
-      {/* Dialog recharge */}
+      {/* Dialog recharge — validation de carte */}
       <Dialog open={!!rechargeDialog} onOpenChange={() => setRechargeDialog(null)}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Recharger la carte transport</DialogTitle></DialogHeader>
-          {rechargeDialog && (
-          <div className="space-y-4">
-              <div className="text-sm space-y-1">
-                <p><strong>Élève :</strong> {rechargeDialog.prenom} {rechargeDialog.nom}</p>
-                <p><strong>Zone :</strong> {(rechargeDialog.zones_transport as any)?.nom}</p>
-                <p><strong>Description :</strong> Transport du mois de {moisCourant} {anneeCourante}</p>
-                <p><strong>Validité :</strong> 30 jours à partir d'aujourd'hui</p>
-              </div>
-              {hasRechargeThisMonth(rechargeDialog.id) && (
-                <div className="bg-warning/10 border border-warning/30 rounded-md p-3 text-sm text-warning-foreground">
-                  ⚠️ Cet élève a déjà été rechargé ce mois-ci. Une seule recharge par mois est autorisée.
+          <DialogHeader><DialogTitle>Valider la carte transport</DialogTitle></DialogHeader>
+          {rechargeDialog && (() => {
+            const prixZoneRecharge = (rechargeDialog.zones_transport as any)?.prix_mensuel || 0;
+            const zoneNom = (rechargeDialog.zones_transport as any)?.nom || '—';
+            return (
+              <div className="space-y-4">
+                <div className="text-sm space-y-1">
+                  <p><strong>Élève :</strong> {rechargeDialog.prenom} {rechargeDialog.nom}</p>
+                  <p><strong>Zone :</strong> {zoneNom}</p>
+                  <p><strong>Description :</strong> Transport du mois de {moisCourant} {anneeCourante}</p>
+                  <p><strong>Montant :</strong> <span className="font-bold text-primary">{prixZoneRecharge.toLocaleString()} GNF</span></p>
+                  <p><strong>Validité :</strong> 30 jours à partir d'aujourd'hui</p>
                 </div>
-              )}
-              <div>
-                <label className="text-sm font-medium">Montant (GNF)</label>
-                <Input type="number" value={montantRecharge} onChange={e => setMontantRecharge(e.target.value)} />
+                {hasRechargeThisMonth(rechargeDialog.id) && (
+                  <div className="bg-warning/10 border border-warning/30 rounded-md p-3 text-sm text-warning-foreground">
+                    ⚠️ Cet élève a déjà été rechargé ce mois-ci. Une seule recharge par mois est autorisée.
+                  </div>
+                )}
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setRechargeDialog(null)}>Annuler</Button>
+                  <Button
+                    disabled={rechargeMutation.isPending || hasRechargeThisMonth(rechargeDialog.id)}
+                    onClick={() => rechargeMutation.mutate({ eleveId: rechargeDialog.id, montant: prixZoneRecharge })}
+                  >
+                    {rechargeMutation.isPending ? 'En cours…' : 'Confirmer la validation'}
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setRechargeDialog(null)}>Annuler</Button>
-                <Button
-                  disabled={rechargeMutation.isPending || !montantRecharge || hasRechargeThisMonth(rechargeDialog.id)}
-                  onClick={() => rechargeMutation.mutate({ eleveId: rechargeDialog.id, montant: Number(montantRecharge) })}
-                >
-                  {rechargeMutation.isPending ? 'En cours…' : 'Confirmer la recharge'}
-                </Button>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog paiement espèce comptable */}
+      <Dialog open={!!cashPayDialog} onOpenChange={() => setCashPayDialog(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Paiement transport en espèces</DialogTitle></DialogHeader>
+          {cashPayDialog && (() => {
+            const prixZoneCash = (cashPayDialog.zones_transport as any)?.prix_mensuel || 0;
+            return (
+              <div className="space-y-4">
+                <div className="text-sm space-y-1">
+                  <p><strong>Élève :</strong> {cashPayDialog.prenom} {cashPayDialog.nom}</p>
+                  <p><strong>Zone :</strong> {(cashPayDialog.zones_transport as any)?.nom}</p>
+                  <p><strong>Montant :</strong> <span className="font-bold text-primary">{prixZoneCash.toLocaleString()} GNF</span></p>
+                  <p><strong>Mois :</strong> {moisCourant} {anneeCourante}</p>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setCashPayDialog(null)}>Annuler</Button>
+                  <Button disabled={cashPayMutation.isPending} onClick={() => cashPayMutation.mutate({ eleveId: cashPayDialog.id, montant: prixZoneCash })}>
+                    {cashPayMutation.isPending ? 'En cours…' : 'Enregistrer le paiement'}
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
