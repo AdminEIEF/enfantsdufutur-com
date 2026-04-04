@@ -332,6 +332,7 @@ export default function CompositionsAdmin() {
   const [resultsByClassComp, setResultsByClassComp] = useState<string | null>(null);
   const [resultsByClassData, setResultsByClassData] = useState<any[]>([]);
   const [resultsByClassLoading, setResultsByClassLoading] = useState(false);
+  const [resultsByClassEffectif, setResultsByClassEffectif] = useState<any[]>([]);
 
   // Form state
   const [form, setForm] = useState({
