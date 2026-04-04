@@ -517,12 +517,6 @@ export default function PreInscriptionPublic() {
                     style={{ width: `${(uploadedDocs.length / DOCUMENTS_REQUIS.length) * 100}%` }}
                   />
                 </div>
-                {DOCUMENTS_REQUIS.filter(d => d.required && !getDocForKey(d.key)).length > 0 && (
-                  <div className="flex items-center gap-1.5 mt-2 text-xs text-destructive">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    {DOCUMENTS_REQUIS.filter(d => d.required && !getDocForKey(d.key)).length} document(s) obligatoire(s) manquant(s)
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
