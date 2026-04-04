@@ -82,6 +82,30 @@ serve(async (req) => {
         });
       }
 
+      // Check if already recharged this month for this student
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+      const { data: existingRecharge } = await supabaseAdmin
+        .from("ordres_cantine")
+        .select("id")
+        .eq("eleve_id", eleve_id)
+        .eq("statut", "valide")
+        .gte("created_at", startOfMonth)
+        .lte("created_at", endOfMonth)
+        .maybeSingle();
+
+      if (existingRecharge) {
+        const moisNom = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+        return new Response(JSON.stringify({ 
+          error: `La cantine de ${eleve.prenom} a déjà été rechargée pour ${moisNom}. Une seule recharge par mois est autorisée.` 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       // Check family wallet balance
       const { data: famille } = await supabaseAdmin
         .from("familles")

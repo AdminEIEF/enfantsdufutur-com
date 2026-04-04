@@ -52,9 +52,9 @@ interface Article {
 interface CartItem { article: Article; quantite: number; }
 
 const WALLET_SERVICES = [
-  { value: 'cantine', label: 'Cantine', emoji: '🍽️', desc: 'Recharger le solde repas', gradient: 'from-emerald-500 to-teal-600', icon: UtensilsCrossed },
-  { value: 'librairie', label: 'Librairie', emoji: '📚', desc: 'Acheter livres & fournitures', gradient: 'from-indigo-500 to-purple-600', icon: BookOpen },
-  { value: 'boutique', label: 'Boutique', emoji: '👕', desc: 'Commander uniformes', gradient: 'from-pink-500 to-rose-600', icon: ShoppingBag },
+  { value: 'cantine', label: 'Cantine', emoji: '🍽️', desc: 'Recharger le solde repas (1x/mois)', gradient: 'from-emerald-500 to-teal-600', icon: UtensilsCrossed },
+  { value: 'librairie', label: 'Librairie', emoji: '📚', desc: 'Romans & livres numériques', gradient: 'from-indigo-500 to-purple-600', icon: BookOpen },
+  { value: 'boutique', label: 'Boutique', emoji: '👕', desc: 'Fournitures & uniformes', gradient: 'from-pink-500 to-rose-600', icon: ShoppingBag },
   { value: 'transport', label: 'Transport', emoji: '🚌', desc: 'Frais de transport', gradient: 'from-amber-500 to-orange-600', icon: Bus },
   { value: 'autre', label: 'Autre', emoji: '📦', desc: 'Autre paiement', gradient: 'from-gray-500 to-slate-600', icon: Package },
 ];
@@ -541,7 +541,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                     <div className="space-y-2">
                       <Label className="text-xs font-bold">Montant par enfant (GNF)</Label>
                       <Input type="number" placeholder="400000" value={cantineMontant} onChange={e => setCantineMontant(e.target.value)} min={1000} className="rounded-xl h-11 text-lg font-bold" />
-                      <p className="text-[10px] text-muted-foreground">Tarif mensuel recommandé : <strong>{CANTINE_MENSUEL.toLocaleString()} GNF</strong></p>
+                      <p className="text-[10px] text-muted-foreground">Tarif mensuel : <strong>{CANTINE_MENSUEL.toLocaleString()} GNF</strong> — <span className="text-amber-600 font-semibold">1 recharge/mois max par enfant</span></p>
                     </div>
 
                     {cantineSelectedIds.length > 0 && Number(cantineMontant) > 0 && (
