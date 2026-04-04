@@ -630,8 +630,12 @@ export default function PreInscriptionPublic() {
                       <span className="text-xl">👔</span>
                       <p className="text-sm font-bold">Uniformes scolaires</p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">Tenue scolaire complète, tenue de sport, polo et options (karaté, scout). Disponible à la boutique de l'école.</p>
-                    <p className="text-xs font-semibold text-primary mt-1">💰 Tarif selon le cycle et les articles choisis</p>
+                    <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                       <p>👕 2 Tenues scolaires Primaire : <span className="font-semibold text-foreground">350 000 GNF</span> — Secondaire : <span className="font-semibold text-foreground">450 000 GNF</span></p>
+                       <p>🏃 Tenue de sport (EPS) : <span className="font-semibold text-foreground">100 000 GNF</span></p>
+                       <p>⚜️ Tenue Scout : <span className="font-semibold text-foreground">250 000 GNF</span></p>
+                       <p>🥋 Tenue de Karaté (kimono) : <span className="font-semibold text-foreground">200 000 GNF</span></p>
+                     </div>
                   </div>
                 </label>
               </div>
