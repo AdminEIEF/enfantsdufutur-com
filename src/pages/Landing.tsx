@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   GraduationCap, Users, BookOpen, Shield, Bus, Utensils,
   ArrowRight, Phone, Mail, MapPin, Download, Star, Clock, Award, Image, Briefcase,
-  ChevronRight, Sparkles
+  ChevronRight, Sparkles, FileText, ChevronDown
 } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
