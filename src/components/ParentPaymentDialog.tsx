@@ -68,6 +68,39 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
   const [debitDescription, setDebitDescription] = useState('');
   const [debitLoading, setDebitLoading] = useState(false);
 
+  // Handle initialMode for wallet recharge
+  useEffect(() => {
+    if (open && initialMode === 'mobile-wallet') {
+      setActiveMode('mobile');
+      setMobileMode('manuel');
+      setManuelPurpose('wallet');
+    }
+    if (!open) {
+      setActiveMode('select');
+      setMobileMode('manuel');
+      setManuelPurpose('');
+      setManuelMontant('');
+      setDebitType('');
+      setDebitMontant('');
+    }
+  }, [open, initialMode]);
+
+  // Auto-fill amount when selecting debit type
+  const handleDebitTypeSelect = (type: string) => {
+    setDebitType(type);
+    const selectedEnfantForDebit = enfants.find(e => e.id === debitEleveId);
+    if (type === 'cantine') {
+      setDebitMontant(CANTINE_MENSUEL.toString());
+      setDebitDescription('Cantine mensuel');
+    } else if (type === 'transport' && selectedEnfantForDebit?.zones_transport?.prix_mensuel) {
+      setDebitMontant(selectedEnfantForDebit.zones_transport.prix_mensuel.toString());
+      setDebitDescription('Transport mensuel');
+    } else {
+      setDebitMontant('');
+      setDebitDescription('');
+    }
+  };
+
   const handlePay = async () => {
     if (!eleveId || !typePaiement || !montant || Number(montant) <= 0) {
       toast.error('Veuillez remplir tous les champs');
