@@ -199,7 +199,7 @@ export default function PreInscriptionPublic() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.prenom_eleve || !form.nom_eleve || !form.nom_parent || !form.telephone_parent) {
+    if (!form.prenom_eleve || !form.nom_eleve || !form.nom_pere || !form.telephone_pere) {
       toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
@@ -208,8 +208,8 @@ export default function PreInscriptionPublic() {
       const payload: any = {
         prenom_eleve: form.prenom_eleve.trim(),
         nom_eleve: form.nom_eleve.trim(),
-        nom_parent: form.nom_parent.trim(),
-        telephone_parent: form.telephone_parent.trim(),
+        nom_parent: `${form.nom_pere.trim()} / ${form.nom_mere.trim()}`.trim(),
+        telephone_parent: form.telephone_pere.trim(),
         option_cantine: form.option_cantine,
         option_transport: form.option_transport,
         option_uniformes: form.option_uniformes,
