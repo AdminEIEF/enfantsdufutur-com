@@ -154,26 +154,62 @@ export default function StudentCultureGenerale() {
           </h2>
           <p className="text-sm text-muted-foreground">Choisis une catégorie pour tester tes connaissances !</p>
 
-          <div className="grid grid-cols-2 gap-3">
-            {QUIZ_CATEGORIES.map(cat => (
-              <motion.div key={cat.key} whileTap={{ scale: 0.95 }}>
-                <Card
-                  className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-emerald-300"
-                  onClick={() => startQuiz(cat.key)}
-                >
-                  <CardContent className="py-6 flex flex-col items-center gap-2">
-                    <span className="text-4xl">{cat.emoji}</span>
-                    <span className="font-bold">{cat.label}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {cat.key === 'all'
-                        ? `${ALL_QUESTIONS.length} questions`
-                        : `${ALL_QUESTIONS.filter(q => q.category === cat.key).length} questions`}
-                    </Badge>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+          {(() => {
+            const CAT_COLORS = [
+              'from-violet-500 to-purple-600', 'from-blue-500 to-cyan-600', 'from-emerald-500 to-teal-600',
+              'from-amber-500 to-orange-600', 'from-rose-500 to-pink-600', 'from-indigo-500 to-blue-600',
+            ];
+            const pages: typeof QUIZ_CATEGORIES[] = [];
+            for (let i = 0; i < QUIZ_CATEGORIES.length; i += 6) {
+              pages.push(QUIZ_CATEGORIES.slice(i, i + 6));
+            }
+            return (
+              <div className="space-y-3">
+                <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-3 -mx-2 px-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+                  {pages.map((page, pageIdx) => (
+                    <div key={pageIdx} className="snap-center shrink-0 w-full">
+                      <div className="grid grid-cols-3 grid-rows-2 gap-2.5">
+                        {page.map((cat, i) => {
+                          const globalIdx = pageIdx * 6 + i;
+                          const qCount = cat.key === 'all' ? ALL_QUESTIONS.length : ALL_QUESTIONS.filter(q => q.category === cat.key).length;
+                          return (
+                            <motion.div
+                              key={cat.key}
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: i * 0.05, type: 'spring', damping: 20 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <Card
+                                className="cursor-pointer overflow-hidden border-0 shadow-md hover:shadow-xl transition-all active:scale-[0.95]"
+                                onClick={() => startQuiz(cat.key)}
+                              >
+                                <div className={`h-1.5 bg-gradient-to-r ${CAT_COLORS[globalIdx % CAT_COLORS.length]}`} />
+                                <CardContent className="p-3 flex flex-col items-center gap-1.5">
+                                  <span className="text-2xl">{cat.emoji}</span>
+                                  <span className="text-xs font-semibold text-center leading-tight">{cat.label}</span>
+                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                                    {qCount} Q
+                                  </Badge>
+                                </CardContent>
+                              </Card>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {pages.length > 1 && (
+                  <div className="flex justify-center gap-1.5">
+                    {pages.map((_, idx) => (
+                      <div key={idx} className="w-2 h-2 rounded-full bg-emerald-400/40" />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </StudentLayout>
     );

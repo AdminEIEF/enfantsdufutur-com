@@ -235,43 +235,66 @@ export default function StudentQuizMatieres() {
                 Aucune matière avec quiz disponible
               </CardContent>
             </Card>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {matieres.map((m, i) => {
-                const color = MATIERE_COLORS[i % MATIERE_COLORS.length];
-                const key = getQuestionBankKey(m.nom);
-                const emoji = key ? MATIERE_EMOJIS[key] || '📚' : '📚';
-                return (
-                  <motion.div
-                    key={m.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.06, type: 'spring', damping: 20 }}
-                  >
-                    <Card
-                      className="cursor-pointer overflow-hidden border-0 shadow-md hover:shadow-xl transition-all active:scale-[0.97]"
-                      onClick={() => startQuiz(m.nom)}
-                    >
-                      <div className={`h-2 bg-gradient-to-r ${color.bg}`} />
-                      <CardContent className="p-4 flex flex-col items-center gap-2">
-                        <motion.span
-                          className="text-3xl"
-                          whileHover={{ scale: 1.2, rotate: 10 }}
-                          transition={{ type: 'spring', stiffness: 300 }}
-                        >
-                          {emoji}
-                        </motion.span>
-                        <p className="text-sm font-semibold text-center leading-tight">{m.nom}</p>
-                        <Badge variant="secondary" className="text-[10px]">
-                          {QUESTION_BANKS[key!]?.length || 0} questions
-                        </Badge>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
+          ) : (() => {
+            // Group matieres into pages of 6 (2x3)
+            const pages: typeof matieres[] = [];
+            for (let i = 0; i < matieres.length; i += 6) {
+              pages.push(matieres.slice(i, i + 6));
+            }
+            return (
+              <div className="space-y-3">
+                <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-3 -mx-2 px-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+                  {pages.map((page, pageIdx) => (
+                    <div key={pageIdx} className="snap-center shrink-0 w-full">
+                      <div className="grid grid-cols-3 grid-rows-2 gap-2.5">
+                        {page.map((m, i) => {
+                          const globalIdx = pageIdx * 6 + i;
+                          const color = MATIERE_COLORS[globalIdx % MATIERE_COLORS.length];
+                          const key = getQuestionBankKey(m.nom);
+                          const emoji = key ? MATIERE_EMOJIS[key] || '📚' : '📚';
+                          return (
+                            <motion.div
+                              key={m.id}
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: i * 0.05, type: 'spring', damping: 20 }}
+                            >
+                              <Card
+                                className="cursor-pointer overflow-hidden border-0 shadow-md hover:shadow-xl transition-all active:scale-[0.95]"
+                                onClick={() => startQuiz(m.nom)}
+                              >
+                                <div className={`h-1.5 bg-gradient-to-r ${color.bg}`} />
+                                <CardContent className="p-3 flex flex-col items-center gap-1.5">
+                                  <motion.span
+                                    className="text-2xl"
+                                    whileHover={{ scale: 1.2, rotate: 10 }}
+                                    transition={{ type: 'spring', stiffness: 300 }}
+                                  >
+                                    {emoji}
+                                  </motion.span>
+                                  <p className="text-xs font-semibold text-center leading-tight line-clamp-2">{m.nom}</p>
+                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                                    {QUESTION_BANKS[key!]?.length || 0} Q
+                                  </Badge>
+                                </CardContent>
+                              </Card>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {pages.length > 1 && (
+                  <div className="flex justify-center gap-1.5">
+                    {pages.map((_, idx) => (
+                      <div key={idx} className="w-2 h-2 rounded-full bg-primary/30" />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </StudentLayout>
     );
