@@ -303,8 +303,12 @@ export default function PreInscriptionPublic() {
 
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Pré-inscription en ligne</h1>
-          <p className="text-muted-foreground">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-4">
+            <GraduationCap className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold text-primary">Inscription simplifiée</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2">Pré-inscription en ligne</h1>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto">
             Remplissez ce formulaire pour soumettre une demande de pré-inscription. 
             Notre équipe vous contactera pour un rendez-vous.
           </p>
