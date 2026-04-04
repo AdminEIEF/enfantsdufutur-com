@@ -13,6 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import SuiviGPSBus from './SuiviGPSBus';
+import PonctualiteTransport from './PonctualiteTransport';
+import { TrendingUp } from 'lucide-react';
 
 // ─── Zones Transport ─────────────────────────────────────
 function ZonesTab() {

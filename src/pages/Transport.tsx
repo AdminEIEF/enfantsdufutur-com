@@ -367,7 +367,7 @@ export default function Transport() {
           <TabsTrigger value="eleves">Élèves</TabsTrigger>
           <TabsTrigger value="itineraires" className="gap-1"><Route className="h-3.5 w-3.5" /> Itinéraires</TabsTrigger>
           <TabsTrigger value="cartes" className="gap-1"><CreditCard className="h-3.5 w-3.5" /> Cartes</TabsTrigger>
-          <TabsTrigger value="ponctualite" className="gap-1"><TrendingUp className="h-3.5 w-3.5" /> Ponctualité</TabsTrigger>
+          
           <TabsTrigger value="assignation" className="gap-1"><LinkIcon className="h-3.5 w-3.5" /> Assignation</TabsTrigger>
           <TabsTrigger value="alertes" className="gap-1"><Bell className="h-3.5 w-3.5" /> Alertes</TabsTrigger>
           <TabsTrigger value="par-classe" className="gap-1"><GraduationCap className="h-3.5 w-3.5" /> Par Classe</TabsTrigger>
