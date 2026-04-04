@@ -66,7 +66,6 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
 
   const rechargeMutation = useMutation({
     mutationFn: async ({ eleveId, montant }: { eleveId: string; montant: number }) => {
-      // Désactiver les anciennes recharges actives
       await supabase
         .from('recharges_transport')
         .update({ actif: false } as any)
@@ -95,6 +94,57 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
     },
   });
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const eligible = filteredEleves.filter((e: any) => !hasRechargeThisMonth(e.id));
+    if (selectedIds.size === eligible.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(eligible.map((e: any) => e.id)));
+    }
+  };
+
+  const handleBulkRecharge = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    let success = 0;
+    let errors = 0;
+    for (const id of selectedIds) {
+      const eleve = eleves.find((e: any) => e.id === id);
+      if (!eleve) continue;
+      const montant = (eleve as any).zones_transport?.prix_mensuel || 0;
+      try {
+        await supabase
+          .from('recharges_transport')
+          .update({ actif: false } as any)
+          .eq('eleve_id', id)
+          .eq('actif', true);
+        const { error } = await supabase.from('recharges_transport').insert({
+          eleve_id: id,
+          montant,
+          actif: true,
+        } as any);
+        if (error) { errors++; } else { success++; }
+      } catch { errors++; }
+    }
+    setBulkLoading(false);
+    queryClient.invalidateQueries({ queryKey: ['recharges-transport'] });
+    setSelectedIds(new Set());
+    setBulkMode(false);
+    toast({
+      title: `Recharge en lot terminée`,
+      description: `${success} rechargé(s) avec succès${errors > 0 ? `, ${errors} erreur(s)` : ''}.`,
+      variant: errors > 0 ? 'destructive' : 'default',
+    });
+  };
 
   const getActiveRecharge = (eleveId: string) => {
     return recharges.find(
