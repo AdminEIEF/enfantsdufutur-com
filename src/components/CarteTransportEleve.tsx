@@ -424,6 +424,11 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                       </TableCell>
                     )}
                     <TableCell className="text-center">
+                      <Badge variant={parentPaid ? 'default' : 'secondary'} className={parentPaid ? 'bg-emerald-600' : ''}>
+                        {parentPaid ? '✓ Payé' : 'Non payé'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
                       <Badge variant={recharge ? 'default' : 'destructive'}>
                         {recharge ? 'Active' : 'Expirée'}
                       </Badge>
