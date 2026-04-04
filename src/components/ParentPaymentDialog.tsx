@@ -291,12 +291,12 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
         {/* Header */}
         <div className="bg-gradient-to-br from-primary via-primary/90 to-accent p-5 relative">
           <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-primary-foreground/5 -translate-y-1/2 translate-x-1/4" />
-          <button onClick={() => onOpenChange(false)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors z-10">
-            <X className="h-4 w-4 text-primary-foreground" />
+          <button onClick={() => onOpenChange(false)} className="absolute top-3 right-3 w-9 h-9 rounded-full bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors z-20 shadow-sm">
+            <X className="h-5 w-5 text-primary-foreground" />
           </button>
           {showBack && (
-            <button onClick={handleBack} className="absolute top-3 left-3 w-8 h-8 rounded-full bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors z-10">
-              <ArrowLeft className="h-4 w-4 text-primary-foreground" />
+            <button onClick={handleBack} className="absolute top-3 left-3 w-9 h-9 rounded-full bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors z-20 shadow-sm">
+              <ArrowLeft className="h-5 w-5 text-primary-foreground" />
             </button>
           )}
           <div className="relative z-10">
