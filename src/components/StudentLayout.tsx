@@ -121,7 +121,7 @@ export function StudentLayout({ children }: { children: ReactNode }) {
       </header>
 
       {/* Content */}
-      <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-24">
+      <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-28">
         {children}
       </main>
 
