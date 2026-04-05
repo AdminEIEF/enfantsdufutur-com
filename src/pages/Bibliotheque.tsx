@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Library, Search, User, Award, BarChart3, FileText, ChevronRight, Printer, Lightbulb, GraduationCap, BookOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { Progress } from '@/components/ui/progress';
@@ -185,6 +186,8 @@ function computeMatiereByPeriode(notes: any[], periodes: any[]) {
 
 export default function Bibliotheque() {
   const { data: cycles = [] } = useCycles();
+  const { hasRole } = useAuth();
+  const isSuperviseur = hasRole('superviseur');
   const [activeTab, setActiveTab] = useState('prescolaire-primaire');
   const [cycleId, setCycleId] = useState('');
   const [niveauId, setNiveauId] = useState('');
@@ -407,7 +410,7 @@ export default function Bibliotheque() {
 
       {/* Tabs Préscolaire & Primaire / Secondaire */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full max-w-lg grid-cols-3">
+        <TabsList className={`grid w-full max-w-lg ${isSuperviseur ? 'grid-cols-3' : 'grid-cols-2'}`}>
           <TabsTrigger value="prescolaire-primaire" className="gap-2">
             <BookOpen className="h-4 w-4" />
             Présco. & Primaire
@@ -416,9 +419,11 @@ export default function Bibliotheque() {
             <GraduationCap className="h-4 w-4" />
             Secondaire
           </TabsTrigger>
-          <TabsTrigger value="livres-numeriques" className="gap-2">
-            📚 Livres Num.
-          </TabsTrigger>
+          {isSuperviseur && (
+            <TabsTrigger value="livres-numeriques" className="gap-2">
+              📚 Livres Num.
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="prescolaire-primaire" className="space-y-4 mt-4">
@@ -431,9 +436,11 @@ export default function Bibliotheque() {
           {renderElevesList()}
         </TabsContent>
 
-        <TabsContent value="livres-numeriques" className="space-y-4 mt-4">
-          <LivresNumeriquesTab />
-        </TabsContent>
+        {isSuperviseur && (
+          <TabsContent value="livres-numeriques" className="space-y-4 mt-4">
+            <LivresNumeriquesTab />
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Dialog Dossier Élève */}
