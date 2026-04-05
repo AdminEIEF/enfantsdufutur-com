@@ -765,12 +765,11 @@ serve(async (req) => {
     // ─── LIBRAIRIE (digital library - only validated purchases) ───
     if (action === "librairie") {
       const niveauId = (eleve as any).classes?.niveau_id;
-      const LIBRAIRIE_CATEGORIES = ['roman', 'romans', 'livre', 'livres', 'manuel', 'manuels', 'lecture', 'dictionnaire', 'dictionnaires'];
 
-      // Get only digital articles (with fichier_url)
-      const { data: allArticles } = await supabaseAdmin
-        .from("articles")
-        .select("id, nom, categorie, prix, stock, fichier_url, fichier_nom, niveau_id")
+      // Get digital books from dedicated table
+      const { data: allBooks } = await supabaseAdmin
+        .from("livres_numeriques")
+        .select("id, nom, categorie, prix, fichier_url, fichier_nom, niveau_id")
         .not("fichier_url", "is", null)
         .order("categorie")
         .order("nom");
@@ -783,19 +782,17 @@ serve(async (req) => {
 
       const purchasedIds = new Set((purchases || []).map((p: any) => p.article_id));
 
-      // Filter: only book categories + student's niveau or purchased
-      const articles = (allArticles || [])
+      // Filter: student's niveau or purchased
+      const articles = (allBooks || [])
         .filter((a: any) => {
-          const isBook = LIBRAIRIE_CATEGORIES.some(cat => a.categorie.toLowerCase().includes(cat));
-          if (!isBook) return false;
-          return a.niveau_id === niveauId || purchasedIds.has(a.id);
+          return a.niveau_id === niveauId || a.niveau_id === null || purchasedIds.has(a.id);
         })
         .map((a: any) => ({
           id: a.id,
           nom: a.nom,
           categorie: a.categorie,
           prix: a.prix,
-          stock: a.stock,
+          stock: 999,
           fichier_url: purchasedIds.has(a.id) ? a.fichier_url : null,
           fichier_nom: purchasedIds.has(a.id) ? a.fichier_nom : null,
           purchased: purchasedIds.has(a.id),
