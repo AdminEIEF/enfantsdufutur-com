@@ -138,7 +138,7 @@ export default function StudentLibrairie() {
                   📂 {cat}
                   <Badge variant="secondary" className="text-[10px]">{catArticles.length}</Badge>
                 </h2>
-                <div className="grid gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {catArticles.map((art, i) => (
                     <motion.div
                       key={art.id}
