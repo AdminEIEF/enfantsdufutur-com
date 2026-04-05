@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Briefcase, Lock, Loader2, User, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import employeeIllustration from '@/assets/employee-illustration.png';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import SplashScreen from '@/components/SplashScreen';
