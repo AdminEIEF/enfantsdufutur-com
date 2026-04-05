@@ -98,7 +98,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
   const [loadingCatalogue, setLoadingCatalogue] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [submittingCatalogue, setSubmittingCatalogue] = useState(false);
-  const [libFilter, setLibFilter] = useState<'all' | 'numerique' | 'physique'>('all');
+  
 
   useEffect(() => {
     if (open && initialMode === 'mobile-wallet') {
@@ -265,7 +265,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
     if (activeMode === 'mobile') return 'Mobile Money';
     if (walletSubMode === 'cantine') return 'Recharge Cantine';
     if (walletSubMode === 'transport') return 'Transport Scolaire';
-    if (walletSubMode === 'catalogue') return catalogueType === 'librairie' ? 'Librairie' : 'Boutique';
+    if (walletSubMode === 'catalogue') return catalogueType === 'librairie' ? 'Livres Numériques' : 'Boutique';
     if (walletSubMode === 'debit') return 'Payer un service';
     return 'Portefeuille';
   };
