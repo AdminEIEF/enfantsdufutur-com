@@ -292,7 +292,7 @@ export default function LivresNumeriquesTab() {
         niveau: selectedNiveauLabel,
       });
       setAddStatus('success');
-      setAddForm({ nom: '', categorie: 'roman', prix: '', stock: '0', niveau_id: ALL_LEVELS_VALUE });
+      setAddForm({ nom: '', categorie: 'roman', prix: '', niveau_id: ALL_LEVELS_VALUE });
       setAddFile(null);
       if (addFileRef.current) addFileRef.current.value = '';
     } catch (err: any) {
@@ -620,31 +620,6 @@ export default function LivresNumeriquesTab() {
                       placeholder="0"
                       value={addForm.prix}
                       onChange={e => setAddForm(f => ({ ...f, prix: e.target.value }))}
-                      className="rounded-2xl"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Niveau</Label>
-                    <Select value={addForm.niveau_id} onValueChange={v => setAddForm(f => ({ ...f, niveau_id: v }))}>
-                      <SelectTrigger className="rounded-2xl"><SelectValue placeholder="Tous niveaux" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={ALL_LEVELS_VALUE}>Tous niveaux</SelectItem>
-                        {niveaux.map((n: any) => (
-                          <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Stock physique</Label>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      value={addForm.stock}
-                      onChange={e => setAddForm(f => ({ ...f, stock: e.target.value }))}
                       className="rounded-2xl"
                     />
                   </div>
