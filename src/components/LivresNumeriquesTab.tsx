@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Upload, FileText, Trash2, Eye, Loader2, BookOpen, Download } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, Upload, FileText, Trash2, Eye, Loader2, BookOpen, Download, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -25,8 +27,20 @@ function useArticlesWithFiles() {
   });
 }
 
+function useNiveaux() {
+  return useQuery({
+    queryKey: ['niveaux-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('niveaux').select('id, nom').order('nom');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export default function LivresNumeriquesTab() {
   const { data: articles = [], isLoading } = useArticlesWithFiles();
+  const { data: niveaux = [] } = useNiveaux();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [uploading, setUploading] = useState<string | null>(null);
@@ -34,6 +48,13 @@ export default function LivresNumeriquesTab() {
   const [previewName, setPreviewName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
+
+  // Add book dialog
+  const [showAdd, setShowAdd] = useState(false);
+  const [addForm, setAddForm] = useState({ nom: '', categorie: 'Roman', prix: '', stock: '0', niveau_id: '' });
+  const [addFile, setAddFile] = useState<File | null>(null);
+  const [adding, setAdding] = useState(false);
+  const addFileRef = useRef<HTMLInputElement>(null);
 
   const filtered = articles.filter((a: any) =>
     `${a.nom} ${a.categorie}`.toLowerCase().includes(search.toLowerCase())
@@ -62,7 +83,7 @@ export default function LivresNumeriquesTab() {
 
       const { data: signedData } = await supabase.storage
         .from('livres-numeriques')
-        .createSignedUrl(path, 31536000); // 1 year
+        .createSignedUrl(path, 31536000);
 
       if (!signedData?.signedUrl) throw new Error("Échec de la signature");
 
@@ -102,6 +123,67 @@ export default function LivresNumeriquesTab() {
     setPreviewName(name);
   };
 
+  const handleAddBook = async () => {
+    if (!addForm.nom.trim()) { toast.error('Nom requis'); return; }
+    if (!addForm.prix || isNaN(Number(addForm.prix))) { toast.error('Prix invalide'); return; }
+
+    setAdding(true);
+    try {
+      // 1. Create the article
+      const insertData: any = {
+        nom: addForm.nom.trim(),
+        categorie: addForm.categorie,
+        prix: Number(addForm.prix),
+        stock: Number(addForm.stock) || 0,
+        niveau_id: addForm.niveau_id || null,
+      };
+
+      const { data: newArt, error: insErr } = await supabase
+        .from('articles' as any)
+        .insert(insertData as any)
+        .select('id')
+        .single();
+      if (insErr) throw insErr;
+
+      const artId = (newArt as any).id;
+
+      // 2. Upload file if provided
+      if (addFile) {
+        const ext = addFile.name.split('.').pop()?.toLowerCase();
+        if (!['pdf', 'epub'].includes(ext || '')) {
+          toast.error('Format non supporté. Utilisez PDF ou EPUB.');
+        } else {
+          const path = `articles/${artId}/${Date.now()}_${addFile.name}`;
+          const { error: upErr } = await supabase.storage
+            .from('livres-numeriques')
+            .upload(path, addFile, { upsert: true });
+          if (upErr) throw upErr;
+
+          const { data: signedData } = await supabase.storage
+            .from('livres-numeriques')
+            .createSignedUrl(path, 31536000);
+
+          if (signedData?.signedUrl) {
+            await supabase
+              .from('articles' as any)
+              .update({ fichier_url: signedData.signedUrl, fichier_nom: addFile.name } as any)
+              .eq('id', artId);
+          }
+        }
+      }
+
+      toast.success('Livre numérique ajouté !');
+      queryClient.invalidateQueries({ queryKey: ['articles-livres-numeriques'] });
+      setShowAdd(false);
+      setAddForm({ nom: '', categorie: 'Roman', prix: '', stock: '0', niveau_id: '' });
+      setAddFile(null);
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur');
+    } finally {
+      setAdding(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -121,18 +203,23 @@ export default function LivresNumeriquesTab() {
             Livres Numériques
           </h2>
           <p className="text-sm text-muted-foreground">
-            Uploadez des fichiers PDF/EPUB pour chaque article. Les élèves ayant acheté l'article y auront accès.
+            Gérez vos romans et manuels numériques (PDF/EPUB).
           </p>
         </div>
-        <Badge variant="secondary" className="text-sm">
-          {withFile.length}/{articles.length} avec fichier
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-sm">
+            {withFile.length}/{articles.length} avec fichier
+          </Badge>
+          <Button size="sm" className="gap-1.5" onClick={() => setShowAdd(true)}>
+            <Plus className="h-4 w-4" /> Ajouter
+          </Button>
+        </div>
       </div>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Rechercher un article..."
+          placeholder="Rechercher un livre..."
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="pl-10"
@@ -142,15 +229,15 @@ export default function LivresNumeriquesTab() {
       {/* Articles avec fichier */}
       {withFile.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-bold text-emerald-600 flex items-center gap-2">
+          <h3 className="text-sm font-bold text-primary flex items-center gap-2">
             <FileText className="h-4 w-4" /> Avec fichier numérique ({withFile.length})
           </h3>
           <div className="grid gap-2">
             {withFile.map((art: any) => (
               <Card key={art.id} className="border-0 shadow-sm">
                 <CardContent className="p-3 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
-                    <FileText className="h-5 w-5 text-emerald-600" />
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <FileText className="h-5 w-5 text-primary" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold truncate">{art.nom}</p>
@@ -215,6 +302,93 @@ export default function LivresNumeriquesTab() {
           </div>
         </div>
       )}
+
+      {/* Add Book Dialog */}
+      <Dialog open={showAdd} onOpenChange={setShowAdd}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-primary" /> Ajouter un livre numérique
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label>Nom du livre *</Label>
+              <Input
+                placeholder="Ex: Le Petit Prince"
+                value={addForm.nom}
+                onChange={e => setAddForm(f => ({ ...f, nom: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Catégorie *</Label>
+                <Select value={addForm.categorie} onValueChange={v => setAddForm(f => ({ ...f, categorie: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Roman">Roman</SelectItem>
+                    <SelectItem value="Manuel">Manuel</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Prix (GNF) *</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={addForm.prix}
+                  onChange={e => setAddForm(f => ({ ...f, prix: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Niveau</Label>
+                <Select value={addForm.niveau_id} onValueChange={v => setAddForm(f => ({ ...f, niveau_id: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Tous niveaux" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Tous niveaux</SelectItem>
+                    {niveaux.map((n: any) => (
+                      <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Stock physique</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={addForm.stock}
+                  onChange={e => setAddForm(f => ({ ...f, stock: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Fichier numérique (PDF/EPUB)</Label>
+              <input
+                ref={addFileRef}
+                type="file"
+                accept=".pdf,.epub"
+                className="hidden"
+                onChange={e => setAddFile(e.target.files?.[0] || null)}
+              />
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => addFileRef.current?.click()}
+              >
+                <Upload className="h-4 w-4" />
+                {addFile ? addFile.name : 'Choisir un fichier'}
+              </Button>
+            </div>
+            <Button className="w-full gap-2" disabled={adding} onClick={handleAddBook}>
+              {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              Ajouter le livre
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Preview Dialog */}
       <Dialog open={!!previewUrl} onOpenChange={() => { setPreviewUrl(null); setPreviewName(''); }}>
