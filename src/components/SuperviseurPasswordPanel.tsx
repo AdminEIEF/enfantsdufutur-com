@@ -236,7 +236,7 @@ export default function SuperviseurPasswordPanel() {
         setGeneratedPwd({ id: item.id, pwd });
         toast.success(`Mot de passe généré pour ${item.prenom} ${item.nom}`);
       } else if (tab === 'familles') {
-        const code = generateSimpleCode();
+        const code = 'FAM-' + Math.random().toString(36).substring(2, 6).toUpperCase();
         const { error } = await supabase.from('familles').update({ code_acces: code } as any).eq('id', item.id);
         if (error) throw error;
         savePassword(STORAGE_KEY_FAMILLES, item.id, code);
