@@ -2144,6 +2144,53 @@ export type Database = {
           },
         ]
       }
+      livres_numeriques: {
+        Row: {
+          categorie: string
+          created_at: string
+          description: string | null
+          fichier_nom: string | null
+          fichier_url: string | null
+          id: string
+          niveau_id: string | null
+          nom: string
+          prix: number
+          updated_at: string
+        }
+        Insert: {
+          categorie: string
+          created_at?: string
+          description?: string | null
+          fichier_nom?: string | null
+          fichier_url?: string | null
+          id?: string
+          niveau_id?: string | null
+          nom: string
+          prix?: number
+          updated_at?: string
+        }
+        Update: {
+          categorie?: string
+          created_at?: string
+          description?: string | null
+          fichier_nom?: string | null
+          fichier_url?: string | null
+          id?: string
+          niveau_id?: string | null
+          nom?: string
+          prix?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "livres_numeriques_niveau_id_fkey"
+            columns: ["niveau_id"]
+            isOneToOne: false
+            referencedRelation: "niveaux"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mandataires: {
         Row: {
           created_at: string
