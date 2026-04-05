@@ -72,15 +72,14 @@ function usePendingValidations() {
     queryKey: ['pending-digital-validations'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('commandes_articles' as any)
-        .select('*, eleves:eleve_id(nom, prenom, matricule, classe_id, classes:classe_id(nom))')
-        .eq('article_type', 'librairie')
-        .eq('statut', 'en_attente_validation')
+        .from('achats_livres_numeriques' as any)
+        .select('*, eleves:eleve_id(nom, prenom, matricule, classe_id, classes:classe_id(nom)), livres_numeriques:livre_numerique_id(nom, categorie, prix, fichier_url), commandes_articles:commande_id(id, article_nom, prix_unitaire, quantite)')
+        .eq('statut', 'en_attente')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as any[];
     },
-    refetchInterval: 15000,
+    refetchInterval: 10000,
   });
 }
 
