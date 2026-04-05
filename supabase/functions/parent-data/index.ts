@@ -381,7 +381,9 @@ serve(async (req) => {
         });
       }
 
-      // Create commandes_articles entries (status: paye - stock NOT deducted yet)
+      // Create commandes_articles entries
+      // For digital books (librairie), statut = 'en_attente_validation'
+      // For physical items, statut = 'paye'
       const commandeRows = items.map((item: any) => ({
         eleve_id,
         article_nom: item.article_nom,
@@ -390,7 +392,7 @@ serve(async (req) => {
         quantite: Number(item.quantite),
         prix_unitaire: Number(item.prix_unitaire),
         source: "commande_parent",
-        statut: "paye",
+        statut: type_service === "librairie" ? "en_attente_validation" : "paye",
       }));
 
       const { error: insertErr } = await supabaseAdmin
