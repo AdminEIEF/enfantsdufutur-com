@@ -382,7 +382,6 @@ export default function LivresNumeriquesTab() {
           </div>
 
           {/* Catalogue des livres */}
-          <div className="space-y-2">
           {filtered.length > 0 ? (
             <div className="space-y-2">
               <h3 className="text-sm font-bold text-primary flex items-center gap-2">
