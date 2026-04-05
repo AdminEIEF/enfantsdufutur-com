@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { StudentLayout } from '@/components/StudentLayout';
-import { BookOpen, Download, Eye, Loader2, Lock, ShoppingBag, FileText, Search } from 'lucide-react';
+import { BookOpen, Download, Eye, Loader2, Clock, FileText, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -19,6 +19,7 @@ interface LibrairieArticle {
   fichier_url: string | null;
   fichier_nom: string | null;
   purchased: boolean;
+  statut: string;
 }
 
 export default function StudentLibrairie() {
@@ -28,7 +29,7 @@ export default function StudentLibrairie() {
   const [search, setSearch] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewName, setPreviewName] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'all' | 'purchased' | 'available'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'valide' | 'en_attente'>('all');
 
   useEffect(() => {
     if (!session) return;
@@ -60,13 +61,13 @@ export default function StudentLibrairie() {
 
   const filtered = articles.filter(a => {
     const matchSearch = `${a.nom} ${a.categorie}`.toLowerCase().includes(search.toLowerCase());
-    if (activeFilter === 'purchased') return matchSearch && a.purchased;
-    if (activeFilter === 'available') return matchSearch && a.fichier_url && !a.purchased;
+    if (activeFilter === 'valide') return matchSearch && a.statut === 'valide';
+    if (activeFilter === 'en_attente') return matchSearch && a.statut !== 'valide';
     return matchSearch;
   });
 
-  const purchasedCount = articles.filter(a => a.purchased).length;
-  const digitalCount = articles.filter(a => a.fichier_url).length;
+  const validatedCount = articles.filter(a => a.statut === 'valide').length;
+  const pendingCount = articles.filter(a => a.statut !== 'valide').length;
 
   const categories = [...new Set(filtered.map(a => a.categorie))].sort();
 
@@ -80,7 +81,8 @@ export default function StudentLibrairie() {
           </div>
           <h1 className="text-xl font-extrabold">Ma Bibliothèque</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {purchasedCount} livre{purchasedCount > 1 ? 's' : ''} acheté{purchasedCount > 1 ? 's' : ''} • Romans & manuels numériques
+            {validatedCount} livre{validatedCount > 1 ? 's' : ''} disponible{validatedCount > 1 ? 's' : ''}
+            {pendingCount > 0 && ` • ${pendingCount} en attente`}
           </p>
         </div>
 
@@ -99,8 +101,8 @@ export default function StudentLibrairie() {
         <div className="flex gap-2 overflow-x-auto pb-1">
           {([
             { key: 'all', label: 'Tous', count: articles.length },
-            { key: 'purchased', label: '📖 Mes livres', count: purchasedCount },
-            { key: 'available', label: '🆕 Disponibles', count: digitalCount },
+            { key: 'valide', label: '✅ Disponibles', count: validatedCount },
+            { key: 'en_attente', label: '⏳ En attente', count: pendingCount },
           ] as const).map(f => (
             <button
               key={f.key}
@@ -112,7 +114,9 @@ export default function StudentLibrairie() {
               }`}
             >
               {f.label}
-              <Badge variant="secondary" className="text-[9px] px-1.5 py-0 rounded-full">{f.count}</Badge>
+              {f.count > 0 && (
+                <Badge variant="secondary" className="text-[9px] px-1.5 py-0 rounded-full">{f.count}</Badge>
+              )}
             </button>
           ))}
         </div>
@@ -121,11 +125,19 @@ export default function StudentLibrairie() {
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : filtered.length === 0 ? (
+        ) : articles.length === 0 ? (
           <Card className="border-0 shadow-md rounded-2xl">
             <CardContent className="py-16 text-center text-muted-foreground">
               <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p className="text-sm font-medium">Aucun livre trouvé</p>
+              <p className="text-sm font-medium">Aucun livre commandé</p>
+              <p className="text-xs mt-1">Vos livres commandés apparaîtront ici</p>
+            </CardContent>
+          </Card>
+        ) : filtered.length === 0 ? (
+          <Card className="border-0 shadow-md rounded-2xl">
+            <CardContent className="py-16 text-center text-muted-foreground">
+              <Search className="h-12 w-12 mx-auto mb-3 opacity-20" />
+              <p className="text-sm font-medium">Aucun résultat</p>
             </CardContent>
           </Card>
         ) : (
@@ -139,81 +151,71 @@ export default function StudentLibrairie() {
                   <Badge variant="secondary" className="text-[10px]">{catArticles.length}</Badge>
                 </h2>
                 <div className="grid grid-cols-2 gap-2">
-                  {catArticles.map((art, i) => (
-                    <motion.div
-                      key={art.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.03 }}
-                    >
-                      <Card className={`border-0 shadow-md rounded-2xl overflow-hidden transition-all ${art.purchased ? 'ring-1 ring-emerald-200 dark:ring-emerald-800' : ''}`}>
-                        <CardContent className="p-0">
-                          <div className="flex items-center gap-3 p-3.5">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-md ${
-                              art.purchased
-                                ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
-                                : art.fichier_url
-                                  ? 'bg-gradient-to-br from-purple-500 to-violet-600'
-                                  : 'bg-gradient-to-br from-gray-400 to-gray-500'
-                            }`}>
-                              {art.purchased ? (
-                                <BookOpen className="h-5 w-5 text-white" />
-                              ) : art.fichier_url ? (
-                                <FileText className="h-5 w-5 text-white" />
-                              ) : (
-                                <Lock className="h-5 w-5 text-white" />
+                  {catArticles.map((art, i) => {
+                    const isValidated = art.statut === 'valide';
+                    return (
+                      <motion.div
+                        key={art.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.03 }}
+                      >
+                        <Card className={`border-0 shadow-md rounded-2xl overflow-hidden transition-all ${
+                          isValidated ? 'ring-1 ring-emerald-200 dark:ring-emerald-800' : 'opacity-80'
+                        }`}>
+                          <CardContent className="p-0">
+                            <div className="flex items-center gap-3 p-3.5">
+                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-md ${
+                                isValidated
+                                  ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                                  : 'bg-gradient-to-br from-amber-400 to-orange-500'
+                              }`}>
+                                {isValidated ? (
+                                  <BookOpen className="h-5 w-5 text-white" />
+                                ) : (
+                                  <Clock className="h-5 w-5 text-white" />
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold truncate">{art.nom}</p>
+                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                  <span className="text-[10px] text-muted-foreground font-medium">
+                                    {art.prix.toLocaleString()} GNF
+                                  </span>
+                                  {isValidated ? (
+                                    <Badge className="bg-emerald-600 text-[9px] px-1.5 py-0 rounded-full">
+                                      ✅ Disponible
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 rounded-full text-amber-600 border-amber-200">
+                                      ⏳ En attente
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              {isValidated && art.fichier_url && (
+                                <div className="flex gap-1 shrink-0">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-9 w-9 p-0 text-primary"
+                                    onClick={() => { setPreviewUrl(art.fichier_url); setPreviewName(art.fichier_nom || art.nom); }}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <a href={art.fichier_url} target="_blank" rel="noopener noreferrer">
+                                    <Button size="sm" variant="ghost" className="h-9 w-9 p-0 text-primary">
+                                      <Download className="h-4 w-4" />
+                                    </Button>
+                                  </a>
+                                </div>
                               )}
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-bold truncate">{art.nom}</p>
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <span className="text-[10px] text-muted-foreground font-medium">
-                                  {art.prix.toLocaleString()} GNF
-                                </span>
-                                {art.purchased && (
-                                  <Badge className="bg-emerald-600 text-[9px] px-1.5 py-0 rounded-full">
-                                    ✓ Acheté
-                                  </Badge>
-                                )}
-                                {!art.purchased && art.fichier_url && (
-                                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 rounded-full text-purple-600 border-purple-200">
-                                    📱 Numérique
-                                  </Badge>
-                                )}
-                                {!art.fichier_url && (
-                                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 rounded-full">
-                                    Physique
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            {art.purchased && art.fichier_url && (
-                              <div className="flex gap-1 shrink-0">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-9 w-9 p-0 text-primary"
-                                  onClick={() => { setPreviewUrl(art.fichier_url); setPreviewName(art.fichier_nom || art.nom); }}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <a href={art.fichier_url} target="_blank" rel="noopener noreferrer">
-                                  <Button size="sm" variant="ghost" className="h-9 w-9 p-0 text-primary">
-                                    <Download className="h-4 w-4" />
-                                  </Button>
-                                </a>
-                              </div>
-                            )}
-                            {!art.purchased && (
-                              <div className="shrink-0">
-                                <ShoppingBag className="h-4 w-4 text-muted-foreground/40" />
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </div>
             );

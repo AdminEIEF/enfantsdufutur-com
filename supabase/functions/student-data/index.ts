@@ -762,42 +762,50 @@ serve(async (req) => {
       });
     }
 
-    // ─── LIBRAIRIE (digital library - only validated purchases) ───
+    // ─── LIBRAIRIE (digital library - only ordered books) ───
     if (action === "librairie") {
-      const niveauId = (eleve as any).classes?.niveau_id;
+      // Get ALL student purchases (pending + validated)
+      const { data: purchases } = await supabaseAdmin
+        .from("achats_livres_numeriques")
+        .select("livre_numerique_id, statut")
+        .eq("eleve_id", eleveId);
 
-      // Get digital books from dedicated table
-      const { data: allBooks } = await supabaseAdmin
+      if (!purchases || purchases.length === 0) {
+        return new Response(JSON.stringify({ articles: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const purchaseMap = new Map<string, string>();
+      for (const p of purchases) {
+        purchaseMap.set(p.livre_numerique_id, p.statut);
+      }
+
+      const bookIds = [...purchaseMap.keys()];
+
+      // Get book details for ordered books only
+      const { data: books } = await supabaseAdmin
         .from("livres_numeriques")
-        .select("id, nom, categorie, prix, fichier_url, fichier_nom, niveau_id")
-        .not("fichier_url", "is", null)
+        .select("id, nom, categorie, prix, fichier_url, fichier_nom")
+        .in("id", bookIds)
         .order("categorie")
         .order("nom");
 
-      // Get student's validated purchases (via achats_livres_numeriques)
-      const { data: purchases } = await supabaseAdmin
-        .from("achats_livres_numeriques")
-        .select("livre_numerique_id")
-        .eq("eleve_id", eleveId)
-        .eq("statut", "valide");
-
-      const purchasedIds = new Set((purchases || []).map((p: any) => p.livre_numerique_id));
-
-      // Filter: student's niveau or purchased
-      const articles = (allBooks || [])
-        .filter((a: any) => {
-          return a.niveau_id === niveauId || a.niveau_id === null || purchasedIds.has(a.id);
-        })
-        .map((a: any) => ({
+      const articles = (books || []).map((a: any) => {
+        const statut = purchaseMap.get(a.id) || "en_attente";
+        const isValidated = statut === "valide";
+        return {
           id: a.id,
           nom: a.nom,
           categorie: a.categorie,
           prix: a.prix,
           stock: 999,
-          fichier_url: purchasedIds.has(a.id) ? a.fichier_url : null,
-          fichier_nom: purchasedIds.has(a.id) ? a.fichier_nom : null,
-          purchased: purchasedIds.has(a.id),
-        }));
+          fichier_url: isValidated ? a.fichier_url : null,
+          fichier_nom: isValidated ? a.fichier_nom : null,
+          purchased: isValidated,
+          statut,
+        };
+      });
 
       return new Response(JSON.stringify({ articles }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
