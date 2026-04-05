@@ -383,13 +383,13 @@ export default function LivresNumeriquesTab() {
 
           {/* Catalogue des livres */}
           <div className="space-y-2">
-            {filtered.length > 0 ? (
-              <>
-                <h3 className="text-sm font-bold text-primary flex items-center gap-2">
-                  <FileText className="h-4 w-4" /> Catalogue ({filtered.length})
-                </h3>
-                <div className="grid gap-2">
-                  {filtered.map((art: any) => (
+          {filtered.length > 0 ? (
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold text-primary flex items-center gap-2">
+                <FileText className="h-4 w-4" /> Catalogue ({filtered.length})
+              </h3>
+              <div className="grid gap-2">
+                {filtered.map((art: any) => (
                   <Card key={art.id} className="border-0 shadow-sm">
                     <CardContent className="p-3 flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -400,13 +400,16 @@ export default function LivresNumeriquesTab() {
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="text-[10px]">{formatCategoryLabel(art.categorie)}</Badge>
                           {art.niveaux?.nom && <Badge variant="secondary" className="text-[10px]">{art.niveaux.nom}</Badge>}
-                          <span className="text-[10px] text-muted-foreground truncate">{art.fichier_nom}</span>
+                          <span className="text-[10px] text-muted-foreground">{Number(art.prix).toLocaleString()} GNF</span>
+                          {art.fichier_nom && <span className="text-[10px] text-muted-foreground truncate">{art.fichier_nom}</span>}
                         </div>
                       </div>
                       <div className="flex gap-1 shrink-0">
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handlePreview(art.fichier_url, art.fichier_nom || art.nom)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        {art.fichier_url && (
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handlePreview(art.fichier_url, art.fichier_nom || art.nom)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => handleDelete(art.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -416,50 +419,14 @@ export default function LivresNumeriquesTab() {
                 ))}
               </div>
             </div>
+          ) : (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="py-12 text-center text-muted-foreground">
+                <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                <p className="text-sm font-medium">Aucun livre numérique trouvé</p>
+              </CardContent>
+            </Card>
           )}
-
-          {/* Articles sans fichier */}
-          {withoutFile.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-bold text-muted-foreground flex items-center gap-2">
-                <Upload className="h-4 w-4" /> Sans fichier numérique ({withoutFile.length})
-              </h3>
-              <div className="grid gap-2">
-                {withoutFile.map((art: any) => (
-                  <Card key={art.id} className="border-0 shadow-sm">
-                    <CardContent className="p-3 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
-                        <BookOpen className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold truncate">{art.nom}</p>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-[10px]">{formatCategoryLabel(art.categorie)}</Badge>
-                          {art.niveaux?.nom && <Badge variant="secondary" className="text-[10px]">{art.niveaux.nom}</Badge>}
-                          <span className="text-[10px] text-muted-foreground">Stock: {art.stock}</span>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="shrink-0 gap-1.5"
-                        disabled={uploading === art.id}
-                        onClick={() => {
-                          setSelectedArticleId(art.id);
-                          setTimeout(() => fileInputRef.current?.click(), 50);
-                        }}
-                      >
-                        {uploading === art.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                        Upload
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
 
       {/* ─── VALIDATIONS TAB ─── */}
       {activeTab === 'validations' && (
