@@ -438,17 +438,21 @@ export default function LivresNumeriquesTab() {
             </Card>
           ) : (
             <div className="grid gap-2">
-              {pendingValidations.map((cmd: any) => {
-                const eleve = cmd.eleves;
+              {pendingValidations.map((achat: any) => {
+                const eleve = achat.eleves;
+                const livre = achat.livres_numeriques;
+                const cmd = achat.commandes_articles;
+                const articleNom = livre?.nom || cmd?.article_nom || '—';
+                const prix = livre?.prix || cmd?.prix_unitaire || 0;
                 return (
-                  <Card key={cmd.id} className="border-0 shadow-md ring-1 ring-border">
+                  <Card key={achat.id} className="border-0 shadow-md ring-1 ring-border">
                     <CardContent className="p-3">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-accent/50 flex items-center justify-center shrink-0">
                           <Clock className="h-5 w-5 text-accent-foreground" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold truncate">{cmd.article_nom}</p>
+                          <p className="text-sm font-bold truncate">{articleNom}</p>
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                               <User className="h-3 w-3" />
@@ -457,19 +461,19 @@ export default function LivresNumeriquesTab() {
                             {eleve?.classes?.nom && (
                               <Badge variant="secondary" className="text-[9px] px-1.5 rounded-full">{eleve.classes.nom}</Badge>
                             )}
-                            <span className="text-[10px] font-semibold text-primary">{cmd.prix_unitaire?.toLocaleString()} GNF</span>
+                            <span className="text-[10px] font-semibold text-primary">{prix?.toLocaleString()} GNF</span>
                             <span className="text-[9px] text-muted-foreground">
-                              {new Date(cmd.created_at).toLocaleDateString('fr-FR')}
+                              {new Date(achat.created_at).toLocaleDateString('fr-FR')}
                             </span>
                           </div>
                         </div>
                           <Button
                             size="sm"
                             className="shrink-0 gap-1.5 rounded-xl"
-                          disabled={validating === cmd.id}
-                          onClick={() => handleValidate(cmd.id, cmd.eleve_id, cmd.article_nom)}
+                          disabled={validating === achat.id}
+                          onClick={() => handleValidate(achat.id, achat.eleve_id, articleNom)}
                         >
-                          {validating === cmd.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                          {validating === achat.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
                           Valider
                         </Button>
                       </div>
