@@ -187,36 +187,26 @@ export default function LivresNumeriquesTab() {
     setShowAdd(open);
   };
 
-  const handleValidate = async (commandeId: string, eleveId: string, articleNom: string) => {
-    setValidating(commandeId);
+  const handleValidate = async (achatId: string, eleveId: string, livreNom: string) => {
+    setValidating(achatId);
     try {
-      // Find the matching article by name
-      const matchingArticle = articles.find((a: any) => a.nom === articleNom && a.fichier_url);
-      
-      if (!matchingArticle) {
-        toast.error('Article numérique introuvable. Vérifiez que le fichier est uploadé.');
-        return;
-      }
-
-      // Create ventes_articles entry to grant access
-      const { error: venteErr } = await supabase
-        .from('ventes_articles' as any)
-        .insert({
-          eleve_id: eleveId,
-          article_id: matchingArticle.id,
-          quantite: 1,
-          prix_unitaire: matchingArticle.prix,
-        } as any);
-      if (venteErr) throw venteErr;
-
-      // Update commande status
+      // Update achat status to validated
       const { error: updErr } = await supabase
-        .from('commandes_articles' as any)
-        .update({ statut: 'valide' } as any)
-        .eq('id', commandeId);
+        .from('achats_livres_numeriques' as any)
+        .update({ statut: 'valide', valide_at: new Date().toISOString() } as any)
+        .eq('id', achatId);
       if (updErr) throw updErr;
 
-      toast.success(`Livre "${articleNom}" validé pour l'élève !`);
+      // Also update the commande_articles status
+      const achat = pendingValidations.find((v: any) => v.id === achatId);
+      if (achat?.commande_id) {
+        await supabase
+          .from('commandes_articles' as any)
+          .update({ statut: 'valide' } as any)
+          .eq('id', achat.commande_id);
+      }
+
+      toast.success(`Livre "${livreNom}" validé pour l'élève !`);
       queryClient.invalidateQueries({ queryKey: ['pending-digital-validations'] });
     } catch (err: any) {
       toast.error(err.message || 'Erreur de validation');
