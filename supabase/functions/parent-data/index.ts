@@ -393,9 +393,11 @@ serve(async (req) => {
         });
       }
 
+      const isDigital = type_service === "librairie";
+
       // Create commandes_articles entries
-      // For digital books (librairie), statut = 'en_attente_validation'
-      // For physical items, statut = 'paye'
+      // For digital books, keep the order pending so supervisor can validate it fast.
+      // For physical items, mark as paid immediately.
       const commandeRows = items.map((item: any) => ({
         eleve_id,
         article_nom: item.article_nom,
@@ -404,7 +406,7 @@ serve(async (req) => {
         quantite: Number(item.quantite),
         prix_unitaire: Number(item.prix_unitaire),
         source: "commande_parent",
-        statut: type_service === "librairie" ? "en_attente_validation" : "paye",
+        statut: isDigital ? "en_attente_validation" : "paye",
       }));
 
       const { data: insertedCommandes, error: insertErr } = await supabaseAdmin
@@ -415,14 +417,42 @@ serve(async (req) => {
       if (insertErr) throw insertErr;
 
       // For digital books, also create achats_livres_numeriques entries
-      if (type_service === "librairie" && insertedCommandes) {
+      if (isDigital && insertedCommandes) {
         const achatsRows = items.map((item: any, idx: number) => ({
           eleve_id,
           livre_numerique_id: item.article_id,
           commande_id: insertedCommandes[idx]?.id || null,
           statut: "en_attente",
         }));
-        await supabaseAdmin.from("achats_livres_numeriques").insert(achatsRows);
+
+        const { error: achatsErr } = await supabaseAdmin
+          .from("achats_livres_numeriques")
+          .insert(achatsRows);
+
+        if (achatsErr) {
+          if (insertedCommandes.length > 0) {
+            await supabaseAdmin
+              .from("commandes_articles")
+              .delete()
+              .in("id", insertedCommandes.map((cmd: any) => cmd.id));
+          }
+
+          const { data: rollbackFamille } = await supabaseAdmin
+            .from("familles")
+            .select("solde_famille")
+            .eq("id", familleId)
+            .single();
+
+          await supabaseAdmin
+            .from("familles")
+            .update({
+              solde_famille: Number(rollbackFamille?.solde_famille || 0) + numTotal,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", familleId);
+
+          throw achatsErr;
+        }
       }
 
       // Get student name for notification
@@ -434,7 +464,6 @@ serve(async (req) => {
       const eleveNom = eleveInfo ? `${eleveInfo.prenom} ${eleveInfo.nom}` : "un élève";
 
       // Notify parent
-      const isDigital = type_service === "librairie";
       await supabaseAdmin.from("parent_notifications").insert({
         famille_id: familleId,
         titre: isDigital ? `📚 Commande livre numérique envoyée` : `🛒 Commande ${type_service} validée`,
