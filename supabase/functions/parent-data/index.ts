@@ -468,8 +468,8 @@ serve(async (req) => {
         famille_id: familleId,
         titre: isDigital ? `📚 Commande livre numérique envoyée` : `🛒 Commande ${type_service} validée`,
         message: isDigital
-          ? `Votre commande de ${numTotal.toLocaleString()} GNF (${items.length} livre${items.length > 1 ? 's' : ''}) est en attente de validation par l'école.`
-          : `Votre commande de ${numTotal.toLocaleString()} GNF (${items.length} article${items.length > 1 ? 's' : ''}) a été payée. Présentez-vous à l'école pour récupérer les articles.`,
+          ? `Votre commande de ${numTotal.toLocaleString()} GNF (${items.length} livre${items.length > 1 ? 's' : ''}) pour ${eleveNom} est en attente de validation par l'école.`
+          : `Votre commande de ${numTotal.toLocaleString()} GNF (${items.length} article${items.length > 1 ? 's' : ''}) pour ${eleveNom} a été payée. Présentez-vous à l'école pour récupérer les articles.`,
         type: "commande",
       });
 
