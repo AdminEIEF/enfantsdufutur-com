@@ -272,14 +272,14 @@ serve(async (req) => {
       const LIBRAIRIE_CATEGORIES = ['roman', 'romans', 'livre', 'livres', 'manuel', 'manuels', 'lecture', 'dictionnaire', 'dictionnaires'];
 
       if (type_service === "librairie") {
-        // Fetch only book-related categories from articles
+        // Only digital books (with fichier_url) for parent online purchase
         const { data: arts } = await supabaseAdmin
           .from("articles")
           .select("id, nom, categorie, prix, stock, niveau_id, fichier_url")
-          .gt("stock", 0)
+          .not("fichier_url", "is", null)
           .order("categorie")
           .order("nom");
-        // Filter to book categories only
+        const LIBRAIRIE_CATEGORIES = ['roman', 'romans', 'livre', 'livres', 'manuel', 'manuels', 'lecture', 'dictionnaire', 'dictionnaires'];
         articles = (arts || []).filter((a: any) => 
           LIBRAIRIE_CATEGORIES.some(cat => a.categorie.toLowerCase().includes(cat))
         );
@@ -381,7 +381,9 @@ serve(async (req) => {
         });
       }
 
-      // Create commandes_articles entries (status: paye - stock NOT deducted yet)
+      // Create commandes_articles entries
+      // For digital books (librairie), statut = 'en_attente_validation'
+      // For physical items, statut = 'paye'
       const commandeRows = items.map((item: any) => ({
         eleve_id,
         article_nom: item.article_nom,
@@ -390,7 +392,7 @@ serve(async (req) => {
         quantite: Number(item.quantite),
         prix_unitaire: Number(item.prix_unitaire),
         source: "commande_parent",
-        statut: "paye",
+        statut: type_service === "librairie" ? "en_attente_validation" : "paye",
       }));
 
       const { error: insertErr } = await supabaseAdmin
