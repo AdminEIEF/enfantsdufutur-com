@@ -247,8 +247,8 @@ export default function LivresNumeriquesTab() {
 
   const tabs = [
     { key: 'dashboard' as const, label: 'Tableau de bord', icon: BarChart3, badge: null },
-    { key: 'livres' as const, label: 'Catalogue', icon: FileText, badge: totalBooks },
-    { key: 'validations' as const, label: 'Validations', icon: CheckCircle2, badge: pendingCount > 0 ? pendingCount : null },
+     { key: 'livres' as const, label: 'Catalogue', icon: FileText, badge: totalBooks > 0 ? totalBooks : null },
+     { key: 'validations' as const, label: 'Validations', icon: CheckCircle2, badge: pendingCount > 0 ? pendingCount : null },
     { key: 'historique' as const, label: 'Historique', icon: History, badge: null },
   ];
 
@@ -364,41 +364,49 @@ export default function LivresNumeriquesTab() {
           </div>
 
           {filtered.length > 0 ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h3 className="text-sm font-bold text-primary flex items-center gap-2">
                 <FileText className="h-4 w-4" /> Catalogue ({filtered.length})
               </h3>
-              <div className="grid grid-cols-2 gap-3">
-                {filtered.map((art: any) => (
-                  <Card key={art.id} className="border-0 shadow-md overflow-hidden">
-                    <CardContent className="p-0">
-                      <div className="flex flex-col h-full">
-                        <div className="bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center py-5">
-                          <FileText className="h-10 w-10 text-primary/60" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {filtered.map((art: any) => {
+                  const isRoman = art.categorie?.toLowerCase() === 'roman';
+                  const coverGradient = isRoman
+                    ? 'from-amber-600 via-orange-500 to-yellow-500'
+                    : 'from-blue-600 via-indigo-500 to-violet-500';
+                  return (
+                    <div key={art.id} className="group flex flex-col">
+                      {/* Book cover */}
+                      <div className={`relative aspect-[2/3] rounded-xl overflow-hidden shadow-lg bg-gradient-to-br ${coverGradient} flex flex-col items-center justify-center p-4 text-white transition-transform group-hover:scale-[1.03]`}>
+                        <BookOpen className="h-8 w-8 opacity-30 absolute top-3 right-3" />
+                        <div className="flex-1 flex flex-col items-center justify-center text-center gap-1">
+                          <p className="text-xs font-bold uppercase tracking-wider opacity-70">{formatCategoryLabel(art.categorie)}</p>
+                          <p className="text-sm sm:text-base font-extrabold leading-tight line-clamp-3">{art.nom}</p>
                         </div>
-                        <div className="p-3 flex flex-col flex-1">
-                          <p className="text-sm font-bold truncate">{art.nom}</p>
-                          <div className="flex flex-wrap items-center gap-1 mt-1">
-                            <Badge variant="outline" className="text-[10px]">{formatCategoryLabel(art.categorie)}</Badge>
-                            {art.niveaux?.nom && <Badge variant="secondary" className="text-[10px]">{art.niveaux.nom}</Badge>}
-                          </div>
-                          <p className="text-xs font-semibold text-primary mt-1.5">{Number(art.prix).toLocaleString()} GNF</p>
-                          {art.fichier_nom && <p className="text-[10px] text-muted-foreground truncate mt-0.5">{art.fichier_nom}</p>}
-                          <div className="flex gap-1 mt-auto pt-2">
-                            {art.fichier_url && (
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handlePreview(art.fichier_url, art.fichier_nom || art.nom)}>
-                                <Eye className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(art.id)}>
-                              <Trash2 className="h-3.5 w-3.5" />
+                        <div className="mt-auto flex items-center justify-between w-full">
+                          <Badge className="bg-white/20 text-white text-[9px] border-0">{Number(art.prix).toLocaleString()} GNF</Badge>
+                          {art.niveaux?.nom && <Badge className="bg-white/20 text-white text-[9px] border-0">{art.niveaux.nom}</Badge>}
+                        </div>
+                        {/* Hover overlay with actions */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          {art.fichier_url && (
+                            <Button size="sm" variant="secondary" className="h-8 w-8 p-0 rounded-full" onClick={() => handlePreview(art.fichier_url, art.fichier_nom || art.nom)}>
+                              <Eye className="h-4 w-4" />
                             </Button>
-                          </div>
+                          )}
+                          <Button size="sm" variant="destructive" className="h-8 w-8 p-0 rounded-full" onClick={() => handleDelete(art.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      {/* Title below cover */}
+                      <div className="mt-2 px-0.5">
+                        <p className="text-sm font-bold truncate">{art.nom}</p>
+                        {art.fichier_nom && <p className="text-[10px] text-muted-foreground truncate">{art.fichier_nom}</p>}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : (
