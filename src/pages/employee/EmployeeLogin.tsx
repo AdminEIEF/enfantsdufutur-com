@@ -110,16 +110,20 @@ export default function EmployeeLogin() {
               </motion.div>
             ))}
           </div>
-          <motion.img
-            src={employeeIllustration}
-            alt="Employé"
-            width={280}
-            height={280}
-            className="mt-8 drop-shadow-2xl"
+          <motion.div
+            className="mt-8 bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-lg"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-          />
+          >
+            <img
+              src={employeeIllustration}
+              alt="Employé"
+              width={240}
+              height={240}
+              className="drop-shadow-xl mx-auto"
+            />
+          </motion.div>
         </motion.div>
       </div>
 
