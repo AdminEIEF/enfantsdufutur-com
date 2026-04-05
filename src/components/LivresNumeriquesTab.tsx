@@ -291,7 +291,12 @@ export default function LivresNumeriquesTab() {
         .eq('id', articleId)
         .single();
       if (confirmErr) throw confirmErr;
-      const confirmedBook = confirmedBookData as { id: string; nom: string; fichier_nom: string | null; fichier_url: string | null } | null;
+      const confirmedBook = confirmedBookData as unknown as {
+        id: string;
+        nom: string;
+        fichier_nom: string | null;
+        fichier_url: string | null;
+      } | null;
       if (!confirmedBook?.fichier_url) throw new Error("Le livre a été créé mais le PDF n'a pas pu être confirmé.");
 
       toast.success(`Livre ajouté. Le fichier ${addFile.name} a bien été téléversé.`);
