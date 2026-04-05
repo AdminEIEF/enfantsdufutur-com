@@ -16,6 +16,7 @@ function useArticlesWithFiles() {
       const { data, error } = await supabase
         .from('articles' as any)
         .select('*, niveaux:niveau_id(nom)')
+        .in('categorie', ['Roman', 'Manuel', 'Romans', 'Manuels'])
         .order('categorie')
         .order('nom');
       if (error) throw error;
