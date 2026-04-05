@@ -275,7 +275,7 @@ serve(async (req) => {
         // Fetch only book-related categories from articles
         const { data: arts } = await supabaseAdmin
           .from("articles")
-          .select("id, nom, categorie, prix, stock, niveau_id")
+          .select("id, nom, categorie, prix, stock, niveau_id, fichier_url")
           .gt("stock", 0)
           .order("categorie")
           .order("nom");
