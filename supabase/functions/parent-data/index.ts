@@ -407,18 +407,50 @@ serve(async (req) => {
         statut: type_service === "librairie" ? "en_attente_validation" : "paye",
       }));
 
-      const { error: insertErr } = await supabaseAdmin
+      const { data: insertedCommandes, error: insertErr } = await supabaseAdmin
         .from("commandes_articles")
-        .insert(commandeRows);
+        .insert(commandeRows)
+        .select("id");
 
       if (insertErr) throw insertErr;
 
+      // For digital books, also create achats_livres_numeriques entries
+      if (type_service === "librairie" && insertedCommandes) {
+        const achatsRows = items.map((item: any, idx: number) => ({
+          eleve_id,
+          livre_numerique_id: item.article_id,
+          commande_id: insertedCommandes[idx]?.id || null,
+          statut: "en_attente",
+        }));
+        await supabaseAdmin.from("achats_livres_numeriques").insert(achatsRows);
+      }
+
+      // Get student name for notification
+      const { data: eleveInfo } = await supabaseAdmin
+        .from("eleves")
+        .select("prenom, nom")
+        .eq("id", eleve_id)
+        .maybeSingle();
+      const eleveNom = eleveInfo ? `${eleveInfo.prenom} ${eleveInfo.nom}` : "un élève";
+
       // Notify parent
+      const isDigital = type_service === "librairie";
       await supabaseAdmin.from("parent_notifications").insert({
         famille_id: familleId,
-        titre: `🛒 Commande ${type_service} validée`,
-        message: `Votre commande de ${numTotal.toLocaleString()} GNF (${items.length} article${items.length > 1 ? 's' : ''}) a été payée. Présentez-vous à l'école pour récupérer les articles.`,
+        titre: isDigital ? `📚 Commande livre numérique envoyée` : `🛒 Commande ${type_service} validée`,
+        message: isDigital
+          ? `Votre commande de ${numTotal.toLocaleString()} GNF (${items.length} livre${items.length > 1 ? 's' : ''}) est en attente de validation par l'école.`
+          : `Votre commande de ${numTotal.toLocaleString()} GNF (${items.length} article${items.length > 1 ? 's' : ''}) a été payée. Présentez-vous à l'école pour récupérer les articles.`,
         type: "commande",
+      });
+
+      // Notify staff/superviseur for immediate validation
+      const articleNames = items.map((i: any) => i.article_nom).join(", ");
+      await supabaseAdmin.from("notifications").insert({
+        titre: isDigital ? "📚 Nouvelle commande livre numérique" : `🛒 Nouvelle commande ${type_service}`,
+        message: `${eleveNom} — ${items.length} article${items.length > 1 ? 's' : ''} (${numTotal.toLocaleString()} GNF) : ${articleNames}.${isDigital ? ' À valider dans Livres Numériques.' : ''}`,
+        destinataire_type: "admin",
+        type: "action",
       });
 
       return new Response(
