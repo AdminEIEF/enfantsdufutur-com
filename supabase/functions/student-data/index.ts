@@ -762,19 +762,20 @@ serve(async (req) => {
       });
     }
 
-    // ─── LIBRAIRIE (digital library - books only) ───
+    // ─── LIBRAIRIE (digital library - only validated purchases) ───
     if (action === "librairie") {
       const niveauId = (eleve as any).classes?.niveau_id;
       const LIBRAIRIE_CATEGORIES = ['roman', 'romans', 'livre', 'livres', 'manuel', 'manuels', 'lecture', 'dictionnaire', 'dictionnaires'];
 
-      // Get all articles
+      // Get only digital articles (with fichier_url)
       const { data: allArticles } = await supabaseAdmin
         .from("articles")
         .select("id, nom, categorie, prix, stock, fichier_url, fichier_nom, niveau_id")
+        .not("fichier_url", "is", null)
         .order("categorie")
         .order("nom");
 
-      // Get student's purchases
+      // Get student's validated purchases (via ventes_articles)
       const { data: purchases } = await supabaseAdmin
         .from("ventes_articles")
         .select("article_id")
