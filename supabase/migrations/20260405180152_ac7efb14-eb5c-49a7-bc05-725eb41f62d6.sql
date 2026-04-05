@@ -1,0 +1,2 @@
+ALTER TABLE public.articles DROP CONSTRAINT articles_categorie_check;
+ALTER TABLE public.articles ADD CONSTRAINT articles_categorie_check CHECK (categorie = ANY (ARRAY['fourniture'::text, 'manuel'::text, 'roman'::text, 'art_plastique'::text]));
