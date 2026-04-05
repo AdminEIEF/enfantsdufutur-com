@@ -180,6 +180,20 @@ export default function LivresNumeriquesTab() {
         const { error: commandeError } = await supabase.from('commandes_articles' as any).update({ statut: 'valide' } as any).eq('id', achat.commande_id);
         if (commandeError && !commandeError.message?.toLowerCase().includes('row-level security')) throw commandeError;
       }
+
+      // Send notification to parent with child's name
+      const eleveData = achat?.eleves;
+      const eleveNomComplet = eleveData ? `${eleveData.prenom} ${eleveData.nom}` : 'votre enfant';
+      const { data: eleveRow } = await supabase.from('eleves').select('famille_id').eq('id', eleveId).maybeSingle();
+      if (eleveRow?.famille_id) {
+        await supabase.from('parent_notifications').insert({
+          famille_id: eleveRow.famille_id,
+          titre: '✅ Livre numérique validé',
+          message: `Le livre "${livreNom}" pour ${eleveNomComplet} a été validé. Il est maintenant disponible dans son espace élève dans la Bibliothèque.`,
+          type: 'info',
+        });
+      }
+
       toast.success(`Livre "${livreNom}" validé pour l'élève !`);
       queryClient.invalidateQueries({ queryKey: ['pending-digital-validations'] });
       queryClient.invalidateQueries({ queryKey: ['digital-validation-history'] });
