@@ -97,7 +97,7 @@ export default function EmployeeLogin() {
           <p className="text-white/80 text-sm max-w-xs leading-relaxed">
             Accédez à vos congés, plannings, bulletins de paie, courriers et plus encore depuis votre espace sécurisé.
           </p>
-          <div className="mt-8 flex gap-4">
+          <div className="mt-6 flex gap-4">
             {['Congés', 'Paie', 'Planning', 'Courriers'].map((item, i) => (
               <motion.div
                 key={item}
@@ -110,6 +110,16 @@ export default function EmployeeLogin() {
               </motion.div>
             ))}
           </div>
+          <motion.img
+            src={employeeIllustration}
+            alt="Employé"
+            width={280}
+            height={280}
+            className="mt-8 drop-shadow-2xl"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          />
         </motion.div>
       </div>
 
