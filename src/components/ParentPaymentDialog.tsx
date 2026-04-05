@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Loader2, Smartphone, CreditCard, Wallet, Copy, MessageCircle, CheckCircle2, X, ArrowLeft,
-  ChevronRight, UtensilsCrossed, BookOpen, ShoppingBag, Bus, Plus, Minus, ShoppingCart, Package, FileText, BookMarked
+  ChevronRight, UtensilsCrossed, BookOpen, ShoppingBag, Bus, Plus, Minus, ShoppingCart, Package, FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
