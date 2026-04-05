@@ -624,6 +624,19 @@ export default function LivresNumeriquesTab() {
                     />
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <Label>Niveau</Label>
+                  <Select value={addForm.niveau_id} onValueChange={v => setAddForm(f => ({ ...f, niveau_id: v }))}>
+                    <SelectTrigger className="rounded-2xl"><SelectValue placeholder="Tous niveaux" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_LEVELS_VALUE}>Tous niveaux</SelectItem>
+                      {niveaux.map((n: any) => (
+                        <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="space-y-4 rounded-3xl border bg-card/70 p-4 shadow-sm">
