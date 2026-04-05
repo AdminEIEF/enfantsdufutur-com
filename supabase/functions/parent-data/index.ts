@@ -272,14 +272,14 @@ serve(async (req) => {
       const LIBRAIRIE_CATEGORIES = ['roman', 'romans', 'livre', 'livres', 'manuel', 'manuels', 'lecture', 'dictionnaire', 'dictionnaires'];
 
       if (type_service === "librairie") {
-        // Fetch only book-related categories from articles
+        // Only digital books (with fichier_url) for parent online purchase
         const { data: arts } = await supabaseAdmin
           .from("articles")
           .select("id, nom, categorie, prix, stock, niveau_id, fichier_url")
-          .gt("stock", 0)
+          .not("fichier_url", "is", null)
           .order("categorie")
           .order("nom");
-        // Filter to book categories only
+        const LIBRAIRIE_CATEGORIES = ['roman', 'romans', 'livre', 'livres', 'manuel', 'manuels', 'lecture', 'dictionnaire', 'dictionnaires'];
         articles = (arts || []).filter((a: any) => 
           LIBRAIRIE_CATEGORIES.some(cat => a.categorie.toLowerCase().includes(cat))
         );
