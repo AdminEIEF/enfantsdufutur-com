@@ -427,6 +427,8 @@ export default function LivresNumeriquesTab() {
               </CardContent>
             </Card>
           )}
+        </>
+      )}
 
       {/* ─── VALIDATIONS TAB ─── */}
       {activeTab === 'validations' && (
