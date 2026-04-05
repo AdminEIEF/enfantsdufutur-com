@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Upload, FileText, Trash2, Eye, Loader2, BookOpen, Download, Plus, CheckCircle2, Clock, User } from 'lucide-react';
@@ -12,6 +12,34 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 const ALL_LEVELS_VALUE = '__all_levels__';
+const DIGITAL_BOOK_QUERY_CATEGORIES = ['roman', 'manuel', 'Roman', 'Manuel', 'Romans', 'Manuels'];
+
+const formatCategoryLabel = (category?: string | null) => {
+  const normalized = category?.toLowerCase();
+  if (normalized === 'roman' || normalized === 'romans') return 'Roman';
+  if (normalized === 'manuel' || normalized === 'manuels') return 'Manuel';
+  return category || 'Livre';
+};
+
+const isPdfFile = (fileName?: string | null, url?: string | null) => {
+  const lowerName = fileName?.toLowerCase() || '';
+  const lowerUrl = url?.toLowerCase() || '';
+  return lowerName.endsWith('.pdf') || lowerUrl.includes('.pdf');
+};
+
+const getFriendlyErrorMessage = (error: any) => {
+  const message = error?.message || error?.error_description || error?.details || '';
+
+  if (message.includes('articles_categorie_check')) {
+    return 'Catégorie invalide. Choisissez Roman ou Manuel.';
+  }
+
+  if (message.toLowerCase().includes('row-level security')) {
+    return "Votre compte n'a pas l'autorisation d'ajouter ce livre.";
+  }
+
+  return message || "Erreur lors de l'ajout du livre numérique";
+};
 
 function useArticlesWithFiles() {
   return useQuery({
@@ -20,7 +48,7 @@ function useArticlesWithFiles() {
       const { data, error } = await supabase
         .from('articles' as any)
         .select('*, niveaux:niveau_id(nom)')
-        .in('categorie', ['Roman', 'Manuel', 'Romans', 'Manuels'])
+        .in('categorie', DIGITAL_BOOK_QUERY_CATEGORIES)
         .order('categorie')
         .order('nom');
       if (error) throw error;
@@ -72,11 +100,13 @@ export default function LivresNumeriquesTab() {
 
   // Add book dialog
   const [showAdd, setShowAdd] = useState(false);
-  const [addForm, setAddForm] = useState({ nom: '', categorie: 'Roman', prix: '', stock: '0', niveau_id: ALL_LEVELS_VALUE });
+  const [addForm, setAddForm] = useState({ nom: '', categorie: 'roman', prix: '', stock: '0', niveau_id: ALL_LEVELS_VALUE });
   const [addFile, setAddFile] = useState<File | null>(null);
   const [adding, setAdding] = useState(false);
   const addFileRef = useRef<HTMLInputElement>(null);
   const [validating, setValidating] = useState<string | null>(null);
+  const [addStatus, setAddStatus] = useState<'idle' | 'uploading' | 'success'>('idle');
+  const [lastAddedBook, setLastAddedBook] = useState<{ nom: string; fichierNom: string; categorie: string; niveau: string } | null>(null);
 
   const filtered = articles.filter((a: any) =>
     `${a.nom} ${a.categorie}`.toLowerCase().includes(search.toLowerCase())
@@ -145,6 +175,21 @@ export default function LivresNumeriquesTab() {
     setPreviewName(name);
   };
 
+  const resetAddDialog = () => {
+    setAddForm({ nom: '', categorie: 'roman', prix: '', stock: '0', niveau_id: ALL_LEVELS_VALUE });
+    setAddFile(null);
+    setAddStatus('idle');
+    setLastAddedBook(null);
+    if (addFileRef.current) addFileRef.current.value = '';
+  };
+
+  const handleAddDialogChange = (open: boolean) => {
+    if (!open && !adding) {
+      resetAddDialog();
+    }
+    setShowAdd(open);
+  };
+
   const handleValidate = async (commandeId: string, eleveId: string, articleNom: string) => {
     setValidating(commandeId);
     try {
@@ -195,13 +240,19 @@ export default function LivresNumeriquesTab() {
     }
 
     setAdding(true);
+    setAddStatus('uploading');
+    setLastAddedBook(null);
     let articleId: string | null = null;
     let uploadedPath: string | null = null;
+    const trimmedName = addForm.nom.trim();
+    const selectedNiveauLabel = addForm.niveau_id === ALL_LEVELS_VALUE
+      ? 'Tous les niveaux'
+      : niveaux.find((niveau: any) => niveau.id === addForm.niveau_id)?.nom || 'Niveau ciblé';
 
     try {
       const insertData: any = {
-        nom: addForm.nom.trim(),
-        categorie: addForm.categorie,
+        nom: trimmedName,
+        categorie: addForm.categorie.toLowerCase(),
         prix: Number(addForm.prix),
         stock: Number(addForm.stock) || 0,
         niveau_id: addForm.niveau_id === ALL_LEVELS_VALUE ? null : addForm.niveau_id,
@@ -234,11 +285,26 @@ export default function LivresNumeriquesTab() {
         .eq('id', articleId);
       if (updateErr) throw updateErr;
 
-      toast.success('Livre numérique ajouté !');
+      const { data: confirmedBook, error: confirmErr } = await supabase
+        .from('articles' as any)
+        .select('id, nom, fichier_nom, fichier_url')
+        .eq('id', articleId)
+        .single();
+      if (confirmErr) throw confirmErr;
+      if (!confirmedBook?.fichier_url) throw new Error("Le livre a été créé mais le PDF n'a pas pu être confirmé.");
+
+      toast.success(`Livre ajouté. Le fichier ${addFile.name} a bien été téléversé.`);
       queryClient.invalidateQueries({ queryKey: ['articles-livres-numeriques'] });
-      setShowAdd(false);
-      setAddForm({ nom: '', categorie: 'Roman', prix: '', stock: '0', niveau_id: ALL_LEVELS_VALUE });
+      setLastAddedBook({
+        nom: trimmedName,
+        fichierNom: addFile.name,
+        categorie: formatCategoryLabel(addForm.categorie),
+        niveau: selectedNiveauLabel,
+      });
+      setAddStatus('success');
+      setAddForm({ nom: '', categorie: 'roman', prix: '', stock: '0', niveau_id: ALL_LEVELS_VALUE });
       setAddFile(null);
+      if (addFileRef.current) addFileRef.current.value = '';
     } catch (err: any) {
       if (uploadedPath) {
         await supabase.storage.from('livres-numeriques').remove([uploadedPath]);
@@ -246,7 +312,8 @@ export default function LivresNumeriquesTab() {
       if (articleId) {
         await supabase.from('articles' as any).delete().eq('id', articleId);
       }
-      toast.error(err.message || 'Erreur lors de l\'ajout du livre numérique');
+      setAddStatus('idle');
+      toast.error(getFriendlyErrorMessage(err));
     } finally {
       setAdding(false);
     }
@@ -278,7 +345,7 @@ export default function LivresNumeriquesTab() {
           <Badge variant="secondary" className="text-sm">
             {withFile.length}/{articles.length} avec fichier
           </Badge>
-          <Button size="sm" className="gap-1.5" onClick={() => setShowAdd(true)}>
+          <Button size="sm" className="gap-1.5" onClick={() => { resetAddDialog(); setShowAdd(true); }}>
             <Plus className="h-4 w-4" /> Ajouter
           </Button>
         </div>
@@ -341,7 +408,7 @@ export default function LivresNumeriquesTab() {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold truncate">{art.nom}</p>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-[10px]">{art.categorie}</Badge>
+                          <Badge variant="outline" className="text-[10px]">{formatCategoryLabel(art.categorie)}</Badge>
                           {art.niveaux?.nom && <Badge variant="secondary" className="text-[10px]">{art.niveaux.nom}</Badge>}
                           <span className="text-[10px] text-muted-foreground truncate">{art.fichier_nom}</span>
                         </div>
@@ -377,7 +444,7 @@ export default function LivresNumeriquesTab() {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold truncate">{art.nom}</p>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-[10px]">{art.categorie}</Badge>
+                          <Badge variant="outline" className="text-[10px]">{formatCategoryLabel(art.categorie)}</Badge>
                           {art.niveaux?.nom && <Badge variant="secondary" className="text-[10px]">{art.niveaux.nom}</Badge>}
                           <span className="text-[10px] text-muted-foreground">Stock: {art.stock}</span>
                         </div>
@@ -469,89 +536,191 @@ export default function LivresNumeriquesTab() {
       )}
 
       {/* Add Book Dialog */}
-      <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5 text-primary" /> Ajouter un livre numérique
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label>Nom du livre *</Label>
-              <Input
-                placeholder="Ex: Le Petit Prince"
-                value={addForm.nom}
-                onChange={e => setAddForm(f => ({ ...f, nom: e.target.value }))}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Catégorie *</Label>
-                <Select value={addForm.categorie} onValueChange={v => setAddForm(f => ({ ...f, categorie: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Roman">Roman</SelectItem>
-                    <SelectItem value="Manuel">Manuel</SelectItem>
-                  </SelectContent>
-                </Select>
+      <Dialog open={showAdd} onOpenChange={handleAddDialogChange}>
+        <DialogContent className="max-w-2xl overflow-hidden rounded-3xl border-0 p-0 shadow-2xl">
+          <div className="border-b bg-gradient-to-br from-primary/10 via-background to-accent/10 p-6">
+            <DialogHeader className="text-left">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+                  {addStatus === 'success' ? <CheckCircle2 className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
+                </div>
+                <div className="space-y-1">
+                  <DialogTitle className="text-xl">
+                    {addStatus === 'success' ? 'Livre bien ajouté' : 'Ajouter un livre numérique'}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {addStatus === 'success'
+                      ? 'Le livre est enregistré et le fichier numérique est disponible dans le catalogue.'
+                      : 'Ajoutez un roman ou un manuel avec son fichier PDF ou EPUB.'}
+                  </DialogDescription>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Prix (GNF) *</Label>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={addForm.prix}
-                  onChange={e => setAddForm(f => ({ ...f, prix: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Niveau</Label>
-                <Select value={addForm.niveau_id} onValueChange={v => setAddForm(f => ({ ...f, niveau_id: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Tous niveaux" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL_LEVELS_VALUE}>Tous niveaux</SelectItem>
-                    {niveaux.map((n: any) => (
-                      <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Stock physique</Label>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={addForm.stock}
-                  onChange={e => setAddForm(f => ({ ...f, stock: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Fichier numérique (PDF/EPUB)</Label>
-              <input
-                ref={addFileRef}
-                type="file"
-                accept=".pdf,.epub"
-                className="hidden"
-                onChange={e => setAddFile(e.target.files?.[0] || null)}
-              />
-              <Button
-                variant="outline"
-                className="w-full gap-2"
-                onClick={() => addFileRef.current?.click()}
-              >
-                <Upload className="h-4 w-4" />
-                {addFile ? addFile.name : 'Choisir un fichier'}
-              </Button>
-            </div>
-            <Button className="w-full gap-2" disabled={adding || !addFile} onClick={handleAddBook}>
-              {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              Ajouter le livre
-            </Button>
+            </DialogHeader>
           </div>
+
+          {addStatus === 'success' && lastAddedBook ? (
+            <div className="space-y-5 p-6">
+              <div className="rounded-3xl border bg-card p-5 shadow-sm">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-2">
+                    <Badge className="gap-1 rounded-full">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> PDF téléversé
+                    </Badge>
+                    <div>
+                      <p className="text-lg font-semibold">{lastAddedBook.nom}</p>
+                      <p className="text-sm text-muted-foreground">{lastAddedBook.fichierNom}</p>
+                    </div>
+                  </div>
+                  <div className="grid gap-2 text-sm sm:text-right">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Catégorie</p>
+                      <p className="font-medium">{lastAddedBook.categorie}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Niveau</p>
+                      <p className="font-medium">{lastAddedBook.niveau}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <Button variant="outline" className="rounded-2xl" onClick={() => handleAddDialogChange(false)}>
+                  Fermer
+                </Button>
+                <Button
+                  className="gap-2 rounded-2xl"
+                  onClick={() => {
+                    setAddStatus('idle');
+                    setLastAddedBook(null);
+                  }}
+                >
+                  <Plus className="h-4 w-4" /> Ajouter un autre livre
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-6 p-6 md:grid-cols-[1.15fr_0.85fr]">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Nom du livre *</Label>
+                  <Input
+                    placeholder="Ex: Le Petit Prince"
+                    value={addForm.nom}
+                    onChange={e => setAddForm(f => ({ ...f, nom: e.target.value }))}
+                    className="rounded-2xl"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Catégorie *</Label>
+                    <Select value={addForm.categorie} onValueChange={v => setAddForm(f => ({ ...f, categorie: v }))}>
+                      <SelectTrigger className="rounded-2xl"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="roman">Roman</SelectItem>
+                        <SelectItem value="manuel">Manuel</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Prix (GNF) *</Label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={addForm.prix}
+                      onChange={e => setAddForm(f => ({ ...f, prix: e.target.value }))}
+                      className="rounded-2xl"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Niveau</Label>
+                    <Select value={addForm.niveau_id} onValueChange={v => setAddForm(f => ({ ...f, niveau_id: v }))}>
+                      <SelectTrigger className="rounded-2xl"><SelectValue placeholder="Tous niveaux" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={ALL_LEVELS_VALUE}>Tous niveaux</SelectItem>
+                        {niveaux.map((n: any) => (
+                          <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Stock physique</Label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={addForm.stock}
+                      onChange={e => setAddForm(f => ({ ...f, stock: e.target.value }))}
+                      className="rounded-2xl"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-3xl border bg-card/70 p-4 shadow-sm">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold">Fichier numérique</p>
+                  <p className="text-xs text-muted-foreground">Formats acceptés : PDF ou EPUB</p>
+                </div>
+
+                <input
+                  ref={addFileRef}
+                  type="file"
+                  accept=".pdf,.epub"
+                  className="hidden"
+                  onChange={e => {
+                    setAddFile(e.target.files?.[0] || null);
+                    setAddStatus('idle');
+                  }}
+                />
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-auto w-full justify-start rounded-3xl border-dashed px-4 py-5 text-left"
+                  onClick={() => addFileRef.current?.click()}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <Upload className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium">{addFile ? 'Fichier prêt à envoyer' : 'Choisir un fichier'}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {addFile ? addFile.name : 'Touchez ici pour sélectionner le PDF/EPUB'}
+                      </p>
+                    </div>
+                  </div>
+                </Button>
+
+                <div className="space-y-3 rounded-2xl bg-muted/40 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-medium text-muted-foreground">État du fichier</span>
+                    <Badge variant={addFile ? 'default' : 'secondary'} className="rounded-full">
+                      {addFile ? (isPdfFile(addFile.name) ? 'PDF prêt' : 'EPUB prêt') : 'Aucun fichier'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm">
+                    <FileText className="mt-0.5 h-4 w-4 text-primary" />
+                    <p className="text-muted-foreground">
+                      {addStatus === 'uploading'
+                        ? 'Téléversement du fichier et enregistrement du livre en cours...'
+                        : 'Après validation, une confirmation affichera que le PDF a bien été téléversé.'}
+                    </p>
+                  </div>
+                </div>
+
+                <Button className="w-full gap-2 rounded-2xl" disabled={adding || !addFile} onClick={handleAddBook}>
+                  {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  {adding ? 'Ajout en cours...' : 'Ajouter le livre'}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -569,7 +738,7 @@ export default function LivresNumeriquesTab() {
             </DialogTitle>
           </DialogHeader>
           <div className="p-4 pt-2">
-            {previewUrl && previewUrl.includes('.pdf') ? (
+            {previewUrl && isPdfFile(previewName, previewUrl) ? (
               <iframe
                 src={`https://docs.google.com/gview?url=${encodeURIComponent(previewUrl)}&embedded=true`}
                 className="w-full h-[70vh] rounded-lg border"
