@@ -774,13 +774,14 @@ serve(async (req) => {
         .order("categorie")
         .order("nom");
 
-      // Get student's validated purchases (via ventes_articles)
+      // Get student's validated purchases (via achats_livres_numeriques)
       const { data: purchases } = await supabaseAdmin
-        .from("ventes_articles")
-        .select("article_id")
-        .eq("eleve_id", eleveId);
+        .from("achats_livres_numeriques")
+        .select("livre_numerique_id")
+        .eq("eleve_id", eleveId)
+        .eq("statut", "valide");
 
-      const purchasedIds = new Set((purchases || []).map((p: any) => p.article_id));
+      const purchasedIds = new Set((purchases || []).map((p: any) => p.livre_numerique_id));
 
       // Filter: student's niveau or purchased
       const articles = (allBooks || [])
