@@ -112,7 +112,6 @@ export default function LivresNumeriquesTab() {
   );
 
   const withFile = filtered.filter((a: any) => a.fichier_url);
-  const withoutFile = filtered.filter((a: any) => !a.fichier_url);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -333,7 +332,7 @@ export default function LivresNumeriquesTab() {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="text-sm">
-            {withFile.length}/{articles.length} avec fichier
+            {filtered.length} livre{filtered.length > 1 ? 's' : ''}
           </Badge>
           <Button size="sm" className="gap-1.5" onClick={() => { resetAddDialog(); setShowAdd(true); }}>
             <Plus className="h-4 w-4" /> Ajouter
@@ -382,14 +381,15 @@ export default function LivresNumeriquesTab() {
             />
           </div>
 
-          {/* Articles avec fichier */}
-          {withFile.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-bold text-primary flex items-center gap-2">
-                <FileText className="h-4 w-4" /> Avec fichier numérique ({withFile.length})
-              </h3>
-              <div className="grid gap-2">
-                {withFile.map((art: any) => (
+          {/* Catalogue des livres */}
+          <div className="space-y-2">
+            {filtered.length > 0 ? (
+              <>
+                <h3 className="text-sm font-bold text-primary flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> Catalogue ({filtered.length})
+                </h3>
+                <div className="grid gap-2">
+                  {filtered.map((art: any) => (
                   <Card key={art.id} className="border-0 shadow-sm">
                     <CardContent className="p-3 flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
