@@ -285,12 +285,13 @@ export default function LivresNumeriquesTab() {
         .eq('id', articleId);
       if (updateErr) throw updateErr;
 
-      const { data: confirmedBook, error: confirmErr } = await supabase
+      const { data: confirmedBookData, error: confirmErr } = await supabase
         .from('articles' as any)
         .select('id, nom, fichier_nom, fichier_url')
         .eq('id', articleId)
         .single();
       if (confirmErr) throw confirmErr;
+      const confirmedBook = confirmedBookData as { id: string; nom: string; fichier_nom: string | null; fichier_url: string | null } | null;
       if (!confirmedBook?.fichier_url) throw new Error("Le livre a été créé mais le PDF n'a pas pu être confirmé.");
 
       toast.success(`Livre ajouté. Le fichier ${addFile.name} a bien été téléversé.`);
@@ -494,11 +495,11 @@ export default function LivresNumeriquesTab() {
               {pendingValidations.map((cmd: any) => {
                 const eleve = cmd.eleves;
                 return (
-                  <Card key={cmd.id} className="border-0 shadow-md ring-1 ring-amber-200 dark:ring-amber-800">
+                  <Card key={cmd.id} className="border-0 shadow-md ring-1 ring-border">
                     <CardContent className="p-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
-                          <Clock className="h-5 w-5 text-amber-600" />
+                        <div className="w-10 h-10 rounded-xl bg-accent/50 flex items-center justify-center shrink-0">
+                          <Clock className="h-5 w-5 text-accent-foreground" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-bold truncate">{cmd.article_nom}</p>
@@ -516,9 +517,9 @@ export default function LivresNumeriquesTab() {
                             </span>
                           </div>
                         </div>
-                        <Button
-                          size="sm"
-                          className="shrink-0 gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700"
+                          <Button
+                            size="sm"
+                            className="shrink-0 gap-1.5 rounded-xl"
                           disabled={validating === cmd.id}
                           onClick={() => handleValidate(cmd.id, cmd.eleve_id, cmd.article_nom)}
                         >
