@@ -43,12 +43,11 @@ const getFriendlyErrorMessage = (error: any) => {
 
 function useArticlesWithFiles() {
   return useQuery({
-    queryKey: ['articles-livres-numeriques'],
+    queryKey: ['livres-numeriques'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('articles' as any)
+        .from('livres_numeriques' as any)
         .select('*, niveaux:niveau_id(nom)')
-        .in('categorie', DIGITAL_BOOK_QUERY_CATEGORIES)
         .order('categorie')
         .order('nom');
       if (error) throw error;
@@ -100,7 +99,7 @@ export default function LivresNumeriquesTab() {
 
   // Add book dialog
   const [showAdd, setShowAdd] = useState(false);
-  const [addForm, setAddForm] = useState({ nom: '', categorie: 'roman', prix: '', stock: '0', niveau_id: ALL_LEVELS_VALUE });
+  const [addForm, setAddForm] = useState({ nom: '', categorie: 'roman', prix: '', niveau_id: ALL_LEVELS_VALUE });
   const [addFile, setAddFile] = useState<File | null>(null);
   const [adding, setAdding] = useState(false);
   const addFileRef = useRef<HTMLInputElement>(null);
@@ -127,7 +126,7 @@ export default function LivresNumeriquesTab() {
 
     setUploading(selectedArticleId);
     try {
-      const path = `articles/${selectedArticleId}/${Date.now()}_${file.name}`;
+      const path = `livres/${selectedArticleId}/${Date.now()}_${file.name}`;
       const { error: upErr } = await supabase.storage
         .from('livres-numeriques')
         .upload(path, file, { upsert: true });
@@ -140,13 +139,13 @@ export default function LivresNumeriquesTab() {
       if (!signedData?.signedUrl) throw new Error("Échec de la signature");
 
       const { error: updErr } = await supabase
-        .from('articles' as any)
+        .from('livres_numeriques' as any)
         .update({ fichier_url: signedData.signedUrl, fichier_nom: file.name } as any)
         .eq('id', selectedArticleId);
       if (updErr) throw updErr;
 
       toast.success('Fichier numérique uploadé !');
-      queryClient.invalidateQueries({ queryKey: ['articles-livres-numeriques'] });
+      queryClient.invalidateQueries({ queryKey: ['livres-numeriques'] });
     } catch (err: any) {
       toast.error(err.message || 'Erreur upload');
     } finally {
@@ -159,12 +158,12 @@ export default function LivresNumeriquesTab() {
   const handleDelete = async (articleId: string) => {
     try {
       const { error } = await supabase
-        .from('articles' as any)
-        .update({ fichier_url: null, fichier_nom: null } as any)
+        .from('livres_numeriques' as any)
+        .delete()
         .eq('id', articleId);
       if (error) throw error;
-      toast.success('Fichier numérique supprimé');
-      queryClient.invalidateQueries({ queryKey: ['articles-livres-numeriques'] });
+      toast.success('Livre numérique supprimé');
+      queryClient.invalidateQueries({ queryKey: ['livres-numeriques'] });
     } catch (err: any) {
       toast.error(err.message);
     }
@@ -176,7 +175,7 @@ export default function LivresNumeriquesTab() {
   };
 
   const resetAddDialog = () => {
-    setAddForm({ nom: '', categorie: 'roman', prix: '', stock: '0', niveau_id: ALL_LEVELS_VALUE });
+    setAddForm({ nom: '', categorie: 'roman', prix: '', niveau_id: ALL_LEVELS_VALUE });
     setAddFile(null);
     setAddStatus('idle');
     setLastAddedBook(null);
@@ -254,12 +253,11 @@ export default function LivresNumeriquesTab() {
         nom: trimmedName,
         categorie: addForm.categorie.toLowerCase(),
         prix: Number(addForm.prix),
-        stock: Number(addForm.stock) || 0,
         niveau_id: addForm.niveau_id === ALL_LEVELS_VALUE ? null : addForm.niveau_id,
       };
 
       const { data: newArt, error: insErr } = await supabase
-        .from('articles' as any)
+        .from('livres_numeriques' as any)
         .insert(insertData as any)
         .select('id')
         .single();
@@ -267,7 +265,7 @@ export default function LivresNumeriquesTab() {
 
       articleId = (newArt as any).id;
 
-      uploadedPath = `articles/${articleId}/${Date.now()}_${addFile.name}`;
+      uploadedPath = `livres/${articleId}/${Date.now()}_${addFile.name}`;
       const { error: upErr } = await supabase.storage
         .from('livres-numeriques')
         .upload(uploadedPath, addFile, { upsert: true });
@@ -280,27 +278,13 @@ export default function LivresNumeriquesTab() {
       if (!signedData?.signedUrl) throw new Error('Impossible de générer le lien du fichier.');
 
       const { error: updateErr } = await supabase
-        .from('articles' as any)
+        .from('livres_numeriques' as any)
         .update({ fichier_url: signedData.signedUrl, fichier_nom: addFile.name } as any)
         .eq('id', articleId);
       if (updateErr) throw updateErr;
 
-      const { data: confirmedBookData, error: confirmErr } = await supabase
-        .from('articles' as any)
-        .select('id, nom, fichier_nom, fichier_url')
-        .eq('id', articleId)
-        .single();
-      if (confirmErr) throw confirmErr;
-      const confirmedBook = confirmedBookData as unknown as {
-        id: string;
-        nom: string;
-        fichier_nom: string | null;
-        fichier_url: string | null;
-      } | null;
-      if (!confirmedBook?.fichier_url) throw new Error("Le livre a été créé mais le PDF n'a pas pu être confirmé.");
-
       toast.success(`Livre ajouté. Le fichier ${addFile.name} a bien été téléversé.`);
-      queryClient.invalidateQueries({ queryKey: ['articles-livres-numeriques'] });
+      queryClient.invalidateQueries({ queryKey: ['livres-numeriques'] });
       setLastAddedBook({
         nom: trimmedName,
         fichierNom: addFile.name,
