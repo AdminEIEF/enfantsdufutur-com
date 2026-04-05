@@ -52,7 +52,7 @@ interface CartItem { article: Article; quantite: number; }
 
 const WALLET_SERVICES = [
   { value: 'cantine', label: 'Cantine', emoji: '🍽️', desc: 'Recharger le solde repas (1x/mois)', gradient: 'from-emerald-500 to-teal-600', icon: UtensilsCrossed },
-  { value: 'librairie', label: 'Librairie', emoji: '📚', desc: 'Romans & livres numériques', gradient: 'from-indigo-500 to-purple-600', icon: BookOpen },
+  { value: 'librairie', label: 'Livres Numériques', emoji: '📱', desc: 'Acheter des romans & manuels numériques', gradient: 'from-violet-500 to-purple-600', icon: FileText },
   { value: 'boutique', label: 'Boutique', emoji: '👕', desc: 'Fournitures & uniformes', gradient: 'from-pink-500 to-rose-600', icon: ShoppingBag },
   { value: 'transport', label: 'Transport', emoji: '🚌', desc: 'Frais de transport', gradient: 'from-amber-500 to-orange-600', icon: Bus },
   { value: 'autre', label: 'Autre', emoji: '📦', desc: 'Autre paiement', gradient: 'from-gray-500 to-slate-600', icon: Package },
@@ -641,26 +641,10 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                       </Select>
                     ) : null}
 
-                    {/* Librairie sub-filter: Numérique / Physique */}
-                    {catalogueType === 'librairie' && catalogue.length > 0 && (
-                      <div className="flex gap-1.5">
-                        {([
-                          { key: 'all' as const, label: 'Tous', icon: '📚' },
-                          { key: 'numerique' as const, label: 'Numériques', icon: '📱' },
-                          { key: 'physique' as const, label: 'Physiques', icon: '📕' },
-                        ]).map(f => (
-                          <button
-                            key={f.key}
-                            onClick={() => setLibFilter(f.key)}
-                            className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${
-                              libFilter === f.key
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'bg-muted/60 text-muted-foreground'
-                            }`}
-                          >
-                            {f.icon} {f.label}
-                          </button>
-                        ))}
+                    {/* Info: Livres numériques uniquement */}
+                    {catalogueType === 'librairie' && (
+                      <div className="bg-violet-50 dark:bg-violet-950/20 rounded-xl p-2.5 text-[10px] text-violet-700 dark:text-violet-300">
+                        📱 Seuls les livres numériques sont disponibles à l'achat en ligne. Les livres physiques s'achètent directement à la librairie.
                       </div>
                     )}
 
@@ -670,11 +654,9 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                     ) : catalogue.length === 0 ? (
                       <p className="text-center text-xs text-muted-foreground py-6">{!catalogueEleveId && !isSingle ? 'Sélectionnez un enfant' : 'Aucun article disponible'}</p>
                     ) : (() => {
-                      const filtered = catalogueType === 'librairie' && libFilter !== 'all'
-                        ? catalogue.filter(a => libFilter === 'numerique' ? a.fichier_url : !a.fichier_url)
-                        : catalogue;
+                      const filtered = catalogue;
                       return filtered.length === 0 ? (
-                        <p className="text-center text-xs text-muted-foreground py-6">Aucun livre {libFilter === 'numerique' ? 'numérique' : 'physique'} disponible</p>
+                        <p className="text-center text-xs text-muted-foreground py-6">Aucun livre numérique disponible</p>
                       ) : (
                       <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                         {filtered.map(article => {
