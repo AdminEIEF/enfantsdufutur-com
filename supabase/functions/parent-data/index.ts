@@ -272,6 +272,17 @@ serve(async (req) => {
       const LIBRAIRIE_CATEGORIES = ['roman', 'romans', 'livre', 'livres', 'manuel', 'manuels', 'lecture', 'dictionnaire', 'dictionnaires'];
 
       if (type_service === "librairie") {
+        // Get the student's niveau_id for filtering
+        let niveauId: string | null = null;
+        if (eleve_id) {
+          const { data: eleveData } = await supabaseAdmin
+            .from("eleves")
+            .select("classe_id, classes:classe_id(niveau_id)")
+            .eq("id", eleve_id)
+            .maybeSingle();
+          niveauId = (eleveData as any)?.classes?.niveau_id || null;
+        }
+
         // Only digital books from dedicated livres_numeriques table
         const { data: arts } = await supabaseAdmin
           .from("livres_numeriques")
@@ -279,7 +290,11 @@ serve(async (req) => {
           .not("fichier_url", "is", null)
           .order("categorie")
           .order("nom");
-        articles = (arts || []).map((a: any) => ({ ...a, stock: 999 }));
+        
+        // Filter by student's niveau (or niveau_id is null = all levels)
+        articles = (arts || [])
+          .filter((a: any) => !niveauId || a.niveau_id === niveauId || a.niveau_id === null)
+          .map((a: any) => ({ ...a, stock: 999 }));
       } else if (type_service === "boutique") {
         // Fetch non-book articles from articles table (fournitures etc.)
         const { data: fournitures } = await supabaseAdmin
