@@ -79,7 +79,7 @@ function usePendingValidations() {
       if (error) throw error;
       return data as any[];
     },
-    refetchInterval: 10000,
+    refetchInterval: 5000,
   });
 }
 
@@ -190,24 +190,35 @@ export default function LivresNumeriquesTab() {
   const handleValidate = async (achatId: string, eleveId: string, livreNom: string) => {
     setValidating(achatId);
     try {
+      const { data: authData } = await supabase.auth.getUser();
+
       // Update achat status to validated
       const { error: updErr } = await supabase
         .from('achats_livres_numeriques' as any)
-        .update({ statut: 'valide', valide_at: new Date().toISOString() } as any)
+        .update({
+          statut: 'valide',
+          valide_at: new Date().toISOString(),
+          valide_par: authData.user?.id ?? null,
+        } as any)
         .eq('id', achatId);
       if (updErr) throw updErr;
 
-      // Also update the commande_articles status
+      // Best effort: mirror status on linked order when access is allowed
       const achat = pendingValidations.find((v: any) => v.id === achatId);
       if (achat?.commande_id) {
-        await supabase
+        const { error: commandeError } = await supabase
           .from('commandes_articles' as any)
           .update({ statut: 'valide' } as any)
           .eq('id', achat.commande_id);
+
+        if (commandeError && !commandeError.message?.toLowerCase().includes('row-level security')) {
+          throw commandeError;
+        }
       }
 
       toast.success(`Livre "${livreNom}" validé pour l'élève !`);
       queryClient.invalidateQueries({ queryKey: ['pending-digital-validations'] });
+      queryClient.invalidateQueries({ queryKey: ['livres-numeriques'] });
     } catch (err: any) {
       toast.error(err.message || 'Erreur de validation');
     } finally {
@@ -424,6 +435,7 @@ export default function LivresNumeriquesTab() {
           <div className="bg-muted/40 rounded-xl p-3 text-xs text-muted-foreground">
             <p className="font-semibold text-foreground mb-1">📋 Procédure de validation</p>
             <p>Lorsqu'un parent achète un livre numérique, la commande apparaît ici. Validez pour que le livre soit accessible dans l'espace élève.</p>
+            <p className="mt-1">Actualisation automatique toutes les 5 secondes.</p>
           </div>
 
           {loadingValidations ? (
