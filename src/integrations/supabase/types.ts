@@ -14,6 +14,61 @@ export type Database = {
   }
   public: {
     Tables: {
+      achats_livres_numeriques: {
+        Row: {
+          commande_id: string | null
+          created_at: string
+          eleve_id: string
+          id: string
+          livre_numerique_id: string
+          statut: string
+          valide_at: string | null
+          valide_par: string | null
+        }
+        Insert: {
+          commande_id?: string | null
+          created_at?: string
+          eleve_id: string
+          id?: string
+          livre_numerique_id: string
+          statut?: string
+          valide_at?: string | null
+          valide_par?: string | null
+        }
+        Update: {
+          commande_id?: string | null
+          created_at?: string
+          eleve_id?: string
+          id?: string
+          livre_numerique_id?: string
+          statut?: string
+          valide_at?: string | null
+          valide_par?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "achats_livres_numeriques_commande_id_fkey"
+            columns: ["commande_id"]
+            isOneToOne: false
+            referencedRelation: "commandes_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "achats_livres_numeriques_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "achats_livres_numeriques_livre_numerique_id_fkey"
+            columns: ["livre_numerique_id"]
+            isOneToOne: false
+            referencedRelation: "livres_numeriques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       active_connections: {
         Row: {
           categorie: string | null
