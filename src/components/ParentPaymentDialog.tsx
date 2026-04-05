@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Loader2, Smartphone, CreditCard, Wallet, Copy, MessageCircle, CheckCircle2, X, ArrowLeft,
-  ChevronRight, UtensilsCrossed, BookOpen, ShoppingBag, Bus, Plus, Minus, ShoppingCart, Package
+  ChevronRight, UtensilsCrossed, BookOpen, ShoppingBag, Bus, Plus, Minus, ShoppingCart, Package, FileText, BookMarked
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -46,7 +46,7 @@ const MANUEL_PURPOSE_OPTIONS = [
 ];
 
 interface Article {
-  id: string; nom: string; categorie: string; prix: number; stock: number; taille?: string; niveau_id?: string;
+  id: string; nom: string; categorie: string; prix: number; stock: number; taille?: string; niveau_id?: string; fichier_url?: string | null;
 }
 interface CartItem { article: Article; quantite: number; }
 
@@ -98,6 +98,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
   const [loadingCatalogue, setLoadingCatalogue] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [submittingCatalogue, setSubmittingCatalogue] = useState(false);
+  const [libFilter, setLibFilter] = useState<'all' | 'numerique' | 'physique'>('all');
 
   useEffect(() => {
     if (open && initialMode === 'mobile-wallet') {
@@ -640,24 +641,60 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                       </Select>
                     ) : null}
 
+                    {/* Librairie sub-filter: Numérique / Physique */}
+                    {catalogueType === 'librairie' && catalogue.length > 0 && (
+                      <div className="flex gap-1.5">
+                        {([
+                          { key: 'all' as const, label: 'Tous', icon: '📚' },
+                          { key: 'numerique' as const, label: 'Numériques', icon: '📱' },
+                          { key: 'physique' as const, label: 'Physiques', icon: '📕' },
+                        ]).map(f => (
+                          <button
+                            key={f.key}
+                            onClick={() => setLibFilter(f.key)}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${
+                              libFilter === f.key
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : 'bg-muted/60 text-muted-foreground'
+                            }`}
+                          >
+                            {f.icon} {f.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Catalogue items */}
                     {loadingCatalogue ? (
                       <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
                     ) : catalogue.length === 0 ? (
                       <p className="text-center text-xs text-muted-foreground py-6">{!catalogueEleveId && !isSingle ? 'Sélectionnez un enfant' : 'Aucun article disponible'}</p>
-                    ) : (
+                    ) : (() => {
+                      const filtered = catalogueType === 'librairie' && libFilter !== 'all'
+                        ? catalogue.filter(a => libFilter === 'numerique' ? a.fichier_url : !a.fichier_url)
+                        : catalogue;
+                      return filtered.length === 0 ? (
+                        <p className="text-center text-xs text-muted-foreground py-6">Aucun livre {libFilter === 'numerique' ? 'numérique' : 'physique'} disponible</p>
+                      ) : (
                       <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                        {catalogue.map(article => {
+                        {filtered.map(article => {
                           const inCart = cart.find(c => c.article.id === article.id);
+                          const isNumerique = catalogueType === 'librairie' && !!article.fichier_url;
                           return (
                             <div key={article.id} className="flex items-center gap-3 p-3 rounded-2xl border bg-card hover:shadow-md transition-all">
-                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${catalogueType === 'librairie' ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : 'bg-gradient-to-br from-pink-500 to-rose-600'}`}>
-                                {catalogueType === 'librairie' ? <BookOpen className="h-4 w-4 text-white" /> : <ShoppingBag className="h-4 w-4 text-white" />}
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
+                                catalogueType === 'librairie'
+                                  ? isNumerique ? 'bg-gradient-to-br from-violet-500 to-purple-600' : 'bg-gradient-to-br from-indigo-500 to-blue-600'
+                                  : 'bg-gradient-to-br from-pink-500 to-rose-600'
+                              }`}>
+                                {catalogueType === 'librairie' ? (isNumerique ? <FileText className="h-4 w-4 text-white" /> : <BookMarked className="h-4 w-4 text-white" />) : <ShoppingBag className="h-4 w-4 text-white" />}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-semibold leading-tight">{article.nom}</p>
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                   <Badge variant="outline" className="text-[9px] px-1.5 rounded-full">{article.categorie}</Badge>
+                                  {isNumerique && <Badge className="text-[8px] px-1.5 py-0 rounded-full bg-violet-600">📱 Numérique</Badge>}
+                                  {catalogueType === 'librairie' && !isNumerique && <Badge variant="secondary" className="text-[8px] px-1.5 py-0 rounded-full">📕 Physique</Badge>}
                                   {(article as any).taille && (article as any).taille !== 'unique' && <span className="text-[10px] text-muted-foreground">T: {(article as any).taille}</span>}
                                   {article.stock <= 3 && article.stock > 0 && <span className="text-[9px] text-amber-600 font-semibold">⚠ {article.stock} restant(s)</span>}
                                 </div>
@@ -680,7 +717,8 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                           );
                         })}
                       </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Cart summary */}
                     {cart.length > 0 && (
