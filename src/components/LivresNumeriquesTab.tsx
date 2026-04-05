@@ -11,6 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+const ALL_LEVELS_VALUE = '__all_levels__';
+
 function useArticlesWithFiles() {
   return useQuery({
     queryKey: ['articles-livres-numeriques'],
@@ -70,7 +72,7 @@ export default function LivresNumeriquesTab() {
 
   // Add book dialog
   const [showAdd, setShowAdd] = useState(false);
-  const [addForm, setAddForm] = useState({ nom: '', categorie: 'Roman', prix: '', stock: '0', niveau_id: '' });
+  const [addForm, setAddForm] = useState({ nom: '', categorie: 'Roman', prix: '', stock: '0', niveau_id: ALL_LEVELS_VALUE });
   const [addFile, setAddFile] = useState<File | null>(null);
   const [adding, setAdding] = useState(false);
   const addFileRef = useRef<HTMLInputElement>(null);
@@ -184,15 +186,25 @@ export default function LivresNumeriquesTab() {
   const handleAddBook = async () => {
     if (!addForm.nom.trim()) { toast.error('Nom requis'); return; }
     if (!addForm.prix || isNaN(Number(addForm.prix))) { toast.error('Prix invalide'); return; }
+    if (!addFile) { toast.error('Ajoutez le fichier numérique du livre.'); return; }
+
+    const ext = addFile.name.split('.').pop()?.toLowerCase();
+    if (!['pdf', 'epub'].includes(ext || '')) {
+      toast.error('Format non supporté. Utilisez PDF ou EPUB.');
+      return;
+    }
 
     setAdding(true);
+    let articleId: string | null = null;
+    let uploadedPath: string | null = null;
+
     try {
       const insertData: any = {
         nom: addForm.nom.trim(),
         categorie: addForm.categorie,
         prix: Number(addForm.prix),
         stock: Number(addForm.stock) || 0,
-        niveau_id: addForm.niveau_id || null,
+        niveau_id: addForm.niveau_id === ALL_LEVELS_VALUE ? null : addForm.niveau_id,
       };
 
       const { data: newArt, error: insErr } = await supabase
@@ -202,39 +214,39 @@ export default function LivresNumeriquesTab() {
         .single();
       if (insErr) throw insErr;
 
-      const artId = (newArt as any).id;
+      articleId = (newArt as any).id;
 
-      if (addFile) {
-        const ext = addFile.name.split('.').pop()?.toLowerCase();
-        if (!['pdf', 'epub'].includes(ext || '')) {
-          toast.error('Format non supporté. Utilisez PDF ou EPUB.');
-        } else {
-          const path = `articles/${artId}/${Date.now()}_${addFile.name}`;
-          const { error: upErr } = await supabase.storage
-            .from('livres-numeriques')
-            .upload(path, addFile, { upsert: true });
-          if (upErr) throw upErr;
+      uploadedPath = `articles/${articleId}/${Date.now()}_${addFile.name}`;
+      const { error: upErr } = await supabase.storage
+        .from('livres-numeriques')
+        .upload(uploadedPath, addFile, { upsert: true });
+      if (upErr) throw upErr;
 
-          const { data: signedData } = await supabase.storage
-            .from('livres-numeriques')
-            .createSignedUrl(path, 31536000);
+      const { data: signedData, error: signedErr } = await supabase.storage
+        .from('livres-numeriques')
+        .createSignedUrl(uploadedPath, 31536000);
+      if (signedErr) throw signedErr;
+      if (!signedData?.signedUrl) throw new Error('Impossible de générer le lien du fichier.');
 
-          if (signedData?.signedUrl) {
-            await supabase
-              .from('articles' as any)
-              .update({ fichier_url: signedData.signedUrl, fichier_nom: addFile.name } as any)
-              .eq('id', artId);
-          }
-        }
-      }
+      const { error: updateErr } = await supabase
+        .from('articles' as any)
+        .update({ fichier_url: signedData.signedUrl, fichier_nom: addFile.name } as any)
+        .eq('id', articleId);
+      if (updateErr) throw updateErr;
 
       toast.success('Livre numérique ajouté !');
       queryClient.invalidateQueries({ queryKey: ['articles-livres-numeriques'] });
       setShowAdd(false);
-      setAddForm({ nom: '', categorie: 'Roman', prix: '', stock: '0', niveau_id: '' });
+      setAddForm({ nom: '', categorie: 'Roman', prix: '', stock: '0', niveau_id: ALL_LEVELS_VALUE });
       setAddFile(null);
     } catch (err: any) {
-      toast.error(err.message || 'Erreur');
+      if (uploadedPath) {
+        await supabase.storage.from('livres-numeriques').remove([uploadedPath]);
+      }
+      if (articleId) {
+        await supabase.from('articles' as any).delete().eq('id', articleId);
+      }
+      toast.error(err.message || 'Erreur lors de l\'ajout du livre numérique');
     } finally {
       setAdding(false);
     }
@@ -500,7 +512,7 @@ export default function LivresNumeriquesTab() {
                 <Select value={addForm.niveau_id} onValueChange={v => setAddForm(f => ({ ...f, niveau_id: v }))}>
                   <SelectTrigger><SelectValue placeholder="Tous niveaux" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tous niveaux</SelectItem>
+                    <SelectItem value={ALL_LEVELS_VALUE}>Tous niveaux</SelectItem>
                     {niveaux.map((n: any) => (
                       <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>
                     ))}
@@ -535,7 +547,7 @@ export default function LivresNumeriquesTab() {
                 {addFile ? addFile.name : 'Choisir un fichier'}
               </Button>
             </div>
-            <Button className="w-full gap-2" disabled={adding} onClick={handleAddBook}>
+            <Button className="w-full gap-2" disabled={adding || !addFile} onClick={handleAddBook}>
               {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               Ajouter le livre
             </Button>
