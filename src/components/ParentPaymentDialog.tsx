@@ -661,24 +661,21 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                       <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                         {filtered.map(article => {
                           const inCart = cart.find(c => c.article.id === article.id);
-                          const isNumerique = catalogueType === 'librairie' && !!article.fichier_url;
                           return (
                             <div key={article.id} className="flex items-center gap-3 p-3 rounded-2xl border bg-card hover:shadow-md transition-all">
                               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
                                 catalogueType === 'librairie'
-                                  ? isNumerique ? 'bg-gradient-to-br from-violet-500 to-purple-600' : 'bg-gradient-to-br from-indigo-500 to-blue-600'
+                                  ? 'bg-gradient-to-br from-violet-500 to-purple-600'
                                   : 'bg-gradient-to-br from-pink-500 to-rose-600'
                               }`}>
-                                {catalogueType === 'librairie' ? (isNumerique ? <FileText className="h-4 w-4 text-white" /> : <BookMarked className="h-4 w-4 text-white" />) : <ShoppingBag className="h-4 w-4 text-white" />}
+                                {catalogueType === 'librairie' ? <FileText className="h-4 w-4 text-white" /> : <ShoppingBag className="h-4 w-4 text-white" />}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-semibold leading-tight">{article.nom}</p>
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                   <Badge variant="outline" className="text-[9px] px-1.5 rounded-full">{article.categorie}</Badge>
-                                  {isNumerique && <Badge className="text-[8px] px-1.5 py-0 rounded-full bg-violet-600">📱 Numérique</Badge>}
-                                  {catalogueType === 'librairie' && !isNumerique && <Badge variant="secondary" className="text-[8px] px-1.5 py-0 rounded-full">📕 Physique</Badge>}
+                                  {catalogueType === 'librairie' && <Badge className="text-[8px] px-1.5 py-0 rounded-full bg-violet-600">📱 Numérique</Badge>}
                                   {(article as any).taille && (article as any).taille !== 'unique' && <span className="text-[10px] text-muted-foreground">T: {(article as any).taille}</span>}
-                                  {article.stock <= 3 && article.stock > 0 && <span className="text-[9px] text-amber-600 font-semibold">⚠ {article.stock} restant(s)</span>}
                                 </div>
                               </div>
                               <div className="flex flex-col items-end gap-1 shrink-0">
