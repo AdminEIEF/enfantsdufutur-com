@@ -300,7 +300,7 @@ export default function LivresNumeriquesTab() {
         await supabase.storage.from('livres-numeriques').remove([uploadedPath]);
       }
       if (articleId) {
-        await supabase.from('articles' as any).delete().eq('id', articleId);
+        await supabase.from('livres_numeriques' as any).delete().eq('id', articleId);
       }
       setAddStatus('idle');
       toast.error(getFriendlyErrorMessage(err));

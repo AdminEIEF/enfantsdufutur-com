@@ -272,17 +272,14 @@ serve(async (req) => {
       const LIBRAIRIE_CATEGORIES = ['roman', 'romans', 'livre', 'livres', 'manuel', 'manuels', 'lecture', 'dictionnaire', 'dictionnaires'];
 
       if (type_service === "librairie") {
-        // Only digital books (with fichier_url) for parent online purchase
+        // Only digital books from dedicated livres_numeriques table
         const { data: arts } = await supabaseAdmin
-          .from("articles")
-          .select("id, nom, categorie, prix, stock, niveau_id, fichier_url")
+          .from("livres_numeriques")
+          .select("id, nom, categorie, prix, niveau_id, fichier_url")
           .not("fichier_url", "is", null)
           .order("categorie")
           .order("nom");
-        const LIBRAIRIE_CATEGORIES = ['roman', 'romans', 'livre', 'livres', 'manuel', 'manuels', 'lecture', 'dictionnaire', 'dictionnaires'];
-        articles = (arts || []).filter((a: any) => 
-          LIBRAIRIE_CATEGORIES.some(cat => a.categorie.toLowerCase().includes(cat))
-        );
+        articles = (arts || []).map((a: any) => ({ ...a, stock: 999 }));
       } else if (type_service === "boutique") {
         // Fetch non-book articles from articles table (fournitures etc.)
         const { data: fournitures } = await supabaseAdmin
