@@ -18,21 +18,21 @@ const LOGO_SIZE = 9;
 const SCHOOL_NAME_Y = 8;
 
 const PHOTO_X = 5;
-const PHOTO_Y = 13;
+const PHOTO_Y = 15;
 const PHOTO_W = 16;
 const PHOTO_H = 21;
 
 const INFO_X = 24;
-const NAME_Y = 17;
-const MATRICULE_LABEL_Y = 21.5;
-const MATRICULE_VALUE_Y = 25;
-const LIGNE_Y = 30;
-const BADGE_Y = 33;
+const NAME_Y = 19;
+const MATRICULE_LABEL_Y = 23.5;
+const MATRICULE_VALUE_Y = 27;
+const LIGNE_Y = 32;
+const BADGE_Y = 35;
 
 const QR_SIZE = 20; // minimum 20mm for Hikvision
 const QR_QUIET = 2; // 2mm white quiet zone
 const QR_X = CARD_W - QR_SIZE - QR_QUIET - 3;
-const QR_Y = 13;
+const QR_Y = 15;
 
 const FOOTER_Y = CARD_H - 2.5;
 
@@ -142,10 +142,7 @@ async function drawSingleCard(pdf: jsPDF, card: CardData, ox = 0, oy = 0) {
   drawWavesAt(pdf, ox, oy);
   pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
 
-  // ── Header line ──
-  pdf.setDrawColor(220, 38, 38);
-  pdf.setLineWidth(0.3);
-  pdf.line(ox + 4, oy + 11, ox + CARD_W - 4, oy + 11);
+  // (no header line)
 
   // 3. School logo (absolute position)
   if (card.schoolLogoUrl) {
