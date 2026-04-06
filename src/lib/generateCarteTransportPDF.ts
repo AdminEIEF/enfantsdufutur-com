@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
+import transportBgUrl from '@/assets/transport-bg.jpg';
 
 /**
  * PVC CR80 card: 85.6mm × 54mm (strict, non-responsive)
@@ -99,10 +100,20 @@ async function drawSingleCard(pdf: jsPDF, card: CardData, ox = 0, oy = 0) {
   pdf.setFillColor(255, 255, 255);
   pdf.roundedRect(ox, oy, CARD_W, CARD_H, 3, 3, 'F');
 
+  // Background watermark image
+  try {
+    const bgData = await loadImageAsDataURL(transportBgUrl);
+    if (bgData) {
+      pdf.setGState(new (pdf as any).GState({ opacity: 0.08 }));
+      pdf.addImage(bgData, 'JPEG', ox + 1, oy + 1, CARD_W - 2, CARD_H - 2);
+      pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
+    }
+  } catch {}
+
   // Subtle cream tint top half
   pdf.setFillColor(254, 252, 248);
-  pdf.setGState(new (pdf as any).GState({ opacity: 0.6 }));
-  pdf.rect(ox + 1, oy + 1, CARD_W - 2, CARD_H * 0.5, 'F');
+  pdf.setGState(new (pdf as any).GState({ opacity: 0.5 }));
+  pdf.rect(ox + 1, oy + 1, CARD_W - 2, CARD_H * 0.45, 'F');
   pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
 
   // Border
