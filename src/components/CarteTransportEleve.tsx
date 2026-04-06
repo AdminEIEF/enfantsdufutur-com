@@ -309,17 +309,6 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
             (svg as SVGElement).style.overflow = 'visible';
           });
 
-          // Force ligne badge styles
-          clonedDoc.querySelectorAll('[data-ligne-badge]').forEach((node) => {
-            const badge = node as HTMLElement;
-            badge.style.display = 'flex';
-            badge.style.alignItems = 'center';
-            badge.style.justifyContent = 'center';
-            badge.style.background = '#EFF6FF';
-            badge.style.border = '1px solid #BFDBFE';
-            badge.style.overflow = 'hidden';
-          });
-
           // Force ACTIVE badge
           clonedDoc.querySelectorAll('div').forEach((node) => {
             if (node.textContent?.includes('\u25CF ACTIVE')) {
