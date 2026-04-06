@@ -706,6 +706,11 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                   <p style={{ fontSize: 13, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2, textAlign: 'center' }}>
                     {schoolConfig?.nom || 'École'}
                   </p>
+                  {schoolConfig?.ville && (
+                    <p style={{ fontSize: 7, color: '#6B7280', fontWeight: 500, textAlign: 'center', marginTop: -1 }}>
+                      {schoolConfig.ville}
+                    </p>
+                  )}
                 </div>
 
                 {/* Body */}
