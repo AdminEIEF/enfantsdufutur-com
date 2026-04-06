@@ -459,7 +459,16 @@ export default function Transport() {
                           <p className="text-xs text-muted-foreground italic">Pas de chauffeur</p>
                         )}
                       </div>
-                      <Badge variant="outline" className="text-xs">{z.effectif} élèves</Badge>
+                     <Badge variant="outline" className="text-xs">{z.effectif} élèves</Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] mt-1">
+                      <span className="flex items-center gap-1 text-green-600 font-semibold">
+                        <CheckCircle2 className="h-3 w-3" /> {z.imprime} imprimée(s)
+                      </span>
+                      <span className="text-muted-foreground">·</span>
+                      <span className="flex items-center gap-1 text-orange-500 font-semibold">
+                        <Clock className="h-3 w-3" /> {z.nonImprime} restante(s)
+                      </span>
                     </div>
                     {z.quartiers.length > 0 && (
                       <p className="text-[11px] text-muted-foreground/70 line-clamp-1">{z.quartiers.join(', ')}</p>
