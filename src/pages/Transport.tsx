@@ -20,6 +20,7 @@ import { exportToExcel } from '@/lib/excelUtils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import CarteTransportEleve from '@/components/CarteTransportEleve';
+import { exportBulkTransportCards, type TransportCardExportData } from '@/lib/generateCarteTransportPDF';
 import ValidationTransportBus from '@/components/ValidationTransportBus';
 import ItinerairesTransport from '@/components/transport/ItinerairesTransport';
 
