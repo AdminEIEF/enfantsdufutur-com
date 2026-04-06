@@ -18,6 +18,9 @@ export async function generateBulletinPDF(
     throw new Error('Élément bulletin introuvable');
   }
 
+  // Wait for all custom fonts to be fully loaded before capture
+  await document.fonts.ready;
+
   const a4Container = element.querySelector('[data-bulletin-a4]') as HTMLElement || element;
 
   // Save original styles
