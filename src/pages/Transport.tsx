@@ -793,51 +793,49 @@ export default function Transport() {
                     <path d="M0,40 C80,0 160,70 240,35 C300,10 360,50 400,25 L400,90 L0,90 Z" fill="#F87171" opacity="0.5" />
                     <path d="M0,55 C60,30 140,75 220,50 C290,30 350,65 400,40 L400,90 L0,90 Z" fill="#4ADE80" opacity="0.4" />
                   </svg>
+                   {/* Red separator line */}
+                   <div className="absolute left-4 right-4 z-10" style={{ top: 42, height: 1, background: '#DC2626' }} />
                    <div className="absolute inset-0 flex items-center justify-center opacity-[0.10] pointer-events-none">
                      <img src={transportMapWatermark} alt="" className="w-[85%] h-[85%] object-contain" crossOrigin="anonymous" />
                    </div>
-                   <div className="flex items-center justify-center gap-2 px-4 pt-3 pb-1 relative z-10">
+                   <div className="flex items-center gap-2 px-4 pt-3 pb-1 relative z-10">
                      {schoolConfig?.logo_url ? (
-                       <img src={schoolConfig.logo_url} alt="Logo" className="h-10 w-10 rounded-full object-cover" crossOrigin="anonymous" />
+                       <img src={schoolConfig.logo_url} alt="Logo" className="h-9 w-9 rounded-full object-cover" crossOrigin="anonymous" />
                      ) : (
-                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center"><Bus className="h-5 w-5 text-primary" /></div>
+                       <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center"><Bus className="h-5 w-5 text-primary" /></div>
                      )}
-                     <p style={{ fontSize: 13, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2, textAlign: 'center' }}>{schoolConfig?.nom || 'École'}</p>
+                     <p className="flex-1 text-center" style={{ fontSize: 12, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2, letterSpacing: 0.5 }}>{schoolConfig?.nom || 'École'}</p>
                    </div>
-                  <div className="flex gap-3 px-4 pt-2 relative z-10" style={{ height: 140 }}>
-                    <div className="flex-shrink-0 rounded-lg overflow-hidden bg-muted border" style={{ width: 72, height: 90, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+                  <div className="flex gap-3 px-4 pt-3 relative z-10" style={{ height: 145 }}>
+                    <div className="flex-shrink-0 rounded-lg overflow-hidden bg-muted border" style={{ width: 72, height: 92, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
                       {selectedStudent.photo_url ? (
                         <img src={selectedStudent.photo_url} alt="Photo" className="w-full h-full object-cover" style={{ objectPosition: 'center 20%' }} crossOrigin="anonymous" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-muted-foreground" style={{ fontSize: 10 }}>Photo</div>
                       )}
                     </div>
-                    <div className="flex-1 flex flex-col justify-between py-0.5">
-                      <div>
-                        <p style={{ fontSize: 16, fontWeight: 800, color: '#1F2937', lineHeight: 1.1 }}>{selectedStudent.prenom} {selectedStudent.nom}</p>
-                        <div className="mt-1.5">
-                          <p style={{ fontSize: 7, color: '#9CA3AF', textTransform: 'uppercase' }}>Matricule</p>
-                          <p style={{ fontSize: 10, fontWeight: 600, color: '#374151', fontFamily: 'monospace' }}>{selectedStudent.matricule || '—'}</p>
-                        </div>
+                    <div className="flex-1 flex flex-col py-0.5">
+                      <p style={{ fontSize: 15, fontWeight: 800, color: '#1F2937', lineHeight: 1.15 }}>{selectedStudent.prenom} {selectedStudent.nom}</p>
+                      <div className="mt-1.5">
+                        <p style={{ fontSize: 6.5, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1 }}>Matricule</p>
+                        <p style={{ fontSize: 10, fontWeight: 700, color: '#374151', fontFamily: 'monospace' }}>{selectedStudent.matricule || '—'}</p>
                       </div>
-                      <div className="flex items-center gap-1 rounded px-1.5 py-0.5 mt-1" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', maxWidth: '100%', overflow: 'hidden' }}>
+                      <div className="flex items-center gap-1 rounded px-1.5 py-0.5 mt-2" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', maxWidth: 'fit-content' }}>
                         <MapPin style={{ width: 8, height: 8, color: '#3B82F6', flexShrink: 0 }} />
-                        <span style={{ fontSize: 8, fontWeight: 600, color: '#1E40AF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>LIGNE : {(selectedStudent.zones_transport as any)?.nom || '—'}</span>
+                        <span style={{ fontSize: 8, fontWeight: 700, color: '#1E40AF', whiteSpace: 'nowrap' }}>LIGNE : {(selectedStudent.zones_transport as any)?.nom || '—'}</span>
                       </div>
-                      <div className="mt-1">
-                        {selectedStudent.recharge ? (
-                          <div className="flex items-center gap-2">
-                            <div className="rounded-full px-2 py-0.5" style={{ background: '#D1FAE5', fontSize: 7, fontWeight: 600, color: '#065F46' }}>● ACTIVE</div>
-                            <span style={{ fontSize: 8, color: '#6B7280' }}>Expire le {new Date(selectedStudent.recharge.date_expiration).toLocaleDateString('fr-FR')}</span>
-                          </div>
-                        ) : null}
-                      </div>
+                      {selectedStudent.recharge ? (
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <div className="rounded-full px-2 py-0.5" style={{ background: '#D1FAE5', fontSize: 7, fontWeight: 700, color: '#065F46' }}>● ACTIVE</div>
+                          <span style={{ fontSize: 7.5, color: '#6B7280' }}>Exp. {new Date(selectedStudent.recharge.date_expiration).toLocaleDateString('fr-FR')}</span>
+                        </div>
+                      ) : null}
                     </div>
-                    <div className="flex-shrink-0 flex flex-col items-center justify-center">
-                      <div className="bg-white rounded-lg p-2" style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.1)', border: '2px solid #E5E7EB' }}>
-                        <QRCodeCanvas value={JSON.stringify({ type: 'transport', matricule: selectedStudent.matricule, id: selectedStudent.id })} size={90} level="H" includeMargin={false} />
+                    <div className="flex-shrink-0 flex flex-col items-center justify-start pt-1">
+                      <div className="bg-white rounded-lg p-1.5" style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.1)', border: '1.5px solid #E5E7EB' }}>
+                        <QRCodeCanvas value={JSON.stringify({ type: 'transport', matricule: selectedStudent.matricule, id: selectedStudent.id })} size={88} level="H" includeMargin={false} />
                       </div>
-                      <p style={{ fontSize: 6, color: '#9CA3AF', marginTop: 3 }}>Scanner pour valider</p>
+                      <p style={{ fontSize: 5.5, color: '#9CA3AF', marginTop: 3 }}>Scanner pour valider</p>
                     </div>
                   </div>
                    <div className="absolute bottom-1.5 left-4 right-4 flex justify-between items-center z-10">
