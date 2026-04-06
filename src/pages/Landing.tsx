@@ -238,7 +238,7 @@ export default function Landing() {
               style={{ background: 'rgba(245,166,35,0.2)', color: COLORS.goldLight, border: `1px solid ${COLORS.gold}40` }}
             >
               <Sparkles className="h-3.5 w-3.5" />
-              Inscriptions 2025-2026 ouvertes
+              Inscriptions 2026-2027 ouvertes
             </motion.div>
 
             {/* School Name */}
