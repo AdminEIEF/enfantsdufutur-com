@@ -26,6 +26,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   const { data: schoolConfig } = useSchoolConfig();
   const [search, setSearch] = useState('');
   const [filterZone, setFilterZone] = useState('all');
+  const [filterClasse, setFilterClasse] = useState('all');
   const [rechargeDialog, setRechargeDialog] = useState<any>(null);
   const [printCard, setPrintCard] = useState<any>(null);
   const [cashPayDialog, setCashPayDialog] = useState<any>(null);
@@ -249,11 +250,22 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     );
   };
 
+  const uniqueClasses = useMemo(() => {
+    const classMap = new Map<string, string>();
+    eleves.forEach((e: any) => {
+      if (e.classes?.nom && e.classe_id) classMap.set(e.classe_id, e.classes.nom);
+    });
+    return Array.from(classMap.entries())
+      .map(([id, nom]) => ({ id, nom }))
+      .sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { numeric: true }));
+  }, [eleves]);
+
   const filteredEleves = useMemo(() => {
     const filtered = eleves.filter((e: any) => {
       const matchSearch = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase());
       const matchZone = filterZone === 'all' || e.zone_transport_id === filterZone;
-      return matchSearch && matchZone;
+      const matchClasse = filterClasse === 'all' || e.classe_id === filterClasse;
+      return matchSearch && matchZone && matchClasse;
     });
     // Sort: pending validation (paid but not recharged) first, then not paid, then already recharged
     return filtered.sort((a: any, b: any) => {
@@ -266,7 +278,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       const bScore = bPaid && !bRecharged ? 0 : !bPaid ? 1 : 2;
       return aScore - bScore;
     });
-  }, [eleves, search, filterZone, paiementsTransport, recharges]);
+  }, [eleves, search, filterZone, filterClasse, paiementsTransport, recharges]);
 
   // PVC card dimensions: CR80 standard 85.6mm × 54mm
   const PVC_DISPLAY_W = 460;
@@ -388,6 +400,13 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
             {zones.map((z: any) => <SelectItem key={z.id} value={z.id}>{z.nom}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={filterClasse} onValueChange={setFilterClasse}>
+          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Classe" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes les classes</SelectItem>
+            {uniqueClasses.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Button
           variant={bulkMode ? 'default' : 'outline'}
           size="sm"
@@ -403,7 +422,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
           onClick={exportBulkCards}
         >
           <Printer className="h-3.5 w-3.5 mr-1" />
-          {bulkDownloading ? 'Export en cours…' : bulkMode && selectedIds.size > 0 ? `Planche A4 — ${selectedIds.size} carte(s)` : 'Planche A4 — toutes les cartes'}
+          {bulkDownloading ? 'Export en cours…' : bulkMode && selectedIds.size > 0 ? `Planche A4 — ${selectedIds.size} carte(s)` : filterClasse !== 'all' ? `Planche A4 — classe ${uniqueClasses.find(c => c.id === filterClasse)?.nom || ''}` : 'Planche A4 — toutes les cartes'}
         </Button>
       </div>
 
