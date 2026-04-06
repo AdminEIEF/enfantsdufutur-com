@@ -241,16 +241,7 @@ async function drawSingleCard(pdf: jsPDF, card: CardData, ox = 0, oy = 0) {
   pdf.setTextColor(140, 145, 160);
   pdf.text('Scanner pour valider', ox + QR_X + QR_SIZE / 2, oy + QR_Y + QR_SIZE + QR_QUIET + 1.5, { align: 'center' });
 
-  // 11. Footer (absolute)
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(3.5);
-  pdf.setTextColor(255, 255, 255);
-  pdf.text(card.schoolVille || 'Conakry, Guinée', ox + 5, oy + FOOTER_Y);
-
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(3);
-  pdf.setTextColor(255, 255, 255);
-  pdf.text('Carte permanente • Rechargeable', ox + CARD_W - 5, oy + FOOTER_Y, { align: 'right' });
+  // 11. Footer (no text, just the color bar)
 
   pdf.restoreGraphicsState();
 }
