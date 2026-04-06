@@ -76,7 +76,7 @@ async function generateQRDataURL(data: string): Promise<string> {
 }
 
 // ── Footer gradient bar (matching badge scolaire style) ──
-function drawFooterBar(pdf: jsPDF, ox: number, oy: number) {
+function drawFooterBar(pdf: jsPDF, ox: number, oy: number, ville?: string) {
   const barH = CARD_H * 0.08; // 8% of card height
   const barY = oy + CARD_H - barH;
   const barW = CARD_W;
@@ -91,6 +91,13 @@ function drawFooterBar(pdf: jsPDF, ox: number, oy: number) {
   for (let i = 0; i < steps; i++) {
     pdf.setFillColor(colors[i][0], colors[i][1], colors[i][2]);
     pdf.rect(ox + i * stepW, barY, stepW + 0.5, barH, 'F');
+  }
+  // City name centered on footer bar
+  if (ville) {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(4);
+    pdf.setTextColor(255, 255, 255);
+    pdf.text(ville.toUpperCase(), ox + CARD_W / 2, barY + barH / 2 + 1, { align: 'center' });
   }
 }
 
