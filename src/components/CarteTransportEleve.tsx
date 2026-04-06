@@ -15,7 +15,6 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { useState, useMemo } from 'react';
 import transportMapWatermark from '@/assets/transport-bg.jpg';
 import transportFooterImg from '@/assets/transport-footer.png';
-import transportBusWatermark from '@/assets/transport-bus-watermark.jpg';
 import { exportSingleTransportCard, exportBulkTransportCards, type TransportCardExportData } from '@/lib/generateCarteTransportPDF';
 
 interface CarteTransportEleveProps {
