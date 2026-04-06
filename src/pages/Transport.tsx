@@ -842,9 +842,9 @@ export default function Transport() {
                         <p style={{ fontSize: 6.5, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1 }}>Matricule</p>
                         <p style={{ fontSize: 10, fontWeight: 700, color: '#374151', fontFamily: 'monospace' }}>{selectedStudent.matricule || '—'}</p>
                       </div>
-                      <div className="flex items-center gap-1 rounded px-1.5 py-0.5 mt-2" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', maxWidth: 'fit-content' }}>
+                      <div className="flex items-center justify-center gap-1 rounded px-2 py-0.5 mt-2" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', maxWidth: '100%', width: 'fit-content', textAlign: 'center' }}>
                         <MapPin style={{ width: 8, height: 8, color: '#3B82F6', flexShrink: 0 }} />
-                        <span style={{ fontSize: 8, fontWeight: 700, color: '#1E40AF', whiteSpace: 'nowrap' }}>LIGNE : {(selectedStudent.zones_transport as any)?.nom || '—'}</span>
+                        <span style={{ fontSize: 8, fontWeight: 700, color: '#1E40AF', whiteSpace: 'nowrap', textAlign: 'center' }}>LIGNE : {(selectedStudent.zones_transport as any)?.nom || '—'}</span>
                       </div>
                       {selectedStudent.recharge ? (
                         <div className="flex items-center gap-2 mt-1.5">
@@ -868,7 +868,21 @@ export default function Transport() {
 
                 <div className="flex gap-2 justify-end">
                   <Button variant="outline" onClick={() => setSelectedStudent(null)}>Fermer</Button>
-                  <Button onClick={exportCard}><Download className="h-4 w-4 mr-1" /> Exporter PNG</Button>
+                  <Button variant="outline" onClick={exportCard}><Download className="h-4 w-4 mr-1" /> PNG</Button>
+                  <Button onClick={async () => {
+                    const { exportSingleTransportCard } = await import('@/lib/generateCarteTransportPDF');
+                    const recharge = selectedStudent.recharge;
+                    await exportSingleTransportCard({
+                      id: selectedStudent.id,
+                      prenom: selectedStudent.prenom,
+                      nom: selectedStudent.nom,
+                      matricule: selectedStudent.matricule || '',
+                      photoUrl: selectedStudent.photo_url,
+                      zoneName: (selectedStudent.zones_transport as any)?.nom || '—',
+                      rechargeActive: !!recharge,
+                      dateExpiration: recharge ? new Date(recharge.date_expiration).toLocaleDateString('fr-FR') : undefined,
+                    }, schoolConfig?.nom || 'École', schoolConfig?.logo_url, schoolConfig?.ville);
+                  }}><Download className="h-4 w-4 mr-1" /> PDF</Button>
                 </div>
               </div>
             )}
