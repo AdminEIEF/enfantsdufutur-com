@@ -6,15 +6,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Bus, CreditCard, Download, Printer, Search, Wallet, RefreshCw, MapPin, Banknote } from 'lucide-react';
+import { Bus, CreditCard, Download, Printer, Search, Wallet, RefreshCw, MapPin, Banknote, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useState, useMemo } from 'react';
-import html2canvas from 'html2canvas';
 import transportMapWatermark from '@/assets/transport-map-watermark.png';
+import { exportSingleTransportCard, exportBulkTransportCards, type TransportCardExportData } from '@/lib/generateCarteTransportPDF';
 
 interface CarteTransportEleveProps {
   zones: any[];
@@ -34,7 +34,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   const [bulkLoading, setBulkLoading] = useState(false);
   const [bulkDownloading, setBulkDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const bulkCardRef = useRef<HTMLDivElement>(null);
+  
 
   const MOIS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   const moisCourant = MOIS_FR[new Date().getMonth()];
@@ -268,95 +268,38 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     });
   }, [eleves, search, filterZone, paiementsTransport, recharges]);
 
-  // PVC card dimensions: CR80 standard 85.6mm × 54mm = ratio ~1.585
+  // PVC card dimensions: CR80 standard 85.6mm × 54mm
   const PVC_DISPLAY_W = 460;
   const PVC_DISPLAY_H = 290;
-  const PVC_EXPORT_W = 1012; // 85.6mm at 300 DPI
-  const PVC_EXPORT_H = 638;  // 54mm at 300 DPI
 
-  const captureCardCanvas = async (el: HTMLElement) => {
-    const canvas = await html2canvas(el, {
-      scale: 4,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: '#FFFFFF',
-      width: el.offsetWidth,
-      height: el.offsetHeight,
-      imageTimeout: 15000,
-      logging: false,
-      onclone: (_clonedDoc, clonedElement) => {
-        clonedElement.style.width = el.offsetWidth + 'px';
-        clonedElement.style.height = el.offsetHeight + 'px';
-        clonedElement.style.overflow = 'hidden';
-        clonedElement.style.borderRadius = '14px';
-        _clonedDoc.querySelectorAll('svg path').forEach((node) => {
-          const path = node as SVGPathElement;
-          const fill = path.getAttribute('fill')?.toLowerCase() || '';
-          if (fill.includes('f87171')) {
-            path.setAttribute('fill', '#F87171');
-            path.setAttribute('opacity', '0.6');
-            path.style.fill = '#F87171';
-            path.style.opacity = '0.6';
-            path.removeAttribute('class');
-          } else if (fill.includes('4ade80')) {
-            path.setAttribute('fill', '#4ADE80');
-            path.setAttribute('opacity', '0.5');
-            path.style.fill = '#4ADE80';
-            path.style.opacity = '0.5';
-            path.removeAttribute('class');
-          }
-        });
-        _clonedDoc.querySelectorAll('svg').forEach((svg) => {
-          (svg as SVGElement).style.overflow = 'visible';
-        });
-        _clonedDoc.querySelectorAll('div').forEach((node) => {
-          if (node.textContent?.includes('\u25CF ACTIVE')) {
-            const badge = node as HTMLElement;
-            badge.style.backgroundColor = '#16A34A';
-            badge.style.color = '#FFFFFF';
-            badge.style.borderColor = '#16A34A';
-            badge.style.opacity = '1';
-          }
-        });
-      },
-    });
-    const resizedCanvas = document.createElement('canvas');
-    resizedCanvas.width = PVC_EXPORT_W;
-    resizedCanvas.height = PVC_EXPORT_H;
-    const ctx = resizedCanvas.getContext('2d')!;
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(canvas, 0, 0, PVC_EXPORT_W, PVC_EXPORT_H);
-    return resizedCanvas;
-  };
+  const buildCardData = (eleve: any, recharge?: any): TransportCardExportData => ({
+    id: eleve.id,
+    prenom: eleve.prenom,
+    nom: eleve.nom,
+    matricule: eleve.matricule || '',
+    photoUrl: eleve.photo_url,
+    zoneName: (eleve.zones_transport as any)?.nom || '—',
+    rechargeActive: !!recharge,
+    dateExpiration: recharge ? new Date(recharge.date_expiration).toLocaleDateString('fr-FR') : undefined,
+  });
 
   const exportCard = async () => {
-    if (!cardRef.current) return;
+    if (!printCard) return;
     try {
-      const resizedCanvas = await captureCardCanvas(cardRef.current);
-      resizedCanvas.toBlob((blob) => {
-        if (!blob) {
-          toast({ title: 'Erreur export', variant: 'destructive' });
-          return;
-        }
-        const filename = `carte_transport_${printCard?.matricule || 'eleve'}.png`;
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
-        toast({ title: 'Carte exportée (format PVC 300 DPI)' });
-      }, 'image/png', 1);
+      const cardData = buildCardData(printCard, printCard.recharge);
+      await exportSingleTransportCard(
+        cardData,
+        schoolConfig?.nom || 'École',
+        schoolConfig?.logo_url,
+        schoolConfig?.ville
+      );
+      toast({ title: 'Carte exportée en PDF (format PVC CR80)' });
     } catch {
       toast({ title: 'Erreur export', variant: 'destructive' });
     }
   };
 
   const exportBulkCards = async () => {
-    const targets = filteredEleves.filter((e: any) => selectedIds.has(e.id) || !bulkMode);
     const toExport = bulkMode && selectedIds.size > 0
       ? filteredEleves.filter((e: any) => selectedIds.has(e.id))
       : filteredEleves;
@@ -367,123 +310,22 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     }
 
     setBulkDownloading(true);
-    let exported = 0;
-
-    for (const eleve of toExport) {
-      const recharge = getActiveRecharge(eleve.id);
-      // Render card off-screen
-      const container = document.createElement('div');
-      container.style.position = 'fixed';
-      container.style.left = '-9999px';
-      container.style.top = '0';
-      document.body.appendChild(container);
-
-      // Create card element
-      const cardEl = document.createElement('div');
-      cardEl.style.width = PVC_DISPLAY_W + 'px';
-      cardEl.style.height = PVC_DISPLAY_H + 'px';
-      cardEl.style.borderRadius = '14px';
-      cardEl.style.overflow = 'hidden';
-      cardEl.style.fontFamily = "'Inter', 'Space Grotesk', sans-serif";
-      cardEl.style.background = '#FFFFFF';
-      cardEl.style.position = 'relative';
-
-      const zoneName = (eleve.zones_transport as any)?.nom || '—';
-      const expDate = recharge ? new Date(recharge.date_expiration).toLocaleDateString('fr-FR') : '';
-
-      cardEl.innerHTML = `
-        <svg style="position:absolute;bottom:0;left:0;width:100%;height:100px" viewBox="0 0 460 100" preserveAspectRatio="none">
-          <path d="M0,45 C90,0 180,70 270,35 C340,10 400,55 460,25 L460,100 L0,100 Z" fill="#F87171" opacity="0.6"/>
-          <path d="M0,60 C70,30 160,75 250,50 C330,30 400,70 460,42 L460,100 L0,100 Z" fill="#4ADE80" opacity="0.5"/>
-        </svg>
-        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0.1;pointer-events:none">
-          <img src="${transportMapWatermark}" style="width:85%;height:85%;object-fit:contain" crossorigin="anonymous"/>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px 4px;position:relative;z-index:10">
-          ${schoolConfig?.logo_url
-            ? `<img src="${schoolConfig.logo_url}" style="height:40px;width:40px;border-radius:50%;object-fit:cover" crossorigin="anonymous"/>`
-            : '<div style="height:40px;width:40px;border-radius:50%;background:#EFF6FF;display:flex;align-items:center;justify-content:center">🚌</div>'}
-          <p style="font-size:13px;color:#DC2626;font-weight:900;text-transform:uppercase;text-align:center;line-height:1.2">${schoolConfig?.nom || 'École'}</p>
-        </div>
-        <div style="display:flex;gap:12px;padding:6px 16px 0;position:relative;z-index:10;height:150px">
-          <div style="width:80px;height:100px;border-radius:8px;overflow:hidden;background:#F3F4F6;border:1px solid #E5E7EB;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.12)">
-            ${eleve.photo_url
-              ? `<img src="${eleve.photo_url}" style="width:100%;height:100%;object-fit:cover;object-position:center 20%" crossorigin="anonymous"/>`
-              : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;color:#9CA3AF">Photo</div>'}
-          </div>
-          <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:2px 0">
-            <div>
-              <p style="font-size:16px;font-weight:800;color:#1F2937;line-height:1.1">${eleve.prenom} ${eleve.nom}</p>
-              <div style="margin-top:6px">
-                <p style="font-size:7px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.05em">Matricule</p>
-                <p style="font-size:10px;font-weight:600;color:#374151;font-family:monospace">${eleve.matricule || '—'}</p>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:4px;margin-top:4px">
-              <span style="font-size:9px;font-weight:700;color:#1E40AF">📍 LIGNE : ${zoneName}</span>
-            </div>
-            ${recharge ? `
-              <div style="margin-top:4px;display:flex;align-items:center;gap:8px">
-                <span style="background:#D1FAE5;font-size:7px;font-weight:600;color:#065F46;border-radius:9999px;padding:2px 8px">● ACTIVE</span>
-                <span style="font-size:8px;color:#6B7280">Expire le ${expDate}</span>
-              </div>` : ''}
-          </div>
-          <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-            <div style="background:#FFF;border-radius:8px;padding:6px;box-shadow:0 1px 6px rgba(0,0,0,0.1);border:2px solid #E5E7EB" id="qr-placeholder-${eleve.id}"></div>
-            <p style="font-size:6px;color:#9CA3AF;margin-top:3px">Scanner pour valider</p>
-          </div>
-        </div>
-        <div style="position:absolute;bottom:6px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;z-index:10">
-          <p style="font-size:7px;color:#111827;font-weight:700">${schoolConfig?.ville || 'Conakry, Guinée'}</p>
-          <p style="font-size:6px;color:#111827;font-weight:600">Carte permanente • Rechargeable</p>
-        </div>
-      `;
-
-      container.appendChild(cardEl);
-
-      // Render QR code into placeholder
-      const qrPlaceholder = cardEl.querySelector(`#qr-placeholder-${eleve.id}`);
-      if (qrPlaceholder) {
-        const qrCanvas = document.createElement('canvas');
-        const { QRCodeCanvas: _Q } = await import('qrcode.react');
-        // Use simple canvas QR approach
-        const { toCanvas } = await import('qrcode');
-        await toCanvas(qrCanvas, JSON.stringify({ type: 'transport', matricule: eleve.matricule, id: eleve.id }), {
-          width: 90,
-          margin: 0,
-          errorCorrectionLevel: 'H',
-        });
-        qrPlaceholder.appendChild(qrCanvas);
-      }
-
-      // Wait for images to load
-      await new Promise(r => setTimeout(r, 500));
-
-      try {
-        const resizedCanvas = await captureCardCanvas(cardEl);
-        const blob = await new Promise<Blob | null>(resolve => resizedCanvas.toBlob(resolve, 'image/png', 1));
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `carte_transport_${eleve.matricule || eleve.id}.png`;
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          setTimeout(() => URL.revokeObjectURL(url), 5000);
-          exported++;
-        }
-      } catch (err) {
-        console.error('Export error for', eleve.matricule, err);
-      }
-
-      document.body.removeChild(container);
-      // Small delay between downloads
-      await new Promise(r => setTimeout(r, 300));
+    try {
+      const cards: TransportCardExportData[] = toExport.map((e: any) => {
+        const recharge = getActiveRecharge(e.id);
+        return buildCardData(e, recharge);
+      });
+      await exportBulkTransportCards(
+        cards,
+        schoolConfig?.nom || 'École',
+        schoolConfig?.logo_url,
+        schoolConfig?.ville
+      );
+      toast({ title: `${cards.length} carte(s) exportées en PDF`, description: 'Format PVC CR80 — prêt pour impression' });
+    } catch {
+      toast({ title: 'Erreur export', variant: 'destructive' });
     }
-
     setBulkDownloading(false);
-    toast({ title: `${exported} carte(s) exportée(s)`, description: 'Format PVC CR80 — 300 DPI' });
   };
 
   const totalActives = eleves.filter((e: any) => getActiveRecharge(e.id)).length;
@@ -949,7 +791,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => setPrintCard(null)}>Fermer</Button>
                 <Button onClick={exportCard}>
-                  <Download className="h-4 w-4 mr-1" /> Exporter PNG
+                  <FileText className="h-4 w-4 mr-1" /> Exporter PDF
                 </Button>
               </div>
             </div>
