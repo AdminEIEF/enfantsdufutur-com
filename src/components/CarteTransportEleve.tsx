@@ -34,7 +34,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   const [bulkLoading, setBulkLoading] = useState(false);
   const [bulkDownloading, setBulkDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const bulkCardRef = useRef<HTMLDivElement>(null);
+  
 
   const MOIS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   const moisCourant = MOIS_FR[new Date().getMonth()];
@@ -791,7 +791,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => setPrintCard(null)}>Fermer</Button>
                 <Button onClick={exportCard}>
-                  <Download className="h-4 w-4 mr-1" /> Exporter PNG
+                  <FileText className="h-4 w-4 mr-1" /> Exporter PDF
                 </Button>
               </div>
             </div>
