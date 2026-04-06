@@ -38,7 +38,7 @@ async function loadImageAsDataURL(url: string): Promise<string | null> {
 
 async function generateQRDataURL(data: string): Promise<string> {
   return QRCode.toDataURL(data, {
-    width: 300,
+    width: 600,
     margin: 0,
     errorCorrectionLevel: 'H',
     color: { dark: '#000000', light: '#FFFFFF' },
@@ -94,25 +94,28 @@ async function drawSingleCard(pdf: jsPDF, card: CardData, offsetX = 0, offsetY =
   const x = offsetX;
   const y = offsetY;
 
-  // White background with rounded corners
+  // Subtle warm background gradient (simulated with layered rects)
   pdf.setFillColor(255, 255, 255);
   pdf.roundedRect(x, y, CARD_W, CARD_H, 3, 3, 'F');
 
+  // Light cream tint at top for warmth
+  pdf.setFillColor(254, 252, 248);
+  pdf.setGState(new (pdf as any).GState({ opacity: 0.7 }));
+  pdf.roundedRect(x, y, CARD_W, CARD_H * 0.6, 3, 0, 'F');
+  pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
+
   // Border
-  pdf.setDrawColor(229, 231, 235);
-  pdf.setLineWidth(0.3);
+  pdf.setDrawColor(200, 205, 215);
+  pdf.setLineWidth(0.4);
   pdf.roundedRect(x, y, CARD_W, CARD_H, 3, 3, 'S');
 
-  // Save state and clip to card area for waves
+  // Save state
   pdf.saveGraphicsState();
-  // Draw waves relative to card position
-  const savedX = x;
-  const savedY = y;
-  
-  // Waves at bottom
+
+  // Waves at bottom (always rendered)
   drawWavesAt(pdf, x, y);
 
-  // Reset opacity
+  // Reset opacity after waves
   pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
 
   // School header
