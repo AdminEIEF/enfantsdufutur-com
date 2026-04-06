@@ -278,7 +278,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       const bScore = bPaid && !bRecharged ? 0 : !bPaid ? 1 : 2;
       return aScore - bScore;
     });
-  }, [eleves, search, filterZone, paiementsTransport, recharges]);
+  }, [eleves, search, filterZone, filterClasse, paiementsTransport, recharges]);
 
   // PVC card dimensions: CR80 standard 85.6mm × 54mm
   const PVC_DISPLAY_W = 460;
