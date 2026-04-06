@@ -214,26 +214,55 @@ export default function Transport() {
     if (!cardRef.current) return;
 
     try {
-      // Wait for all custom fonts to be fully loaded before capture
+      // 1. Wait for all custom fonts to be fully loaded
       await document.fonts.ready;
+
+      // 2. Wait for all images (watermark, logo, photo) to be fully loaded
+      const images = cardRef.current.querySelectorAll('img');
+      await Promise.all(
+        Array.from(images).map(
+          (img) =>
+            new Promise<void>((resolve) => {
+              if (img.complete && img.naturalHeight > 0) return resolve();
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+            })
+        )
+      );
 
       const canvas = await html2canvas(cardRef.current, {
         scale: 3,
         useCORS: true,
         allowTaint: false,
-        backgroundColor: '#FFFFFF',
-        imageTimeout: 15000,
+        backgroundColor: null, // Transparent — capture actual backgrounds
+        imageTimeout: 20000,
         logging: false,
         onclone: (clonedDoc) => {
-          // Apply text rendering optimizations to the cloned card
-          const cardEl = clonedDoc.querySelector('[data-transport-card]') as HTMLElement || clonedDoc.body;
+          const cardEl = clonedDoc.querySelector('[data-transport-card]') as HTMLElement;
           if (cardEl) {
+            // Force print background colors & images
+            (cardEl.style as any).webkitPrintColorAdjust = 'exact';
+            (cardEl.style as any).printColorAdjust = 'exact';
+            (cardEl.style as any).colorAdjust = 'exact';
             (cardEl.style as any).textRendering = 'optimizeLegibility';
             (cardEl.style as any).webkitFontSmoothing = 'antialiased';
             (cardEl.style as any).mozOsxFontSmoothing = 'grayscale';
             cardEl.style.fontKerning = 'normal';
+            // Ensure white background is rendered
+            cardEl.style.backgroundColor = '#FFFFFF';
           }
 
+          // Ensure watermark img is visible (absolute positioned <img>)
+          clonedDoc.querySelectorAll('img').forEach((img: HTMLImageElement) => {
+            img.setAttribute('crossOrigin', 'anonymous');
+            // Force visibility of watermark images
+            if (img.alt === '' && img.closest('.pointer-events-none')) {
+              img.style.opacity = '0.10';
+              img.style.visibility = 'visible';
+            }
+          });
+
+          // Force SVG wave colors
           clonedDoc.querySelectorAll('svg path').forEach((node) => {
             const path = node as SVGPathElement;
             const fill = path.getAttribute('fill')?.toLowerCase();
@@ -252,6 +281,7 @@ export default function Transport() {
             }
           });
 
+          // Force ACTIVE badge colors
           clonedDoc.querySelectorAll('div').forEach((node) => {
             if (node.textContent?.includes('● ACTIVE')) {
               const badge = node as HTMLElement;
@@ -266,7 +296,7 @@ export default function Transport() {
 
       canvas.toBlob((blob) => {
         if (!blob) {
-          toast({ title: 'Erreur export', description: 'Impossible de générer l’image.', variant: 'destructive' });
+          toast({ title: 'Erreur export', description: "Impossible de générer l'image.", variant: 'destructive' });
           return;
         }
 
@@ -750,6 +780,7 @@ export default function Transport() {
                 {/* Carte PVC */}
                 <div
                   ref={cardRef}
+                  data-transport-card
                   className="relative mx-auto overflow-hidden"
                   style={{
                     width: 400, height: 252, borderRadius: 14,
