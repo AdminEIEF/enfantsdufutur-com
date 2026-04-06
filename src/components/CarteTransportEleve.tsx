@@ -27,10 +27,13 @@ interface CarteTransportEleveProps {
 export default function CarteTransportEleve({ zones }: CarteTransportEleveProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { hasRole } = useAuth();
+  const isSuperviseur = hasRole('superviseur');
   const { data: schoolConfig } = useSchoolConfig();
   const [search, setSearch] = useState('');
   const [filterZone, setFilterZone] = useState('all');
   const [filterClasse, setFilterClasse] = useState('all');
+  const [printTab, setPrintTab] = useState('a_imprimer');
   const [rechargeDialog, setRechargeDialog] = useState<any>(null);
   const [printCard, setPrintCard] = useState<any>(null);
   const [cashPayDialog, setCashPayDialog] = useState<any>(null);
@@ -38,6 +41,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [bulkDownloading, setBulkDownloading] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<{ eleves: any[]; action: 'single' | 'bulk' } | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   
 
