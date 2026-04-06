@@ -780,13 +780,13 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
           <DialogHeader><DialogTitle>Carte de transport scolaire</DialogTitle></DialogHeader>
           {printCard && (
             <div className="space-y-4">
-              {/* PVC Card — 85.6mm x 54mm ratio = ~1.585 */}
+              {/* PVC Card — CR80 standard 85.6mm × 54mm */}
                <div
                 ref={cardRef}
                 className="relative mx-auto overflow-hidden"
                 style={{
-                  width: 460,
-                  height: 230,
+                  width: PVC_DISPLAY_W,
+                  height: PVC_DISPLAY_H,
                   borderRadius: 14,
                   fontFamily: "'Inter', 'Space Grotesk', sans-serif",
                   background: '#FFFFFF',
