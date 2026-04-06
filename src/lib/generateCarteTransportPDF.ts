@@ -164,25 +164,31 @@ async function drawSingleCard(pdf: jsPDF, card: CardData, ox = 0, oy = 0) {
     pdf.text('Photo', ox + PHOTO_X + PHOTO_W / 2, oy + PHOTO_Y + PHOTO_H / 2 + 1, { align: 'center' });
   }
 
-  // 6. Student name (absolute)
+  // 6. Student name (absolute, multi-line safe)
   const ix = ox + INFO_X;
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(9);
   pdf.setTextColor(31, 41, 55);
   const fullName = `${card.prenom} ${card.nom}`;
-  // Truncate if too long to avoid overlapping QR
-  const maxNameW = QR_X - INFO_X - 2;
-  pdf.text(fullName, ix, oy + NAME_Y, { maxWidth: maxNameW });
+  const maxNameW = QR_X - INFO_X - 4; // extra margin to never touch QR
+  const nameLines: string[] = pdf.splitTextToSize(fullName, maxNameW);
+  // Limit to 2 lines max, truncate if needed
+  if (nameLines.length > 2) nameLines.length = 2;
+  const nameLineH = 3.5; // line height in mm
+  pdf.text(nameLines, ix, oy + NAME_Y);
+  const nameBottomY = NAME_Y + (nameLines.length - 1) * nameLineH;
 
-  // 7. Matricule (absolute)
+  // 7. Matricule (positioned below name, never overlapping)
+  const matriculeLabelY = Math.max(MATRICULE_LABEL_Y, nameBottomY + 2.5);
+  const matriculeValueY = matriculeLabelY + 3.5;
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(4);
   pdf.setTextColor(156, 163, 175);
-  pdf.text('MATRICULE', ix, oy + MATRICULE_LABEL_Y);
+  pdf.text('MATRICULE', ix, oy + matriculeLabelY);
   pdf.setFont('courier', 'bold');
   pdf.setFontSize(6.5);
   pdf.setTextColor(55, 65, 81);
-  pdf.text(card.matricule || '—', ix, oy + MATRICULE_VALUE_Y);
+  pdf.text(card.matricule || '—', ix, oy + matriculeValueY);
 
   // 8. Zone / Ligne (absolute — centered in blue badge)
   const ligneText = `LIGNE : ${card.zoneName}`;

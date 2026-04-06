@@ -720,7 +720,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                   {/* Info */}
                   <div className="flex-1 flex flex-col justify-between py-0.5">
                     <div>
-                      <p style={{ fontSize: 16, fontWeight: 800, color: '#1F2937', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+                      <p style={{ fontSize: 16, fontWeight: 800, color: '#1F2937', lineHeight: 1.1, letterSpacing: '-0.02em', maxWidth: 'calc(100% - 10px)', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                         {printCard.prenom} {printCard.nom}
                       </p>
                       <div className="mt-1.5">
