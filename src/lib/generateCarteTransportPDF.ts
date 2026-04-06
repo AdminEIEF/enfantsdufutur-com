@@ -95,9 +95,15 @@ function drawFooterBar(pdf: jsPDF, ox: number, oy: number, ville?: string) {
   // City name centered on footer bar
   if (ville) {
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(4);
+    pdf.setFontSize(3.5);
     pdf.setTextColor(255, 255, 255);
-    pdf.text(ville.toUpperCase(), ox + CARD_W / 2, barY + barH / 2 + 1, { align: 'center' });
+    const footerText = `${ville.toUpperCase()} — CARTE PERMANENTE • RECHARGEABLE`;
+    pdf.text(footerText, ox + CARD_W / 2, barY + barH / 2 + 1, { align: 'center' });
+  } else {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(3.5);
+    pdf.setTextColor(255, 255, 255);
+    pdf.text('CARTE PERMANENTE • RECHARGEABLE', ox + CARD_W / 2, barY + barH / 2 + 1, { align: 'center' });
   }
 }
 
