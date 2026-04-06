@@ -783,8 +783,8 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 <div className="absolute bottom-0 left-0 right-0 z-20" style={{ height: '8%' }}>
                   <img src={transportFooterImg} alt="" className="w-full h-full object-cover" style={{ display: 'block' }} />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <p style={{ fontSize: 7, fontWeight: 800, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: 1, lineHeight: 1 }}>
-                      {schoolConfig?.ville ? `${schoolConfig.ville} — ` : ''}Carte permanente • Rechargeable
+                    <p style={{ fontSize: 9, fontWeight: 900, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: 1.2, lineHeight: 1, marginTop: -2 }}>
+                      {schoolConfig?.ville ? `${schoolConfig.ville} — ` : ''}CARTE PERMANENTE • RECHARGEABLE
                     </p>
                   </div>
                 </div>
