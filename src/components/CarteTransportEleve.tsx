@@ -472,7 +472,12 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
           variant="outline"
           size="sm"
           disabled={bulkDownloading || (bulkMode && selectedIds.size === 0)}
-          onClick={exportBulkCards}
+          onClick={() => {
+            const toExport = bulkMode && selectedIds.size > 0
+              ? filteredEleves.filter((e: any) => selectedIds.has(e.id))
+              : filteredEleves;
+            checkDuplicatesAndExport(toExport, 'bulk');
+          }}
         >
           <Printer className="h-3.5 w-3.5 mr-1" />
           {bulkDownloading ? 'Export en cours…' : bulkMode && selectedIds.size > 0 ? `Planche A4 — ${selectedIds.size} carte(s)` : filterClasse !== 'all' ? `Planche A4 — classe ${uniqueClasses.find(c => c.id === filterClasse)?.nom || ''}` : 'Planche A4 — toutes les cartes'}
