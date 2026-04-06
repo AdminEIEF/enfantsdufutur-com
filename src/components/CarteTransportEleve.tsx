@@ -26,6 +26,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   const { data: schoolConfig } = useSchoolConfig();
   const [search, setSearch] = useState('');
   const [filterZone, setFilterZone] = useState('all');
+  const [filterClasse, setFilterClasse] = useState('all');
   const [rechargeDialog, setRechargeDialog] = useState<any>(null);
   const [printCard, setPrintCard] = useState<any>(null);
   const [cashPayDialog, setCashPayDialog] = useState<any>(null);
