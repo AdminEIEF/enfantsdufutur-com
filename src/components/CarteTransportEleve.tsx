@@ -15,6 +15,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { useState, useMemo } from 'react';
 import transportMapWatermark from '@/assets/transport-bg.jpg';
 import transportFooterImg from '@/assets/transport-footer.png';
+import transportBusWatermark from '@/assets/transport-bus-watermark.jpg';
 import { exportSingleTransportCard, exportBulkTransportCards, type TransportCardExportData } from '@/lib/generateCarteTransportPDF';
 
 interface CarteTransportEleveProps {
@@ -688,6 +689,11 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 {/* Map watermark */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-[0.10] pointer-events-none">
                   <img src={transportMapWatermark} alt="" className="w-[85%] h-[85%] object-contain" crossOrigin="anonymous" />
+                </div>
+
+                {/* Bus watermark – bottom-right near photo */}
+                <div className="absolute pointer-events-none opacity-[0.12] z-[5]" style={{ bottom: '18%', left: 4, width: 55, height: 40 }}>
+                  <img src={transportBusWatermark} alt="" className="w-full h-full object-contain" crossOrigin="anonymous" />
                 </div>
 
                 {/* Header */}
