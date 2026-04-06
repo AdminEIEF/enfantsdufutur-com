@@ -69,7 +69,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, classe_id, photo_url, type_trajet_transport, classes(nom), zone_transport_id, zones_transport:zone_transport_id(id, nom, prix_mensuel, prix_aller_simple, prix_retour_simple, chauffeur_bus)')
+        .select('id, nom, prenom, matricule, classe_id, photo_url, type_trajet_transport, print_status, print_count, last_printed_at, classes(nom), zone_transport_id, zones_transport:zone_transport_id(id, nom, prix_mensuel, prix_aller_simple, prix_retour_simple, chauffeur_bus)')
         .not('zone_transport_id', 'is', null)
         .eq('statut', 'inscrit')
         .order('nom');
