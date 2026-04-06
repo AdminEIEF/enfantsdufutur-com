@@ -400,6 +400,13 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
             {zones.map((z: any) => <SelectItem key={z.id} value={z.id}>{z.nom}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={filterClasse} onValueChange={setFilterClasse}>
+          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Classe" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes les classes</SelectItem>
+            {uniqueClasses.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Button
           variant={bulkMode ? 'default' : 'outline'}
           size="sm"
@@ -415,7 +422,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
           onClick={exportBulkCards}
         >
           <Printer className="h-3.5 w-3.5 mr-1" />
-          {bulkDownloading ? 'Export en cours…' : bulkMode && selectedIds.size > 0 ? `Planche A4 — ${selectedIds.size} carte(s)` : 'Planche A4 — toutes les cartes'}
+          {bulkDownloading ? 'Export en cours…' : bulkMode && selectedIds.size > 0 ? `Planche A4 — ${selectedIds.size} carte(s)` : filterClasse !== 'all' ? `Planche A4 — classe ${uniqueClasses.find(c => c.id === filterClasse)?.nom || ''}` : 'Planche A4 — toutes les cartes'}
         </Button>
       </div>
 
