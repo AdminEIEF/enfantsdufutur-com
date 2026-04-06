@@ -250,11 +250,22 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     );
   };
 
+  const uniqueClasses = useMemo(() => {
+    const classMap = new Map<string, string>();
+    eleves.forEach((e: any) => {
+      if (e.classes?.nom && e.classe_id) classMap.set(e.classe_id, e.classes.nom);
+    });
+    return Array.from(classMap.entries())
+      .map(([id, nom]) => ({ id, nom }))
+      .sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { numeric: true }));
+  }, [eleves]);
+
   const filteredEleves = useMemo(() => {
     const filtered = eleves.filter((e: any) => {
       const matchSearch = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase());
       const matchZone = filterZone === 'all' || e.zone_transport_id === filterZone;
-      return matchSearch && matchZone;
+      const matchClasse = filterClasse === 'all' || e.classe_id === filterClasse;
+      return matchSearch && matchZone && matchClasse;
     });
     // Sort: pending validation (paid but not recharged) first, then not paid, then already recharged
     return filtered.sort((a: any, b: any) => {
