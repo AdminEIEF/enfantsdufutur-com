@@ -74,49 +74,23 @@ async function generateQRDataURL(data: string): Promise<string> {
   });
 }
 
-// ── Footer waves (absolute from card origin, fixed 10% height) ──
-function drawWavesAt(pdf: jsPDF, ox: number, oy: number) {
-  const footerH = CARD_H * 0.25; // 25% of card height
-  const baseY = oy + CARD_H - footerH;
-
-  // Red band — #E12F3F
-  pdf.setFillColor(225, 47, 63);
-  pdf.setGState(new (pdf as any).GState({ opacity: 0.95 }));
-
-  const pts1: number[][] = [];
-  for (let i = 0; i <= 100; i++) {
-    const t = i / 100;
-    pts1.push([
-      ox + t * CARD_W,
-      baseY + footerH * 0.3 * Math.sin(t * Math.PI * 2.5 + 0.5) + footerH * 0.15,
-    ]);
+// ── Footer gradient bar (matching badge scolaire style) ──
+function drawFooterBar(pdf: jsPDF, ox: number, oy: number) {
+  const barH = CARD_H * 0.08; // 8% of card height
+  const barY = oy + CARD_H - barH;
+  const barW = CARD_W;
+  const steps = 4;
+  const colors = [
+    [192, 57, 43],   // #c0392b
+    [169, 50, 38],   // #a93226
+    [30, 132, 73],   // #1e8449
+    [25, 111, 61],   // #196f3d
+  ];
+  const stepW = barW / steps;
+  for (let i = 0; i < steps; i++) {
+    pdf.setFillColor(colors[i][0], colors[i][1], colors[i][2]);
+    pdf.rect(ox + i * stepW, barY, stepW + 0.5, barH, 'F');
   }
-  pts1.push([ox + CARD_W, oy + CARD_H], [ox, oy + CARD_H]);
-
-  const lines1: number[][] = [];
-  for (let i = 1; i < pts1.length; i++) {
-    lines1.push([pts1[i][0] - pts1[i - 1][0], pts1[i][1] - pts1[i - 1][1]]);
-  }
-  (pdf as any).lines(lines1, pts1[0][0], pts1[0][1], [1, 1], 'F', false);
-
-  // Green wave — #438B62
-  pdf.setFillColor(67, 139, 98);
-
-  const pts2: number[][] = [];
-  for (let i = 0; i <= 100; i++) {
-    const t = i / 100;
-    pts2.push([
-      ox + t * CARD_W,
-      baseY + footerH * 0.3 * Math.sin(t * Math.PI * 2 + 1) + footerH * 0.55,
-    ]);
-  }
-  pts2.push([ox + CARD_W, oy + CARD_H], [ox, oy + CARD_H]);
-
-  const lines2: number[][] = [];
-  for (let i = 1; i < pts2.length; i++) {
-    lines2.push([pts2[i][0] - pts2[i - 1][0], pts2[i][1] - pts2[i - 1][1]]);
-  }
-  (pdf as any).lines(lines2, pts2[0][0], pts2[0][1], [1, 1], 'F', false);
 }
 
 // ── Draw one card at absolute offset ──
@@ -138,9 +112,8 @@ async function drawSingleCard(pdf: jsPDF, card: CardData, ox = 0, oy = 0) {
 
   pdf.saveGraphicsState();
 
-  // 2. Waves (always rendered)
-  drawWavesAt(pdf, ox, oy);
-  pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
+  // 2. Footer bar (always rendered)
+  drawFooterBar(pdf, ox, oy);
 
   // (no header line)
 

@@ -815,11 +815,8 @@ export default function Transport() {
                     boxShadow: '0 4px 24px rgba(0,0,0,0.13)',
                   }}
                 >
-                  {/* Footer waves — matching reference card design */}
-                  <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" style={{ height: '25%' }} shapeRendering="geometricPrecision">
-                    <path d="M0,20 C50,5 100,30 160,15 C220,0 280,25 340,10 C370,3 390,8 400,5 L400,60 L0,60 Z" fill="#E12F3F" opacity="0.95" />
-                    <path d="M0,35 C60,22 130,45 200,30 C270,15 330,38 400,25 L400,60 L0,60 Z" fill="#438B62" opacity="0.95" />
-                  </svg>
+                  {/* Footer bar — same as badge scolaire */}
+                  <div className="absolute bottom-0 left-0 right-0" style={{ height: '8%', background: 'linear-gradient(90deg, #c0392b, #a93226, #1e8449, #196f3d)' }} />
                    <div className="absolute inset-0 flex items-center justify-center opacity-[0.10] pointer-events-none">
                      <img src={transportMapWatermark} alt="" className="w-[85%] h-[85%] object-contain" crossOrigin="anonymous" />
                    </div>
