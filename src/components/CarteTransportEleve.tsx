@@ -796,13 +796,11 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                   </div>
                 </div>
 
-                {/* Footer bar with city */}
-                <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center" style={{ height: '8%' }}>
-                  {schoolConfig?.ville && (
-                    <p style={{ fontSize: 7, fontWeight: 800, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: 1 }}>
-                      {schoolConfig.ville}
-                    </p>
-                  )}
+                {/* Footer bar with city + type */}
+                <div className="absolute bottom-0 left-0 right-0 z-20 flex flex-col items-center justify-center" style={{ height: '8%' }}>
+                  <p style={{ fontSize: 7, fontWeight: 800, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: 1, lineHeight: 1 }}>
+                    {schoolConfig?.ville ? `${schoolConfig.ville} — ` : ''}Carte permanente • Rechargeable
+                  </p>
                 </div>
               </div>
 
