@@ -661,40 +661,17 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                   height: PVC_DISPLAY_H,
                   borderRadius: 14,
                   fontFamily: "'Inter', 'Space Grotesk', sans-serif",
-                  background: '#FFFFFF',
                   boxShadow: '0 4px 24px rgba(0,0,0,0.13)',
+                  overflow: 'hidden',
                 }}
               >
-                {/* Background wave shape */}
-                <svg
-                  className="absolute bottom-0 left-0 w-full"
-                  viewBox="0 0 460 100"
-                  preserveAspectRatio="none"
-                  style={{ height: 100 }}
-                >
-                    <path
-                     d="M0,45 C90,0 180,70 270,35 C340,10 400,55 460,25 L460,100 L0,100 Z"
-                     fill="#F87171"
-                     opacity="0.6"
-                     style={{ fill: '#F87171' }}
-                   />
-                   <path
-                     d="M0,60 C70,30 160,75 250,50 C330,30 400,70 460,42 L460,100 L0,100 Z"
-                     fill="#4ADE80"
-                     opacity="0.5"
-                     style={{ fill: '#4ADE80' }}
-                   />
-                </svg>
-
-                {/* Map watermark */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-[0.10] pointer-events-none">
-                  <img src={transportMapWatermark} alt="" className="w-[85%] h-[85%] object-contain" crossOrigin="anonymous" />
-                </div>
-
-                {/* Bus watermark – bottom-right near photo */}
-                <div className="absolute pointer-events-none opacity-[0.12] z-[5]" style={{ bottom: '18%', left: 4, width: 55, height: 40 }}>
-                  <img src={transportBusWatermark} alt="" className="w-full h-full object-contain" crossOrigin="anonymous" />
-                </div>
+                {/* Full card background image */}
+                <img
+                  src={transportMapWatermark}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+                  crossOrigin="anonymous"
+                />
 
                 {/* Header */}
                 <div className="flex items-center justify-center gap-2 px-4 pt-3 pb-1 relative z-10">
