@@ -95,9 +95,9 @@ async function drawFooterBar(pdf: jsPDF, ox: number, oy: number, ville?: string)
     ? `${ville.toUpperCase()} — CARTE PERMANENTE • RECHARGEABLE`
     : 'CARTE PERMANENTE • RECHARGEABLE';
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(3.5);
+  pdf.setFontSize(5);
   pdf.setTextColor(255, 255, 255);
-  pdf.text(footerText, ox + CARD_W / 2, barY + barH / 2 + 1, { align: 'center' });
+  pdf.text(footerText, ox + CARD_W / 2, barY + barH / 2 + 0.5, { align: 'center' });
 }
 
 // ── Draw one card at absolute offset ──
