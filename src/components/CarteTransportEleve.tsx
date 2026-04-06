@@ -731,11 +731,36 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
 
                     {/* Zone / Ligne */}
                     <div
-                      className="flex items-center gap-1 rounded px-1.5 py-0.5 mt-1"
-                      style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', maxWidth: '100%', overflow: 'hidden' }}
+                      data-ligne-badge="true"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 4,
+                        borderRadius: 4,
+                        paddingLeft: 6,
+                        paddingRight: 6,
+                        paddingTop: 3,
+                        paddingBottom: 3,
+                        marginTop: 4,
+                        background: '#EFF6FF',
+                        border: '1px solid #BFDBFE',
+                        width: '100%',
+                        boxSizing: 'border-box' as any,
+                        overflow: 'hidden',
+                      }}
                     >
-                      <MapPin style={{ width: 8, height: 8, color: '#3B82F6', flexShrink: 0 }} />
-                      <span style={{ fontSize: 8, fontWeight: 600, color: '#1E40AF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <MapPin style={{ width: 9, height: 9, color: '#3B82F6', flexShrink: 0 }} />
+                      <span style={{
+                        fontSize: 8,
+                        fontWeight: 700,
+                        color: '#1E40AF',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        textAlign: 'center',
+                        flex: 1,
+                      }}>
                         LIGNE : {(printCard.zones_transport as any)?.nom || '—'}
                       </span>
                     </div>
