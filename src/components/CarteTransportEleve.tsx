@@ -603,6 +603,24 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
+                      {(e.print_status || 'en_attente') === 'imprime' ? (
+                        <div className="flex flex-col items-center gap-0.5">
+                          <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px]">
+                            Imprimé ({e.print_count || 0}x)
+                          </Badge>
+                          {e.last_printed_at && (
+                            <span className="text-[9px] text-muted-foreground">
+                              {new Date(e.last_printed_at).toLocaleDateString('fr-FR')}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px]">
+                          En attente
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
                       {recharge ? (
                         <span className={jours <= 5 ? 'text-destructive font-bold' : jours <= 10 ? 'text-warning font-medium' : ''}>
                           {jours}j
