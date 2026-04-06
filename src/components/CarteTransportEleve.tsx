@@ -904,6 +904,46 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Duplicate warning dialog */}
+      <AlertDialog open={!!duplicateWarning} onOpenChange={(open) => { if (!open) setDuplicateWarning(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Attention : Carte(s) déjà imprimée(s)
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Les élèves suivants ont déjà eu leur carte imprimée :</p>
+                <ul className="list-disc pl-4 space-y-1 text-sm">
+                  {duplicateWarning?.eleves.slice(0, 5).map((e: any) => (
+                    <li key={e.id}>
+                      <strong>{e.prenom} {e.nom}</strong> — imprimée {e.print_count} fois
+                      {e.last_printed_at && ` (dernière : ${new Date(e.last_printed_at).toLocaleDateString('fr-FR')})`}
+                    </li>
+                  ))}
+                  {(duplicateWarning?.eleves.length || 0) > 5 && (
+                    <li className="text-muted-foreground">… et {(duplicateWarning?.eleves.length || 0) - 5} autre(s)</li>
+                  )}
+                </ul>
+                <p className="font-medium">Voulez-vous vraiment générer un duplicata ?</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              const action = duplicateWarning?.action;
+              setDuplicateWarning(null);
+              if (action === 'single') doExportCard();
+              else doExportBulkCards();
+            }}>
+              Confirmer l'impression
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
