@@ -81,7 +81,7 @@ function drawWavesAt(pdf: jsPDF, ox: number, oy: number) {
 
   // Red band — #E12F3F
   pdf.setFillColor(225, 47, 63);
-  pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
+  pdf.setGState(new (pdf as any).GState({ opacity: 0.95 }));
 
   const pts1: number[][] = [];
   for (let i = 0; i <= 100; i++) {
