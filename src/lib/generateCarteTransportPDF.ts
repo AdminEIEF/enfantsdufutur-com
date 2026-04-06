@@ -76,7 +76,7 @@ async function generateQRDataURL(data: string): Promise<string> {
 }
 
 // ── Footer gradient bar (matching badge scolaire style) ──
-function drawFooterBar(pdf: jsPDF, ox: number, oy: number) {
+function drawFooterBar(pdf: jsPDF, ox: number, oy: number, ville?: string) {
   const barH = CARD_H * 0.08; // 8% of card height
   const barY = oy + CARD_H - barH;
   const barW = CARD_W;
@@ -91,6 +91,13 @@ function drawFooterBar(pdf: jsPDF, ox: number, oy: number) {
   for (let i = 0; i < steps; i++) {
     pdf.setFillColor(colors[i][0], colors[i][1], colors[i][2]);
     pdf.rect(ox + i * stepW, barY, stepW + 0.5, barH, 'F');
+  }
+  // City name centered on footer bar
+  if (ville) {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(4);
+    pdf.setTextColor(255, 255, 255);
+    pdf.text(ville.toUpperCase(), ox + CARD_W / 2, barY + barH / 2 + 1, { align: 'center' });
   }
 }
 
@@ -124,7 +131,7 @@ async function drawSingleCard(pdf: jsPDF, card: CardData, ox = 0, oy = 0) {
   pdf.saveGraphicsState();
 
   // 2. Footer bar (always rendered)
-  drawFooterBar(pdf, ox, oy);
+  drawFooterBar(pdf, ox, oy, card.schoolVille);
 
   // (no header line)
 
@@ -145,14 +152,6 @@ async function drawSingleCard(pdf: jsPDF, card: CardData, ox = 0, oy = 0) {
   const schoolNameX = card.schoolLogoUrl ? ox + LOGO_X + LOGO_SIZE + 3 : ox + CARD_W / 2;
   const schoolAlign = card.schoolLogoUrl ? 'left' : 'center';
   pdf.text(card.schoolName.toUpperCase(), schoolNameX, oy + SCHOOL_NAME_Y, { align: schoolAlign as any });
-
-  // 4b. School city/address
-  if (card.schoolVille) {
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(4.5);
-    pdf.setTextColor(107, 114, 128);
-    pdf.text(card.schoolVille, schoolNameX, oy + SCHOOL_NAME_Y + 3, { align: schoolAlign as any });
-  }
 
   // 5. Photo (absolute position)
   pdf.setFillColor(243, 244, 246);

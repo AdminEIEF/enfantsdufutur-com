@@ -706,11 +706,6 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                   <p style={{ fontSize: 13, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2, textAlign: 'center' }}>
                     {schoolConfig?.nom || 'École'}
                   </p>
-                  {schoolConfig?.ville && (
-                    <p style={{ fontSize: 7, color: '#6B7280', fontWeight: 500, textAlign: 'center', marginTop: -1 }}>
-                      {schoolConfig.ville}
-                    </p>
-                  )}
                 </div>
 
                 {/* Body */}
@@ -801,7 +796,14 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                   </div>
                 </div>
 
-                {/* Footer - no text, just color bar */}
+                {/* Footer bar with city */}
+                <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center" style={{ height: '8%' }}>
+                  {schoolConfig?.ville && (
+                    <p style={{ fontSize: 7, fontWeight: 800, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: 1 }}>
+                      {schoolConfig.ville}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="flex gap-2 justify-end">
