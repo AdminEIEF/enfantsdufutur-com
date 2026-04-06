@@ -860,10 +860,6 @@ export default function Transport() {
                       <p style={{ fontSize: 5.5, color: '#9CA3AF', marginTop: 3 }}>Scanner pour valider</p>
                     </div>
                   </div>
-                   <div className="absolute bottom-1.5 left-4 right-4 flex justify-between items-center z-10">
-                     <p style={{ fontSize: 7, color: '#FFFFFF', fontWeight: 700 }}>{schoolConfig?.ville || 'Conakry, Guinée'}</p>
-                     <p style={{ fontSize: 6, color: '#FFFFFF', fontWeight: 600 }}>Carte permanente • Rechargeable</p>
-                   </div>
                 </div>
 
                 <div className="flex gap-2 justify-end">

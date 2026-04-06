@@ -796,15 +796,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                   </div>
                 </div>
 
-                {/* Footer */}
-                <div className="absolute bottom-1.5 left-4 right-4 flex justify-between items-center z-10">
-                  <p style={{ fontSize: 7, color: '#111827', fontWeight: 700 }}>
-                    {schoolConfig?.ville || 'Conakry, Guinée'}
-                  </p>
-                  <p style={{ fontSize: 6, color: '#111827', fontWeight: 600 }}>
-                    Carte permanente • Rechargeable
-                  </p>
-                </div>
+                {/* Footer - no text, just color bar */}
               </div>
 
               <div className="flex gap-2 justify-end">
