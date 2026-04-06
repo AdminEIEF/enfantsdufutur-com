@@ -268,13 +268,65 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     });
   }, [eleves, search, filterZone, paiementsTransport, recharges]);
 
-  // PVC card dimensions: CR80 standard 85.6mm × 54mm = ratio ~1.585
+  // PVC card dimensions: CR80 standard 85.6mm × 54mm
   const PVC_DISPLAY_W = 460;
   const PVC_DISPLAY_H = 290;
-  const PVC_EXPORT_W = 1012; // 85.6mm at 300 DPI
-  const PVC_EXPORT_H = 638;  // 54mm at 300 DPI
 
-  const captureCardCanvas = async (el: HTMLElement) => {
+  const buildCardData = (eleve: any, recharge?: any): TransportCardExportData => ({
+    id: eleve.id,
+    prenom: eleve.prenom,
+    nom: eleve.nom,
+    matricule: eleve.matricule || '',
+    photoUrl: eleve.photo_url,
+    zoneName: (eleve.zones_transport as any)?.nom || '—',
+    rechargeActive: !!recharge,
+    dateExpiration: recharge ? new Date(recharge.date_expiration).toLocaleDateString('fr-FR') : undefined,
+  });
+
+  const exportCard = async () => {
+    if (!printCard) return;
+    try {
+      const cardData = buildCardData(printCard, printCard.recharge);
+      await exportSingleTransportCard(
+        cardData,
+        schoolConfig?.nom || 'École',
+        schoolConfig?.logo_url,
+        schoolConfig?.ville
+      );
+      toast({ title: 'Carte exportée en PDF (format PVC CR80)' });
+    } catch {
+      toast({ title: 'Erreur export', variant: 'destructive' });
+    }
+  };
+
+  const exportBulkCards = async () => {
+    const toExport = bulkMode && selectedIds.size > 0
+      ? filteredEleves.filter((e: any) => selectedIds.has(e.id))
+      : filteredEleves;
+
+    if (toExport.length === 0) {
+      toast({ title: 'Aucun élève sélectionné', variant: 'destructive' });
+      return;
+    }
+
+    setBulkDownloading(true);
+    try {
+      const cards: TransportCardExportData[] = toExport.map((e: any) => {
+        const recharge = getActiveRecharge(e.id);
+        return buildCardData(e, recharge);
+      });
+      await exportBulkTransportCards(
+        cards,
+        schoolConfig?.nom || 'École',
+        schoolConfig?.logo_url,
+        schoolConfig?.ville
+      );
+      toast({ title: `${cards.length} carte(s) exportées en PDF`, description: 'Format PVC CR80 — prêt pour impression' });
+    } catch {
+      toast({ title: 'Erreur export', variant: 'destructive' });
+    }
+    setBulkDownloading(false);
+  };
     const canvas = await html2canvas(el, {
       scale: 4,
       useCORS: true,
