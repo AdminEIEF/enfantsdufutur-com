@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useState, useMemo } from 'react';
-import transportMapWatermark from '@/assets/transport-map-watermark.png';
+import transportMapWatermark from '@/assets/transport-bg.jpg';
 import { exportSingleTransportCard, exportBulkTransportCards, type TransportCardExportData } from '@/lib/generateCarteTransportPDF';
 
 interface CarteTransportEleveProps {
