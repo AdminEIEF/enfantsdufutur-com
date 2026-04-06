@@ -654,6 +654,11 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                           <Button size="sm" variant="ghost" onClick={() => setPrintCard({ ...e, recharge })}>
                             <Printer className="h-3 w-3" />
                           </Button>
+                          {isSuperviseur && e.print_status === 'imprime' && (
+                            <Button size="sm" variant="ghost" onClick={() => resetPrintStatus(e.id)} title="Réinitialiser le statut">
+                              <RotateCcw className="h-3 w-3 text-muted-foreground" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     )}
