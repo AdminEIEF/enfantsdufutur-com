@@ -417,6 +417,9 @@ export default function Bulletins() {
                   setPdfLoading(true);
                   toast.info(`Génération des ${eleves.length} bulletins en cours...`);
                   try {
+                    // Wait for all custom fonts to be fully loaded
+                    await document.fonts.ready;
+
                     // Iterate through each student, render bulletin, capture to PDF
                     const { default: jsPDF } = await import('jspdf');
                     const { default: html2canvas } = await import('html2canvas');
@@ -451,6 +454,9 @@ export default function Bulletins() {
                           clEl.style.transform = 'none';
                           clEl.style.width = '794px';
                           clEl.style.maxWidth = '794px';
+                          (clEl.style as any).textRendering = 'optimizeLegibility';
+                          (clEl.style as any).webkitFontSmoothing = 'antialiased';
+                          (clEl.style as any).mozOsxFontSmoothing = 'grayscale';
                         },
                       });
                       

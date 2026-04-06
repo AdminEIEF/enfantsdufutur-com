@@ -214,6 +214,9 @@ export default function Transport() {
     if (!cardRef.current) return;
 
     try {
+      // Wait for all custom fonts to be fully loaded before capture
+      await document.fonts.ready;
+
       const canvas = await html2canvas(cardRef.current, {
         scale: 3,
         useCORS: true,
@@ -222,6 +225,15 @@ export default function Transport() {
         imageTimeout: 15000,
         logging: false,
         onclone: (clonedDoc) => {
+          // Apply text rendering optimizations to the cloned card
+          const cardEl = clonedDoc.querySelector('[data-transport-card]') as HTMLElement || clonedDoc.body;
+          if (cardEl) {
+            (cardEl.style as any).textRendering = 'optimizeLegibility';
+            (cardEl.style as any).webkitFontSmoothing = 'antialiased';
+            (cardEl.style as any).mozOsxFontSmoothing = 'grayscale';
+            cardEl.style.fontKerning = 'normal';
+          }
+
           clonedDoc.querySelectorAll('svg path').forEach((node) => {
             const path = node as SVGPathElement;
             const fill = path.getAttribute('fill')?.toLowerCase();
