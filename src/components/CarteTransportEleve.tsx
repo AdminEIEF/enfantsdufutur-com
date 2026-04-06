@@ -552,6 +552,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 {bulkMode && <TableHead className="text-right">Montant</TableHead>}
                 <TableHead className="text-center">Paiement parent</TableHead>
                 <TableHead className="text-center">Statut carte</TableHead>
+                <TableHead className="text-center">Impression</TableHead>
                 <TableHead className="text-center">Jours restants</TableHead>
                 {!bulkMode && <TableHead className="text-right">Actions</TableHead>}
               </TableRow>
