@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import transportBgUrl from '@/assets/transport-bg.jpg';
 import transportFooterUrl from '@/assets/transport-footer.png';
+import transportBusUrl from '@/assets/transport-bus-watermark.jpg';
 
 /**
  * PVC CR80 card: 85.6mm × 54mm (strict, non-responsive)
