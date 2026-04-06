@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
 import { StudentLayout } from '@/components/StudentLayout';
-import { BookOpen, Download, Eye, Loader2, Clock, FileText, Search } from 'lucide-react';
+import { BookOpen, Download, Eye, Loader2, Clock, FileText, Search, Library, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -69,157 +69,158 @@ export default function StudentLibrairie() {
   const validatedCount = articles.filter(a => a.statut === 'valide').length;
   const pendingCount = articles.filter(a => a.statut !== 'valide').length;
 
-  const categories = [...new Set(filtered.map(a => a.categorie))].sort();
-
   return (
     <StudentLayout>
       <div className="space-y-5 pb-24">
         {/* Header */}
-        <div className="text-center">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center mx-auto mb-3 shadow-lg">
-            <BookOpen className="h-7 w-7 text-white" />
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-accent/10 p-5">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="relative flex items-center gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20">
+              <Library className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-lg font-extrabold tracking-tight">Ma Bibliothèque</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {validatedCount} disponible{validatedCount > 1 ? 's' : ''}
+                {pendingCount > 0 && <span className="text-amber-600 font-semibold"> · {pendingCount} en attente</span>}
+              </p>
+            </div>
           </div>
-          <h1 className="text-xl font-extrabold">Ma Bibliothèque</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {validatedCount} livre{validatedCount > 1 ? 's' : ''} disponible{validatedCount > 1 ? 's' : ''}
-            {pendingCount > 0 && ` • ${pendingCount} en attente`}
-          </p>
         </div>
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher un livre..."
+            placeholder="Rechercher un livre…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="pl-10 rounded-xl"
+            className="pl-10 rounded-2xl bg-muted/40 border-0 focus-visible:ring-1"
           />
         </div>
 
         {/* Filter chips */}
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex gap-1.5 p-1 bg-muted/40 rounded-2xl">
           {([
-            { key: 'all', label: 'Tous', count: articles.length },
-            { key: 'valide', label: '✅ Disponibles', count: validatedCount },
-            { key: 'en_attente', label: '⏳ En attente', count: pendingCount },
-          ] as const).map(f => (
+            { key: 'all' as const, label: 'Tous', count: articles.length },
+            { key: 'valide' as const, label: 'Disponibles', count: validatedCount },
+            { key: 'en_attente' as const, label: 'En attente', count: pendingCount },
+          ]).map(f => (
             <button
               key={f.key}
               onClick={() => setActiveFilter(f.key)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
                 activeFilter === f.key
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'bg-muted/60 text-muted-foreground'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground'
               }`}
             >
-              {f.label}
+              {f.key === 'valide' && '✅'} {f.key === 'en_attente' && '⏳'} {f.label}
               {f.count > 0 && (
-                <Badge variant="secondary" className="text-[9px] px-1.5 py-0 rounded-full">{f.count}</Badge>
+                <span className={`text-[10px] font-bold ${activeFilter === f.key ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {f.count}
+                </span>
               )}
             </button>
           ))}
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Loader2 className="h-7 w-7 animate-spin text-primary" />
+            </div>
+            <p className="text-sm text-muted-foreground font-medium">Chargement…</p>
           </div>
         ) : articles.length === 0 ? (
-          <Card className="border-0 shadow-md rounded-2xl">
-            <CardContent className="py-16 text-center text-muted-foreground">
-              <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p className="text-sm font-medium">Aucun livre commandé</p>
-              <p className="text-xs mt-1">Vos livres commandés apparaîtront ici</p>
+          <Card className="border-0 shadow-sm rounded-2xl">
+            <CardContent className="py-20 text-center text-muted-foreground">
+              <Library className="h-14 w-14 mx-auto mb-3 opacity-15" />
+              <p className="text-sm font-semibold">Aucun livre commandé</p>
+              <p className="text-xs mt-1.5 max-w-xs mx-auto">Vos livres commandés par vos parents apparaîtront ici une fois validés</p>
             </CardContent>
           </Card>
         ) : filtered.length === 0 ? (
-          <Card className="border-0 shadow-md rounded-2xl">
+          <Card className="border-0 shadow-sm rounded-2xl">
             <CardContent className="py-16 text-center text-muted-foreground">
-              <Search className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p className="text-sm font-medium">Aucun résultat</p>
+              <Search className="h-12 w-12 mx-auto mb-3 opacity-15" />
+              <p className="text-sm font-semibold">Aucun résultat</p>
             </CardContent>
           </Card>
         ) : (
-          categories.map(cat => {
-            const catArticles = filtered.filter(a => a.categorie === cat);
-            if (catArticles.length === 0) return null;
-            return (
-              <div key={cat} className="space-y-2">
-                <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                  📂 {cat}
-                  <Badge variant="secondary" className="text-[10px]">{catArticles.length}</Badge>
-                </h2>
-                <div className="grid grid-cols-2 gap-2">
-                  {catArticles.map((art, i) => {
-                    const isValidated = art.statut === 'valide';
-                    return (
-                      <motion.div
-                        key={art.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                      >
-                        <Card className={`border-0 shadow-md rounded-2xl overflow-hidden transition-all ${
-                          isValidated ? 'ring-1 ring-emerald-200 dark:ring-emerald-800' : 'opacity-80'
+          <div className="grid grid-cols-2 gap-3">
+            {filtered.map((art, i) => {
+              const isValidated = art.statut === 'valide';
+              const isRoman = art.categorie?.toLowerCase() === 'roman';
+              const coverGradient = isValidated
+                ? (isRoman ? 'from-amber-600 via-orange-500 to-yellow-400' : 'from-blue-600 via-indigo-500 to-violet-500')
+                : 'from-gray-400 via-gray-500 to-gray-600';
+              return (
+                <motion.div
+                  key={art.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  className="group"
+                >
+                  {/* Book Cover */}
+                  <div className={`relative aspect-[2/3] rounded-2xl overflow-hidden shadow-md ${isValidated ? 'hover:shadow-xl' : ''} transition-all duration-300`}>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${coverGradient}`} />
+                    {/* Decorative */}
+                    <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '16px 16px' }} />
+                    {/* Content */}
+                    <div className="relative h-full flex flex-col p-3 text-white">
+                      <div className="flex items-start justify-between">
+                        <Badge className={`text-[8px] font-bold border-0 backdrop-blur-sm px-1.5 py-0 h-4 ${
+                          isValidated ? 'bg-white/25 text-white' : 'bg-black/30 text-white/80'
                         }`}>
-                          <CardContent className="p-0">
-                            <div className="flex items-center gap-3 p-3.5">
-                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-md ${
-                                isValidated
-                                  ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
-                                  : 'bg-gradient-to-br from-amber-400 to-orange-500'
-                              }`}>
-                                {isValidated ? (
-                                  <BookOpen className="h-5 w-5 text-white" />
-                                ) : (
-                                  <Clock className="h-5 w-5 text-white" />
-                                )}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold truncate">{art.nom}</p>
-                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                  <span className="text-[10px] text-muted-foreground font-medium">
-                                    {art.prix.toLocaleString()} GNF
-                                  </span>
-                                  {isValidated ? (
-                                    <Badge className="bg-emerald-600 text-[9px] px-1.5 py-0 rounded-full">
-                                      ✅ Disponible
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 rounded-full text-amber-600 border-amber-200">
-                                      ⏳ En attente
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                              {isValidated && art.fichier_url && (
-                                <div className="flex gap-1 shrink-0">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-9 w-9 p-0 text-primary"
-                                    onClick={() => { setPreviewUrl(art.fichier_url); setPreviewName(art.fichier_nom || art.nom); }}
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                  <a href={art.fichier_url} target="_blank" rel="noopener noreferrer">
-                                    <Button size="sm" variant="ghost" className="h-9 w-9 p-0 text-primary">
-                                      <Download className="h-4 w-4" />
-                                    </Button>
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })
+                          {isValidated ? '✅ Dispo' : '⏳ Attente'}
+                        </Badge>
+                        {isValidated ? (
+                          <BookOpen className="h-4 w-4 opacity-40" />
+                        ) : (
+                          <Clock className="h-4 w-4 opacity-40" />
+                        )}
+                      </div>
+                      <div className="flex-1 flex items-center justify-center px-1">
+                        <p className="text-xs font-extrabold leading-snug text-center line-clamp-4 drop-shadow-sm">{art.nom}</p>
+                      </div>
+                      <div className="flex items-end justify-between gap-1">
+                        <span className="text-[9px] font-bold bg-black/20 px-1.5 py-0.5 rounded-full backdrop-blur-sm">
+                          {art.prix.toLocaleString()} GNF
+                        </span>
+                        <span className="text-[8px] opacity-70 font-medium">{isRoman ? 'Roman' : 'Manuel'}</span>
+                      </div>
+                    </div>
+
+                    {/* Actions for validated books */}
+                    {isValidated && art.fichier_url && (
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 active:opacity-100 transition-all duration-200 flex items-center justify-center gap-3">
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          className="h-10 w-10 rounded-full shadow-lg"
+                          onClick={() => { setPreviewUrl(art.fichier_url); setPreviewName(art.fichier_nom || art.nom); }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <a href={art.fichier_url} target="_blank" rel="noopener noreferrer">
+                          <Button size="icon" variant="secondary" className="h-10 w-10 rounded-full shadow-lg">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                  {/* Title below */}
+                  <div className="mt-1.5 px-0.5">
+                    <p className="text-xs font-bold truncate">{art.nom}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
         )}
       </div>
 
@@ -245,10 +246,10 @@ export default function StudentLibrairie() {
             ) : (
               <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                 <FileText className="h-12 w-12 mb-3 opacity-30" />
-                <p className="text-sm">Aperçu non disponible pour ce format</p>
+                <p className="text-sm">Aperçu non disponible</p>
                 <a href={previewUrl || ''} target="_blank" rel="noopener noreferrer" className="mt-3">
                   <Button variant="outline" className="gap-2 rounded-xl">
-                    <Download className="h-4 w-4" /> Télécharger le fichier
+                    <Download className="h-4 w-4" /> Télécharger
                   </Button>
                 </a>
               </div>
