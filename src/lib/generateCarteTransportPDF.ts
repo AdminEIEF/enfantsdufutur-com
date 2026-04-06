@@ -2,11 +2,39 @@ import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 
 /**
- * PVC CR80 card: 85.6mm × 54mm
- * jsPDF uses mm units natively — pixel-perfect for print.
+ * PVC CR80 card: 85.6mm × 54mm (strict, non-responsive)
+ * All positions are ABSOLUTE in mm from card origin.
+ * QR Code minimum 20×20mm with 2mm quiet zone.
+ * Images rendered at 300 DPI equivalent (scale factor ×3).
  */
 const CARD_W = 85.6;
 const CARD_H = 54;
+
+// ── Absolute positions (mm from card top-left) ──
+const LOGO_X = 4;
+const LOGO_Y = 2.5;
+const LOGO_SIZE = 9;
+
+const SCHOOL_NAME_Y = 8;
+
+const PHOTO_X = 5;
+const PHOTO_Y = 13;
+const PHOTO_W = 16;
+const PHOTO_H = 21;
+
+const INFO_X = 24;
+const NAME_Y = 17;
+const MATRICULE_LABEL_Y = 21.5;
+const MATRICULE_VALUE_Y = 25;
+const LIGNE_Y = 30;
+const BADGE_Y = 33;
+
+const QR_SIZE = 20; // minimum 20mm for Hikvision
+const QR_QUIET = 2; // 2mm white quiet zone
+const QR_X = CARD_W - QR_SIZE - QR_QUIET - 3;
+const QR_Y = 13;
+
+const FOOTER_Y = CARD_H - 2.5;
 
 interface CardData {
   prenom: string;
@@ -37,251 +65,204 @@ async function loadImageAsDataURL(url: string): Promise<string | null> {
 }
 
 async function generateQRDataURL(data: string): Promise<string> {
+  // 800px for a 20mm print area = ~1016 DPI effective resolution
   return QRCode.toDataURL(data, {
-    width: 600,
+    width: 800,
     margin: 0,
     errorCorrectionLevel: 'H',
     color: { dark: '#000000', light: '#FFFFFF' },
   });
 }
 
-function drawWaves(pdf: jsPDF) {
+// ── Decorative waves (absolute from card origin) ──
+function drawWavesAt(pdf: jsPDF, ox: number, oy: number) {
   // Red wave
   pdf.setFillColor(248, 113, 113);
-  pdf.setGState(new (pdf as any).GState({ opacity: 0.6 }));
-  
-  // Approximate wave with a filled polygon
-  const redWavePoints: [number, number][] = [];
-  for (let x = 0; x <= CARD_W; x += 0.5) {
-    const t = x / CARD_W;
-    // Sinusoidal wave
-    const y = CARD_H - 18 + Math.sin(t * Math.PI * 2.5 + 0.5) * 6 + Math.cos(t * Math.PI * 1.5) * 3;
-    redWavePoints.push([x, y]);
-  }
-  redWavePoints.push([CARD_W, CARD_H]);
-  redWavePoints.push([0, CARD_H]);
+  pdf.setGState(new (pdf as any).GState({ opacity: 0.65 }));
 
-  pdf.moveTo(redWavePoints[0][0], redWavePoints[0][1]);
-  for (let i = 1; i < redWavePoints.length; i++) {
-    pdf.lineTo(redWavePoints[i][0], redWavePoints[i][1]);
+  const pts1: number[][] = [];
+  for (let i = 0; i <= 120; i++) {
+    const t = i / 120;
+    pts1.push([
+      ox + t * CARD_W,
+      oy + CARD_H - 16 + Math.sin(t * Math.PI * 2.5 + 0.5) * 5 + Math.cos(t * Math.PI * 1.5) * 3,
+    ]);
   }
-  pdf.fill();
+  pts1.push([ox + CARD_W, oy + CARD_H], [ox, oy + CARD_H]);
+
+  const lines1: number[][] = [];
+  for (let i = 1; i < pts1.length; i++) {
+    lines1.push([pts1[i][0] - pts1[i - 1][0], pts1[i][1] - pts1[i - 1][1]]);
+  }
+  (pdf as any).lines(lines1, pts1[0][0], pts1[0][1], [1, 1], 'F', false);
 
   // Green wave
   pdf.setFillColor(74, 222, 128);
-  pdf.setGState(new (pdf as any).GState({ opacity: 0.5 }));
+  pdf.setGState(new (pdf as any).GState({ opacity: 0.55 }));
 
-  const greenWavePoints: [number, number][] = [];
-  for (let x = 0; x <= CARD_W; x += 0.5) {
-    const t = x / CARD_W;
-    const y = CARD_H - 14 + Math.sin(t * Math.PI * 2 + 1) * 5 + Math.cos(t * Math.PI * 1.8 + 0.3) * 3;
-    greenWavePoints.push([x, y]);
+  const pts2: number[][] = [];
+  for (let i = 0; i <= 120; i++) {
+    const t = i / 120;
+    pts2.push([
+      ox + t * CARD_W,
+      oy + CARD_H - 12 + Math.sin(t * Math.PI * 2 + 1) * 4.5 + Math.cos(t * Math.PI * 1.8 + 0.3) * 2.5,
+    ]);
   }
-  greenWavePoints.push([CARD_W, CARD_H]);
-  greenWavePoints.push([0, CARD_H]);
+  pts2.push([ox + CARD_W, oy + CARD_H], [ox, oy + CARD_H]);
 
-  pdf.moveTo(greenWavePoints[0][0], greenWavePoints[0][1]);
-  for (let i = 1; i < greenWavePoints.length; i++) {
-    pdf.lineTo(greenWavePoints[i][0], greenWavePoints[i][1]);
+  const lines2: number[][] = [];
+  for (let i = 1; i < pts2.length; i++) {
+    lines2.push([pts2[i][0] - pts2[i - 1][0], pts2[i][1] - pts2[i - 1][1]]);
   }
-  pdf.fill();
+  (pdf as any).lines(lines2, pts2[0][0], pts2[0][1], [1, 1], 'F', false);
 
-  // Reset opacity
   pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
 }
 
-async function drawSingleCard(pdf: jsPDF, card: CardData, offsetX = 0, offsetY = 0) {
-  const x = offsetX;
-  const y = offsetY;
-
-  // Subtle warm background gradient (simulated with layered rects)
+// ── Draw one card at absolute offset ──
+async function drawSingleCard(pdf: jsPDF, card: CardData, ox = 0, oy = 0) {
+  // 1. Card background
   pdf.setFillColor(255, 255, 255);
-  pdf.roundedRect(x, y, CARD_W, CARD_H, 3, 3, 'F');
+  pdf.roundedRect(ox, oy, CARD_W, CARD_H, 3, 3, 'F');
 
-  // Light cream tint at top for warmth
+  // Subtle cream tint top half
   pdf.setFillColor(254, 252, 248);
-  pdf.setGState(new (pdf as any).GState({ opacity: 0.7 }));
-  pdf.roundedRect(x, y, CARD_W, CARD_H * 0.6, 3, 0, 'F');
+  pdf.setGState(new (pdf as any).GState({ opacity: 0.6 }));
+  pdf.rect(ox + 1, oy + 1, CARD_W - 2, CARD_H * 0.5, 'F');
   pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
 
   // Border
-  pdf.setDrawColor(200, 205, 215);
+  pdf.setDrawColor(190, 195, 210);
   pdf.setLineWidth(0.4);
-  pdf.roundedRect(x, y, CARD_W, CARD_H, 3, 3, 'S');
+  pdf.roundedRect(ox, oy, CARD_W, CARD_H, 3, 3, 'S');
 
-  // Save state
   pdf.saveGraphicsState();
 
-  // Waves at bottom (always rendered)
-  drawWavesAt(pdf, x, y);
-
-  // Reset opacity after waves
+  // 2. Waves (always rendered)
+  drawWavesAt(pdf, ox, oy);
   pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
 
-  // School header
-  let headerX = x + CARD_W / 2;
-  let logoOffset = 0;
+  // ── Header line ──
+  pdf.setDrawColor(220, 38, 38);
+  pdf.setLineWidth(0.3);
+  pdf.line(ox + 4, oy + 11, ox + CARD_W - 4, oy + 11);
 
+  // 3. School logo (absolute position)
   if (card.schoolLogoUrl) {
     try {
       const logoData = await loadImageAsDataURL(card.schoolLogoUrl);
       if (logoData) {
-        const logoSize = 8;
-        pdf.addImage(logoData, 'PNG', x + CARD_W / 2 - 18, y + 2.5, logoSize, logoSize);
-        logoOffset = 5;
+        pdf.addImage(logoData, 'PNG', ox + LOGO_X, oy + LOGO_Y, LOGO_SIZE, LOGO_SIZE);
       }
     } catch {}
   }
 
+  // 4. School name
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(7);
-  pdf.setTextColor(220, 38, 38); // red-600
-  pdf.text(card.schoolName.toUpperCase(), x + CARD_W / 2 + logoOffset, y + 7.5, { align: 'center' });
+  pdf.setTextColor(220, 38, 38);
+  const schoolNameX = card.schoolLogoUrl ? ox + LOGO_X + LOGO_SIZE + 3 : ox + CARD_W / 2;
+  const schoolAlign = card.schoolLogoUrl ? 'left' : 'center';
+  pdf.text(card.schoolName.toUpperCase(), schoolNameX, oy + SCHOOL_NAME_Y, { align: schoolAlign as any });
 
-  // Photo
-  const photoX = x + 5;
-  const photoY = y + 13;
-  const photoW = 15;
-  const photoH = 20;
-
+  // 5. Photo (absolute position)
   pdf.setFillColor(243, 244, 246);
-  pdf.roundedRect(photoX, photoY, photoW, photoH, 1.5, 1.5, 'F');
-  pdf.setDrawColor(229, 231, 235);
-  pdf.setLineWidth(0.2);
-  pdf.roundedRect(photoX, photoY, photoW, photoH, 1.5, 1.5, 'S');
+  pdf.roundedRect(ox + PHOTO_X, oy + PHOTO_Y, PHOTO_W, PHOTO_H, 1.5, 1.5, 'F');
+  pdf.setDrawColor(210, 215, 225);
+  pdf.setLineWidth(0.25);
+  pdf.roundedRect(ox + PHOTO_X, oy + PHOTO_Y, PHOTO_W, PHOTO_H, 1.5, 1.5, 'S');
 
   if (card.photoUrl) {
     try {
       const photoData = await loadImageAsDataURL(card.photoUrl);
       if (photoData) {
-        // Clip to rounded rect area
-        pdf.addImage(photoData, 'JPEG', photoX + 0.3, photoY + 0.3, photoW - 0.6, photoH - 0.6);
+        pdf.addImage(photoData, 'JPEG', ox + PHOTO_X + 0.4, oy + PHOTO_Y + 0.4, PHOTO_W - 0.8, PHOTO_H - 0.8);
       }
     } catch {}
   } else {
     pdf.setFontSize(5);
     pdf.setTextColor(156, 163, 175);
-    pdf.text('Photo', photoX + photoW / 2, photoY + photoH / 2 + 1, { align: 'center' });
+    pdf.text('Photo', ox + PHOTO_X + PHOTO_W / 2, oy + PHOTO_Y + PHOTO_H / 2 + 1, { align: 'center' });
   }
 
-  // Student name
-  const infoX = x + 23;
+  // 6. Student name (absolute)
+  const ix = ox + INFO_X;
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(9);
   pdf.setTextColor(31, 41, 55);
-  pdf.text(`${card.prenom} ${card.nom}`, infoX, y + 17);
+  const fullName = `${card.prenom} ${card.nom}`;
+  // Truncate if too long to avoid overlapping QR
+  const maxNameW = QR_X - INFO_X - 2;
+  pdf.text(fullName, ix, oy + NAME_Y, { maxWidth: maxNameW });
 
-  // Matricule
+  // 7. Matricule (absolute)
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(4);
   pdf.setTextColor(156, 163, 175);
-  pdf.text('MATRICULE', infoX, y + 21);
+  pdf.text('MATRICULE', ix, oy + MATRICULE_LABEL_Y);
   pdf.setFont('courier', 'bold');
-  pdf.setFontSize(6);
+  pdf.setFontSize(6.5);
   pdf.setTextColor(55, 65, 81);
-  pdf.text(card.matricule || '—', infoX, y + 24);
+  pdf.text(card.matricule || '—', ix, oy + MATRICULE_VALUE_Y);
 
-  // Zone/Ligne
+  // 8. Zone / Ligne (absolute)
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(5);
-  pdf.setTextColor(30, 64, 175); // blue-800
-  pdf.text(`📍 LIGNE : ${card.zoneName}`, infoX, y + 29);
+  pdf.setFontSize(5.5);
+  pdf.setTextColor(30, 64, 175);
+  pdf.text(`LIGNE : ${card.zoneName}`, ix, oy + LIGNE_Y);
 
-  // Active badge
+  // 9. Active badge (absolute)
   if (card.rechargeActive && card.dateExpiration) {
-    pdf.setFillColor(209, 250, 229); // green-100
-    pdf.roundedRect(infoX, y + 31, 10, 3.5, 1, 1, 'F');
+    pdf.setFillColor(209, 250, 229);
+    pdf.roundedRect(ix, oy + BADGE_Y, 11, 3.5, 1, 1, 'F');
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(3.5);
     pdf.setTextColor(6, 95, 70);
-    pdf.text('● ACTIVE', infoX + 5, y + 33.3, { align: 'center' });
+    pdf.text('ACTIVE', ix + 5.5, oy + BADGE_Y + 2.6, { align: 'center' });
 
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(4);
     pdf.setTextColor(107, 114, 128);
-    pdf.text(`Expire le ${card.dateExpiration}`, infoX + 12, y + 33.3);
+    pdf.text(`Exp. ${card.dateExpiration}`, ix + 13, oy + BADGE_Y + 2.6);
   }
 
-  // QR Code
-  const qrSize = 17;
-  const qrX = x + CARD_W - qrSize - 6;
-  const qrY = y + 14;
+  // 10. QR Code (absolute position, 20×20mm + 2mm quiet zone)
+  const qrBoxX = ox + QR_X - QR_QUIET;
+  const qrBoxY = oy + QR_Y - QR_QUIET;
+  const qrBoxSize = QR_SIZE + QR_QUIET * 2;
 
-  // QR background
+  // White quiet zone background
   pdf.setFillColor(255, 255, 255);
-  pdf.setDrawColor(229, 231, 235);
-  pdf.setLineWidth(0.4);
-  pdf.roundedRect(qrX - 1.5, qrY - 1.5, qrSize + 3, qrSize + 3, 1.5, 1.5, 'FD');
+  pdf.setDrawColor(220, 225, 235);
+  pdf.setLineWidth(0.3);
+  pdf.roundedRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 1.5, 1.5, 'FD');
 
   try {
     const qrData = JSON.stringify({ type: 'transport', matricule: card.matricule, id: card.matricule });
     const qrDataURL = await generateQRDataURL(qrData);
-    pdf.addImage(qrDataURL, 'PNG', qrX, qrY, qrSize, qrSize);
+    pdf.addImage(qrDataURL, 'PNG', ox + QR_X, oy + QR_Y, QR_SIZE, QR_SIZE);
   } catch {}
 
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(3);
-  pdf.setTextColor(156, 163, 175);
-  pdf.text('Scanner pour valider', qrX + qrSize / 2, qrY + qrSize + 3, { align: 'center' });
+  pdf.setTextColor(140, 145, 160);
+  pdf.text('Scanner pour valider', ox + QR_X + QR_SIZE / 2, oy + QR_Y + QR_SIZE + QR_QUIET + 1.5, { align: 'center' });
 
-  // Footer
+  // 11. Footer (absolute)
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(3.5);
-  pdf.setTextColor(17, 24, 39);
-  pdf.text(card.schoolVille || 'Conakry, Guinée', x + 5, y + CARD_H - 2);
+  pdf.setTextColor(255, 255, 255);
+  pdf.text(card.schoolVille || 'Conakry, Guinée', ox + 5, oy + FOOTER_Y);
 
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(3);
-  pdf.setTextColor(17, 24, 39);
-  pdf.text('Carte permanente • Rechargeable', x + CARD_W - 5, y + CARD_H - 2, { align: 'right' });
+  pdf.setTextColor(255, 255, 255);
+  pdf.text('Carte permanente • Rechargeable', ox + CARD_W - 5, oy + FOOTER_Y, { align: 'right' });
 
   pdf.restoreGraphicsState();
 }
 
-function drawWavesAt(pdf: jsPDF, ox: number, oy: number) {
-  // Red wave
-  pdf.setFillColor(248, 113, 113);
-  pdf.setGState(new (pdf as any).GState({ opacity: 0.6 }));
-
-  const points1: number[][] = [];
-  for (let i = 0; i <= 100; i++) {
-    const t = i / 100;
-    const xp = ox + t * CARD_W;
-    const yp = oy + CARD_H - 18 + Math.sin(t * Math.PI * 2.5 + 0.5) * 6 + Math.cos(t * Math.PI * 1.5) * 3;
-    points1.push([xp, yp]);
-  }
-  points1.push([ox + CARD_W, oy + CARD_H]);
-  points1.push([ox, oy + CARD_H]);
-
-  // Use lines array approach
-  const lines1: number[][] = [];
-  for (let i = 1; i < points1.length; i++) {
-    lines1.push([points1[i][0] - points1[i - 1][0], points1[i][1] - points1[i - 1][1]]);
-  }
-  (pdf as any).lines(lines1, points1[0][0], points1[0][1], [1, 1], 'F', false);
-
-  // Green wave
-  pdf.setFillColor(74, 222, 128);
-  pdf.setGState(new (pdf as any).GState({ opacity: 0.5 }));
-
-  const points2: number[][] = [];
-  for (let i = 0; i <= 100; i++) {
-    const t = i / 100;
-    const xp = ox + t * CARD_W;
-    const yp = oy + CARD_H - 14 + Math.sin(t * Math.PI * 2 + 1) * 5 + Math.cos(t * Math.PI * 1.8 + 0.3) * 3;
-    points2.push([xp, yp]);
-  }
-  points2.push([ox + CARD_W, oy + CARD_H]);
-  points2.push([ox, oy + CARD_H]);
-
-  const lines2: number[][] = [];
-  for (let i = 1; i < points2.length; i++) {
-    lines2.push([points2[i][0] - points2[i - 1][0], points2[i][1] - points2[i - 1][1]]);
-  }
-  (pdf as any).lines(lines2, points2[0][0], points2[0][1], [1, 1], 'F', false);
-
-  pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
-}
+// ── Public exports ──
 
 export interface TransportCardExportData {
   id: string;
@@ -294,6 +275,9 @@ export interface TransportCardExportData {
   dateExpiration?: string;
 }
 
+/**
+ * Export a single card as PDF at exact PVC CR80 dimensions (85.6×54mm).
+ */
 export async function exportSingleTransportCard(
   card: TransportCardExportData,
   schoolName: string,
@@ -322,6 +306,10 @@ export async function exportSingleTransportCard(
   pdf.save(`carte_transport_${card.matricule || card.id}.pdf`);
 }
 
+/**
+ * Export multiple cards on A4 pages (2 columns, centered).
+ * Each card keeps strict 85.6×54mm dimensions.
+ */
 export async function exportBulkTransportCards(
   cards: TransportCardExportData[],
   schoolName: string,
@@ -330,7 +318,6 @@ export async function exportBulkTransportCards(
 ): Promise<void> {
   if (cards.length === 0) return;
 
-  // A4 page: 210 x 297mm — fit cards in a grid
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -339,16 +326,15 @@ export async function exportBulkTransportCards(
 
   const pageW = 210;
   const pageH = 297;
-  const marginX = (pageW - CARD_W * 2 - 8) / 2; // 2 columns with 8mm gap
-  const marginY = 10;
   const gapX = 8;
   const gapY = 8;
   const cols = 2;
+  const marginX = (pageW - CARD_W * cols - gapX * (cols - 1)) / 2;
+  const marginY = 12;
   const rows = Math.floor((pageH - marginY * 2 + gapY) / (CARD_H + gapY));
   const cardsPerPage = cols * rows;
 
   for (let i = 0; i < cards.length; i++) {
-    const pageIndex = Math.floor(i / cardsPerPage);
     const posOnPage = i % cardsPerPage;
     const col = posOnPage % cols;
     const row = Math.floor(posOnPage / cols);
