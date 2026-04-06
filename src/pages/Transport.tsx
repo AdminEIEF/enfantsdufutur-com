@@ -815,10 +815,10 @@ export default function Transport() {
                     boxShadow: '0 4px 24px rgba(0,0,0,0.13)',
                   }}
                 >
-                  {/* Footer waves — fixed 25% height, 95% opacity, crisp vector */}
-                  <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 400 25" preserveAspectRatio="none" style={{ height: '25%' }} shapeRendering="geometricPrecision">
-                    <path d="M0,8 C60,0 120,15 200,8 C280,1 340,12 400,5 L400,25 L0,25 Z" fill="#E12F3F" opacity="0.95" />
-                    <path d="M0,15 C80,8 160,22 240,14 C310,7 360,18 400,12 L400,25 L0,25 Z" fill="#438B62" opacity="0.95" />
+                  {/* Footer waves — matching reference card design */}
+                  <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 400 60" preserveAspectRatio="none" style={{ height: '25%' }} shapeRendering="geometricPrecision">
+                    <path d="M0,20 C50,5 100,30 160,15 C220,0 280,25 340,10 C370,3 390,8 400,5 L400,60 L0,60 Z" fill="#E12F3F" opacity="0.95" />
+                    <path d="M0,35 C60,22 130,45 200,30 C270,15 330,38 400,25 L400,60 L0,60 Z" fill="#438B62" opacity="0.95" />
                   </svg>
                    <div className="absolute inset-0 flex items-center justify-center opacity-[0.10] pointer-events-none">
                      <img src={transportMapWatermark} alt="" className="w-[85%] h-[85%] object-contain" crossOrigin="anonymous" />
@@ -831,7 +831,7 @@ export default function Transport() {
                      )}
                      <p className="flex-1 text-center" style={{ fontSize: 12, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2, letterSpacing: 0.5 }}>{schoolConfig?.nom || 'École'}</p>
                    </div>
-                  <div className="flex gap-3 px-4 pt-5 relative z-10" style={{ height: 145 }}>
+                  <div className="flex gap-3 px-4 pt-7 relative z-10" style={{ height: 145 }}>
                     <div className="flex-shrink-0 rounded-lg overflow-hidden bg-muted border" style={{ width: 72, height: 92, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
                       {selectedStudent.photo_url ? (
                         <img src={selectedStudent.photo_url} alt="Photo" className="w-full h-full object-cover" style={{ objectPosition: 'center 20%' }} crossOrigin="anonymous" />
@@ -864,8 +864,8 @@ export default function Transport() {
                     </div>
                   </div>
                    <div className="absolute bottom-1.5 left-4 right-4 flex justify-between items-center z-10">
-                     <p style={{ fontSize: 7, color: '#111827', fontWeight: 700 }}>{schoolConfig?.ville || 'Conakry, Guinée'}</p>
-                     <p style={{ fontSize: 6, color: '#111827', fontWeight: 600 }}>Carte permanente • Rechargeable</p>
+                     <p style={{ fontSize: 7, color: '#FFFFFF', fontWeight: 700 }}>{schoolConfig?.ville || 'Conakry, Guinée'}</p>
+                     <p style={{ fontSize: 6, color: '#FFFFFF', fontWeight: 600 }}>Carte permanente • Rechargeable</p>
                    </div>
                 </div>
 
