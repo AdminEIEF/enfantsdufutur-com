@@ -270,34 +270,34 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     if (!cardRef.current) return;
 
     try {
-      const canvas = await html2canvas(cardRef.current, {
+      const el = cardRef.current;
+      const canvas = await html2canvas(el, {
         scale: 3,
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#FFFFFF',
+        width: el.offsetWidth,
+        height: el.offsetHeight,
         imageTimeout: 15000,
         logging: false,
-        onclone: (clonedDoc) => {
+        onclone: (clonedDoc, clonedElement) => {
+          clonedElement.style.width = el.offsetWidth + 'px';
+          clonedElement.style.height = el.offsetHeight + 'px';
+          clonedElement.style.overflow = 'hidden';
+          clonedElement.style.borderRadius = '14px';
+
           clonedDoc.querySelectorAll('svg path').forEach((node) => {
             const path = node as SVGPathElement;
             const fill = path.getAttribute('fill')?.toLowerCase();
             const opacity = path.getAttribute('opacity');
-
-            if (fill === '#f87171') {
-              path.style.fill = '#EF4444';
-            } else if (fill === '#4ade80') {
-              path.style.fill = '#22C55E';
-            } else if (fill) {
-              path.style.fill = fill;
-            }
-
-            if (opacity) {
-              path.style.opacity = opacity;
-            }
+            if (fill === '#f87171') path.style.fill = '#EF4444';
+            else if (fill === '#4ade80') path.style.fill = '#22C55E';
+            else if (fill) path.style.fill = fill;
+            if (opacity) path.style.opacity = opacity;
           });
 
           clonedDoc.querySelectorAll('div').forEach((node) => {
-            if (node.textContent?.includes('● ACTIVE')) {
+            if (node.textContent?.includes('\u25CF ACTIVE')) {
               const badge = node as HTMLElement;
               badge.style.backgroundColor = '#16A34A';
               badge.style.color = '#FFFFFF';
@@ -308,12 +308,22 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         },
       });
 
-      canvas.toBlob((blob) => {
+      // Resize to exact PVC card print dimensions (85.6x54mm at 300dpi)
+      const cardWidth = 1012;
+      const cardHeight = 638;
+      const resizedCanvas = document.createElement('canvas');
+      resizedCanvas.width = cardWidth;
+      resizedCanvas.height = cardHeight;
+      const ctx = resizedCanvas.getContext('2d')!;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(canvas, 0, 0, cardWidth, cardHeight);
+
+      resizedCanvas.toBlob((blob) => {
         if (!blob) {
-          toast({ title: 'Erreur export', description: 'Impossible de générer l’image.', variant: 'destructive' });
+          toast({ title: 'Erreur export', description: "Impossible de g\u00E9n\u00E9rer l'image.", variant: 'destructive' });
           return;
         }
-
         const filename = `carte_transport_${printCard?.matricule || 'eleve'}.png`;
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -323,18 +333,11 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         document.body.appendChild(link);
         link.click();
         link.remove();
-
-        const fallbackWin = window.open(url, '_blank', 'noopener,noreferrer');
-        if (fallbackWin) fallbackWin.focus();
-
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-        }, 10000);
-
-        toast({ title: 'Carte exportée en haute qualité' });
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        toast({ title: 'Carte export\u00E9e en haute qualit\u00E9 (300 DPI)' });
       }, 'image/png', 1);
     } catch {
-      toast({ title: 'Erreur export', description: 'Le téléchargement a échoué.', variant: 'destructive' });
+      toast({ title: 'Erreur export', description: 'Le t\u00E9l\u00E9chargement a \u00E9chou\u00E9.', variant: 'destructive' });
     }
   };
 
