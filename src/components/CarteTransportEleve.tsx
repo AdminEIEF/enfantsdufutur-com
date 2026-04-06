@@ -286,20 +286,27 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
           clonedElement.style.overflow = 'hidden';
           clonedElement.style.borderRadius = '14px';
 
-          // Force SVG wave colors for export
+          // Force SVG wave colors for export — critical for PNG rendering
           clonedDoc.querySelectorAll('svg path').forEach((node) => {
             const path = node as SVGPathElement;
-            const fill = path.getAttribute('fill')?.toLowerCase();
-            const opacity = path.getAttribute('opacity');
-            if (fill === '#f87171' || fill?.includes('f87171')) {
-              path.style.fill = '#F87171';
-              path.style.opacity = opacity || '0.5';
+            const fill = path.getAttribute('fill')?.toLowerCase() || '';
+            if (fill.includes('f87171')) {
               path.setAttribute('fill', '#F87171');
-            } else if (fill === '#4ade80' || fill?.includes('4ade80')) {
-              path.style.fill = '#4ADE80';
-              path.style.opacity = opacity || '0.4';
+              path.setAttribute('opacity', '0.6');
+              path.style.fill = '#F87171';
+              path.style.opacity = '0.6';
+              path.removeAttribute('class');
+            } else if (fill.includes('4ade80')) {
               path.setAttribute('fill', '#4ADE80');
+              path.setAttribute('opacity', '0.5');
+              path.style.fill = '#4ADE80';
+              path.style.opacity = '0.5';
+              path.removeAttribute('class');
             }
+          });
+          // Also force the parent SVG to be visible
+          clonedDoc.querySelectorAll('svg').forEach((svg) => {
+            (svg as SVGElement).style.overflow = 'visible';
           });
 
           // Force ligne badge styles
@@ -326,9 +333,9 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         },
       });
 
-      // Resize to exact PVC card print dimensions (85.6x54mm at 300dpi)
-      const cardWidth = 1012;
-      const cardHeight = 638;
+      // Resize to exact PVC card print dimensions (wider, shorter format)
+      const cardWidth = 1160;
+      const cardHeight = 580;
       const resizedCanvas = document.createElement('canvas');
       resizedCanvas.width = cardWidth;
       resizedCanvas.height = cardHeight;
@@ -654,12 +661,12 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
           {printCard && (
             <div className="space-y-4">
               {/* PVC Card — 85.6mm x 54mm ratio = ~1.585 */}
-              <div
+               <div
                 ref={cardRef}
                 className="relative mx-auto overflow-hidden"
                 style={{
-                  width: 400,
-                  height: 252,
+                  width: 460,
+                  height: 230,
                   borderRadius: 14,
                   fontFamily: "'Inter', 'Space Grotesk', sans-serif",
                   background: '#FFFFFF',
@@ -669,19 +676,21 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 {/* Background wave shape */}
                 <svg
                   className="absolute bottom-0 left-0 w-full"
-                  viewBox="0 0 400 90"
+                  viewBox="0 0 460 80"
                   preserveAspectRatio="none"
-                  style={{ height: 90 }}
+                  style={{ height: 80 }}
                 >
                     <path
-                     d="M0,40 C80,0 160,70 240,35 C300,10 360,50 400,25 L400,90 L0,90 Z"
+                     d="M0,35 C90,0 180,60 270,30 C340,8 400,45 460,20 L460,80 L0,80 Z"
                      fill="#F87171"
-                     opacity="0.5"
+                     opacity="0.6"
+                     style={{ fill: '#F87171' }}
                    />
                    <path
-                     d="M0,55 C60,30 140,75 220,50 C290,30 350,65 400,40 L400,90 L0,90 Z"
+                     d="M0,50 C70,25 160,65 250,42 C330,25 400,58 460,35 L460,80 L0,80 Z"
                      fill="#4ADE80"
-                     opacity="0.4"
+                     opacity="0.5"
+                     style={{ fill: '#4ADE80' }}
                    />
                 </svg>
 
@@ -710,7 +719,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 </div>
 
                 {/* Body */}
-                <div className="flex gap-3 px-4 pt-2 relative z-10" style={{ height: 140 }}>
+                <div className="flex gap-3 px-4 pt-1 relative z-10" style={{ height: 120 }}>
                   {/* Photo */}
                   <div
                     className="flex-shrink-0 rounded-lg overflow-hidden bg-muted border"
