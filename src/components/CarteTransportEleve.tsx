@@ -32,7 +32,9 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkDownloading, setBulkDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const bulkCardRef = useRef<HTMLDivElement>(null);
 
   const MOIS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   const moisCourant = MOIS_FR[new Date().getMonth()];
