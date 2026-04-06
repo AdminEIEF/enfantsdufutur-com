@@ -6,15 +6,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Bus, CreditCard, Download, Printer, Search, Wallet, RefreshCw, MapPin, Banknote } from 'lucide-react';
+import { Bus, CreditCard, Download, Printer, Search, Wallet, RefreshCw, MapPin, Banknote, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useState, useMemo } from 'react';
-import html2canvas from 'html2canvas';
 import transportMapWatermark from '@/assets/transport-map-watermark.png';
+import { exportSingleTransportCard, exportBulkTransportCards, type TransportCardExportData } from '@/lib/generateCarteTransportPDF';
 
 interface CarteTransportEleveProps {
   zones: any[];
