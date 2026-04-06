@@ -839,7 +839,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 </div>
 
                 {/* Body */}
-                <div className="flex gap-3 px-4 pt-1 relative z-10" style={{ height: 120 }}>
+                <div className="flex gap-3 px-4 pt-1 relative z-10" style={{ height: 150 }}>
                   {/* Photo */}
                   <div
                     className="flex-shrink-0 rounded-lg overflow-hidden bg-muted border"
