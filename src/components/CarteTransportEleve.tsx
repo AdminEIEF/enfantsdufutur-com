@@ -309,17 +309,6 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
             (svg as SVGElement).style.overflow = 'visible';
           });
 
-          // Force ligne badge styles
-          clonedDoc.querySelectorAll('[data-ligne-badge]').forEach((node) => {
-            const badge = node as HTMLElement;
-            badge.style.display = 'flex';
-            badge.style.alignItems = 'center';
-            badge.style.justifyContent = 'center';
-            badge.style.background = '#EFF6FF';
-            badge.style.border = '1px solid #BFDBFE';
-            badge.style.overflow = 'hidden';
-          });
-
           // Force ACTIVE badge
           clonedDoc.querySelectorAll('div').forEach((node) => {
             if (node.textContent?.includes('\u25CF ACTIVE')) {
@@ -757,36 +746,15 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                     </div>
 
                     {/* Zone / Ligne */}
-                    <div
-                      data-ligne-badge="true"
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 4,
-                        borderRadius: 4,
-                        paddingLeft: 6,
-                        paddingRight: 6,
-                        paddingTop: 3,
-                        paddingBottom: 3,
-                        marginTop: 4,
-                        background: '#EFF6FF',
-                        border: '1px solid #BFDBFE',
-                        width: '100%',
-                        boxSizing: 'border-box' as any,
-                        overflow: 'hidden',
-                      }}
-                    >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
                       <MapPin style={{ width: 9, height: 9, color: '#3B82F6', flexShrink: 0 }} />
                       <span style={{
-                        fontSize: 8,
+                        fontSize: 9,
                         fontWeight: 700,
                         color: '#1E40AF',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        textAlign: 'center',
-                        flex: 1,
                       }}>
                         LIGNE : {(printCard.zones_transport as any)?.nom || '—'}
                       </span>
