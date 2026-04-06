@@ -272,7 +272,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     try {
       const el = cardRef.current;
       const canvas = await html2canvas(el, {
-        scale: 3,
+        scale: 4,
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#FFFFFF',
