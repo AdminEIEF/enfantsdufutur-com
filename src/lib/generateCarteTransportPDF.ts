@@ -93,7 +93,7 @@ async function drawFooterBar(pdf: jsPDF, ox: number, oy: number, ville?: string)
   try {
     const footerData = await loadImageAsDataURL(transportFooterUrl);
     if (footerData) {
-      pdf.addImage(footerData, 'PNG', ox, barY, CARD_W, barH);
+      pdf.addImage(footerData, detectImageFormat(footerData), ox, barY, CARD_W, barH);
     }
   } catch {}
 
@@ -117,7 +117,7 @@ async function drawSingleCard(pdf: jsPDF, card: CardData, ox = 0, oy = 0) {
   try {
     const bgData = await loadImageAsDataURL(transportBgUrl);
     if (bgData) {
-      pdf.addImage(bgData, 'JPEG', ox, oy, CARD_W, CARD_H);
+      pdf.addImage(bgData, detectImageFormat(bgData), ox, oy, CARD_W, CARD_H);
     }
   } catch {}
 
@@ -138,7 +138,7 @@ async function drawSingleCard(pdf: jsPDF, card: CardData, ox = 0, oy = 0) {
     try {
       const logoData = await loadImageAsDataURL(card.schoolLogoUrl);
       if (logoData) {
-        pdf.addImage(logoData, 'PNG', ox + LOGO_X, oy + LOGO_Y, LOGO_SIZE, LOGO_SIZE);
+        pdf.addImage(logoData, detectImageFormat(logoData), ox + LOGO_X, oy + LOGO_Y, LOGO_SIZE, LOGO_SIZE);
       }
     } catch {}
   }
@@ -162,7 +162,7 @@ async function drawSingleCard(pdf: jsPDF, card: CardData, ox = 0, oy = 0) {
     try {
       const photoData = await loadImageAsDataURL(card.photoUrl);
       if (photoData) {
-        pdf.addImage(photoData, 'JPEG', ox + PHOTO_X + 0.4, oy + PHOTO_Y + 0.4, PHOTO_W - 0.8, PHOTO_H - 0.8);
+        pdf.addImage(photoData, detectImageFormat(photoData), ox + PHOTO_X + 0.4, oy + PHOTO_Y + 0.4, PHOTO_W - 0.8, PHOTO_H - 0.8);
       }
     } catch {}
   } else {
