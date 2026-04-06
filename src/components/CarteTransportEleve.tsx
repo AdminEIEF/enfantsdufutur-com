@@ -443,6 +443,26 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         </Card>
       </div>
 
+      {/* Onglets statut impression */}
+      <Tabs value={printTab} onValueChange={setPrintTab}>
+        <TabsList>
+          <TabsTrigger value="a_imprimer" className="gap-1">
+            <Clock className="h-3.5 w-3.5" />
+            À Imprimer
+            <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
+              {eleves.filter((e: any) => (e.print_status || 'en_attente') === 'en_attente').length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="historique" className="gap-1">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Historique
+            <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
+              {eleves.filter((e: any) => e.print_status === 'imprime').length}
+            </Badge>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* Filtres + Bulk */}
       <div className="flex gap-3 flex-wrap items-center">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
