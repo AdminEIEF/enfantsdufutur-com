@@ -286,16 +286,34 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
           clonedElement.style.overflow = 'hidden';
           clonedElement.style.borderRadius = '14px';
 
+          // Force SVG wave colors for export
           clonedDoc.querySelectorAll('svg path').forEach((node) => {
             const path = node as SVGPathElement;
             const fill = path.getAttribute('fill')?.toLowerCase();
             const opacity = path.getAttribute('opacity');
-            if (fill === '#f87171') path.style.fill = '#EF4444';
-            else if (fill === '#4ade80') path.style.fill = '#22C55E';
-            else if (fill) path.style.fill = fill;
-            if (opacity) path.style.opacity = opacity;
+            if (fill === '#f87171' || fill?.includes('f87171')) {
+              path.style.fill = '#F87171';
+              path.style.opacity = opacity || '0.5';
+              path.setAttribute('fill', '#F87171');
+            } else if (fill === '#4ade80' || fill?.includes('4ade80')) {
+              path.style.fill = '#4ADE80';
+              path.style.opacity = opacity || '0.4';
+              path.setAttribute('fill', '#4ADE80');
+            }
           });
 
+          // Force ligne badge styles
+          clonedDoc.querySelectorAll('[data-ligne-badge]').forEach((node) => {
+            const badge = node as HTMLElement;
+            badge.style.display = 'flex';
+            badge.style.alignItems = 'center';
+            badge.style.justifyContent = 'center';
+            badge.style.background = '#EFF6FF';
+            badge.style.border = '1px solid #BFDBFE';
+            badge.style.overflow = 'hidden';
+          });
+
+          // Force ACTIVE badge
           clonedDoc.querySelectorAll('div').forEach((node) => {
             if (node.textContent?.includes('\u25CF ACTIVE')) {
               const badge = node as HTMLElement;
