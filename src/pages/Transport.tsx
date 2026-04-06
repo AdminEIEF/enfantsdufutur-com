@@ -165,7 +165,7 @@ export default function Transport() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, statut, zone_transport_id, classe_id, photo_url, classes(nom), zones_transport:zone_transport_id(id, nom, quartiers)')
+        .select('id, nom, prenom, matricule, statut, zone_transport_id, classe_id, photo_url, print_status, print_count, classes(nom), zones_transport:zone_transport_id(id, nom, quartiers)')
         .not('zone_transport_id', 'is', null)
         .eq('statut', 'inscrit')
         .order('nom');
@@ -331,6 +331,8 @@ export default function Transport() {
       const elevesZone = eleves.filter((e: any) => e.zone_transport_id === z.id);
       const veh = vehiculesAssignes.find((v: any) => v.zone_transport_id === z.id);
       const chauffeur = veh?.employes;
+      const imprime = elevesZone.filter((e: any) => e.print_status === 'imprime').length;
+      const nonImprime = elevesZone.length - imprime;
       return {
         id: z.id,
         nom: z.nom,
@@ -339,11 +341,15 @@ export default function Transport() {
         busImmat: veh?.immatriculation || null,
         quartiers: z.quartiers || [],
         effectif: elevesZone.length,
+        imprime,
+        nonImprime,
       };
     });
   }, [zones, eleves, vehiculesAssignes]);
 
   const totalElevesTransport = eleves.length;
+  const totalImprime = eleves.filter((e: any) => e.print_status === 'imprime').length;
+  const totalNonImprime = totalElevesTransport - totalImprime;
   const nbChauffeurs = vehiculesAssignes.filter((v: any) => v.chauffeur_id).length;
   const chartEffectif = statsParZone.map(z => ({ name: z.nom, value: z.effectif }));
 
@@ -355,7 +361,7 @@ export default function Transport() {
 
       {/* KPIs */}
       {!isChauffeur && (
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -385,6 +391,28 @@ export default function Transport() {
               <div>
                 <p className="text-sm text-muted-foreground">Chauffeurs assignés</p>
                 <p className="text-2xl font-bold">{nbChauffeurs}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-green-200 dark:border-green-800">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Printer className="h-8 w-8 text-green-600" />
+              <div>
+                <p className="text-sm text-muted-foreground">Cartes imprimées</p>
+                <p className="text-2xl font-bold text-green-600">{totalImprime}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-orange-200 dark:border-orange-800">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Clock className="h-8 w-8 text-orange-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Reste à imprimer</p>
+                <p className="text-2xl font-bold text-orange-500">{totalNonImprime}</p>
               </div>
             </div>
           </CardContent>
@@ -431,7 +459,16 @@ export default function Transport() {
                           <p className="text-xs text-muted-foreground italic">Pas de chauffeur</p>
                         )}
                       </div>
-                      <Badge variant="outline" className="text-xs">{z.effectif} élèves</Badge>
+                     <Badge variant="outline" className="text-xs">{z.effectif} élèves</Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] mt-1">
+                      <span className="flex items-center gap-1 text-green-600 font-semibold">
+                        <CheckCircle2 className="h-3 w-3" /> {z.imprime} imprimée(s)
+                      </span>
+                      <span className="text-muted-foreground">·</span>
+                      <span className="flex items-center gap-1 text-orange-500 font-semibold">
+                        <Clock className="h-3 w-3" /> {z.nonImprime} restante(s)
+                      </span>
                     </div>
                     {z.quartiers.length > 0 && (
                       <p className="text-[11px] text-muted-foreground/70 line-clamp-1">{z.quartiers.join(', ')}</p>
