@@ -310,6 +310,10 @@ export async function exportSingleTransportCard(
  * Export multiple cards on A4 pages (2 columns, centered).
  * Each card keeps strict 85.6×54mm dimensions.
  */
+/**
+ * Export multiple cards on A4 pages.
+ * Planche mode: 2 columns × 5 rows = 10 cards/page, 2mm gaps, crop marks.
+ */
 export async function exportBulkTransportCards(
   cards: TransportCardExportData[],
   schoolName: string,
@@ -326,13 +330,16 @@ export async function exportBulkTransportCards(
 
   const pageW = 210;
   const pageH = 297;
-  const gapX = 8;
-  const gapY = 8;
+  const gap = 2; // 2mm entre chaque carte pour découpe massicot
   const cols = 2;
-  const marginX = (pageW - CARD_W * cols - gapX * (cols - 1)) / 2;
-  const marginY = 12;
-  const rows = Math.floor((pageH - marginY * 2 + gapY) / (CARD_H + gapY));
+  const rows = 5;
   const cardsPerPage = cols * rows;
+
+  // Centre la grille sur la page
+  const gridW = CARD_W * cols + gap * (cols - 1);
+  const gridH = CARD_H * rows + gap * (rows - 1);
+  const marginX = (pageW - gridW) / 2;
+  const marginY = (pageH - gridH) / 2;
 
   for (let i = 0; i < cards.length; i++) {
     const posOnPage = i % cardsPerPage;
@@ -343,8 +350,8 @@ export async function exportBulkTransportCards(
       pdf.addPage();
     }
 
-    const ox = marginX + col * (CARD_W + gapX);
-    const oy = marginY + row * (CARD_H + gapY);
+    const ox = marginX + col * (CARD_W + gap);
+    const oy = marginY + row * (CARD_H + gap);
 
     await drawSingleCard(pdf, {
       prenom: cards[i].prenom,
@@ -358,7 +365,21 @@ export async function exportBulkTransportCards(
       rechargeActive: cards[i].rechargeActive,
       dateExpiration: cards[i].dateExpiration,
     }, ox, oy);
+
+    // Repères de découpe (crop marks)
+    pdf.setDrawColor(180, 180, 180);
+    pdf.setLineWidth(0.1);
+    const m = 3;
+    // Coins
+    pdf.line(ox - 1, oy, ox - 1 - m, oy);
+    pdf.line(ox, oy - 1, ox, oy - 1 - m);
+    pdf.line(ox + CARD_W + 1, oy, ox + CARD_W + 1 + m, oy);
+    pdf.line(ox + CARD_W, oy - 1, ox + CARD_W, oy - 1 - m);
+    pdf.line(ox - 1, oy + CARD_H, ox - 1 - m, oy + CARD_H);
+    pdf.line(ox, oy + CARD_H + 1, ox, oy + CARD_H + 1 + m);
+    pdf.line(ox + CARD_W + 1, oy + CARD_H, ox + CARD_W + 1 + m, oy + CARD_H);
+    pdf.line(ox + CARD_W, oy + CARD_H + 1, ox + CARD_W, oy + CARD_H + 1 + m);
   }
 
-  pdf.save(`cartes_transport_lot_${cards.length}.pdf`);
+  pdf.save(`planche_cartes_transport_${cards.length}.pdf`);
 }

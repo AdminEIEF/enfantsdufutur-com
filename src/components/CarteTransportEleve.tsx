@@ -402,8 +402,8 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
           disabled={bulkDownloading || (bulkMode && selectedIds.size === 0)}
           onClick={exportBulkCards}
         >
-          <Download className="h-3.5 w-3.5 mr-1" />
-          {bulkDownloading ? 'Export en cours…' : bulkMode && selectedIds.size > 0 ? `Télécharger ${selectedIds.size} carte(s)` : 'Télécharger toutes les cartes'}
+          <Printer className="h-3.5 w-3.5 mr-1" />
+          {bulkDownloading ? 'Export en cours…' : bulkMode && selectedIds.size > 0 ? `Planche A4 — ${selectedIds.size} carte(s)` : 'Planche A4 — toutes les cartes'}
         </Button>
       </div>
 
