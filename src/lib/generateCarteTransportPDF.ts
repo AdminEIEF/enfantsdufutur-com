@@ -122,7 +122,7 @@ async function drawSingleCard(pdf: jsPDF, card: CardData, ox = 0, oy = 0) {
   pdf.saveGraphicsState();
 
   // 2. Footer bar (always rendered)
-  drawFooterBar(pdf, ox, oy, card.schoolVille);
+  await drawFooterBar(pdf, ox, oy, card.schoolVille);
 
   // (no header line)
 
