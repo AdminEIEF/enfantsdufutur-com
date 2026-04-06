@@ -683,15 +683,49 @@ export default function Transport() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {sorted.map((g) => (
-                    <Card key={g.classeName} className="cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-primary/60"
-                      onClick={() => setExpandedClasse(expandedClasse === g.classeName ? null : g.classeName)}>
+                    <Card key={g.classeName} className="hover:shadow-md transition-shadow border-l-4 border-l-primary/60">
                       <CardContent className="pt-4 pb-3 px-4">
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-2 cursor-pointer"
+                          onClick={() => setExpandedClasse(expandedClasse === g.classeName ? null : g.classeName)}>
                           <div className="flex items-center gap-2">
                             <GraduationCap className="h-4 w-4 text-primary" />
                             <span className="font-semibold text-sm">{g.classeName}</span>
                           </div>
-                          <Badge className="bg-primary/10 text-primary border-0 font-bold">{g.eleves.length}</Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-primary/10 text-primary border-0 font-bold">{g.eleves.length}</Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2"
+                              disabled={classePlancheLoading === g.classeName}
+                              onClick={async (ev) => {
+                                ev.stopPropagation();
+                                setClassePlancheLoading(g.classeName);
+                                try {
+                                  const cards: TransportCardExportData[] = g.eleves.map((e: any) => {
+                                    const recharge = getActiveRecharge(e.id);
+                                    return {
+                                      id: e.id,
+                                      prenom: e.prenom,
+                                      nom: e.nom,
+                                      matricule: e.matricule || '',
+                                      photoUrl: e.photo_url,
+                                      zoneName: (e.zones_transport as any)?.nom || '—',
+                                      rechargeActive: !!recharge,
+                                      dateExpiration: recharge ? new Date(recharge.date_expiration).toLocaleDateString('fr-FR') : undefined,
+                                    };
+                                  });
+                                  await exportBulkTransportCards(cards, schoolConfig?.nom || 'École', schoolConfig?.logo_url, schoolConfig?.ville);
+                                  toast({ title: `${cards.length} carte(s) exportées`, description: `Classe ${g.classeName} — Planche A4` });
+                                } catch {
+                                  toast({ title: 'Erreur export', variant: 'destructive' });
+                                }
+                                setClassePlancheLoading(null);
+                              }}
+                            >
+                              <Printer className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         </div>
                         {expandedClasse === g.classeName && (
                           <div className="space-y-1 mt-3 pt-3 border-t max-h-[250px] overflow-y-auto">
