@@ -262,23 +262,13 @@ export default function Transport() {
             }
           });
 
-          // Force SVG wave colors
+          // Force SVG wave colors — exact design colors
           clonedDoc.querySelectorAll('svg path').forEach((node) => {
             const path = node as SVGPathElement;
             const fill = path.getAttribute('fill')?.toLowerCase();
-            const opacity = path.getAttribute('opacity');
-
-            if (fill === '#f87171') {
-              path.style.fill = '#EF4444';
-            } else if (fill === '#4ade80') {
-              path.style.fill = '#22C55E';
-            } else if (fill) {
-              path.style.fill = fill;
-            }
-
-            if (opacity) {
-              path.style.opacity = opacity;
-            }
+            if (fill === '#e12f3f') path.style.fill = '#E12F3F';
+            else if (fill === '#438b62') path.style.fill = '#438B62';
+            else if (fill) path.style.fill = fill;
           });
 
           // Force ACTIVE badge colors
