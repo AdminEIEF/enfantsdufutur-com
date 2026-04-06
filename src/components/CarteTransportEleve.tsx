@@ -853,8 +853,8 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                   <div
                     className="flex-shrink-0 rounded-lg overflow-hidden bg-muted border"
                     style={{
-                      width: 72,
-                      height: 90,
+                      width: 80,
+                      height: 105,
                       boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
                     }}
                   >
