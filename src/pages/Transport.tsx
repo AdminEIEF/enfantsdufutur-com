@@ -779,13 +779,11 @@ export default function Transport() {
                     boxShadow: '0 4px 24px rgba(0,0,0,0.13)',
                   }}
                 >
-                  {/* Footer waves — fixed 10% height, crisp vector, exact colors */}
-                  <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 400 25" preserveAspectRatio="none" style={{ height: '10%' }} shapeRendering="geometricPrecision">
-                    <path d="M0,8 C60,0 120,15 200,8 C280,1 340,12 400,5 L400,25 L0,25 Z" fill="#E12F3F" />
-                    <path d="M0,15 C80,8 160,22 240,14 C310,7 360,18 400,12 L400,25 L0,25 Z" fill="#438B62" />
+                  {/* Footer waves — fixed 25% height, 95% opacity, crisp vector */}
+                  <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 400 25" preserveAspectRatio="none" style={{ height: '25%' }} shapeRendering="geometricPrecision">
+                    <path d="M0,8 C60,0 120,15 200,8 C280,1 340,12 400,5 L400,25 L0,25 Z" fill="#E12F3F" opacity="0.95" />
+                    <path d="M0,15 C80,8 160,22 240,14 C310,7 360,18 400,12 L400,25 L0,25 Z" fill="#438B62" opacity="0.95" />
                   </svg>
-                   {/* Red separator line */}
-                   <div className="absolute left-4 right-4 z-10" style={{ top: 42, height: 1, background: '#DC2626' }} />
                    <div className="absolute inset-0 flex items-center justify-center opacity-[0.10] pointer-events-none">
                      <img src={transportMapWatermark} alt="" className="w-[85%] h-[85%] object-contain" crossOrigin="anonymous" />
                    </div>
