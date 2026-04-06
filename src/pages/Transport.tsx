@@ -165,7 +165,7 @@ export default function Transport() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, statut, zone_transport_id, classe_id, photo_url, classes(nom), zones_transport:zone_transport_id(id, nom, quartiers)')
+        .select('id, nom, prenom, matricule, statut, zone_transport_id, classe_id, photo_url, print_status, print_count, classes(nom), zones_transport:zone_transport_id(id, nom, quartiers)')
         .not('zone_transport_id', 'is', null)
         .eq('statut', 'inscrit')
         .order('nom');
@@ -331,6 +331,8 @@ export default function Transport() {
       const elevesZone = eleves.filter((e: any) => e.zone_transport_id === z.id);
       const veh = vehiculesAssignes.find((v: any) => v.zone_transport_id === z.id);
       const chauffeur = veh?.employes;
+      const imprime = elevesZone.filter((e: any) => e.print_status === 'imprime').length;
+      const nonImprime = elevesZone.length - imprime;
       return {
         id: z.id,
         nom: z.nom,
@@ -339,6 +341,8 @@ export default function Transport() {
         busImmat: veh?.immatriculation || null,
         quartiers: z.quartiers || [],
         effectif: elevesZone.length,
+        imprime,
+        nonImprime,
       };
     });
   }, [zones, eleves, vehiculesAssignes]);
