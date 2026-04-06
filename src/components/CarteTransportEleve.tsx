@@ -559,7 +559,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
             </TableHeader>
             <TableBody>
               {filteredEleves.length === 0 ? (
-                <TableRow><TableCell colSpan={bulkMode ? 8 : 7} className="text-center py-8 text-muted-foreground">Aucun élève</TableCell></TableRow>
+                <TableRow><TableCell colSpan={bulkMode ? 9 : 9} className="text-center py-8 text-muted-foreground">Aucun élève</TableCell></TableRow>
               ) : filteredEleves.map((e: any) => {
                 const recharge = getActiveRecharge(e.id);
                 const jours = recharge ? getDaysRemaining(recharge.date_expiration) : 0;
