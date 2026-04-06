@@ -116,6 +116,20 @@ async function drawSingleCard(pdf: jsPDF, card: CardData, ox = 0, oy = 0) {
     }
   } catch {}
 
+  // Bus watermark – bottom-right of photo area, small
+  try {
+    const busData = await loadImageAsDataURL(transportBusUrl);
+    if (busData) {
+      const busW = 14;
+      const busH = 10;
+      const busX = ox + PHOTO_X;
+      const busY = oy + PHOTO_Y + PHOTO_H + 1;
+      pdf.setGState(new (pdf as any).GState({ opacity: 0.12 }));
+      pdf.addImage(busData, 'JPEG', busX, busY, busW, busH);
+      pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
+    }
+  } catch {}
+
   // Subtle cream tint top half
   pdf.setFillColor(254, 252, 248);
   pdf.setGState(new (pdf as any).GState({ opacity: 0.5 }));
