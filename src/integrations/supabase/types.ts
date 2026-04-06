@@ -1373,6 +1373,7 @@ export type Database = {
           deleted_at: string | null
           famille_id: string | null
           id: string
+          last_printed_at: string | null
           matricule: string | null
           mot_de_passe_eleve: string | null
           nom: string
@@ -1384,6 +1385,8 @@ export type Database = {
           photo_thumbnail_url: string | null
           photo_url: string | null
           prenom: string
+          print_count: number
+          print_status: string
           qr_code: string | null
           robotique_paye: boolean | null
           session_id: string | null
@@ -1411,6 +1414,7 @@ export type Database = {
           deleted_at?: string | null
           famille_id?: string | null
           id?: string
+          last_printed_at?: string | null
           matricule?: string | null
           mot_de_passe_eleve?: string | null
           nom: string
@@ -1422,6 +1426,8 @@ export type Database = {
           photo_thumbnail_url?: string | null
           photo_url?: string | null
           prenom: string
+          print_count?: number
+          print_status?: string
           qr_code?: string | null
           robotique_paye?: boolean | null
           session_id?: string | null
@@ -1449,6 +1455,7 @@ export type Database = {
           deleted_at?: string | null
           famille_id?: string | null
           id?: string
+          last_printed_at?: string | null
           matricule?: string | null
           mot_de_passe_eleve?: string | null
           nom?: string
@@ -1460,6 +1467,8 @@ export type Database = {
           photo_thumbnail_url?: string | null
           photo_url?: string | null
           prenom?: string
+          print_count?: number
+          print_status?: string
           qr_code?: string | null
           robotique_paye?: boolean | null
           session_id?: string | null

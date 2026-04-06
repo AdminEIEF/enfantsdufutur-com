@@ -5,11 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Bus, CreditCard, Download, Printer, Search, Wallet, RefreshCw, MapPin, Banknote, FileText } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Bus, CreditCard, Download, Printer, Search, Wallet, RefreshCw, MapPin, Banknote, FileText, Clock, CheckCircle2, AlertTriangle, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useState, useMemo } from 'react';
@@ -24,10 +27,13 @@ interface CarteTransportEleveProps {
 export default function CarteTransportEleve({ zones }: CarteTransportEleveProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { hasRole } = useAuth();
+  const isSuperviseur = hasRole('superviseur');
   const { data: schoolConfig } = useSchoolConfig();
   const [search, setSearch] = useState('');
   const [filterZone, setFilterZone] = useState('all');
   const [filterClasse, setFilterClasse] = useState('all');
+  const [printTab, setPrintTab] = useState('a_imprimer');
   const [rechargeDialog, setRechargeDialog] = useState<any>(null);
   const [printCard, setPrintCard] = useState<any>(null);
   const [cashPayDialog, setCashPayDialog] = useState<any>(null);
@@ -35,6 +41,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [bulkDownloading, setBulkDownloading] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<{ eleves: any[]; action: 'single' | 'bulk' } | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   
 
@@ -62,7 +69,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
-        .select('id, nom, prenom, matricule, classe_id, photo_url, type_trajet_transport, classes(nom), zone_transport_id, zones_transport:zone_transport_id(id, nom, prix_mensuel, prix_aller_simple, prix_retour_simple, chauffeur_bus)')
+        .select('id, nom, prenom, matricule, classe_id, photo_url, type_trajet_transport, print_status, print_count, last_printed_at, classes(nom), zone_transport_id, zones_transport:zone_transport_id(id, nom, prix_mensuel, prix_aller_simple, prix_retour_simple, chauffeur_bus)')
         .not('zone_transport_id', 'is', null)
         .eq('statut', 'inscrit')
         .order('nom');
@@ -266,7 +273,10 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       const matchSearch = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase());
       const matchZone = filterZone === 'all' || e.zone_transport_id === filterZone;
       const matchClasse = filterClasse === 'all' || e.classe_id === filterClasse;
-      return matchSearch && matchZone && matchClasse;
+      const matchPrintTab = printTab === 'a_imprimer'
+        ? (e.print_status || 'en_attente') === 'en_attente'
+        : (e.print_status || 'en_attente') === 'imprime';
+      return matchSearch && matchZone && matchClasse && matchPrintTab;
     });
     // Sort: pending validation (paid but not recharged) first, then not paid, then already recharged
     return filtered.sort((a: any, b: any) => {
@@ -279,7 +289,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       const bScore = bPaid && !bRecharged ? 0 : !bPaid ? 1 : 2;
       return aScore - bScore;
     });
-  }, [eleves, search, filterZone, filterClasse, paiementsTransport, recharges]);
+  }, [eleves, search, filterZone, filterClasse, printTab, paiementsTransport, recharges]);
 
   // PVC card dimensions: CR80 standard 85.6mm × 54mm
   const PVC_DISPLAY_W = 460;
@@ -296,7 +306,45 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     dateExpiration: recharge ? new Date(recharge.date_expiration).toLocaleDateString('fr-FR') : undefined,
   });
 
-  const exportCard = async () => {
+  // ── Mark students as printed in DB ──
+  const markAsPrinted = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    const now = new Date().toISOString();
+    for (const id of ids) {
+      const eleve = eleves.find((e: any) => e.id === id);
+      const currentCount = (eleve as any)?.print_count || 0;
+      await supabase.from('eleves').update({
+        print_status: 'imprime',
+        print_count: currentCount + 1,
+        last_printed_at: now,
+      } as any).eq('id', id);
+    }
+    queryClient.invalidateQueries({ queryKey: ['transport-card-eleves'] });
+  };
+
+  // ── Reset print status ──
+  const resetPrintStatus = async (id: string) => {
+    await supabase.from('eleves').update({
+      print_status: 'en_attente',
+      print_count: 0,
+      last_printed_at: null,
+    } as any).eq('id', id);
+    queryClient.invalidateQueries({ queryKey: ['transport-card-eleves'] });
+    toast({ title: 'Statut réinitialisé' });
+  };
+
+  // ── Check for duplicates before printing ──
+  const checkDuplicatesAndExport = (elevesToPrint: any[], action: 'single' | 'bulk') => {
+    const alreadyPrinted = elevesToPrint.filter((e: any) => (e.print_count || 0) > 0);
+    if (alreadyPrinted.length > 0) {
+      setDuplicateWarning({ eleves: alreadyPrinted, action });
+    } else {
+      if (action === 'single') doExportCard();
+      else doExportBulkCards();
+    }
+  };
+
+  const doExportCard = async () => {
     if (!printCard) return;
     try {
       const cardData = buildCardData(printCard, printCard.recharge);
@@ -306,13 +354,19 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         schoolConfig?.logo_url,
         schoolConfig?.ville
       );
+      await markAsPrinted([printCard.id]);
       toast({ title: 'Carte exportée en PDF (format PVC CR80)' });
     } catch {
       toast({ title: 'Erreur export', variant: 'destructive' });
     }
   };
 
-  const exportBulkCards = async () => {
+  const exportCard = () => {
+    if (!printCard) return;
+    checkDuplicatesAndExport([printCard], 'single');
+  };
+
+  const doExportBulkCards = async () => {
     const toExport = bulkMode && selectedIds.size > 0
       ? filteredEleves.filter((e: any) => selectedIds.has(e.id))
       : filteredEleves;
@@ -334,6 +388,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         schoolConfig?.logo_url,
         schoolConfig?.ville
       );
+      await markAsPrinted(toExport.map((e: any) => e.id));
       toast({ title: `${cards.length} carte(s) exportées en PDF`, description: 'Format PVC CR80 — prêt pour impression' });
     } catch {
       toast({ title: 'Erreur export', variant: 'destructive' });
@@ -388,6 +443,26 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         </Card>
       </div>
 
+      {/* Onglets statut impression */}
+      <Tabs value={printTab} onValueChange={setPrintTab}>
+        <TabsList>
+          <TabsTrigger value="a_imprimer" className="gap-1">
+            <Clock className="h-3.5 w-3.5" />
+            À Imprimer
+            <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
+              {eleves.filter((e: any) => (e.print_status || 'en_attente') === 'en_attente').length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="historique" className="gap-1">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Historique
+            <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
+              {eleves.filter((e: any) => e.print_status === 'imprime').length}
+            </Badge>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* Filtres + Bulk */}
       <div className="flex gap-3 flex-wrap items-center">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
@@ -420,7 +495,12 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
           variant="outline"
           size="sm"
           disabled={bulkDownloading || (bulkMode && selectedIds.size === 0)}
-          onClick={exportBulkCards}
+          onClick={() => {
+            const toExport = bulkMode && selectedIds.size > 0
+              ? filteredEleves.filter((e: any) => selectedIds.has(e.id))
+              : filteredEleves;
+            checkDuplicatesAndExport(toExport, 'bulk');
+          }}
         >
           <Printer className="h-3.5 w-3.5 mr-1" />
           {bulkDownloading ? 'Export en cours…' : bulkMode && selectedIds.size > 0 ? `Planche A4 — ${selectedIds.size} carte(s)` : filterClasse !== 'all' ? `Planche A4 — classe ${uniqueClasses.find(c => c.id === filterClasse)?.nom || ''}` : 'Planche A4 — toutes les cartes'}
@@ -472,13 +552,14 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 {bulkMode && <TableHead className="text-right">Montant</TableHead>}
                 <TableHead className="text-center">Paiement parent</TableHead>
                 <TableHead className="text-center">Statut carte</TableHead>
+                <TableHead className="text-center">Impression</TableHead>
                 <TableHead className="text-center">Jours restants</TableHead>
                 {!bulkMode && <TableHead className="text-right">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredEleves.length === 0 ? (
-                <TableRow><TableCell colSpan={bulkMode ? 8 : 7} className="text-center py-8 text-muted-foreground">Aucun élève</TableCell></TableRow>
+                <TableRow><TableCell colSpan={bulkMode ? 9 : 9} className="text-center py-8 text-muted-foreground">Aucun élève</TableCell></TableRow>
               ) : filteredEleves.map((e: any) => {
                 const recharge = getActiveRecharge(e.id);
                 const jours = recharge ? getDaysRemaining(recharge.date_expiration) : 0;
@@ -522,6 +603,24 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
+                      {(e.print_status || 'en_attente') === 'imprime' ? (
+                        <div className="flex flex-col items-center gap-0.5">
+                          <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px]">
+                            Imprimé ({e.print_count || 0}x)
+                          </Badge>
+                          {e.last_printed_at && (
+                            <span className="text-[9px] text-muted-foreground">
+                              {new Date(e.last_printed_at).toLocaleDateString('fr-FR')}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px]">
+                          En attente
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
                       {recharge ? (
                         <span className={jours <= 5 ? 'text-destructive font-bold' : jours <= 10 ? 'text-warning font-medium' : ''}>
                           {jours}j
@@ -555,6 +654,11 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                           <Button size="sm" variant="ghost" onClick={() => setPrintCard({ ...e, recharge })}>
                             <Printer className="h-3 w-3" />
                           </Button>
+                          {isSuperviseur && e.print_status === 'imprime' && (
+                            <Button size="sm" variant="ghost" onClick={() => resetPrintStatus(e.id)} title="Réinitialiser le statut">
+                              <RotateCcw className="h-3 w-3 text-muted-foreground" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     )}
@@ -800,6 +904,46 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Duplicate warning dialog */}
+      <AlertDialog open={!!duplicateWarning} onOpenChange={(open) => { if (!open) setDuplicateWarning(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Attention : Carte(s) déjà imprimée(s)
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Les élèves suivants ont déjà eu leur carte imprimée :</p>
+                <ul className="list-disc pl-4 space-y-1 text-sm">
+                  {duplicateWarning?.eleves.slice(0, 5).map((e: any) => (
+                    <li key={e.id}>
+                      <strong>{e.prenom} {e.nom}</strong> — imprimée {e.print_count} fois
+                      {e.last_printed_at && ` (dernière : ${new Date(e.last_printed_at).toLocaleDateString('fr-FR')})`}
+                    </li>
+                  ))}
+                  {(duplicateWarning?.eleves.length || 0) > 5 && (
+                    <li className="text-muted-foreground">… et {(duplicateWarning?.eleves.length || 0) - 5} autre(s)</li>
+                  )}
+                </ul>
+                <p className="font-medium">Voulez-vous vraiment générer un duplicata ?</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              const action = duplicateWarning?.action;
+              setDuplicateWarning(null);
+              if (action === 'single') doExportCard();
+              else doExportBulkCards();
+            }}>
+              Confirmer l'impression
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
