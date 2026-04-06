@@ -789,9 +789,10 @@ export default function Transport() {
                     boxShadow: '0 4px 24px rgba(0,0,0,0.13)',
                   }}
                 >
-                  <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 400 90" preserveAspectRatio="none" style={{ height: 90 }}>
-                    <path d="M0,40 C80,0 160,70 240,35 C300,10 360,50 400,25 L400,90 L0,90 Z" fill="#F87171" opacity="0.5" />
-                    <path d="M0,55 C60,30 140,75 220,50 C290,30 350,65 400,40 L400,90 L0,90 Z" fill="#4ADE80" opacity="0.4" />
+                  {/* Footer waves — fixed 10% height, crisp vector, exact colors */}
+                  <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 400 25" preserveAspectRatio="none" style={{ height: '10%' }} shapeRendering="geometricPrecision">
+                    <path d="M0,8 C60,0 120,15 200,8 C280,1 340,12 400,5 L400,25 L0,25 Z" fill="#E12F3F" />
+                    <path d="M0,15 C80,8 160,22 240,14 C310,7 360,18 400,12 L400,25 L0,25 Z" fill="#438B62" />
                   </svg>
                    {/* Red separator line */}
                    <div className="absolute left-4 right-4 z-10" style={{ top: 42, height: 1, background: '#DC2626' }} />

@@ -74,18 +74,21 @@ async function generateQRDataURL(data: string): Promise<string> {
   });
 }
 
-// ── Decorative waves (absolute from card origin) ──
+// ── Footer waves (absolute from card origin, fixed 10% height) ──
 function drawWavesAt(pdf: jsPDF, ox: number, oy: number) {
-  // Red wave
-  pdf.setFillColor(248, 113, 113);
-  pdf.setGState(new (pdf as any).GState({ opacity: 0.65 }));
+  const footerH = CARD_H * 0.10; // 10% of card height
+  const baseY = oy + CARD_H - footerH;
+
+  // Red band — #E12F3F
+  pdf.setFillColor(225, 47, 63);
+  pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
 
   const pts1: number[][] = [];
-  for (let i = 0; i <= 120; i++) {
-    const t = i / 120;
+  for (let i = 0; i <= 100; i++) {
+    const t = i / 100;
     pts1.push([
       ox + t * CARD_W,
-      oy + CARD_H - 16 + Math.sin(t * Math.PI * 2.5 + 0.5) * 5 + Math.cos(t * Math.PI * 1.5) * 3,
+      baseY + footerH * 0.3 * Math.sin(t * Math.PI * 2.5 + 0.5) + footerH * 0.15,
     ]);
   }
   pts1.push([ox + CARD_W, oy + CARD_H], [ox, oy + CARD_H]);
@@ -96,16 +99,15 @@ function drawWavesAt(pdf: jsPDF, ox: number, oy: number) {
   }
   (pdf as any).lines(lines1, pts1[0][0], pts1[0][1], [1, 1], 'F', false);
 
-  // Green wave
-  pdf.setFillColor(74, 222, 128);
-  pdf.setGState(new (pdf as any).GState({ opacity: 0.55 }));
+  // Green wave — #438B62
+  pdf.setFillColor(67, 139, 98);
 
   const pts2: number[][] = [];
-  for (let i = 0; i <= 120; i++) {
-    const t = i / 120;
+  for (let i = 0; i <= 100; i++) {
+    const t = i / 100;
     pts2.push([
       ox + t * CARD_W,
-      oy + CARD_H - 12 + Math.sin(t * Math.PI * 2 + 1) * 4.5 + Math.cos(t * Math.PI * 1.8 + 0.3) * 2.5,
+      baseY + footerH * 0.3 * Math.sin(t * Math.PI * 2 + 1) + footerH * 0.55,
     ]);
   }
   pts2.push([ox + CARD_W, oy + CARD_H], [ox, oy + CARD_H]);
@@ -115,8 +117,6 @@ function drawWavesAt(pdf: jsPDF, ox: number, oy: number) {
     lines2.push([pts2[i][0] - pts2[i - 1][0], pts2[i][1] - pts2[i - 1][1]]);
   }
   (pdf as any).lines(lines2, pts2[0][0], pts2[0][1], [1, 1], 'F', false);
-
-  pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
 }
 
 // ── Draw one card at absolute offset ──
