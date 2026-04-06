@@ -361,7 +361,7 @@ export default function Transport() {
 
       {/* KPIs */}
       {!isChauffeur && (
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -391,6 +391,28 @@ export default function Transport() {
               <div>
                 <p className="text-sm text-muted-foreground">Chauffeurs assignés</p>
                 <p className="text-2xl font-bold">{nbChauffeurs}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-green-200 dark:border-green-800">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Printer className="h-8 w-8 text-green-600" />
+              <div>
+                <p className="text-sm text-muted-foreground">Cartes imprimées</p>
+                <p className="text-2xl font-bold text-green-600">{totalImprime}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-orange-200 dark:border-orange-800">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Clock className="h-8 w-8 text-orange-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Reste à imprimer</p>
+                <p className="text-2xl font-bold text-orange-500">{totalNonImprime}</p>
               </div>
             </div>
           </CardContent>
