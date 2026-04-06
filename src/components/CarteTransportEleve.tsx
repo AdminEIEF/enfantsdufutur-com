@@ -796,18 +796,18 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                 {/* Background wave shape */}
                 <svg
                   className="absolute bottom-0 left-0 w-full"
-                  viewBox="0 0 460 80"
+                  viewBox="0 0 460 100"
                   preserveAspectRatio="none"
-                  style={{ height: 80 }}
+                  style={{ height: 100 }}
                 >
                     <path
-                     d="M0,35 C90,0 180,60 270,30 C340,8 400,45 460,20 L460,80 L0,80 Z"
+                     d="M0,45 C90,0 180,70 270,35 C340,10 400,55 460,25 L460,100 L0,100 Z"
                      fill="#F87171"
                      opacity="0.6"
                      style={{ fill: '#F87171' }}
                    />
                    <path
-                     d="M0,50 C70,25 160,65 250,42 C330,25 400,58 460,35 L460,80 L0,80 Z"
+                     d="M0,60 C70,30 160,75 250,50 C330,30 400,70 460,42 L460,100 L0,100 Z"
                      fill="#4ADE80"
                      opacity="0.5"
                      style={{ fill: '#4ADE80' }}
