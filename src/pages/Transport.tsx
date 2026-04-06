@@ -142,6 +142,7 @@ export default function Transport() {
   const [expandedClasse, setExpandedClasse] = useState<string | null>(null);
   const [selectedZone, setSelectedZone] = useState<any>(null);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [classePlancheLoading, setClassePlancheLoading] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const { data: schoolConfig } = useSchoolConfig();
 
