@@ -65,9 +65,9 @@ async function loadImageAsDataURL(url: string): Promise<string | null> {
 }
 
 async function generateQRDataURL(data: string): Promise<string> {
-  // 800px for a 20mm print area = ~1016 DPI effective resolution
+  // 1200px for a 20mm print area ≈ 1524 DPI effective resolution
   return QRCode.toDataURL(data, {
-    width: 800,
+    width: 1200,
     margin: 0,
     errorCorrectionLevel: 'H',
     color: { dark: '#000000', light: '#FFFFFF' },
@@ -175,11 +175,23 @@ async function drawSingleCard(pdf: jsPDF, card: CardData, ox = 0, oy = 0) {
   pdf.setTextColor(55, 65, 81);
   pdf.text(card.matricule || '—', ix, oy + MATRICULE_VALUE_Y);
 
-  // 8. Zone / Ligne (absolute)
+  // 8. Zone / Ligne (absolute — centered in blue badge)
+  const ligneText = `LIGNE : ${card.zoneName}`;
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(5.5);
+  const ligneTextW = pdf.getTextWidth(ligneText);
+  const ligneBadgeW = ligneTextW + 4; // 2mm padding each side
+  const ligneBadgeH = 4;
+  const ligneBadgeX = ix;
+  const ligneBadgeY = oy + LIGNE_Y - 3;
+  // Badge background
+  pdf.setFillColor(239, 246, 255); // #EFF6FF
+  pdf.setDrawColor(191, 219, 254); // #BFDBFE
+  pdf.setLineWidth(0.2);
+  pdf.roundedRect(ligneBadgeX, ligneBadgeY, ligneBadgeW, ligneBadgeH, 1, 1, 'FD');
+  // Text centered in badge
   pdf.setTextColor(30, 64, 175);
-  pdf.text(`LIGNE : ${card.zoneName}`, ix, oy + LIGNE_Y);
+  pdf.text(ligneText, ligneBadgeX + ligneBadgeW / 2, ligneBadgeY + ligneBadgeH / 2 + 1, { align: 'center' });
 
   // 9. Active badge (absolute)
   if (card.rechargeActive && card.dateExpiration) {
