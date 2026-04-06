@@ -146,14 +146,6 @@ async function drawSingleCard(pdf: jsPDF, card: CardData, ox = 0, oy = 0) {
   const schoolAlign = card.schoolLogoUrl ? 'left' : 'center';
   pdf.text(card.schoolName.toUpperCase(), schoolNameX, oy + SCHOOL_NAME_Y, { align: schoolAlign as any });
 
-  // 4b. School city/address
-  if (card.schoolVille) {
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(4.5);
-    pdf.setTextColor(107, 114, 128);
-    pdf.text(card.schoolVille, schoolNameX, oy + SCHOOL_NAME_Y + 3, { align: schoolAlign as any });
-  }
-
   // 5. Photo (absolute position)
   pdf.setFillColor(243, 244, 246);
   pdf.roundedRect(ox + PHOTO_X, oy + PHOTO_Y, PHOTO_W, PHOTO_H, 1.5, 1.5, 'F');
