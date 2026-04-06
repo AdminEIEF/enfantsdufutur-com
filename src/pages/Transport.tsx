@@ -348,6 +348,8 @@ export default function Transport() {
   }, [zones, eleves, vehiculesAssignes]);
 
   const totalElevesTransport = eleves.length;
+  const totalImprime = eleves.filter((e: any) => e.print_status === 'imprime').length;
+  const totalNonImprime = totalElevesTransport - totalImprime;
   const nbChauffeurs = vehiculesAssignes.filter((v: any) => v.chauffeur_id).length;
   const chartEffectif = statsParZone.map(z => ({ name: z.nom, value: z.effectif }));
 
