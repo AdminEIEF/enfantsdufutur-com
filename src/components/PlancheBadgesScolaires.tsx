@@ -74,6 +74,9 @@ export default function PlancheBadgesScolaires({ eleves, onClose, schoolName, sc
     if (!rectoRef.current || !versoRef.current) return;
     setGenerating(true);
     try {
+      // Wait for all custom fonts to be fully loaded
+      await document.fonts.ready;
+
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfW = 210;
       const pdfH = 297;
@@ -88,6 +91,12 @@ export default function PlancheBadgesScolaires({ eleves, onClose, schoolName, sc
         // Recto
         const rectoCanvas = await html2canvas(rectoPages[i] as HTMLElement, {
           scale: 2, useCORS: true, backgroundColor: '#ffffff',
+          onclone: (clonedDoc) => {
+            clonedDoc.querySelectorAll('.planche-page').forEach((el: Element) => {
+              (el as HTMLElement).style.textRendering = 'optimizeLegibility';
+              ((el as HTMLElement).style as any).webkitFontSmoothing = 'antialiased';
+            });
+          },
         });
         const rectoImg = rectoCanvas.toDataURL('image/png');
         const rectoH = (rectoCanvas.height * pdfW) / rectoCanvas.width;
@@ -98,6 +107,12 @@ export default function PlancheBadgesScolaires({ eleves, onClose, schoolName, sc
           pdf.addPage();
           const versoCanvas = await html2canvas(versoPages[i] as HTMLElement, {
             scale: 2, useCORS: true, backgroundColor: '#ffffff',
+            onclone: (clonedDoc) => {
+              clonedDoc.querySelectorAll('.planche-page').forEach((el: Element) => {
+                (el as HTMLElement).style.textRendering = 'optimizeLegibility';
+                ((el as HTMLElement).style as any).webkitFontSmoothing = 'antialiased';
+              });
+            },
           });
           const versoImg = versoCanvas.toDataURL('image/png');
           const versoH = (versoCanvas.height * pdfW) / versoCanvas.width;
