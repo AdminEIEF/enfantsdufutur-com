@@ -554,6 +554,15 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
           <RefreshCw className="h-3.5 w-3.5 mr-1" />
           {bulkMode ? 'Annuler sélection' : 'Recharge en lot'}
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={bulkDownloading || (bulkMode && selectedIds.size === 0)}
+          onClick={exportBulkCards}
+        >
+          <Download className="h-3.5 w-3.5 mr-1" />
+          {bulkDownloading ? 'Export en cours…' : bulkMode && selectedIds.size > 0 ? `Télécharger ${selectedIds.size} carte(s)` : 'Télécharger toutes les cartes'}
+        </Button>
       </div>
 
       {/* Bulk action bar */}
