@@ -273,7 +273,10 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       const matchSearch = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase());
       const matchZone = filterZone === 'all' || e.zone_transport_id === filterZone;
       const matchClasse = filterClasse === 'all' || e.classe_id === filterClasse;
-      return matchSearch && matchZone && matchClasse;
+      const matchPrintTab = printTab === 'a_imprimer'
+        ? (e.print_status || 'en_attente') === 'en_attente'
+        : (e.print_status || 'en_attente') === 'imprime';
+      return matchSearch && matchZone && matchClasse && matchPrintTab;
     });
     // Sort: pending validation (paid but not recharged) first, then not paid, then already recharged
     return filtered.sort((a: any, b: any) => {
@@ -286,7 +289,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       const bScore = bPaid && !bRecharged ? 0 : !bPaid ? 1 : 2;
       return aScore - bScore;
     });
-  }, [eleves, search, filterZone, filterClasse, paiementsTransport, recharges]);
+  }, [eleves, search, filterZone, filterClasse, printTab, paiementsTransport, recharges]);
 
   // PVC card dimensions: CR80 standard 85.6mm × 54mm
   const PVC_DISPLAY_W = 460;
