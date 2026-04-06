@@ -303,7 +303,45 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     dateExpiration: recharge ? new Date(recharge.date_expiration).toLocaleDateString('fr-FR') : undefined,
   });
 
-  const exportCard = async () => {
+  // ── Mark students as printed in DB ──
+  const markAsPrinted = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    const now = new Date().toISOString();
+    for (const id of ids) {
+      const eleve = eleves.find((e: any) => e.id === id);
+      const currentCount = (eleve as any)?.print_count || 0;
+      await supabase.from('eleves').update({
+        print_status: 'imprime',
+        print_count: currentCount + 1,
+        last_printed_at: now,
+      } as any).eq('id', id);
+    }
+    queryClient.invalidateQueries({ queryKey: ['transport-card-eleves'] });
+  };
+
+  // ── Reset print status ──
+  const resetPrintStatus = async (id: string) => {
+    await supabase.from('eleves').update({
+      print_status: 'en_attente',
+      print_count: 0,
+      last_printed_at: null,
+    } as any).eq('id', id);
+    queryClient.invalidateQueries({ queryKey: ['transport-card-eleves'] });
+    toast({ title: 'Statut réinitialisé' });
+  };
+
+  // ── Check for duplicates before printing ──
+  const checkDuplicatesAndExport = (elevesToPrint: any[], action: 'single' | 'bulk') => {
+    const alreadyPrinted = elevesToPrint.filter((e: any) => (e.print_count || 0) > 0);
+    if (alreadyPrinted.length > 0) {
+      setDuplicateWarning({ eleves: alreadyPrinted, action });
+    } else {
+      if (action === 'single') doExportCard();
+      else doExportBulkCards();
+    }
+  };
+
+  const doExportCard = async () => {
     if (!printCard) return;
     try {
       const cardData = buildCardData(printCard, printCard.recharge);
@@ -313,13 +351,19 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         schoolConfig?.logo_url,
         schoolConfig?.ville
       );
+      await markAsPrinted([printCard.id]);
       toast({ title: 'Carte exportée en PDF (format PVC CR80)' });
     } catch {
       toast({ title: 'Erreur export', variant: 'destructive' });
     }
   };
 
-  const exportBulkCards = async () => {
+  const exportCard = () => {
+    if (!printCard) return;
+    checkDuplicatesAndExport([printCard], 'single');
+  };
+
+  const doExportBulkCards = async () => {
     const toExport = bulkMode && selectedIds.size > 0
       ? filteredEleves.filter((e: any) => selectedIds.has(e.id))
       : filteredEleves;
@@ -341,6 +385,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
         schoolConfig?.logo_url,
         schoolConfig?.ville
       );
+      await markAsPrinted(toExport.map((e: any) => e.id));
       toast({ title: `${cards.length} carte(s) exportées en PDF`, description: 'Format PVC CR80 — prêt pour impression' });
     } catch {
       toast({ title: 'Erreur export', variant: 'destructive' });
