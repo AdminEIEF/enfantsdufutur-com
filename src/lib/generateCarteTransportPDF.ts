@@ -76,7 +76,7 @@ async function generateQRDataURL(data: string): Promise<string> {
 
 // ── Footer waves (absolute from card origin, fixed 10% height) ──
 function drawWavesAt(pdf: jsPDF, ox: number, oy: number) {
-  const footerH = CARD_H * 0.10; // 10% of card height
+  const footerH = CARD_H * 0.25; // 25% of card height
   const baseY = oy + CARD_H - footerH;
 
   // Red band — #E12F3F

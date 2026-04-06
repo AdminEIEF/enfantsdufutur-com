@@ -795,7 +795,7 @@ export default function Transport() {
                      )}
                      <p className="flex-1 text-center" style={{ fontSize: 12, color: '#DC2626', fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.2, letterSpacing: 0.5 }}>{schoolConfig?.nom || 'École'}</p>
                    </div>
-                  <div className="flex gap-3 px-4 pt-3 relative z-10" style={{ height: 145 }}>
+                  <div className="flex gap-3 px-4 pt-5 relative z-10" style={{ height: 145 }}>
                     <div className="flex-shrink-0 rounded-lg overflow-hidden bg-muted border" style={{ width: 72, height: 92, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
                       {selectedStudent.photo_url ? (
                         <img src={selectedStudent.photo_url} alt="Photo" className="w-full h-full object-cover" style={{ objectPosition: 'center 20%' }} crossOrigin="anonymous" />
