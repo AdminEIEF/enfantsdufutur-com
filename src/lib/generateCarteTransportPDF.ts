@@ -67,6 +67,13 @@ async function loadImageAsDataURL(url: string): Promise<string | null> {
   }
 }
 
+function detectImageFormat(dataUrl: string): string {
+  if (dataUrl.startsWith('data:image/png')) return 'PNG';
+  if (dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg')) return 'JPEG';
+  if (dataUrl.startsWith('data:image/webp')) return 'WEBP';
+  return 'PNG';
+}
+
 async function generateQRDataURL(data: string): Promise<string> {
   // 1200px for a 20mm print area ≈ 1524 DPI effective resolution
   return QRCode.toDataURL(data, {
