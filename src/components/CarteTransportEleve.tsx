@@ -14,6 +14,7 @@ import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useState, useMemo } from 'react';
 import transportMapWatermark from '@/assets/transport-bg.jpg';
+import transportFooterImg from '@/assets/transport-footer.png';
 import { exportSingleTransportCard, exportBulkTransportCards, type TransportCardExportData } from '@/lib/generateCarteTransportPDF';
 
 interface CarteTransportEleveProps {
@@ -796,11 +797,14 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                   </div>
                 </div>
 
-                {/* Footer bar with city + type */}
-                <div className="absolute bottom-0 left-0 right-0 z-20 flex flex-col items-center justify-center" style={{ height: '8%' }}>
-                  <p style={{ fontSize: 7, fontWeight: 800, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: 1, lineHeight: 1 }}>
-                    {schoolConfig?.ville ? `${schoolConfig.ville} — ` : ''}Carte permanente • Rechargeable
-                  </p>
+                {/* Footer bar image + text */}
+                <div className="absolute bottom-0 left-0 right-0 z-20" style={{ height: '8%' }}>
+                  <img src={transportFooterImg} alt="" className="w-full h-full object-cover" style={{ display: 'block' }} />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <p style={{ fontSize: 7, fontWeight: 800, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: 1, lineHeight: 1 }}>
+                      {schoolConfig?.ville ? `${schoolConfig.ville} — ` : ''}Carte permanente • Rechargeable
+                    </p>
+                  </div>
                 </div>
               </div>
 

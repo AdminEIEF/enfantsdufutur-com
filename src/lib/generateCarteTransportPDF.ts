@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import transportBgUrl from '@/assets/transport-bg.jpg';
+import transportFooterUrl from '@/assets/transport-footer.png';
 
 /**
  * PVC CR80 card: 85.6mm × 54mm (strict, non-responsive)
@@ -75,36 +76,27 @@ async function generateQRDataURL(data: string): Promise<string> {
   });
 }
 
-// ── Footer gradient bar (matching badge scolaire style) ──
-function drawFooterBar(pdf: jsPDF, ox: number, oy: number, ville?: string) {
+// ── Footer image bar ──
+async function drawFooterBar(pdf: jsPDF, ox: number, oy: number, ville?: string) {
   const barH = CARD_H * 0.08; // 8% of card height
   const barY = oy + CARD_H - barH;
-  const barW = CARD_W;
-  const steps = 4;
-  const colors = [
-    [192, 57, 43],   // #c0392b
-    [169, 50, 38],   // #a93226
-    [30, 132, 73],   // #1e8449
-    [25, 111, 61],   // #196f3d
-  ];
-  const stepW = barW / steps;
-  for (let i = 0; i < steps; i++) {
-    pdf.setFillColor(colors[i][0], colors[i][1], colors[i][2]);
-    pdf.rect(ox + i * stepW, barY, stepW + 0.5, barH, 'F');
-  }
+
+  // Draw footer image
+  try {
+    const footerData = await loadImageAsDataURL(transportFooterUrl);
+    if (footerData) {
+      pdf.addImage(footerData, 'PNG', ox, barY, CARD_W, barH);
+    }
+  } catch {}
+
   // City name centered on footer bar
-  if (ville) {
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(3.5);
-    pdf.setTextColor(255, 255, 255);
-    const footerText = `${ville.toUpperCase()} — CARTE PERMANENTE • RECHARGEABLE`;
-    pdf.text(footerText, ox + CARD_W / 2, barY + barH / 2 + 1, { align: 'center' });
-  } else {
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(3.5);
-    pdf.setTextColor(255, 255, 255);
-    pdf.text('CARTE PERMANENTE • RECHARGEABLE', ox + CARD_W / 2, barY + barH / 2 + 1, { align: 'center' });
-  }
+  const footerText = ville
+    ? `${ville.toUpperCase()} — CARTE PERMANENTE • RECHARGEABLE`
+    : 'CARTE PERMANENTE • RECHARGEABLE';
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(3.5);
+  pdf.setTextColor(255, 255, 255);
+  pdf.text(footerText, ox + CARD_W / 2, barY + barH / 2 + 1, { align: 'center' });
 }
 
 // ── Draw one card at absolute offset ──
