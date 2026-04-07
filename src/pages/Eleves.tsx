@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect, lazy, Suspense } from 'react';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { usePagination } from '@/hooks/usePaginatedQuery';
 import PaginationControls from '@/components/PaginationControls';
 import Cropper from 'react-easy-crop';
