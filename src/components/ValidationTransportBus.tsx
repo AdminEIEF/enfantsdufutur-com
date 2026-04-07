@@ -156,19 +156,29 @@ export default function ValidationTransportBus() {
     },
   });
 
-  const handleScan = (text: string) => {
-    setScannerOpen(false);
+  const handleScan = useCallback((text: string) => {
+    // Le QRScannerDialog extrait déjà le matricule du JSON
+    // Le texte reçu est soit un matricule brut, soit du JSON brut (douchette physique)
+    let matricule = text.trim();
     try {
       const data = JSON.parse(text);
-      if (data.type === 'transport' && data.id) {
-        validateMutation.mutate(data.id);
-      } else {
-        toast({ title: 'QR invalide', description: 'Ce QR code n\'est pas une carte transport', variant: 'destructive' });
+      if (data.type === 'transport' && data.matricule) {
+        matricule = data.matricule;
+      } else if (data.matricule) {
+        matricule = data.matricule;
       }
     } catch {
-      handleManualValidation(text.trim());
+      // Texte brut = matricule directement
     }
-  };
+
+    if (!matricule) {
+      toast({ title: 'QR invalide', description: 'Aucun matricule détecté', variant: 'destructive' });
+      return;
+    }
+
+    // Rechercher l'élève par matricule puis valider
+    handleManualValidation(matricule);
+  }, [toast]);
 
   useBarcodeScanner({ onScan: handleScan });
 
