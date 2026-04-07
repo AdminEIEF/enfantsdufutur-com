@@ -580,7 +580,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                       </div>
                       <div className="space-y-1.5">
                         {enfants.map(e => (
-                          <label key={e.id} className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${cantineSelectedIds.includes(e.id) ? 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-sm' : 'border-border hover:bg-muted/50'}`}>
+                          <div key={e.id} onClick={() => setCantineSelectedIds(prev => prev.includes(e.id) ? prev.filter(x => x !== e.id) : [...prev, e.id])} className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${cantineSelectedIds.includes(e.id) ? 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-sm' : 'border-border hover:bg-muted/50'}`}>
                             <Checkbox checked={cantineSelectedIds.includes(e.id)} onCheckedChange={() => setCantineSelectedIds(prev => prev.includes(e.id) ? prev.filter(x => x !== e.id) : [...prev, e.id])} />
                             {e.photo_url ? (
                               <img src={e.photo_url} alt="" className="w-9 h-9 rounded-xl object-cover" />
@@ -591,7 +591,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                               <p className="font-semibold text-sm truncate">{e.prenom} {e.nom}</p>
                               <p className="text-[10px] text-muted-foreground">Solde cantine: <span className="font-bold text-emerald-600">{(e.solde_cantine || 0).toLocaleString()} GNF</span></p>
                             </div>
-                          </label>
+                          </div>
                         ))}
                       </div>
                     </div>
