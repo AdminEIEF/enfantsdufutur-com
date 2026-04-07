@@ -156,33 +156,7 @@ export default function ValidationTransportBus() {
     },
   });
 
-  const handleScan = useCallback((text: string) => {
-    // Le QRScannerDialog extrait déjà le matricule du JSON
-    // Le texte reçu est soit un matricule brut, soit du JSON brut (douchette physique)
-    let matricule = text.trim();
-    try {
-      const data = JSON.parse(text);
-      if (data.type === 'transport' && data.matricule) {
-        matricule = data.matricule;
-      } else if (data.matricule) {
-        matricule = data.matricule;
-      }
-    } catch {
-      // Texte brut = matricule directement
-    }
-
-    if (!matricule) {
-      toast({ title: 'QR invalide', description: 'Aucun matricule détecté', variant: 'destructive' });
-      return;
-    }
-
-    // Rechercher l'élève par matricule puis valider
-    handleManualValidation(matricule);
-  }, [toast]);
-
-  useBarcodeScanner({ onScan: handleScan });
-
-  const handleManualValidation = async (matricule: string) => {
+  const lookupAndValidate = useCallback(async (matricule: string) => {
     if (!matricule) return;
     const { data: eleve } = await supabase
       .from('eleves')
@@ -196,6 +170,32 @@ export default function ValidationTransportBus() {
     } else {
       toast({ title: 'Non trouvé', description: `Aucun élève transport avec le matricule "${matricule}"`, variant: 'destructive' });
     }
+  }, [validateMutation, toast]);
+
+  const handleScan = useCallback((text: string) => {
+    let matricule = text.trim();
+    try {
+      const data = JSON.parse(text);
+      if (data.matricule) {
+        matricule = data.matricule;
+      }
+    } catch {
+      // Texte brut = matricule directement
+    }
+
+    if (!matricule) {
+      toast({ title: 'QR invalide', description: 'Aucun matricule détecté', variant: 'destructive' });
+      return;
+    }
+
+    lookupAndValidate(matricule);
+  }, [toast, lookupAndValidate]);
+
+  useBarcodeScanner({ onScan: handleScan });
+
+  const handleManualValidation = async (matricule: string) => {
+    if (!matricule) return;
+    await lookupAndValidate(matricule);
     setManualSearch('');
   };
 
