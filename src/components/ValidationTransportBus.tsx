@@ -6,11 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bus, CheckCircle, XCircle, ScanLine, Search, AlertTriangle, ArrowLeftRight } from 'lucide-react';
+import { Bus, CheckCircle, XCircle, ScanLine, Search, AlertTriangle, ArrowLeftRight, WifiOff, Wifi, Download, RefreshCw, CloudOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useOfflineTransport } from '@/hooks/useOfflineTransport';
 import QRScannerDialog from '@/components/QRScannerDialog';
 
 export default function ValidationTransportBus() {
@@ -20,9 +21,21 @@ export default function ValidationTransportBus() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [manualSearch, setManualSearch] = useState('');
 
+  const {
+    isOnline,
+    cachedCount,
+    lastSync,
+    pendingCount,
+    isSyncing,
+    isCaching,
+    downloadEleves,
+    validateOffline,
+    syncPendingScans,
+  } = useOfflineTransport();
+
   const today = new Date().toISOString().slice(0, 10);
 
-  // Validations du jour
+  // Validations du jour (online only)
   const { data: validations = [] } = useQuery({
     queryKey: ['validations-transport', today],
     queryFn: async () => {
@@ -35,13 +48,13 @@ export default function ValidationTransportBus() {
       if (error) throw error;
       return data as any[];
     },
+    enabled: isOnline,
   });
 
   // Élèves avec cartes expirées
   const { data: expiredCards = [] } = useQuery({
     queryKey: ['expired-transport-cards'],
     queryFn: async () => {
-      // Récupérer tous les élèves transport
       const { data: eleves, error: eErr } = await supabase
         .from('eleves')
         .select('id, nom, prenom, matricule, classe_id, classes(nom), zones_transport:zone_transport_id(nom)')
@@ -50,7 +63,6 @@ export default function ValidationTransportBus() {
         .order('nom');
       if (eErr) throw eErr;
 
-      // Récupérer la dernière recharge pour chaque élève
       const { data: recharges, error: rErr } = await supabase
         .from('recharges_transport')
         .select('eleve_id, date_recharge, date_expiration, actif')
@@ -75,11 +87,11 @@ export default function ValidationTransportBus() {
       }
       return result;
     },
+    enabled: isOnline,
   });
 
   const validateMutation = useMutation({
     mutationFn: async (eleveId: string) => {
-      // Vérifier la recharge active
       const { data: recharges } = await supabase
         .from('recharges_transport')
         .select('*')
@@ -99,7 +111,6 @@ export default function ValidationTransportBus() {
 
       if (!eleve) throw new Error('Élève introuvable');
 
-      // Vérifier combien de validations aujourd'hui (max 2 : aller + retour)
       const { data: existing } = await supabase
         .from('validations_transport')
         .select('id')
@@ -136,18 +147,12 @@ export default function ValidationTransportBus() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['validations-transport'] });
       if (result.status === 'valid') {
-        try {
-          const ctx = new AudioContext();
-          const osc = ctx.createOscillator();
-          osc.frequency.value = 800;
-          osc.connect(ctx.destination);
-          osc.start();
-          setTimeout(() => osc.stop(), 150);
-        } catch {}
+        playBeep(800);
         toast({ title: `✅ ${result.trajet === 'aller' ? 'Aller' : 'Retour'} validé`, description: `${result.eleve.prenom} ${result.eleve.nom}` });
       } else if (result.status === 'already') {
         toast({ title: 'ℹ️ Limite atteinte', description: `${result.eleve.prenom} ${result.eleve.nom} — Aller-retour déjà validé` });
       } else {
+        playBeep(300);
         toast({ title: '❌ Carte expirée', description: `${result.eleve.prenom} ${result.eleve.nom} — Recharge requise`, variant: 'destructive' });
       }
     },
@@ -156,8 +161,39 @@ export default function ValidationTransportBus() {
     },
   });
 
+  function playBeep(freq: number) {
+    try {
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      osc.frequency.value = freq;
+      osc.connect(ctx.destination);
+      osc.start();
+      setTimeout(() => osc.stop(), 150);
+    } catch {}
+  }
+
   const lookupAndValidate = useCallback(async (matricule: string) => {
     if (!matricule) return;
+
+    // If offline, use local cache
+    if (!navigator.onLine) {
+      const result = await validateOffline(matricule);
+      if (result.status === 'valid') {
+        playBeep(800);
+        if (navigator.vibrate) navigator.vibrate(150);
+        toast({ title: '✅ Validé (hors ligne)', description: result.message });
+      } else if (result.status === 'invalid') {
+        playBeep(300);
+        toast({ title: '❌ Carte expirée', description: result.message, variant: 'destructive' });
+      } else if (result.status === 'already') {
+        toast({ title: 'ℹ️ Limite atteinte', description: result.message });
+      } else {
+        toast({ title: 'Non trouvé', description: result.message, variant: 'destructive' });
+      }
+      return;
+    }
+
+    // Online mode
     const { data: eleve } = await supabase
       .from('eleves')
       .select('id')
@@ -170,15 +206,11 @@ export default function ValidationTransportBus() {
     } else {
       toast({ title: 'Non trouvé', description: `Aucun élève transport avec le matricule "${matricule}"`, variant: 'destructive' });
     }
-  }, [validateMutation, toast]);
+  }, [validateMutation, toast, validateOffline]);
 
   const handleScan = useCallback((text: string) => {
     console.log('[Scanner] Texte reçu:', text);
-    
-    // Le hook useBarcodeScanner extrait déjà le matricule via extractMatriculeFromScan
-    // Pour la caméra QR (QRScannerDialog), on fait aussi l'extraction
     const matricule = extractMatriculeFromScan(text) || text.trim();
-    
     console.log('[Scanner] Matricule extrait:', matricule);
 
     if (!matricule) {
@@ -200,15 +232,67 @@ export default function ValidationTransportBus() {
   const validCount = validations.filter((v: any) => v.valide).length;
   const rejectCount = validations.filter((v: any) => !v.valide).length;
 
-  // Count trajets
-  const eleveTrajetMap = new Map<string, number>();
-  validations.forEach((v: any) => {
-    eleveTrajetMap.set(v.eleve_id, (eleveTrajetMap.get(v.eleve_id) || 0) + 1);
-  });
-
   return (
     <div className="space-y-3">
-      {/* Zone scan — optimisée mobile */}
+      {/* Offline status bar */}
+      <Card className={`border ${isOnline ? 'border-accent/30 bg-accent/5' : 'border-orange-400/30 bg-orange-50 dark:bg-orange-950/20'}`}>
+        <CardContent className="py-2.5 px-3 sm:px-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              {isOnline ? (
+                <Wifi className="h-4 w-4 text-accent" />
+              ) : (
+                <WifiOff className="h-4 w-4 text-orange-500" />
+              )}
+              <span className="text-xs sm:text-sm font-medium">
+                {isOnline ? 'En ligne' : 'Hors ligne'}
+              </span>
+              {cachedCount > 0 && (
+                <Badge variant="outline" className="text-xs">
+                  {cachedCount} élèves en cache
+                </Badge>
+              )}
+              {pendingCount > 0 && (
+                <Badge variant="secondary" className="text-xs gap-1">
+                  <CloudOff className="h-3 w-3" />
+                  {pendingCount} en attente
+                </Badge>
+              )}
+              {lastSync && (
+                <span className="text-xs text-muted-foreground hidden sm:inline">
+                  Sync: {new Date(lastSync).toLocaleString('fr-FR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
+                </span>
+              )}
+            </div>
+            <div className="flex gap-1.5">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs gap-1"
+                onClick={downloadEleves}
+                disabled={isCaching || !isOnline}
+              >
+                <Download className="h-3 w-3" />
+                {isCaching ? 'Téléchargement…' : 'Mettre en cache'}
+              </Button>
+              {pendingCount > 0 && isOnline && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs gap-1"
+                  onClick={syncPendingScans}
+                  disabled={isSyncing}
+                >
+                  <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
+                  Synchroniser
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Zone scan */}
       <Card className="border-primary/30">
         <CardContent className="pt-4 pb-4">
           <div className="flex flex-col gap-3">
@@ -218,6 +302,7 @@ export default function ValidationTransportBus() {
               onClick={() => setScannerOpen(true)}
             >
               <ScanLine className="h-6 w-6" /> Scanner une carte
+              {!isOnline && <WifiOff className="h-4 w-4 ml-1 opacity-60" />}
             </Button>
             <div className="flex gap-2 w-full">
               <Input
@@ -235,7 +320,7 @@ export default function ValidationTransportBus() {
         </CardContent>
       </Card>
 
-      {/* Stats du jour — responsive grid */}
+      {/* Stats du jour */}
       <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <Card>
           <CardContent className="pt-4 pb-3 px-3 sm:pt-6 sm:px-6 flex items-center gap-2 sm:gap-3">
@@ -266,7 +351,7 @@ export default function ValidationTransportBus() {
         </Card>
       </div>
 
-      {/* Tabs: Historique + Cartes expirées */}
+      {/* Tabs */}
       <Tabs defaultValue="historique">
         <TabsList className="w-full grid grid-cols-2">
           <TabsTrigger value="historique" className="gap-1 text-xs sm:text-sm">
@@ -282,14 +367,16 @@ export default function ValidationTransportBus() {
             <CardHeader className="pb-2 px-3 sm:px-6">
               <CardTitle className="text-sm sm:text-base">
                 {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                {!isOnline && <span className="text-xs text-orange-500 ml-2">(données en cache)</span>}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {isMobile ? (
-                // Vue mobile : cartes empilées
                 <div className="divide-y">
                   {validations.length === 0 ? (
-                    <p className="text-center py-8 text-muted-foreground text-sm">Aucun passage</p>
+                    <p className="text-center py-8 text-muted-foreground text-sm">
+                      {isOnline ? 'Aucun passage' : 'Les passages seront visibles en ligne'}
+                    </p>
                   ) : validations.map((v: any) => {
                     const trajetCount = validations.filter((x: any) => x.eleve_id === v.eleve_id && new Date(x.validated_at) <= new Date(v.validated_at)).length;
                     const trajetLabel = trajetCount <= 1 ? 'Aller' : 'Retour';
@@ -314,7 +401,6 @@ export default function ValidationTransportBus() {
                   })}
                 </div>
               ) : (
-                // Vue desktop : tableau
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -385,11 +471,6 @@ export default function ValidationTransportBus() {
                             ? `Exp. ${new Date(e.date_expiration).toLocaleDateString('fr-FR')}`
                             : 'Jamais rechargée'}
                         </Badge>
-                        {e.derniere_recharge && (
-                          <span className="text-xs text-muted-foreground">
-                            Dern. recharge : {new Date(e.derniere_recharge).toLocaleDateString('fr-FR')}
-                          </span>
-                        )}
                       </div>
                     </div>
                   ))}
