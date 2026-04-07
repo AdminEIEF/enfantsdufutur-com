@@ -752,7 +752,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                               const zoneName = e.zones_transport?.nom || '—';
                               const trajet = getTrajetLabel(e);
                               return (
-                                <label key={e.id} className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${transportSelectedIds.includes(e.id) ? 'border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 shadow-sm' : 'border-border hover:bg-muted/50'}`}>
+                                <div key={e.id} onClick={() => setTransportSelectedIds(prev => prev.includes(e.id) ? prev.filter(x => x !== e.id) : [...prev, e.id])} className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${transportSelectedIds.includes(e.id) ? 'border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 shadow-sm' : 'border-border hover:bg-muted/50'}`}>
                                   <Checkbox checked={transportSelectedIds.includes(e.id)} onCheckedChange={() => setTransportSelectedIds(prev => prev.includes(e.id) ? prev.filter(x => x !== e.id) : [...prev, e.id])} />
                                   {e.photo_url ? (
                                     <img src={e.photo_url} alt="" className="w-9 h-9 rounded-xl object-cover" />
@@ -767,7 +767,7 @@ export default function ParentPaymentDialog({ open, onOpenChange, enfants, code,
                                       <span className="text-[10px] font-bold text-amber-700">{prix.toLocaleString()} GNF</span>
                                     </div>
                                   </div>
-                                </label>
+                                </div>
                               );
                             })}
                           </div>
