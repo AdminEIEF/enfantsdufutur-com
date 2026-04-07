@@ -10,67 +10,25 @@ interface UseBarcodeScannerOptions {
  * AZERTY → QWERTY character mapping.
  * Physical barcode scanners send USB HID keycodes (QWERTY-based),
  * but on AZERTY systems the OS remaps them, garbling the output.
- * This table reverses that remapping.
  */
 const AZERTY_TO_QWERTY: Record<string, string> = {
-  // Number row (unshifted on AZERTY → QWERTY digits)
-  '&': '1',
-  'é': '2',
-  '"': '3',
-  "'": '4',
-  '(': '5',
-  '-': '6',
-  'è': '7',
-  '_': '8',
-  'ç': '9',
-  'à': '0',
+  // Number row
+  '&': '1', 'é': '2', '"': '3', "'": '4', '(': '5',
+  '-': '6', 'è': '7', '_': '8', 'ç': '9', 'à': '0',
   ')': '-',
-  // Number row shifted on AZERTY → QWERTY shifted digits
-  '°': ')',
-  '+': '=',
-  // Letter swaps (AZERTY ↔ QWERTY differences)
-  'a': 'q',
-  'q': 'a',
-  'z': 'w',
-  'w': 'z',
-  'm': ';',
-  ',': 'm',
-  ';': ',',
-  ':': '.',
-  '!': '/',
-  'ù': "'",
-  '%': '"',
-  '¨': '{',  // dead diaeresis → {
-  '£': '}',  // pound sign → }
-  'µ': '\\',
-  '§': '!',
-  '*': ']',
-  '$': '[',
-  // Uppercase letter swaps
-  'A': 'Q',
-  'Q': 'A',
-  'Z': 'W',
-  'W': 'Z',
-  'M': ':',
+  // Shifted number row
+  '°': ')', '+': '=',
+  // Letter swaps
+  'a': 'q', 'q': 'a', 'z': 'w', 'w': 'z',
+  'm': ';', ',': 'm', ';': ',', ':': '.', '!': '/',
+  'ù': "'", '%': '"', '¨': '{', '£': '}',
+  'µ': '\\', '§': '!', '*': ']', '$': '[',
+  // Uppercase
+  'A': 'Q', 'Q': 'A', 'Z': 'W', 'W': 'Z', 'M': ':',
 };
 
 /**
- * Detect if a string looks like garbled AZERTY output
- * by checking for characters that commonly appear in AZERTY-garbled JSON.
- */
-function looksLikeAzerty(text: string): boolean {
-  // If the text contains typical AZERTY artifacts from a QR code JSON
-  const azertyIndicators = ['¨%', '%M%', '£', 'é', 'è', 'à', ')'];
-  let score = 0;
-  for (const indicator of azertyIndicators) {
-    if (text.includes(indicator)) score++;
-  }
-  // If 3+ indicators found, very likely AZERTY-garbled
-  return score >= 3;
-}
-
-/**
- * Convert an AZERTY-garbled string back to its QWERTY original.
+ * Convert AZERTY-garbled string to QWERTY.
  */
 function azertyToQwerty(text: string): string {
   let result = '';
@@ -81,55 +39,102 @@ function azertyToQwerty(text: string): string {
 }
 
 /**
- * Try to fix and parse scanner output, handling AZERTY keyboard layouts.
+ * Detect if a string contains typical AZERTY-garbled characters.
  */
-function normalizeScannedCode(raw: string): string {
-  // First, try direct JSON parse (QWERTY system or camera scan)
+function containsAzertyArtifacts(text: string): boolean {
+  // Characters that would NOT appear in a normal JSON/matricule string
+  // but DO appear in AZERTY-garbled scanner output
+  const artifacts = /[éèàçùµ¨£§°%]/.test(text);
+  const hasAzertyPattern = text.includes('%M%') || text.includes('%;%') || 
+    text.includes(')é') || text.includes('àé');
+  return artifacts || hasAzertyPattern;
+}
+
+/**
+ * Extract matricule from any scanner output (QWERTY, AZERTY, partial text).
+ * Tries multiple strategies in order of reliability.
+ */
+export function extractMatriculeFromScan(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  // Strategy 1: Direct JSON parse (QWERTY scanner, clean data)
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(trimmed);
     if (parsed.matricule) return parsed.matricule;
-    return raw;
   } catch {
-    // Not valid JSON as-is
+    // Not valid JSON
   }
 
-  // Check if it looks like AZERTY-garbled text
-  if (looksLikeAzerty(raw)) {
-    const converted = azertyToQwerty(raw);
+  // Strategy 2: AZERTY conversion then JSON parse
+  if (containsAzertyArtifacts(trimmed)) {
+    const converted = azertyToQwerty(trimmed);
+    
+    // Try JSON parse on converted text
     try {
       const parsed = JSON.parse(converted);
       if (parsed.matricule) return parsed.matricule;
-      return converted;
     } catch {
-      // Conversion didn't produce valid JSON either, return converted anyway
-      return converted;
+      // Might be missing opening brace (dead key ¨ swallowed)
     }
+
+    // Try adding missing opening brace (dead key issue on AZERTY)
+    if (!converted.startsWith('{')) {
+      try {
+        const parsed = JSON.parse('{' + converted);
+        if (parsed.matricule) return parsed.matricule;
+      } catch {
+        // Still not valid
+      }
+    }
+
+    // Strategy 3: Extract matricule pattern from converted text
+    // Matricule format: 3+ letters, dash, digits, dash, digits (e.g., EDU-2602-0070)
+    const matriculeMatch = converted.match(/[A-Z]{2,5}-\d{2,4}-\d{3,6}/i);
+    if (matriculeMatch) return matriculeMatch[0].toUpperCase();
   }
 
-  // Return raw text as-is (plain matricule)
-  return raw;
+  // Strategy 4: Extract matricule pattern directly from raw text
+  // On AZERTY, digits become: &é"'(-è_çà and - becomes )
+  // So EDU-2602-0070 becomes EDU)é-àé)ààèà
+  // Convert digit-like AZERTY chars in the raw text
+  const rawConverted = azertyToQwerty(trimmed);
+  const rawMatriculeMatch = rawConverted.match(/[A-Z]{2,5}-\d{2,4}-\d{3,6}/i);
+  if (rawMatriculeMatch) return rawMatriculeMatch[0].toUpperCase();
+
+  // Strategy 5: If it already looks like a matricule (no conversion needed)
+  const directMatch = trimmed.match(/^[A-Z]{2,5}-\d{2,4}-\d{3,6}$/i);
+  if (directMatch) return directMatch[0].toUpperCase();
+
+  // Strategy 6: Raw text might just be a plain matricule or ID
+  if (/^[A-Z0-9\-]{5,20}$/i.test(trimmed)) return trimmed.toUpperCase();
+
+  return null;
 }
 
 /**
  * Global key listener that detects rapid keyboard input from physical barcode/QR scanners.
- * Works even when focus is on an input field (for flasheur/douchette compatibility).
+ * Works with both QWERTY and AZERTY keyboard layouts.
  * Characters arriving within `maxIntervalMs` of each other ending with Enter trigger `onScan`.
  * 
- * Automatically handles AZERTY keyboard layouts by detecting and converting garbled output.
+ * Handles AZERTY dead keys (¨, ^, ~) by capturing them via the 'Dead' key event
+ * and resolving them on the next keystroke.
  */
 export function useBarcodeScanner({
   onScan,
-  maxIntervalMs = 80,
+  maxIntervalMs = 100, // Slightly more generous for AZERTY dead key delays
   minLength = 3,
 }: UseBarcodeScannerOptions) {
   const bufferRef = useRef('');
   const lastKeyTimeRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRapidInputRef = useRef(false);
+  const deadKeyRef = useRef(false);
 
   const resetBuffer = useCallback(() => {
     bufferRef.current = '';
     isRapidInputRef.current = false;
+    deadKeyRef.current = false;
   }, []);
 
   useEffect(() => {
@@ -157,16 +162,49 @@ export function useBarcodeScanner({
 
       if (e.key === 'Enter') {
         const code = bufferRef.current.trim();
-        // Only trigger if rapid input detected (scanner) AND meets minimum length
         if (code.length >= minLength && isRapidInputRef.current) {
           e.preventDefault();
           e.stopPropagation();
-          // Normalize: handle AZERTY conversion + JSON extraction
-          const normalized = normalizeScannedCode(code);
-          onScan(normalized);
+          
+          // Extract matricule using multi-strategy approach
+          const matricule = extractMatriculeFromScan(code);
+          if (matricule) {
+            onScan(matricule);
+          } else {
+            // Pass raw text as fallback
+            onScan(code);
+          }
         }
         bufferRef.current = '';
         isRapidInputRef.current = false;
+        deadKeyRef.current = false;
+        return;
+      }
+
+      // Handle dead keys (AZERTY: ¨, ^, ~)
+      if (e.key === 'Dead') {
+        deadKeyRef.current = true;
+        // On AZERTY, dead key ¨ corresponds to { in QWERTY (Shift+[)
+        // We record a placeholder — the actual character appears in the next event
+        // For our purposes, add ¨ directly as it will be converted later
+        bufferRef.current += '¨';
+        timerRef.current = setTimeout(resetBuffer, 500);
+        return;
+      }
+
+      // If previous key was dead, the current key might be a composed character
+      if (deadKeyRef.current) {
+        deadKeyRef.current = false;
+        // The e.key now contains the composed character (e.g., ë, ï)
+        // or the dead key character followed by this character
+        if (e.key.length === 1) {
+          // Remove the ¨ we added and add the actual composed character
+          if (bufferRef.current.endsWith('¨')) {
+            bufferRef.current = bufferRef.current.slice(0, -1);
+          }
+          bufferRef.current += e.key;
+        }
+        timerRef.current = setTimeout(resetBuffer, 500);
         return;
       }
 
@@ -176,7 +214,7 @@ export function useBarcodeScanner({
       }
 
       // Auto-reset buffer after a pause
-      timerRef.current = setTimeout(resetBuffer, 300);
+      timerRef.current = setTimeout(resetBuffer, 500);
     };
 
     // Use capture phase to intercept before input fields

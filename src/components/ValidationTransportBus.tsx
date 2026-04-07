@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { useBarcodeScanner, extractMatriculeFromScan } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -173,15 +173,13 @@ export default function ValidationTransportBus() {
   }, [validateMutation, toast]);
 
   const handleScan = useCallback((text: string) => {
-    let matricule = text.trim();
-    try {
-      const data = JSON.parse(text);
-      if (data.matricule) {
-        matricule = data.matricule;
-      }
-    } catch {
-      // Texte brut = matricule directement
-    }
+    console.log('[Scanner] Texte reçu:', text);
+    
+    // Le hook useBarcodeScanner extrait déjà le matricule via extractMatriculeFromScan
+    // Pour la caméra QR (QRScannerDialog), on fait aussi l'extraction
+    const matricule = extractMatriculeFromScan(text) || text.trim();
+    
+    console.log('[Scanner] Matricule extrait:', matricule);
 
     if (!matricule) {
       toast({ title: 'QR invalide', description: 'Aucun matricule détecté', variant: 'destructive' });
