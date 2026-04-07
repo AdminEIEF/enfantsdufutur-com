@@ -1,13 +1,15 @@
 /**
- * IndexedDB wrapper for offline transport scanning.
- * Stores: cached students, pending scan queue.
+ * IndexedDB wrapper for offline scanning (transport + pointage).
+ * Stores: cached students, pending scan queue, pointage cache, pointage queue.
  */
 
 const DB_NAME = 'edugestion-offline';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_ELEVES = 'eleves';
 const STORE_QUEUE = 'scan_queue';
 const STORE_META = 'meta';
+const STORE_POINTAGE_ELEVES = 'pointage_eleves';
+const STORE_POINTAGE_QUEUE = 'pointage_queue';
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
