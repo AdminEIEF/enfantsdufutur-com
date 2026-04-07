@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect, lazy, Suspense } from 'react';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { usePagination } from '@/hooks/usePaginatedQuery';
 import PaginationControls from '@/components/PaginationControls';
 import Cropper from 'react-easy-crop';
@@ -110,6 +111,7 @@ export default function Eleves() {
   const { hasRole } = useAuth();
   const isSuperviseur = hasRole('superviseur');
   const [search, setSearch] = useState('');
+  useBarcodeScanner({ onScan: useCallback((code: string) => setSearch(code), []) });
   const [filterCycle, setFilterCycle] = useState('all');
   const [filterClasse, setFilterClasse] = useState('all');
   const [filterType, setFilterType] = useState<'all' | 'famille' | 'individuel'>('individuel');
