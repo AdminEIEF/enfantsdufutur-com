@@ -144,8 +144,9 @@ export default function ParentCantineOrdre({ enfants, code, onSuccess }: Props) 
                 </div>
                 <div className="space-y-1.5">
                   {enfants.map(e => (
-                    <label
+                    <div
                       key={e.id}
+                      onClick={() => toggleChild(e.id)}
                       className={`flex items-center gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${
                         selectedIds.includes(e.id)
                           ? 'border-primary bg-primary/5'
@@ -162,7 +163,7 @@ export default function ParentCantineOrdre({ enfants, code, onSuccess }: Props) 
                           Solde: {(e.solde_cantine || 0).toLocaleString()} GNF
                         </p>
                       </div>
-                    </label>
+                    </div>
                   ))}
                 </div>
               </div>
