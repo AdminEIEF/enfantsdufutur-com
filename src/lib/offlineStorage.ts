@@ -14,17 +14,29 @@ const STORE_POINTAGE_QUEUE = 'pointage_queue';
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => {
+    req.onupgradeneeded = (event) => {
       const db = req.result;
-      if (!db.objectStoreNames.contains(STORE_ELEVES)) {
-        const store = db.createObjectStore(STORE_ELEVES, { keyPath: 'matricule' });
-        store.createIndex('zone_transport_id', 'zone_transport_id', { unique: false });
+      const oldVersion = (event as IDBVersionChangeEvent).oldVersion;
+      if (oldVersion < 1) {
+        if (!db.objectStoreNames.contains(STORE_ELEVES)) {
+          const store = db.createObjectStore(STORE_ELEVES, { keyPath: 'matricule' });
+          store.createIndex('zone_transport_id', 'zone_transport_id', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORE_QUEUE)) {
+          db.createObjectStore(STORE_QUEUE, { keyPath: 'id', autoIncrement: true });
+        }
+        if (!db.objectStoreNames.contains(STORE_META)) {
+          db.createObjectStore(STORE_META, { keyPath: 'key' });
+        }
       }
-      if (!db.objectStoreNames.contains(STORE_QUEUE)) {
-        db.createObjectStore(STORE_QUEUE, { keyPath: 'id', autoIncrement: true });
-      }
-      if (!db.objectStoreNames.contains(STORE_META)) {
-        db.createObjectStore(STORE_META, { keyPath: 'key' });
+      if (oldVersion < 2) {
+        if (!db.objectStoreNames.contains(STORE_POINTAGE_ELEVES)) {
+          const store = db.createObjectStore(STORE_POINTAGE_ELEVES, { keyPath: 'matricule' });
+          store.createIndex('classe_id', 'classe_id', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORE_POINTAGE_QUEUE)) {
+          db.createObjectStore(STORE_POINTAGE_QUEUE, { keyPath: 'id', autoIncrement: true });
+        }
       }
     };
     req.onsuccess = () => resolve(req.result);
