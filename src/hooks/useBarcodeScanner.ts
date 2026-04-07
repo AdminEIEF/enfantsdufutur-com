@@ -58,6 +58,8 @@ export function extractMatriculeFromScan(raw: string): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
 
+  console.log('[Scanner] Raw input:', trimmed);
+
   // Strategy 1: Direct JSON parse (QWERTY scanner, clean data)
   try {
     const parsed = JSON.parse(trimmed);
@@ -67,9 +69,11 @@ export function extractMatriculeFromScan(raw: string): string | null {
   }
 
   // Strategy 2: AZERTY conversion then JSON parse
-  if (containsAzertyArtifacts(trimmed)) {
-    const converted = azertyToQwerty(trimmed);
-    
+  const isAzerty = containsAzertyArtifacts(trimmed);
+  const converted = azertyToQwerty(trimmed);
+  console.log('[Scanner] Converted:', converted);
+
+  if (isAzerty) {
     // Try JSON parse on converted text
     try {
       const parsed = JSON.parse(converted);
@@ -84,23 +88,26 @@ export function extractMatriculeFromScan(raw: string): string | null {
         const parsed = JSON.parse('{' + converted);
         if (parsed.matricule) return parsed.matricule;
       } catch {
-        // Still not valid
+        // Still not valid — try wrapping as full object
+      }
+      // Also try with both braces
+      const wrapped = '{' + converted + (converted.endsWith('}') ? '' : '}');
+      try {
+        const parsed = JSON.parse(wrapped);
+        if (parsed.matricule) return parsed.matricule;
+      } catch {
+        // fallback to regex
       }
     }
-
-    // Strategy 3: Extract matricule pattern from converted text
-    // Matricule format: 3+ letters, dash, digits, dash, digits (e.g., EDU-2602-0070)
-    const matriculeMatch = converted.match(/[A-Z]{2,5}-\d{2,4}-\d{3,6}/i);
-    if (matriculeMatch) return matriculeMatch[0].toUpperCase();
   }
 
-  // Strategy 4: Extract matricule pattern directly from raw text
-  // On AZERTY, digits become: &é"'(-è_çà and - becomes )
-  // So EDU-2602-0070 becomes EDU)é-àé)ààèà
-  // Convert digit-like AZERTY chars in the raw text
-  const rawConverted = azertyToQwerty(trimmed);
-  const rawMatriculeMatch = rawConverted.match(/[A-Z]{2,5}-\d{2,4}-\d{3,6}/i);
-  if (rawMatriculeMatch) return rawMatriculeMatch[0].toUpperCase();
+  // Strategy 3: Extract matricule pattern from converted text (always try, not just for AZERTY)
+  const matriculeMatch = converted.match(/[A-Z]{2,5}-\d{2,4}-\d{3,6}/i);
+  if (matriculeMatch) return matriculeMatch[0].toUpperCase();
+
+  // Strategy 4: Also try with EI prefix format (EI-2026-001)
+  const eiMatch = converted.match(/[A-Z]{2,5}-\d{2,6}-\d{2,6}/i);
+  if (eiMatch) return eiMatch[0].toUpperCase();
 
   // Strategy 5: If it already looks like a matricule (no conversion needed)
   const directMatch = trimmed.match(/^[A-Z]{2,5}-\d{2,4}-\d{3,6}$/i);

@@ -641,7 +641,7 @@ export default function Eleves() {
     const w = window.open('', '_blank', 'width=650,height=750');
     if (!w) return;
     const sName = schoolConfig?.nom || 'Groupe Scolaire';
-    const anneeScolaire = '2025-2026';
+    const anneeScolaire = '2026-2027';
     const cycleName = badgeEleve.classes?.niveaux?.cycles?.nom || '';
     const className = badgeEleve.classes?.nom || '';
     const logoUrl = schoolConfig?.logo_url || '';

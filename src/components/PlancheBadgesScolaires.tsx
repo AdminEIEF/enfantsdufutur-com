@@ -32,7 +32,7 @@ interface Props {
 
 const CARDS_PER_PAGE = 10; // 2 cols x 5 rows
 
-export default function PlancheBadgesScolaires({ eleves, onClose, schoolName, schoolLogo, anneeScolaire = '2025-2026' }: Props) {
+export default function PlancheBadgesScolaires({ eleves, onClose, schoolName, schoolLogo, anneeScolaire = '2026-2027' }: Props) {
   const rectoRef = useRef<HTMLDivElement>(null);
   const versoRef = useRef<HTMLDivElement>(null);
   const [generating, setGenerating] = useState(false);
