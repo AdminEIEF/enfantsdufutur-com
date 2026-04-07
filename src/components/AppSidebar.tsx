@@ -90,6 +90,7 @@ const navSections = [
       { title: 'Supervision', url: '/supervision', icon: ShieldCheck },
       { title: 'Configuration', url: '/configuration', icon: Cog },
       { title: 'Compositions', url: '/compositions-admin', icon: FileCheck2 },
+      { title: 'Scan Élève', url: '/scan-eleve', icon: ScanLine },
     ],
   },
   {
