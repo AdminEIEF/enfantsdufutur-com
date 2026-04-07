@@ -808,10 +808,10 @@ function PeriodesTab() {
   const [editId, setEditId] = useState<string | null>(null);
   const [nom, setNom] = useState('');
   const [ordre, setOrdre] = useState(1);
-  const [anneeScolaire, setAnneeScolaire] = useState('2025-2026');
+  const [anneeScolaire, setAnneeScolaire] = useState('2026-2027');
   const [estRattrapage, setEstRattrapage] = useState(false);
 
-  const reset = () => { setEditId(null); setNom(''); setOrdre(1); setAnneeScolaire('2025-2026'); setEstRattrapage(false); setOpen(false); };
+  const reset = () => { setEditId(null); setNom(''); setOrdre(1); setAnneeScolaire('2026-2027'); setEstRattrapage(false); setOpen(false); };
 
   const save = useMutation({
     mutationFn: async () => {
@@ -894,7 +894,7 @@ function PeriodesTab() {
           <div className="space-y-3">
             <div><Label>Nom</Label><Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Semestre 1, Trimestre 2" /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Année scolaire</Label><Input value={anneeScolaire} onChange={e => setAnneeScolaire(e.target.value)} placeholder="2025-2026" /></div>
+              <div><Label>Année scolaire</Label><Input value={anneeScolaire} onChange={e => setAnneeScolaire(e.target.value)} <div><Label>Année scolaire</Label><Input value={anneeScolaire} onChange={e => setAnneeScolaire(e.target.value)} placeholder="2026-2027" /></div> /></div>
               <div><Label>Ordre</Label><Input type="number" value={ordre} onChange={e => setOrdre(Number(e.target.value))} min={1} /></div>
             </div>
             <div className="flex items-center gap-2">

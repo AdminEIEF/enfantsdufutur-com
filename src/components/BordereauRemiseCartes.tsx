@@ -132,7 +132,7 @@ export default function BordereauRemiseCartes({
   eleves,
   onClose,
   schoolName = 'École Internationale Les Enfants du Futur',
-  anneeScolaire = '2025-2026',
+  anneeScolaire = '2026-2027',
 }: Props) {
   const printRef = useRef<HTMLDivElement>(null);
 
