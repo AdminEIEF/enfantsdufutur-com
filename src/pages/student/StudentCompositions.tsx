@@ -498,27 +498,69 @@ export default function StudentCompositions() {
                 </div>
                 <CardContent className="p-5 space-y-4">
                   <p className="font-semibold text-[15px] leading-relaxed"><MathText text={q.enonce} /></p>
-                  <RadioGroup value={answers[q.id] || ''} onValueChange={v => {
-                    setAnswers(prev => ({ ...prev, [q.id]: v }));
-                    if (!isLast) setTimeout(() => setCurrentQIndex(i => i + 1), 400);
-                  }} className="space-y-2">
-                    {(q.options || []).map((opt: any, oi: number) => (
-                      <motion.div key={oi} whileTap={{ scale: 0.97 }}>
-                        <label
-                          htmlFor={`q${q.id}_${oi}`}
-                          className={`flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer ${
-                            answers[q.id] === opt.label
-                              ? 'border-primary bg-primary/5 shadow-md'
-                              : 'border-muted hover:border-primary/30 hover:bg-accent/20'
-                          }`}
-                        >
-                          <RadioGroupItem value={opt.label} id={`q${q.id}_${oi}`} />
-                          <span className="flex-1 text-sm font-medium"><MathText text={opt.label} /></span>
-                          {answers[q.id] === opt.label && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
-                        </label>
-                      </motion.div>
-                    ))}
-                  </RadioGroup>
+                  {(() => {
+                    // Detect multi-answer: reponse_correcte is a JSON array
+                    let isMulti = false;
+                    try {
+                      const parsed = JSON.parse(q.reponse_correcte);
+                      if (Array.isArray(parsed) && parsed.length >= 2) isMulti = true;
+                    } catch {}
+
+                    if (isMulti) {
+                      const selected: string[] = Array.isArray(answers[q.id]) ? answers[q.id] as string[] : [];
+                      return (
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground italic">Plusieurs réponses possibles</p>
+                          {(q.options || []).map((opt: any, oi: number) => {
+                            const isChecked = selected.includes(opt.label);
+                            return (
+                              <motion.div key={oi} whileTap={{ scale: 0.97 }}>
+                                <div
+                                  onClick={() => {
+                                    const newSel = isChecked ? selected.filter(s => s !== opt.label) : [...selected, opt.label];
+                                    setAnswers(prev => ({ ...prev, [q.id]: newSel }));
+                                  }}
+                                  className={`flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer ${
+                                    isChecked
+                                      ? 'border-primary bg-primary/5 shadow-md'
+                                      : 'border-muted hover:border-primary/30 hover:bg-accent/20'
+                                  }`}
+                                >
+                                  <input type="checkbox" checked={isChecked} readOnly className="rounded border-muted-foreground" />
+                                  <span className="flex-1 text-sm font-medium"><MathText text={opt.label} /></span>
+                                  {isChecked && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <RadioGroup value={String(answers[q.id] || '')} onValueChange={v => {
+                        setAnswers(prev => ({ ...prev, [q.id]: v }));
+                        if (!isLast) setTimeout(() => setCurrentQIndex(i => i + 1), 400);
+                      }} className="space-y-2">
+                        {(q.options || []).map((opt: any, oi: number) => (
+                          <motion.div key={oi} whileTap={{ scale: 0.97 }}>
+                            <label
+                              htmlFor={`q${q.id}_${oi}`}
+                              className={`flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer ${
+                                answers[q.id] === opt.label
+                                  ? 'border-primary bg-primary/5 shadow-md'
+                                  : 'border-muted hover:border-primary/30 hover:bg-accent/20'
+                              }`}
+                            >
+                              <RadioGroupItem value={opt.label} id={`q${q.id}_${oi}`} />
+                              <span className="flex-1 text-sm font-medium"><MathText text={opt.label} /></span>
+                              {answers[q.id] === opt.label && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
+                            </label>
+                          </motion.div>
+                        ))}
+                      </RadioGroup>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </motion.div>
