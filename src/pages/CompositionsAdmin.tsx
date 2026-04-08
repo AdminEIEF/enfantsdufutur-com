@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -317,6 +318,8 @@ interface Question {
 }
 
 export default function CompositionsAdmin() {
+  const { roles } = useAuth();
+  const isCoordinateur = roles.includes('coordinateur') || roles.includes('coordinateur_secondaire');
   const [compositions, setCompositions] = useState<Composition[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [matieres, setMatieres] = useState<any[]>([]);
@@ -353,8 +356,19 @@ export default function CompositionsAdmin() {
       supabase.from('classes').select('id, nom, niveau_id, niveaux:niveau_id(nom, cycle_id, cycles:cycle_id(nom))').order('nom'),
       supabase.from('matieres').select('id, nom').order('nom'),
     ]);
-    setCompositions((compRes.data || []) as any);
-    setClasses(classesRes.data || []);
+    let allClasses = classesRes.data || [];
+    let allComps = (compRes.data || []) as any[];
+
+    // Coordinateur primaire: filter to Crèche/Maternelle/Primaire only
+    if (isCoordinateur && roles.includes('coordinateur')) {
+      const primaryCycles = ['Crèche', 'Maternelle', 'Primaire'];
+      allClasses = allClasses.filter((c: any) => primaryCycles.includes(c.niveaux?.cycles?.nom));
+      const primaryClassIds = new Set(allClasses.map((c: any) => c.id));
+      allComps = allComps.filter((c: any) => primaryClassIds.has(c.classe_id));
+    }
+
+    setCompositions(allComps);
+    setClasses(allClasses);
     setMatieres(matieresRes.data || []);
     setLoading(false);
   }
@@ -740,8 +754,8 @@ export default function CompositionsAdmin() {
         </div>
       )}
 
-      {/* Connected Students Dashboard - after compositions */}
-      <ConnectedStudentsDashboard />
+      {/* Connected Students Dashboard - hidden for coordinateurs */}
+      {!isCoordinateur && <ConnectedStudentsDashboard />}
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
