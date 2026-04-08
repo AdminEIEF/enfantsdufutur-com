@@ -134,13 +134,13 @@ export default function StudentCompositions() {
         await callApi('submit_composition', { composition_id: activeComp.id, reponse_texte: htmlContent });
         toast.success('Composition soumise !');
       } else if (activeType === 'texte') {
-        const textPayload = activeQuestions.map((q: any, idx: number) => ({ question_id: q.id, ordre: idx + 1, question: q.enonce, answer: (answers[q.id] || '').trim(), points: q.points }));
+        const textPayload = activeQuestions.map((q: any, idx: number) => ({ question_id: q.id, ordre: idx + 1, question: q.enonce, answer: (String(answers[q.id] || '')).trim(), points: q.points }));
         const textParts = textPayload.map(item => {
           const sq = item.question.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
           const sa = item.answer.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>');
           return `<div><strong>Q${item.ordre}: ${sq}</strong><br/>${sa || '<em>Aucune réponse</em>'}</div>`;
         }).join('<hr/>');
-        if (!autoSubmit) { const unanswered = activeQuestions.filter((q: any) => !answers[q.id]?.trim()); if (unanswered.length > 0 && !confirm(`${unanswered.length} question(s) sans réponse. Soumettre ?`)) { setSubmitting(false); return; } }
+        if (!autoSubmit) { const unanswered = activeQuestions.filter((q: any) => !String(answers[q.id] || '').trim()); if (unanswered.length > 0 && !confirm(`${unanswered.length} question(s) sans réponse. Soumettre ?`)) { setSubmitting(false); return; } }
         await callApi('submit_composition', { composition_id: activeComp.id, reponse_texte: textParts + photosHtml, reponses: textPayload });
         toast.success('Composition soumise !');
       } else {
@@ -315,7 +315,7 @@ export default function StudentCompositions() {
   // ─── Texte exam (one question at a time) ───
   if (activeComp && activeType === 'texte') {
     const total = activeQuestions.length;
-    const answered = Object.keys(answers).filter(k => answers[k]?.trim()).length;
+    const answered = Object.keys(answers).filter(k => String(answers[k] || '').trim()).length;
     const progress = total > 0 ? ((currentQIndex + 1) / total) * 100 : 0;
     const q = activeQuestions[currentQIndex];
     const isLast = currentQIndex >= total - 1;
@@ -357,7 +357,7 @@ export default function StudentCompositions() {
                   className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
                     i === currentQIndex
                       ? 'bg-primary text-primary-foreground scale-110 shadow-lg'
-                      : answers[activeQuestions[i]?.id]?.trim()
+                      : String(answers[activeQuestions[i]?.id] || '').trim()
                         ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                         : 'bg-muted text-muted-foreground'
                   }`}
