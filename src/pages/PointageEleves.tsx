@@ -230,6 +230,50 @@ export default function PointageEleves() {
   const presentCount = todayPointages.filter(p => p.heure_arrivee && !p.heure_depart).length;
   const lateCount = todayPointages.filter(p => p.en_retard).length;
 
+  const schoolObj = {
+    nom: schoolConfig?.nom || 'École',
+    soustitre: schoolConfig?.soustitre,
+    logo_url: schoolConfig?.logo_url,
+    ville: schoolConfig?.ville,
+  };
+
+  const printDailyReport = () => {
+    generateRapportPointagePDF({
+      type: 'jour',
+      date: today,
+      pointages: mapPointages(todayPointages),
+      stats: { total: arrivedCount, presents: presentCount, retards: lateCount, departs: departedCount },
+      school: schoolObj,
+    });
+  };
+
+  const printWeeklyReport = async () => {
+    const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const weekEnd = format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const { data } = await supabase
+      .from('pointages_eleves')
+      .select('*, eleves:eleve_id(nom, prenom, matricule, classes:classe_id(nom))')
+      .gte('date_pointage', weekStart)
+      .lte('date_pointage', weekEnd)
+      .order('date_pointage', { ascending: true })
+      .order('created_at', { ascending: true });
+    const entries = mapPointages(data || []);
+    generateRapportPointagePDF({
+      type: 'semaine',
+      date: today,
+      dateDebut: weekStart,
+      dateFin: weekEnd,
+      pointages: entries,
+      stats: {
+        total: (data || []).length,
+        presents: (data || []).filter((p: any) => p.heure_arrivee && !p.heure_depart).length,
+        retards: (data || []).filter((p: any) => p.en_retard).length,
+        departs: (data || []).filter((p: any) => p.heure_depart).length,
+      },
+      school: schoolObj,
+    });
+  };
+
   const stats = [
     { icon: LogIn, label: 'Arrivés', value: arrivedCount, gradient: 'from-emerald-500/15 to-teal-500/5', iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-500' },
     { icon: Users, label: 'Présents', value: presentCount, gradient: 'from-blue-500/15 to-indigo-500/5', iconBg: 'bg-blue-500/10', iconColor: 'text-blue-500' },
