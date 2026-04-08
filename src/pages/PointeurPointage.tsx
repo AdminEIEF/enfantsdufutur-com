@@ -5,12 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ScanLine, Search, Clock, LogIn, LogOut, Users, Camera } from 'lucide-react';
+import { ScanLine, Search, Clock, LogIn, LogOut, Users, Camera, Wifi, WifiOff, Download, RefreshCw, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useOfflinePointage } from '@/hooks/useOfflinePointage';
 
 export default function PointeurPointage() {
   const [searchMatricule, setSearchMatricule] = useState('');
@@ -20,6 +21,7 @@ export default function PointeurPointage() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [niveaux, setNiveaux] = useState<any[]>([]);
   const [cycles, setCycles] = useState<any[]>([]);
+  const offline = useOfflinePointage();
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -68,6 +70,28 @@ export default function PointeurPointage() {
     if (!matricule) return;
     setLoading(true);
     try {
+      // OFFLINE MODE
+      if (!offline.isOnline) {
+        const result = await offline.processOfflineScan(matricule, today);
+        if (!result.success) {
+          toast.error('Élève non trouvé en cache', { description: `Matricule: ${matricule}` });
+        } else if (result.action === 'arrivee') {
+          const heureStr = format(new Date(result.heure!), 'HH:mm');
+          setLastScanned({ prenom: result.eleve!.prenom, nom: result.eleve!.nom, matricule: result.eleve!.matricule, classes: { nom: result.eleve!.classe_nom }, action: 'arrivee', heure: result.heure, en_retard: result.en_retard });
+          toast[result.en_retard ? 'warning' : 'success'](`${result.en_retard ? '⚠️ RETARD' : '✅ Arrivée'} (hors ligne)`, { description: `${result.eleve!.prenom} ${result.eleve!.nom} — ${heureStr}` });
+        } else if (result.action === 'depart') {
+          setLastScanned({ prenom: result.eleve!.prenom, nom: result.eleve!.nom, matricule: result.eleve!.matricule, classes: { nom: result.eleve!.classe_nom }, action: 'depart', heure: result.heure });
+          toast.success(`🚪 Départ (hors ligne)`, { description: `${result.eleve!.prenom} ${result.eleve!.nom}` });
+        } else {
+          setLastScanned({ prenom: result.eleve!.prenom, nom: result.eleve!.nom, matricule: result.eleve!.matricule, classes: { nom: result.eleve!.classe_nom }, action: 'complet' });
+          toast.info('Pointage déjà complet');
+        }
+        setLoading(false);
+        setSearchMatricule('');
+        return;
+      }
+
+      // ONLINE MODE
       const { data: eleve } = await supabase
         .from('eleves')
         .select('id, nom, prenom, matricule, classe_id, classes:classe_id(nom), famille_id')
@@ -214,6 +238,40 @@ export default function PointeurPointage() {
           {format(new Date(), 'EEEE dd MMMM yyyy', { locale: fr })}
         </Badge>
       </div>
+
+      {/* Offline status bar */}
+      <Card className={`border ${offline.isOnline ? 'border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/10' : 'border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/10'}`}>
+        <CardContent className="py-3 px-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3 text-sm">
+              {offline.isOnline ? (
+                <Badge variant="outline" className="gap-1 border-emerald-500 text-emerald-700"><Wifi className="h-3 w-3" /> En ligne</Badge>
+              ) : (
+                <Badge variant="outline" className="gap-1 border-amber-500 text-amber-700"><WifiOff className="h-3 w-3" /> Hors ligne</Badge>
+              )}
+              <span className="text-muted-foreground">{offline.cachedCount} en cache</span>
+              {offline.pendingCount > 0 && (
+                <Badge variant="secondary" className="gap-1">
+                  <RefreshCw className={`h-3 w-3 ${offline.isSyncing ? 'animate-spin' : ''}`} />
+                  {offline.pendingCount} en attente
+                </Badge>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={offline.downloadEleves} disabled={offline.isDownloading || !offline.isOnline}>
+                {offline.isDownloading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}
+                Cache
+              </Button>
+              {offline.pendingCount > 0 && offline.isOnline && (
+                <Button size="sm" variant="outline" onClick={offline.syncPending} disabled={offline.isSyncing}>
+                  <RefreshCw className={`h-3.5 w-3.5 mr-1 ${offline.isSyncing ? 'animate-spin' : ''}`} />
+                  Sync
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Scanner */}
       <Card>
