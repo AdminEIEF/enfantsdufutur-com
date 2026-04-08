@@ -308,7 +308,7 @@ interface Composition {
 interface Question {
   id?: string;
   composition_id?: string;
-  type_question: 'qcm' | 'vrai_faux' | 'texte';
+  type_question: 'qcm' | 'qcm_multiple' | 'vrai_faux' | 'texte';
   enonce: string;
   options: { label: string; correct?: boolean }[];
   reponse_correcte: string;
@@ -495,14 +495,29 @@ export default function CompositionsAdmin() {
     setShowQuestions(compId);
     setQuestionsLoading(true);
     const { data } = await supabase.from('composition_questions').select('*').eq('composition_id', compId).order('ordre');
-    setQuestions((data || []).map((q: any) => ({
-      ...q,
-      options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
-    })));
+    setQuestions((data || []).map((q: any) => {
+      const opts = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+      // Detect qcm_multiple: if reponse_correcte is a JSON array string and type is qcm
+      let type_question = q.type_question;
+      let reponse_correcte = q.reponse_correcte;
+      if (q.type_question === 'qcm' && reponse_correcte) {
+        try {
+          const parsed = JSON.parse(reponse_correcte);
+          if (Array.isArray(parsed) && parsed.length >= 2) {
+            type_question = 'qcm_multiple';
+            // Mark correct options
+            for (const opt of opts) {
+              opt.correct = parsed.includes(opt.label);
+            }
+          }
+        } catch {}
+      }
+      return { ...q, type_question, options: opts, reponse_correcte };
+    }));
     setQuestionsLoading(false);
   }
 
-  function addQuestion(type: 'qcm' | 'vrai_faux' | 'texte') {
+  function addQuestion(type: 'qcm' | 'qcm_multiple' | 'vrai_faux' | 'texte') {
     const newQ: Question = {
       type_question: type,
       enonce: '',
@@ -531,18 +546,23 @@ export default function CompositionsAdmin() {
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       if (!q.enonce.trim()) { toast.error(`Question ${i + 1}: énoncé requis`); return; }
-      if (q.type_question !== 'texte' && !q.reponse_correcte) { toast.error(`Question ${i + 1}: réponse correcte requise`); return; }
-      if (q.type_question === 'qcm' && q.options.some(o => !o.label.trim())) {
+      if (q.type_question === 'qcm_multiple') {
+        const correctCount = q.options.filter(o => o.correct).length;
+        if (correctCount < 2) { toast.error(`Question ${i + 1}: sélectionnez au moins 2 bonnes réponses`); return; }
+      } else if (q.type_question !== 'texte' && !q.reponse_correcte) { toast.error(`Question ${i + 1}: réponse correcte requise`); return; }
+      if ((q.type_question === 'qcm' || q.type_question === 'qcm_multiple') && q.options.some(o => !o.label.trim())) {
         toast.error(`Question ${i + 1}: toutes les options doivent être remplies`); return;
       }
     }
     await supabase.from('composition_questions').delete().eq('composition_id', showQuestions);
     const rows = questions.map((q, i) => ({
       composition_id: showQuestions,
-      type_question: q.type_question,
+      type_question: q.type_question === 'qcm_multiple' ? 'qcm' : q.type_question,
       enonce: q.enonce,
-      options: q.options,
-      reponse_correcte: q.reponse_correcte,
+      options: q.type_question === 'qcm_multiple' ? q.options.map(o => ({ ...o })) : q.options,
+      reponse_correcte: q.type_question === 'qcm_multiple'
+        ? JSON.stringify(q.options.filter(o => o.correct).map(o => o.label))
+        : q.reponse_correcte,
       points: q.points,
       ordre: i,
     }));
@@ -899,7 +919,7 @@ export default function CompositionsAdmin() {
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <Badge variant="outline">
-                        {q.type_question === 'qcm' ? 'QCM' : q.type_question === 'texte' ? '✍️ Texte' : 'Vrai/Faux'} — Q{idx + 1}
+                        {q.type_question === 'qcm_multiple' ? 'QCM Multiple' : q.type_question === 'qcm' ? 'QCM' : q.type_question === 'texte' ? '✍️ Texte' : 'Vrai/Faux'} — Q{idx + 1}
                       </Badge>
                       <div className="flex items-center gap-2">
                         <Label className="text-xs">Points:</Label>
@@ -928,6 +948,44 @@ export default function CompositionsAdmin() {
                         <p className="text-xs text-muted-foreground italic">
                           💡 L'IA comparera la réponse de l'élève avec cette référence et attribuera une note automatiquement.
                         </p>
+                      </div>
+                    ) : q.type_question === 'qcm_multiple' ? (
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Cochez les bonnes réponses (au moins 2) :</Label>
+                        {q.options.map((opt, oi) => (
+                          <div key={oi} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              className="rounded border-muted-foreground"
+                              checked={!!opt.correct}
+                              onChange={(e) => {
+                                const newOpts = [...q.options];
+                                newOpts[oi] = { ...newOpts[oi], correct: e.target.checked };
+                                updateQuestion(idx, { options: newOpts });
+                              }}
+                              id={`q${idx}_mc${oi}`}
+                            />
+                            <div className="flex-1 space-y-1">
+                              <Input
+                                className="h-8"
+                                placeholder={`Option ${oi + 1}`}
+                                value={opt.label}
+                                onChange={e => {
+                                  const newOpts = [...q.options];
+                                  newOpts[oi] = { ...newOpts[oi], label: e.target.value };
+                                  updateQuestion(idx, { options: newOpts });
+                                }}
+                              />
+                              {opt.label && /[\$\\]/.test(opt.label) && (
+                                <span className="text-xs text-muted-foreground"><MathText text={opt.label} /></span>
+                              )}
+                            </div>
+                            {opt.correct && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
+                          </div>
+                        ))}
+                        <Button variant="ghost" size="sm" onClick={() => {
+                          updateQuestion(idx, { options: [...q.options, { label: '' }] });
+                        }}>+ Ajouter une option</Button>
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -978,6 +1036,9 @@ export default function CompositionsAdmin() {
                       <>
                         <Button variant="outline" onClick={() => addQuestion('qcm')}>
                           <Plus className="h-4 w-4 mr-1" /> QCM
+                        </Button>
+                        <Button variant="outline" onClick={() => addQuestion('qcm_multiple')}>
+                          <Plus className="h-4 w-4 mr-1" /> QCM Multiple
                         </Button>
                         <Button variant="outline" onClick={() => addQuestion('vrai_faux')}>
                           <Plus className="h-4 w-4 mr-1" /> Vrai/Faux
