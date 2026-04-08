@@ -2,17 +2,16 @@ import { useState, useMemo, useEffect } from 'react';
 import { usePagination } from '@/hooks/usePaginatedQuery';
 import PaginationControls from '@/components/PaginationControls';
 import { useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, UserPlus, ChevronRight, KeyRound, Copy, RefreshCw, GraduationCap, User, Eye, EyeOff, Download } from 'lucide-react';
+import { Users, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, UserPlus, ChevronRight, KeyRound, Copy, RefreshCw, GraduationCap, User, Eye, EyeOff, Download, Heart, Wallet } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -37,10 +36,7 @@ function useClassesAll() {
   return useQuery({
     queryKey: ['classes-all-familles'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('classes')
-        .select('*, niveaux:niveau_id(nom, cycles:cycle_id(nom))')
-        .order('nom');
+      const { data, error } = await supabase.from('classes').select('*, niveaux:niveau_id(nom, cycles:cycle_id(nom))').order('nom');
       if (error) throw error;
       return data;
     },
@@ -58,8 +54,6 @@ export default function Familles() {
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
-
-  // Create/Edit family
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [nomFamille, setNomFamille] = useState('');
@@ -67,20 +61,7 @@ export default function Familles() {
   const [telMere, setTelMere] = useState('');
   const [email, setEmail] = useState('');
   const [adresse, setAdresse] = useState('');
-
-  // Detail view
   const [selectedFamille, setSelectedFamille] = useState<any>(null);
-
-  // Auto-open family from URL param (e.g. from Eleves page)
-  useEffect(() => {
-    const familleId = searchParams.get('familleId');
-    if (familleId && familles.length > 0 && !selectedFamille) {
-      const found = familles.find((f: any) => f.id === familleId);
-      if (found) setSelectedFamille(found);
-    }
-  }, [familles, searchParams]);
-
-  // Add child dialog
   const [addChildOpen, setAddChildOpen] = useState(false);
   const [addChildMode, setAddChildMode] = useState<'search' | 'create'>('search');
   const [childSearch, setChildSearch] = useState('');
@@ -89,24 +70,24 @@ export default function Familles() {
   const [childSexe, setChildSexe] = useState('');
   const [childDob, setChildDob] = useState('');
   const [childClasseId, setChildClasseId] = useState('');
-
-  // Edit child dialog
   const [editingChild, setEditingChild] = useState<any>(null);
-
-  // Delete confirm
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  // Admin: show credentials tab
   const [showCodesPanel, setShowCodesPanel] = useState(false);
   const [codesSearch, setCodesSearch] = useState('');
   const [visibleCodeIds, setVisibleCodeIds] = useState<Set<string>>(new Set());
 
+  useEffect(() => {
+    const familleId = searchParams.get('familleId');
+    if (familleId && familles.length > 0 && !selectedFamille) {
+      const found = familles.find((f: any) => f.id === familleId);
+      if (found) setSelectedFamille(found);
+    }
+  }, [familles, searchParams]);
+
   const { data: generatedCodes = [], refetch: refetchCodes } = useQuery({
     queryKey: ['generated-family-codes'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('generated_family_codes' as any)
-        .select('famille_id, code_plain, created_at')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('generated_family_codes' as any).select('famille_id, code_plain, created_at').order('created_at', { ascending: false });
       if (error) throw error;
       return (data || []) as any[];
     },
@@ -119,15 +100,10 @@ export default function Familles() {
     return m;
   }, [generatedCodes]);
 
-
   const { data: allEleves = [] } = useQuery({
     queryKey: ['eleves-for-famille-search'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('eleves')
-        .select('id, nom, prenom, matricule, sexe, classe_id, famille_id, classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom)))')
-        .is('deleted_at', null)
-        .order('nom');
+      const { data, error } = await supabase.from('eleves').select('id, nom, prenom, matricule, sexe, classe_id, famille_id, classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom)))').is('deleted_at', null).order('nom');
       if (error) throw error;
       return data;
     },
@@ -136,76 +112,33 @@ export default function Familles() {
   const searchedEleves = useMemo(() => {
     if (!childSearch.trim()) return [];
     const q = childSearch.toLowerCase();
-    return allEleves
-      .filter((e: any) => 
-        `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(q)
-      )
-      .slice(0, 10);
+    return allEleves.filter((e: any) => `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(q)).slice(0, 10);
   }, [allEleves, childSearch]);
 
-  const resetForm = () => {
-    setNomFamille(''); setTelPere(''); setTelMere(''); setEmail(''); setAdresse(''); setEditId(null);
-  };
-
-  const resetChildForm = () => {
-    setChildNom(''); setChildPrenom(''); setChildSexe(''); setChildDob(''); setChildClasseId('');
-    setChildSearch(''); setAddChildMode('search');
-  };
-
-  const openEdit = (f: any) => {
-    setEditId(f.id);
-    setNomFamille(f.nom_famille);
-    setTelPere(f.telephone_pere || '');
-    setTelMere(f.telephone_mere || '');
-    setEmail(f.email_parent || '');
-    setAdresse(f.adresse || '');
-    setFormOpen(true);
-  };
-
+  const resetForm = () => { setNomFamille(''); setTelPere(''); setTelMere(''); setEmail(''); setAdresse(''); setEditId(null); };
+  const resetChildForm = () => { setChildNom(''); setChildPrenom(''); setChildSexe(''); setChildDob(''); setChildClasseId(''); setChildSearch(''); setAddChildMode('search'); };
+  const openEdit = (f: any) => { setEditId(f.id); setNomFamille(f.nom_famille); setTelPere(f.telephone_pere || ''); setTelMere(f.telephone_mere || ''); setEmail(f.email_parent || ''); setAdresse(f.adresse || ''); setFormOpen(true); };
   const openCreate = () => { resetForm(); setFormOpen(true); };
 
-  // ─── Mutations ─────────────────────────────────────────
   const saveFamille = useMutation({
     mutationFn: async () => {
       if (!nomFamille.trim()) throw new Error('Le nom de famille est obligatoire');
-      if (nomFamille.trim().length > 100) throw new Error('Le nom ne doit pas dépasser 100 caractères');
-      const payload = {
-        nom_famille: nomFamille.trim(),
-        telephone_pere: telPere.trim() || null,
-        telephone_mere: telMere.trim() || null,
-        email_parent: email.trim() || null,
-        adresse: adresse.trim() || null,
-      };
-      if (editId) {
-        const { error } = await supabase.from('familles').update(payload).eq('id', editId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('familles').insert(payload);
-        if (error) throw error;
-      }
+      const payload = { nom_famille: nomFamille.trim(), telephone_pere: telPere.trim() || null, telephone_mere: telMere.trim() || null, email_parent: email.trim() || null, adresse: adresse.trim() || null };
+      if (editId) { const { error } = await supabase.from('familles').update(payload).eq('id', editId); if (error) throw error; }
+      else { const { error } = await supabase.from('familles').insert(payload); if (error) throw error; }
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['familles-with-children'] });
-      toast.success(editId ? 'Famille modifiée' : 'Famille créée');
-      resetForm(); setFormOpen(false);
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['familles-with-children'] }); toast.success(editId ? 'Famille modifiée' : 'Famille créée'); resetForm(); setFormOpen(false); },
     onError: (e: any) => toast.error(e.message),
   });
 
   const deleteFamille = useMutation({
     mutationFn: async (id: string) => {
-      // Détacher les enfants d'abord
       const { error: detachErr } = await supabase.from('eleves').update({ famille_id: null }).eq('famille_id', id);
       if (detachErr) throw detachErr;
       const { error } = await supabase.from('familles').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['familles-with-children'] });
-      toast.success('Famille supprimée');
-      setDeleteConfirmId(null);
-      setSelectedFamille(null);
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['familles-with-children'] }); toast.success('Famille supprimée'); setDeleteConfirmId(null); setSelectedFamille(null); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -215,13 +148,7 @@ export default function Familles() {
       const { error } = await supabase.from('eleves').update({ famille_id: selectedFamille.id }).eq('id', eleveId);
       if (error) throw error;
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ['familles-with-children'] });
-      await qc.invalidateQueries({ queryKey: ['eleves-for-famille-search'] });
-      toast.success('Élève rattaché à la famille (retiré de l\'ancienne si existante)');
-      resetChildForm(); setAddChildOpen(false);
-      refreshSelectedFamille();
-    },
+    onSuccess: async () => { await qc.invalidateQueries({ queryKey: ['familles-with-children'] }); await qc.invalidateQueries({ queryKey: ['eleves-for-famille-search'] }); toast.success('Élève rattaché'); resetChildForm(); setAddChildOpen(false); refreshSelectedFamille(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -229,60 +156,27 @@ export default function Familles() {
     mutationFn: async () => {
       if (!childNom.trim() || !childPrenom.trim()) throw new Error('Nom et prénom obligatoires');
       if (!selectedFamille) throw new Error('Aucune famille sélectionnée');
-      const { error } = await supabase.from('eleves').insert({
-        nom: childNom.trim(),
-        prenom: childPrenom.trim(),
-        sexe: childSexe || null,
-        date_naissance: childDob || null,
-        classe_id: childClasseId || null,
-        famille_id: selectedFamille.id,
-        statut: 'inscrit',
-      });
+      const { error } = await supabase.from('eleves').insert({ nom: childNom.trim(), prenom: childPrenom.trim(), sexe: childSexe || null, date_naissance: childDob || null, classe_id: childClasseId || null, famille_id: selectedFamille.id, statut: 'inscrit' });
       if (error) throw error;
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ['familles-with-children'] });
-      await qc.invalidateQueries({ queryKey: ['eleves-for-famille-search'] });
-      toast.success(`${childPrenom} ${childNom} ajouté(e) à la famille`);
-      resetChildForm(); setAddChildOpen(false);
-      refreshSelectedFamille();
-    },
+    onSuccess: async () => { await qc.invalidateQueries({ queryKey: ['familles-with-children'] }); await qc.invalidateQueries({ queryKey: ['eleves-for-famille-search'] }); toast.success(`${childPrenom} ${childNom} ajouté(e)`); resetChildForm(); setAddChildOpen(false); refreshSelectedFamille(); },
     onError: (e: any) => toast.error(e.message),
   });
 
   const refreshSelectedFamille = () => {
     const updated = qc.getQueryData<any[]>(['familles-with-children']);
-    if (updated && selectedFamille) {
-      const f = updated.find((fam: any) => fam.id === selectedFamille.id);
-      if (f) setSelectedFamille(f);
-    }
+    if (updated && selectedFamille) { const f = updated.find((fam: any) => fam.id === selectedFamille.id); if (f) setSelectedFamille(f); }
   };
 
   const removeChildFromFamily = useMutation({
-    mutationFn: async (eleveId: string) => {
-      const { error } = await supabase.from('eleves').update({ famille_id: null }).eq('id', eleveId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['familles-with-children'] });
-      toast.success('Enfant détaché de la famille');
-    },
+    mutationFn: async (eleveId: string) => { const { error } = await supabase.from('eleves').update({ famille_id: null }).eq('id', eleveId); if (error) throw error; },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['familles-with-children'] }); toast.success('Enfant détaché'); },
     onError: (e: any) => toast.error(e.message),
   });
 
   const updateChild = useMutation({
-    mutationFn: async (child: any) => {
-      const { id, ...rest } = child;
-      const { error } = await supabase.from('eleves').update(rest).eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ['familles-with-children'] });
-      await qc.invalidateQueries({ queryKey: ['eleves-for-famille-search'] });
-      toast.success('Élève mis à jour');
-      setEditingChild(null);
-      refreshSelectedFamille();
-    },
+    mutationFn: async (child: any) => { const { id, ...rest } = child; const { error } = await supabase.from('eleves').update(rest).eq('id', id); if (error) throw error; },
+    onSuccess: async () => { await qc.invalidateQueries({ queryKey: ['familles-with-children'] }); await qc.invalidateQueries({ queryKey: ['eleves-for-famille-search'] }); toast.success('Élève mis à jour'); setEditingChild(null); refreshSelectedFamille(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -293,53 +187,19 @@ export default function Familles() {
       if (error) throw error;
       return code;
     },
-    onSuccess: (code) => {
-      qc.invalidateQueries({ queryKey: ['familles-with-children'] });
-      toast.success(`Code généré : ${code} — Notez-le maintenant, il ne sera plus visible.`);
-      // Mark as having a code without storing the hash
-      if (selectedFamille) {
-        setSelectedFamille({ ...selectedFamille, code_acces_set: true });
-      }
-    },
+    onSuccess: (code) => { qc.invalidateQueries({ queryKey: ['familles-with-children'] }); toast.success(`Code généré : ${code}`); if (selectedFamille) setSelectedFamille({ ...selectedFamille, code_acces_set: true }); },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.size === filtered.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filtered.map((f: any) => f.id)));
-    }
-  };
+  const toggleSelect = (id: string) => { setSelectedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); };
+  const toggleSelectAll = () => { if (selectedIds.size === filtered.length) setSelectedIds(new Set()); else setSelectedIds(new Set(filtered.map((f: any) => f.id))); };
 
   const bulkDeleteFamilles = useMutation({
-    mutationFn: async () => {
-      const ids = Array.from(selectedIds);
-      for (const id of ids) {
-        const { error: detachErr } = await supabase.from('eleves').update({ famille_id: null }).eq('famille_id', id);
-        if (detachErr) throw detachErr;
-        const { error } = await supabase.from('familles').delete().eq('id', id);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['familles-with-children'] });
-      toast.success(`${selectedIds.size} famille(s) supprimée(s). Les élèves ont été conservés.`);
-      setSelectedIds(new Set());
-      setBulkDeleteConfirm(false);
-    },
+    mutationFn: async () => { for (const id of Array.from(selectedIds)) { await supabase.from('eleves').update({ famille_id: null }).eq('famille_id', id); await supabase.from('familles').delete().eq('id', id); } },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['familles-with-children'] }); toast.success(`${selectedIds.size} famille(s) supprimée(s)`); setSelectedIds(new Set()); setBulkDeleteConfirm(false); },
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Stats
   const totalFamilles = familles.length;
   const totalEnfants = familles.reduce((s: number, f: any) => s + (f.eleves?.length || 0), 0);
   const famillesMulti = familles.filter((f: any) => (f.eleves?.length || 0) > 1).length;
@@ -352,423 +212,354 @@ export default function Familles() {
   const { paginatedData: paginatedFamilles, currentPage: famillesPage, totalPages: famillesTotalPages, totalItems: famillesTotalItems, pageSize: famillesPageSize, setCurrentPage: setFamillesPage } = usePagination(filtered);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Users className="h-7 w-7 text-primary" /> Familles
-        </h1>
-        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" /> Nouvelle Famille</Button>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2.5">
+            <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+              <Users className="h-5 w-5 text-primary" />
+            </div>
+            Familles
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5 ml-[52px]">{totalFamilles} familles enregistrées</p>
+        </div>
+        <Button onClick={openCreate} className="rounded-2xl gap-2 h-10 shadow-sm">
+          <Plus className="h-4 w-4" /> Nouvelle
+        </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total familles</p>
-                <p className="text-2xl font-bold">{totalFamilles}</p>
-              </div>
+      {/* Stats Cards - Glass */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { icon: Users, label: 'Familles', value: totalFamilles, gradient: 'from-primary/10 to-primary/5', color: 'text-primary' },
+          { icon: GraduationCap, label: 'Enfants', value: totalEnfants, gradient: 'from-accent/10 to-accent/5', color: 'text-accent' },
+          { icon: Heart, label: 'Fratries', value: famillesMulti, gradient: 'from-pink-500/10 to-pink-500/5', color: 'text-pink-600' },
+        ].map(({ icon: Icon, label, value, gradient, color }) => (
+          <div key={label} className={`rounded-2xl bg-gradient-to-br ${gradient} border p-3.5 flex items-center gap-2.5`}>
+            <div className={`h-10 w-10 rounded-xl bg-card/80 flex items-center justify-center ${color} shrink-0`}>
+              <Icon className="h-5 w-5" />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <UserPlus className="h-8 w-8 text-accent" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total enfants inscrits</p>
-                <p className="text-2xl font-bold">{totalEnfants}</p>
-              </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+              <p className={`text-xl font-bold ${color}`}>{value}</p>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-secondary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Familles multi-enfants</p>
-                <p className="text-2xl font-bold text-secondary">{famillesMulti}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        ))}
       </div>
 
-      {/* Admin: Identifiants Familles Panel */}
+      {/* Identifiants Panel */}
       {(isAdmin || isSuperviseur) && (
-        <Card>
-          <CardHeader className="pb-3 cursor-pointer" onClick={() => { setShowCodesPanel(!showCodesPanel); if (!showCodesPanel) refetchCodes(); }}>
-            <CardTitle className="flex items-center justify-between text-base">
-              <span className="flex items-center gap-2">
-                <KeyRound className="h-5 w-5 text-primary" />
-                Identifiants Familles
-                <Badge variant="secondary" className="ml-2">{generatedCodes.length} générés</Badge>
-              </span>
-              <ChevronRight className={`h-4 w-4 transition-transform ${showCodesPanel ? 'rotate-90' : ''}`} />
-            </CardTitle>
-          </CardHeader>
+        <div className="rounded-2xl border bg-card/80 backdrop-blur-sm overflow-hidden">
+          <button className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/30 transition-colors" onClick={() => { setShowCodesPanel(!showCodesPanel); if (!showCodesPanel) refetchCodes(); }}>
+            <span className="flex items-center gap-2 text-sm font-semibold">
+              <KeyRound className="h-4 w-4 text-primary" />
+              Identifiants Familles
+              <Badge variant="secondary" className="text-[10px] rounded-full">{generatedCodes.length}</Badge>
+            </span>
+            <ChevronRight className={`h-4 w-4 transition-transform ${showCodesPanel ? 'rotate-90' : ''}`} />
+          </button>
           {showCodesPanel && (
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2">
+            <div className="px-4 pb-4 space-y-3 border-t">
+              <div className="flex items-center gap-2 pt-3">
                 <div className="relative flex-1">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Rechercher une famille..." className="pl-9 h-9" value={codesSearch} onChange={e => setCodesSearch(e.target.value)} />
+                  <Input placeholder="Rechercher…" className="pl-9 h-9 rounded-xl" value={codesSearch} onChange={e => setCodesSearch(e.target.value)} />
                 </div>
-                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
-                  const lines = ['Famille,Code d\'accès'];
-                  familles.forEach((f: any) => {
-                    const code = codesMap.get(f.id);
-                    if (code) lines.push(`"${f.nom_famille}","${code}"`);
-                  });
+                <Button variant="outline" size="sm" className="gap-1.5 rounded-xl" onClick={() => {
+                  const lines = ['Famille,Code'];
+                  familles.forEach((f: any) => { const code = codesMap.get(f.id); if (code) lines.push(`"${f.nom_famille}","${code}"`); });
                   const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
                   const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url; a.download = 'identifiants_familles.csv'; a.click();
-                  URL.revokeObjectURL(url);
-                  toast.success('Export CSV téléchargé');
+                  const a = document.createElement('a'); a.href = url; a.download = 'identifiants_familles.csv'; a.click();
+                  URL.revokeObjectURL(url); toast.success('CSV téléchargé');
                 }}>
                   <Download className="h-3.5 w-3.5" /> CSV
                 </Button>
               </div>
-
-              <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
-                {familles
-                  .filter((f: any) => {
-                    if (!codesSearch.trim()) return codesMap.has(f.id);
-                    const q = codesSearch.toLowerCase();
-                    return codesMap.has(f.id) && f.nom_famille.toLowerCase().includes(q);
-                  })
-                  .map((f: any) => {
-                    const code = codesMap.get(f.id) || '';
-                    const isVisible = visibleCodeIds.has(f.id);
-                    return (
-                      <div key={f.id} className="flex items-center justify-between px-3 py-2 hover:bg-muted/50">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium truncate">{f.nom_famille}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {f.telephone_pere ? `📱 ${f.telephone_pere}` : ''} {f.telephone_mere ? `📱 ${f.telephone_mere}` : ''}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <code className="text-sm font-mono font-bold bg-muted px-2 py-0.5 rounded">
-                            {isVisible ? code : '••••••••'}
-                          </code>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                            setVisibleCodeIds(prev => {
-                              const next = new Set(prev);
-                              if (next.has(f.id)) next.delete(f.id); else next.add(f.id);
-                              return next;
-                            });
-                          }}>
-                            {isVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(code); toast.success('Code copié !'); }}>
-                            <Copy className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
+              <div className="rounded-xl border divide-y max-h-[300px] overflow-y-auto">
+                {familles.filter((f: any) => {
+                  if (!codesSearch.trim()) return codesMap.has(f.id);
+                  return codesMap.has(f.id) && f.nom_famille.toLowerCase().includes(codesSearch.toLowerCase());
+                }).map((f: any) => {
+                  const code = codesMap.get(f.id) || '';
+                  const isVisible = visibleCodeIds.has(f.id);
+                  return (
+                    <div key={f.id} className="flex items-center justify-between px-3 py-2.5 hover:bg-muted/30 transition-colors">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{f.nom_famille}</p>
+                        <p className="text-[11px] text-muted-foreground">{f.telephone_pere ? `📱 ${f.telephone_pere}` : ''}</p>
                       </div>
-                    );
-                  })}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <code className="text-xs font-mono font-bold bg-muted px-2 py-0.5 rounded-lg">{isVisible ? code : '••••••••'}</code>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setVisibleCodeIds(prev => { const n = new Set(prev); if (n.has(f.id)) n.delete(f.id); else n.add(f.id); return n; })}>
+                          {isVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(code); toast.success('Copié !'); }}>
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
                 {familles.filter((f: any) => codesMap.has(f.id)).length === 0 && (
-                  <p className="text-center text-sm text-muted-foreground py-4">Aucun code généré. Le superviseur doit d'abord générer les codes.</p>
+                  <p className="text-center text-sm text-muted-foreground py-4">Aucun code généré.</p>
                 )}
               </div>
-            </CardContent>
+            </div>
           )}
-        </Card>
+        </div>
       )}
 
-
-      <div className="flex items-center gap-4 flex-wrap">
+      {/* Search + Actions */}
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Rechercher une famille…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Rechercher une famille…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-2xl h-10" />
         </div>
         {filtered.length > 0 && (
           <div className="flex items-center gap-2">
-            <Checkbox
-              checked={selectedIds.size === filtered.length && filtered.length > 0}
-              onCheckedChange={toggleSelectAll}
-            />
-            <span className="text-sm text-muted-foreground">Tout sélectionner</span>
+            <Checkbox checked={selectedIds.size === filtered.length && filtered.length > 0} onCheckedChange={toggleSelectAll} />
+            <span className="text-xs text-muted-foreground">Tout</span>
           </div>
         )}
         {selectedIds.size > 0 && (
-          <Button variant="destructive" size="sm" onClick={() => setBulkDeleteConfirm(true)}>
-            <Trash2 className="h-4 w-4 mr-1" /> Supprimer {selectedIds.size} famille(s)
+          <Button variant="destructive" size="sm" className="rounded-xl" onClick={() => setBulkDeleteConfirm(true)}>
+            <Trash2 className="h-3.5 w-3.5 mr-1" /> {selectedIds.size}
           </Button>
         )}
       </div>
 
-      {/* Family Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Family Cards Grid */}
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
-          <p className="text-muted-foreground col-span-full text-center py-8">Chargement…</p>
+          <p className="text-muted-foreground col-span-full text-center py-12">Chargement…</p>
         ) : filtered.length === 0 ? (
-          <p className="text-muted-foreground col-span-full text-center py-8">Aucune famille trouvée</p>
+          <p className="text-muted-foreground col-span-full text-center py-12">Aucune famille trouvée</p>
         ) : paginatedFamilles.map((f: any) => (
-          <Card key={f.id} className={`cursor-pointer hover:shadow-md transition-shadow group ${selectedIds.has(f.id) ? 'ring-2 ring-primary' : ''}`}>
-            <CardHeader className="pb-2">
+          <div
+            key={f.id}
+            className={`group relative rounded-2xl border bg-card/80 backdrop-blur-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden ${selectedIds.has(f.id) ? 'ring-2 ring-primary' : ''}`}
+            onClick={() => setSelectedFamille(f)}
+          >
+            {/* Colored top bar */}
+            <div className="h-1.5 bg-gradient-to-r from-primary via-primary/70 to-accent" />
+            <div className="p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <Checkbox
                     checked={selectedIds.has(f.id)}
                     onCheckedChange={() => toggleSelect(f.id)}
                     onClick={(e) => e.stopPropagation()}
                   />
-                  <CardTitle className="text-lg cursor-pointer" onClick={() => setSelectedFamille(f)}>{f.nom_famille}</CardTitle>
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-sm truncate">{f.nom_famille}</h3>
+                    <p className="text-[11px] text-muted-foreground">{f.eleves?.length || 0} enfant{(f.eleves?.length || 0) > 1 ? 's' : ''}</p>
+                  </div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={() => setSelectedFamille(f)} />
+                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm" onClick={() => setSelectedFamille(f)}>
-              {f.telephone_pere && <div className="flex items-center gap-2 text-muted-foreground"><Phone className="h-3 w-3" /> Père: {f.telephone_pere}</div>}
-              {f.telephone_mere && <div className="flex items-center gap-2 text-muted-foreground"><Phone className="h-3 w-3" /> Mère: {f.telephone_mere}</div>}
-              {f.email_parent && <div className="flex items-center gap-2 text-muted-foreground"><Mail className="h-3 w-3" /> {f.email_parent}</div>}
-              {f.adresse && <div className="flex items-center gap-2 text-muted-foreground"><MapPin className="h-3 w-3" /> {f.adresse}</div>}
-              <div className="flex gap-2 pt-1 flex-wrap">
-                <Badge variant="outline">{f.eleves?.length || 0} enfant(s)</Badge>
-                {(f.eleves?.length || 0) > 1 && <Badge variant="secondary">Fratrie</Badge>}
+
+              {/* Contact pills */}
+              <div className="flex flex-wrap gap-1.5">
+                {f.telephone_pere && (
+                  <span className="inline-flex items-center gap-1 text-[10px] bg-blue-500/10 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full">
+                    <Phone className="h-2.5 w-2.5" /> Père
+                  </span>
+                )}
+                {f.telephone_mere && (
+                  <span className="inline-flex items-center gap-1 text-[10px] bg-pink-500/10 text-pink-700 dark:text-pink-400 px-2 py-0.5 rounded-full">
+                    <Phone className="h-2.5 w-2.5" /> Mère
+                  </span>
+                )}
+                {f.email_parent && (
+                  <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full">
+                    <Mail className="h-2.5 w-2.5" /> Email
+                  </span>
+                )}
+              </div>
+
+              {/* Bottom badges */}
+              <div className="flex gap-1.5 flex-wrap">
+                {(f.eleves?.length || 0) > 1 && <Badge variant="secondary" className="text-[10px] rounded-full h-5">Fratrie</Badge>}
                 {Number(f.solde_famille || 0) > 0 && (
-                  <Badge className="bg-green-100 text-green-700 border-green-300">
+                  <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px] rounded-full h-5">
                     💰 {Number(f.solde_famille).toLocaleString()} GNF
                   </Badge>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
       <PaginationControls currentPage={famillesPage} totalPages={famillesTotalPages} totalItems={famillesTotalItems} pageSize={famillesPageSize} onPageChange={setFamillesPage} />
 
-
-      {/* Bulk Delete Confirmation */}
+      {/* Bulk Delete */}
       <Dialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Vous allez supprimer <strong>{selectedIds.size} famille(s)</strong>. Les élèves rattachés seront conservés dans le système mais détachés de leur famille.
-          </p>
+        <DialogContent className="rounded-3xl">
+          <DialogHeader><DialogTitle>Confirmer la suppression</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Supprimer <strong>{selectedIds.size}</strong> famille(s) ? Les élèves seront conservés.</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBulkDeleteConfirm(false)}>Annuler</Button>
-            <Button variant="destructive" onClick={() => bulkDeleteFamilles.mutate()} disabled={bulkDeleteFamilles.isPending}>
-              {bulkDeleteFamilles.isPending ? 'Suppression…' : 'Confirmer la suppression'}
-            </Button>
+            <Button variant="outline" className="rounded-xl" onClick={() => setBulkDeleteConfirm(false)}>Annuler</Button>
+            <Button variant="destructive" className="rounded-xl" onClick={() => bulkDeleteFamilles.mutate()} disabled={bulkDeleteFamilles.isPending}>{bulkDeleteFamilles.isPending ? 'Suppression…' : 'Supprimer'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ─── Create/Edit Family Dialog ─── */}
+      {/* Create/Edit Dialog */}
       <Dialog open={formOpen} onOpenChange={(o) => { setFormOpen(o); if (!o) resetForm(); }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{editId ? 'Modifier la famille' : 'Créer une famille'}</DialogTitle></DialogHeader>
+        <DialogContent className="rounded-3xl">
+          <DialogHeader><DialogTitle>{editId ? 'Modifier la famille' : 'Nouvelle famille'}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Nom de famille *</Label><Input value={nomFamille} onChange={e => setNomFamille(e.target.value)} maxLength={100} placeholder="Ex: Dupont" /></div>
+            <div><Label>Nom de famille *</Label><Input value={nomFamille} onChange={e => setNomFamille(e.target.value)} maxLength={100} placeholder="Ex: Dupont" className="rounded-xl" /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Téléphone père</Label><Input value={telPere} onChange={e => setTelPere(e.target.value)} placeholder="+237 6XX XX XX XX" /></div>
-              <div><Label>Téléphone mère</Label><Input value={telMere} onChange={e => setTelMere(e.target.value)} placeholder="+237 6XX XX XX XX" /></div>
+              <div><Label>Tél. père</Label><Input value={telPere} onChange={e => setTelPere(e.target.value)} placeholder="+224 6XX" className="rounded-xl" /></div>
+              <div><Label>Tél. mère</Label><Input value={telMere} onChange={e => setTelMere(e.target.value)} placeholder="+224 6XX" className="rounded-xl" /></div>
             </div>
-            <div><Label>Email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="parent@email.com" /></div>
-            <div><Label>Adresse</Label><Input value={adresse} onChange={e => setAdresse(e.target.value)} placeholder="Quartier, ville" /></div>
+            <div><Label>Email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} className="rounded-xl" /></div>
+            <div><Label>Adresse</Label><Input value={adresse} onChange={e => setAdresse(e.target.value)} className="rounded-xl" /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setFormOpen(false); resetForm(); }}>Annuler</Button>
-            <Button onClick={() => saveFamille.mutate()} disabled={saveFamille.isPending}>
-              {editId ? 'Enregistrer' : 'Créer la famille'}
-            </Button>
+            <Button variant="outline" className="rounded-xl" onClick={() => { setFormOpen(false); resetForm(); }}>Annuler</Button>
+            <Button className="rounded-xl" onClick={() => saveFamille.mutate()} disabled={saveFamille.isPending}>{editId ? 'Enregistrer' : 'Créer'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ─── Family Detail Dialog ─── */}
+      {/* Family Detail */}
       <Dialog open={!!selectedFamille} onOpenChange={(o) => { if (!o) setSelectedFamille(null); }}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0 rounded-3xl">
           {selectedFamille && (
             <>
-              {/* Header banner */}
-              <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-6 pt-6 pb-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Users className="h-6 w-6 text-primary" />
+              {/* Hero Header */}
+              <div className="relative bg-gradient-to-br from-primary via-primary/90 to-accent p-5 pb-6 text-primary-foreground">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-10 translate-x-10" />
+                <div className="relative z-10">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-14 w-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center">
+                      <Users className="h-7 w-7" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-foreground">{selectedFamille.nom_famille}</h2>
-                      <p className="text-sm text-muted-foreground">{selectedFamille.eleves?.length || 0} enfant{(selectedFamille.eleves?.length || 0) > 1 ? 's' : ''} • Créée le {new Date(selectedFamille.created_at).toLocaleDateString('fr-FR')}</p>
+                      <h2 className="text-xl font-bold">{selectedFamille.nom_famille}</h2>
+                      <p className="text-xs opacity-80">{selectedFamille.eleves?.length || 0} enfant{(selectedFamille.eleves?.length || 0) > 1 ? 's' : ''} • {new Date(selectedFamille.created_at).toLocaleDateString('fr-FR')}</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => { openEdit(selectedFamille); setSelectedFamille(null); }}>
-                      <Edit className="h-3 w-3 mr-1" /> Modifier
+                    <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white rounded-xl gap-1 h-8 text-xs" onClick={() => { openEdit(selectedFamille); setSelectedFamille(null); }}>
+                      <Edit className="h-3 w-3" /> Modifier
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => setDeleteConfirmId(selectedFamille?.id)}>
-                      <Trash2 className="h-3 w-3 mr-1" /> Supprimer
+                    <Button size="sm" variant="destructive" className="rounded-xl gap-1 h-8 text-xs" onClick={() => setDeleteConfirmId(selectedFamille?.id)}>
+                      <Trash2 className="h-3 w-3" /> Supprimer
                     </Button>
                   </div>
                 </div>
               </div>
 
-              <div className="px-6 pb-6">
-                <Tabs defaultValue="infos" className="mt-2">
-                  <TabsList className="grid grid-cols-2 w-full">
-                    <TabsTrigger value="infos">Informations</TabsTrigger>
-                    <TabsTrigger value="enfants">Enfants ({selectedFamille.eleves?.length || 0})</TabsTrigger>
+              <div className="px-5 pb-5">
+                <Tabs defaultValue="infos" className="mt-3">
+                  <TabsList className="grid grid-cols-2 w-full rounded-2xl h-10 bg-muted/50 p-1">
+                    <TabsTrigger value="infos" className="rounded-xl text-xs">Informations</TabsTrigger>
+                    <TabsTrigger value="enfants" className="rounded-xl text-xs">Enfants ({selectedFamille.eleves?.length || 0})</TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="infos" className="mt-4 space-y-4">
-                    {/* Contact cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <TabsContent value="infos" className="mt-4 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {selectedFamille.telephone_pere && (
-                        <a href={`tel:${selectedFamille.telephone_pere}`} className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-accent/50 transition-colors">
-                          <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                            <Phone className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Téléphone père</p>
-                            <p className="text-sm font-semibold text-foreground">{selectedFamille.telephone_pere}</p>
-                          </div>
+                        <a href={`tel:${selectedFamille.telephone_pere}`} className="flex items-center gap-3 p-3 rounded-2xl border bg-card hover:bg-accent/30 transition-colors">
+                          <div className="h-9 w-9 rounded-xl bg-blue-500/10 flex items-center justify-center"><Phone className="h-4 w-4 text-blue-600" /></div>
+                          <div><p className="text-[10px] text-muted-foreground">Père</p><p className="text-sm font-semibold">{selectedFamille.telephone_pere}</p></div>
                         </a>
                       )}
                       {selectedFamille.telephone_mere && (
-                        <a href={`tel:${selectedFamille.telephone_mere}`} className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-accent/50 transition-colors">
-                          <div className="h-9 w-9 rounded-lg bg-pink-500/10 flex items-center justify-center">
-                            <Phone className="h-4 w-4 text-pink-600" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Téléphone mère</p>
-                            <p className="text-sm font-semibold text-foreground">{selectedFamille.telephone_mere}</p>
-                          </div>
+                        <a href={`tel:${selectedFamille.telephone_mere}`} className="flex items-center gap-3 p-3 rounded-2xl border bg-card hover:bg-accent/30 transition-colors">
+                          <div className="h-9 w-9 rounded-xl bg-pink-500/10 flex items-center justify-center"><Phone className="h-4 w-4 text-pink-600" /></div>
+                          <div><p className="text-[10px] text-muted-foreground">Mère</p><p className="text-sm font-semibold">{selectedFamille.telephone_mere}</p></div>
                         </a>
                       )}
                       {selectedFamille.email_parent && (
-                        <a href={`mailto:${selectedFamille.email_parent}`} className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-accent/50 transition-colors">
-                          <div className="h-9 w-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                            <Mail className="h-4 w-4 text-emerald-600" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Email</p>
-                            <p className="text-sm font-semibold text-foreground truncate">{selectedFamille.email_parent}</p>
-                          </div>
+                        <a href={`mailto:${selectedFamille.email_parent}`} className="flex items-center gap-3 p-3 rounded-2xl border bg-card hover:bg-accent/30 transition-colors">
+                          <div className="h-9 w-9 rounded-xl bg-emerald-500/10 flex items-center justify-center"><Mail className="h-4 w-4 text-emerald-600" /></div>
+                          <div><p className="text-[10px] text-muted-foreground">Email</p><p className="text-sm font-semibold truncate">{selectedFamille.email_parent}</p></div>
                         </a>
                       )}
                       {selectedFamille.adresse && (
-                        <div className="flex items-center gap-3 p-3 rounded-xl border bg-card">
-                          <div className="h-9 w-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                            <MapPin className="h-4 w-4 text-amber-600" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Adresse</p>
-                            <p className="text-sm font-semibold text-foreground">{selectedFamille.adresse}</p>
-                          </div>
+                        <div className="flex items-center gap-3 p-3 rounded-2xl border bg-card">
+                          <div className="h-9 w-9 rounded-xl bg-amber-500/10 flex items-center justify-center"><MapPin className="h-4 w-4 text-amber-600" /></div>
+                          <div><p className="text-[10px] text-muted-foreground">Adresse</p><p className="text-sm font-semibold">{selectedFamille.adresse}</p></div>
                         </div>
                       )}
                     </div>
 
                     {/* Wallet */}
-                    <div className="rounded-xl border bg-gradient-to-r from-emerald-500/5 to-emerald-500/10 p-4">
-                      <p className="text-xs text-muted-foreground mb-1">💰 Portefeuille Famille</p>
-                      <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
-                        {Number(selectedFamille.solde_famille || 0).toLocaleString()} GNF
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Rechargeable pour achats boutique, librairie, cantine.
-                      </p>
+                    <div className="rounded-2xl bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-200/50 dark:border-emerald-800/30 p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Wallet className="h-4 w-4 text-emerald-600" />
+                        <p className="text-xs text-muted-foreground">Portefeuille Famille</p>
+                      </div>
+                      <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{Number(selectedFamille.solde_famille || 0).toLocaleString()} GNF</p>
                     </div>
 
-                    {/* Code d'accès parent */}
-                    <div className="rounded-xl border p-4 space-y-2">
-                      <p className="text-sm font-medium flex items-center gap-2">
-                        <KeyRound className="h-4 w-4 text-primary" /> Code d'accès Espace Parent
-                      </p>
+                    {/* Access code */}
+                    <div className="rounded-2xl border p-4 space-y-2">
+                      <p className="text-sm font-semibold flex items-center gap-2"><KeyRound className="h-4 w-4 text-primary" /> Code d'accès Parent</p>
                       <div className="flex items-center gap-2">
                         {selectedFamille.code_acces_set ? (
                           <>
-                            <Badge variant="outline" className="text-emerald-700 border-emerald-300 bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800">✓ Code configuré</Badge>
-                            {isSuperviseur && (
-                              <Button variant="outline" size="sm" onClick={() => generateCode.mutate(selectedFamille.id)}>
-                                <RefreshCw className="h-3 w-3 mr-1" /> Régénérer
-                              </Button>
-                            )}
+                            <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 rounded-full">✓ Configuré</Badge>
+                            {isSuperviseur && <Button variant="outline" size="sm" className="rounded-xl" onClick={() => generateCode.mutate(selectedFamille.id)}><RefreshCw className="h-3 w-3 mr-1" /> Régénérer</Button>}
                           </>
                         ) : isSuperviseur ? (
-                          <Button size="sm" onClick={() => generateCode.mutate(selectedFamille.id)}>
-                            <KeyRound className="h-4 w-4 mr-1" /> Générer un code
-                          </Button>
+                          <Button size="sm" className="rounded-xl" onClick={() => generateCode.mutate(selectedFamille.id)}><KeyRound className="h-3.5 w-3.5 mr-1" /> Générer</Button>
                         ) : (
-                          <p className="text-xs text-muted-foreground italic">Seul le superviseur peut générer un code.</p>
+                          <p className="text-xs text-muted-foreground italic">Le superviseur doit générer le code.</p>
                         )}
                       </div>
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="enfants" className="mt-4 space-y-4">
+                  <TabsContent value="enfants" className="mt-4 space-y-3">
                     <div className="flex justify-end">
-                      <Button size="sm" onClick={() => { resetChildForm(); setAddChildOpen(true); }}>
-                        <UserPlus className="h-4 w-4 mr-2" /> Ajouter un enfant
+                      <Button size="sm" className="rounded-xl gap-1.5" onClick={() => { resetChildForm(); setAddChildOpen(true); }}>
+                        <UserPlus className="h-3.5 w-3.5" /> Ajouter
                       </Button>
                     </div>
-
                     {selectedFamille.eleves?.length > 0 ? (
-                      <div className="grid gap-3">
+                      <div className="space-y-2.5">
                         {selectedFamille.eleves.map((e: any) => (
-                          <div key={e.id} className="flex items-center gap-4 p-4 rounded-xl border bg-card hover:shadow-md transition-shadow">
-                            {/* Photo */}
-                            <div className="h-14 w-14 rounded-full overflow-hidden border-2 border-primary/20 flex-shrink-0 bg-muted flex items-center justify-center">
+                          <div key={e.id} className="flex items-center gap-3 p-3.5 rounded-2xl border bg-card/80 hover:shadow-md transition-all">
+                            <div className="h-12 w-12 rounded-xl overflow-hidden border-2 border-primary/15 shrink-0 bg-muted flex items-center justify-center">
                               {e.photo_thumbnail_url || e.photo_url ? (
-                                <img
-                                  src={e.photo_thumbnail_url || e.photo_url}
-                                  alt={`${e.prenom} ${e.nom}`}
-                                  className="h-full w-full object-cover"
-                                />
+                                <img src={e.photo_thumbnail_url || e.photo_url} alt={`${e.prenom}`} className="h-full w-full object-cover" />
                               ) : (
-                                <User className="h-6 w-6 text-muted-foreground" />
+                                <User className="h-5 w-5 text-muted-foreground" />
                               )}
                             </div>
-                            {/* Info */}
                             <div className="flex-1 min-w-0">
-                              <button
-                                className="font-semibold text-foreground hover:text-primary transition-colors text-left"
-                                onClick={() => setEditingChild({ ...e })}
-                              >
+                              <button className="font-semibold text-sm hover:text-primary transition-colors text-left truncate block" onClick={() => setEditingChild({ ...e })}>
                                 {e.prenom} {e.nom}
                               </button>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                {e.classes ? (
-                                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <GraduationCap className="h-3 w-3" />
-                                    {e.classes.niveaux?.cycles?.nom} — {e.classes.niveaux?.nom} — {e.classes.nom}
+                              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                {e.classes && (
+                                  <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                                    <GraduationCap className="h-2.5 w-2.5" /> {e.classes.nom}
                                   </span>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">Non affecté</span>
                                 )}
-                              </div>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Badge variant={e.statut === 'inscrit' ? 'default' : e.statut === 'réinscrit' ? 'secondary' : 'outline'} className="text-[10px] h-5">
-                                  {e.statut}
-                                </Badge>
-                                {e.matricule && <span className="text-[10px] text-muted-foreground font-mono">{e.matricule}</span>}
-                                {e.sexe && <span className="text-[10px] text-muted-foreground">{e.sexe === 'M' ? '👦' : '👧'} {e.sexe}</span>}
+                                <Badge variant={e.statut === 'inscrit' ? 'default' : 'outline'} className="text-[9px] rounded-full h-4">{e.statut}</Badge>
+                                {e.sexe && <span className="text-[10px]">{e.sexe === 'M' ? '👦' : '👧'}</span>}
                               </div>
                             </div>
-                            {/* Actions */}
-                            <div className="flex gap-1 flex-shrink-0">
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingChild({ ...e })} title="Modifier">
-                                <Edit className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeChildFromFamily.mutate(e.id)} title="Détacher">
-                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                              </Button>
+                            <div className="flex gap-0.5 shrink-0">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl" onClick={() => setEditingChild({ ...e })}><Edit className="h-3 w-3" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl" onClick={() => removeChildFromFamily.mutate(e.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-muted-foreground text-sm text-center py-4">Aucun enfant rattaché à cette famille</p>
+                      <p className="text-muted-foreground text-sm text-center py-6">Aucun enfant rattaché</p>
                     )}
                   </TabsContent>
                 </Tabs>
@@ -778,194 +569,93 @@ export default function Familles() {
         </DialogContent>
       </Dialog>
 
-      {/* ─── Add Child Dialog ─── */}
+      {/* Add Child */}
       <Dialog open={addChildOpen} onOpenChange={(o) => { setAddChildOpen(o); if (!o) resetChildForm(); }}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Ajouter un enfant à la famille {selectedFamille?.nom_famille}</DialogTitle></DialogHeader>
-          
-          <Tabs value={addChildMode} onValueChange={v => setAddChildMode(v as 'search' | 'create')} className="mt-2">
-            <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="search"><Search className="h-3.5 w-3.5 mr-1.5" /> Chercher un élève</TabsTrigger>
-              <TabsTrigger value="create"><Plus className="h-3.5 w-3.5 mr-1.5" /> Nouvel élève</TabsTrigger>
+        <DialogContent className="max-w-lg rounded-3xl">
+          <DialogHeader><DialogTitle>Ajouter un enfant — {selectedFamille?.nom_famille}</DialogTitle></DialogHeader>
+          <Tabs value={addChildMode} onValueChange={v => setAddChildMode(v as any)} className="mt-2">
+            <TabsList className="grid grid-cols-2 w-full rounded-xl">
+              <TabsTrigger value="search" className="rounded-lg text-xs"><Search className="h-3 w-3 mr-1" /> Chercher</TabsTrigger>
+              <TabsTrigger value="create" className="rounded-lg text-xs"><Plus className="h-3 w-3 mr-1" /> Nouveau</TabsTrigger>
             </TabsList>
-
             <TabsContent value="search" className="mt-3 space-y-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher par nom, prénom ou matricule..."
-                  value={childSearch}
-                  onChange={e => setChildSearch(e.target.value)}
-                  className="pl-9"
-                  autoFocus
-                />
+                <Input placeholder="Nom, prénom ou matricule…" value={childSearch} onChange={e => setChildSearch(e.target.value)} className="pl-9 rounded-xl" autoFocus />
               </div>
               {childSearch.trim() && (
-                <div className="border rounded-lg max-h-[300px] overflow-y-auto">
+                <div className="border rounded-xl max-h-[300px] overflow-y-auto divide-y">
                   {searchedEleves.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-6">Aucun élève trouvé pour "{childSearch}"</p>
-                  ) : (
-                    searchedEleves.map((e: any) => (
-                      <div
-                        key={e.id}
-                        className="flex items-center justify-between px-3 py-2.5 hover:bg-muted/50 border-b last:border-b-0 transition-colors"
-                      >
-                        <div>
-                          <p className="font-medium text-sm">{e.prenom} {e.nom}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {e.matricule && <span className="font-mono mr-2">{e.matricule}</span>}
-                            {e.classes ? `${e.classes.niveaux?.cycles?.nom} — ${e.classes.nom}` : 'Sans classe'}
-                            {e.famille_id && <Badge variant="secondary" className="ml-2 text-[10px]">Déjà en famille</Badge>}
-                          </p>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant={e.famille_id ? 'outline' : 'default'}
-                          disabled={attachExistingChild.isPending}
-                          onClick={() => attachExistingChild.mutate(e.id)}
-                        >
-                          <UserPlus className="h-3.5 w-3.5 mr-1" />
-                          {e.famille_id ? 'Réattribuer' : 'Ajouter'}
-                        </Button>
+                    <p className="text-sm text-muted-foreground text-center py-6">Aucun résultat</p>
+                  ) : searchedEleves.map((e: any) => (
+                    <div key={e.id} className="flex items-center justify-between px-3 py-2.5 hover:bg-muted/30 transition-colors">
+                      <div>
+                        <p className="font-medium text-sm">{e.prenom} {e.nom}</p>
+                        <p className="text-[11px] text-muted-foreground">{e.matricule && <span className="font-mono mr-2">{e.matricule}</span>}{e.classes?.nom || 'Sans classe'}{e.famille_id && <Badge variant="secondary" className="ml-1.5 text-[9px]">En famille</Badge>}</p>
                       </div>
-                    ))
-                  )}
+                      <Button size="sm" variant={e.famille_id ? 'outline' : 'default'} className="rounded-xl h-7 text-xs" disabled={attachExistingChild.isPending} onClick={() => attachExistingChild.mutate(e.id)}>
+                        <UserPlus className="h-3 w-3 mr-1" />{e.famille_id ? 'Réattribuer' : 'Ajouter'}
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              )}
-              {!childSearch.trim() && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Tapez le nom ou le matricule d'un élève déjà inscrit pour le rattacher à cette famille.
-                </p>
               )}
             </TabsContent>
-
             <TabsContent value="create" className="mt-3 space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Prénom *</Label><Input value={childPrenom} onChange={e => setChildPrenom(e.target.value)} maxLength={50} placeholder="Prénom" /></div>
-                <div><Label>Nom *</Label><Input value={childNom} onChange={e => setChildNom(e.target.value)} maxLength={50} placeholder="Nom" /></div>
+                <div><Label>Prénom *</Label><Input value={childPrenom} onChange={e => setChildPrenom(e.target.value)} className="rounded-xl" /></div>
+                <div><Label>Nom *</Label><Input value={childNom} onChange={e => setChildNom(e.target.value)} className="rounded-xl" /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Sexe</Label>
-                  <Select value={childSexe} onValueChange={setChildSexe}>
-                    <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="M">Masculin</SelectItem>
-                      <SelectItem value="F">Féminin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div><Label>Date de naissance</Label><Input type="date" value={childDob} onChange={e => setChildDob(e.target.value)} /></div>
+                <div><Label>Sexe</Label><Select value={childSexe} onValueChange={setChildSexe}><SelectTrigger className="rounded-xl"><SelectValue placeholder="Choisir" /></SelectTrigger><SelectContent><SelectItem value="M">Masculin</SelectItem><SelectItem value="F">Féminin</SelectItem></SelectContent></Select></div>
+                <div><Label>Date naissance</Label><Input type="date" value={childDob} onChange={e => setChildDob(e.target.value)} className="rounded-xl" /></div>
               </div>
-              <div>
-                <Label>Classe</Label>
-                <Select value={childClasseId} onValueChange={setChildClasseId}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner la classe" /></SelectTrigger>
-                  <SelectContent>
-                    {allClasses.map((c: any) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.niveaux?.cycles?.nom} — {c.niveaux?.nom} — {c.nom}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <div><Label>Classe</Label><Select value={childClasseId} onValueChange={setChildClasseId}><SelectTrigger className="rounded-xl"><SelectValue placeholder="Classe" /></SelectTrigger><SelectContent>{allClasses.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.niveaux?.cycles?.nom} — {c.niveaux?.nom} — {c.nom}</SelectItem>)}</SelectContent></Select></div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setAddChildOpen(false)}>Annuler</Button>
-                <Button onClick={() => addChild.mutate()} disabled={addChild.isPending}>
-                  <UserPlus className="h-4 w-4 mr-2" /> Créer et ajouter
-                </Button>
+                <Button variant="outline" className="rounded-xl" onClick={() => setAddChildOpen(false)}>Annuler</Button>
+                <Button className="rounded-xl" onClick={() => addChild.mutate()} disabled={addChild.isPending}><UserPlus className="h-3.5 w-3.5 mr-1" /> Créer</Button>
               </DialogFooter>
             </TabsContent>
           </Tabs>
         </DialogContent>
       </Dialog>
 
-      {/* ─── Edit Child Dialog ─── */}
+      {/* Edit Child */}
       <Dialog open={!!editingChild} onOpenChange={(o) => { if (!o) setEditingChild(null); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md rounded-3xl">
           <DialogHeader><DialogTitle>Modifier l'élève</DialogTitle></DialogHeader>
           {editingChild && (
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Prénom</Label><Input value={editingChild.prenom} onChange={e => setEditingChild({ ...editingChild, prenom: e.target.value })} /></div>
-                <div><Label>Nom</Label><Input value={editingChild.nom} onChange={e => setEditingChild({ ...editingChild, nom: e.target.value })} /></div>
+                <div><Label>Prénom</Label><Input value={editingChild.prenom} onChange={e => setEditingChild({ ...editingChild, prenom: e.target.value })} className="rounded-xl" /></div>
+                <div><Label>Nom</Label><Input value={editingChild.nom} onChange={e => setEditingChild({ ...editingChild, nom: e.target.value })} className="rounded-xl" /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Sexe</Label>
-                  <Select value={editingChild.sexe || ''} onValueChange={v => setEditingChild({ ...editingChild, sexe: v })}>
-                    <SelectTrigger><SelectValue placeholder="Sexe" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="M">Masculin</SelectItem>
-                      <SelectItem value="F">Féminin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div><Label>Date de naissance</Label><Input type="date" value={editingChild.date_naissance || ''} onChange={e => setEditingChild({ ...editingChild, date_naissance: e.target.value })} /></div>
+                <div><Label>Sexe</Label><Select value={editingChild.sexe || ''} onValueChange={v => setEditingChild({ ...editingChild, sexe: v })}><SelectTrigger className="rounded-xl"><SelectValue placeholder="Sexe" /></SelectTrigger><SelectContent><SelectItem value="M">Masculin</SelectItem><SelectItem value="F">Féminin</SelectItem></SelectContent></Select></div>
+                <div><Label>Date naissance</Label><Input type="date" value={editingChild.date_naissance || ''} onChange={e => setEditingChild({ ...editingChild, date_naissance: e.target.value })} className="rounded-xl" /></div>
               </div>
-              <div>
-                <Label>Classe</Label>
-                <Select value={editingChild.classe_id || ''} onValueChange={v => setEditingChild({ ...editingChild, classe_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner la classe" /></SelectTrigger>
-                  <SelectContent>
-                    {allClasses.map((c: any) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.niveaux?.cycles?.nom} — {c.niveaux?.nom} — {c.nom}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Statut</Label>
-                <Select value={editingChild.statut || 'inscrit'} onValueChange={v => setEditingChild({ ...editingChild, statut: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="inscrit">Inscrit</SelectItem>
-                    <SelectItem value="réinscrit">Réinscrit</SelectItem>
-                    <SelectItem value="suspendu">Suspendu</SelectItem>
-                    <SelectItem value="radié">Radié</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <div><Label>Classe</Label><Select value={editingChild.classe_id || ''} onValueChange={v => setEditingChild({ ...editingChild, classe_id: v })}><SelectTrigger className="rounded-xl"><SelectValue placeholder="Classe" /></SelectTrigger><SelectContent>{allClasses.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.niveaux?.cycles?.nom} — {c.niveaux?.nom} — {c.nom}</SelectItem>)}</SelectContent></Select></div>
+              <div><Label>Statut</Label><Select value={editingChild.statut || 'inscrit'} onValueChange={v => setEditingChild({ ...editingChild, statut: v })}><SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="inscrit">Inscrit</SelectItem><SelectItem value="réinscrit">Réinscrit</SelectItem><SelectItem value="suspendu">Suspendu</SelectItem><SelectItem value="radié">Radié</SelectItem></SelectContent></Select></div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingChild(null)}>Annuler</Button>
-            <Button
-              disabled={updateChild.isPending}
-              onClick={() => {
-                if (!editingChild) return;
-                updateChild.mutate({
-                  id: editingChild.id,
-                  nom: editingChild.nom,
-                  prenom: editingChild.prenom,
-                  sexe: editingChild.sexe,
-                  date_naissance: editingChild.date_naissance || null,
-                  classe_id: editingChild.classe_id || null,
-                  statut: editingChild.statut,
-                });
-              }}
-            >
-              {updateChild.isPending ? 'Enregistrement...' : 'Enregistrer'}
-            </Button>
+            <Button variant="outline" className="rounded-xl" onClick={() => setEditingChild(null)}>Annuler</Button>
+            <Button className="rounded-xl" disabled={updateChild.isPending} onClick={() => {
+              if (!editingChild) return;
+              updateChild.mutate({ id: editingChild.id, nom: editingChild.nom, prenom: editingChild.prenom, sexe: editingChild.sexe, date_naissance: editingChild.date_naissance || null, classe_id: editingChild.classe_id || null, statut: editingChild.statut });
+            }}>{updateChild.isPending ? 'Enregistrement…' : 'Enregistrer'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ─── Delete Confirm Dialog ─── */}
+      {/* Delete Confirm */}
       <Dialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Confirmer la suppression</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Cette action supprimera la famille et détachera tous les enfants associés. Les enfants ne seront pas supprimés.
-          </p>
+        <DialogContent className="rounded-3xl">
+          <DialogHeader><DialogTitle>Supprimer la famille ?</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Les enfants seront conservés mais détachés de la famille.</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>Annuler</Button>
-            <Button variant="destructive" onClick={() => deleteConfirmId && deleteFamille.mutate(deleteConfirmId)} disabled={deleteFamille.isPending}>
-              Supprimer la famille
-            </Button>
+            <Button variant="outline" className="rounded-xl" onClick={() => setDeleteConfirmId(null)}>Annuler</Button>
+            <Button variant="destructive" className="rounded-xl" onClick={() => deleteConfirmId && deleteFamille.mutate(deleteConfirmId)} disabled={deleteFamille.isPending}>Supprimer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
