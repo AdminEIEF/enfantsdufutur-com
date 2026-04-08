@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Bus, MapPin, Users, Search, Download, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon, Settings, User, Phone, Navigation2, GraduationCap, Printer, Clock, LayoutDashboard, Receipt, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Bus, MapPin, Users, Search, Download, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon, Settings, User, Phone, Navigation2, GraduationCap, Printer, Clock, LayoutDashboard, Receipt, CheckCircle2, AlertTriangle, Shield, Zap, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -23,11 +23,114 @@ import CarteTransportEleve from '@/components/CarteTransportEleve';
 import { exportBulkTransportCards, type TransportCardExportData } from '@/lib/generateCarteTransportPDF';
 import ValidationTransportBus from '@/components/ValidationTransportBus';
 import ItinerairesTransport from '@/components/transport/ItinerairesTransport';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import AlertesTransport from '@/components/transport/AlertesTransport';
 import ChauffeurDashboard from '@/components/transport/ChauffeurDashboard';
 import AssignationBusChauffeur from '@/components/transport/AssignationBusChauffeur';
 import GestionTransport from '@/components/transport/GestionTransport';
+
+// ─── Recharge Status Badge Component ───
+function RechargeStatusBadge({ recharge, getDaysRemaining }: { recharge: any; getDaysRemaining: (d: string) => number }) {
+  if (!recharge) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/20">
+        <div className="w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
+        <div>
+          <p className="text-xs font-bold text-destructive">CARTE EXPIRÉE</p>
+          <p className="text-[10px] text-destructive/70">Recharge nécessaire</p>
+        </div>
+      </div>
+    );
+  }
+
+  const jours = getDaysRemaining(recharge.date_expiration);
+  const expDate = new Date(recharge.date_expiration).toLocaleDateString('fr-FR');
+
+  if (jours <= 0) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/20">
+        <div className="w-2.5 h-2.5 rounded-full bg-destructive" />
+        <div>
+          <p className="text-xs font-bold text-destructive">EXPIRÉE</p>
+          <p className="text-[10px] text-destructive/70">Depuis le {expDate}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (jours <= 5) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-orange-500/10 border border-orange-500/20">
+        <div className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
+        <div>
+          <p className="text-xs font-bold text-orange-600 dark:text-orange-400">EXPIRE BIENTÔT</p>
+          <p className="text-[10px] text-orange-600/70 dark:text-orange-400/70">{jours} jour(s) — {expDate}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (jours <= 10) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+        <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+        <div>
+          <p className="text-xs font-bold text-amber-600 dark:text-amber-400">ACTIVE</p>
+          <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70">{jours} jour(s) — {expDate}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+      <div>
+        <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">ACTIVE</p>
+        <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">{jours} jour(s) — {expDate}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Mini status for list items ───
+function RechargeStatusMini({ recharge, getDaysRemaining }: { recharge: any; getDaysRemaining: (d: string) => number }) {
+  if (!recharge) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold">
+        <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" /> Expirée
+      </span>
+    );
+  }
+  const jours = getDaysRemaining(recharge.date_expiration);
+  if (jours <= 0) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold">
+        <span className="w-1.5 h-1.5 rounded-full bg-destructive" /> Expirée
+      </span>
+    );
+  }
+  if (jours <= 5) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 text-[10px] font-bold">
+        <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" /> {jours}j
+      </span>
+    );
+  }
+  if (jours <= 10) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> {jours}j
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {jours}j
+    </span>
+  );
+}
 
 const COLORS = [
   'hsl(220, 70%, 45%)', 'hsl(38, 92%, 50%)', 'hsl(162, 63%, 41%)',
