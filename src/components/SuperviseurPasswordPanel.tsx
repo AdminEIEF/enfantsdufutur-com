@@ -409,26 +409,55 @@ export default function SuperviseurPasswordPanel() {
 
           {/* Alphabet filter for familles tab */}
           {tab === 'familles' && (
-            <div className="flex flex-wrap gap-1">
-              <Button
-                variant={selectedLetter === 'all' ? 'default' : 'outline'}
-                size="sm"
-                className="h-6 w-8 text-[10px] px-0"
-                onClick={() => setSelectedLetter('all')}
-              >
-                Tous
-              </Button>
-              {ALPHABET.map(l => (
+            <div className="space-y-3">
+              {/* Bulk actions */}
+              <div className="flex flex-wrap gap-2">
                 <Button
-                  key={l}
-                  variant={selectedLetter === l ? 'default' : 'outline'}
                   size="sm"
-                  className="h-6 w-6 text-[10px] px-0"
-                  onClick={() => setSelectedLetter(l)}
+                  className="text-xs gap-1.5"
+                  disabled={bulkGenerating}
+                  onClick={handleBulkGenerateFamilles}
                 >
-                  {l}
+                  {bulkGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                  Générer tous les codes
                 </Button>
-              ))}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs gap-1.5"
+                  onClick={handleExportCodes}
+                >
+                  <Download className="h-3.5 w-3.5" /> Exporter CSV
+                </Button>
+              </div>
+              {bulkGenerating && (
+                <div className="space-y-1">
+                  <Progress value={(bulkProgress / bulkTotal) * 100} className="h-2" />
+                  <p className="text-xs text-muted-foreground text-center">{bulkProgress}/{bulkTotal} familles traitées...</p>
+                </div>
+              )}
+              {/* Alphabet filter */}
+              <div className="flex flex-wrap gap-1">
+                <Button
+                  variant={selectedLetter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-6 w-8 text-[10px] px-0"
+                  onClick={() => setSelectedLetter('all')}
+                >
+                  Tous
+                </Button>
+                {ALPHABET.map(l => (
+                  <Button
+                    key={l}
+                    variant={selectedLetter === l ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-6 w-6 text-[10px] px-0"
+                    onClick={() => setSelectedLetter(l)}
+                  >
+                    {l}
+                  </Button>
+                ))}
+              </div>
             </div>
           )}
 
