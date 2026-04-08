@@ -73,6 +73,32 @@ export default function ScanEleveInfo() {
     enabled: !!matricule,
   });
 
+  // Fetch paiements for scolarité summary
+  const { data: paiements } = useQuery({
+    queryKey: ['scan-eleve-paiements', eleve?.id],
+    queryFn: async () => {
+      if (!eleve?.id) return [];
+      const { data } = await supabase
+        .from('paiements')
+        .select('montant, type_paiement')
+        .eq('eleve_id', eleve.id);
+      return data || [];
+    },
+    enabled: !!eleve?.id,
+  });
+
+  // Compute scolarité totals
+  const niveaux = (eleve?.classes as any)?.niveaux;
+  const fraisScolarite = niveaux?.frais_scolarite || 0;
+  const fraisInscription = niveaux?.frais_inscription || 0;
+  const fraisAssurance = niveaux?.frais_assurance || 0;
+  const fraisDossier = niveaux?.frais_dossier || 0;
+  const totalScolariteNet = fraisScolarite + fraisInscription + fraisAssurance + fraisDossier;
+  const totalPayeScolarite = (paiements || [])
+    .filter((p: any) => ['scolarite', 'inscription', 'reinscription'].includes(p.type_paiement))
+    .reduce((s: number, p: any) => s + (p.montant || 0), 0);
+  const resteAPayerScolarite = totalScolariteNet - totalPayeScolarite;
+
   // Fetch notes/moyennes - bareme comes from cycles table
   const bareme = (eleve?.classes as any)?.niveaux?.cycles?.bareme || 20;
   const { data: notes } = useQuery({
