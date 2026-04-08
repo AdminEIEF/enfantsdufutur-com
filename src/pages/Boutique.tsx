@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -1195,6 +1195,8 @@ export default function Boutique() {
   const [showInventoryDialog, setShowInventoryDialog] = useState(false);
   const [newArticle, setNewArticle] = useState({ nom: '', categorie: 'tenue_scolaire', taille: 'M', prix: 0, stock: 0 });
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const scannerActiveRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Fetch articles
   const { data: articles = [] } = useQuery({
@@ -1234,12 +1236,23 @@ export default function Boutique() {
   });
 
   const handleBarcodeScan = useCallback((m: string) => {
+    scannerActiveRef.current = true;
+    setSearchEleve('');
+    if (inputRef.current) inputRef.current.blur();
+    
     const found = eleves.find((e: any) => e.matricule === m || e.id === m);
     if (found) { setSelectedEleve(found); setSearchEleve(`${found.prenom} ${found.nom}`); }
-    else toast.error('Élève introuvable');
+    else toast.error('Élève introuvable', { description: `Matricule: ${m}` });
+    
+    setTimeout(() => { scannerActiveRef.current = false; }, 300);
   }, [eleves]);
 
   useBarcodeScanner({ onScan: handleBarcodeScan });
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (scannerActiveRef.current) { e.preventDefault(); return; }
+    setSearchEleve(e.target.value);
+  }, []);
 
   const filteredEleves = useMemo(() => {
     if (!searchEleve.trim()) return [];
@@ -1374,25 +1387,33 @@ export default function Boutique() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2"><ShoppingBag className="h-8 w-8 text-purple-600" /> Boutique</h1>
-          <p className="text-muted-foreground">Vente d'uniformes, équipements et gestion des retraits</p>
+    <div className="space-y-5">
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500/20 to-purple-500/5 flex items-center justify-center">
+            <ShoppingBag className="h-5 w-5 text-purple-500" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Boutique</h1>
+            <p className="text-xs text-muted-foreground">Uniformes, équipements & gestion des retraits</p>
+          </div>
         </div>
-      </div>
+      </motion.div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="retraits" className="gap-1"><ClipboardCheck className="h-4 w-4" /> Retraits</TabsTrigger>
-          <TabsTrigger value="vente" className="gap-1"><ShoppingBag className="h-4 w-4" /> Vente directe</TabsTrigger>
-          <TabsTrigger value="inventaire" className="gap-1"><Package className="h-4 w-4" /> Inventaire</TabsTrigger>
-          <TabsTrigger value="credit" className="gap-1"><CreditCard className="h-4 w-4" /> Crédit</TabsTrigger>
-          <TabsTrigger value="historique" className="gap-1"><History className="h-4 w-4" /> Historique Ventes</TabsTrigger>
-          <TabsTrigger value="historique_retraits" className="gap-1"><ClipboardCheck className="h-4 w-4" /> Historique Retraits</TabsTrigger>
-          <TabsTrigger value="gestion" className="gap-1"><Settings className="h-4 w-4" /> Gestion</TabsTrigger>
-          <TabsTrigger value="rapport" className="gap-1"><Receipt className="h-4 w-4" /> Rapport Journalier</TabsTrigger>
-        </TabsList>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+          <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1 rounded-2xl">
+            <TabsTrigger value="retraits" className="gap-1.5 rounded-xl text-xs"><ClipboardCheck className="h-3.5 w-3.5" /> Retraits</TabsTrigger>
+            <TabsTrigger value="vente" className="gap-1.5 rounded-xl text-xs"><ShoppingBag className="h-3.5 w-3.5" /> Vente</TabsTrigger>
+            <TabsTrigger value="inventaire" className="gap-1.5 rounded-xl text-xs"><Package className="h-3.5 w-3.5" /> Inventaire</TabsTrigger>
+            <TabsTrigger value="credit" className="gap-1.5 rounded-xl text-xs"><CreditCard className="h-3.5 w-3.5" /> Crédit</TabsTrigger>
+            <TabsTrigger value="historique" className="gap-1.5 rounded-xl text-xs"><History className="h-3.5 w-3.5" /> Ventes</TabsTrigger>
+            <TabsTrigger value="historique_retraits" className="gap-1.5 rounded-xl text-xs"><ClipboardCheck className="h-3.5 w-3.5" /> Hist. Retraits</TabsTrigger>
+            <TabsTrigger value="gestion" className="gap-1.5 rounded-xl text-xs"><Settings className="h-3.5 w-3.5" /> Gestion</TabsTrigger>
+            <TabsTrigger value="rapport" className="gap-1.5 rounded-xl text-xs"><Receipt className="h-3.5 w-3.5" /> Rapport</TabsTrigger>
+          </TabsList>
+        </motion.div>
 
         {/* ===== RETRAITS TAB ===== */}
         <TabsContent value="retraits" className="space-y-4">
@@ -1409,7 +1430,7 @@ export default function Boutique() {
                 <CardContent className="pt-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Rechercher un élève (nom, prénom, matricule)..." value={searchEleve} onChange={e => setSearchEleve(e.target.value)} className="pl-10 pr-10" />
+                    <Input ref={inputRef} placeholder="Rechercher un élève (nom, prénom, matricule)..." value={searchEleve} onChange={handleSearchChange} className="pl-10 pr-10" />
                     <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setScannerOpen(true)} title="Scanner par caméra">
                       <Camera className="h-4 w-4 text-primary" />
                     </Button>
