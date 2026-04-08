@@ -696,7 +696,12 @@ export default function CompositionsAdmin() {
                       <Button variant="outline" size="sm" onClick={() => openQuestions(comp.id)}>
                         <FileQuestion className="h-4 w-4 mr-1" /> Questions
                       </Button>
-                    )}
+                     )}
+                     {comp.type_composition === 'geometrie_traces' && (
+                       <Button variant="outline" size="sm" className="border-emerald-500/30 text-emerald-600" onClick={() => window.open('/composition-geometrie', '_blank')}>
+                         <Eye className="h-4 w-4 mr-1" /> Aperçu Géométrie
+                       </Button>
+                     )}
                     <Button variant="outline" size="sm" onClick={() => openResults(comp.id)}>
                       <Eye className="h-4 w-4 mr-1" /> Résultats
                     </Button>
