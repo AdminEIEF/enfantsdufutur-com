@@ -378,9 +378,9 @@ export default function Eleves() {
   const searchTerms = searchLower.split(/\s+/).filter(t => t.length > 0);
 
   const filtered = eleves.filter((e: any) => {
-    // Search: only by nom, prénom and matricule
+    // Search: only by nom, prénom and matricule — ALL terms must match
     const fullText = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase();
-    const basicMatch = searchTerms.length > 0 && searchTerms.some(term => fullText.includes(term));
+    const basicMatch = searchTerms.length > 0 && searchTerms.every(term => fullText.includes(term));
     const matchSearch = isSearchActive ? basicMatch : true;
 
     const matchCycle = filterCycle === 'all' || e.classes?.niveaux?.cycles?.id === filterCycle;
@@ -395,6 +395,20 @@ export default function Eleves() {
     if (!showComplete && isDossierComplete(e)) return false;
 
     return matchCycle && matchClasse && matchType;
+  }).sort((a: any, b: any) => {
+    if (!isSearchActive) return 0;
+    // Prioritize exact name matches: nom starts with search term first
+    const aNom = a.nom.toLowerCase();
+    const bNom = b.nom.toLowerCase();
+    const firstTerm = searchTerms[0] || '';
+    const aStartsNom = aNom.startsWith(firstTerm) ? 0 : 1;
+    const bStartsNom = bNom.startsWith(firstTerm) ? 0 : 1;
+    if (aStartsNom !== bStartsNom) return aStartsNom - bStartsNom;
+    // Then by exact full match
+    const aExact = aNom === firstTerm ? 0 : 1;
+    const bExact = bNom === firstTerm ? 0 : 1;
+    if (aExact !== bExact) return aExact - bExact;
+    return aNom.localeCompare(bNom);
   });
 
   const { paginatedData: paginatedEleves, currentPage: elevesPage, totalPages: elevesTotalPages, totalItems: elevesTotalItems, pageSize: elevesPageSize, setCurrentPage: setElevesPage, resetPage: resetElevesPage } = usePagination(filtered, { pageSize: 20 });
