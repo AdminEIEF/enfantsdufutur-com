@@ -1387,25 +1387,33 @@ export default function Boutique() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2"><ShoppingBag className="h-8 w-8 text-purple-600" /> Boutique</h1>
-          <p className="text-muted-foreground">Vente d'uniformes, équipements et gestion des retraits</p>
+    <div className="space-y-5">
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500/20 to-purple-500/5 flex items-center justify-center">
+            <ShoppingBag className="h-5 w-5 text-purple-500" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Boutique</h1>
+            <p className="text-xs text-muted-foreground">Uniformes, équipements & gestion des retraits</p>
+          </div>
         </div>
-      </div>
+      </motion.div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="retraits" className="gap-1"><ClipboardCheck className="h-4 w-4" /> Retraits</TabsTrigger>
-          <TabsTrigger value="vente" className="gap-1"><ShoppingBag className="h-4 w-4" /> Vente directe</TabsTrigger>
-          <TabsTrigger value="inventaire" className="gap-1"><Package className="h-4 w-4" /> Inventaire</TabsTrigger>
-          <TabsTrigger value="credit" className="gap-1"><CreditCard className="h-4 w-4" /> Crédit</TabsTrigger>
-          <TabsTrigger value="historique" className="gap-1"><History className="h-4 w-4" /> Historique Ventes</TabsTrigger>
-          <TabsTrigger value="historique_retraits" className="gap-1"><ClipboardCheck className="h-4 w-4" /> Historique Retraits</TabsTrigger>
-          <TabsTrigger value="gestion" className="gap-1"><Settings className="h-4 w-4" /> Gestion</TabsTrigger>
-          <TabsTrigger value="rapport" className="gap-1"><Receipt className="h-4 w-4" /> Rapport Journalier</TabsTrigger>
-        </TabsList>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+          <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1 rounded-2xl">
+            <TabsTrigger value="retraits" className="gap-1.5 rounded-xl text-xs"><ClipboardCheck className="h-3.5 w-3.5" /> Retraits</TabsTrigger>
+            <TabsTrigger value="vente" className="gap-1.5 rounded-xl text-xs"><ShoppingBag className="h-3.5 w-3.5" /> Vente</TabsTrigger>
+            <TabsTrigger value="inventaire" className="gap-1.5 rounded-xl text-xs"><Package className="h-3.5 w-3.5" /> Inventaire</TabsTrigger>
+            <TabsTrigger value="credit" className="gap-1.5 rounded-xl text-xs"><CreditCard className="h-3.5 w-3.5" /> Crédit</TabsTrigger>
+            <TabsTrigger value="historique" className="gap-1.5 rounded-xl text-xs"><History className="h-3.5 w-3.5" /> Ventes</TabsTrigger>
+            <TabsTrigger value="historique_retraits" className="gap-1.5 rounded-xl text-xs"><ClipboardCheck className="h-3.5 w-3.5" /> Hist. Retraits</TabsTrigger>
+            <TabsTrigger value="gestion" className="gap-1.5 rounded-xl text-xs"><Settings className="h-3.5 w-3.5" /> Gestion</TabsTrigger>
+            <TabsTrigger value="rapport" className="gap-1.5 rounded-xl text-xs"><Receipt className="h-3.5 w-3.5" /> Rapport</TabsTrigger>
+          </TabsList>
+        </motion.div>
 
         {/* ===== RETRAITS TAB ===== */}
         <TabsContent value="retraits" className="space-y-4">
