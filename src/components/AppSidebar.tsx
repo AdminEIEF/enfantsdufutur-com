@@ -133,6 +133,7 @@ const navSections = [
       { title: 'Calendrier', url: '/calendrier', icon: CalendarRange },
       { title: 'Orientation', url: '/orientation', icon: ChartColumnStacked },
       { title: 'Performance', url: '/performance', icon: Trophy },
+      { title: 'Résultats Compositions', url: '/resultats-compositions', icon: FileCheck2 },
     ],
   },
   {
