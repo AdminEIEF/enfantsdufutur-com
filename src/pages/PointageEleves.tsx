@@ -1,17 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ScanLine, Search, Clock, LogIn, LogOut, Users, Camera, Wifi, WifiOff, Download, RefreshCw, Loader2 } from 'lucide-react';
+import { ScanLine, Search, Clock, LogIn, LogOut, Users, Camera, Wifi, WifiOff, Download, RefreshCw, Loader2, AlertTriangle, CheckCircle2, ArrowRightLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import PointageHistorique from '@/components/PointageHistorique';
 import { useOfflinePointage } from '@/hooks/useOfflinePointage';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PointageEleves() {
   const [searchMatricule, setSearchMatricule] = useState('');
@@ -20,6 +20,8 @@ export default function PointageEleves() {
   const [lastScanned, setLastScanned] = useState<any>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
   const offline = useOfflinePointage();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const scannerActiveRef = useRef(false);
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -34,7 +36,6 @@ export default function PointageEleves() {
 
   useEffect(() => {
     fetchTodayPointages();
-    // Realtime
     const channel = supabase
       .channel('pointages-eleves-rt')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pointages_eleves' }, () => {
@@ -45,6 +46,12 @@ export default function PointageEleves() {
   }, [fetchTodayPointages]);
 
   const handleScan = useCallback(async (code: string) => {
+    // Mark scanner as active to block input field
+    scannerActiveRef.current = true;
+    // Clear any characters that leaked into the input
+    setSearchMatricule('');
+    if (inputRef.current) inputRef.current.blur();
+
     let matricule = code;
     try {
       const parsed = JSON.parse(code);
@@ -52,9 +59,24 @@ export default function PointageEleves() {
     } catch { /* raw text */ }
 
     await processPointage(matricule.trim());
+    
+    // Reset after a short delay
+    setTimeout(() => {
+      scannerActiveRef.current = false;
+      setSearchMatricule('');
+    }, 300);
   }, [today]);
 
   useBarcodeScanner({ onScan: handleScan });
+
+  // Block scanner characters from appearing in input
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (scannerActiveRef.current) {
+      e.preventDefault();
+      return;
+    }
+    setSearchMatricule(e.target.value);
+  }, []);
 
   const processPointage = async (matricule: string) => {
     if (!matricule) return;
@@ -86,7 +108,6 @@ export default function PointageEleves() {
       }
 
       // ONLINE MODE
-      // Find student
       const { data: eleve } = await supabase
         .from('eleves')
         .select('id, nom, prenom, matricule, classe_id, classes:classe_id(nom), famille_id')
@@ -101,7 +122,6 @@ export default function PointageEleves() {
         return;
       }
 
-      // Check if already has a pointage today
       const { data: existing } = await supabase
         .from('pointages_eleves')
         .select('*')
@@ -115,13 +135,11 @@ export default function PointageEleves() {
       const enRetard = heureArrivee > HEURE_LIMITE;
 
       if (!existing) {
-        // First scan = arrival
         const { error } = await supabase
           .from('pointages_eleves')
           .insert({ eleve_id: eleve.id, date_pointage: today, heure_arrivee: now, en_retard: enRetard });
         if (error) throw error;
 
-        // Count total late arrivals
         let lateCount = 0;
         if (enRetard) {
           const { count } = await supabase
@@ -143,7 +161,6 @@ export default function PointageEleves() {
           });
         }
 
-        // Notify parent
         if (eleve.famille_id) {
           const retardMsg = enRetard
             ? ` ⚠️ EN RETARD (${heureArrivee} au lieu de 08:10). Nombre total de retards : ${enRetard ? (await supabase.from('pointages_eleves').select('id', { count: 'exact', head: true }).eq('eleve_id', eleve.id).eq('en_retard', true)).count || 0 : 0}.`
@@ -156,7 +173,6 @@ export default function PointageEleves() {
           });
         }
       } else if (!existing.heure_depart) {
-        // Second scan = departure
         const { error } = await supabase
           .from('pointages_eleves')
           .update({ heure_depart: now })
@@ -168,7 +184,6 @@ export default function PointageEleves() {
           description: `${eleve.prenom} ${eleve.nom} — ${format(new Date(now), 'HH:mm')}`,
         });
 
-        // Notify parent
         if (eleve.famille_id) {
           await supabase.from('parent_notifications').insert({
             famille_id: eleve.famille_id,
@@ -201,214 +216,230 @@ export default function PointageEleves() {
   const presentCount = todayPointages.filter(p => p.heure_arrivee && !p.heure_depart).length;
   const lateCount = todayPointages.filter(p => p.en_retard).length;
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <ScanLine className="h-6 w-6 text-primary" />
-          Pointage Élèves
-        </h1>
-        <Badge variant="outline" className="text-sm">
-          {format(new Date(), 'EEEE dd MMMM yyyy', { locale: fr })}
-        </Badge>
-      </div>
+  const stats = [
+    { icon: LogIn, label: 'Arrivés', value: arrivedCount, gradient: 'from-emerald-500/15 to-teal-500/5', iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-500' },
+    { icon: Users, label: 'Présents', value: presentCount, gradient: 'from-blue-500/15 to-indigo-500/5', iconBg: 'bg-blue-500/10', iconColor: 'text-blue-500' },
+    { icon: LogOut, label: 'Partis', value: departedCount, gradient: 'from-amber-500/15 to-orange-500/5', iconBg: 'bg-amber-500/10', iconColor: 'text-amber-500' },
+    { icon: AlertTriangle, label: 'Retards', value: lateCount, gradient: 'from-red-500/15 to-rose-500/5', iconBg: 'bg-red-500/10', iconColor: 'text-red-500' },
+  ];
 
-      {/* Offline status bar */}
-      <Card className={`border ${offline.isOnline ? 'border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/10' : 'border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/10'}`}>
-        <CardContent className="py-3 px-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-3 text-sm">
-              {offline.isOnline ? (
-                <Badge variant="outline" className="gap-1 border-emerald-500 text-emerald-700"><Wifi className="h-3 w-3" /> En ligne</Badge>
-              ) : (
-                <Badge variant="outline" className="gap-1 border-amber-500 text-amber-700"><WifiOff className="h-3 w-3" /> Hors ligne</Badge>
-              )}
-              <span className="text-muted-foreground">
-                {offline.cachedCount} élèves en cache
-              </span>
-              {offline.pendingCount > 0 && (
-                <Badge variant="secondary" className="gap-1">
-                  <RefreshCw className={`h-3 w-3 ${offline.isSyncing ? 'animate-spin' : ''}`} />
-                  {offline.pendingCount} en attente
-                </Badge>
-              )}
-              {offline.lastSync && (
-                <span className="text-xs text-muted-foreground hidden sm:inline">
-                  Dernier cache : {format(new Date(offline.lastSync), 'dd/MM HH:mm')}
-                </span>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={offline.downloadEleves} disabled={offline.isDownloading || !offline.isOnline}>
-                {offline.isDownloading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}
-                Mettre en cache
-              </Button>
-              {offline.pendingCount > 0 && offline.isOnline && (
-                <Button size="sm" variant="outline" onClick={offline.syncPending} disabled={offline.isSyncing}>
-                  <RefreshCw className={`h-3.5 w-3.5 mr-1 ${offline.isSyncing ? 'animate-spin' : ''}`} />
-                  Synchroniser
-                </Button>
-              )}
-            </div>
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+            <ScanLine className="h-5 w-5 text-primary" />
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Pointage Élèves</h1>
+            <p className="text-xs text-muted-foreground">{format(new Date(), 'EEEE dd MMMM yyyy', { locale: fr })}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {offline.isOnline ? (
+            <Badge variant="outline" className="gap-1.5 border-emerald-500/40 text-emerald-600 bg-emerald-500/5 text-[10px] font-medium">
+              <Wifi className="h-3 w-3" /> En ligne
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="gap-1.5 border-amber-500/40 text-amber-600 bg-amber-500/5 text-[10px] font-medium animate-pulse">
+              <WifiOff className="h-3 w-3" /> Hors ligne
+            </Badge>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Offline controls */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+        className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm px-4 py-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="font-medium">{offline.cachedCount} élèves en cache</span>
+            {offline.pendingCount > 0 && (
+              <Badge variant="secondary" className="gap-1 text-[10px]">
+                <RefreshCw className={`h-2.5 w-2.5 ${offline.isSyncing ? 'animate-spin' : ''}`} />
+                {offline.pendingCount} en attente
+              </Badge>
+            )}
+            {offline.lastSync && (
+              <span className="hidden sm:inline">Dernier cache : {format(new Date(offline.lastSync), 'dd/MM HH:mm')}</span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" className="h-7 text-[10px] px-2.5 rounded-xl" onClick={offline.downloadEleves} disabled={offline.isDownloading || !offline.isOnline}>
+              {offline.isDownloading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
+              Cache
+            </Button>
+            {offline.pendingCount > 0 && offline.isOnline && (
+              <Button size="sm" variant="ghost" className="h-7 text-[10px] px-2.5 rounded-xl" onClick={offline.syncPending} disabled={offline.isSyncing}>
+                <RefreshCw className={`h-3 w-3 mr-1 ${offline.isSyncing ? 'animate-spin' : ''}`} />
+                Sync
+              </Button>
+            )}
+          </div>
+        </div>
+      </motion.div>
 
       {/* Scanner section */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Saisir ou scanner le matricule..."
-                value={searchMatricule}
-                onChange={e => setSearchMatricule(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleManualSearch()}
-                className="pl-10"
-                autoFocus
-              />
-            </div>
-            <Button onClick={handleManualSearch} disabled={loading || !searchMatricule.trim()}>
-              <Clock className="h-4 w-4 mr-2" /> Pointer
-            </Button>
-            <Button variant="outline" onClick={() => setScannerOpen(true)}>
-              <Camera className="h-4 w-4 mr-2" /> Scanner QR
-            </Button>
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+        className="rounded-2xl border border-border/40 bg-gradient-to-br from-primary/5 to-transparent p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <ScanLine className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold text-foreground">Scanner ou saisir un matricule</span>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2.5">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              ref={inputRef}
+              placeholder="Matricule de l'élève..."
+              value={searchMatricule}
+              onChange={handleInputChange}
+              onKeyDown={e => e.key === 'Enter' && handleManualSearch()}
+              className="pl-10 rounded-xl h-10 bg-background/80 border-border/50"
+            />
           </div>
-        </CardContent>
-      </Card>
+          <Button onClick={handleManualSearch} disabled={loading || !searchMatricule.trim()} className="rounded-xl h-10 px-5">
+            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Clock className="h-4 w-4 mr-2" />}
+            Pointer
+          </Button>
+          <Button variant="outline" onClick={() => setScannerOpen(true)} className="rounded-xl h-10 px-5 border-border/50">
+            <Camera className="h-4 w-4 mr-2" /> QR
+          </Button>
+        </div>
+      </motion.div>
 
       {/* Last scanned feedback */}
-      {lastScanned && (
-        <Card className={`border-2 ${
-          lastScanned.en_retard ? 'border-red-500 bg-red-50 dark:bg-red-950/20' :
-          lastScanned.action === 'arrivee' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20' :
-          lastScanned.action === 'depart' ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20' :
-          'border-muted'
-        }`}>
-          <CardContent className="pt-6">
+      <AnimatePresence mode="wait">
+        {lastScanned && (
+          <motion.div
+            key={lastScanned.matricule + lastScanned.action}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            className={`rounded-2xl border-2 p-5 ${
+              lastScanned.en_retard
+                ? 'border-red-500/50 bg-gradient-to-r from-red-500/10 to-red-500/5'
+                : lastScanned.action === 'arrivee'
+                ? 'border-emerald-500/50 bg-gradient-to-r from-emerald-500/10 to-emerald-500/5'
+                : lastScanned.action === 'depart'
+                ? 'border-amber-500/50 bg-gradient-to-r from-amber-500/10 to-amber-500/5'
+                : 'border-border/40 bg-card/50'
+            }`}
+          >
             <div className="flex items-center gap-4">
-              <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
-                lastScanned.en_retard ? 'bg-red-100 dark:bg-red-900' :
-                lastScanned.action === 'arrivee' ? 'bg-emerald-100 dark:bg-emerald-900' :
-                lastScanned.action === 'depart' ? 'bg-orange-100 dark:bg-orange-900' : 'bg-muted'
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
+                lastScanned.en_retard ? 'bg-red-500/15' :
+                lastScanned.action === 'arrivee' ? 'bg-emerald-500/15' :
+                lastScanned.action === 'depart' ? 'bg-amber-500/15' : 'bg-muted/50'
               }`}>
                 {lastScanned.en_retard ? (
-                  <Clock className="h-7 w-7 text-red-600" />
+                  <AlertTriangle className="h-7 w-7 text-red-500" />
                 ) : lastScanned.action === 'arrivee' ? (
-                  <LogIn className="h-7 w-7 text-emerald-600" />
+                  <CheckCircle2 className="h-7 w-7 text-emerald-500" />
                 ) : lastScanned.action === 'depart' ? (
-                  <LogOut className="h-7 w-7 text-orange-600" />
+                  <LogOut className="h-7 w-7 text-amber-500" />
                 ) : (
-                  <Clock className="h-7 w-7 text-muted-foreground" />
+                  <ArrowRightLeft className="h-7 w-7 text-muted-foreground" />
                 )}
               </div>
-              <div>
-                <p className="text-lg font-bold">{lastScanned.prenom} {lastScanned.nom}</p>
-                <p className="text-sm text-muted-foreground">
-                  {lastScanned.matricule} • {(lastScanned.classes as any)?.nom}
-                </p>
+              <div className="min-w-0">
+                <p className="text-lg font-bold text-foreground truncate">{lastScanned.prenom} {lastScanned.nom}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <Badge variant="outline" className="text-[10px] font-mono border-border/40">{lastScanned.matricule}</Badge>
+                  <span className="text-xs text-muted-foreground">{(lastScanned.classes as any)?.nom}</span>
+                </div>
                 {lastScanned.action !== 'complet' && (
-                  <p className="text-sm font-medium mt-1">
-                    {lastScanned.action === 'arrivee' ? (lastScanned.en_retard ? '⚠️ Arrivée en RETARD' : '✅ Arrivée') : '🚪 Départ'} à {format(new Date(lastScanned.heure), 'HH:mm')}
+                  <p className={`text-sm font-semibold mt-1.5 ${
+                    lastScanned.en_retard ? 'text-red-600' :
+                    lastScanned.action === 'arrivee' ? 'text-emerald-600' : 'text-amber-600'
+                  }`}>
+                    {lastScanned.action === 'arrivee' ? (lastScanned.en_retard ? '⚠️ Retard' : '✅ Arrivée') : '🚪 Départ'} — {format(new Date(lastScanned.heure), 'HH:mm')}
                   </p>
                 )}
                 {lastScanned.en_retard && lastScanned.retard_count > 0 && (
-                  <Badge className="bg-red-100 text-red-700 text-[10px] mt-1">
+                  <Badge className="bg-red-500/10 text-red-600 border-red-500/20 text-[10px] mt-1.5">
                     {lastScanned.retard_count} retard{lastScanned.retard_count > 1 ? 's' : ''} au total
                   </Badge>
                 )}
                 {lastScanned.action === 'complet' && (
-                  <p className="text-sm text-muted-foreground mt-1">Pointage déjà complet pour aujourd'hui</p>
+                  <p className="text-xs text-muted-foreground mt-1">Pointage déjà complet pour aujourd'hui</p>
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4 text-center">
-            <LogIn className="h-5 w-5 mx-auto text-emerald-600 mb-1" />
-            <div className="text-2xl font-bold">{arrivedCount}</div>
-            <p className="text-xs text-muted-foreground">Arrivés</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 text-center">
-            <Users className="h-5 w-5 mx-auto text-primary mb-1" />
-            <div className="text-2xl font-bold">{presentCount}</div>
-            <p className="text-xs text-muted-foreground">Présents</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 text-center">
-            <LogOut className="h-5 w-5 mx-auto text-orange-600 mb-1" />
-            <div className="text-2xl font-bold">{departedCount}</div>
-            <p className="text-xs text-muted-foreground">Partis</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 text-center">
-            <Clock className="h-5 w-5 mx-auto text-red-600 mb-1" />
-            <div className="text-2xl font-bold">{lateCount}</div>
-            <p className="text-xs text-muted-foreground">En retard</p>
-          </CardContent>
-        </Card>
-      </div>
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="grid grid-cols-4 gap-3">
+        {stats.map((s, i) => (
+          <div key={i} className={`rounded-2xl bg-gradient-to-br ${s.gradient} border border-border/30 p-4 text-center transition-all hover:scale-[1.02]`}>
+            <div className={`w-9 h-9 rounded-xl ${s.iconBg} flex items-center justify-center mx-auto mb-2`}>
+              <s.icon className={`h-4.5 w-4.5 ${s.iconColor}`} />
+            </div>
+            <div className="text-2xl font-bold text-foreground">{s.value}</div>
+            <p className="text-[10px] text-muted-foreground font-medium">{s.label}</p>
+          </div>
+        ))}
+      </motion.div>
 
       {/* Today's list */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Pointages du jour ({todayPointages.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {todayPointages.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">Aucun pointage enregistré aujourd'hui</p>
-          ) : (
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {todayPointages.map(p => (
-                <div key={p.id} className="flex items-center justify-between border rounded-lg px-3 py-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">
-                      {(p.eleves as any)?.prenom} {(p.eleves as any)?.nom}
-                    </span>
-                    <Badge variant="outline" className="text-[10px]">
-                      {(p.eleves as any)?.matricule}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {(p.eleves as any)?.classes?.nom}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs">
-                    {p.heure_arrivee && (
-                      <span className="text-emerald-600 font-medium">
-                        ↓ {format(new Date(p.heure_arrivee), 'HH:mm')}
-                      </span>
-                    )}
-                    {p.heure_depart && (
-                      <span className="text-orange-600 font-medium">
-                        ↑ {format(new Date(p.heure_depart), 'HH:mm')}
-                      </span>
-                    )}
-                    {p.en_retard && (
-                      <Badge className="bg-red-100 text-red-700 text-[10px]">Retard</Badge>
-                    )}
-                    {!p.heure_depart && p.heure_arrivee && !p.en_retard && (
-                      <Badge className="bg-emerald-100 text-emerald-700 text-[10px]">Présent</Badge>
-                    )}
-                  </div>
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+        className="rounded-2xl border border-border/40 bg-card overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-border/30 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-foreground">Pointages du jour</h3>
+          <Badge variant="secondary" className="text-[10px]">{todayPointages.length}</Badge>
+        </div>
+        {todayPointages.length === 0 ? (
+          <div className="py-12 text-center">
+            <ScanLine className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Aucun pointage enregistré aujourd'hui</p>
+          </div>
+        ) : (
+          <div className="max-h-[400px] overflow-y-auto divide-y divide-border/20">
+            {todayPointages.map(p => (
+              <div key={p.id} className="flex items-center justify-between px-5 py-2.5 hover:bg-muted/30 transition-colors">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${
+                    p.en_retard ? 'bg-red-500' : p.heure_depart ? 'bg-amber-500' : 'bg-emerald-500'
+                  }`} />
+                  <span className="font-medium text-sm text-foreground truncate">
+                    {(p.eleves as any)?.prenom} {(p.eleves as any)?.nom}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-mono hidden sm:inline">
+                    {(p.eleves as any)?.matricule}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground hidden md:inline">
+                    {(p.eleves as any)?.classes?.nom}
+                  </span>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <div className="flex items-center gap-2.5 text-xs shrink-0">
+                  {p.heure_arrivee && (
+                    <span className={`font-mono ${p.en_retard ? 'text-red-500 font-semibold' : 'text-emerald-600'}`}>
+                      ↓ {format(new Date(p.heure_arrivee), 'HH:mm')}
+                    </span>
+                  )}
+                  {p.heure_depart && (
+                    <span className="font-mono text-amber-600">
+                      ↑ {format(new Date(p.heure_depart), 'HH:mm')}
+                    </span>
+                  )}
+                  {p.en_retard && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-500 text-[9px] font-semibold">Retard</span>
+                  )}
+                  {!p.heure_depart && p.heure_arrivee && !p.en_retard && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[9px] font-semibold">Présent</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
 
-      {/* Historique semaine/mois */}
+      {/* Historique */}
       <PointageHistorique />
 
       <QRScannerDialog
