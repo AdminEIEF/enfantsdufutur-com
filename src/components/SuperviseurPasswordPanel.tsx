@@ -241,6 +241,8 @@ export default function SuperviseurPasswordPanel() {
         const { error } = await supabase.from('familles').update({ code_acces: code } as any).eq('id', item.id);
         if (error) throw error;
         savePassword(STORAGE_KEY_FAMILLES, item.id, code);
+        // Save to DB for admin visibility
+        await supabase.from('generated_family_codes' as any).upsert({ famille_id: item.id, code_plain: code, generated_by: (await supabase.auth.getUser()).data.user?.id } as any, { onConflict: 'famille_id' });
         setGeneratedPwd({ id: item.id, pwd: code });
         toast.success(`Code d'accès généré pour ${item.nom_famille}`);
       }
