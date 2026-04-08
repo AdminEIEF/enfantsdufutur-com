@@ -37,31 +37,34 @@ export default function ScanEleveInfo() {
     queryKey: ['scan-eleve-info', matricule],
     queryFn: async () => {
       if (!matricule) return null;
+      console.log('[ScanEleve] Recherche matricule:', matricule);
       const { data, error } = await supabase
         .from('eleves')
         .select(`
           *, 
-          classes!eleves_classe_id_fkey(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom))),
+          classes!eleves_classe_id_fkey(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom, bareme))),
           familles!eleves_famille_id_fkey(nom_famille, telephone_pere, telephone_mere, email_parent, adresse, solde_famille),
-          zones_transport!eleves_zone_transport_id_fkey(nom, tarif_mensuel)
+          zones_transport!eleves_zone_transport_id_fkey(nom, prix_mensuel)
         `)
         .or(`matricule.eq.${matricule},qr_code.eq.${matricule}`)
         .is('deleted_at', null)
         .maybeSingle();
+      console.log('[ScanEleve] Résultat:', data, 'Erreur:', error);
       if (error) throw error;
       return data;
     },
     enabled: !!matricule,
   });
 
-  // Fetch notes/moyennes
+  // Fetch notes/moyennes - bareme comes from cycles table
+  const bareme = (eleve?.classes as any)?.niveaux?.cycles?.bareme || 20;
   const { data: notes } = useQuery({
     queryKey: ['scan-eleve-notes', eleve?.id],
     queryFn: async () => {
       if (!eleve?.id) return [];
       const { data } = await supabase
         .from('notes')
-        .select('note, bareme, matieres!notes_matiere_id_fkey(nom), periodes!notes_periode_id_fkey(nom)')
+        .select('note, matieres!notes_matiere_id_fkey(nom, coefficient), periodes!notes_periode_id_fkey(nom)')
         .eq('eleve_id', eleve.id);
       return data || [];
     },
@@ -75,8 +78,10 @@ export default function ScanEleveInfo() {
     notes.forEach((n: any) => {
       const periode = n.periodes?.nom || 'Inconnu';
       if (!grouped[periode]) grouped[periode] = { total: 0, count: 0 };
-      grouped[periode].total += (n.note / n.bareme) * 20;
-      grouped[periode].count += 1;
+      if (n.note !== null) {
+        grouped[periode].total += (n.note / bareme) * 20;
+        grouped[periode].count += 1;
+      }
     });
     return Object.entries(grouped).map(([nom, v]) => ({
       nom,
