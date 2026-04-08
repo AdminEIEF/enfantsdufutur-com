@@ -2152,6 +2152,47 @@ export type Database = {
           },
         ]
       }
+      generated_student_codes: {
+        Row: {
+          created_at: string
+          eleve_id: string
+          generated_by: string | null
+          id: string
+          password_plain: string
+          updated_at: string
+          visible_coordinateur_primaire: boolean
+          visible_coordinateur_secondaire: boolean
+        }
+        Insert: {
+          created_at?: string
+          eleve_id: string
+          generated_by?: string | null
+          id?: string
+          password_plain: string
+          updated_at?: string
+          visible_coordinateur_primaire?: boolean
+          visible_coordinateur_secondaire?: boolean
+        }
+        Update: {
+          created_at?: string
+          eleve_id?: string
+          generated_by?: string | null
+          id?: string
+          password_plain?: string
+          updated_at?: string
+          visible_coordinateur_primaire?: boolean
+          visible_coordinateur_secondaire?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_student_codes_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: true
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incidents_transport: {
         Row: {
           created_at: string

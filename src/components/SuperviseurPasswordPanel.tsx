@@ -228,6 +228,12 @@ export default function SuperviseurPasswordPanel() {
         const { error } = await supabase.from('eleves').update({ mot_de_passe_eleve: pwd } as any).eq('id', item.id);
         if (error) throw error;
         savePassword(STORAGE_KEY_ELEVES, item.id, pwd);
+        const userId = (await supabase.auth.getUser()).data.user?.id;
+        await supabase.from('generated_student_codes' as any).upsert({
+          eleve_id: item.id, password_plain: pwd, generated_by: userId,
+          visible_coordinateur_primaire: visiblePrimaire,
+          visible_coordinateur_secondaire: visibleSecondaire,
+        } as any, { onConflict: 'eleve_id' });
         setGeneratedPwd({ id: item.id, pwd });
         toast.success(`Mot de passe généré pour ${item.prenom} ${item.nom}`);
       } else if (tab === 'employes') {
@@ -253,10 +259,85 @@ export default function SuperviseurPasswordPanel() {
     }
   };
 
-  // Bulk generate all family codes
+  // Bulk generate
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState(0);
   const [bulkTotal, setBulkTotal] = useState(0);
+
+  // Visibility toggles for coordinators
+  const [visiblePrimaire, setVisiblePrimaire] = useState(false);
+  const [visibleSecondaire, setVisibleSecondaire] = useState(false);
+  const [togglingVisibility, setTogglingVisibility] = useState(false);
+
+  // Load visibility state
+  useEffect(() => {
+    supabase.from('generated_student_codes' as any).select('visible_coordinateur_primaire, visible_coordinateur_secondaire').limit(1).then(({ data }) => {
+      if (data && data.length > 0) {
+        setVisiblePrimaire((data[0] as any).visible_coordinateur_primaire);
+        setVisibleSecondaire((data[0] as any).visible_coordinateur_secondaire);
+      }
+    });
+  }, []);
+
+  const toggleVisibility = async (type: 'primaire' | 'secondaire') => {
+    setTogglingVisibility(true);
+    const newVal = type === 'primaire' ? !visiblePrimaire : !visibleSecondaire;
+    const col = type === 'primaire' ? 'visible_coordinateur_primaire' : 'visible_coordinateur_secondaire';
+    const { error } = await supabase.from('generated_student_codes' as any).update({ [col]: newVal } as any).neq('id', '00000000-0000-0000-0000-000000000000');
+    if (!error) {
+      if (type === 'primaire') setVisiblePrimaire(newVal);
+      else setVisibleSecondaire(newVal);
+      toast.success(`Visibilité ${type === 'primaire' ? 'Coordinateur Primaire' : 'Coordinateur Secondaire'} ${newVal ? 'activée' : 'désactivée'}`);
+    } else { toast.error('Erreur de mise à jour'); }
+    setTogglingVisibility(false);
+  };
+
+  // Bulk generate student passwords
+  const handleBulkGenerateEleves = async () => {
+    const filtered = results as any[];
+    if (filtered.length === 0) { toast.info('Aucun élève à traiter'); return; }
+    setBulkGenerating(true);
+    setBulkTotal(filtered.length);
+    setBulkProgress(0);
+    let success = 0;
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    for (let i = 0; i < filtered.length; i++) {
+      const e = filtered[i];
+      try {
+        const pwd = generateSimpleCode();
+        const { error } = await supabase.from('eleves').update({ mot_de_passe_eleve: pwd } as any).eq('id', e.id);
+        if (!error) {
+          savePassword(STORAGE_KEY_ELEVES, e.id, pwd);
+          await supabase.from('generated_student_codes' as any).upsert({
+            eleve_id: e.id, password_plain: pwd, generated_by: userId,
+            visible_coordinateur_primaire: visiblePrimaire,
+            visible_coordinateur_secondaire: visibleSecondaire,
+          } as any, { onConflict: 'eleve_id' });
+          success++;
+        }
+      } catch { /* continue */ }
+      setBulkProgress(i + 1);
+    }
+    setBulkGenerating(false);
+    toast.success(`${success} mots de passe générés sur ${filtered.length} élèves`);
+  };
+
+  // Export student passwords CSV
+  const handleExportEleveCodes = () => {
+    const saved = getSavedPasswords(STORAGE_KEY_ELEVES);
+    const lines = ['Matricule,Nom,Prénom,Classe,Mot de passe'];
+    (results as any[]).forEach(e => {
+      const pwd = saved[e.id];
+      if (pwd) lines.push(`"${e.matricule || ''}","${e.nom}","${e.prenom}","${e.classes?.nom || ''}","${pwd}"`);
+    });
+    if (lines.length <= 1) { toast.info('Aucun code à exporter'); return; }
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'codes_eleves.csv'; a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Export CSV téléchargé');
+  };
 
   const handleBulkGenerateFamilles = async () => {
     const famillesSansCode = familles.filter(f => !getSavedPasswords(STORAGE_KEY_FAMILLES)[f.id]);
@@ -345,31 +426,73 @@ export default function SuperviseurPasswordPanel() {
 
           {/* Filters for eleves tab */}
           {tab === 'eleves' && (
-            <div className="grid grid-cols-2 gap-2">
-              <Select value={selectedNiveau} onValueChange={setSelectedNiveau}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="Tous les niveaux" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les niveaux</SelectItem>
-                  {niveaux.map(n => (
-                    <SelectItem key={n.id} value={n.id}>
-                      {n.nom} ({(n.cycles as any)?.nom})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={selectedClasse} onValueChange={setSelectedClasse}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="Toutes les classes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toutes les classes</SelectItem>
-                  {classes.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <Select value={selectedNiveau} onValueChange={setSelectedNiveau}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Tous les niveaux" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les niveaux</SelectItem>
+                    {niveaux.map(n => (
+                      <SelectItem key={n.id} value={n.id}>
+                        {n.nom} ({(n.cycles as any)?.nom})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={selectedClasse} onValueChange={setSelectedClasse}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Toutes les classes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les classes</SelectItem>
+                    {classes.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Bulk actions */}
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" className="text-xs gap-1.5" disabled={bulkGenerating} onClick={handleBulkGenerateEleves}>
+                  {bulkGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                  Générer tous les MDP ({results.length})
+                </Button>
+                <Button size="sm" variant="outline" className="text-xs gap-1.5" onClick={handleExportEleveCodes}>
+                  <Download className="h-3.5 w-3.5" /> Exporter CSV
+                </Button>
+              </div>
+              {bulkGenerating && (
+                <div className="space-y-1">
+                  <Progress value={(bulkProgress / bulkTotal) * 100} className="h-2" />
+                  <p className="text-xs text-muted-foreground text-center">{bulkProgress}/{bulkTotal} élèves traités...</p>
+                </div>
+              )}
+              {/* Visibility toggles for coordinators */}
+              <div className="flex flex-wrap gap-2 border rounded-lg p-3 bg-muted/30">
+                <p className="text-xs font-medium w-full mb-1">Visibilité chez les coordinateurs</p>
+                <Button
+                  size="sm"
+                  variant={visiblePrimaire ? 'default' : 'outline'}
+                  className="text-xs gap-1.5"
+                  disabled={togglingVisibility}
+                  onClick={() => toggleVisibility('primaire')}
+                >
+                  {visiblePrimaire ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                  Coord. Primaire
+                </Button>
+                <Button
+                  size="sm"
+                  variant={visibleSecondaire ? 'default' : 'outline'}
+                  className="text-xs gap-1.5"
+                  disabled={togglingVisibility}
+                  onClick={() => toggleVisibility('secondaire')}
+                >
+                  {visibleSecondaire ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                  Coord. Secondaire
+                </Button>
+              </div>
             </div>
           )}
 
