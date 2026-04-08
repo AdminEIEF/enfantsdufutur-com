@@ -333,6 +333,24 @@ serve(async (req) => {
         });
       }
 
+      // For primaire_interactif type, return QCM questions with options (no correct answers)
+      if (comp.type_composition === 'primaire_interactif') {
+        const { data: questions } = await supabaseAdmin
+          .from("composition_questions")
+          .select("id, type_question, enonce, options, points, ordre, reponse_correcte")
+          .eq("composition_id", composition_id)
+          .order("ordre");
+
+        const cleanQuestions = (questions || []).map((q: any) => ({
+          ...q,
+          options: (q.options as any[]).map((o: any) => ({ label: o.label })),
+        }));
+
+        return new Response(JSON.stringify({ type_composition: 'primaire_interactif', questions: cleanQuestions, debut_at: debutAt }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       // For texte type, return questions without options
       if (comp.type_composition === 'texte') {
         const { data: questions } = await supabaseAdmin
