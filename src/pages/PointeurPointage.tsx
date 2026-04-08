@@ -5,12 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ScanLine, Search, Clock, LogIn, LogOut, Users, Camera } from 'lucide-react';
+import { ScanLine, Search, Clock, LogIn, LogOut, Users, Camera, Wifi, WifiOff, Download, RefreshCw, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useOfflinePointage } from '@/hooks/useOfflinePointage';
 
 export default function PointeurPointage() {
   const [searchMatricule, setSearchMatricule] = useState('');
@@ -20,6 +21,7 @@ export default function PointeurPointage() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [niveaux, setNiveaux] = useState<any[]>([]);
   const [cycles, setCycles] = useState<any[]>([]);
+  const offline = useOfflinePointage();
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
