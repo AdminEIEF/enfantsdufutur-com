@@ -295,6 +295,12 @@ export default function PointageEleves() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="h-8 text-[10px] rounded-xl gap-1.5 border-border/50" onClick={printDailyReport}>
+            <Printer className="h-3 w-3" /> Jour
+          </Button>
+          <Button variant="outline" size="sm" className="h-8 text-[10px] rounded-xl gap-1.5 border-border/50" onClick={printWeeklyReport}>
+            <Printer className="h-3 w-3" /> Semaine
+          </Button>
           {offline.isOnline ? (
             <Badge variant="outline" className="gap-1.5 border-emerald-500/40 text-emerald-600 bg-emerald-500/5 text-[10px] font-medium">
               <Wifi className="h-3 w-3" /> En ligne
