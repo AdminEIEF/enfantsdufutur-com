@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -16,6 +17,22 @@ function parseScannedCode(raw: string): string | null {
   if (mMatch) return mMatch[1].toUpperCase();
   // Fallback
   return trimmed.toUpperCase();
+}
+
+function PhotoWithSkeleton({ src }: { src: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="relative w-28 h-28 rounded-2xl border-4 border-background shadow-lg overflow-hidden">
+      {!loaded && <Skeleton className="absolute inset-0 w-full h-full" />}
+      <img
+        src={src}
+        alt=""
+        loading="eager"
+        onLoad={() => setLoaded(true)}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+      />
+    </div>
+  );
 }
 
 export default function ScanEleveInfo() {
@@ -162,8 +179,8 @@ export default function ScanEleveInfo() {
               <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-14">
                 {/* Avatar */}
                 <div className="relative z-10">
-                  {eleve.photo_url ? (
-                    <img src={eleve.photo_url} alt="" className="w-28 h-28 rounded-2xl object-cover border-4 border-background shadow-lg" />
+                  {eleve.photo_thumbnail_url || eleve.photo_url ? (
+                    <PhotoWithSkeleton src={eleve.photo_thumbnail_url || eleve.photo_url} />
                   ) : (
                     <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-muted to-muted/50 border-4 border-background shadow-lg flex items-center justify-center">
                       <User className="h-12 w-12 text-muted-foreground" />
