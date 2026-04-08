@@ -14,8 +14,9 @@ import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
-  const { roles } = useAuth();
+  const { roles, hasAnyRole } = useAuth();
   const navigate = useNavigate();
+  const canSeeFinance = hasAnyRole(['superviseur', 'admin', 'comptable', 'tresorier']);
   const [scanResult, setScanResult] = useState<any>(null);
 
   const handleSearchStudent = useCallback(async (matricule: string) => {
