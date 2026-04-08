@@ -468,7 +468,7 @@ export default function CompositionsAdmin() {
 
   async function togglePublie(comp: Composition) {
     if (!comp.publie) {
-      if (comp.type_composition === 'qcm' || comp.type_composition === 'texte') {
+      if (comp.type_composition === 'qcm' || comp.type_composition === 'texte' || comp.type_composition === 'primaire_interactif') {
         const { count } = await supabase.from('composition_questions').select('id', { count: 'exact', head: true }).eq('composition_id', comp.id);
         if (!count || count === 0) {
           toast.error('Ajoutez des questions avant de publier'); return;
