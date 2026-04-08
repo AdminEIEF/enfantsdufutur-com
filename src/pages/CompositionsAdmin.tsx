@@ -669,7 +669,7 @@ export default function CompositionsAdmin() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-lg">{comp.titre}</h3>
                           <Badge variant="outline" className="text-xs">
-                            {comp.type_composition === 'document' ? '📄 Document' : comp.type_composition === 'texte' ? '✍️ Texte' : '📝 QCM'}
+                            {comp.type_composition === 'primaire_interactif' ? '🎨 Primaire Interactif' : comp.type_composition === 'document' ? '📄 Document' : comp.type_composition === 'texte' ? '✍️ Texte' : '📝 QCM'}
                           </Badge>
                       {comp.publie ? (
                         <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Publiée</Badge>
@@ -752,6 +752,7 @@ export default function CompositionsAdmin() {
                     <SelectItem value="qcm">📝 QCM / Vrai-Faux</SelectItem>
                     <SelectItem value="texte">✍️ Questions texte — Réponse libre</SelectItem>
                     <SelectItem value="document">📄 Document (PDF/Word) — Réponse texte</SelectItem>
+                    <SelectItem value="primaire_interactif">🎨 Primaire Interactif — Dessin + Math + QCM Audio</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
