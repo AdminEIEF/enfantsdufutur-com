@@ -754,8 +754,8 @@ export default function CompositionsAdmin() {
         </div>
       )}
 
-      {/* Connected Students Dashboard - after compositions */}
-      <ConnectedStudentsDashboard />
+      {/* Connected Students Dashboard - hidden for coordinateurs */}
+      {!isCoordinateur && <ConnectedStudentsDashboard />}
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
