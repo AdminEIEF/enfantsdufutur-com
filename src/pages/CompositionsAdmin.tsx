@@ -1022,6 +1022,9 @@ export default function CompositionsAdmin() {
                         <Button variant="outline" onClick={() => addQuestion('qcm')}>
                           <Plus className="h-4 w-4 mr-1" /> QCM
                         </Button>
+                        <Button variant="outline" onClick={() => addQuestion('qcm_multiple')}>
+                          <Plus className="h-4 w-4 mr-1" /> QCM Multiple
+                        </Button>
                         <Button variant="outline" onClick={() => addQuestion('vrai_faux')}>
                           <Plus className="h-4 w-4 mr-1" /> Vrai/Faux
                         </Button>
