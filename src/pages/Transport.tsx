@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Bus, MapPin, Users, Search, Download, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon, Settings, User, Phone, Navigation2, GraduationCap, Printer, Clock, LayoutDashboard, Receipt, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Bus, MapPin, Users, Search, Download, CreditCard, ScanLine, Route, TrendingUp, Bell, LinkIcon, Settings, User, Phone, Navigation2, GraduationCap, Printer, Clock, LayoutDashboard, Receipt, CheckCircle2, AlertTriangle, Shield, Zap, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -23,11 +23,114 @@ import CarteTransportEleve from '@/components/CarteTransportEleve';
 import { exportBulkTransportCards, type TransportCardExportData } from '@/lib/generateCarteTransportPDF';
 import ValidationTransportBus from '@/components/ValidationTransportBus';
 import ItinerairesTransport from '@/components/transport/ItinerairesTransport';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import AlertesTransport from '@/components/transport/AlertesTransport';
 import ChauffeurDashboard from '@/components/transport/ChauffeurDashboard';
 import AssignationBusChauffeur from '@/components/transport/AssignationBusChauffeur';
 import GestionTransport from '@/components/transport/GestionTransport';
+
+// ─── Recharge Status Badge Component ───
+function RechargeStatusBadge({ recharge, getDaysRemaining }: { recharge: any; getDaysRemaining: (d: string) => number }) {
+  if (!recharge) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/20">
+        <div className="w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
+        <div>
+          <p className="text-xs font-bold text-destructive">CARTE EXPIRÉE</p>
+          <p className="text-[10px] text-destructive/70">Recharge nécessaire</p>
+        </div>
+      </div>
+    );
+  }
+
+  const jours = getDaysRemaining(recharge.date_expiration);
+  const expDate = new Date(recharge.date_expiration).toLocaleDateString('fr-FR');
+
+  if (jours <= 0) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/20">
+        <div className="w-2.5 h-2.5 rounded-full bg-destructive" />
+        <div>
+          <p className="text-xs font-bold text-destructive">EXPIRÉE</p>
+          <p className="text-[10px] text-destructive/70">Depuis le {expDate}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (jours <= 5) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-orange-500/10 border border-orange-500/20">
+        <div className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
+        <div>
+          <p className="text-xs font-bold text-orange-600 dark:text-orange-400">EXPIRE BIENTÔT</p>
+          <p className="text-[10px] text-orange-600/70 dark:text-orange-400/70">{jours} jour(s) — {expDate}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (jours <= 10) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+        <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+        <div>
+          <p className="text-xs font-bold text-amber-600 dark:text-amber-400">ACTIVE</p>
+          <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70">{jours} jour(s) — {expDate}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+      <div>
+        <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">ACTIVE</p>
+        <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">{jours} jour(s) — {expDate}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Mini status for list items ───
+function RechargeStatusMini({ recharge, getDaysRemaining }: { recharge: any; getDaysRemaining: (d: string) => number }) {
+  if (!recharge) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold">
+        <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" /> Expirée
+      </span>
+    );
+  }
+  const jours = getDaysRemaining(recharge.date_expiration);
+  if (jours <= 0) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold">
+        <span className="w-1.5 h-1.5 rounded-full bg-destructive" /> Expirée
+      </span>
+    );
+  }
+  if (jours <= 5) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 text-[10px] font-bold">
+        <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" /> {jours}j
+      </span>
+    );
+  }
+  if (jours <= 10) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> {jours}j
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {jours}j
+    </span>
+  );
+}
 
 const COLORS = [
   'hsl(220, 70%, 45%)', 'hsl(38, 92%, 50%)', 'hsl(162, 63%, 41%)',
@@ -70,15 +173,17 @@ function TransportPaymentsRecent() {
   }).length;
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-0 shadow-sm">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Receipt className="h-5 w-5 text-primary" />
+        <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+          <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Receipt className="h-4 w-4 text-primary" />
+          </div>
           Paiements transport récents
           {pendingCount > 0 && (
-            <Badge className="bg-amber-100 text-amber-800 border-amber-200 ml-2 animate-pulse">
+            <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-0 ml-2 rounded-full text-[10px] animate-pulse">
               <AlertTriangle className="h-3 w-3 mr-1" />
-              {pendingCount} carte(s) à valider
+              {pendingCount} à valider
             </Badge>
           )}
         </CardTitle>
@@ -354,149 +459,139 @@ export default function Transport() {
   const chartEffectif = statsParZone.map(z => ({ name: z.nom, value: z.effectif }));
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-        <Bus className="h-7 w-7 text-primary" /> Transport scolaire
-      </h1>
+    <div className="space-y-5">
+      {/* Smart Android Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-3"
+      >
+        <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <Bus className="h-6 w-6 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Transport scolaire</h1>
+          <p className="text-xs text-muted-foreground">{totalElevesTransport} élèves · {zones.length} zones · {nbChauffeurs} chauffeur(s)</p>
+        </div>
+      </motion.div>
 
-      {/* KPIs */}
+      {/* KPIs Smart Android */}
       {!isChauffeur && (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Élèves transportés</p>
-                <p className="text-2xl font-bold">{totalElevesTransport}</p>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
+      >
+        {[
+          { icon: Users, label: 'Transportés', value: totalElevesTransport, color: 'bg-primary/10 text-primary' },
+          { icon: MapPin, label: 'Zones', value: zones.length, color: 'bg-accent/10 text-accent' },
+          { icon: Bus, label: 'Chauffeurs', value: nbChauffeurs, color: 'bg-primary/10 text-primary' },
+          { icon: Printer, label: 'Imprimées', value: totalImprime, color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
+          { icon: Clock, label: 'À imprimer', value: totalNonImprime, color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400' },
+        ].map((kpi, i) => (
+          <Card key={i} className="rounded-2xl border-0 shadow-sm bg-card/80 backdrop-blur-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${kpi.color}`}>
+                  <kpi.icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] text-muted-foreground font-medium">{kpi.label}</p>
+                  <p className="text-xl font-bold text-foreground">{kpi.value}</p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <MapPin className="h-8 w-8 text-accent" />
-              <div>
-                <p className="text-sm text-muted-foreground">Zones actives</p>
-                <p className="text-2xl font-bold">{zones.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Bus className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Chauffeurs assignés</p>
-                <p className="text-2xl font-bold">{nbChauffeurs}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-green-200 dark:border-green-800">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Printer className="h-8 w-8 text-green-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">Cartes imprimées</p>
-                <p className="text-2xl font-bold text-green-600">{totalImprime}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-orange-200 dark:border-orange-800">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Clock className="h-8 w-8 text-orange-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Reste à imprimer</p>
-                <p className="text-2xl font-bold text-orange-500">{totalNonImprime}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        ))}
+      </motion.div>
       )}
 
       {isChauffeur ? (
         <ChauffeurDashboard />
       ) : (
       <Tabs defaultValue={initialTab === 'zones' ? 'dashboard' : initialTab}>
-        <TabsList className="flex-wrap h-auto gap-1">
-          <TabsTrigger value="dashboard" className="gap-1"><LayoutDashboard className="h-3.5 w-3.5" /> Tableau de bord</TabsTrigger>
-          <TabsTrigger value="eleves">Élèves</TabsTrigger>
-          <TabsTrigger value="itineraires" className="gap-1"><Route className="h-3.5 w-3.5" /> Itinéraires</TabsTrigger>
-          <TabsTrigger value="cartes" className="gap-1"><CreditCard className="h-3.5 w-3.5" /> Cartes</TabsTrigger>
-          
-          <TabsTrigger value="assignation" className="gap-1"><LinkIcon className="h-3.5 w-3.5" /> Assignation</TabsTrigger>
-          <TabsTrigger value="alertes" className="gap-1"><Bell className="h-3.5 w-3.5" /> Alertes</TabsTrigger>
-          <TabsTrigger value="par-classe" className="gap-1"><GraduationCap className="h-3.5 w-3.5" /> Par Classe</TabsTrigger>
-          <TabsTrigger value="validation" className="gap-1"><ScanLine className="h-3.5 w-3.5" /> Scan</TabsTrigger>
-          <TabsTrigger value="gestion" className="gap-1"><Settings className="h-3.5 w-3.5" /> Gestion</TabsTrigger>
+        <TabsList className="flex-wrap h-auto gap-1 rounded-2xl bg-muted/60 p-1">
+          <TabsTrigger value="dashboard" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><LayoutDashboard className="h-3.5 w-3.5" /> Dashboard</TabsTrigger>
+          <TabsTrigger value="eleves" className="rounded-xl text-xs data-[state=active]:shadow-sm">Élèves</TabsTrigger>
+          <TabsTrigger value="itineraires" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><Route className="h-3.5 w-3.5" /> Itinéraires</TabsTrigger>
+          <TabsTrigger value="cartes" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><CreditCard className="h-3.5 w-3.5" /> Cartes</TabsTrigger>
+          <TabsTrigger value="assignation" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><LinkIcon className="h-3.5 w-3.5" /> Assignation</TabsTrigger>
+          <TabsTrigger value="alertes" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><Bell className="h-3.5 w-3.5" /> Alertes</TabsTrigger>
+          <TabsTrigger value="par-classe" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><GraduationCap className="h-3.5 w-3.5" /> Par Classe</TabsTrigger>
+          <TabsTrigger value="validation" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><ScanLine className="h-3.5 w-3.5" /> Scan</TabsTrigger>
+          <TabsTrigger value="gestion" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><Settings className="h-3.5 w-3.5" /> Gestion</TabsTrigger>
         </TabsList>
 
         {/* Tab: Tableau de bord */}
         <TabsContent value="dashboard" className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {statsParZone.length === 0 ? (
-              <Card className="col-span-full">
+              <Card className="col-span-full rounded-2xl">
                 <CardContent className="py-8 text-center text-muted-foreground">Aucune zone configurée</CardContent>
               </Card>
             ) : statsParZone.map((z, i) => {
               const color = COLORS[i % COLORS.length];
               return (
-                <Card key={z.id} className="border-l-4 cursor-pointer hover:shadow-md transition-shadow" style={{ borderLeftColor: color }}
-                  onClick={() => setSelectedZone(z)}>
-                  <CardContent className="pt-4 pb-3 px-4 space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-sm">{z.nom}</h3>
-                        {z.chauffeurNom ? (
-                          <p className="text-xs text-muted-foreground">🚐 {z.chauffeurNom}</p>
-                        ) : (
-                          <p className="text-xs text-muted-foreground italic">Pas de chauffeur</p>
-                        )}
+                <motion.div
+                  key={z.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                >
+                  <Card className="rounded-2xl border-0 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden"
+                    onClick={() => setSelectedZone(z)}>
+                    <div className="h-1" style={{ background: color }} />
+                    <CardContent className="pt-3 pb-3 px-4 space-y-2">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-bold text-sm text-foreground">{z.nom}</h3>
+                          {z.chauffeurNom ? (
+                            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                              <User className="h-3 w-3" /> {z.chauffeurNom}
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-muted-foreground italic">Pas de chauffeur</p>
+                          )}
+                        </div>
+                        <Badge className="bg-primary/10 text-primary border-0 rounded-xl text-xs font-bold">{z.effectif}</Badge>
                       </div>
-                     <Badge variant="outline" className="text-xs">{z.effectif} élèves</Badge>
-                    </div>
-                    <div className="flex items-center gap-2 text-[11px] mt-1">
-                      <span className="flex items-center gap-1 text-green-600 font-semibold">
-                        <CheckCircle2 className="h-3 w-3" /> {z.imprime} imprimée(s)
-                      </span>
-                      <span className="text-muted-foreground">·</span>
-                      <span className="flex items-center gap-1 text-orange-500 font-semibold">
-                        <Clock className="h-3 w-3" /> {z.nonImprime} restante(s)
-                      </span>
-                    </div>
-                    {z.quartiers.length > 0 && (
-                      <p className="text-[11px] text-muted-foreground/70 line-clamp-1">{z.quartiers.join(', ')}</p>
-                    )}
-                    <div className="flex items-center justify-between text-xs">
-                      {z.busImmat && <span className="font-mono text-muted-foreground">🚌 {z.busImmat}</span>}
-                      {z.chauffeurTel && <span className="text-muted-foreground">📞 {z.chauffeurTel}</span>}
-                    </div>
-                  </CardContent>
-                </Card>
+                      <div className="flex items-center gap-3 text-[11px]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold">
+                          <CheckCircle2 className="h-3 w-3" /> {z.imprime}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 font-semibold">
+                          <Clock className="h-3 w-3" /> {z.nonImprime}
+                        </span>
+                      </div>
+                      {z.quartiers.length > 0 && (
+                        <p className="text-[10px] text-muted-foreground/70 line-clamp-1">{z.quartiers.join(', ')}</p>
+                      )}
+                      {(z.busImmat || z.chauffeurTel) && (
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/50">
+                          {z.busImmat && <span className="font-mono">🚌 {z.busImmat}</span>}
+                          {z.chauffeurTel && <span>📞 {z.chauffeurTel}</span>}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
               );
             })}
           </div>
 
-          {/* Paiements transport récents */}
           <TransportPaymentsRecent />
 
-          {/* Graphique répartition */}
-          <Card>
-            <CardHeader><CardTitle className="text-base">Répartition des élèves par zone</CardTitle></CardHeader>
+          <Card className="rounded-2xl border-0 shadow-sm">
+            <CardHeader><CardTitle className="text-sm font-bold text-foreground">Répartition par zone</CardTitle></CardHeader>
             <CardContent>
               {chartEffectif.length > 0 ? (
                 <ResponsiveContainer width="100%" height={Math.max(200, chartEffectif.length * 50)}>
                   <BarChart data={chartEffectif} layout="vertical" margin={{ left: 10, right: 30, top: 5, bottom: 5 }}>
                     <XAxis type="number" allowDecimals={false} />
-                    <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12 }} />
+                    <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
                     <Tooltip formatter={(val: number) => [`${val} élève(s)`, 'Effectif']} />
-                    <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={28}>
+                    <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={24}>
                       {chartEffectif.map((_, i) => (
                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
                       ))}
@@ -622,7 +717,7 @@ export default function Transport() {
             </Button>
           </div>
 
-          <Card>
+          <Card className="rounded-2xl border-0 shadow-sm overflow-hidden">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
@@ -774,14 +869,8 @@ export default function Transport() {
                                   onClick={(ev) => { ev.stopPropagation(); setSelectedStudent({ ...e, recharge }); }}>
                                   <span className="font-medium">{e.prenom} {e.nom}</span>
                                   <div className="flex items-center gap-2">
-                                    {recharge ? (
-                                      <span className={`text-[10px] font-semibold ${jours <= 5 ? 'text-destructive' : jours <= 10 ? 'text-warning' : 'text-accent'}`}>
-                                        {jours}j restants
-                                      </span>
-                                    ) : (
-                                      <span className="text-[10px] text-destructive font-semibold">Expirée</span>
-                                    )}
-                                    <Badge variant="outline" className="text-[10px]">{(e.zones_transport as any)?.nom || '—'}</Badge>
+                                    <RechargeStatusMini recharge={recharge} getDaysRemaining={getDaysRemaining} />
+                                    <Badge variant="outline" className="text-[10px] rounded-full">{(e.zones_transport as any)?.nom || '—'}</Badge>
                                   </div>
                                 </div>
                               );
@@ -806,37 +895,24 @@ export default function Transport() {
           <DialogContent className="max-w-lg">
             <DialogHeader><DialogTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Détail transport</DialogTitle></DialogHeader>
             {selectedStudent && (
-              <div className="space-y-4">
+                <div className="space-y-4">
                 {/* Info élève */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-muted/50 rounded-lg p-3">
+                  <div className="bg-muted/40 rounded-xl p-3">
                     <p className="text-[11px] text-muted-foreground mb-1">Élève</p>
-                    <p className="font-bold text-sm">{selectedStudent.prenom} {selectedStudent.nom}</p>
+                    <p className="font-bold text-sm text-foreground">{selectedStudent.prenom} {selectedStudent.nom}</p>
                   </div>
-                  <div className="bg-muted/50 rounded-lg p-3">
+                  <div className="bg-muted/40 rounded-xl p-3">
                     <p className="text-[11px] text-muted-foreground mb-1">Classe</p>
-                    <p className="font-bold text-sm">{selectedStudent.classes?.nom || '—'}</p>
+                    <p className="font-bold text-sm text-foreground">{selectedStudent.classes?.nom || '—'}</p>
                   </div>
-                  <div className="bg-muted/50 rounded-lg p-3">
+                  <div className="bg-muted/40 rounded-xl p-3">
                     <p className="text-[11px] text-muted-foreground mb-1">Zone</p>
-                    <p className="font-bold text-sm">{(selectedStudent.zones_transport as any)?.nom || '—'}</p>
+                    <p className="font-bold text-sm text-foreground">{(selectedStudent.zones_transport as any)?.nom || '—'}</p>
                   </div>
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="text-[11px] text-muted-foreground mb-1">Statut carte</p>
-                    {selectedStudent.recharge ? (
-                      <div>
-                        <Badge className="bg-accent/10 text-accent border-0 text-xs">Active</Badge>
-                        <p className={`text-xs mt-1 font-semibold ${getDaysRemaining(selectedStudent.recharge.date_expiration) <= 5 ? 'text-destructive' : ''}`}>
-                          <Clock className="h-3 w-3 inline mr-1" />
-                          {getDaysRemaining(selectedStudent.recharge.date_expiration)} jour(s) restant(s)
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
-                          Expire le {new Date(selectedStudent.recharge.date_expiration).toLocaleDateString('fr-FR')}
-                        </p>
-                      </div>
-                    ) : (
-                      <Badge variant="destructive" className="text-xs">Expirée / Non rechargée</Badge>
-                    )}
+                  <div className="bg-muted/40 rounded-xl p-3">
+                    <p className="text-[11px] text-muted-foreground mb-2">Statut carte</p>
+                    <RechargeStatusBadge recharge={selectedStudent.recharge} getDaysRemaining={getDaysRemaining} />
                   </div>
                 </div>
 
