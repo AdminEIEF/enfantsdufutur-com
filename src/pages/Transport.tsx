@@ -717,7 +717,7 @@ export default function Transport() {
             </Button>
           </div>
 
-          <Card>
+          <Card className="rounded-2xl border-0 shadow-sm overflow-hidden">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
