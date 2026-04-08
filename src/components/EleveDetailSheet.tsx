@@ -104,7 +104,7 @@ function PasswordSectionModern({ eleve, onUpdate, isSuperviseur }: { eleve: any;
 interface EleveDetailSheetProps {
   selected: any;
   onClose: () => void;
-  onUpdate: () => void;
+  onUpdate: (updatedFields?: Partial<any>) => void;
   isSuperviseur: boolean;
   tranchesConfig: Record<string, TrancheConfig[]>;
   paiementsAll: any[];
