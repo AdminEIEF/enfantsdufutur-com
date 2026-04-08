@@ -19,6 +19,22 @@ function parseScannedCode(raw: string): string | null {
   return trimmed.toUpperCase();
 }
 
+function PhotoWithSkeleton({ src }: { src: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="relative w-28 h-28 rounded-2xl border-4 border-background shadow-lg overflow-hidden">
+      {!loaded && <Skeleton className="absolute inset-0 w-full h-full" />}
+      <img
+        src={src}
+        alt=""
+        loading="eager"
+        onLoad={() => setLoaded(true)}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+      />
+    </div>
+  );
+}
+
 export default function ScanEleveInfo() {
   const [matricule, setMatricule] = useState<string | null>(null);
   const [scanning, setScanning] = useState(true);
