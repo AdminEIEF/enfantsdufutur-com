@@ -85,6 +85,7 @@ export default function Dashboard() {
       return allData;
     },
     staleTime: 5 * 60 * 1000,
+    enabled: canSeeFinance,
   });
 
   const { data: depenses = [] } = useQuery({
@@ -105,6 +106,7 @@ export default function Dashboard() {
       return allData;
     },
     staleTime: 5 * 60 * 1000,
+    enabled: canSeeFinance,
   });
 
   const { data: notesCount = 0 } = useQuery({
