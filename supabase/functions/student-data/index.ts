@@ -533,10 +533,14 @@ serve(async (req) => {
                   const rawScore = Math.max(0, Math.min(gradeResult.score, totalPossiblePts));
                   const scaledScore = totalPossiblePts > 0 ? Math.round((rawScore / totalPossiblePts) * comp.bareme * 100) / 100 : 0;
                   
-                  await supabaseAdmin
+                   await supabaseAdmin
                     .from("composition_reponses")
                     .update({ score: scaledScore })
                     .eq("id", existing.id);
+
+                  // Auto-insert score into notes table
+                  const cycleBaremeAI = (eleve as any).classes?.niveaux?.cycles?.bareme || comp.bareme;
+                  await autoInsertCompositionNote(eleveId, comp.matiere_id, scaledScore, cycleBaremeAI, comp.bareme);
 
                   await supabaseAdmin.from("student_notifications").insert({
                     eleve_id: eleveId,
@@ -615,6 +619,10 @@ serve(async (req) => {
         .from("composition_reponses")
         .update({ reponses: studentAnswers, score, soumis_at: new Date().toISOString() })
         .eq("id", existing.id);
+
+      // Auto-insert score into notes table
+      const cycleBareme = (eleve as any).classes?.niveaux?.cycles?.bareme || comp.bareme;
+      await autoInsertCompositionNote(eleveId, comp.matiere_id, score, cycleBareme, comp.bareme);
 
       await supabaseAdmin.from("student_notifications").insert({
         eleve_id: eleveId,
