@@ -53,8 +53,9 @@ export default function AssignationBusChauffeur() {
         .eq('id', vehiculeId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vehicules-assignation'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['vehicules-assignation'] });
+      await queryClient.invalidateQueries({ queryKey: ['chauffeurs-list'] });
       toast({ title: 'Assignation mise à jour' });
       setAssignDialog(null);
       setSelectedChauffeur('');
