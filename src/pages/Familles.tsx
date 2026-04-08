@@ -76,6 +76,7 @@ export default function Familles() {
   const isSuperviseur = hasRole('superviseur');
   const isAdmin = hasRole('admin');
   const { data: familles = [], isLoading } = useFamilles();
+  const { data: paiementsMap = new Map() } = useFamillesPaiements();
   const { data: allClasses = [] } = useClassesAll();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('search') || '');
