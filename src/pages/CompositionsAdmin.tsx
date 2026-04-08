@@ -495,10 +495,25 @@ export default function CompositionsAdmin() {
     setShowQuestions(compId);
     setQuestionsLoading(true);
     const { data } = await supabase.from('composition_questions').select('*').eq('composition_id', compId).order('ordre');
-    setQuestions((data || []).map((q: any) => ({
-      ...q,
-      options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
-    })));
+    setQuestions((data || []).map((q: any) => {
+      const opts = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+      // Detect qcm_multiple: if reponse_correcte is a JSON array string and type is qcm
+      let type_question = q.type_question;
+      let reponse_correcte = q.reponse_correcte;
+      if (q.type_question === 'qcm' && reponse_correcte) {
+        try {
+          const parsed = JSON.parse(reponse_correcte);
+          if (Array.isArray(parsed) && parsed.length >= 2) {
+            type_question = 'qcm_multiple';
+            // Mark correct options
+            for (const opt of opts) {
+              opt.correct = parsed.includes(opt.label);
+            }
+          }
+        } catch {}
+      }
+      return { ...q, type_question, options: opts, reponse_correcte };
+    }));
     setQuestionsLoading(false);
   }
 
