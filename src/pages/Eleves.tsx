@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ClipboardList, Search, User, Users, UserCheck, Edit, QrCode, Printer, Download, ShieldCheck, Eye, EyeOff, RefreshCw, KeyRound, UserX, XCircle, Camera, Upload, Bus, FileDown, Trash2, ChevronRight, GraduationCap, ImageDown } from 'lucide-react';
 import PlancheBadgesScolaires from '@/components/PlancheBadgesScolaires';
+import EleveDetailSheet from '@/components/EleveDetailSheet';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -1144,314 +1145,104 @@ export default function Eleves() {
 
       <div className="text-sm text-muted-foreground">{filtered.length} élève(s) trouvé(s)</div>
 
-      {/* Detail dialog */}
-      <Dialog open={!!selected} onOpenChange={() => { setSelected(null); resetPhotoState(); }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><User className="h-5 w-5" /> {selected?.prenom} {selected?.nom}</DialogTitle></DialogHeader>
-          {selected && (() => {
-            const niveauId = selected.classes?.niveau_id || null;
-            const eleveTranches: TrancheConfig[] = (niveauId && tranchesConfig[niveauId]) ? tranchesConfig[niveauId] : [];
-            const elevePaiements = paiementsAll.filter((p: any) => p.eleve_id === selected.id);
-            const moisPayes = elevePaiements.map((p: any) => p.mois_concerne).filter(Boolean) as string[];
-            const fraisAnnuels = Number(selected.classes?.niveaux?.frais_scolarite || 0);
-            const totalPaye = elevePaiements.reduce((s: number, p: any) => s + Number(p.montant), 0);
-            const resteAPayer = Math.max(0, fraisAnnuels - totalPaye);
+      {/* Detail dialog - Modern Android style */}
+      <EleveDetailSheet
+        selected={selected}
+        onClose={() => { setSelected(null); resetPhotoState(); }}
+        onUpdate={() => { void refreshEleves(); if (selected) setSelected({ ...selected }); }}
+        isSuperviseur={isSuperviseur}
+        tranchesConfig={tranchesConfig}
+        paiementsAll={paiementsAll}
+        zonesTransport={zonesTransport}
+        photoInputRef={photoInputRef}
+        handleFileSelect={handleFileSelect}
+        startCamera={startCamera}
+        photoPreview={photoPreview}
+        uploadingPhoto={uploadingPhoto}
+        handleSavePhotoOnly={handleSavePhotoOnly}
+      />
 
-            // Build month -> tranche map
-            const moisToTranche: Record<string, TrancheConfig> = {};
-            eleveTranches.forEach(t => t.mois.forEach(m => { moisToTranche[m] = t; }));
-
-            // Check if a tranche is fully paid (all its months are paid)
-            const isTranchePaid = (t: TrancheConfig) => t.mois.every(m => moisPayes.includes(m));
-
-            return (
-            <Tabs defaultValue="info" className="mt-2">
-              <TabsList className="grid w-full grid-cols-4"><TabsTrigger value="info">Infos</TabsTrigger><TabsTrigger value="scolarite">Scolarité</TabsTrigger><TabsTrigger value="options">Options</TabsTrigger><TabsTrigger value="famille">Famille</TabsTrigger></TabsList>
-              <TabsContent value="info" className="space-y-3 text-sm mt-3">
-                {/* Photo section */}
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    {(photoPreview || selected.photo_url) ? (
-                      <img src={photoPreview || selected.photo_url} alt={selected.prenom} loading="lazy" decoding="async" className="w-20 h-20 rounded-lg object-cover border-2 border-primary" />
-                    ) : (
-                      <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center text-3xl border-2 border-dashed border-muted-foreground/30">👤</div>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => photoInputRef.current?.click()}>
-                      <Upload className="h-3 w-3 mr-1" /> {selected.photo_url ? 'Changer photo' : 'Ajouter photo'}
-                    </Button>
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={startCamera}>
-                      <Camera className="h-3 w-3 mr-1" /> Caméra
-                    </Button>
-                    {photoPreview && (
-                      <Button size="sm" className="h-7 text-xs" disabled={uploadingPhoto} onClick={() => handleSavePhotoOnly(selected)}>
-                        {uploadingPhoto ? 'Envoi...' : 'Enregistrer photo'}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div><strong>Matricule:</strong> {selected.matricule || '—'}</div>
-                  <div><strong>Sexe:</strong> {selected.sexe || '—'}</div>
-                  <div><strong>Date de naissance:</strong> {selected.date_naissance || '—'}</div>
-                  <div><strong>Statut:</strong> <Badge>{selected.statut}</Badge></div>
-                  <div><strong>Cycle:</strong> {selected.classes?.niveaux?.cycles?.nom || '—'}</div>
-                  <div><strong>Classe:</strong> {selected.classes?.nom || '—'}</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <strong>Type:</strong>
-                  {selected.famille_id ? <Badge className="gap-1"><Users className="h-3 w-3" />En famille — {selected.familles?.nom_famille}</Badge> : <Badge variant="outline" className="gap-1"><UserCheck className="h-3 w-3" />Individuel</Badge>}
-                </div>
-                {/* Mot de passe élève */}
-                <PasswordSection eleve={selected} onUpdate={() => { void refreshEleves(); setSelected({ ...selected }); }} isSuperviseur={isSuperviseur} />
-              </TabsContent>
-
-              {/* Scolarité tab - month-by-month status */}
-              <TabsContent value="scolarite" className="space-y-3 text-sm mt-3">
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-lg bg-muted p-2">
-                    <p className="text-xs text-muted-foreground">Total annuel</p>
-                    <p className="font-bold">{fraisAnnuels.toLocaleString()} GNF</p>
-                  </div>
-                  <div className="rounded-lg bg-muted p-2">
-                    <p className="text-xs text-muted-foreground">Payé</p>
-                    <p className="font-bold text-green-600">{totalPaye.toLocaleString()} GNF</p>
-                  </div>
-                  <div className={`rounded-lg p-2 ${resteAPayer === 0 ? 'bg-green-50 dark:bg-green-950' : 'bg-destructive/10'}`}>
-                    <p className="text-xs text-muted-foreground">Reste</p>
-                    <p className={`font-bold ${resteAPayer === 0 ? 'text-green-600' : 'text-destructive'}`}>{resteAPayer.toLocaleString()} GNF</p>
-                  </div>
-                </div>
-
-                {eleveTranches.length > 0 ? (
-                  <div className="space-y-3">
-                    {eleveTranches.map((t, idx) => {
-                      const tranchePaid = isTranchePaid(t);
-                      return (
-                        <div key={idx} className={`rounded-lg border p-3 ${tranchePaid ? 'border-green-300 bg-green-50 dark:bg-green-950' : 'border-destructive/30 bg-destructive/5'}`}>
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="font-semibold text-sm">{t.label}</span>
-                            <span className="text-xs font-medium">{t.montant.toLocaleString()} GNF</span>
-                          </div>
-                          <div className="grid grid-cols-5 gap-1">
-                            {t.mois.map(m => {
-                              const paid = moisPayes.includes(m);
-                              return (
-                                <div key={m} className={`text-center text-xs rounded py-1 px-1 ${paid ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-destructive/10 text-destructive'}`}>
-                                  {m.slice(0, 3)}
-                                  <span className="block text-[10px]">{paid ? '✓' : '✗'}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-2">Statut par mois :</p>
-                    <div className="grid grid-cols-5 gap-1.5">
-                      {MOIS_SCOLAIRES.map(m => {
-                        const paid = moisPayes.includes(m);
-                        return (
-                          <div key={m} className={`text-center text-xs rounded py-1.5 px-1 ${paid ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-destructive/10 text-destructive'}`}>
-                            {m.slice(0, 3)}
-                            <span className="block text-[10px]">{paid ? '✓ Payé' : '✗ Impayé'}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="options" className="space-y-3 text-sm mt-3">
-                <div>
-                  <h4 className="font-semibold mb-1">Check-list</h4>
-                  <div className="flex gap-2 flex-wrap">
-                    <Badge variant={selected.checklist_livret ? 'default' : 'outline'}>Livret {selected.checklist_livret ? '✓' : '✗'}</Badge>
-                    <Badge variant={selected.checklist_rames ? 'default' : 'outline'}>Rames {selected.checklist_rames ? '✓' : '✗'}</Badge>
-                    <Badge variant={selected.checklist_marqueurs ? 'default' : 'outline'}>Marqueurs {selected.checklist_marqueurs ? '✓' : '✗'}</Badge>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-1">Options</h4>
-                  <div className="flex gap-2 flex-wrap">
-                    {selected.zone_transport_id && zonesTransport.find((z: any) => z.id === selected.zone_transport_id) && (
-                      <Badge variant="default" className="gap-1"><Bus className="h-3 w-3" />Transport: {zonesTransport.find((z: any) => z.id === selected.zone_transport_id)?.nom}</Badge>
-                    )}
-                    {selected.option_cantine && <Badge variant="outline">Cantine</Badge>}
-                    {selected.uniforme_scolaire && <Badge variant="outline">Uniforme scolaire</Badge>}
-                    {selected.uniforme_sport && <Badge variant="outline">Uniforme sport</Badge>}
-                    {selected.uniforme_polo_lacoste && <Badge variant="outline">Polo Lacoste</Badge>}
-                    {selected.uniforme_karate && <Badge variant="outline">Karaté</Badge>}
-                  </div>
-                </div>
-                <div className="border rounded-lg p-3 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Bus className="h-4 w-4 text-muted-foreground" />
-                    <strong className="text-sm">Affecter au transport</strong>
-                  </div>
-                  <div className="flex gap-2 items-end">
-                    <div className="flex-1">
-                      <Label className="text-xs">Zone de transport</Label>
-                      <Select
-                        value={selected.zone_transport_id || 'none'}
-                        onValueChange={async (val) => {
-                          const zoneId = val === 'none' ? null : val;
-                          const { error } = await supabase.from('eleves').update({ zone_transport_id: zoneId }).eq('id', selected.id);
-                          if (error) {
-                            toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
-                          } else {
-                            toast({ title: zoneId ? 'Transport assigné' : 'Transport retiré', description: zoneId ? `${selected.prenom} ${selected.nom} a été affecté(e) à la zone sélectionnée.` : `${selected.prenom} ${selected.nom} a été retiré(e) du transport.` });
-                            void refreshEleves();
-                            qc.invalidateQueries({ queryKey: ['transport-eleves'] });
-                            qc.invalidateQueries({ queryKey: ['transport-card-eleves'] });
-                            setSelected({ ...selected, zone_transport_id: zoneId });
-                          }
-                        }}
-                      >
-                        <SelectTrigger><SelectValue placeholder="Choisir une zone" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Aucun (pas de transport)</SelectItem>
-                          {zonesTransport.map((z: any) => (
-                            <SelectItem key={z.id} value={z.id}>{z.nom} — {Number(z.prix_mensuel).toLocaleString()} GNF/mois</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  {selected.zone_transport_id && (
-                    <p className="text-xs text-muted-foreground">Cet élève apparaîtra dans le module Transport avec sa classe et sa zone.</p>
-                  )}
-                </div>
-                <div className="border rounded-lg p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <ClipboardList className="h-4 w-4 text-muted-foreground" />
-                      <strong className="text-sm">Inscription Cantine</strong>
-                    </div>
-                    <Switch
-                      checked={!!selected.option_cantine}
-                      onCheckedChange={async (checked) => {
-                        const { error } = await supabase.from('eleves').update({ option_cantine: checked }).eq('id', selected.id);
-                        if (error) {
-                          toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
-                        } else {
-                          toast({ title: checked ? 'Inscrit à la cantine' : 'Retiré de la cantine', description: `${selected.prenom} ${selected.nom} a été ${checked ? 'inscrit(e) à' : 'retiré(e) de'} la cantine.` });
-                          void refreshEleves();
-                          setSelected({ ...selected, option_cantine: checked });
-                        }
-                      }}
-                    />
-                  </div>
-                  {selected.option_cantine && (
-                    <p className="text-xs text-muted-foreground">Solde cantine : <span className="font-semibold">{Number(selected.solde_cantine || 0).toLocaleString()} GNF</span></p>
-                  )}
-                </div>
-              </TabsContent>
-              <TabsContent value="famille" className="space-y-3 text-sm mt-3">
-                {selected.familles ? (
-                  <div>
-                    <h4 className="font-semibold mb-1 flex items-center gap-2">
-                      Famille:
-                      <button
-                        className="text-primary hover:underline font-semibold inline-flex items-center gap-1"
-                        onClick={() => {
-                          setSelected(null);
-                          navigate(`/familles?familleId=${selected.familles.id}`);
-                        }}
-                      >
-                        {selected.familles.nom_famille}
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </h4>
-                    <div className="text-muted-foreground space-y-1">
-                      {selected.familles.telephone_pere && <p>Tél. père: {selected.familles.telephone_pere}</p>}
-                      {selected.familles.telephone_mere && <p>Tél. mère: {selected.familles.telephone_mere}</p>}
-                      {selected.familles.email_parent && <p>Email: {selected.familles.email_parent}</p>}
-                      {selected.familles.adresse && <p>Adresse: {selected.familles.adresse}</p>}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground">Élève inscrit individuellement, non rattaché à une famille.</p>
-                )}
-              </TabsContent>
-            </Tabs>
-            );
-          })()}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit dialog */}
+      {/* Edit dialog - Modern style */}
       <Dialog open={!!editing} onOpenChange={() => setEditing(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Modifier l'élève</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-md p-0 rounded-3xl border-0 shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-br from-primary/10 to-accent/10 px-5 pt-5 pb-4">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-base">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Edit className="h-4 w-4 text-primary" />
+                </div>
+                Modifier l'élève
+              </DialogTitle>
+            </DialogHeader>
+          </div>
           {editing && (
-            <div className="space-y-3">
-              {/* Photo upload in edit */}
-              <div className="flex items-center gap-3">
-                {(photoPreview || editing.photo_url) ? (
-                  <img src={photoPreview || editing.photo_url} alt={editing.prenom} loading="lazy" decoding="async" className="w-16 h-16 rounded-lg object-cover border" />
-                ) : (
-                  <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center text-2xl border-2 border-dashed border-muted-foreground/30">👤</div>
-                )}
-                <div className="flex flex-col gap-1">
-                  <input type="file" accept="image/*" className="hidden" id="edit-photo-input" onChange={handleFileSelect} />
-                  <label htmlFor="edit-photo-input" className="cursor-pointer">
-                    <span className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                      <Upload className="h-3 w-3" /> {editing.photo_url || photoPreview ? 'Changer photo' : 'Ajouter photo'}
-                    </span>
-                  </label>
-                  <button type="button" className="inline-flex items-center gap-1 text-xs text-primary hover:underline" onClick={startCamera}>
-                    <Camera className="h-3 w-3" /> Caméra
-                  </button>
+            <div className="px-5 pb-5 space-y-4 max-h-[65vh] overflow-y-auto">
+              {/* Photo upload */}
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  {(photoPreview || editing.photo_url) ? (
+                    <img src={photoPreview || editing.photo_url} alt={editing.prenom} loading="lazy" decoding="async" className="w-18 h-18 rounded-2xl object-cover ring-2 ring-primary/20 shadow-md" />
+                  ) : (
+                    <div className="w-18 h-18 rounded-2xl bg-muted flex items-center justify-center text-3xl border-2 border-dashed border-muted-foreground/30">👤</div>
+                  )}
+                  <div className="absolute -bottom-1 -right-1 flex gap-0.5">
+                    <input type="file" accept="image/*" className="hidden" id="edit-photo-input" onChange={handleFileSelect} />
+                    <label htmlFor="edit-photo-input" className="cursor-pointer w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:scale-110 transition-transform">
+                      <Upload className="h-3.5 w-3.5" />
+                    </label>
+                    <button type="button" onClick={startCamera} className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:scale-110 transition-transform">
+                      <Camera className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">{editing.prenom} {editing.nom}</p>
+                  <p className="text-xs text-muted-foreground">{editing.matricule || '—'}</p>
                 </div>
               </div>
+
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Nom</Label><Input value={editing.nom} onChange={e => setEditing({ ...editing, nom: e.target.value })} /></div>
-                <div><Label>Prénom</Label><Input value={editing.prenom} onChange={e => setEditing({ ...editing, prenom: e.target.value })} /></div>
+                <div><Label className="text-xs font-medium text-muted-foreground">Nom</Label><Input value={editing.nom} onChange={e => setEditing({ ...editing, nom: e.target.value })} className="rounded-xl mt-1" /></div>
+                <div><Label className="text-xs font-medium text-muted-foreground">Prénom</Label><Input value={editing.prenom} onChange={e => setEditing({ ...editing, prenom: e.target.value })} className="rounded-xl mt-1" /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Sexe</Label>
+                <div><Label className="text-xs font-medium text-muted-foreground">Sexe</Label>
                   <Select value={editing.sexe || ''} onValueChange={v => setEditing({ ...editing, sexe: v })}>
-                    <SelectTrigger><SelectValue placeholder="Sexe" /></SelectTrigger>
-                    <SelectContent><SelectItem value="M">M</SelectItem><SelectItem value="F">F</SelectItem></SelectContent>
+                    <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder="Sexe" /></SelectTrigger>
+                    <SelectContent><SelectItem value="M">Masculin</SelectItem><SelectItem value="F">Féminin</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div><Label>Date de naissance</Label><Input type="date" value={editing.date_naissance || ''} onChange={e => setEditing({ ...editing, date_naissance: e.target.value })} /></div>
+                <div><Label className="text-xs font-medium text-muted-foreground">Date de naissance</Label><Input type="date" value={editing.date_naissance || ''} onChange={e => setEditing({ ...editing, date_naissance: e.target.value })} className="rounded-xl mt-1" /></div>
               </div>
-              <div><Label>Classe</Label>
+              <div><Label className="text-xs font-medium text-muted-foreground">Classe</Label>
                 <Select value={editing.classe_id || ''} onValueChange={v => setEditing({ ...editing, classe_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
+                  <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder="Classe" /></SelectTrigger>
                   <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>Famille</Label>
-                <div className="flex gap-2">
+              <div><Label className="text-xs font-medium text-muted-foreground">Famille</Label>
+                <div className="flex gap-2 mt-1">
                   <Select value={editing.famille_id || 'none'} onValueChange={v => setEditing({ ...editing, famille_id: v === 'none' ? null : v })}>
-                    <SelectTrigger><SelectValue placeholder="Aucune famille" /></SelectTrigger>
+                    <SelectTrigger className="rounded-xl"><SelectValue placeholder="Aucune famille" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Aucune famille</SelectItem>
                       {familles.map((f: any) => <SelectItem key={f.id} value={f.id}>{f.nom_famille}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <Button type="button" size="sm" variant="outline" onClick={() => setCreatingFamille(!creatingFamille)} className="shrink-0">
+                  <Button type="button" size="sm" variant="outline" onClick={() => setCreatingFamille(!creatingFamille)} className="shrink-0 rounded-xl">
                     {creatingFamille ? '✕' : '+ Créer'}
                   </Button>
                 </div>
                 {creatingFamille && (
-                  <div className="mt-2 border rounded-lg p-3 space-y-2 bg-muted/30">
+                  <div className="mt-2 border rounded-2xl p-3 space-y-2 bg-muted/30">
                     <p className="text-xs font-semibold">Nouvelle famille</p>
-                    <Input placeholder="Nom de famille *" value={newFamilleName} onChange={e => setNewFamilleName(e.target.value)} className="h-8 text-sm" />
+                    <Input placeholder="Nom de famille *" value={newFamilleName} onChange={e => setNewFamilleName(e.target.value)} className="h-9 text-sm rounded-xl" />
                     <div className="grid grid-cols-2 gap-2">
-                      <Input placeholder="Tél. père" value={newFamilleTelPere} onChange={e => setNewFamilleTelPere(e.target.value)} className="h-8 text-sm" />
-                      <Input placeholder="Tél. mère" value={newFamilleTelMere} onChange={e => setNewFamilleTelMere(e.target.value)} className="h-8 text-sm" />
+                      <Input placeholder="Tél. père" value={newFamilleTelPere} onChange={e => setNewFamilleTelPere(e.target.value)} className="h-9 text-sm rounded-xl" />
+                      <Input placeholder="Tél. mère" value={newFamilleTelMere} onChange={e => setNewFamilleTelMere(e.target.value)} className="h-9 text-sm rounded-xl" />
                     </div>
-                    <Button size="sm" disabled={!newFamilleName.trim() || savingFamille} onClick={async () => {
+                    <Button size="sm" className="rounded-xl" disabled={!newFamilleName.trim() || savingFamille} onClick={async () => {
                       setSavingFamille(true);
                       try {
                         const { data, error } = await supabase.from('familles').insert({
@@ -1479,20 +1270,25 @@ export default function Eleves() {
                 )}
               </div>
               {/* Option Cantine */}
-              <div className="flex items-center gap-2 pt-2">
-                <Checkbox
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-muted/40 border border-border/50">
+                <div className="w-8 h-8 rounded-xl bg-orange-500/10 flex items-center justify-center">
+                  <span className="text-sm">🍽️</span>
+                </div>
+                <Label htmlFor="edit-option-cantine" className="text-sm cursor-pointer flex-1 font-medium">Inscrit à la cantine</Label>
+                <Switch
                   id="edit-option-cantine"
                   checked={!!editing.option_cantine}
                   onCheckedChange={(checked) => setEditing({ ...editing, option_cantine: !!checked })}
                 />
-                <Label htmlFor="edit-option-cantine" className="text-sm cursor-pointer">Inscrit à la cantine</Label>
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setEditing(null); resetPhotoState(); }}>Annuler</Button>
-            <Button onClick={handleSaveEdit} disabled={updateMutation.isPending || uploadingPhoto}>{uploadingPhoto ? 'Upload photo...' : updateMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}</Button>
-          </DialogFooter>
+          <div className="px-5 pb-5 flex gap-2">
+            <Button variant="outline" className="flex-1 rounded-xl" onClick={() => { setEditing(null); resetPhotoState(); }}>Annuler</Button>
+            <Button className="flex-1 rounded-xl" onClick={handleSaveEdit} disabled={updateMutation.isPending || uploadingPhoto}>
+              {uploadingPhoto ? '📸 Upload...' : updateMutation.isPending ? 'Enregistrement...' : '✅ Enregistrer'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
