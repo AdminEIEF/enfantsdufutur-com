@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, UserPlus, ChevronRight, KeyRound, Copy, RefreshCw, GraduationCap, User, Eye, EyeOff, Download, Heart, Wallet } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Users, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, UserPlus, ChevronRight, KeyRound, Copy, RefreshCw, GraduationCap, User, Eye, EyeOff, Download, Heart, Wallet, CreditCard, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -24,10 +25,36 @@ function useFamilles() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('familles')
-        .select('id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse, solde_famille, created_at, updated_at, eleves(id, nom, prenom, statut, matricule, date_naissance, sexe, photo_url, photo_thumbnail_url, classe_id, classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom))))')
+        .select('id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse, solde_famille, photo_url, created_at, updated_at, eleves(id, nom, prenom, statut, matricule, date_naissance, sexe, photo_url, photo_thumbnail_url, classe_id, classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom))))')
         .order('nom_famille');
       if (error) throw error;
       return data;
+    },
+  });
+}
+
+function useFamillesPaiements() {
+  return useQuery({
+    queryKey: ['familles-paiements-totals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('paiements')
+        .select('eleve_id, montant, type_paiement, eleves!inner(famille_id)')
+        .not('eleves.famille_id', 'is', null);
+      if (error) throw error;
+      // Group by famille_id
+      const map = new Map<string, { total: number; scolarite: number }>();
+      (data || []).forEach((p: any) => {
+        const fid = p.eleves?.famille_id;
+        if (!fid) return;
+        const prev = map.get(fid) || { total: 0, scolarite: 0 };
+        prev.total += Number(p.montant || 0);
+        if (p.type_paiement === 'scolarite' || p.type_paiement === 'inscription') {
+          prev.scolarite += Number(p.montant || 0);
+        }
+        map.set(fid, prev);
+      });
+      return map;
     },
   });
 }
