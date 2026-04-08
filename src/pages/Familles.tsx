@@ -95,8 +95,31 @@ export default function Familles() {
 
   // Delete confirm
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  // Admin: show credentials tab
+  const [showCodesPanel, setShowCodesPanel] = useState(false);
+  const [codesSearch, setCodesSearch] = useState('');
+  const [visibleCodeIds, setVisibleCodeIds] = useState<Set<string>>(new Set());
 
-  // Query for unattached students
+  const { data: generatedCodes = [], refetch: refetchCodes } = useQuery({
+    queryKey: ['generated-family-codes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('generated_family_codes' as any)
+        .select('famille_id, code_plain, created_at')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: isAdmin || isSuperviseur,
+  });
+
+  const codesMap = useMemo(() => {
+    const m = new Map<string, string>();
+    generatedCodes.forEach((c: any) => m.set(c.famille_id, c.code_plain));
+    return m;
+  }, [generatedCodes]);
+
+
   const { data: allEleves = [] } = useQuery({
     queryKey: ['eleves-for-famille-search'],
     queryFn: async () => {
