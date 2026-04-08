@@ -253,10 +253,85 @@ export default function SuperviseurPasswordPanel() {
     }
   };
 
-  // Bulk generate all family codes
+  // Bulk generate
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState(0);
   const [bulkTotal, setBulkTotal] = useState(0);
+
+  // Visibility toggles for coordinators
+  const [visiblePrimaire, setVisiblePrimaire] = useState(false);
+  const [visibleSecondaire, setVisibleSecondaire] = useState(false);
+  const [togglingVisibility, setTogglingVisibility] = useState(false);
+
+  // Load visibility state
+  useEffect(() => {
+    supabase.from('generated_student_codes' as any).select('visible_coordinateur_primaire, visible_coordinateur_secondaire').limit(1).then(({ data }) => {
+      if (data && data.length > 0) {
+        setVisiblePrimaire((data[0] as any).visible_coordinateur_primaire);
+        setVisibleSecondaire((data[0] as any).visible_coordinateur_secondaire);
+      }
+    });
+  }, []);
+
+  const toggleVisibility = async (type: 'primaire' | 'secondaire') => {
+    setTogglingVisibility(true);
+    const newVal = type === 'primaire' ? !visiblePrimaire : !visibleSecondaire;
+    const col = type === 'primaire' ? 'visible_coordinateur_primaire' : 'visible_coordinateur_secondaire';
+    const { error } = await supabase.from('generated_student_codes' as any).update({ [col]: newVal } as any).neq('id', '00000000-0000-0000-0000-000000000000');
+    if (!error) {
+      if (type === 'primaire') setVisiblePrimaire(newVal);
+      else setVisibleSecondaire(newVal);
+      toast.success(`Visibilité ${type === 'primaire' ? 'Coordinateur Primaire' : 'Coordinateur Secondaire'} ${newVal ? 'activée' : 'désactivée'}`);
+    } else { toast.error('Erreur de mise à jour'); }
+    setTogglingVisibility(false);
+  };
+
+  // Bulk generate student passwords
+  const handleBulkGenerateEleves = async () => {
+    const filtered = results as any[];
+    if (filtered.length === 0) { toast.info('Aucun élève à traiter'); return; }
+    setBulkGenerating(true);
+    setBulkTotal(filtered.length);
+    setBulkProgress(0);
+    let success = 0;
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    for (let i = 0; i < filtered.length; i++) {
+      const e = filtered[i];
+      try {
+        const pwd = generateSimpleCode();
+        const { error } = await supabase.from('eleves').update({ mot_de_passe_eleve: pwd } as any).eq('id', e.id);
+        if (!error) {
+          savePassword(STORAGE_KEY_ELEVES, e.id, pwd);
+          await supabase.from('generated_student_codes' as any).upsert({
+            eleve_id: e.id, password_plain: pwd, generated_by: userId,
+            visible_coordinateur_primaire: visiblePrimaire,
+            visible_coordinateur_secondaire: visibleSecondaire,
+          } as any, { onConflict: 'eleve_id' });
+          success++;
+        }
+      } catch { /* continue */ }
+      setBulkProgress(i + 1);
+    }
+    setBulkGenerating(false);
+    toast.success(`${success} mots de passe générés sur ${filtered.length} élèves`);
+  };
+
+  // Export student passwords CSV
+  const handleExportEleveCodes = () => {
+    const saved = getSavedPasswords(STORAGE_KEY_ELEVES);
+    const lines = ['Matricule,Nom,Prénom,Classe,Mot de passe'];
+    (results as any[]).forEach(e => {
+      const pwd = saved[e.id];
+      if (pwd) lines.push(`"${e.matricule || ''}","${e.nom}","${e.prenom}","${e.classes?.nom || ''}","${pwd}"`);
+    });
+    if (lines.length <= 1) { toast.info('Aucun code à exporter'); return; }
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'codes_eleves.csv'; a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Export CSV téléchargé');
+  };
 
   const handleBulkGenerateFamilles = async () => {
     const famillesSansCode = familles.filter(f => !getSavedPasswords(STORAGE_KEY_FAMILLES)[f.id]);
