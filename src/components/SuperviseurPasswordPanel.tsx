@@ -228,6 +228,12 @@ export default function SuperviseurPasswordPanel() {
         const { error } = await supabase.from('eleves').update({ mot_de_passe_eleve: pwd } as any).eq('id', item.id);
         if (error) throw error;
         savePassword(STORAGE_KEY_ELEVES, item.id, pwd);
+        const userId = (await supabase.auth.getUser()).data.user?.id;
+        await supabase.from('generated_student_codes' as any).upsert({
+          eleve_id: item.id, password_plain: pwd, generated_by: userId,
+          visible_coordinateur_primaire: visiblePrimaire,
+          visible_coordinateur_secondaire: visibleSecondaire,
+        } as any, { onConflict: 'eleve_id' });
         setGeneratedPwd({ id: item.id, pwd });
         toast.success(`Mot de passe généré pour ${item.prenom} ${item.nom}`);
       } else if (tab === 'employes') {
