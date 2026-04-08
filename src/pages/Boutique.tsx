@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -1195,6 +1195,8 @@ export default function Boutique() {
   const [showInventoryDialog, setShowInventoryDialog] = useState(false);
   const [newArticle, setNewArticle] = useState({ nom: '', categorie: 'tenue_scolaire', taille: 'M', prix: 0, stock: 0 });
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const scannerActiveRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Fetch articles
   const { data: articles = [] } = useQuery({
@@ -1234,12 +1236,23 @@ export default function Boutique() {
   });
 
   const handleBarcodeScan = useCallback((m: string) => {
+    scannerActiveRef.current = true;
+    setSearchEleve('');
+    if (inputRef.current) inputRef.current.blur();
+    
     const found = eleves.find((e: any) => e.matricule === m || e.id === m);
     if (found) { setSelectedEleve(found); setSearchEleve(`${found.prenom} ${found.nom}`); }
-    else toast.error('Élève introuvable');
+    else toast.error('Élève introuvable', { description: `Matricule: ${m}` });
+    
+    setTimeout(() => { scannerActiveRef.current = false; }, 300);
   }, [eleves]);
 
   useBarcodeScanner({ onScan: handleBarcodeScan });
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (scannerActiveRef.current) { e.preventDefault(); return; }
+    setSearchEleve(e.target.value);
+  }, []);
 
   const filteredEleves = useMemo(() => {
     if (!searchEleve.trim()) return [];
