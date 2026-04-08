@@ -134,6 +134,7 @@ export default function Dashboard() {
       if (error) throw error;
       return data as any[];
     },
+    enabled: canSeeFinance,
   });
 
   // ─── KPIs ──────────────────────────────────────────────
