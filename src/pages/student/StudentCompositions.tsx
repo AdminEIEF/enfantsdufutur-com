@@ -109,8 +109,8 @@ export default function StudentCompositions() {
     return data;
   };
 
-  async function fetchCompositions() {
-    try { setLoading(true); const data = await callApi('compositions'); setCompositions(data.compositions || []); setReponses(data.reponses || []); }
+  async function fetchCompositions(isInitial = false) {
+    try { if (isInitial || !initialLoadDone.current) setLoading(true); const data = await callApi('compositions'); setCompositions(data.compositions || []); setReponses(data.reponses || []); initialLoadDone.current = true; }
     catch (e: any) { toast.error(e.message); }
     finally { setLoading(false); }
   }
