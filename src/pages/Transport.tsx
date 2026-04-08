@@ -867,14 +867,8 @@ export default function Transport() {
                                   onClick={(ev) => { ev.stopPropagation(); setSelectedStudent({ ...e, recharge }); }}>
                                   <span className="font-medium">{e.prenom} {e.nom}</span>
                                   <div className="flex items-center gap-2">
-                                    {recharge ? (
-                                      <span className={`text-[10px] font-semibold ${jours <= 5 ? 'text-destructive' : jours <= 10 ? 'text-warning' : 'text-accent'}`}>
-                                        {jours}j restants
-                                      </span>
-                                    ) : (
-                                      <span className="text-[10px] text-destructive font-semibold">Expirée</span>
-                                    )}
-                                    <Badge variant="outline" className="text-[10px]">{(e.zones_transport as any)?.nom || '—'}</Badge>
+                                    <RechargeStatusMini recharge={recharge} getDaysRemaining={getDaysRemaining} />
+                                    <Badge variant="outline" className="text-[10px] rounded-full">{(e.zones_transport as any)?.nom || '—'}</Badge>
                                   </div>
                                 </div>
                               );
