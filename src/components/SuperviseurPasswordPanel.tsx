@@ -251,6 +251,57 @@ export default function SuperviseurPasswordPanel() {
     }
   };
 
+  // Bulk generate all family codes
+  const [bulkGenerating, setBulkGenerating] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState(0);
+  const [bulkTotal, setBulkTotal] = useState(0);
+
+  const handleBulkGenerateFamilles = async () => {
+    const famillesSansCode = familles.filter(f => !getSavedPasswords(STORAGE_KEY_FAMILLES)[f.id]);
+    if (famillesSansCode.length === 0) {
+      toast.info('Tous les codes sont déjà générés');
+      return;
+    }
+    setBulkGenerating(true);
+    setBulkTotal(famillesSansCode.length);
+    setBulkProgress(0);
+    let success = 0;
+    for (let i = 0; i < famillesSansCode.length; i++) {
+      const f = famillesSansCode[i];
+      try {
+        const code = 'FAM-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        const { error } = await supabase.from('familles').update({ code_acces: code } as any).eq('id', f.id);
+        if (!error) {
+          savePassword(STORAGE_KEY_FAMILLES, f.id, code);
+          success++;
+        }
+      } catch { /* continue */ }
+      setBulkProgress(i + 1);
+    }
+    setBulkGenerating(false);
+    toast.success(`${success} codes générés avec succès sur ${famillesSansCode.length} familles`);
+  };
+
+  // Export all generated codes as CSV text
+  const handleExportCodes = () => {
+    const saved = getSavedPasswords(STORAGE_KEY_FAMILLES);
+    const lines = ['Famille,Code d\'accès'];
+    familles.forEach(f => {
+      const code = saved[f.id];
+      if (code) {
+        lines.push(`"${f.nom_famille}","${code}"`);
+      }
+    });
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'codes_familles.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Export CSV téléchargé');
+  };
+
   const uniqueCategories = useMemo(() => {
     const cats = new Set(employes.map(e => e.categorie));
     return Array.from(cats).sort();
