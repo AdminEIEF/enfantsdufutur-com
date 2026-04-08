@@ -364,7 +364,11 @@ export default function Familles() {
           <p className="text-muted-foreground col-span-full text-center py-12">Chargement…</p>
         ) : filtered.length === 0 ? (
           <p className="text-muted-foreground col-span-full text-center py-12">Aucune famille trouvée</p>
-        ) : paginatedFamilles.map((f: any) => (
+        ) : paginatedFamilles.map((f: any) => {
+          const famCode = codesMap.get(f.id);
+          const payData = paiementsMap.get(f.id);
+          const totalPaye = payData?.total || 0;
+          return (
           <div
             key={f.id}
             className={`group relative rounded-2xl border bg-card/80 backdrop-blur-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden ${selectedIds.has(f.id) ? 'ring-2 ring-primary' : ''}`}
@@ -380,12 +384,21 @@ export default function Familles() {
                     onCheckedChange={() => toggleSelect(f.id)}
                     onClick={(e) => e.stopPropagation()}
                   />
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-primary" />
+                  <div className="h-10 w-10 rounded-xl overflow-hidden border-2 border-primary/15 shrink-0 bg-primary/10 flex items-center justify-center">
+                    {f.photo_url ? (
+                      <img src={f.photo_url} alt={f.nom_famille} className="h-full w-full object-cover" />
+                    ) : (
+                      <Users className="h-5 w-5 text-primary" />
+                    )}
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-bold text-sm truncate">{f.nom_famille}</h3>
-                    <p className="text-[11px] text-muted-foreground">{f.eleves?.length || 0} enfant{(f.eleves?.length || 0) > 1 ? 's' : ''}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[11px] text-muted-foreground">{f.eleves?.length || 0} enfant{(f.eleves?.length || 0) > 1 ? 's' : ''}</p>
+                      {famCode && (
+                        <code className="text-[9px] font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-bold">{famCode}</code>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -410,6 +423,16 @@ export default function Familles() {
                 )}
               </div>
 
+              {/* Payment summary */}
+              {totalPaye > 0 && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="text-muted-foreground flex items-center gap-1"><CreditCard className="h-2.5 w-2.5" /> Total payé</span>
+                    <span className="font-bold text-emerald-600">{totalPaye.toLocaleString()} GNF</span>
+                  </div>
+                </div>
+              )}
+
               {/* Bottom badges */}
               <div className="flex gap-1.5 flex-wrap">
                 {(f.eleves?.length || 0) > 1 && <Badge variant="secondary" className="text-[10px] rounded-full h-5">Fratrie</Badge>}
@@ -421,7 +444,8 @@ export default function Familles() {
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
       <PaginationControls currentPage={famillesPage} totalPages={famillesTotalPages} totalItems={famillesTotalItems} pageSize={famillesPageSize} onPageChange={setFamillesPage} />
 
