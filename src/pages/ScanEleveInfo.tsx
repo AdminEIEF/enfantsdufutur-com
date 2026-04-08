@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { ScanLine, User, Users, BookOpenText, GraduationCap, Utensils, BusFront, Wrench, Phone, Mail, MapPin, Award, TrendingUp, Calendar, Hash, Loader2, AlertCircle } from 'lucide-react';
+import { ScanLine, User, Users, BookOpenText, GraduationCap, Utensils, BusFront, Wrench, Phone, Mail, MapPin, Award, TrendingUp, Calendar, Hash, Loader2, AlertCircle, Wallet } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -59,7 +59,7 @@ export default function ScanEleveInfo() {
         .from('eleves')
         .select(`
           *, 
-          classes!eleves_classe_id_fkey(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom, bareme))),
+          classes!eleves_classe_id_fkey(nom, niveaux:niveau_id(nom, frais_scolarite, frais_inscription, frais_assurance, frais_dossier, cycles:cycle_id(nom, bareme))),
           familles!eleves_famille_id_fkey(nom_famille, telephone_pere, telephone_mere, email_parent, adresse, solde_famille),
           zones_transport!eleves_zone_transport_id_fkey(nom, prix_mensuel)
         `)
@@ -72,6 +72,32 @@ export default function ScanEleveInfo() {
     },
     enabled: !!matricule,
   });
+
+  // Fetch paiements for scolarité summary
+  const { data: paiements } = useQuery({
+    queryKey: ['scan-eleve-paiements', eleve?.id],
+    queryFn: async () => {
+      if (!eleve?.id) return [];
+      const { data } = await supabase
+        .from('paiements')
+        .select('montant, type_paiement')
+        .eq('eleve_id', eleve.id);
+      return data || [];
+    },
+    enabled: !!eleve?.id,
+  });
+
+  // Compute scolarité totals
+  const niveaux = (eleve?.classes as any)?.niveaux;
+  const fraisScolarite = niveaux?.frais_scolarite || 0;
+  const fraisInscription = niveaux?.frais_inscription || 0;
+  const fraisAssurance = niveaux?.frais_assurance || 0;
+  const fraisDossier = niveaux?.frais_dossier || 0;
+  const totalScolariteNet = fraisScolarite + fraisInscription + fraisAssurance + fraisDossier;
+  const totalPayeScolarite = (paiements || [])
+    .filter((p: any) => ['scolarite', 'inscription', 'reinscription'].includes(p.type_paiement))
+    .reduce((s: number, p: any) => s + (p.montant || 0), 0);
+  const resteAPayerScolarite = totalScolariteNet - totalPayeScolarite;
 
   // Fetch notes/moyennes - bareme comes from cycles table
   const bareme = (eleve?.classes as any)?.niveaux?.cycles?.bareme || 20;
@@ -258,6 +284,26 @@ export default function ScanEleveInfo() {
                         <p className="font-bold text-lg">{Number(famille.solde_famille).toLocaleString('fr-FR')} GNF</p>
                       </div>
                     )}
+                    {/* Scolarité summary */}
+                    {totalScolariteNet > 0 && (
+                      <div className="mt-3 p-3 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/10 space-y-1.5">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1"><Wallet className="h-3 w-3" /> Scolarité</span>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Net à payer</span>
+                          <span className="font-semibold">{totalScolariteNet.toLocaleString('fr-FR')} GNF</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Déjà payé</span>
+                          <span className="font-semibold text-emerald-600">{totalPayeScolarite.toLocaleString('fr-FR')} GNF</span>
+                        </div>
+                        <div className="flex justify-between text-sm border-t border-primary/10 pt-1.5">
+                          <span className="font-medium">Reste à payer</span>
+                          <span className={`font-bold ${resteAPayerScolarite > 0 ? 'text-destructive' : 'text-emerald-600'}`}>
+                            {resteAPayerScolarite.toLocaleString('fr-FR')} GNF
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -292,7 +338,7 @@ export default function ScanEleveInfo() {
                   <div className="mt-3 p-3 rounded-xl bg-gradient-to-r from-blue-500/10 to-blue-500/5 border border-blue-500/10">
                     <span className="text-xs text-muted-foreground flex items-center gap-1"><BusFront className="h-3 w-3" /> Zone Transport</span>
                     <p className="font-semibold">{zone.nom}</p>
-                    <p className="text-xs text-muted-foreground">{eleve.type_trajet_transport || 'Aller-retour'} • {Number(zone.tarif_mensuel || 0).toLocaleString('fr-FR')} GNF/mois</p>
+                    <p className="text-xs text-muted-foreground">{eleve.type_trajet_transport || 'Aller-retour'} • {Number(zone.prix_mensuel || 0).toLocaleString('fr-FR')} GNF/mois</p>
                   </div>
                 )}
               </CardContent>
