@@ -1162,72 +1162,87 @@ export default function Eleves() {
         handleSavePhotoOnly={handleSavePhotoOnly}
       />
 
-      {/* Edit dialog */}
+      {/* Edit dialog - Modern style */}
       <Dialog open={!!editing} onOpenChange={() => setEditing(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Modifier l'élève</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-md p-0 rounded-3xl border-0 shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-br from-primary/10 to-accent/10 px-5 pt-5 pb-4">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-base">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Edit className="h-4 w-4 text-primary" />
+                </div>
+                Modifier l'élève
+              </DialogTitle>
+            </DialogHeader>
+          </div>
           {editing && (
-            <div className="space-y-3">
-              {/* Photo upload in edit */}
-              <div className="flex items-center gap-3">
-                {(photoPreview || editing.photo_url) ? (
-                  <img src={photoPreview || editing.photo_url} alt={editing.prenom} loading="lazy" decoding="async" className="w-16 h-16 rounded-lg object-cover border" />
-                ) : (
-                  <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center text-2xl border-2 border-dashed border-muted-foreground/30">👤</div>
-                )}
-                <div className="flex flex-col gap-1">
-                  <input type="file" accept="image/*" className="hidden" id="edit-photo-input" onChange={handleFileSelect} />
-                  <label htmlFor="edit-photo-input" className="cursor-pointer">
-                    <span className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                      <Upload className="h-3 w-3" /> {editing.photo_url || photoPreview ? 'Changer photo' : 'Ajouter photo'}
-                    </span>
-                  </label>
-                  <button type="button" className="inline-flex items-center gap-1 text-xs text-primary hover:underline" onClick={startCamera}>
-                    <Camera className="h-3 w-3" /> Caméra
-                  </button>
+            <div className="px-5 pb-5 space-y-4 max-h-[65vh] overflow-y-auto">
+              {/* Photo upload */}
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  {(photoPreview || editing.photo_url) ? (
+                    <img src={photoPreview || editing.photo_url} alt={editing.prenom} loading="lazy" decoding="async" className="w-18 h-18 rounded-2xl object-cover ring-2 ring-primary/20 shadow-md" />
+                  ) : (
+                    <div className="w-18 h-18 rounded-2xl bg-muted flex items-center justify-center text-3xl border-2 border-dashed border-muted-foreground/30">👤</div>
+                  )}
+                  <div className="absolute -bottom-1 -right-1 flex gap-0.5">
+                    <input type="file" accept="image/*" className="hidden" id="edit-photo-input" onChange={handleFileSelect} />
+                    <label htmlFor="edit-photo-input" className="cursor-pointer w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:scale-110 transition-transform">
+                      <Upload className="h-3.5 w-3.5" />
+                    </label>
+                    <button type="button" onClick={startCamera} className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:scale-110 transition-transform">
+                      <Camera className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">{editing.prenom} {editing.nom}</p>
+                  <p className="text-xs text-muted-foreground">{editing.matricule || '—'}</p>
                 </div>
               </div>
+
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Nom</Label><Input value={editing.nom} onChange={e => setEditing({ ...editing, nom: e.target.value })} /></div>
-                <div><Label>Prénom</Label><Input value={editing.prenom} onChange={e => setEditing({ ...editing, prenom: e.target.value })} /></div>
+                <div><Label className="text-xs font-medium text-muted-foreground">Nom</Label><Input value={editing.nom} onChange={e => setEditing({ ...editing, nom: e.target.value })} className="rounded-xl mt-1" /></div>
+                <div><Label className="text-xs font-medium text-muted-foreground">Prénom</Label><Input value={editing.prenom} onChange={e => setEditing({ ...editing, prenom: e.target.value })} className="rounded-xl mt-1" /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Sexe</Label>
+                <div><Label className="text-xs font-medium text-muted-foreground">Sexe</Label>
                   <Select value={editing.sexe || ''} onValueChange={v => setEditing({ ...editing, sexe: v })}>
-                    <SelectTrigger><SelectValue placeholder="Sexe" /></SelectTrigger>
-                    <SelectContent><SelectItem value="M">M</SelectItem><SelectItem value="F">F</SelectItem></SelectContent>
+                    <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder="Sexe" /></SelectTrigger>
+                    <SelectContent><SelectItem value="M">Masculin</SelectItem><SelectItem value="F">Féminin</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div><Label>Date de naissance</Label><Input type="date" value={editing.date_naissance || ''} onChange={e => setEditing({ ...editing, date_naissance: e.target.value })} /></div>
+                <div><Label className="text-xs font-medium text-muted-foreground">Date de naissance</Label><Input type="date" value={editing.date_naissance || ''} onChange={e => setEditing({ ...editing, date_naissance: e.target.value })} className="rounded-xl mt-1" /></div>
               </div>
-              <div><Label>Classe</Label>
+              <div><Label className="text-xs font-medium text-muted-foreground">Classe</Label>
                 <Select value={editing.classe_id || ''} onValueChange={v => setEditing({ ...editing, classe_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
+                  <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder="Classe" /></SelectTrigger>
                   <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>Famille</Label>
-                <div className="flex gap-2">
+              <div><Label className="text-xs font-medium text-muted-foreground">Famille</Label>
+                <div className="flex gap-2 mt-1">
                   <Select value={editing.famille_id || 'none'} onValueChange={v => setEditing({ ...editing, famille_id: v === 'none' ? null : v })}>
-                    <SelectTrigger><SelectValue placeholder="Aucune famille" /></SelectTrigger>
+                    <SelectTrigger className="rounded-xl"><SelectValue placeholder="Aucune famille" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Aucune famille</SelectItem>
                       {familles.map((f: any) => <SelectItem key={f.id} value={f.id}>{f.nom_famille}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <Button type="button" size="sm" variant="outline" onClick={() => setCreatingFamille(!creatingFamille)} className="shrink-0">
+                  <Button type="button" size="sm" variant="outline" onClick={() => setCreatingFamille(!creatingFamille)} className="shrink-0 rounded-xl">
                     {creatingFamille ? '✕' : '+ Créer'}
                   </Button>
                 </div>
                 {creatingFamille && (
-                  <div className="mt-2 border rounded-lg p-3 space-y-2 bg-muted/30">
+                  <div className="mt-2 border rounded-2xl p-3 space-y-2 bg-muted/30">
                     <p className="text-xs font-semibold">Nouvelle famille</p>
-                    <Input placeholder="Nom de famille *" value={newFamilleName} onChange={e => setNewFamilleName(e.target.value)} className="h-8 text-sm" />
+                    <Input placeholder="Nom de famille *" value={newFamilleName} onChange={e => setNewFamilleName(e.target.value)} className="h-9 text-sm rounded-xl" />
                     <div className="grid grid-cols-2 gap-2">
-                      <Input placeholder="Tél. père" value={newFamilleTelPere} onChange={e => setNewFamilleTelPere(e.target.value)} className="h-8 text-sm" />
-                      <Input placeholder="Tél. mère" value={newFamilleTelMere} onChange={e => setNewFamilleTelMere(e.target.value)} className="h-8 text-sm" />
+                      <Input placeholder="Tél. père" value={newFamilleTelPere} onChange={e => setNewFamilleTelPere(e.target.value)} className="h-9 text-sm rounded-xl" />
+                      <Input placeholder="Tél. mère" value={newFamilleTelMere} onChange={e => setNewFamilleTelMere(e.target.value)} className="h-9 text-sm rounded-xl" />
                     </div>
-                    <Button size="sm" disabled={!newFamilleName.trim() || savingFamille} onClick={async () => {
+                    <Button size="sm" className="rounded-xl" disabled={!newFamilleName.trim() || savingFamille} onClick={async () => {
                       setSavingFamille(true);
                       try {
                         const { data, error } = await supabase.from('familles').insert({
@@ -1255,20 +1270,25 @@ export default function Eleves() {
                 )}
               </div>
               {/* Option Cantine */}
-              <div className="flex items-center gap-2 pt-2">
-                <Checkbox
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-muted/40 border border-border/50">
+                <div className="w-8 h-8 rounded-xl bg-orange-500/10 flex items-center justify-center">
+                  <span className="text-sm">🍽️</span>
+                </div>
+                <Label htmlFor="edit-option-cantine" className="text-sm cursor-pointer flex-1 font-medium">Inscrit à la cantine</Label>
+                <Switch
                   id="edit-option-cantine"
                   checked={!!editing.option_cantine}
                   onCheckedChange={(checked) => setEditing({ ...editing, option_cantine: !!checked })}
                 />
-                <Label htmlFor="edit-option-cantine" className="text-sm cursor-pointer">Inscrit à la cantine</Label>
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setEditing(null); resetPhotoState(); }}>Annuler</Button>
-            <Button onClick={handleSaveEdit} disabled={updateMutation.isPending || uploadingPhoto}>{uploadingPhoto ? 'Upload photo...' : updateMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}</Button>
-          </DialogFooter>
+          <div className="px-5 pb-5 flex gap-2">
+            <Button variant="outline" className="flex-1 rounded-xl" onClick={() => { setEditing(null); resetPhotoState(); }}>Annuler</Button>
+            <Button className="flex-1 rounded-xl" onClick={handleSaveEdit} disabled={updateMutation.isPending || uploadingPhoto}>
+              {uploadingPhoto ? '📸 Upload...' : updateMutation.isPending ? 'Enregistrement...' : '✅ Enregistrer'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
