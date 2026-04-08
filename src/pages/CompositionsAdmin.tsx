@@ -356,8 +356,19 @@ export default function CompositionsAdmin() {
       supabase.from('classes').select('id, nom, niveau_id, niveaux:niveau_id(nom, cycle_id, cycles:cycle_id(nom))').order('nom'),
       supabase.from('matieres').select('id, nom').order('nom'),
     ]);
-    setCompositions((compRes.data || []) as any);
-    setClasses(classesRes.data || []);
+    let allClasses = classesRes.data || [];
+    let allComps = (compRes.data || []) as any[];
+
+    // Coordinateur primaire: filter to Crèche/Maternelle/Primaire only
+    if (isCoordinateur && roles.includes('coordinateur')) {
+      const primaryCycles = ['Crèche', 'Maternelle', 'Primaire'];
+      allClasses = allClasses.filter((c: any) => primaryCycles.includes(c.niveaux?.cycles?.nom));
+      const primaryClassIds = new Set(allClasses.map((c: any) => c.id));
+      allComps = allComps.filter((c: any) => primaryClassIds.has(c.classe_id));
+    }
+
+    setCompositions(allComps);
+    setClasses(allClasses);
     setMatieres(matieresRes.data || []);
     setLoading(false);
   }
