@@ -657,7 +657,8 @@ export default function Familles() {
                 </Tabs>
               </div>
             </>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
