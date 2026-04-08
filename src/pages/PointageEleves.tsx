@@ -60,6 +60,32 @@ export default function PointageEleves() {
     if (!matricule) return;
     setLoading(true);
     try {
+      // OFFLINE MODE
+      if (!offline.isOnline) {
+        const result = await offline.processOfflineScan(matricule, today);
+        if (!result.success) {
+          toast.error('Élève non trouvé en cache', { description: `Matricule: ${matricule}` });
+        } else if (result.action === 'arrivee') {
+          const heureStr = format(new Date(result.heure!), 'HH:mm');
+          setLastScanned({ prenom: result.eleve!.prenom, nom: result.eleve!.nom, matricule: result.eleve!.matricule, classes: { nom: result.eleve!.classe_nom }, action: 'arrivee', heure: result.heure, en_retard: result.en_retard });
+          if (result.en_retard) {
+            toast.warning(`⚠️ RETARD (hors ligne)`, { description: `${result.eleve!.prenom} ${result.eleve!.nom} — ${heureStr}` });
+          } else {
+            toast.success(`✅ Arrivée (hors ligne)`, { description: `${result.eleve!.prenom} ${result.eleve!.nom} — ${heureStr}` });
+          }
+        } else if (result.action === 'depart') {
+          setLastScanned({ prenom: result.eleve!.prenom, nom: result.eleve!.nom, matricule: result.eleve!.matricule, classes: { nom: result.eleve!.classe_nom }, action: 'depart', heure: result.heure });
+          toast.success(`🚪 Départ (hors ligne)`, { description: `${result.eleve!.prenom} ${result.eleve!.nom}` });
+        } else {
+          setLastScanned({ prenom: result.eleve!.prenom, nom: result.eleve!.nom, matricule: result.eleve!.matricule, classes: { nom: result.eleve!.classe_nom }, action: 'complet' });
+          toast.info('Pointage déjà complet');
+        }
+        setLoading(false);
+        setSearchMatricule('');
+        return;
+      }
+
+      // ONLINE MODE
       // Find student
       const { data: eleve } = await supabase
         .from('eleves')
