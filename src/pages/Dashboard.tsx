@@ -14,8 +14,9 @@ import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
-  const { roles } = useAuth();
+  const { roles, hasAnyRole } = useAuth();
   const navigate = useNavigate();
+  const canSeeFinance = hasAnyRole(['superviseur', 'admin', 'comptable', 'tresorier']);
   const [scanResult, setScanResult] = useState<any>(null);
 
   const handleSearchStudent = useCallback(async (matricule: string) => {
@@ -84,6 +85,7 @@ export default function Dashboard() {
       return allData;
     },
     staleTime: 5 * 60 * 1000,
+    enabled: canSeeFinance,
   });
 
   const { data: depenses = [] } = useQuery({
@@ -104,6 +106,7 @@ export default function Dashboard() {
       return allData;
     },
     staleTime: 5 * 60 * 1000,
+    enabled: canSeeFinance,
   });
 
   const { data: notesCount = 0 } = useQuery({
@@ -131,6 +134,7 @@ export default function Dashboard() {
       if (error) throw error;
       return data as any[];
     },
+    enabled: canSeeFinance,
   });
 
   // ─── KPIs ──────────────────────────────────────────────
@@ -464,6 +468,7 @@ export default function Dashboard() {
             <p className="text-[10px] text-muted-foreground mt-0.5">Réinscriptions</p>
           </CardContent>
         </Card>
+        {canSeeFinance && (
         <Card className="overflow-hidden border border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Recettes du mois</CardTitle>
@@ -476,6 +481,8 @@ export default function Dashboard() {
             <p className="text-[10px] text-muted-foreground mt-0.5">{paiementsMois.length} paiements</p>
           </CardContent>
         </Card>
+        )}
+        {canSeeFinance && (
         <Card className="overflow-hidden border border-teal-200 dark:border-teal-800 bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Recouvrement</CardTitle>
@@ -488,6 +495,7 @@ export default function Dashboard() {
             <p className="text-[10px] text-muted-foreground mt-0.5">Taux global</p>
           </CardContent>
         </Card>
+        )}
       </div>
 
       {/* Abandon KPI */}
@@ -506,7 +514,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Family & Librairie KPIs */}
+      {/* Family & Financial KPIs - restricted */}
+      {canSeeFinance && (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <Card className="overflow-hidden border border-red-200 dark:border-red-800 bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
@@ -565,8 +574,12 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+      )}
 
-      {/* CA Comparatif Bar Chart: Scolarité/Transport vs Librairie/Options */}
+      {/* Financial sections - restricted to finance roles */}
+      {canSeeFinance && (
+      <>
+      {/* CA Comparatif Bar Chart */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">📊 Chiffre d'Affaires comparatif</CardTitle>
@@ -699,6 +712,8 @@ export default function Dashboard() {
       )}
 
       <DashboardRecouvrementSection recouvrementParNiveau={recouvrementParNiveau} tauxGlobal={tauxGlobal} />
+      </>
+      )}
 
       {/* Alertes cantine */}
       {cantineInscrits > 0 && (
@@ -755,7 +770,8 @@ export default function Dashboard() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly trend */}
+        {/* Monthly trend - finance only */}
+        {canSeeFinance && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Tendance recettes / dépenses (6 mois)</CardTitle>
@@ -780,8 +796,9 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+        )}
 
-        {/* Effectif par cycle */}
+        {/* Effectif par cycle - visible to all */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Répartition par cycle</CardTitle>
@@ -805,7 +822,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Recettes par type */}
+        {/* Recettes par type - finance only */}
+        {canSeeFinance && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Recettes par type de paiement</CardTitle>
@@ -826,8 +844,10 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+        )}
 
-        {/* Dépenses par service */}
+        {/* Dépenses par service - finance only */}
+        {canSeeFinance && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Dépenses par service</CardTitle>
@@ -850,6 +870,7 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+        )}
       </div>
     </div>
   );
