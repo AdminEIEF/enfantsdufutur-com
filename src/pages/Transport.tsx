@@ -523,64 +523,73 @@ export default function Transport() {
 
         {/* Tab: Tableau de bord */}
         <TabsContent value="dashboard" className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {statsParZone.length === 0 ? (
-              <Card className="col-span-full">
+              <Card className="col-span-full rounded-2xl">
                 <CardContent className="py-8 text-center text-muted-foreground">Aucune zone configurée</CardContent>
               </Card>
             ) : statsParZone.map((z, i) => {
               const color = COLORS[i % COLORS.length];
               return (
-                <Card key={z.id} className="border-l-4 cursor-pointer hover:shadow-md transition-shadow" style={{ borderLeftColor: color }}
-                  onClick={() => setSelectedZone(z)}>
-                  <CardContent className="pt-4 pb-3 px-4 space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-sm">{z.nom}</h3>
-                        {z.chauffeurNom ? (
-                          <p className="text-xs text-muted-foreground">🚐 {z.chauffeurNom}</p>
-                        ) : (
-                          <p className="text-xs text-muted-foreground italic">Pas de chauffeur</p>
-                        )}
+                <motion.div
+                  key={z.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                >
+                  <Card className="rounded-2xl border-0 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden"
+                    onClick={() => setSelectedZone(z)}>
+                    <div className="h-1" style={{ background: color }} />
+                    <CardContent className="pt-3 pb-3 px-4 space-y-2">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-bold text-sm text-foreground">{z.nom}</h3>
+                          {z.chauffeurNom ? (
+                            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                              <User className="h-3 w-3" /> {z.chauffeurNom}
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-muted-foreground italic">Pas de chauffeur</p>
+                          )}
+                        </div>
+                        <Badge className="bg-primary/10 text-primary border-0 rounded-xl text-xs font-bold">{z.effectif}</Badge>
                       </div>
-                     <Badge variant="outline" className="text-xs">{z.effectif} élèves</Badge>
-                    </div>
-                    <div className="flex items-center gap-2 text-[11px] mt-1">
-                      <span className="flex items-center gap-1 text-green-600 font-semibold">
-                        <CheckCircle2 className="h-3 w-3" /> {z.imprime} imprimée(s)
-                      </span>
-                      <span className="text-muted-foreground">·</span>
-                      <span className="flex items-center gap-1 text-orange-500 font-semibold">
-                        <Clock className="h-3 w-3" /> {z.nonImprime} restante(s)
-                      </span>
-                    </div>
-                    {z.quartiers.length > 0 && (
-                      <p className="text-[11px] text-muted-foreground/70 line-clamp-1">{z.quartiers.join(', ')}</p>
-                    )}
-                    <div className="flex items-center justify-between text-xs">
-                      {z.busImmat && <span className="font-mono text-muted-foreground">🚌 {z.busImmat}</span>}
-                      {z.chauffeurTel && <span className="text-muted-foreground">📞 {z.chauffeurTel}</span>}
-                    </div>
-                  </CardContent>
-                </Card>
+                      <div className="flex items-center gap-3 text-[11px]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold">
+                          <CheckCircle2 className="h-3 w-3" /> {z.imprime}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 font-semibold">
+                          <Clock className="h-3 w-3" /> {z.nonImprime}
+                        </span>
+                      </div>
+                      {z.quartiers.length > 0 && (
+                        <p className="text-[10px] text-muted-foreground/70 line-clamp-1">{z.quartiers.join(', ')}</p>
+                      )}
+                      {(z.busImmat || z.chauffeurTel) && (
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/50">
+                          {z.busImmat && <span className="font-mono">🚌 {z.busImmat}</span>}
+                          {z.chauffeurTel && <span>📞 {z.chauffeurTel}</span>}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
               );
             })}
           </div>
 
-          {/* Paiements transport récents */}
           <TransportPaymentsRecent />
 
-          {/* Graphique répartition */}
-          <Card>
-            <CardHeader><CardTitle className="text-base">Répartition des élèves par zone</CardTitle></CardHeader>
+          <Card className="rounded-2xl border-0 shadow-sm">
+            <CardHeader><CardTitle className="text-sm font-bold text-foreground">Répartition par zone</CardTitle></CardHeader>
             <CardContent>
               {chartEffectif.length > 0 ? (
                 <ResponsiveContainer width="100%" height={Math.max(200, chartEffectif.length * 50)}>
                   <BarChart data={chartEffectif} layout="vertical" margin={{ left: 10, right: 30, top: 5, bottom: 5 }}>
                     <XAxis type="number" allowDecimals={false} />
-                    <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12 }} />
+                    <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
                     <Tooltip formatter={(val: number) => [`${val} élève(s)`, 'Effectif']} />
-                    <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={28}>
+                    <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={24}>
                       {chartEffectif.map((_, i) => (
                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
                       ))}
