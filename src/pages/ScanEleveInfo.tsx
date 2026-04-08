@@ -42,11 +42,10 @@ export default function ScanEleveInfo() {
         .select(`
           *, 
           classes!eleves_classe_id_fkey(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom))),
-          familles!eleves_famille_id_fkey(nom_famille, telephone, email, adresse, solde_famille),
+          familles!eleves_famille_id_fkey(nom_famille, telephone_pere, telephone_mere, email_parent, adresse, solde_famille),
           zones_transport!eleves_zone_transport_id_fkey(nom, tarif_mensuel)
         `)
         .or(`matricule.eq.${matricule},qr_code.eq.${matricule}`)
-        .eq('deleted_at', '')
         .is('deleted_at', null)
         .maybeSingle();
       if (error) throw error;
@@ -211,14 +210,19 @@ export default function ScanEleveInfo() {
                     <p className="font-medium text-base">{famille.nom_famille}</p>
                     {eleve.nom_prenom_pere && <p className="text-muted-foreground">👨 Père : {eleve.nom_prenom_pere}</p>}
                     {eleve.nom_prenom_mere && <p className="text-muted-foreground">👩 Mère : {eleve.nom_prenom_mere}</p>}
-                    {famille.telephone && (
-                      <a href={`tel:${famille.telephone}`} className="flex items-center gap-2 text-primary hover:underline">
-                        <Phone className="h-3.5 w-3.5" /> {famille.telephone}
+                    {famille.telephone_pere && (
+                      <a href={`tel:${famille.telephone_pere}`} className="flex items-center gap-2 text-primary hover:underline">
+                        <Phone className="h-3.5 w-3.5" /> 👨 {famille.telephone_pere}
                       </a>
                     )}
-                    {famille.email && (
-                      <a href={`mailto:${famille.email}`} className="flex items-center gap-2 text-primary hover:underline">
-                        <Mail className="h-3.5 w-3.5" /> {famille.email}
+                    {famille.telephone_mere && (
+                      <a href={`tel:${famille.telephone_mere}`} className="flex items-center gap-2 text-primary hover:underline">
+                        <Phone className="h-3.5 w-3.5" /> 👩 {famille.telephone_mere}
+                      </a>
+                    )}
+                    {famille.email_parent && (
+                      <a href={`mailto:${famille.email_parent}`} className="flex items-center gap-2 text-primary hover:underline">
+                        <Mail className="h-3.5 w-3.5" /> {famille.email_parent}
                       </a>
                     )}
                     {famille.adresse && (

@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -9,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
+import type { AppRole } from '@/hooks/useAuth';
 
 interface AdminNotification {
   id: string;
@@ -18,47 +18,148 @@ interface AdminNotification {
   lu: boolean | null;
   created_at: string;
   destinataire_type: string;
+  destinataire_ref: string | null;
 }
 
-export function AdminNotificationBell() {
+// Map each app role to the destinataire_type values it should see
+function getAllowedTypes(roles: AppRole[]): string[] {
+  const types = new Set<string>();
+
+  for (const role of roles) {
+    // Everyone sees 'staff'
+    types.add('staff');
+
+    switch (role) {
+      case 'superviseur':
+      case 'admin':
+        // See everything
+        types.add('admin');
+        types.add('famille');
+        types.add('transport');
+        types.add('cantine');
+        types.add('librairie');
+        types.add('boutique');
+        types.add('comptable');
+        types.add('tresorier');
+        types.add('coordinateur');
+        types.add('coordinateur_secondaire');
+        break;
+      case 'tresorier':
+      case 'comptable':
+        types.add('admin');
+        types.add('tresorier');
+        types.add('comptable');
+        break;
+      case 'coordinateur':
+        types.add('coordinateur');
+        break;
+      case 'coordinateur_secondaire':
+        types.add('coordinateur_secondaire');
+        break;
+      case 'cantine':
+        types.add('cantine');
+        break;
+      case 'librairie':
+        types.add('librairie');
+        break;
+      case 'boutique':
+        types.add('boutique');
+        break;
+      case 'chauffeur':
+        types.add('transport');
+        break;
+      case 'pointeur':
+      case 'surveillant':
+        types.add('pointeur');
+        break;
+      case 'secretaire':
+        types.add('admin');
+        types.add('secretaire');
+        break;
+      case 'service_info':
+        types.add('admin');
+        types.add('service_info');
+        break;
+      case 'robotique':
+        types.add('robotique');
+        break;
+    }
+  }
+
+  return Array.from(types);
+}
+
+function playNotificationSound() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1047, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch {
+    // silent fallback
+  }
+}
+
+interface Props {
+  roles: AppRole[];
+}
+
+export function AdminNotificationBell({ roles }: Props) {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState<AdminNotification | null>(null);
+  const initialLoadDone = useRef(false);
+  const allowedTypes = getAllowedTypes(roles);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
+        .in('destinataire_type', allowedTypes)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(15);
       if (error) throw error;
       const notifs = (data || []) as AdminNotification[];
       setNotifications(notifs);
       setUnreadCount(notifs.filter(n => !n.lu).length);
+      initialLoadDone.current = true;
     } catch {
       // silent
     }
-  };
+  }, [allowedTypes.join(',')]);
 
   useEffect(() => {
     fetchNotifications();
-  }, []);
+  }, [fetchNotifications]);
 
-  // Realtime
+  // Realtime — listen for new inserts, filter client-side by allowed types
   useEffect(() => {
     const channel = supabase
       .channel('admin-notifications-bell')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
         const newNotif = payload.new as AdminNotification;
-        setNotifications(prev => [newNotif, ...prev].slice(0, 10));
-        setUnreadCount(prev => prev + 1);
+        // Only show if this notification is for this user's roles
+        if (allowedTypes.includes(newNotif.destinataire_type)) {
+          setNotifications(prev => [newNotif, ...prev].slice(0, 15));
+          setUnreadCount(prev => prev + 1);
+          if (initialLoadDone.current) {
+            playNotificationSound();
+          }
+        }
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [allowedTypes.join(',')]);
 
   const markAsRead = async (id: string) => {
     await supabase.from('notifications').update({ lu: true } as any).eq('id', id);
@@ -77,6 +178,8 @@ export function AdminNotificationBell() {
       case 'librairie': return '📚';
       case 'cantine': return '🍽️';
       case 'personnel': return '👤';
+      case 'reinscription': return '🔄';
+      case 'transport': return '🚌';
       default: return '📢';
     }
   };
@@ -88,7 +191,7 @@ export function AdminNotificationBell() {
           <Button variant="ghost" size="sm" className="relative h-8 w-8 p-0">
             <Bell className="h-4 w-4" />
             {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground animate-pulse">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
