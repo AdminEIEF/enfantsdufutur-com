@@ -23,7 +23,7 @@ export default function StudentCompositions() {
   const [activeType, setActiveType] = useState<string>('qcm');
   const [activeQuestions, setActiveQuestions] = useState<any[]>([]);
   const [activeSujet, setActiveSujet] = useState<{ url: string; nom: string } | null>(null);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [timeLeft, setTimeLeft] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [blocked, setBlocked] = useState(false);
