@@ -284,6 +284,26 @@ export default function ScanEleveInfo() {
                         <p className="font-bold text-lg">{Number(famille.solde_famille).toLocaleString('fr-FR')} GNF</p>
                       </div>
                     )}
+                    {/* Scolarité summary */}
+                    {totalScolariteNet > 0 && (
+                      <div className="mt-3 p-3 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/10 space-y-1.5">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1"><Wallet className="h-3 w-3" /> Scolarité</span>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Net à payer</span>
+                          <span className="font-semibold">{totalScolariteNet.toLocaleString('fr-FR')} GNF</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Déjà payé</span>
+                          <span className="font-semibold text-emerald-600">{totalPayeScolarite.toLocaleString('fr-FR')} GNF</span>
+                        </div>
+                        <div className="flex justify-between text-sm border-t border-primary/10 pt-1.5">
+                          <span className="font-medium">Reste à payer</span>
+                          <span className={`font-bold ${resteAPayerScolarite > 0 ? 'text-destructive' : 'text-emerald-600'}`}>
+                            {resteAPayerScolarite.toLocaleString('fr-FR')} GNF
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
