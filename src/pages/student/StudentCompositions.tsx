@@ -13,6 +13,7 @@ import { useExamSecurity } from '@/hooks/useExamSecurity';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MathText } from '@/components/MathText';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PrimaryExamView } from '@/components/PrimaryExamView';
 
 export default function StudentCompositions() {
   const { session } = useStudentAuth();
@@ -242,6 +243,38 @@ export default function StudentCompositions() {
           </Card>
         </div>
       </StudentLayout>
+    );
+  }
+
+  // ─── Primary Interactive Exam ───
+  if (activeComp && activeType === 'primaire_interactif') {
+    const handlePrimarySubmit = async (results: { score: number; total: number; dessinDataUrl: string; detail: any }) => {
+      try {
+        // Submit via the edge function
+        await callApi('submit_primary_exam', {
+          composition_id: activeComp.id,
+          score: results.score,
+          total: results.total,
+          dessin_data_url: results.dessinDataUrl,
+          detail: results.detail,
+        });
+        toast.success('🎉 Examen envoyé !');
+        setTimeout(() => {
+          setActiveComp(null); setActiveQuestions([]); fetchCompositions();
+        }, 3000);
+      } catch (e: any) {
+        toast.error(e.message);
+      }
+    };
+
+    return (
+      <PrimaryExamView
+        composition={activeComp}
+        questions={activeQuestions}
+        timeLeft={timeLeft}
+        onSubmit={handlePrimarySubmit}
+        submitting={submitting}
+      />
     );
   }
 
