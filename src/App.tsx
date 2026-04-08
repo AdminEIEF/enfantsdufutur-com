@@ -100,6 +100,7 @@ const StudentLibrairie = lazy(() => import("./pages/student/StudentLibrairie"));
 const CompositionsAdmin = lazy(() => import("./pages/CompositionsAdmin"));
 const GestionSessions = lazy(() => import("./pages/GestionSessions"));
 const ScanEleveInfo = lazy(() => import("./pages/ScanEleveInfo"));
+const CompositionGeometrie = lazy(() => import("./pages/CompositionGeometrie"));
 
 import { ParentAuthProvider } from "@/hooks/useParentAuth";
 import { StudentAuthProvider } from "@/hooks/useStudentAuth";
@@ -299,6 +300,7 @@ const App = () => (
             <Route path="/eleve/quiz-matieres" element={<StudentAuthProvider><StudentQuizMatieres /></StudentAuthProvider>} />
             <Route path="/scan-eleve" element={<ProtectedRoute><ScanEleveInfo /></ProtectedRoute>} />
             <Route path="/sessions" element={<ProtectedRoute><GestionSessions /></ProtectedRoute>} />
+            <Route path="/composition-geometrie" element={<ProtectedRoute><CompositionGeometrie /></ProtectedRoute>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
