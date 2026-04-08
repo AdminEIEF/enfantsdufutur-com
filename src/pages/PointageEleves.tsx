@@ -4,14 +4,16 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ScanLine, Search, Clock, LogIn, LogOut, Users, Camera, Wifi, WifiOff, Download, RefreshCw, Loader2, AlertTriangle, CheckCircle2, ArrowRightLeft } from 'lucide-react';
-import { format } from 'date-fns';
+import { ScanLine, Search, Clock, LogIn, LogOut, Users, Camera, Wifi, WifiOff, Download, RefreshCw, Loader2, AlertTriangle, CheckCircle2, ArrowRightLeft, Printer } from 'lucide-react';
+import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import PointageHistorique from '@/components/PointageHistorique';
 import { useOfflinePointage } from '@/hooks/useOfflinePointage';
 import { motion, AnimatePresence } from 'framer-motion';
+import { generateRapportPointagePDF } from '@/lib/generateRapportPointagePDF';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
 export default function PointageEleves() {
   const [searchMatricule, setSearchMatricule] = useState('');
