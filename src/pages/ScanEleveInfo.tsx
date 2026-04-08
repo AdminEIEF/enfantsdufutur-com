@@ -163,8 +163,8 @@ export default function ScanEleveInfo() {
               <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-14">
                 {/* Avatar */}
                 <div className="relative z-10">
-                  {eleve.photo_url ? (
-                    <img src={eleve.photo_url} alt="" className="w-28 h-28 rounded-2xl object-cover border-4 border-background shadow-lg" />
+                  {eleve.photo_thumbnail_url || eleve.photo_url ? (
+                    <PhotoWithSkeleton src={eleve.photo_thumbnail_url || eleve.photo_url} />
                   ) : (
                     <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-muted to-muted/50 border-4 border-background shadow-lg flex items-center justify-center">
                       <User className="h-12 w-12 text-muted-foreground" />
