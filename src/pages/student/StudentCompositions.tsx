@@ -660,7 +660,7 @@ export default function StudentCompositions() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-bold text-sm">{comp.titre}</h3>
                     <Badge variant="outline" className="text-[10px]">
-                      {isPrimaire ? '🎨 Interactif' : isDocument ? '📄 Document' : isTexte ? '✍️ Texte' : '📝 QCM'}
+                      {comp.type_composition === 'geometrie_traces' ? '📐 Géométrie' : isPrimaire ? '🎨 Interactif' : isDocument ? '📄 Document' : isTexte ? '✍️ Texte' : '📝 QCM'}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">{comp.matieres?.nom} • {comp.duree_minutes} min • /{comp.bareme}</p>
