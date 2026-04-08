@@ -426,31 +426,73 @@ export default function SuperviseurPasswordPanel() {
 
           {/* Filters for eleves tab */}
           {tab === 'eleves' && (
-            <div className="grid grid-cols-2 gap-2">
-              <Select value={selectedNiveau} onValueChange={setSelectedNiveau}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="Tous les niveaux" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les niveaux</SelectItem>
-                  {niveaux.map(n => (
-                    <SelectItem key={n.id} value={n.id}>
-                      {n.nom} ({(n.cycles as any)?.nom})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={selectedClasse} onValueChange={setSelectedClasse}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="Toutes les classes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toutes les classes</SelectItem>
-                  {classes.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <Select value={selectedNiveau} onValueChange={setSelectedNiveau}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Tous les niveaux" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les niveaux</SelectItem>
+                    {niveaux.map(n => (
+                      <SelectItem key={n.id} value={n.id}>
+                        {n.nom} ({(n.cycles as any)?.nom})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={selectedClasse} onValueChange={setSelectedClasse}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Toutes les classes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les classes</SelectItem>
+                    {classes.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Bulk actions */}
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" className="text-xs gap-1.5" disabled={bulkGenerating} onClick={handleBulkGenerateEleves}>
+                  {bulkGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                  Générer tous les MDP ({results.length})
+                </Button>
+                <Button size="sm" variant="outline" className="text-xs gap-1.5" onClick={handleExportEleveCodes}>
+                  <Download className="h-3.5 w-3.5" /> Exporter CSV
+                </Button>
+              </div>
+              {bulkGenerating && (
+                <div className="space-y-1">
+                  <Progress value={(bulkProgress / bulkTotal) * 100} className="h-2" />
+                  <p className="text-xs text-muted-foreground text-center">{bulkProgress}/{bulkTotal} élèves traités...</p>
+                </div>
+              )}
+              {/* Visibility toggles for coordinators */}
+              <div className="flex flex-wrap gap-2 border rounded-lg p-3 bg-muted/30">
+                <p className="text-xs font-medium w-full mb-1">Visibilité chez les coordinateurs</p>
+                <Button
+                  size="sm"
+                  variant={visiblePrimaire ? 'default' : 'outline'}
+                  className="text-xs gap-1.5"
+                  disabled={togglingVisibility}
+                  onClick={() => toggleVisibility('primaire')}
+                >
+                  {visiblePrimaire ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                  Coord. Primaire
+                </Button>
+                <Button
+                  size="sm"
+                  variant={visibleSecondaire ? 'default' : 'outline'}
+                  className="text-xs gap-1.5"
+                  disabled={togglingVisibility}
+                  onClick={() => toggleVisibility('secondaire')}
+                >
+                  {visibleSecondaire ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                  Coord. Secondaire
+                </Button>
+              </div>
             </div>
           )}
 
