@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, UserPlus, ChevronRight, KeyRound, Copy, RefreshCw, GraduationCap, User } from 'lucide-react';
+import { Users, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, UserPlus, ChevronRight, KeyRound, Copy, RefreshCw, GraduationCap, User, Eye, EyeOff, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -51,6 +51,7 @@ export default function Familles() {
   const qc = useQueryClient();
   const { hasRole } = useAuth();
   const isSuperviseur = hasRole('superviseur');
+  const isAdmin = hasRole('admin');
   const { data: familles = [], isLoading } = useFamilles();
   const { data: allClasses = [] } = useClassesAll();
   const [searchParams] = useSearchParams();
@@ -94,8 +95,31 @@ export default function Familles() {
 
   // Delete confirm
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  // Admin: show credentials tab
+  const [showCodesPanel, setShowCodesPanel] = useState(false);
+  const [codesSearch, setCodesSearch] = useState('');
+  const [visibleCodeIds, setVisibleCodeIds] = useState<Set<string>>(new Set());
 
-  // Query for unattached students
+  const { data: generatedCodes = [], refetch: refetchCodes } = useQuery({
+    queryKey: ['generated-family-codes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('generated_family_codes' as any)
+        .select('famille_id, code_plain, created_at')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: isAdmin || isSuperviseur,
+  });
+
+  const codesMap = useMemo(() => {
+    const m = new Map<string, string>();
+    generatedCodes.forEach((c: any) => m.set(c.famille_id, c.code_plain));
+    return m;
+  }, [generatedCodes]);
+
+
   const { data: allEleves = [] } = useQuery({
     queryKey: ['eleves-for-famille-search'],
     queryFn: async () => {
@@ -373,7 +397,91 @@ export default function Familles() {
         </Card>
       </div>
 
-      {/* Search + Bulk actions */}
+      {/* Admin: Identifiants Familles Panel */}
+      {(isAdmin || isSuperviseur) && (
+        <Card>
+          <CardHeader className="pb-3 cursor-pointer" onClick={() => { setShowCodesPanel(!showCodesPanel); if (!showCodesPanel) refetchCodes(); }}>
+            <CardTitle className="flex items-center justify-between text-base">
+              <span className="flex items-center gap-2">
+                <KeyRound className="h-5 w-5 text-primary" />
+                Identifiants Familles
+                <Badge variant="secondary" className="ml-2">{generatedCodes.length} générés</Badge>
+              </span>
+              <ChevronRight className={`h-4 w-4 transition-transform ${showCodesPanel ? 'rotate-90' : ''}`} />
+            </CardTitle>
+          </CardHeader>
+          {showCodesPanel && (
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Rechercher une famille..." className="pl-9 h-9" value={codesSearch} onChange={e => setCodesSearch(e.target.value)} />
+                </div>
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
+                  const lines = ['Famille,Code d\'accès'];
+                  familles.forEach((f: any) => {
+                    const code = codesMap.get(f.id);
+                    if (code) lines.push(`"${f.nom_famille}","${code}"`);
+                  });
+                  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url; a.download = 'identifiants_familles.csv'; a.click();
+                  URL.revokeObjectURL(url);
+                  toast.success('Export CSV téléchargé');
+                }}>
+                  <Download className="h-3.5 w-3.5" /> CSV
+                </Button>
+              </div>
+
+              <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
+                {familles
+                  .filter((f: any) => {
+                    if (!codesSearch.trim()) return codesMap.has(f.id);
+                    const q = codesSearch.toLowerCase();
+                    return codesMap.has(f.id) && f.nom_famille.toLowerCase().includes(q);
+                  })
+                  .map((f: any) => {
+                    const code = codesMap.get(f.id) || '';
+                    const isVisible = visibleCodeIds.has(f.id);
+                    return (
+                      <div key={f.id} className="flex items-center justify-between px-3 py-2 hover:bg-muted/50">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{f.nom_famille}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {f.telephone_pere ? `📱 ${f.telephone_pere}` : ''} {f.telephone_mere ? `📱 ${f.telephone_mere}` : ''}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <code className="text-sm font-mono font-bold bg-muted px-2 py-0.5 rounded">
+                            {isVisible ? code : '••••••••'}
+                          </code>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                            setVisibleCodeIds(prev => {
+                              const next = new Set(prev);
+                              if (next.has(f.id)) next.delete(f.id); else next.add(f.id);
+                              return next;
+                            });
+                          }}>
+                            {isVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(code); toast.success('Code copié !'); }}>
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                {familles.filter((f: any) => codesMap.has(f.id)).length === 0 && (
+                  <p className="text-center text-sm text-muted-foreground py-4">Aucun code généré. Le superviseur doit d'abord générer les codes.</p>
+                )}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
+
+
       <div className="flex items-center gap-4 flex-wrap">
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

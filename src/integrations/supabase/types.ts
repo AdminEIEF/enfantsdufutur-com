@@ -2120,6 +2120,38 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_family_codes: {
+        Row: {
+          code_plain: string
+          created_at: string
+          famille_id: string
+          generated_by: string | null
+          id: string
+        }
+        Insert: {
+          code_plain: string
+          created_at?: string
+          famille_id: string
+          generated_by?: string | null
+          id?: string
+        }
+        Update: {
+          code_plain?: string
+          created_at?: string
+          famille_id?: string
+          generated_by?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_family_codes_famille_id_fkey"
+            columns: ["famille_id"]
+            isOneToOne: true
+            referencedRelation: "familles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incidents_transport: {
         Row: {
           created_at: string

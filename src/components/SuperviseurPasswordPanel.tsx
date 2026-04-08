@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { KeyRound, Search, Eye, EyeOff, Copy, Loader2, GraduationCap, Users, Briefcase, RefreshCw, CheckCircle2, UserCircle, Phone, Mail, MapPin, ExternalLink } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { KeyRound, Search, Eye, EyeOff, Copy, Loader2, GraduationCap, Users, Briefcase, RefreshCw, CheckCircle2, UserCircle, Phone, Mail, MapPin, ExternalLink, Zap, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 function generatePassword(length = 8) {
@@ -240,6 +241,8 @@ export default function SuperviseurPasswordPanel() {
         const { error } = await supabase.from('familles').update({ code_acces: code } as any).eq('id', item.id);
         if (error) throw error;
         savePassword(STORAGE_KEY_FAMILLES, item.id, code);
+        // Save to DB for admin visibility
+        await supabase.from('generated_family_codes' as any).upsert({ famille_id: item.id, code_plain: code, generated_by: (await supabase.auth.getUser()).data.user?.id } as any, { onConflict: 'famille_id' });
         setGeneratedPwd({ id: item.id, pwd: code });
         toast.success(`Code d'accès généré pour ${item.nom_famille}`);
       }
@@ -248,6 +251,59 @@ export default function SuperviseurPasswordPanel() {
     } finally {
       setGeneratingId(null);
     }
+  };
+
+  // Bulk generate all family codes
+  const [bulkGenerating, setBulkGenerating] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState(0);
+  const [bulkTotal, setBulkTotal] = useState(0);
+
+  const handleBulkGenerateFamilles = async () => {
+    const famillesSansCode = familles.filter(f => !getSavedPasswords(STORAGE_KEY_FAMILLES)[f.id]);
+    if (famillesSansCode.length === 0) {
+      toast.info('Tous les codes sont déjà générés');
+      return;
+    }
+    setBulkGenerating(true);
+    setBulkTotal(famillesSansCode.length);
+    setBulkProgress(0);
+    let success = 0;
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    for (let i = 0; i < famillesSansCode.length; i++) {
+      const f = famillesSansCode[i];
+      try {
+        const code = 'FAM-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        const { error } = await supabase.from('familles').update({ code_acces: code } as any).eq('id', f.id);
+        if (!error) {
+          savePassword(STORAGE_KEY_FAMILLES, f.id, code);
+          await supabase.from('generated_family_codes' as any).upsert({ famille_id: f.id, code_plain: code, generated_by: userId } as any, { onConflict: 'famille_id' });
+          success++;
+        }
+      } catch { /* continue */ }
+      setBulkProgress(i + 1);
+    }
+    setBulkGenerating(false);
+    toast.success(`${success} codes générés avec succès sur ${famillesSansCode.length} familles`);
+  };
+
+  // Export all generated codes as CSV text
+  const handleExportCodes = () => {
+    const saved = getSavedPasswords(STORAGE_KEY_FAMILLES);
+    const lines = ['Famille,Code d\'accès'];
+    familles.forEach(f => {
+      const code = saved[f.id];
+      if (code) {
+        lines.push(`"${f.nom_famille}","${code}"`);
+      }
+    });
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'codes_familles.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Export CSV téléchargé');
   };
 
   const uniqueCategories = useMemo(() => {
@@ -357,26 +413,55 @@ export default function SuperviseurPasswordPanel() {
 
           {/* Alphabet filter for familles tab */}
           {tab === 'familles' && (
-            <div className="flex flex-wrap gap-1">
-              <Button
-                variant={selectedLetter === 'all' ? 'default' : 'outline'}
-                size="sm"
-                className="h-6 w-8 text-[10px] px-0"
-                onClick={() => setSelectedLetter('all')}
-              >
-                Tous
-              </Button>
-              {ALPHABET.map(l => (
+            <div className="space-y-3">
+              {/* Bulk actions */}
+              <div className="flex flex-wrap gap-2">
                 <Button
-                  key={l}
-                  variant={selectedLetter === l ? 'default' : 'outline'}
                   size="sm"
-                  className="h-6 w-6 text-[10px] px-0"
-                  onClick={() => setSelectedLetter(l)}
+                  className="text-xs gap-1.5"
+                  disabled={bulkGenerating}
+                  onClick={handleBulkGenerateFamilles}
                 >
-                  {l}
+                  {bulkGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                  Générer tous les codes
                 </Button>
-              ))}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs gap-1.5"
+                  onClick={handleExportCodes}
+                >
+                  <Download className="h-3.5 w-3.5" /> Exporter CSV
+                </Button>
+              </div>
+              {bulkGenerating && (
+                <div className="space-y-1">
+                  <Progress value={(bulkProgress / bulkTotal) * 100} className="h-2" />
+                  <p className="text-xs text-muted-foreground text-center">{bulkProgress}/{bulkTotal} familles traitées...</p>
+                </div>
+              )}
+              {/* Alphabet filter */}
+              <div className="flex flex-wrap gap-1">
+                <Button
+                  variant={selectedLetter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-6 w-8 text-[10px] px-0"
+                  onClick={() => setSelectedLetter('all')}
+                >
+                  Tous
+                </Button>
+                {ALPHABET.map(l => (
+                  <Button
+                    key={l}
+                    variant={selectedLetter === l ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-6 w-6 text-[10px] px-0"
+                    onClick={() => setSelectedLetter(l)}
+                  >
+                    {l}
+                  </Button>
+                ))}
+              </div>
             </div>
           )}
 
