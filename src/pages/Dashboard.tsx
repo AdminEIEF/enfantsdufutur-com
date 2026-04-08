@@ -770,7 +770,8 @@ export default function Dashboard() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly trend */}
+        {/* Monthly trend - finance only */}
+        {canSeeFinance && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Tendance recettes / dépenses (6 mois)</CardTitle>
@@ -795,8 +796,9 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+        )}
 
-        {/* Effectif par cycle */}
+        {/* Effectif par cycle - visible to all */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Répartition par cycle</CardTitle>
@@ -820,7 +822,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Recettes par type */}
+        {/* Recettes par type - finance only */}
+        {canSeeFinance && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Recettes par type de paiement</CardTitle>
@@ -841,8 +844,10 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+        )}
 
-        {/* Dépenses par service */}
+        {/* Dépenses par service - finance only */}
+        {canSeeFinance && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Dépenses par service</CardTitle>
@@ -865,6 +870,7 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+        )}
       </div>
     </div>
   );
