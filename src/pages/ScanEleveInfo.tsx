@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
