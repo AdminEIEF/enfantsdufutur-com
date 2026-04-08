@@ -59,7 +59,7 @@ export default function ScanEleveInfo() {
         .from('eleves')
         .select(`
           *, 
-          classes!eleves_classe_id_fkey(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom, bareme))),
+          classes!eleves_classe_id_fkey(nom, niveaux:niveau_id(nom, frais_scolarite, frais_inscription, frais_assurance, frais_dossier, cycles:cycle_id(nom, bareme))),
           familles!eleves_famille_id_fkey(nom_famille, telephone_pere, telephone_mere, email_parent, adresse, solde_famille),
           zones_transport!eleves_zone_transport_id_fkey(nom, prix_mensuel)
         `)
