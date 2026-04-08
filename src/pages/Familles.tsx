@@ -484,19 +484,32 @@ export default function Familles() {
       {/* Family Detail */}
       <Dialog open={!!selectedFamille} onOpenChange={(o) => { if (!o) setSelectedFamille(null); }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0 rounded-3xl">
-          {selectedFamille && (
+          {selectedFamille && (() => {
+            const selCode = codesMap.get(selectedFamille.id);
+            const selPay = paiementsMap.get(selectedFamille.id);
+            const selTotalPaye = selPay?.total || 0;
+            return (
             <>
               {/* Hero Header */}
               <div className="relative bg-gradient-to-br from-primary via-primary/90 to-accent p-5 pb-6 text-primary-foreground">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-10 translate-x-10" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="h-14 w-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center">
-                      <Users className="h-7 w-7" />
+                    <div className="h-14 w-14 rounded-2xl overflow-hidden bg-white/15 backdrop-blur flex items-center justify-center shrink-0">
+                      {selectedFamille.photo_url ? (
+                        <img src={selectedFamille.photo_url} alt={selectedFamille.nom_famille} className="h-full w-full object-cover" />
+                      ) : (
+                        <Users className="h-7 w-7" />
+                      )}
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <h2 className="text-xl font-bold">{selectedFamille.nom_famille}</h2>
-                      <p className="text-xs opacity-80">{selectedFamille.eleves?.length || 0} enfant{(selectedFamille.eleves?.length || 0) > 1 ? 's' : ''} • {new Date(selectedFamille.created_at).toLocaleDateString('fr-FR')}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs opacity-80">{selectedFamille.eleves?.length || 0} enfant{(selectedFamille.eleves?.length || 0) > 1 ? 's' : ''} • {new Date(selectedFamille.created_at).toLocaleDateString('fr-FR')}</p>
+                        {selCode && (
+                          <code className="text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded-md font-bold">{selCode}</code>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -511,6 +524,33 @@ export default function Familles() {
               </div>
 
               <div className="px-5 pb-5">
+                {/* Payment Summary Card */}
+                <div className="rounded-2xl bg-gradient-to-br from-primary/5 to-accent/5 border p-4 mt-3 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <p className="text-sm font-semibold">Suivi des paiements</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-card p-3 text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase">Total payé</p>
+                      <p className="text-lg font-bold text-emerald-600">{selTotalPaye.toLocaleString()} <span className="text-xs">GNF</span></p>
+                    </div>
+                    <div className="rounded-xl bg-card p-3 text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase">Portefeuille</p>
+                      <p className="text-lg font-bold text-primary">{Number(selectedFamille.solde_famille || 0).toLocaleString()} <span className="text-xs">GNF</span></p>
+                    </div>
+                  </div>
+                  {selTotalPaye > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px] text-muted-foreground">
+                        <span>Progression globale</span>
+                        <span className="font-semibold text-foreground">{selTotalPaye.toLocaleString()} GNF versés</span>
+                      </div>
+                      <Progress value={Math.min(100, (selTotalPaye / Math.max(selTotalPaye, 1)) * 100)} className="h-2.5 rounded-full" />
+                    </div>
+                  )}
+                </div>
+
                 <Tabs defaultValue="infos" className="mt-3">
                   <TabsList className="grid grid-cols-2 w-full rounded-2xl h-10 bg-muted/50 p-1">
                     <TabsTrigger value="infos" className="rounded-xl text-xs">Informations</TabsTrigger>
