@@ -548,7 +548,7 @@ export default function CompositionsAdmin() {
       if (!q.enonce.trim()) { toast.error(`Question ${i + 1}: énoncé requis`); return; }
       if (q.type_question === 'qcm_multiple') {
         const correctCount = q.options.filter(o => o.correct).length;
-        if (correctCount < 2) { toast.error(`Question ${i + 1}: sélectionnez au moins 2 bonnes réponses`); return; }
+        if (correctCount < 3) { toast.error(`Question ${i + 1}: sélectionnez au moins 3 bonnes réponses pour un QCM Multiple`); return; }
       } else if (q.type_question !== 'texte' && !q.reponse_correcte) { toast.error(`Question ${i + 1}: réponse correcte requise`); return; }
       if ((q.type_question === 'qcm' || q.type_question === 'qcm_multiple') && q.options.some(o => !o.label.trim())) {
         toast.error(`Question ${i + 1}: toutes les options doivent être remplies`); return;
@@ -951,7 +951,7 @@ export default function CompositionsAdmin() {
                       </div>
                     ) : q.type_question === 'qcm_multiple' ? (
                       <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">Cochez les bonnes réponses (au moins 2) :</Label>
+                        <Label className="text-xs text-muted-foreground">Cochez les bonnes réponses (minimum 3) :</Label>
                         {q.options.map((opt, oi) => (
                           <div key={oi} className="flex items-center gap-2">
                             <input

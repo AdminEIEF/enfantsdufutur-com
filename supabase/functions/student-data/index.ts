@@ -363,10 +363,39 @@ serve(async (req) => {
       });
     }
 
+    // Helper: auto-insert composition score into notes table
+    async function autoInsertCompositionNote(eleveId: string, matiereId: string, score: number, cycleBareme: number, compBareme: number) {
+      try {
+        // Find current active period (highest ordre, current year)
+        const { data: periodes } = await supabaseAdmin
+          .from("periodes")
+          .select("id, nom, ordre")
+          .order("ordre", { ascending: false })
+          .limit(1);
+        if (!periodes || periodes.length === 0) return;
+        const periodeId = periodes[0].id;
+
+        // Scale score from composition bareme to cycle bareme
+        const scaledNote = compBareme > 0 ? Math.round((score / compBareme) * cycleBareme * 100) / 100 : 0;
+
+        // Upsert into notes (unique on eleve_id, matiere_id, periode_id)
+        await supabaseAdmin
+          .from("notes")
+          .upsert({
+            eleve_id: eleveId,
+            matiere_id: matiereId,
+            periode_id: periodeId,
+            note: scaledNote,
+          }, { onConflict: "eleve_id,matiere_id,periode_id" });
+      } catch (err) {
+        console.error("Auto-insert note error:", err);
+      }
+    }
+
     if (action === "submit_composition") {
       const { data: comp } = await supabaseAdmin
         .from("compositions")
-        .select("id, titre, duree_minutes, bareme, classe_id, type_composition, matieres:matiere_id(nom)")
+        .select("id, titre, duree_minutes, bareme, classe_id, type_composition, matiere_id, matieres:matiere_id(nom)")
         .eq("id", composition_id)
         .maybeSingle();
 
@@ -504,10 +533,14 @@ serve(async (req) => {
                   const rawScore = Math.max(0, Math.min(gradeResult.score, totalPossiblePts));
                   const scaledScore = totalPossiblePts > 0 ? Math.round((rawScore / totalPossiblePts) * comp.bareme * 100) / 100 : 0;
                   
-                  await supabaseAdmin
+                   await supabaseAdmin
                     .from("composition_reponses")
                     .update({ score: scaledScore })
                     .eq("id", existing.id);
+
+                  // Auto-insert score into notes table
+                  const cycleBaremeAI = (eleve as any).classes?.niveaux?.cycles?.bareme || comp.bareme;
+                  await autoInsertCompositionNote(eleveId, comp.matiere_id, scaledScore, cycleBaremeAI, comp.bareme);
 
                   await supabaseAdmin.from("student_notifications").insert({
                     eleve_id: eleveId,
@@ -586,6 +619,10 @@ serve(async (req) => {
         .from("composition_reponses")
         .update({ reponses: studentAnswers, score, soumis_at: new Date().toISOString() })
         .eq("id", existing.id);
+
+      // Auto-insert score into notes table
+      const cycleBareme = (eleve as any).classes?.niveaux?.cycles?.bareme || comp.bareme;
+      await autoInsertCompositionNote(eleveId, comp.matiere_id, score, cycleBareme, comp.bareme);
 
       await supabaseAdmin.from("student_notifications").insert({
         eleve_id: eleveId,
