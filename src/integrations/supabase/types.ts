@@ -1970,6 +1970,54 @@ export type Database = {
           },
         ]
       }
+      exam_submissions: {
+        Row: {
+          composition_id: string | null
+          created_at: string
+          dessin_url: string | null
+          eleve_id: string
+          id: string
+          reponses_detail: Json | null
+          score_qcm: number | null
+          total_qcm: number | null
+        }
+        Insert: {
+          composition_id?: string | null
+          created_at?: string
+          dessin_url?: string | null
+          eleve_id: string
+          id?: string
+          reponses_detail?: Json | null
+          score_qcm?: number | null
+          total_qcm?: number | null
+        }
+        Update: {
+          composition_id?: string | null
+          created_at?: string
+          dessin_url?: string | null
+          eleve_id?: string
+          id?: string
+          reponses_detail?: Json | null
+          score_qcm?: number | null
+          total_qcm?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_submissions_composition_id_fkey"
+            columns: ["composition_id"]
+            isOneToOne: false
+            referencedRelation: "compositions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_submissions_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       familles: {
         Row: {
           adresse: string | null

@@ -13,6 +13,7 @@ import { useExamSecurity } from '@/hooks/useExamSecurity';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MathText } from '@/components/MathText';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PrimaryExamView } from '@/components/PrimaryExamView';
 
 export default function StudentCompositions() {
   const { session } = useStudentAuth();
@@ -242,6 +243,38 @@ export default function StudentCompositions() {
           </Card>
         </div>
       </StudentLayout>
+    );
+  }
+
+  // ─── Primary Interactive Exam ───
+  if (activeComp && activeType === 'primaire_interactif') {
+    const handlePrimarySubmit = async (results: { score: number; total: number; dessinDataUrl: string; detail: any }) => {
+      try {
+        // Submit via the edge function
+        await callApi('submit_primary_exam', {
+          composition_id: activeComp.id,
+          score: results.score,
+          total: results.total,
+          dessin_data_url: results.dessinDataUrl,
+          detail: results.detail,
+        });
+        toast.success('🎉 Examen envoyé !');
+        setTimeout(() => {
+          setActiveComp(null); setActiveQuestions([]); fetchCompositions();
+        }, 3000);
+      } catch (e: any) {
+        toast.error(e.message);
+      }
+    };
+
+    return (
+      <PrimaryExamView
+        composition={activeComp}
+        questions={activeQuestions}
+        timeLeft={timeLeft}
+        onSubmit={handlePrimarySubmit}
+        submitting={submitting}
+      />
     );
   }
 
@@ -606,6 +639,7 @@ export default function StudentCompositions() {
     const rep = reponses.find((r: any) => r.composition_id === comp.id);
     const isDocument = comp.type_composition === 'document';
     const isTexte = comp.type_composition === 'texte';
+    const isPrimaire = comp.type_composition === 'primaire_interactif';
 
     const statusConfig: Record<string, { label: string; className: string }> = {
       done: { label: '✅ Terminée', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
@@ -626,7 +660,7 @@ export default function StudentCompositions() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-bold text-sm">{comp.titre}</h3>
                     <Badge variant="outline" className="text-[10px]">
-                      {isDocument ? '📄 Document' : isTexte ? '✍️ Texte' : '📝 QCM'}
+                      {isPrimaire ? '🎨 Interactif' : isDocument ? '📄 Document' : isTexte ? '✍️ Texte' : '📝 QCM'}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">{comp.matieres?.nom} • {comp.duree_minutes} min • /{comp.bareme}</p>
