@@ -13,7 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    const { token, action, notification_id, composition_id, reponses: studentReponses, reponse_texte } = await req.json();
+    const body = await req.json();
+    const { token, action, notification_id, composition_id, reponses: studentReponses, reponse_texte } = body;
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -650,6 +651,59 @@ serve(async (req) => {
       });
 
       return new Response(JSON.stringify({ score, bareme: comp.bareme }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "submit_primary_exam") {
+      const { score: pScore, total: pTotal, dessin_data_url, detail } = body;
+      
+      // Mark composition response as submitted
+      const { data: comp } = await supabaseAdmin
+        .from("compositions")
+        .select("id, titre, bareme, matiere_id, matieres:matiere_id(nom)")
+        .eq("id", composition_id)
+        .maybeSingle();
+
+      if (comp) {
+        const { data: existing } = await supabaseAdmin
+          .from("composition_reponses")
+          .select("id, soumis_at")
+          .eq("composition_id", composition_id)
+          .eq("eleve_id", eleveId)
+          .maybeSingle();
+
+        if (existing && !existing.soumis_at) {
+          const scaledScore = pTotal > 0 ? Math.round((pScore / pTotal) * comp.bareme * 100) / 100 : 0;
+          await supabaseAdmin
+            .from("composition_reponses")
+            .update({ score: scaledScore, reponses: detail || {}, soumis_at: new Date().toISOString() })
+            .eq("id", existing.id);
+
+          // Auto-insert into notes
+          const cycleBareme = (eleve as any).classes?.niveaux?.cycles?.bareme || comp.bareme;
+          await autoInsertCompositionNote(eleveId, comp.matiere_id, scaledScore, cycleBareme, comp.bareme);
+        }
+
+        // Insert into exam_submissions
+        await supabaseAdmin.from("exam_submissions").insert({
+          eleve_id: eleveId,
+          composition_id: composition_id,
+          score_qcm: pScore,
+          total_qcm: pTotal,
+          dessin_url: dessin_data_url ? dessin_data_url.substring(0, 500000) : null,
+          reponses_detail: detail || {},
+        });
+
+        await supabaseAdmin.from("student_notifications").insert({
+          eleve_id: eleveId,
+          titre: '🎨 Examen interactif soumis',
+          message: `Ton examen "${comp.titre}" a été envoyé ! Bravo ! 🌟`,
+          type: 'info',
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
