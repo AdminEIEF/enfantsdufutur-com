@@ -1186,7 +1186,7 @@ function VenteCreditPanel() {
 
 export default function Boutique() {
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState('retraits');
+  const [tab, setTab] = useState('dashboard');
   const [searchEleve, setSearchEleve] = useState('');
   const [selectedEleve, setSelectedEleve] = useState<any>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -1404,6 +1404,7 @@ export default function Boutique() {
       <Tabs value={tab} onValueChange={setTab}>
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
           <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1 rounded-2xl">
+            <TabsTrigger value="dashboard" className="gap-1.5 rounded-xl text-xs"><BarChart3 className="h-3.5 w-3.5" /> Dashboard</TabsTrigger>
             <TabsTrigger value="retraits" className="gap-1.5 rounded-xl text-xs"><ClipboardCheck className="h-3.5 w-3.5" /> Retraits</TabsTrigger>
             <TabsTrigger value="vente" className="gap-1.5 rounded-xl text-xs"><ShoppingBag className="h-3.5 w-3.5" /> Vente</TabsTrigger>
             <TabsTrigger value="inventaire" className="gap-1.5 rounded-xl text-xs"><Package className="h-3.5 w-3.5" /> Inventaire</TabsTrigger>
@@ -1414,6 +1415,11 @@ export default function Boutique() {
             <TabsTrigger value="rapport" className="gap-1.5 rounded-xl text-xs"><Receipt className="h-3.5 w-3.5" /> Rapport</TabsTrigger>
           </TabsList>
         </motion.div>
+
+        {/* ===== DASHBOARD TAB ===== */}
+        <TabsContent value="dashboard" className="space-y-4">
+          <BoutiqueDashboard articles={articles} ventes={ventes} selectedDate={selectedDate} />
+        </TabsContent>
 
         {/* ===== RETRAITS TAB ===== */}
         <TabsContent value="retraits" className="space-y-4">
