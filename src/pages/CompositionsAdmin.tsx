@@ -904,7 +904,7 @@ export default function CompositionsAdmin() {
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <Badge variant="outline">
-                        {q.type_question === 'qcm' ? 'QCM' : q.type_question === 'texte' ? '✍️ Texte' : 'Vrai/Faux'} — Q{idx + 1}
+                        {q.type_question === 'qcm_multiple' ? 'QCM Multiple' : q.type_question === 'qcm' ? 'QCM' : q.type_question === 'texte' ? '✍️ Texte' : 'Vrai/Faux'} — Q{idx + 1}
                       </Badge>
                       <div className="flex items-center gap-2">
                         <Label className="text-xs">Points:</Label>
@@ -933,6 +933,44 @@ export default function CompositionsAdmin() {
                         <p className="text-xs text-muted-foreground italic">
                           💡 L'IA comparera la réponse de l'élève avec cette référence et attribuera une note automatiquement.
                         </p>
+                      </div>
+                    ) : q.type_question === 'qcm_multiple' ? (
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Cochez les bonnes réponses (au moins 2) :</Label>
+                        {q.options.map((opt, oi) => (
+                          <div key={oi} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              className="rounded border-muted-foreground"
+                              checked={!!opt.correct}
+                              onChange={(e) => {
+                                const newOpts = [...q.options];
+                                newOpts[oi] = { ...newOpts[oi], correct: e.target.checked };
+                                updateQuestion(idx, { options: newOpts });
+                              }}
+                              id={`q${idx}_mc${oi}`}
+                            />
+                            <div className="flex-1 space-y-1">
+                              <Input
+                                className="h-8"
+                                placeholder={`Option ${oi + 1}`}
+                                value={opt.label}
+                                onChange={e => {
+                                  const newOpts = [...q.options];
+                                  newOpts[oi] = { ...newOpts[oi], label: e.target.value };
+                                  updateQuestion(idx, { options: newOpts });
+                                }}
+                              />
+                              {opt.label && /[\$\\]/.test(opt.label) && (
+                                <span className="text-xs text-muted-foreground"><MathText text={opt.label} /></span>
+                              )}
+                            </div>
+                            {opt.correct && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
+                          </div>
+                        ))}
+                        <Button variant="ghost" size="sm" onClick={() => {
+                          updateQuestion(idx, { options: [...q.options, { label: '' }] });
+                        }}>+ Ajouter une option</Button>
                       </div>
                     ) : (
                       <div className="space-y-2">
