@@ -514,7 +514,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Family & Librairie KPIs */}
+      {/* Family & Financial KPIs - restricted */}
+      {canSeeFinance && (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <Card className="overflow-hidden border border-red-200 dark:border-red-800 bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
@@ -573,6 +574,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+      )}
 
       {/* CA Comparatif Bar Chart: Scolarité/Transport vs Librairie/Options */}
       <Card>
