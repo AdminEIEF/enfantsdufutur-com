@@ -1,18 +1,18 @@
 import { useState, useCallback } from 'react';
 import { useBarcodeScanner, extractMatriculeFromScan } from '@/hooks/useBarcodeScanner';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bus, CheckCircle, XCircle, ScanLine, Search, AlertTriangle, ArrowLeftRight, WifiOff, Wifi, Download, RefreshCw, CloudOff } from 'lucide-react';
+import { Bus, CheckCircle, XCircle, ScanLine, Search, AlertTriangle, ArrowLeftRight, WifiOff, Wifi, Download, RefreshCw, CloudOff, Smartphone, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useOfflineTransport } from '@/hooks/useOfflineTransport';
 import QRScannerDialog from '@/components/QRScannerDialog';
+import scannerIllustration from '@/assets/scanner-illustration.png';
 
 export default function ValidationTransportBus() {
   const { toast } = useToast();
@@ -20,22 +20,15 @@ export default function ValidationTransportBus() {
   const isMobile = useIsMobile();
   const [scannerOpen, setScannerOpen] = useState(false);
   const [manualSearch, setManualSearch] = useState('');
+  const [showGuide, setShowGuide] = useState(false);
 
   const {
-    isOnline,
-    cachedCount,
-    lastSync,
-    pendingCount,
-    isSyncing,
-    isCaching,
-    downloadEleves,
-    validateOffline,
-    syncPendingScans,
+    isOnline, cachedCount, lastSync, pendingCount,
+    isSyncing, isCaching, downloadEleves, validateOffline, syncPendingScans,
   } = useOfflineTransport();
 
   const today = new Date().toISOString().slice(0, 10);
 
-  // Validations du jour (online only)
   const { data: validations = [] } = useQuery({
     queryKey: ['validations-transport', today],
     queryFn: async () => {
@@ -51,7 +44,6 @@ export default function ValidationTransportBus() {
     enabled: isOnline,
   });
 
-  // Élèves avec cartes expirées
   const { data: expiredCards = [] } = useQuery({
     queryKey: ['expired-transport-cards'],
     queryFn: async () => {
@@ -62,27 +54,19 @@ export default function ValidationTransportBus() {
         .eq('statut', 'inscrit')
         .order('nom');
       if (eErr) throw eErr;
-
       const { data: recharges, error: rErr } = await supabase
         .from('recharges_transport')
         .select('eleve_id, date_recharge, date_expiration, actif')
         .order('date_expiration', { ascending: false });
       if (rErr) throw rErr;
-
       const now = new Date().toISOString();
       const result: any[] = [];
-
       for (const e of (eleves || [])) {
         const eleveRecharges = (recharges || []).filter((r: any) => r.eleve_id === e.id);
         const lastRecharge = eleveRecharges[0];
         const hasActive = eleveRecharges.some((r: any) => r.actif && r.date_expiration >= now);
-
         if (!hasActive) {
-          result.push({
-            ...e,
-            derniere_recharge: lastRecharge?.date_recharge || null,
-            date_expiration: lastRecharge?.date_expiration || null,
-          });
+          result.push({ ...e, derniere_recharge: lastRecharge?.date_recharge || null, date_expiration: lastRecharge?.date_expiration || null });
         }
       }
       return result;
@@ -93,131 +77,58 @@ export default function ValidationTransportBus() {
   const validateMutation = useMutation({
     mutationFn: async (eleveId: string) => {
       const { data: recharges } = await supabase
-        .from('recharges_transport')
-        .select('*')
-        .eq('eleve_id', eleveId)
-        .eq('actif', true)
-        .gte('date_expiration', new Date().toISOString())
-        .order('date_expiration', { ascending: false })
-        .limit(1);
-
+        .from('recharges_transport').select('*').eq('eleve_id', eleveId)
+        .eq('actif', true).gte('date_expiration', new Date().toISOString())
+        .order('date_expiration', { ascending: false }).limit(1);
       const recharge = (recharges as any[])?.[0];
-
       const { data: eleve } = await supabase
-        .from('eleves')
-        .select('id, nom, prenom, matricule, zone_transport_id')
-        .eq('id', eleveId)
-        .single();
-
+        .from('eleves').select('id, nom, prenom, matricule, zone_transport_id').eq('id', eleveId).single();
       if (!eleve) throw new Error('Élève introuvable');
-
       const { data: existing } = await supabase
-        .from('validations_transport')
-        .select('id')
-        .eq('eleve_id', eleveId)
-        .gte('validated_at', `${today}T00:00:00`)
-        .lte('validated_at', `${today}T23:59:59`);
-
+        .from('validations_transport').select('id').eq('eleve_id', eleveId)
+        .gte('validated_at', `${today}T00:00:00`).lte('validated_at', `${today}T23:59:59`);
       const count = (existing as any[])?.length || 0;
-
-      if (count >= 2) {
-        return { eleve, status: 'already', message: 'Aller-retour déjà validé' };
-      }
-
+      if (count >= 2) return { eleve, status: 'already', message: 'Aller-retour déjà validé' };
       const trajet = count === 0 ? 'aller' : 'retour';
       const isValid = !!recharge;
-
       const { error } = await supabase.from('validations_transport').insert({
-        eleve_id: eleveId,
-        recharge_id: recharge?.id || null,
-        zone_transport_id: eleve.zone_transport_id,
-        valide: isValid,
-        motif_rejet: isValid ? null : 'Carte expirée ou non rechargée',
+        eleve_id: eleveId, recharge_id: recharge?.id || null, zone_transport_id: eleve.zone_transport_id,
+        valide: isValid, motif_rejet: isValid ? null : 'Carte expirée ou non rechargée',
       } as any);
       if (error) throw error;
-
-      return {
-        eleve,
-        status: isValid ? 'valid' : 'invalid',
-        trajet,
-        message: isValid ? `${trajet === 'aller' ? '🚌 Aller' : '🏠 Retour'} — Accès autorisé` : 'Carte expirée — Accès refusé',
-        recharge,
-      };
+      return { eleve, status: isValid ? 'valid' : 'invalid', trajet, message: isValid ? `${trajet === 'aller' ? '🚌 Aller' : '🏠 Retour'} — Accès autorisé` : 'Carte expirée — Accès refusé', recharge };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['validations-transport'] });
-      if (result.status === 'valid') {
-        playBeep(800);
-        toast({ title: `✅ ${result.trajet === 'aller' ? 'Aller' : 'Retour'} validé`, description: `${result.eleve.prenom} ${result.eleve.nom}` });
-      } else if (result.status === 'already') {
-        toast({ title: 'ℹ️ Limite atteinte', description: `${result.eleve.prenom} ${result.eleve.nom} — Aller-retour déjà validé` });
-      } else {
-        playBeep(300);
-        toast({ title: '❌ Carte expirée', description: `${result.eleve.prenom} ${result.eleve.nom} — Recharge requise`, variant: 'destructive' });
-      }
+      if (result.status === 'valid') { playBeep(800); toast({ title: `✅ ${result.trajet === 'aller' ? 'Aller' : 'Retour'} validé`, description: `${result.eleve.prenom} ${result.eleve.nom}` }); }
+      else if (result.status === 'already') { toast({ title: 'ℹ️ Limite atteinte', description: `${result.eleve.prenom} ${result.eleve.nom} — Aller-retour déjà validé` }); }
+      else { playBeep(300); toast({ title: '❌ Carte expirée', description: `${result.eleve.prenom} ${result.eleve.nom} — Recharge requise`, variant: 'destructive' }); }
     },
-    onError: (err: any) => {
-      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
-    },
+    onError: (err: any) => { toast({ title: 'Erreur', description: err.message, variant: 'destructive' }); },
   });
 
   function playBeep(freq: number) {
-    try {
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      osc.frequency.value = freq;
-      osc.connect(ctx.destination);
-      osc.start();
-      setTimeout(() => osc.stop(), 150);
-    } catch {}
+    try { const ctx = new AudioContext(); const osc = ctx.createOscillator(); osc.frequency.value = freq; osc.connect(ctx.destination); osc.start(); setTimeout(() => osc.stop(), 150); } catch {}
   }
 
   const lookupAndValidate = useCallback(async (matricule: string) => {
     if (!matricule) return;
-
-    // If offline, use local cache
     if (!navigator.onLine) {
       const result = await validateOffline(matricule);
-      if (result.status === 'valid') {
-        playBeep(800);
-        if (navigator.vibrate) navigator.vibrate(150);
-        toast({ title: '✅ Validé (hors ligne)', description: result.message });
-      } else if (result.status === 'invalid') {
-        playBeep(300);
-        toast({ title: '❌ Carte expirée', description: result.message, variant: 'destructive' });
-      } else if (result.status === 'already') {
-        toast({ title: 'ℹ️ Limite atteinte', description: result.message });
-      } else {
-        toast({ title: 'Non trouvé', description: result.message, variant: 'destructive' });
-      }
+      if (result.status === 'valid') { playBeep(800); if (navigator.vibrate) navigator.vibrate(150); toast({ title: '✅ Validé (hors ligne)', description: result.message }); }
+      else if (result.status === 'invalid') { playBeep(300); toast({ title: '❌ Carte expirée', description: result.message, variant: 'destructive' }); }
+      else if (result.status === 'already') { toast({ title: 'ℹ️ Limite atteinte', description: result.message }); }
+      else { toast({ title: 'Non trouvé', description: result.message, variant: 'destructive' }); }
       return;
     }
-
-    // Online mode
-    const { data: eleve } = await supabase
-      .from('eleves')
-      .select('id')
-      .eq('matricule', matricule)
-      .not('zone_transport_id', 'is', null)
-      .single();
-
-    if (eleve) {
-      validateMutation.mutate(eleve.id);
-    } else {
-      toast({ title: 'Non trouvé', description: `Aucun élève transport avec le matricule "${matricule}"`, variant: 'destructive' });
-    }
+    const { data: eleve } = await supabase.from('eleves').select('id').eq('matricule', matricule).not('zone_transport_id', 'is', null).single();
+    if (eleve) { validateMutation.mutate(eleve.id); }
+    else { toast({ title: 'Non trouvé', description: `Aucun élève transport avec le matricule "${matricule}"`, variant: 'destructive' }); }
   }, [validateMutation, toast, validateOffline]);
 
   const handleScan = useCallback((text: string) => {
-    console.log('[Scanner] Texte reçu:', text);
     const matricule = extractMatriculeFromScan(text) || text.trim();
-    console.log('[Scanner] Matricule extrait:', matricule);
-
-    if (!matricule) {
-      toast({ title: 'QR invalide', description: 'Aucun matricule détecté', variant: 'destructive' });
-      return;
-    }
-
+    if (!matricule) { toast({ title: 'QR invalide', description: 'Aucun matricule détecté', variant: 'destructive' }); return; }
     lookupAndValidate(matricule);
   }, [toast, lookupAndValidate]);
 
@@ -233,290 +144,219 @@ export default function ValidationTransportBus() {
   const rejectCount = validations.filter((v: any) => !v.valide).length;
 
   return (
-    <div className="space-y-3">
-      {/* Offline status bar */}
-      <Card className={`border ${isOnline ? 'border-accent/30 bg-accent/5' : 'border-orange-400/30 bg-orange-50 dark:bg-orange-950/20'}`}>
-        <CardContent className="py-2.5 px-3 sm:px-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              {isOnline ? (
-                <Wifi className="h-4 w-4 text-accent" />
-              ) : (
-                <WifiOff className="h-4 w-4 text-orange-500" />
-              )}
-              <span className="text-xs sm:text-sm font-medium">
-                {isOnline ? 'En ligne' : 'Hors ligne'}
-              </span>
-              {cachedCount > 0 && (
-                <Badge variant="outline" className="text-xs">
-                  {cachedCount} élèves en cache
-                </Badge>
-              )}
-              {pendingCount > 0 && (
-                <Badge variant="secondary" className="text-xs gap-1">
-                  <CloudOff className="h-3 w-3" />
-                  {pendingCount} en attente
-                </Badge>
-              )}
-              {lastSync && (
-                <span className="text-xs text-muted-foreground hidden sm:inline">
-                  Sync: {new Date(lastSync).toLocaleString('fr-FR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
-                </span>
-              )}
+    <div className="space-y-4">
+      {/* Connection Status - Glass pill */}
+      <div className={`flex items-center justify-between flex-wrap gap-2 px-4 py-2.5 rounded-2xl backdrop-blur-xl border ${isOnline ? 'bg-accent/5 border-accent/20' : 'bg-orange-500/5 border-orange-400/20'}`}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className={`h-2 w-2 rounded-full animate-pulse ${isOnline ? 'bg-emerald-500' : 'bg-orange-500'}`} />
+          <span className="text-xs font-semibold">{isOnline ? 'En ligne' : 'Hors ligne'}</span>
+          {cachedCount > 0 && <Badge variant="outline" className="text-[10px] rounded-full h-5">{cachedCount} en cache</Badge>}
+          {pendingCount > 0 && <Badge className="text-[10px] rounded-full h-5 bg-orange-500/10 text-orange-600 border-orange-200">{pendingCount} en attente</Badge>}
+        </div>
+        <div className="flex gap-1.5">
+          <Button size="sm" variant="ghost" className="h-7 text-xs rounded-full gap-1 px-3" onClick={downloadEleves} disabled={isCaching || !isOnline}>
+            <Download className="h-3 w-3" />{isCaching ? '…' : 'Cache'}
+          </Button>
+          {pendingCount > 0 && isOnline && (
+            <Button size="sm" variant="ghost" className="h-7 text-xs rounded-full gap-1 px-3" onClick={syncPendingScans} disabled={isSyncing}>
+              <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />Sync
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Scanner Hero Card */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/90 via-primary to-primary/80 p-5 text-primary-foreground">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-8 translate-x-8" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-6 -translate-x-6" />
+        
+        <div className="relative z-10 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center">
+              <ScanLine className="h-6 w-6" />
             </div>
-            <div className="flex gap-1.5">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs gap-1"
-                onClick={downloadEleves}
-                disabled={isCaching || !isOnline}
-              >
-                <Download className="h-3 w-3" />
-                {isCaching ? 'Téléchargement…' : 'Mettre en cache'}
-              </Button>
-              {pendingCount > 0 && isOnline && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs gap-1"
-                  onClick={syncPendingScans}
-                  disabled={isSyncing}
-                >
-                  <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
-                  Synchroniser
-                </Button>
-              )}
+            <div>
+              <h3 className="font-bold text-lg">Scanner une carte</h3>
+              <p className="text-xs opacity-80">QR Code ou douchette</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Zone scan */}
-      <Card className="border-primary/30">
-        <CardContent className="pt-4 pb-4">
-          <div className="flex flex-col gap-3">
+          <div className="flex gap-2">
             <Button
               size="lg"
-              className="gap-2 text-base sm:text-lg w-full sm:w-auto py-6 sm:py-4"
+              className="flex-1 bg-white/20 hover:bg-white/30 backdrop-blur border-white/20 text-white rounded-2xl h-14 text-base font-semibold gap-2"
               onClick={() => setScannerOpen(true)}
             >
-              <ScanLine className="h-6 w-6" /> Scanner une carte
-              {!isOnline && <WifiOff className="h-4 w-4 ml-1 opacity-60" />}
+              <Smartphone className="h-5 w-5" /> Caméra / QR
             </Button>
-            <div className="flex gap-2 w-full">
-              <Input
-                placeholder="Saisir le matricule…"
-                value={manualSearch}
-                onChange={e => setManualSearch(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleManualValidation(manualSearch)}
-                className="text-base"
-              />
-              <Button variant="outline" onClick={() => handleManualValidation(manualSearch)}>
-                <Search className="h-4 w-4" />
-              </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-14 rounded-2xl border-white/30 text-white hover:bg-white/10 px-4"
+              onClick={() => setShowGuide(!showGuide)}
+            >
+              <Info className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <div className="flex gap-2">
+            <Input
+              placeholder="Saisir le matricule…"
+              value={manualSearch}
+              onChange={e => setManualSearch(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleManualValidation(manualSearch)}
+              className="bg-white/15 border-white/20 text-white placeholder:text-white/50 rounded-xl h-11"
+            />
+            <Button className="bg-white/20 hover:bg-white/30 rounded-xl h-11 px-4" onClick={() => handleManualValidation(manualSearch)}>
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Scanner Guide - Illustration */}
+      {showGuide && (
+        <div className="rounded-3xl border bg-card/80 backdrop-blur-sm p-5 space-y-4 animate-fade-in">
+          <div className="flex items-center gap-3 mb-2">
+            <ScanLine className="h-5 w-5 text-primary" />
+            <h4 className="font-bold text-base">Comment scanner les cartes ?</h4>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-5">
+            <img
+              src={scannerIllustration}
+              alt="Illustration douchette scanner"
+              className="w-36 h-36 object-contain rounded-2xl"
+              loading="lazy"
+              width={512}
+              height={512}
+            />
+            <div className="space-y-3 flex-1">
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-primary/5 border border-primary/10">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">1</div>
+                <div>
+                  <p className="text-sm font-semibold">Avec la douchette (recommandé)</p>
+                  <p className="text-xs text-muted-foreground">Pointez la douchette vers le QR Code de la carte. Le matricule est lu automatiquement.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-accent/5 border border-accent/10">
+                <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold text-sm shrink-0">2</div>
+                <div>
+                  <p className="text-sm font-semibold">Avec la caméra du téléphone</p>
+                  <p className="text-xs text-muted-foreground">Appuyez sur "Caméra / QR" et pointez vers la carte de l'élève.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/5 border border-secondary/10">
+                <div className="h-8 w-8 rounded-full bg-secondary/10 flex items-center justify-center text-secondary font-bold text-sm shrink-0">3</div>
+                <div>
+                  <p className="text-sm font-semibold">Saisie manuelle</p>
+                  <p className="text-xs text-muted-foreground">Entrez le matricule dans le champ et validez avec Entrée.</p>
+                </div>
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
-      {/* Stats du jour */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-4">
-        <Card>
-          <CardContent className="pt-4 pb-3 px-3 sm:pt-6 sm:px-6 flex items-center gap-2 sm:gap-3">
-            <Bus className="h-6 w-6 sm:h-8 sm:w-8 text-primary shrink-0" />
-            <div className="min-w-0">
-              <p className="text-xs sm:text-sm text-muted-foreground truncate">Passages</p>
-              <p className="text-xl sm:text-2xl font-bold">{validations.length}</p>
+      {/* Stats Cards - Glass */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { icon: Bus, label: 'Passages', value: validations.length, color: 'text-primary', bg: 'from-primary/10 to-primary/5' },
+          { icon: CheckCircle, label: 'Validés', value: validCount, color: 'text-emerald-600', bg: 'from-emerald-500/10 to-emerald-500/5' },
+          { icon: XCircle, label: 'Refusés', value: rejectCount, color: 'text-destructive', bg: 'from-destructive/10 to-destructive/5' },
+        ].map(({ icon: Icon, label, value, color, bg }) => (
+          <div key={label} className={`rounded-2xl bg-gradient-to-br ${bg} border p-3.5 flex items-center gap-2.5`}>
+            <div className={`h-10 w-10 rounded-xl bg-card/80 flex items-center justify-center ${color} shrink-0`}>
+              <Icon className="h-5 w-5" />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3 px-3 sm:pt-6 sm:px-6 flex items-center gap-2 sm:gap-3">
-            <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-accent shrink-0" />
             <div className="min-w-0">
-              <p className="text-xs sm:text-sm text-muted-foreground truncate">Validés</p>
-              <p className="text-xl sm:text-2xl font-bold text-accent">{validCount}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+              <p className={`text-xl font-bold ${color}`}>{value}</p>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3 px-3 sm:pt-6 sm:px-6 flex items-center gap-2 sm:gap-3">
-            <XCircle className="h-6 w-6 sm:h-8 sm:w-8 text-destructive shrink-0" />
-            <div className="min-w-0">
-              <p className="text-xs sm:text-sm text-muted-foreground truncate">Refusés</p>
-              <p className="text-xl sm:text-2xl font-bold text-destructive">{rejectCount}</p>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        ))}
       </div>
 
       {/* Tabs */}
       <Tabs defaultValue="historique">
-        <TabsList className="w-full grid grid-cols-2">
-          <TabsTrigger value="historique" className="gap-1 text-xs sm:text-sm">
+        <TabsList className="w-full grid grid-cols-2 rounded-2xl h-11 bg-muted/50 p-1">
+          <TabsTrigger value="historique" className="rounded-xl gap-1.5 text-xs sm:text-sm data-[state=active]:shadow-sm">
             <ArrowLeftRight className="h-3.5 w-3.5" /> Historique
           </TabsTrigger>
-          <TabsTrigger value="expires" className="gap-1 text-xs sm:text-sm">
+          <TabsTrigger value="expires" className="rounded-xl gap-1.5 text-xs sm:text-sm data-[state=active]:shadow-sm">
             <AlertTriangle className="h-3.5 w-3.5" /> Expirées ({expiredCards.length})
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="historique" className="mt-2">
-          <Card>
-            <CardHeader className="pb-2 px-3 sm:px-6">
-              <CardTitle className="text-sm sm:text-base">
+        <TabsContent value="historique" className="mt-3">
+          <div className="rounded-2xl border bg-card/80 backdrop-blur-sm overflow-hidden">
+            <div className="px-4 py-3 border-b bg-muted/30">
+              <p className="text-sm font-semibold">
                 {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                {!isOnline && <span className="text-xs text-orange-500 ml-2">(données en cache)</span>}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {isMobile ? (
-                <div className="divide-y">
-                  {validations.length === 0 ? (
-                    <p className="text-center py-8 text-muted-foreground text-sm">
-                      {isOnline ? 'Aucun passage' : 'Les passages seront visibles en ligne'}
-                    </p>
-                  ) : validations.map((v: any) => {
-                    const trajetCount = validations.filter((x: any) => x.eleve_id === v.eleve_id && new Date(x.validated_at) <= new Date(v.validated_at)).length;
-                    const trajetLabel = trajetCount <= 1 ? 'Aller' : 'Retour';
-                    return (
-                      <div key={v.id} className="px-3 py-2.5 flex items-center gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{v.eleves?.prenom} {v.eleves?.nom}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {v.eleves?.classes?.nom || '—'} • {(v.eleves?.zones_transport as any)?.nom || '—'}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0 space-y-0.5">
-                          <Badge variant={v.valide ? 'default' : 'destructive'} className="text-xs">
-                            {v.valide ? `✅ ${trajetLabel}` : '❌'}
-                          </Badge>
-                          <p className="text-xs text-muted-foreground font-mono">
-                            {new Date(v.validated_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Heure</TableHead>
-                      <TableHead>Élève</TableHead>
-                      <TableHead>Classe</TableHead>
-                      <TableHead>Zone</TableHead>
-                      <TableHead className="text-center">Trajet</TableHead>
-                      <TableHead className="text-center">Statut</TableHead>
-                      <TableHead>Motif</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {validations.length === 0 ? (
-                      <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun passage enregistré</TableCell></TableRow>
-                    ) : validations.map((v: any) => {
-                      const trajetCount = validations.filter((x: any) => x.eleve_id === v.eleve_id && new Date(x.validated_at) <= new Date(v.validated_at)).length;
-                      const trajetLabel = trajetCount <= 1 ? '🚌 Aller' : '🏠 Retour';
-                      return (
-                        <TableRow key={v.id}>
-                          <TableCell className="font-mono text-xs">
-                            {new Date(v.validated_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                          </TableCell>
-                          <TableCell className="font-medium">{v.eleves?.prenom} {v.eleves?.nom}</TableCell>
-                          <TableCell>{v.eleves?.classes?.nom || '—'}</TableCell>
-                          <TableCell>{(v.eleves?.zones_transport as any)?.nom || '—'}</TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="outline" className="text-xs">{trajetLabel}</Badge>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant={v.valide ? 'default' : 'destructive'}>
-                              {v.valide ? '✅ Validé' : '❌ Refusé'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{v.motif_rejet || '—'}</TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+                {!isOnline && <span className="text-xs text-orange-500 ml-2">(hors ligne)</span>}
+              </p>
+            </div>
+            <div className="divide-y max-h-[400px] overflow-y-auto">
+              {validations.length === 0 ? (
+                <p className="text-center py-10 text-muted-foreground text-sm">{isOnline ? 'Aucun passage aujourd\'hui' : 'Données visibles en ligne'}</p>
+              ) : validations.map((v: any) => {
+                const trajetCount = validations.filter((x: any) => x.eleve_id === v.eleve_id && new Date(x.validated_at) <= new Date(v.validated_at)).length;
+                const trajetLabel = trajetCount <= 1 ? 'Aller' : 'Retour';
+                return (
+                  <div key={v.id} className="px-4 py-3 flex items-center gap-3 hover:bg-muted/30 transition-colors">
+                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${v.valide ? 'bg-emerald-500/10' : 'bg-destructive/10'}`}>
+                      {v.valide ? <CheckCircle className="h-5 w-5 text-emerald-600" /> : <XCircle className="h-5 w-5 text-destructive" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm truncate">{v.eleves?.prenom} {v.eleves?.nom}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {v.eleves?.classes?.nom || '—'} • {(v.eleves?.zones_transport as any)?.nom || '—'}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0 space-y-0.5">
+                      <Badge variant={v.valide ? 'default' : 'destructive'} className="text-[10px] rounded-full">
+                        {v.valide ? `✅ ${trajetLabel}` : '❌ Refusé'}
+                      </Badge>
+                      <p className="text-[10px] text-muted-foreground font-mono">
+                        {new Date(v.validated_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </TabsContent>
 
-        <TabsContent value="expires" className="mt-2">
-          <Card>
-            <CardHeader className="pb-2 px-3 sm:px-6">
-              <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+        <TabsContent value="expires" className="mt-3">
+          <div className="rounded-2xl border bg-card/80 backdrop-blur-sm overflow-hidden">
+            <div className="px-4 py-3 border-b bg-destructive/5">
+              <p className="text-sm font-semibold flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-destructive" />
-                Élèves avec carte expirée ({expiredCards.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {isMobile ? (
-                <div className="divide-y">
-                  {expiredCards.length === 0 ? (
-                    <p className="text-center py-8 text-muted-foreground text-sm">Toutes les cartes sont valides</p>
-                  ) : expiredCards.map((e: any) => (
-                    <div key={e.id} className="px-3 py-2.5">
-                      <p className="font-medium text-sm">{e.prenom} {e.nom}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {e.classes?.nom || '—'} • {(e.zones_transport as any)?.nom || '—'}
-                      </p>
-                      <div className="flex gap-2 mt-1">
-                        <Badge variant="destructive" className="text-xs">
-                          {e.date_expiration
-                            ? `Exp. ${new Date(e.date_expiration).toLocaleDateString('fr-FR')}`
-                            : 'Jamais rechargée'}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
+                Cartes expirées ou non rechargées ({expiredCards.length})
+              </p>
+            </div>
+            <div className="divide-y max-h-[400px] overflow-y-auto">
+              {expiredCards.length === 0 ? (
+                <p className="text-center py-10 text-muted-foreground text-sm">Toutes les cartes sont valides ✅</p>
+              ) : expiredCards.map((e: any) => (
+                <div key={e.id} className="px-4 py-3 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">{e.prenom} {e.nom}</p>
+                    <p className="text-[11px] text-muted-foreground">{e.classes?.nom || '—'} • {(e.zones_transport as any)?.nom || '—'}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <Badge variant="destructive" className="text-[10px] rounded-full">
+                      {e.date_expiration ? `Exp. ${new Date(e.date_expiration).toLocaleDateString('fr-FR')}` : 'Jamais rechargée'}
+                    </Badge>
+                    {e.matricule && <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{e.matricule}</p>}
+                  </div>
                 </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Matricule</TableHead>
-                      <TableHead>Élève</TableHead>
-                      <TableHead>Classe</TableHead>
-                      <TableHead>Zone</TableHead>
-                      <TableHead>Dernière recharge</TableHead>
-                      <TableHead>Date expiration</TableHead>
-                      <TableHead className="text-center">Statut</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {expiredCards.length === 0 ? (
-                      <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Toutes les cartes sont valides ✅</TableCell></TableRow>
-                    ) : expiredCards.map((e: any) => (
-                      <TableRow key={e.id}>
-                        <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
-                        <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
-                        <TableCell>{e.classes?.nom || '—'}</TableCell>
-                        <TableCell>{(e.zones_transport as any)?.nom || '—'}</TableCell>
-                        <TableCell className="text-sm">
-                          {e.derniere_recharge
-                            ? new Date(e.derniere_recharge).toLocaleDateString('fr-FR')
-                            : <span className="text-muted-foreground">Jamais</span>}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {e.date_expiration
-                            ? new Date(e.date_expiration).toLocaleDateString('fr-FR')
-                            : '—'}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="destructive">Expirée</Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+              ))}
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
 
