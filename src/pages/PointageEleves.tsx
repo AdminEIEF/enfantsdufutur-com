@@ -4,14 +4,16 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ScanLine, Search, Clock, LogIn, LogOut, Users, Camera, Wifi, WifiOff, Download, RefreshCw, Loader2, AlertTriangle, CheckCircle2, ArrowRightLeft } from 'lucide-react';
-import { format } from 'date-fns';
+import { ScanLine, Search, Clock, LogIn, LogOut, Users, Camera, Wifi, WifiOff, Download, RefreshCw, Loader2, AlertTriangle, CheckCircle2, ArrowRightLeft, Printer } from 'lucide-react';
+import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import PointageHistorique from '@/components/PointageHistorique';
 import { useOfflinePointage } from '@/hooks/useOfflinePointage';
 import { motion, AnimatePresence } from 'framer-motion';
+import { generateRapportPointagePDF } from '@/lib/generateRapportPointagePDF';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
 export default function PointageEleves() {
   const [searchMatricule, setSearchMatricule] = useState('');
@@ -22,8 +24,20 @@ export default function PointageEleves() {
   const offline = useOfflinePointage();
   const inputRef = useRef<HTMLInputElement>(null);
   const scannerActiveRef = useRef(false);
+  const { data: schoolConfig } = useSchoolConfig();
 
   const today = format(new Date(), 'yyyy-MM-dd');
+
+  const mapPointages = (data: any[]) => data.map((p: any) => ({
+    eleve_nom: p.eleves?.nom || '',
+    eleve_prenom: p.eleves?.prenom || '',
+    matricule: p.eleves?.matricule || '',
+    classe: p.eleves?.classes?.nom || '',
+    heure_arrivee: p.heure_arrivee,
+    heure_depart: p.heure_depart,
+    en_retard: p.en_retard,
+    date_pointage: p.date_pointage,
+  }));
 
   const fetchTodayPointages = useCallback(async () => {
     const { data } = await supabase
@@ -216,6 +230,50 @@ export default function PointageEleves() {
   const presentCount = todayPointages.filter(p => p.heure_arrivee && !p.heure_depart).length;
   const lateCount = todayPointages.filter(p => p.en_retard).length;
 
+  const schoolObj = {
+    nom: schoolConfig?.nom || 'École',
+    soustitre: schoolConfig?.soustitre,
+    logo_url: schoolConfig?.logo_url,
+    ville: schoolConfig?.ville,
+  };
+
+  const printDailyReport = () => {
+    generateRapportPointagePDF({
+      type: 'jour',
+      date: today,
+      pointages: mapPointages(todayPointages),
+      stats: { total: arrivedCount, presents: presentCount, retards: lateCount, departs: departedCount },
+      school: schoolObj,
+    });
+  };
+
+  const printWeeklyReport = async () => {
+    const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const weekEnd = format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const { data } = await supabase
+      .from('pointages_eleves')
+      .select('*, eleves:eleve_id(nom, prenom, matricule, classes:classe_id(nom))')
+      .gte('date_pointage', weekStart)
+      .lte('date_pointage', weekEnd)
+      .order('date_pointage', { ascending: true })
+      .order('created_at', { ascending: true });
+    const entries = mapPointages(data || []);
+    generateRapportPointagePDF({
+      type: 'semaine',
+      date: today,
+      dateDebut: weekStart,
+      dateFin: weekEnd,
+      pointages: entries,
+      stats: {
+        total: (data || []).length,
+        presents: (data || []).filter((p: any) => p.heure_arrivee && !p.heure_depart).length,
+        retards: (data || []).filter((p: any) => p.en_retard).length,
+        departs: (data || []).filter((p: any) => p.heure_depart).length,
+      },
+      school: schoolObj,
+    });
+  };
+
   const stats = [
     { icon: LogIn, label: 'Arrivés', value: arrivedCount, gradient: 'from-emerald-500/15 to-teal-500/5', iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-500' },
     { icon: Users, label: 'Présents', value: presentCount, gradient: 'from-blue-500/15 to-indigo-500/5', iconBg: 'bg-blue-500/10', iconColor: 'text-blue-500' },
@@ -237,6 +295,12 @@ export default function PointageEleves() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="h-8 text-[10px] rounded-xl gap-1.5 border-border/50" onClick={printDailyReport}>
+            <Printer className="h-3 w-3" /> Jour
+          </Button>
+          <Button variant="outline" size="sm" className="h-8 text-[10px] rounded-xl gap-1.5 border-border/50" onClick={printWeeklyReport}>
+            <Printer className="h-3 w-3" /> Semaine
+          </Button>
           {offline.isOnline ? (
             <Badge variant="outline" className="gap-1.5 border-emerald-500/40 text-emerald-600 bg-emerald-500/5 text-[10px] font-medium">
               <Wifi className="h-3 w-3" /> En ligne
