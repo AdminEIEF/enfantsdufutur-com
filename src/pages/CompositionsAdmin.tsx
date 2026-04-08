@@ -753,6 +753,7 @@ export default function CompositionsAdmin() {
                     <SelectItem value="texte">✍️ Questions texte — Réponse libre</SelectItem>
                     <SelectItem value="document">📄 Document (PDF/Word) — Réponse texte</SelectItem>
                     <SelectItem value="primaire_interactif">🎨 Primaire Interactif — Dessin + Math + QCM Audio</SelectItem>
+                    <SelectItem value="geometrie_traces">📐 Géométrie & Tracés — Relier + Quadrillage</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
