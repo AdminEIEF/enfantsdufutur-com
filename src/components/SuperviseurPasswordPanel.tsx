@@ -268,6 +268,7 @@ export default function SuperviseurPasswordPanel() {
     setBulkTotal(famillesSansCode.length);
     setBulkProgress(0);
     let success = 0;
+    const userId = (await supabase.auth.getUser()).data.user?.id;
     for (let i = 0; i < famillesSansCode.length; i++) {
       const f = famillesSansCode[i];
       try {
@@ -275,6 +276,7 @@ export default function SuperviseurPasswordPanel() {
         const { error } = await supabase.from('familles').update({ code_acces: code } as any).eq('id', f.id);
         if (!error) {
           savePassword(STORAGE_KEY_FAMILLES, f.id, code);
+          await supabase.from('generated_family_codes' as any).upsert({ famille_id: f.id, code_plain: code, generated_by: userId } as any, { onConflict: 'famille_id' });
           success++;
         }
       } catch { /* continue */ }
