@@ -457,87 +457,68 @@ export default function Transport() {
   const chartEffectif = statsParZone.map(z => ({ name: z.nom, value: z.effectif }));
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-        <Bus className="h-7 w-7 text-primary" /> Transport scolaire
-      </h1>
+    <div className="space-y-5">
+      {/* Smart Android Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-3"
+      >
+        <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <Bus className="h-6 w-6 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Transport scolaire</h1>
+          <p className="text-xs text-muted-foreground">{totalElevesTransport} élèves · {zones.length} zones · {nbChauffeurs} chauffeur(s)</p>
+        </div>
+      </motion.div>
 
-      {/* KPIs */}
+      {/* KPIs Smart Android */}
       {!isChauffeur && (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Élèves transportés</p>
-                <p className="text-2xl font-bold">{totalElevesTransport}</p>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
+      >
+        {[
+          { icon: Users, label: 'Transportés', value: totalElevesTransport, color: 'bg-primary/10 text-primary' },
+          { icon: MapPin, label: 'Zones', value: zones.length, color: 'bg-accent/10 text-accent' },
+          { icon: Bus, label: 'Chauffeurs', value: nbChauffeurs, color: 'bg-primary/10 text-primary' },
+          { icon: Printer, label: 'Imprimées', value: totalImprime, color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
+          { icon: Clock, label: 'À imprimer', value: totalNonImprime, color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400' },
+        ].map((kpi, i) => (
+          <Card key={i} className="rounded-2xl border-0 shadow-sm bg-card/80 backdrop-blur-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${kpi.color}`}>
+                  <kpi.icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] text-muted-foreground font-medium">{kpi.label}</p>
+                  <p className="text-xl font-bold text-foreground">{kpi.value}</p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <MapPin className="h-8 w-8 text-accent" />
-              <div>
-                <p className="text-sm text-muted-foreground">Zones actives</p>
-                <p className="text-2xl font-bold">{zones.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Bus className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Chauffeurs assignés</p>
-                <p className="text-2xl font-bold">{nbChauffeurs}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-green-200 dark:border-green-800">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Printer className="h-8 w-8 text-green-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">Cartes imprimées</p>
-                <p className="text-2xl font-bold text-green-600">{totalImprime}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-orange-200 dark:border-orange-800">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Clock className="h-8 w-8 text-orange-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Reste à imprimer</p>
-                <p className="text-2xl font-bold text-orange-500">{totalNonImprime}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        ))}
+      </motion.div>
       )}
 
       {isChauffeur ? (
         <ChauffeurDashboard />
       ) : (
       <Tabs defaultValue={initialTab === 'zones' ? 'dashboard' : initialTab}>
-        <TabsList className="flex-wrap h-auto gap-1">
-          <TabsTrigger value="dashboard" className="gap-1"><LayoutDashboard className="h-3.5 w-3.5" /> Tableau de bord</TabsTrigger>
-          <TabsTrigger value="eleves">Élèves</TabsTrigger>
-          <TabsTrigger value="itineraires" className="gap-1"><Route className="h-3.5 w-3.5" /> Itinéraires</TabsTrigger>
-          <TabsTrigger value="cartes" className="gap-1"><CreditCard className="h-3.5 w-3.5" /> Cartes</TabsTrigger>
-          
-          <TabsTrigger value="assignation" className="gap-1"><LinkIcon className="h-3.5 w-3.5" /> Assignation</TabsTrigger>
-          <TabsTrigger value="alertes" className="gap-1"><Bell className="h-3.5 w-3.5" /> Alertes</TabsTrigger>
-          <TabsTrigger value="par-classe" className="gap-1"><GraduationCap className="h-3.5 w-3.5" /> Par Classe</TabsTrigger>
-          <TabsTrigger value="validation" className="gap-1"><ScanLine className="h-3.5 w-3.5" /> Scan</TabsTrigger>
-          <TabsTrigger value="gestion" className="gap-1"><Settings className="h-3.5 w-3.5" /> Gestion</TabsTrigger>
+        <TabsList className="flex-wrap h-auto gap-1 rounded-2xl bg-muted/60 p-1">
+          <TabsTrigger value="dashboard" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><LayoutDashboard className="h-3.5 w-3.5" /> Dashboard</TabsTrigger>
+          <TabsTrigger value="eleves" className="rounded-xl text-xs data-[state=active]:shadow-sm">Élèves</TabsTrigger>
+          <TabsTrigger value="itineraires" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><Route className="h-3.5 w-3.5" /> Itinéraires</TabsTrigger>
+          <TabsTrigger value="cartes" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><CreditCard className="h-3.5 w-3.5" /> Cartes</TabsTrigger>
+          <TabsTrigger value="assignation" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><LinkIcon className="h-3.5 w-3.5" /> Assignation</TabsTrigger>
+          <TabsTrigger value="alertes" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><Bell className="h-3.5 w-3.5" /> Alertes</TabsTrigger>
+          <TabsTrigger value="par-classe" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><GraduationCap className="h-3.5 w-3.5" /> Par Classe</TabsTrigger>
+          <TabsTrigger value="validation" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><ScanLine className="h-3.5 w-3.5" /> Scan</TabsTrigger>
+          <TabsTrigger value="gestion" className="gap-1 rounded-xl text-xs data-[state=active]:shadow-sm"><Settings className="h-3.5 w-3.5" /> Gestion</TabsTrigger>
         </TabsList>
 
         {/* Tab: Tableau de bord */}
