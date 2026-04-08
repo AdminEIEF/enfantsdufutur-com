@@ -78,8 +78,10 @@ export default function ScanEleveInfo() {
     notes.forEach((n: any) => {
       const periode = n.periodes?.nom || 'Inconnu';
       if (!grouped[periode]) grouped[periode] = { total: 0, count: 0 };
-      grouped[periode].total += (n.note / n.bareme) * 20;
-      grouped[periode].count += 1;
+      if (n.note !== null) {
+        grouped[periode].total += (n.note / bareme) * 20;
+        grouped[periode].count += 1;
+      }
     });
     return Object.entries(grouped).map(([nom, v]) => ({
       nom,
