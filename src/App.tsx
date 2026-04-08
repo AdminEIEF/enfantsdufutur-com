@@ -100,6 +100,7 @@ const StudentLibrairie = lazy(() => import("./pages/student/StudentLibrairie"));
 const CompositionsAdmin = lazy(() => import("./pages/CompositionsAdmin"));
 const GestionSessions = lazy(() => import("./pages/GestionSessions"));
 const ScanEleveInfo = lazy(() => import("./pages/ScanEleveInfo"));
+const CompositionGeometrie = lazy(() => import("./pages/CompositionGeometrie"));
 
 import { ParentAuthProvider } from "@/hooks/useParentAuth";
 import { StudentAuthProvider } from "@/hooks/useStudentAuth";
