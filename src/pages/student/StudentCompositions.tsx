@@ -80,15 +80,23 @@ export default function StudentCompositions() {
 
   useExamSecurity({ isActive: !!activeComp && !blocked, onViolation: handleSecurityViolation, maxViolations: 2, allowPasteInEditable: true });
 
+  const initialLoadDone = useRef(false);
+
   useEffect(() => {
     if (!session) return;
-    fetchCompositions();
-    const refreshId = setInterval(() => { if (!activeComp) fetchCompositions(); }, 2000);
+    fetchCompositions(true);
+    const refreshId = setInterval(() => { if (!activeComp) fetchCompositions(false); }, 5000);
     return () => { clearInterval(refreshId); if (timerRef.current) clearInterval(timerRef.current); };
   }, [session, activeComp]);
 
+  // Tick only when there are upcoming compositions with countdowns
+  const hasUpcoming = compositions.some(c => getStatus(c) === 'upcoming');
   const [tick, setTick] = useState(0);
-  useEffect(() => { const id = setInterval(() => setTick(t => t + 1), 1000); return () => clearInterval(id); }, []);
+  useEffect(() => {
+    if (!hasUpcoming) return;
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [hasUpcoming]);
 
   const callApi = async (action: string, extra: any = {}) => {
     const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/student-data`, {
