@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, UserPlus, ChevronRight, KeyRound, Copy, RefreshCw, GraduationCap, User, Eye, EyeOff, Download, Heart, Wallet } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Users, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, UserPlus, ChevronRight, KeyRound, Copy, RefreshCw, GraduationCap, User, Eye, EyeOff, Download, Heart, Wallet, CreditCard, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -24,10 +25,36 @@ function useFamilles() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('familles')
-        .select('id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse, solde_famille, created_at, updated_at, eleves(id, nom, prenom, statut, matricule, date_naissance, sexe, photo_url, photo_thumbnail_url, classe_id, classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom))))')
+        .select('id, nom_famille, telephone_pere, telephone_mere, email_parent, adresse, solde_famille, photo_url, created_at, updated_at, eleves(id, nom, prenom, statut, matricule, date_naissance, sexe, photo_url, photo_thumbnail_url, classe_id, classes(nom, niveaux:niveau_id(nom, cycles:cycle_id(nom))))')
         .order('nom_famille');
       if (error) throw error;
       return data;
+    },
+  });
+}
+
+function useFamillesPaiements() {
+  return useQuery({
+    queryKey: ['familles-paiements-totals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('paiements')
+        .select('eleve_id, montant, type_paiement, eleves!inner(famille_id)')
+        .not('eleves.famille_id', 'is', null);
+      if (error) throw error;
+      // Group by famille_id
+      const map = new Map<string, { total: number; scolarite: number }>();
+      (data || []).forEach((p: any) => {
+        const fid = p.eleves?.famille_id;
+        if (!fid) return;
+        const prev = map.get(fid) || { total: 0, scolarite: 0 };
+        prev.total += Number(p.montant || 0);
+        if (p.type_paiement === 'scolarite' || p.type_paiement === 'inscription') {
+          prev.scolarite += Number(p.montant || 0);
+        }
+        map.set(fid, prev);
+      });
+      return map;
     },
   });
 }
@@ -49,6 +76,7 @@ export default function Familles() {
   const isSuperviseur = hasRole('superviseur');
   const isAdmin = hasRole('admin');
   const { data: familles = [], isLoading } = useFamilles();
+  const { data: paiementsMap = new Map() } = useFamillesPaiements();
   const { data: allClasses = [] } = useClassesAll();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('search') || '');
@@ -336,7 +364,11 @@ export default function Familles() {
           <p className="text-muted-foreground col-span-full text-center py-12">Chargement…</p>
         ) : filtered.length === 0 ? (
           <p className="text-muted-foreground col-span-full text-center py-12">Aucune famille trouvée</p>
-        ) : paginatedFamilles.map((f: any) => (
+        ) : paginatedFamilles.map((f: any) => {
+          const famCode = codesMap.get(f.id);
+          const payData = paiementsMap.get(f.id);
+          const totalPaye = payData?.total || 0;
+          return (
           <div
             key={f.id}
             className={`group relative rounded-2xl border bg-card/80 backdrop-blur-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden ${selectedIds.has(f.id) ? 'ring-2 ring-primary' : ''}`}
@@ -352,12 +384,21 @@ export default function Familles() {
                     onCheckedChange={() => toggleSelect(f.id)}
                     onClick={(e) => e.stopPropagation()}
                   />
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-primary" />
+                  <div className="h-10 w-10 rounded-xl overflow-hidden border-2 border-primary/15 shrink-0 bg-primary/10 flex items-center justify-center">
+                    {f.photo_url ? (
+                      <img src={f.photo_url} alt={f.nom_famille} className="h-full w-full object-cover" />
+                    ) : (
+                      <Users className="h-5 w-5 text-primary" />
+                    )}
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-bold text-sm truncate">{f.nom_famille}</h3>
-                    <p className="text-[11px] text-muted-foreground">{f.eleves?.length || 0} enfant{(f.eleves?.length || 0) > 1 ? 's' : ''}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[11px] text-muted-foreground">{f.eleves?.length || 0} enfant{(f.eleves?.length || 0) > 1 ? 's' : ''}</p>
+                      {famCode && (
+                        <code className="text-[9px] font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-bold">{famCode}</code>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -382,6 +423,16 @@ export default function Familles() {
                 )}
               </div>
 
+              {/* Payment summary */}
+              {totalPaye > 0 && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="text-muted-foreground flex items-center gap-1"><CreditCard className="h-2.5 w-2.5" /> Total payé</span>
+                    <span className="font-bold text-emerald-600">{totalPaye.toLocaleString()} GNF</span>
+                  </div>
+                </div>
+              )}
+
               {/* Bottom badges */}
               <div className="flex gap-1.5 flex-wrap">
                 {(f.eleves?.length || 0) > 1 && <Badge variant="secondary" className="text-[10px] rounded-full h-5">Fratrie</Badge>}
@@ -393,7 +444,8 @@ export default function Familles() {
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
       <PaginationControls currentPage={famillesPage} totalPages={famillesTotalPages} totalItems={famillesTotalItems} pageSize={famillesPageSize} onPageChange={setFamillesPage} />
 
@@ -432,19 +484,32 @@ export default function Familles() {
       {/* Family Detail */}
       <Dialog open={!!selectedFamille} onOpenChange={(o) => { if (!o) setSelectedFamille(null); }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0 rounded-3xl">
-          {selectedFamille && (
+          {selectedFamille && (() => {
+            const selCode = codesMap.get(selectedFamille.id);
+            const selPay = paiementsMap.get(selectedFamille.id);
+            const selTotalPaye = selPay?.total || 0;
+            return (
             <>
               {/* Hero Header */}
               <div className="relative bg-gradient-to-br from-primary via-primary/90 to-accent p-5 pb-6 text-primary-foreground">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-10 translate-x-10" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="h-14 w-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center">
-                      <Users className="h-7 w-7" />
+                    <div className="h-14 w-14 rounded-2xl overflow-hidden bg-white/15 backdrop-blur flex items-center justify-center shrink-0">
+                      {selectedFamille.photo_url ? (
+                        <img src={selectedFamille.photo_url} alt={selectedFamille.nom_famille} className="h-full w-full object-cover" />
+                      ) : (
+                        <Users className="h-7 w-7" />
+                      )}
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <h2 className="text-xl font-bold">{selectedFamille.nom_famille}</h2>
-                      <p className="text-xs opacity-80">{selectedFamille.eleves?.length || 0} enfant{(selectedFamille.eleves?.length || 0) > 1 ? 's' : ''} • {new Date(selectedFamille.created_at).toLocaleDateString('fr-FR')}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs opacity-80">{selectedFamille.eleves?.length || 0} enfant{(selectedFamille.eleves?.length || 0) > 1 ? 's' : ''} • {new Date(selectedFamille.created_at).toLocaleDateString('fr-FR')}</p>
+                        {selCode && (
+                          <code className="text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded-md font-bold">{selCode}</code>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -459,6 +524,33 @@ export default function Familles() {
               </div>
 
               <div className="px-5 pb-5">
+                {/* Payment Summary Card */}
+                <div className="rounded-2xl bg-gradient-to-br from-primary/5 to-accent/5 border p-4 mt-3 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <p className="text-sm font-semibold">Suivi des paiements</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-card p-3 text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase">Total payé</p>
+                      <p className="text-lg font-bold text-emerald-600">{selTotalPaye.toLocaleString()} <span className="text-xs">GNF</span></p>
+                    </div>
+                    <div className="rounded-xl bg-card p-3 text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase">Portefeuille</p>
+                      <p className="text-lg font-bold text-primary">{Number(selectedFamille.solde_famille || 0).toLocaleString()} <span className="text-xs">GNF</span></p>
+                    </div>
+                  </div>
+                  {selTotalPaye > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px] text-muted-foreground">
+                        <span>Progression globale</span>
+                        <span className="font-semibold text-foreground">{selTotalPaye.toLocaleString()} GNF versés</span>
+                      </div>
+                      <Progress value={Math.min(100, (selTotalPaye / Math.max(selTotalPaye, 1)) * 100)} className="h-2.5 rounded-full" />
+                    </div>
+                  )}
+                </div>
+
                 <Tabs defaultValue="infos" className="mt-3">
                   <TabsList className="grid grid-cols-2 w-full rounded-2xl h-10 bg-muted/50 p-1">
                     <TabsTrigger value="infos" className="rounded-xl text-xs">Informations</TabsTrigger>
@@ -565,7 +657,8 @@ export default function Familles() {
                 </Tabs>
               </div>
             </>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
