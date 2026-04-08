@@ -893,37 +893,24 @@ export default function Transport() {
           <DialogContent className="max-w-lg">
             <DialogHeader><DialogTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Détail transport</DialogTitle></DialogHeader>
             {selectedStudent && (
-              <div className="space-y-4">
+                <div className="space-y-4">
                 {/* Info élève */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-muted/50 rounded-lg p-3">
+                  <div className="bg-muted/40 rounded-xl p-3">
                     <p className="text-[11px] text-muted-foreground mb-1">Élève</p>
-                    <p className="font-bold text-sm">{selectedStudent.prenom} {selectedStudent.nom}</p>
+                    <p className="font-bold text-sm text-foreground">{selectedStudent.prenom} {selectedStudent.nom}</p>
                   </div>
-                  <div className="bg-muted/50 rounded-lg p-3">
+                  <div className="bg-muted/40 rounded-xl p-3">
                     <p className="text-[11px] text-muted-foreground mb-1">Classe</p>
-                    <p className="font-bold text-sm">{selectedStudent.classes?.nom || '—'}</p>
+                    <p className="font-bold text-sm text-foreground">{selectedStudent.classes?.nom || '—'}</p>
                   </div>
-                  <div className="bg-muted/50 rounded-lg p-3">
+                  <div className="bg-muted/40 rounded-xl p-3">
                     <p className="text-[11px] text-muted-foreground mb-1">Zone</p>
-                    <p className="font-bold text-sm">{(selectedStudent.zones_transport as any)?.nom || '—'}</p>
+                    <p className="font-bold text-sm text-foreground">{(selectedStudent.zones_transport as any)?.nom || '—'}</p>
                   </div>
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="text-[11px] text-muted-foreground mb-1">Statut carte</p>
-                    {selectedStudent.recharge ? (
-                      <div>
-                        <Badge className="bg-accent/10 text-accent border-0 text-xs">Active</Badge>
-                        <p className={`text-xs mt-1 font-semibold ${getDaysRemaining(selectedStudent.recharge.date_expiration) <= 5 ? 'text-destructive' : ''}`}>
-                          <Clock className="h-3 w-3 inline mr-1" />
-                          {getDaysRemaining(selectedStudent.recharge.date_expiration)} jour(s) restant(s)
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
-                          Expire le {new Date(selectedStudent.recharge.date_expiration).toLocaleDateString('fr-FR')}
-                        </p>
-                      </div>
-                    ) : (
-                      <Badge variant="destructive" className="text-xs">Expirée / Non rechargée</Badge>
-                    )}
+                  <div className="bg-muted/40 rounded-xl p-3">
+                    <p className="text-[11px] text-muted-foreground mb-2">Statut carte</p>
+                    <RechargeStatusBadge recharge={selectedStudent.recharge} getDaysRemaining={getDaysRemaining} />
                   </div>
                 </div>
 
