@@ -239,6 +239,40 @@ export default function PointeurPointage() {
         </Badge>
       </div>
 
+      {/* Offline status bar */}
+      <Card className={`border ${offline.isOnline ? 'border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/10' : 'border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/10'}`}>
+        <CardContent className="py-3 px-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3 text-sm">
+              {offline.isOnline ? (
+                <Badge variant="outline" className="gap-1 border-emerald-500 text-emerald-700"><Wifi className="h-3 w-3" /> En ligne</Badge>
+              ) : (
+                <Badge variant="outline" className="gap-1 border-amber-500 text-amber-700"><WifiOff className="h-3 w-3" /> Hors ligne</Badge>
+              )}
+              <span className="text-muted-foreground">{offline.cachedCount} en cache</span>
+              {offline.pendingCount > 0 && (
+                <Badge variant="secondary" className="gap-1">
+                  <RefreshCw className={`h-3 w-3 ${offline.isSyncing ? 'animate-spin' : ''}`} />
+                  {offline.pendingCount} en attente
+                </Badge>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={offline.downloadEleves} disabled={offline.isDownloading || !offline.isOnline}>
+                {offline.isDownloading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}
+                Cache
+              </Button>
+              {offline.pendingCount > 0 && offline.isOnline && (
+                <Button size="sm" variant="outline" onClick={offline.syncPending} disabled={offline.isSyncing}>
+                  <RefreshCw className={`h-3.5 w-3.5 mr-1 ${offline.isSyncing ? 'animate-spin' : ''}`} />
+                  Sync
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Scanner */}
       <Card>
         <CardContent className="pt-6">
