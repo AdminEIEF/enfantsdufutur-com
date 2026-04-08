@@ -1149,7 +1149,18 @@ export default function Eleves() {
       <EleveDetailSheet
         selected={selected}
         onClose={() => { setSelected(null); resetPhotoState(); }}
-        onUpdate={() => { void refreshEleves(); if (selected) setSelected({ ...selected }); }}
+        onUpdate={async (updatedFields?: Partial<any>) => { 
+          await refreshEleves(); 
+          if (selected) {
+            if (updatedFields) {
+              setSelected((prev: any) => prev ? { ...prev, ...updatedFields } : prev);
+            } else {
+              const fresh = qc.getQueryData<any[]>(['eleves-full']);
+              const found = fresh?.find((e: any) => e.id === selected.id);
+              if (found) setSelected(found);
+            }
+          }
+        }}
         isSuperviseur={isSuperviseur}
         tranchesConfig={tranchesConfig}
         paiementsAll={paiementsAll}

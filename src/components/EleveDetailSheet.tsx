@@ -104,7 +104,7 @@ function PasswordSectionModern({ eleve, onUpdate, isSuperviseur }: { eleve: any;
 interface EleveDetailSheetProps {
   selected: any;
   onClose: () => void;
-  onUpdate: () => void;
+  onUpdate: (updatedFields?: Partial<any>) => void;
   isSuperviseur: boolean;
   tranchesConfig: Record<string, TrancheConfig[]>;
   paiementsAll: any[];
@@ -405,7 +405,7 @@ export default function EleveDetailSheet({
                           toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
                         } else {
                           toast({ title: zoneId ? 'Transport assigné' : 'Transport retiré' });
-                          onUpdate();
+                          onUpdate({ zone_transport_id: zoneId });
                         }
                       }}
                     >
