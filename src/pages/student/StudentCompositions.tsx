@@ -90,7 +90,11 @@ export default function StudentCompositions() {
   }, [session, activeComp]);
 
   // Tick only when there are upcoming compositions with countdowns
-  const hasUpcoming = compositions.some(c => getStatus(c) === 'upcoming');
+  const hasUpcoming = compositions.some(c => {
+    const rep = reponses.find((r: any) => r.composition_id === c.id);
+    if (rep) return false;
+    return new Date(c.date_debut).getTime() > Date.now();
+  });
   const [tick, setTick] = useState(0);
   useEffect(() => {
     if (!hasUpcoming) return;
