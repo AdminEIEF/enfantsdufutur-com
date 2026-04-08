@@ -549,8 +549,33 @@ serve(async (req) => {
       const totalPossible = (questions || []).reduce((s: number, q: any) => s + q.points, 0);
 
       for (const q of (questions || [])) {
-        if (studentAnswers[q.id] === q.reponse_correcte) {
-          totalPoints += q.points;
+        const studentAnswer = studentAnswers[q.id];
+        // Check if this is a multi-answer question (reponse_correcte is a JSON array)
+        let isMulti = false;
+        let correctAnswers: string[] = [];
+        try {
+          const parsed = JSON.parse(q.reponse_correcte);
+          if (Array.isArray(parsed) && parsed.length >= 2) {
+            isMulti = true;
+            correctAnswers = parsed;
+          }
+        } catch {}
+
+        if (isMulti) {
+          // Multi-answer: student answer should be an array
+          if (Array.isArray(studentAnswer)) {
+            const studentSet = new Set(studentAnswer);
+            const correctSet = new Set(correctAnswers);
+            // Full marks only if exact match
+            if (studentSet.size === correctSet.size && [...studentSet].every(a => correctSet.has(a))) {
+              totalPoints += q.points;
+            }
+          }
+        } else {
+          // Single answer
+          if (studentAnswer === q.reponse_correcte) {
+            totalPoints += q.points;
+          }
         }
       }
 
