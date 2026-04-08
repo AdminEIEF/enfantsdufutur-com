@@ -24,8 +24,75 @@ export default function PointageEleves() {
   const offline = useOfflinePointage();
   const inputRef = useRef<HTMLInputElement>(null);
   const scannerActiveRef = useRef(false);
+  const { data: schoolConfig } = useSchoolConfig();
 
   const today = format(new Date(), 'yyyy-MM-dd');
+
+  const mapPointages = (data: any[]) => data.map((p: any) => ({
+    eleve_nom: p.eleves?.nom || '',
+    eleve_prenom: p.eleves?.prenom || '',
+    matricule: p.eleves?.matricule || '',
+    classe: p.eleves?.classes?.nom || '',
+    heure_arrivee: p.heure_arrivee,
+    heure_depart: p.heure_depart,
+    en_retard: p.en_retard,
+    date_pointage: p.date_pointage,
+  }));
+
+  const printDailyReport = useCallback(() => {
+    const entries = mapPointages(todayPointages);
+    generateRapportPointagePDF({
+      type: 'jour',
+      date: today,
+      pointages: entries,
+      stats: {
+        total: arrivedCount,
+        presents: presentCount,
+        retards: lateCount,
+        departs: departedCount,
+      },
+      school: {
+        nom: schoolConfig?.nom || 'École',
+        soustitre: schoolConfig?.soustitre,
+        logo_url: schoolConfig?.logo_url,
+        ville: schoolConfig?.ville,
+      },
+    });
+  }, [todayPointages, today, schoolConfig]);
+
+  const printWeeklyReport = useCallback(async () => {
+    const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const weekEnd = format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const { data } = await supabase
+      .from('pointages_eleves')
+      .select('*, eleves:eleve_id(nom, prenom, matricule, classes:classe_id(nom))')
+      .gte('date_pointage', weekStart)
+      .lte('date_pointage', weekEnd)
+      .order('date_pointage', { ascending: true })
+      .order('created_at', { ascending: true });
+    const entries = mapPointages(data || []);
+    const retards = (data || []).filter((p: any) => p.en_retard).length;
+    const departs = (data || []).filter((p: any) => p.heure_depart).length;
+    generateRapportPointagePDF({
+      type: 'semaine',
+      date: today,
+      dateDebut: weekStart,
+      dateFin: weekEnd,
+      pointages: entries,
+      stats: {
+        total: (data || []).length,
+        presents: (data || []).filter((p: any) => p.heure_arrivee && !p.heure_depart).length,
+        retards,
+        departs,
+      },
+      school: {
+        nom: schoolConfig?.nom || 'École',
+        soustitre: schoolConfig?.soustitre,
+        logo_url: schoolConfig?.logo_url,
+        ville: schoolConfig?.ville,
+      },
+    });
+  }, [today, schoolConfig]);
 
   const fetchTodayPointages = useCallback(async () => {
     const { data } = await supabase
