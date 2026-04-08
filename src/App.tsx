@@ -101,6 +101,7 @@ const CompositionsAdmin = lazy(() => import("./pages/CompositionsAdmin"));
 const GestionSessions = lazy(() => import("./pages/GestionSessions"));
 const ScanEleveInfo = lazy(() => import("./pages/ScanEleveInfo"));
 const CompositionGeometrie = lazy(() => import("./pages/CompositionGeometrie"));
+const AdminCompositionResults = lazy(() => import("./pages/AdminCompositionResults"));
 
 import { ParentAuthProvider } from "@/hooks/useParentAuth";
 import { StudentAuthProvider } from "@/hooks/useStudentAuth";
@@ -274,6 +275,7 @@ const App = () => (
             <Route path="/service-info-dashboard" element={<ProtectedRoute><ServiceInfoDashboard /></ProtectedRoute>} />
             <Route path="/superviseur-dashboard" element={<ProtectedRoute><SuperviseurDashboard /></ProtectedRoute>} />
             <Route path="/compositions-admin" element={<ProtectedRoute><CompositionsAdmin /></ProtectedRoute>} />
+            <Route path="/resultats-compositions" element={<ProtectedRoute><AdminCompositionResults /></ProtectedRoute>} />
             <Route path="/coordinateur-dashboard" element={<ProtectedRoute><CoordinateurDashboard /></ProtectedRoute>} />
             <Route path="/coordinateur-documents" element={<ProtectedRoute><CoordinateurDocuments /></ProtectedRoute>} />
             <Route path="/coordinateur-eleves" element={<ProtectedRoute><CoordinateurEleves /></ProtectedRoute>} />
