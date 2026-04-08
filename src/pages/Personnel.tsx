@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import {
   Briefcase, Plus, Search, Loader2, Clock, Calendar, FileText, DollarSign,
   Check, X, Eye, Trash2, Upload, UserPlus, Users, ScanLine, CreditCard, Printer,
-  Camera, Download, Key, Mail, Paperclip, BarChart3, MessageSquare, TrendingUp, TrendingDown, AlertTriangle, GraduationCap, FileSpreadsheet, ChevronDown
+  Camera, Download, Key, Mail, Paperclip, BarChart3, MessageSquare, TrendingUp, TrendingDown, AlertTriangle, GraduationCap, FileSpreadsheet, ChevronDown, Pencil
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -1462,42 +1462,56 @@ export default function Personnel() {
         </TabsContent>
       </Tabs>
 
-      {/* Employee detail dialog */}
+      {/* Employee detail dialog — Modern */}
       <Dialog open={!!selectedEmp} onOpenChange={v => { if (!v) { setSelectedEmp(null); setEditForm(null); } }}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto p-0 gap-0 rounded-2xl">
           {selectedEmp && (
             <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center justify-between">
-                  <span>{selectedEmp.prenom} {selectedEmp.nom}</span>
-                  {!editForm ? (
-                    <Button size="sm" variant="outline" onClick={() => setEditForm({
+              {/* Hero header with gradient */}
+              <div className="relative bg-gradient-to-br from-primary/90 via-primary/70 to-primary/50 px-6 pt-6 pb-14 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-primary-foreground tracking-tight">
+                    {selectedEmp.prenom} {selectedEmp.nom}
+                  </h2>
+                  {!editForm && (
+                    <Button size="sm" variant="secondary" className="rounded-full shadow-md text-xs h-8 gap-1.5" onClick={() => setEditForm({
                       nom: selectedEmp.nom, prenom: selectedEmp.prenom, sexe: selectedEmp.sexe || 'M',
                       categorie: selectedEmp.categorie, poste: selectedEmp.poste || '', telephone: selectedEmp.telephone || '',
                       email: selectedEmp.email || '', adresse: selectedEmp.adresse || '', salaire_base: String(selectedEmp.salaire_base || 0),
                       prix_heure: String(selectedEmp.prix_heure || 0),
                       date_embauche: selectedEmp.date_embauche || '', statut: selectedEmp.statut,
                     })}>
-                      ✏️ Modifier
+                      <Pencil className="h-3.5 w-3.5" /> Modifier
                     </Button>
-                  ) : null}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 text-sm">
-                {/* Photo */}
-                <div className="flex items-center gap-3">
+                  )}
+                </div>
+                <p className="text-xs text-primary-foreground/70 mt-0.5">{categorieLabel[getEffectiveCat(selectedEmp)] || selectedEmp.categorie}</p>
+              </div>
+
+              {/* Avatar floating over hero */}
+              <div className="flex flex-col items-center -mt-10 mb-2">
+                <div className="relative group">
                   {selectedEmp.photo_url ? (
-                    <img src={selectedEmp.photo_url} alt="Photo" loading="lazy" decoding="async" className="w-16 h-16 rounded-full object-cover border" />
+                    <img src={selectedEmp.photo_url} alt="Photo" loading="lazy" decoding="async" className="w-20 h-20 rounded-2xl object-cover border-4 border-background shadow-xl" />
                   ) : (
-                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-lg font-bold text-muted-foreground">
+                    <div className="w-20 h-20 rounded-2xl bg-muted border-4 border-background shadow-xl flex items-center justify-center text-2xl font-bold text-muted-foreground">
                       {selectedEmp.prenom?.[0]}{selectedEmp.nom?.[0]}
                     </div>
                   )}
-                  <Button size="sm" variant="outline" onClick={() => startCamera('detail')}>
-                    <Camera className="h-4 w-4 mr-1" /> {selectedEmp.photo_url ? 'Changer photo' : 'Prendre photo'}
-                  </Button>
+                  <button
+                    onClick={() => startCamera('detail')}
+                    className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-1.5 shadow-lg hover:scale-110 transition-transform"
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                  </button>
                 </div>
+                <Badge variant={selectedEmp.statut === 'actif' ? 'default' : 'destructive'} className="mt-2 rounded-full text-[10px] uppercase tracking-wider px-3">
+                  {selectedEmp.statut}
+                </Badge>
+              </div>
 
+              {/* Content */}
+              <div className="px-6 pb-6 space-y-4">
                 {editForm ? (
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
@@ -1537,7 +1551,7 @@ export default function Personnel() {
                           <Input type="number" value={editForm.prix_heure} onChange={e => setEditForm((f: any) => ({ ...f, prix_heure: e.target.value }))} placeholder="Ex: 50000" />
                         </div>
                         {Number(editForm.prix_heure) > 0 && (
-                          <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                          <div className="bg-muted/50 rounded-xl p-3 space-y-1">
                             <p className="text-xs font-medium">📊 Calcul automatique du salaire</p>
                             <p className="text-xs text-muted-foreground">
                               Heures hebdo: <strong>{(heuresParEnseignant[selectedEmp.id] || 0).toFixed(1)}h</strong> → 
@@ -1547,7 +1561,7 @@ export default function Personnel() {
                               Salaire calculé: {getSalaireCalculeSecondaire(selectedEmp.id, Number(editForm.prix_heure)).toLocaleString()} GNF
                             </p>
                             {getHeuresMensuelles(selectedEmp.id) === 0 && (
-                              <p className="text-xs text-destructive">⚠️ Aucun créneau dans l'emploi du temps. Attribuez des heures d'abord.</p>
+                              <p className="text-xs text-destructive">⚠️ Aucun créneau dans l'emploi du temps.</p>
                             )}
                           </div>
                         )}
@@ -1576,7 +1590,7 @@ export default function Personnel() {
                     </div>
                     <div className="space-y-1"><Label>Adresse</Label><Input value={editForm.adresse} onChange={e => setEditForm((f: any) => ({ ...f, adresse: e.target.value }))} /></div>
                     <div className="flex gap-2">
-                      <Button className="flex-1" disabled={editSaving} onClick={async () => {
+                      <Button className="flex-1 rounded-xl" disabled={editSaving} onClick={async () => {
                         if (!editForm.nom || !editForm.prenom) { toast({ title: 'Nom et prénom obligatoires', variant: 'destructive' }); return; }
                         setEditSaving(true);
                         const { error } = await supabase.from('employes').update({
@@ -1598,44 +1612,56 @@ export default function Personnel() {
                         {editSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />}
                         Valider les modifications
                       </Button>
-                      <Button variant="outline" onClick={() => setEditForm(null)}>Annuler</Button>
+                      <Button variant="outline" className="rounded-xl" onClick={() => setEditForm(null)}>Annuler</Button>
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><span className="text-muted-foreground">Matricule:</span> <span className="font-mono">{selectedEmp.matricule}</span></div>
-                    <div><span className="text-muted-foreground">Catégorie:</span> {categorieLabel[getEffectiveCat(selectedEmp)]}</div>
-                    <div><span className="text-muted-foreground">Poste:</span> {selectedEmp.poste || '—'}</div>
-                    <div><span className="text-muted-foreground">Sexe:</span> {selectedEmp.sexe || '—'}</div>
-                    <div><span className="text-muted-foreground">Téléphone:</span> {selectedEmp.telephone || '—'}</div>
-                    <div><span className="text-muted-foreground">Email:</span> {selectedEmp.email || '—'}</div>
-                    <div><span className="text-muted-foreground">Adresse:</span> {selectedEmp.adresse || '—'}</div>
-                    <div><span className="text-muted-foreground">Embauche:</span> {selectedEmp.date_embauche ? format(new Date(selectedEmp.date_embauche), 'dd/MM/yyyy') : '—'}</div>
-                    <div><span className="text-muted-foreground">Salaire:</span> <span className="font-bold">{Number(selectedEmp.salaire_base).toLocaleString()} GNF</span></div>
-                    <div><span className="text-muted-foreground">Statut:</span> <Badge variant={selectedEmp.statut === 'actif' ? 'default' : 'destructive'}>{selectedEmp.statut}</Badge></div>
-            </div>
-          )}
-                {/* Generate / Modify password - superviseur only */}
-                {hasRole('superviseur') && (
-                <div className="border-t pt-3 space-y-2">
-                  <Button size="sm" variant="outline" className="w-full" onClick={() => setPasswordGenOpen(true)}>
-                    <Key className="h-4 w-4 mr-1" /> Générer un mot de passe portail
-                  </Button>
-                  <Button size="sm" variant="outline" className="w-full" onClick={() => { setEditPasswordOpen(true); setCustomPassword(''); }}>
-                    <Key className="h-4 w-4 mr-1" /> Modifier le mot de passe
-                  </Button>
-                </div>
+                  /* Info cards grid */
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {[
+                      { icon: '🏷️', label: 'Matricule', value: selectedEmp.matricule, mono: true },
+                      { icon: '👤', label: 'Poste', value: selectedEmp.poste || '—' },
+                      { icon: '⚧', label: 'Sexe', value: selectedEmp.sexe === 'M' ? 'Masculin' : selectedEmp.sexe === 'F' ? 'Féminin' : '—' },
+                      { icon: '📞', label: 'Téléphone', value: selectedEmp.telephone || '—' },
+                      { icon: '📧', label: 'Email', value: selectedEmp.email || '—' },
+                      { icon: '📍', label: 'Adresse', value: selectedEmp.adresse || '—' },
+                      { icon: '📅', label: 'Embauche', value: selectedEmp.date_embauche ? format(new Date(selectedEmp.date_embauche), 'dd/MM/yyyy') : '—' },
+                      { icon: '💰', label: 'Salaire', value: `${Number(selectedEmp.salaire_base).toLocaleString()} GNF`, bold: true },
+                    ].map((item, idx) => (
+                      <div key={idx} className="bg-muted/40 rounded-xl p-2.5 hover:bg-muted/60 transition-colors">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                          <span>{item.icon}</span> {item.label}
+                        </p>
+                        <p className={`text-sm mt-0.5 truncate ${item.mono ? 'font-mono' : ''} ${item.bold ? 'font-bold text-primary' : 'font-medium'}`}>
+                          {item.value}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 )}
 
-                {/* Badge PVC */}
-                <div className="border-t pt-3">
-                  <Button size="sm" variant="outline" className="w-full" onClick={() => {
+                {/* Actions */}
+                <div className="space-y-2 pt-2">
+                  {/* Superviseur password actions */}
+                  {hasRole('superviseur') && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button size="sm" variant="outline" className="rounded-xl h-10 text-xs gap-1.5" onClick={() => setPasswordGenOpen(true)}>
+                        <Key className="h-3.5 w-3.5" /> Générer mot de passe
+                      </Button>
+                      <Button size="sm" variant="outline" className="rounded-xl h-10 text-xs gap-1.5" onClick={() => { setEditPasswordOpen(true); setCustomPassword(''); }}>
+                        <Key className="h-3.5 w-3.5" /> Modifier mot de passe
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Badge PVC */}
+                  <Button size="sm" variant="outline" className="w-full rounded-xl h-10 text-xs gap-1.5 border-primary/20 hover:bg-primary/5" onClick={() => {
                     const canvas = qrRef.current?.querySelector('canvas');
                     if (!canvas) return;
                     const qrDataUrl = (canvas as HTMLCanvasElement).toDataURL('image/png');
                     generateBadgeEmployePDF(selectedEmp, qrDataUrl, schoolConfig?.nom, schoolConfig?.logo_url, { telephone: '625 00 00 00', adresse: schoolConfig?.ville || 'Conakry, Guinée' });
                   }}>
-                    <Printer className="h-4 w-4 mr-1" /> Imprimer Badge PVC
+                    <Printer className="h-3.5 w-3.5" /> Imprimer Badge PVC
                   </Button>
                   <div ref={qrRef} className="hidden">
                     <QRCodeCanvas value={selectedEmp.matricule} size={200} />
@@ -1643,35 +1669,35 @@ export default function Personnel() {
                 </div>
 
                 {/* Documents */}
-                <div className="border-t pt-3">
-                  <h4 className="font-semibold mb-2 flex items-center gap-1"><Upload className="h-4 w-4" /> Documents</h4>
+                <div className="bg-muted/30 rounded-xl p-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <Upload className="h-3.5 w-3.5" /> Documents
+                  </h4>
                   <EmployeeDocuments employeId={selectedEmp.id} />
                 </div>
 
-                {/* Delete employee */}
-                <div className="border-t pt-3">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="destructive" className="w-full">
-                        <Trash2 className="h-4 w-4 mr-1" /> Supprimer cet employé
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Êtes-vous sûr de vouloir supprimer <strong>{selectedEmp.prenom} {selectedEmp.nom}</strong> ({selectedEmp.matricule}) ? Cette action est irréversible.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDeleteEmployee(selectedEmp)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                          Supprimer
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+                {/* Delete */}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="w-full rounded-xl h-9 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive">
+                      <Trash2 className="h-3.5 w-3.5 mr-1" /> Supprimer cet employé
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Êtes-vous sûr de vouloir supprimer <strong>{selectedEmp.prenom} {selectedEmp.nom}</strong> ({selectedEmp.matricule}) ? Cette action est irréversible.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteEmployee(selectedEmp)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </>
           )}
