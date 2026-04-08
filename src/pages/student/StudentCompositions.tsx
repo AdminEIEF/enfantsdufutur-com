@@ -639,6 +639,7 @@ export default function StudentCompositions() {
     const rep = reponses.find((r: any) => r.composition_id === comp.id);
     const isDocument = comp.type_composition === 'document';
     const isTexte = comp.type_composition === 'texte';
+    const isPrimaire = comp.type_composition === 'primaire_interactif';
 
     const statusConfig: Record<string, { label: string; className: string }> = {
       done: { label: '✅ Terminée', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
@@ -659,7 +660,7 @@ export default function StudentCompositions() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-bold text-sm">{comp.titre}</h3>
                     <Badge variant="outline" className="text-[10px]">
-                      {isDocument ? '📄 Document' : isTexte ? '✍️ Texte' : '📝 QCM'}
+                      {isPrimaire ? '🎨 Interactif' : isDocument ? '📄 Document' : isTexte ? '✍️ Texte' : '📝 QCM'}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">{comp.matieres?.nom} • {comp.duree_minutes} min • /{comp.bareme}</p>
