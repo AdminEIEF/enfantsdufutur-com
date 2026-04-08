@@ -80,15 +80,27 @@ export default function StudentCompositions() {
 
   useExamSecurity({ isActive: !!activeComp && !blocked, onViolation: handleSecurityViolation, maxViolations: 2, allowPasteInEditable: true });
 
+  const initialLoadDone = useRef(false);
+
   useEffect(() => {
     if (!session) return;
-    fetchCompositions();
-    const refreshId = setInterval(() => { if (!activeComp) fetchCompositions(); }, 2000);
+    fetchCompositions(true);
+    const refreshId = setInterval(() => { if (!activeComp) fetchCompositions(false); }, 5000);
     return () => { clearInterval(refreshId); if (timerRef.current) clearInterval(timerRef.current); };
   }, [session, activeComp]);
 
+  // Tick only when there are upcoming compositions with countdowns
+  const hasUpcoming = compositions.some(c => {
+    const rep = reponses.find((r: any) => r.composition_id === c.id);
+    if (rep) return false;
+    return new Date(c.date_debut).getTime() > Date.now();
+  });
   const [tick, setTick] = useState(0);
-  useEffect(() => { const id = setInterval(() => setTick(t => t + 1), 1000); return () => clearInterval(id); }, []);
+  useEffect(() => {
+    if (!hasUpcoming) return;
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [hasUpcoming]);
 
   const callApi = async (action: string, extra: any = {}) => {
     const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/student-data`, {
@@ -101,8 +113,8 @@ export default function StudentCompositions() {
     return data;
   };
 
-  async function fetchCompositions() {
-    try { setLoading(true); const data = await callApi('compositions'); setCompositions(data.compositions || []); setReponses(data.reponses || []); }
+  async function fetchCompositions(isInitial = false) {
+    try { if (isInitial || !initialLoadDone.current) setLoading(true); const data = await callApi('compositions'); setCompositions(data.compositions || []); setReponses(data.reponses || []); initialLoadDone.current = true; }
     catch (e: any) { toast.error(e.message); }
     finally { setLoading(false); }
   }
