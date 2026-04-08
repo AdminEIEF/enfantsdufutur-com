@@ -951,7 +951,7 @@ export default function CompositionsAdmin() {
                       </div>
                     ) : q.type_question === 'qcm_multiple' ? (
                       <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">Cochez les bonnes réponses (au moins 2) :</Label>
+                        <Label className="text-xs text-muted-foreground">Cochez les bonnes réponses (minimum 3) :</Label>
                         {q.options.map((opt, oi) => (
                           <div key={oi} className="flex items-center gap-2">
                             <input
