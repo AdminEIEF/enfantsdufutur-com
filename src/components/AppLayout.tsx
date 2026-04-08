@@ -114,7 +114,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 {user?.email}
               </span>
             </div>
-            <AdminNotificationBell />
+            <AdminNotificationBell roles={roles} />
             <Button variant="ghost" size="sm" className="text-foreground hover:bg-destructive hover:text-white h-8 gap-1.5 group" onClick={signOut}>
               <LogOut className="h-4 w-4 group-hover:animate-[bounceX_1s_ease-in-out_infinite]" />
               <span className="hidden sm:inline text-xs font-medium">Déconnexion</span>
