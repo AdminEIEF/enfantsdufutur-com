@@ -363,10 +363,39 @@ serve(async (req) => {
       });
     }
 
+    // Helper: auto-insert composition score into notes table
+    async function autoInsertCompositionNote(eleveId: string, matiereId: string, score: number, cycleBareme: number, compBareme: number) {
+      try {
+        // Find current active period (highest ordre, current year)
+        const { data: periodes } = await supabaseAdmin
+          .from("periodes")
+          .select("id, nom, ordre")
+          .order("ordre", { ascending: false })
+          .limit(1);
+        if (!periodes || periodes.length === 0) return;
+        const periodeId = periodes[0].id;
+
+        // Scale score from composition bareme to cycle bareme
+        const scaledNote = compBareme > 0 ? Math.round((score / compBareme) * cycleBareme * 100) / 100 : 0;
+
+        // Upsert into notes (unique on eleve_id, matiere_id, periode_id)
+        await supabaseAdmin
+          .from("notes")
+          .upsert({
+            eleve_id: eleveId,
+            matiere_id: matiereId,
+            periode_id: periodeId,
+            note: scaledNote,
+          }, { onConflict: "eleve_id,matiere_id,periode_id" });
+      } catch (err) {
+        console.error("Auto-insert note error:", err);
+      }
+    }
+
     if (action === "submit_composition") {
       const { data: comp } = await supabaseAdmin
         .from("compositions")
-        .select("id, titre, duree_minutes, bareme, classe_id, type_composition, matieres:matiere_id(nom)")
+        .select("id, titre, duree_minutes, bareme, classe_id, type_composition, matiere_id, matieres:matiere_id(nom)")
         .eq("id", composition_id)
         .maybeSingle();
 
