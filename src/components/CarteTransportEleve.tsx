@@ -461,6 +461,81 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
             </Badge>
           </TabsTrigger>
         </TabsList>
+
+        {/* Bouton imprimer bordereau de remise dans l'onglet historique */}
+        {printTab === 'historique' && (() => {
+          const printedEleves = eleves.filter((e: any) => e.print_status === 'imprime');
+          return printedEleves.length > 0 ? (
+            <div className="mt-3 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                  const school = schoolConfig;
+                  const rows = printedEleves.map((e: any, i: number) => {
+                    return `<tr>
+                      <td style="text-align:center;padding:6px 8px;border:1px solid #ddd;">${i + 1}</td>
+                      <td style="padding:6px 8px;border:1px solid #ddd;">${e.matricule || '—'}</td>
+                      <td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${e.prenom} ${e.nom}</td>
+                      <td style="padding:6px 8px;border:1px solid #ddd;">${e.classes?.nom || '—'}</td>
+                      <td style="padding:6px 8px;border:1px solid #ddd;">${(e.zones_transport as any)?.nom || '—'}</td>
+                      <td style="text-align:center;padding:6px 8px;border:1px solid #ddd;font-size:11px;">${e.last_printed_at ? new Date(e.last_printed_at).toLocaleDateString('fr-FR') : '—'}</td>
+                      <td style="padding:6px 40px;border:1px solid #ddd;min-width:120px;"></td>
+                    </tr>`;
+                  }).join('');
+
+                  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Bordereau de remise des cartes transport</title>
+                    <style>
+                      @media print { @page { size: A4; margin: 15mm; } body { -webkit-print-color-adjust: exact; } }
+                      body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; color: #1a1a1a; }
+                      h1 { font-size: 16px; text-align: center; margin: 0; }
+                      h2 { font-size: 13px; text-align: center; margin: 4px 0 16px; color: #555; font-weight: 400; }
+                      table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                      th { background: #f0f4f8; padding: 8px; border: 1px solid #ddd; text-align: left; font-weight: 700; font-size: 11px; text-transform: uppercase; }
+                      .footer { margin-top: 30px; display: flex; justify-content: space-between; font-size: 12px; }
+                      .footer div { text-align: center; }
+                      .footer p { margin: 4px 0; }
+                      .footer .line { border-bottom: 1px solid #333; width: 200px; margin: 20px auto 4px; }
+                    </style>
+                  </head><body>
+                    ${school?.logo_url ? `<div style="text-align:center;margin-bottom:8px;"><img src="${school.logo_url}" style="height:50px;" /></div>` : ''}
+                    <h1>${school?.nom || 'École'}</h1>
+                    <h2>BORDEREAU DE REMISE DES CARTES DE TRANSPORT</h2>
+                    <p style="font-size:12px;text-align:center;margin-bottom:12px;">Date : ${new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} — Total : <strong>${printedEleves.length}</strong> carte(s)</p>
+                    <table>
+                      <thead><tr>
+                        <th style="width:40px;text-align:center;">N°</th>
+                        <th>Matricule</th>
+                        <th>Nom & Prénom</th>
+                        <th>Classe</th>
+                        <th>Zone</th>
+                        <th style="text-align:center;">Date impression</th>
+                        <th style="min-width:120px;text-align:center;">Signature</th>
+                      </tr></thead>
+                      <tbody>${rows}</tbody>
+                    </table>
+                    <div class="footer">
+                      <div><div class="line"></div><p>Le Responsable Transport</p></div>
+                      <div><div class="line"></div><p>Le Coordinateur</p></div>
+                      <div><div class="line"></div><p>La Direction</p></div>
+                    </div>
+                  </body></html>`;
+
+                  const w = window.open('', '_blank');
+                  if (w) {
+                    w.document.write(html);
+                    w.document.close();
+                    setTimeout(() => w.print(), 500);
+                  }
+                }}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Imprimer bordereau de remise ({printedEleves.length})
+              </Button>
+            </div>
+          ) : null;
+        })()}
       </Tabs>
 
       {/* Filtres + Bulk */}

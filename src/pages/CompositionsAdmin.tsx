@@ -308,7 +308,7 @@ interface Composition {
 interface Question {
   id?: string;
   composition_id?: string;
-  type_question: 'qcm' | 'vrai_faux' | 'texte';
+  type_question: 'qcm' | 'qcm_multiple' | 'vrai_faux' | 'texte';
   enonce: string;
   options: { label: string; correct?: boolean }[];
   reponse_correcte: string;
@@ -502,7 +502,7 @@ export default function CompositionsAdmin() {
     setQuestionsLoading(false);
   }
 
-  function addQuestion(type: 'qcm' | 'vrai_faux' | 'texte') {
+  function addQuestion(type: 'qcm' | 'qcm_multiple' | 'vrai_faux' | 'texte') {
     const newQ: Question = {
       type_question: type,
       enonce: '',
@@ -531,18 +531,23 @@ export default function CompositionsAdmin() {
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       if (!q.enonce.trim()) { toast.error(`Question ${i + 1}: énoncé requis`); return; }
-      if (q.type_question !== 'texte' && !q.reponse_correcte) { toast.error(`Question ${i + 1}: réponse correcte requise`); return; }
-      if (q.type_question === 'qcm' && q.options.some(o => !o.label.trim())) {
+      if (q.type_question === 'qcm_multiple') {
+        const correctCount = q.options.filter(o => o.correct).length;
+        if (correctCount < 2) { toast.error(`Question ${i + 1}: sélectionnez au moins 2 bonnes réponses`); return; }
+      } else if (q.type_question !== 'texte' && !q.reponse_correcte) { toast.error(`Question ${i + 1}: réponse correcte requise`); return; }
+      if ((q.type_question === 'qcm' || q.type_question === 'qcm_multiple') && q.options.some(o => !o.label.trim())) {
         toast.error(`Question ${i + 1}: toutes les options doivent être remplies`); return;
       }
     }
     await supabase.from('composition_questions').delete().eq('composition_id', showQuestions);
     const rows = questions.map((q, i) => ({
       composition_id: showQuestions,
-      type_question: q.type_question,
+      type_question: q.type_question === 'qcm_multiple' ? 'qcm' : q.type_question,
       enonce: q.enonce,
-      options: q.options,
-      reponse_correcte: q.reponse_correcte,
+      options: q.type_question === 'qcm_multiple' ? q.options.map(o => ({ ...o })) : q.options,
+      reponse_correcte: q.type_question === 'qcm_multiple'
+        ? JSON.stringify(q.options.filter(o => o.correct).map(o => o.label))
+        : q.reponse_correcte,
       points: q.points,
       ordre: i,
     }));
