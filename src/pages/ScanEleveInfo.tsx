@@ -338,7 +338,7 @@ export default function ScanEleveInfo() {
                   <div className="mt-3 p-3 rounded-xl bg-gradient-to-r from-blue-500/10 to-blue-500/5 border border-blue-500/10">
                     <span className="text-xs text-muted-foreground flex items-center gap-1"><BusFront className="h-3 w-3" /> Zone Transport</span>
                     <p className="font-semibold">{zone.nom}</p>
-                    <p className="text-xs text-muted-foreground">{eleve.type_trajet_transport || 'Aller-retour'} • {Number(zone.tarif_mensuel || 0).toLocaleString('fr-FR')} GNF/mois</p>
+                    <p className="text-xs text-muted-foreground">{eleve.type_trajet_transport || 'Aller-retour'} • {Number(zone.prix_mensuel || 0).toLocaleString('fr-FR')} GNF/mois</p>
                   </div>
                 )}
               </CardContent>
