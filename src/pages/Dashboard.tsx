@@ -576,7 +576,10 @@ export default function Dashboard() {
       </div>
       )}
 
-      {/* CA Comparatif Bar Chart: Scolarité/Transport vs Librairie/Options */}
+      {/* Financial sections - restricted to finance roles */}
+      {canSeeFinance && (
+      <>
+      {/* CA Comparatif Bar Chart */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">📊 Chiffre d'Affaires comparatif</CardTitle>
@@ -709,6 +712,8 @@ export default function Dashboard() {
       )}
 
       <DashboardRecouvrementSection recouvrementParNiveau={recouvrementParNiveau} tauxGlobal={tauxGlobal} />
+      </>
+      )}
 
       {/* Alertes cantine */}
       {cantineInscrits > 0 && (
