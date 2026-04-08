@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { KeyRound, Search, Eye, EyeOff, Copy, Loader2, GraduationCap, Users, Briefcase, RefreshCw, CheckCircle2, UserCircle, Phone, Mail, MapPin, ExternalLink } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { KeyRound, Search, Eye, EyeOff, Copy, Loader2, GraduationCap, Users, Briefcase, RefreshCw, CheckCircle2, UserCircle, Phone, Mail, MapPin, ExternalLink, Zap, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 function generatePassword(length = 8) {
