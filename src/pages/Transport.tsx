@@ -173,15 +173,17 @@ function TransportPaymentsRecent() {
   }).length;
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-0 shadow-sm">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Receipt className="h-5 w-5 text-primary" />
+        <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+          <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Receipt className="h-4 w-4 text-primary" />
+          </div>
           Paiements transport récents
           {pendingCount > 0 && (
-            <Badge className="bg-amber-100 text-amber-800 border-amber-200 ml-2 animate-pulse">
+            <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-0 ml-2 rounded-full text-[10px] animate-pulse">
               <AlertTriangle className="h-3 w-3 mr-1" />
-              {pendingCount} carte(s) à valider
+              {pendingCount} à valider
             </Badge>
           )}
         </CardTitle>
