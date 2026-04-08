@@ -468,6 +468,7 @@ export default function Dashboard() {
             <p className="text-[10px] text-muted-foreground mt-0.5">Réinscriptions</p>
           </CardContent>
         </Card>
+        {canSeeFinance && (
         <Card className="overflow-hidden border border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Recettes du mois</CardTitle>
@@ -480,6 +481,8 @@ export default function Dashboard() {
             <p className="text-[10px] text-muted-foreground mt-0.5">{paiementsMois.length} paiements</p>
           </CardContent>
         </Card>
+        )}
+        {canSeeFinance && (
         <Card className="overflow-hidden border border-teal-200 dark:border-teal-800 bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
             <CardTitle className="text-xs font-medium text-muted-foreground truncate">Recouvrement</CardTitle>
@@ -492,6 +495,7 @@ export default function Dashboard() {
             <p className="text-[10px] text-muted-foreground mt-0.5">Taux global</p>
           </CardContent>
         </Card>
+        )}
       </div>
 
       {/* Abandon KPI */}
