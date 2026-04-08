@@ -1184,6 +1184,104 @@ function VenteCreditPanel() {
   );
 }
 
+// ─── Dashboard Tab ─────────────────────────────────
+function BoutiqueDashboard({ articles, ventes, selectedDate }: { articles: BoutiqueArticle[]; ventes: any[]; selectedDate: string }) {
+  const totalStockValue = articles.reduce((s, a) => s + a.prix * a.stock, 0);
+  const totalStock = articles.reduce((s, a) => s + a.stock, 0);
+  const lowStockItems = articles.filter(a => a.stock <= 5);
+  const outOfStock = articles.filter(a => a.stock <= 0);
+  const totalVentesJour = ventes.reduce((s: number, v: any) => s + Number(v.montant_final), 0);
+  const nbVentesJour = ventes.length;
+
+  const categorySales: Record<string, { qty: number; revenue: number }> = {};
+  ventes.forEach((v: any) => {
+    (v.boutique_vente_items || []).forEach((item: any) => {
+      const cat = item.boutique_articles?.categorie || 'autre';
+      if (!categorySales[cat]) categorySales[cat] = { qty: 0, revenue: 0 };
+      categorySales[cat].qty += item.quantite;
+      categorySales[cat].revenue += item.quantite * item.prix_unitaire;
+    });
+  });
+
+  const catLabel = (key: string) => CATEGORIES.find(c => c.key === key)?.label || key;
+
+  const kpis = [
+    { label: 'Valeur du stock', value: `${totalStockValue.toLocaleString()} GNF`, icon: Package, gradient: 'from-purple-500/15 to-purple-500/5', iconColor: 'text-purple-500' },
+    { label: 'Articles en stock', value: totalStock, icon: ShoppingBag, gradient: 'from-blue-500/15 to-blue-500/5', iconColor: 'text-blue-500' },
+    { label: 'CA du jour', value: `${totalVentesJour.toLocaleString()} GNF`, icon: Banknote, gradient: 'from-emerald-500/15 to-emerald-500/5', iconColor: 'text-emerald-500' },
+    { label: 'Ventes du jour', value: nbVentesJour, icon: Receipt, gradient: 'from-amber-500/15 to-amber-500/5', iconColor: 'text-amber-500' },
+    { label: 'Ruptures de stock', value: outOfStock.length, icon: AlertTriangle, gradient: 'from-red-500/15 to-red-500/5', iconColor: 'text-red-500' },
+    { label: 'Stock faible (≤5)', value: lowStockItems.length, icon: AlertTriangle, gradient: 'from-orange-500/15 to-orange-500/5', iconColor: 'text-orange-500' },
+  ];
+
+  return (
+    <div className="space-y-5">
+      {/* KPI Grid */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {kpis.map((k, i) => (
+          <div key={i} className={`rounded-2xl bg-gradient-to-br ${k.gradient} border border-border/30 p-4 text-center transition-all hover:scale-[1.02]`}>
+            <div className={`w-9 h-9 rounded-xl bg-background/80 flex items-center justify-center mx-auto mb-2`}>
+              <k.icon className={`h-4.5 w-4.5 ${k.iconColor}`} />
+            </div>
+            <div className="text-xl font-bold text-foreground">{k.value}</div>
+            <p className="text-[10px] text-muted-foreground font-medium">{k.label}</p>
+          </div>
+        ))}
+      </motion.div>
+
+      {/* Category breakdown */}
+      {Object.keys(categorySales).length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2"><BarChart3 className="h-4 w-4" /> Ventes par catégorie (aujourd'hui)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {Object.entries(categorySales).sort((a, b) => b[1].revenue - a[1].revenue).map(([cat, data]) => (
+                  <div key={cat} className="flex items-center justify-between py-2 border-b border-border/20 last:border-0">
+                    <span className="text-sm font-medium">{catLabel(cat)}</span>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="secondary" className="text-[10px]">{data.qty} articles</Badge>
+                      <span className="text-sm font-bold text-foreground">{data.revenue.toLocaleString()} GNF</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Low stock alerts */}
+      {lowStockItems.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <Card className="border-orange-500/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2 text-orange-600"><AlertTriangle className="h-4 w-4" /> Alertes stock ({lowStockItems.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {lowStockItems.map(a => (
+                  <div key={a.id} className={`flex items-center justify-between rounded-xl px-3 py-2 ${a.stock <= 0 ? 'bg-red-500/10 border border-red-500/20' : 'bg-orange-500/5 border border-orange-500/15'}`}>
+                    <div>
+                      <span className="text-sm font-medium">{a.nom}</span>
+                      <span className="text-[10px] text-muted-foreground ml-2">{a.taille}</span>
+                    </div>
+                    <Badge className={`text-[10px] ${a.stock <= 0 ? 'bg-red-500/15 text-red-600 border-red-500/20' : 'bg-orange-500/15 text-orange-600 border-orange-500/20'}`}>
+                      {a.stock <= 0 ? 'Rupture' : `${a.stock} restant${a.stock > 1 ? 's' : ''}`}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
 export default function Boutique() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState('dashboard');
