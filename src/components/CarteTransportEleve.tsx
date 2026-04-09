@@ -282,9 +282,16 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       const matchSearch = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase());
       const matchZone = filterZone === 'all' || e.zone_transport_id === filterZone;
       const matchClasse = filterClasse === 'all' || e.classe_id === filterClasse;
-      const matchPrintTab = printTab === 'a_imprimer'
-        ? (e.print_status || 'en_attente') === 'en_attente'
-        : (e.print_status || 'en_attente') === 'imprime';
+      let matchPrintTab = true;
+      if (printTab === 'a_imprimer') {
+        matchPrintTab = (e.print_status || 'en_attente') === 'en_attente';
+      } else if (printTab === 'historique') {
+        matchPrintTab = (e.print_status || 'en_attente') === 'imprime';
+      } else if (printTab === 'chargees') {
+        matchPrintTab = !!getActiveRecharge(e.id);
+      } else if (printTab === 'en_attente_validation') {
+        matchPrintTab = !getActiveRecharge(e.id);
+      }
       return matchSearch && matchZone && matchClasse && matchPrintTab;
     });
     // Sort: pending validation (paid but not recharged) first, then not paid, then already recharged
@@ -293,7 +300,6 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       const bPaid = hasTransportPaidThisMonth(b.id);
       const aRecharged = hasRechargeThisMonth(a.id);
       const bRecharged = hasRechargeThisMonth(b.id);
-      // Priority: paid & not recharged > not paid > recharged
       const aScore = aPaid && !aRecharged ? 0 : !aPaid ? 1 : 2;
       const bScore = bPaid && !bRecharged ? 0 : !bPaid ? 1 : 2;
       return aScore - bScore;
