@@ -474,7 +474,40 @@ export default function PointageEleves() {
         ))}
       </motion.div>
 
-      {/* Today's list */}
+      {/* Barre de progression de présence par niveau */}
+      {niveauPresence.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }}
+          className="rounded-2xl border border-border/40 bg-card overflow-hidden">
+          <div className="px-5 py-3 border-b border-border/30 flex items-center gap-2">
+            <GraduationCap className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Présence par niveau</h3>
+            <Badge variant="secondary" className="ml-auto text-[10px]">{totalArrivedAllNiveaux} élèves</Badge>
+          </div>
+          <div className="p-4 space-y-3">
+            {niveauPresence.map((n) => (
+              <div key={n.nom} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-foreground">{n.nom}</span>
+                  <div className="flex items-center gap-1.5">
+                    <TrendingUp className="h-3 w-3 text-primary" />
+                    <span className="font-bold text-primary">{n.arrived}</span>
+                    <span className="text-muted-foreground">élève{n.arrived > 1 ? 's' : ''}</span>
+                  </div>
+                </div>
+                <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(n.arrived / maxArrived) * 100}%` }}
+                    transition={{ duration: 0.6, ease: 'easeOut' }}
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
         className="rounded-2xl border border-border/40 bg-card overflow-hidden">
         <div className="px-5 py-3.5 border-b border-border/30 flex items-center justify-between">
