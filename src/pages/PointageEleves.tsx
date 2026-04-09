@@ -28,10 +28,23 @@ export default function PointageEleves() {
 
   // Fetch niveaux + classes + total élèves for progress bars
   const [niveauxData, setNiveauxData] = useState<any[]>([]);
+  const [totalElevesParNiveau, setTotalElevesParNiveau] = useState<Record<string, number>>({});
   useEffect(() => {
     supabase.from('niveaux').select('id, nom, classes(id, nom)').order('nom').then(({ data }) => {
       if (data) setNiveauxData(data);
     });
+    // Fetch total students per niveau
+    supabase.from('eleves').select('id, classe_id, classes:classe_id(niveau_id)')
+      .eq('statut', 'inscrit').is('deleted_at', null).then(({ data }) => {
+        if (data) {
+          const map: Record<string, number> = {};
+          data.forEach((e: any) => {
+            const nId = e.classes?.niveau_id;
+            if (nId) map[nId] = (map[nId] || 0) + 1;
+          });
+          setTotalElevesParNiveau(map);
+        }
+      });
   }, []);
 
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -239,21 +252,25 @@ export default function PointageEleves() {
   const presentCount = todayPointages.filter(p => p.heure_arrivee && !p.heure_depart).length;
   const lateCount = todayPointages.filter(p => p.en_retard).length;
 
-  // Compute presence by niveau
+  // Compute presence by niveau (present = arrivé et pas encore parti)
   const niveauPresence = useMemo(() => {
-    if (!niveauxData.length || !todayPointages.length) return [];
+    if (!niveauxData.length) return [];
     return niveauxData.map((niveau: any) => {
       const classeIds = (niveau.classes || []).map((c: any) => c.id);
-      const arrived = todayPointages.filter(p => {
+      const niveauPointages = todayPointages.filter(p => {
         const classeId = (p.eleves as any)?.classe_id || p.classe_id;
-        return classeIds.includes(classeId) && p.heure_arrivee;
-      }).length;
-      return { nom: niveau.nom, nbClasses: (niveau.classes || []).length, arrived };
-    }).filter(n => n.arrived > 0 || n.nbClasses > 0).sort((a, b) => b.arrived - a.arrived);
-  }, [niveauxData, todayPointages]);
+        return classeIds.includes(classeId);
+      });
+      const arrived = niveauPointages.filter(p => p.heure_arrivee).length;
+      const present = niveauPointages.filter(p => p.heure_arrivee && !p.heure_depart).length;
+      const departed = niveauPointages.filter(p => p.heure_depart).length;
+      const total = totalElevesParNiveau[niveau.id] || 0;
+      return { id: niveau.id, nom: niveau.nom, nbClasses: (niveau.classes || []).length, arrived, present, departed, total };
+    }).filter(n => n.total > 0 || n.arrived > 0).sort((a, b) => b.present - a.present);
+  }, [niveauxData, todayPointages, totalElevesParNiveau]);
 
-  const totalArrivedAllNiveaux = niveauPresence.reduce((s, n) => s + n.arrived, 0);
-  const maxArrived = Math.max(...niveauPresence.map(n => n.arrived), 1);
+  const totalPresentAllNiveaux = niveauPresence.reduce((s, n) => s + n.present, 0);
+  const totalAllNiveaux = niveauPresence.reduce((s, n) => s + n.total, 0);
 
   const schoolObj = {
     nom: schoolConfig?.nom || 'École',
@@ -481,29 +498,37 @@ export default function PointageEleves() {
           <div className="px-5 py-3 border-b border-border/30 flex items-center gap-2">
             <GraduationCap className="h-4 w-4 text-primary" />
             <h3 className="text-sm font-semibold text-foreground">Présence par niveau</h3>
-            <Badge variant="secondary" className="ml-auto text-[10px]">{totalArrivedAllNiveaux} élèves</Badge>
+            <Badge variant="secondary" className="ml-auto text-[10px]">{totalPresentAllNiveaux}/{totalAllNiveaux} présents</Badge>
           </div>
           <div className="p-4 space-y-3">
-            {niveauPresence.map((n) => (
-              <div key={n.nom} className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium text-foreground">{n.nom}</span>
-                  <div className="flex items-center gap-1.5">
-                    <TrendingUp className="h-3 w-3 text-primary" />
-                    <span className="font-bold text-primary">{n.arrived}</span>
-                    <span className="text-muted-foreground">élève{n.arrived > 1 ? 's' : ''}</span>
+            {niveauPresence.map((n) => {
+              const pct = n.total > 0 ? Math.round((n.present / n.total) * 100) : 0;
+              return (
+                <div key={n.nom} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-foreground">{n.nom}</span>
+                    <div className="flex items-center gap-2">
+                      {n.departed > 0 && (
+                        <span className="text-amber-500 flex items-center gap-0.5">
+                          <LogOut className="h-3 w-3" /> {n.departed}
+                        </span>
+                      )}
+                      <span className="font-bold text-primary">{n.present}</span>
+                      <span className="text-muted-foreground">/ {n.total}</span>
+                      <span className="text-muted-foreground text-[10px]">({pct}%)</span>
+                    </div>
+                  </div>
+                  <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.6, ease: 'easeOut' }}
+                      className={`h-full rounded-full ${pct > 70 ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : pct > 40 ? 'bg-gradient-to-r from-primary to-primary/70' : 'bg-gradient-to-r from-amber-500 to-amber-400'}`}
+                    />
                   </div>
                 </div>
-                <div className="h-2.5 rounded-full bg-muted overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(n.arrived / maxArrived) * 100}%` }}
-                    transition={{ duration: 0.6, ease: 'easeOut' }}
-                    className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70"
-                  />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
       )}
