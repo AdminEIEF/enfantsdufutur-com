@@ -350,27 +350,55 @@ export default function ChauffeurDashboard() {
 
   return (
     <div className="space-y-4">
-      {/* Header with zone info */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <Bus className="h-6 w-6 text-primary" /> Chauffeur
-          </h1>
-          {myZoneName && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-              <MapPin className="h-3 w-3" /> Zone : <span className="font-semibold text-foreground">{myZoneName}</span>
+      {/* Header with chauffeur identity and zone info */}
+      {loadingChauffeur ? (
+        <div className="flex items-center gap-3 p-4 rounded-2xl border bg-card">
+          <Skeleton className="h-12 w-12 rounded-xl" />
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-3 w-56" />
+          </div>
+        </div>
+      ) : !chauffeurEmploye ? (
+        <div className="p-4 rounded-2xl border bg-destructive/5 border-destructive/20 text-center">
+          <p className="text-sm font-semibold text-destructive">⚠️ Aucun profil chauffeur trouvé</p>
+          <p className="text-xs text-muted-foreground mt-1">Vérifiez que votre compte est lié à un employé chauffeur.</p>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border">
+          <div className="h-12 w-12 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+            {chauffeurEmploye.photo_url ? (
+              <img src={chauffeurEmploye.photo_url} alt="" className="h-12 w-12 rounded-xl object-cover" />
+            ) : (
+              <User className="h-6 w-6 text-primary" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base font-bold truncate">
+              {chauffeurEmploye.prenom} {chauffeurEmploye.nom}
+            </h1>
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1 flex-wrap">
+              <Hash className="h-3 w-3" />{chauffeurEmploye.matricule}
+              {myZoneName && (
+                <>
+                  <span className="mx-0.5">•</span>
+                  <MapPin className="h-3 w-3" />
+                  <span className="font-semibold text-foreground">{myZoneName}</span>
+                </>
+              )}
               {chauffeurVehicule?.immatriculation && (
-                <span className="ml-1 font-mono">• 🚌 {chauffeurVehicule.immatriculation}</span>
+                <>
+                  <span className="mx-0.5">•</span>
+                  <span className="font-mono">🚌 {chauffeurVehicule.immatriculation}</span>
+                </>
               )}
             </p>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="destructive" size="sm" onClick={() => setShowIncident(true)}>
-            <FileWarning className="h-4 w-4 mr-1" /> Incident
+          </div>
+          <Button variant="destructive" size="sm" className="shrink-0 rounded-xl" onClick={() => setShowIncident(true)}>
+            <FileWarning className="h-4 w-4" />
           </Button>
         </div>
-      </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-2">
