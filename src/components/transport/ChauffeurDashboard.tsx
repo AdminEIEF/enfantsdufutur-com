@@ -354,6 +354,18 @@ export default function ChauffeurDashboard() {
       queryClient.invalidateQueries({ queryKey: ['chauffeur-validations-full'] });
     });
 
+    // Notification parent : enfant monté/descendu du bus
+    const trajetType = count === 0 ? 'monté dans' : 'descendu du';
+    const heureNow = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    if (eleve.famille_id) {
+      supabase.from('parent_notifications').insert({
+        famille_id: eleve.famille_id,
+        titre: count === 0 ? '🚌 Votre enfant est monté dans le bus' : '🏠 Votre enfant est descendu du bus',
+        message: `Votre enfant ${eleve.prenom} ${eleve.nom} est bien ${trajetType} le bus à ${heureNow}.`,
+        type: 'info',
+      } as any).then(() => {});
+    }
+
     if (isValid) {
       playBeep(800);
       if (navigator.vibrate) navigator.vibrate(150);
