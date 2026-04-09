@@ -119,29 +119,30 @@ export default function ChauffeurDashboard() {
   const { isOnline, validateOffline } = useOfflineTransport();
 
   // 1. Find the connected chauffeur's employee record via email
-  const { data: chauffeurVehicule } = useQuery({
-    queryKey: ['chauffeur-mon-vehicule', user?.email],
+  const { data: chauffeurInfo, isLoading: loadingChauffeur } = useQuery({
+    queryKey: ['chauffeur-mon-info', user?.email],
     queryFn: async () => {
       if (!user?.email) return null;
-      // Find the employe matching this auth user's email
       const { data: emp } = await supabase
         .from('employes')
-        .select('id')
+        .select('id, nom, prenom, matricule, photo_url')
         .eq('email', user.email)
         .eq('statut', 'actif')
         .maybeSingle();
       if (!emp) return null;
-      // Find vehicle assigned to this chauffeur
       const { data: veh } = await supabase
         .from('vehicules_transport')
         .select('*, zones_transport:zone_transport_id(id, nom)')
         .eq('chauffeur_id', emp.id)
         .eq('actif', true)
         .maybeSingle();
-      return veh ? { ...veh, employe_id: emp.id } : null;
+      return { employe: emp, vehicule: veh };
     },
     enabled: !!user?.email,
   });
+
+  const chauffeurVehicule = chauffeurInfo?.vehicule;
+  const chauffeurEmploye = chauffeurInfo?.employe;
 
   const myZoneId = chauffeurVehicule?.zone_transport_id;
   const myZoneName = (chauffeurVehicule?.zones_transport as any)?.nom;
