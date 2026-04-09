@@ -8,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Bus, Users, AlertTriangle, CheckCircle, MapPin, ScanLine, Clock, FileWarning, Truck, Phone, Shield, XCircle, ArrowRight, User, Calendar, Hash, Timer } from 'lucide-react';
+import { Bus, Users, AlertTriangle, CheckCircle, MapPin, ScanLine, Clock, FileWarning, Truck, Phone, Shield, XCircle, ArrowRight, User, Calendar, Hash, Timer, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { useBarcodeScanner, extractMatriculeFromScan } from '@/hooks/useBarcodeScanner';
 import { useOfflineTransport } from '@/hooks/useOfflineTransport';
 import QRScannerDialog from '@/components/QRScannerDialog';
@@ -69,7 +70,6 @@ function PassagerCard({ v, eleve, recharge }: { v: any; eleve: any; recharge: an
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-2xl bg-card border hover:shadow-md transition-shadow">
-      {/* Photo */}
       <div className="relative shrink-0">
         {eleve?.photo_url || eleve?.photo_thumbnail_url ? (
           <img src={eleve.photo_thumbnail_url || eleve.photo_url} alt="" className="w-12 h-12 rounded-xl object-cover border-2 border-background" />
@@ -80,14 +80,10 @@ function PassagerCard({ v, eleve, recharge }: { v: any; eleve: any; recharge: an
         )}
         <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-background ${isValid ? 'bg-emerald-500' : 'bg-destructive'}`} />
       </div>
-
-      {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm truncate">{eleve?.prenom} {eleve?.nom}</p>
         <p className="text-[11px] text-muted-foreground">{eleve?.classes?.nom || '—'} • {eleve?.matricule || '—'}</p>
       </div>
-
-      {/* Status */}
       <div className="text-right shrink-0 space-y-1">
         <Badge variant={v.valide ? 'default' : 'destructive'} className="text-[10px] rounded-full">
           {v.valide ? `✅ ${trajetLabel}` : '❌ Refusé'}
@@ -109,6 +105,7 @@ function PassagerCard({ v, eleve, recharge }: { v: any; eleve: any; recharge: an
 
 export default function ChauffeurDashboard() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -121,22 +118,72 @@ export default function ChauffeurDashboard() {
 
   const { isOnline, validateOffline } = useOfflineTransport();
 
-  // Validations du jour avec détails élèves
-  const { data: validations = [] } = useQuery({
-    queryKey: ['chauffeur-validations-full', today],
+  // 1. Find the connected chauffeur's employee record via email
+  const { data: chauffeurVehicule } = useQuery({
+    queryKey: ['chauffeur-mon-vehicule', user?.email],
     queryFn: async () => {
+      if (!user?.email) return null;
+      // Find the employe matching this auth user's email
+      const { data: emp } = await supabase
+        .from('employes')
+        .select('id')
+        .eq('email', user.email)
+        .eq('statut', 'actif')
+        .maybeSingle();
+      if (!emp) return null;
+      // Find vehicle assigned to this chauffeur
+      const { data: veh } = await supabase
+        .from('vehicules_transport')
+        .select('*, zones_transport:zone_transport_id(id, nom)')
+        .eq('chauffeur_id', emp.id)
+        .eq('actif', true)
+        .maybeSingle();
+      return veh ? { ...veh, employe_id: emp.id } : null;
+    },
+    enabled: !!user?.email,
+  });
+
+  const myZoneId = chauffeurVehicule?.zone_transport_id;
+  const myZoneName = (chauffeurVehicule?.zones_transport as any)?.nom;
+
+  // 2. Get all students assigned to my zone (total effectif)
+  const { data: elevesZone = [] } = useQuery({
+    queryKey: ['chauffeur-eleves-zone', myZoneId],
+    queryFn: async () => {
+      if (!myZoneId) return [];
       const { data, error } = await supabase
+        .from('eleves')
+        .select('id, nom, prenom, matricule, photo_url, photo_thumbnail_url, classe_id, classes(nom)')
+        .eq('zone_transport_id', myZoneId)
+        .eq('statut', 'inscrit')
+        .is('deleted_at', null)
+        .order('nom');
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!myZoneId,
+  });
+
+  // 3. Validations du jour filtered by my zone
+  const { data: validations = [] } = useQuery({
+    queryKey: ['chauffeur-validations-full', today, myZoneId],
+    queryFn: async () => {
+      let query = supabase
         .from('validations_transport')
         .select('*, eleves(id, nom, prenom, matricule, photo_url, photo_thumbnail_url, classe_id, classes(nom), zones_transport:zone_transport_id(nom))')
         .gte('validated_at', `${today}T00:00:00`)
         .lte('validated_at', `${today}T23:59:59`)
         .order('validated_at', { ascending: false });
+      if (myZoneId) {
+        query = query.eq('zone_transport_id', myZoneId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data as any[];
     },
   });
 
-  // Recharges actives pour afficher jours restants
+  // Recharges actives
   const { data: recharges = [] } = useQuery({
     queryKey: ['chauffeur-recharges'],
     queryFn: async () => {
@@ -149,16 +196,19 @@ export default function ChauffeurDashboard() {
     },
   });
 
-  // Véhicules
+  // Véhicule (only mine)
   const { data: vehicules = [] } = useQuery({
-    queryKey: ['chauffeur-vehicules'],
+    queryKey: ['chauffeur-vehicules', chauffeurVehicule?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('vehicules_transport')
-        .select('*, zones_transport:zone_transport_id(nom)')
-        .eq('actif', true);
-      if (error) throw error;
-      return data as any[];
+      if (!chauffeurVehicule) {
+        const { data, error } = await supabase
+          .from('vehicules_transport')
+          .select('*, zones_transport:zone_transport_id(nom)')
+          .eq('actif', true);
+        if (error) throw error;
+        return data as any[];
+      }
+      return [chauffeurVehicule];
     },
   });
 
@@ -185,6 +235,7 @@ export default function ChauffeurDashboard() {
   const validCount = validations.filter((v: any) => v.valide).length;
   const rejectCount = validations.filter((v: any) => !v.valide).length;
   const uniqueEleves = new Set(validations.map((v: any) => v.eleve_id)).size;
+  const totalAssigned = elevesZone.length;
 
   // ─── Scan logic ───
   function playBeep(freq: number) {
@@ -194,7 +245,6 @@ export default function ChauffeurDashboard() {
   const handleScanValidation = useCallback(async (matricule: string) => {
     if (!matricule) return;
 
-    // Lookup élève
     const { data: eleve } = await supabase.from('eleves')
       .select('id, nom, prenom, matricule, photo_url, photo_thumbnail_url, zone_transport_id, classe_id, classes(nom)')
       .eq('matricule', matricule).not('zone_transport_id', 'is', null).single();
@@ -206,7 +256,15 @@ export default function ChauffeurDashboard() {
       return;
     }
 
-    // Parallel: check recharge + existing validations today
+    // Check if student belongs to my zone
+    if (myZoneId && eleve.zone_transport_id !== myZoneId) {
+      playBeep(300);
+      setLastScanResult({ status: 'wrong_zone', eleve });
+      toast({ title: '⚠️ Mauvaise zone', description: `${eleve.prenom} ${eleve.nom} n'est pas dans votre zone`, variant: 'destructive' });
+      setTimeout(() => setLastScanResult(null), 5000);
+      return;
+    }
+
     const [rechargeRes, existingRes] = await Promise.all([
       supabase.from('recharges_transport')
         .select('*').eq('eleve_id', eleve.id).eq('actif', true)
@@ -222,13 +280,13 @@ export default function ChauffeurDashboard() {
     if (count >= 2) {
       setLastScanResult({ status: 'already', eleve, recharge });
       toast({ title: 'ℹ️ Limite atteinte', description: `${eleve.prenom} ${eleve.nom} — Aller-retour déjà validé` });
+      setTimeout(() => setLastScanResult(null), 5000);
       return;
     }
 
     const trajet = count === 0 ? 'aller' : 'retour';
     const isValid = !!recharge;
 
-    // Insert validation (don't await — fire and forget for speed)
     supabase.from('validations_transport').insert({
       eleve_id: eleve.id, recharge_id: recharge?.id || null, zone_transport_id: eleve.zone_transport_id,
       valide: isValid, motif_rejet: isValid ? null : 'Carte expirée ou non rechargée',
@@ -243,7 +301,6 @@ export default function ChauffeurDashboard() {
       playBeep(300);
     }
 
-    // Show result immediately with what we have
     const displayRecharge = recharge || recharges.find((r: any) => r.eleve_id === eleve.id);
     setLastScanResult({ status: isValid ? 'valid' : 'invalid', eleve, recharge: displayRecharge, trajet });
 
@@ -254,7 +311,7 @@ export default function ChauffeurDashboard() {
     });
 
     setTimeout(() => { setLastScanResult(null); }, 5000);
-  }, [today, toast, queryClient, recharges]);
+  }, [today, toast, queryClient, recharges, myZoneId]);
 
   const handleScan = useCallback((text: string) => {
     const matricule = extractMatriculeFromScan(text) || text.trim();
@@ -292,34 +349,64 @@ export default function ChauffeurDashboard() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold flex items-center gap-2">
-          <Bus className="h-6 w-6 text-primary" /> Chauffeur
-        </h1>
-        <Button variant="destructive" size="sm" onClick={() => setShowIncident(true)}>
-          <FileWarning className="h-4 w-4 mr-1" /> Incident
-        </Button>
+      {/* Header with zone info */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h1 className="text-xl font-bold flex items-center gap-2">
+            <Bus className="h-6 w-6 text-primary" /> Chauffeur
+          </h1>
+          {myZoneName && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+              <MapPin className="h-3 w-3" /> Zone : <span className="font-semibold text-foreground">{myZoneName}</span>
+              {chauffeurVehicule?.immatriculation && (
+                <span className="ml-1 font-mono">• 🚌 {chauffeurVehicule.immatriculation}</span>
+              )}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="destructive" size="sm" onClick={() => setShowIncident(true)}>
+            <FileWarning className="h-4 w-4 mr-1" /> Incident
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {[
-          { icon: Users, label: 'Passagers', value: uniqueEleves, color: 'text-primary', bg: 'from-primary/10 to-primary/5' },
-          { icon: CheckCircle, label: 'Validés', value: validCount, color: 'text-emerald-600', bg: 'from-emerald-500/10 to-emerald-500/5' },
+          { icon: Users, label: 'Affectés', value: totalAssigned, color: 'text-primary', bg: 'from-primary/10 to-primary/5' },
+          { icon: CheckCircle, label: 'Montés', value: uniqueEleves, color: 'text-emerald-600', bg: 'from-emerald-500/10 to-emerald-500/5' },
+          { icon: CheckCircle, label: 'Validés', value: validCount, color: 'text-blue-600', bg: 'from-blue-500/10 to-blue-500/5' },
           { icon: XCircle, label: 'Refusés', value: rejectCount, color: 'text-destructive', bg: 'from-destructive/10 to-destructive/5' },
         ].map(({ icon: Icon, label, value, color, bg }) => (
-          <div key={label} className={`rounded-2xl bg-gradient-to-br ${bg} border p-3 flex items-center gap-2`}>
-            <div className={`h-9 w-9 rounded-xl bg-card/80 flex items-center justify-center ${color} shrink-0`}>
+          <div key={label} className={`rounded-2xl bg-gradient-to-br ${bg} border p-2.5 flex flex-col items-center gap-1`}>
+            <div className={`h-8 w-8 rounded-xl bg-card/80 flex items-center justify-center ${color} shrink-0`}>
               <Icon className="h-4 w-4" />
             </div>
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
-              <p className={`text-lg font-bold ${color}`}>{value}</p>
-            </div>
+            <p className={`text-lg font-bold ${color}`}>{value}</p>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wider">{label}</p>
           </div>
         ))}
       </div>
+
+      {/* Progress: montés / affectés */}
+      {totalAssigned > 0 && (
+        <div className="rounded-2xl border p-3 bg-card">
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="text-muted-foreground">Progression du ramassage</span>
+            <span className="font-bold text-foreground">{uniqueEleves}/{totalAssigned}</span>
+          </div>
+          <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-500 transition-all duration-500"
+              style={{ width: `${Math.min(100, (uniqueEleves / totalAssigned) * 100)}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            {totalAssigned - uniqueEleves} élève(s) pas encore monté(s)
+          </p>
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full grid grid-cols-3 rounded-2xl h-11 bg-muted/50 p-1">
@@ -370,7 +457,41 @@ export default function ChauffeurDashboard() {
             </div>
           )}
 
-          {/* Incidents récents (compact) */}
+          {/* Élèves non encore montés */}
+          {totalAssigned > 0 && uniqueEleves < totalAssigned && (
+            <div className="space-y-2">
+              <p className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+                <Clock className="h-4 w-4" /> Pas encore montés ({totalAssigned - uniqueEleves})
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {elevesZone
+                  .filter((e: any) => !validations.some((v: any) => v.eleve_id === e.id))
+                  .slice(0, 10)
+                  .map((e: any) => (
+                    <div key={e.id} className="flex items-center gap-2 p-2 rounded-xl bg-muted/40 border border-dashed">
+                      {e.photo_thumbnail_url || e.photo_url ? (
+                        <img src={e.photo_thumbnail_url || e.photo_url} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                          <User className="h-3.5 w-3.5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium truncate">{e.prenom} {e.nom}</p>
+                        <p className="text-[10px] text-muted-foreground">{e.classes?.nom || '—'}</p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+              {(totalAssigned - uniqueEleves) > 10 && (
+                <p className="text-[10px] text-muted-foreground text-center">
+                  + {totalAssigned - uniqueEleves - 10} autre(s)…
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Incidents récents */}
           {incidents.length > 0 && (
             <div className="space-y-2">
               <p className="text-sm font-semibold flex items-center gap-2">
@@ -387,15 +508,18 @@ export default function ChauffeurDashboard() {
           )}
         </TabsContent>
 
-        {/* ─── SCAN BUS: uniquement scanner ─── */}
+        {/* ─── SCAN BUS ─── */}
         <TabsContent value="scan" className="mt-3 space-y-4">
-          {/* Scan result display */}
           {lastScanResult ? (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-              {/* Élève info hero */}
               {lastScanResult.eleve && (
                 <Card className="overflow-hidden border-0 shadow-xl">
-                  <div className={`h-20 relative ${lastScanResult.status === 'valid' ? 'bg-gradient-to-r from-emerald-500 to-emerald-600' : lastScanResult.status === 'invalid' ? 'bg-gradient-to-r from-destructive to-destructive/80' : 'bg-gradient-to-r from-primary to-primary/80'}`}>
+                  <div className={`h-20 relative ${
+                    lastScanResult.status === 'valid' ? 'bg-gradient-to-r from-emerald-500 to-emerald-600' :
+                    lastScanResult.status === 'wrong_zone' ? 'bg-gradient-to-r from-amber-500 to-amber-600' :
+                    lastScanResult.status === 'invalid' ? 'bg-gradient-to-r from-destructive to-destructive/80' :
+                    'bg-gradient-to-r from-primary to-primary/80'
+                  }`}>
                     <div className="absolute inset-0 bg-white/5" />
                   </div>
                   <CardContent className="relative pt-0 pb-4 px-4">
@@ -421,8 +545,19 @@ export default function ChauffeurDashboard() {
                 </Card>
               )}
 
+              {/* Wrong zone alert */}
+              {lastScanResult.status === 'wrong_zone' && (
+                <div className="flex flex-col items-center gap-2 p-6 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30">
+                  <MapPin className="h-16 w-16 text-amber-500" />
+                  <p className="text-2xl font-black text-amber-600">MAUVAISE ZONE</p>
+                  <p className="text-sm text-amber-600/70">Cet élève n'est pas affecté à votre bus</p>
+                </div>
+              )}
+
               {/* BIG Validity status */}
-              <CardValidityBig recharge={lastScanResult.recharge && getDaysRemaining(lastScanResult.recharge.date_expiration) > 0 ? lastScanResult.recharge : null} />
+              {lastScanResult.status !== 'wrong_zone' && (
+                <CardValidityBig recharge={lastScanResult.recharge && getDaysRemaining(lastScanResult.recharge.date_expiration) > 0 ? lastScanResult.recharge : null} />
+              )}
 
               {lastScanResult.status === 'not_found' && (
                 <div className="flex flex-col items-center gap-2 p-6 rounded-3xl bg-muted border-2 border-muted">
@@ -444,7 +579,6 @@ export default function ChauffeurDashboard() {
               </Button>
             </div>
           ) : (
-            /* Waiting for scan */
             <div className="space-y-4">
               <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-accent/10">
                 <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
@@ -494,7 +628,7 @@ export default function ChauffeurDashboard() {
                   </div>
                   {v.couleur && <Badge variant="outline" className="ml-auto text-xs">{v.couleur}</Badge>}
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-3 gap-2 text-sm">
                   <div className="p-2 rounded-xl bg-muted/50">
                     <p className="text-[10px] text-muted-foreground">Capacité</p>
                     <p className="font-bold">{v.capacite} places</p>
@@ -502,6 +636,10 @@ export default function ChauffeurDashboard() {
                   <div className="p-2 rounded-xl bg-muted/50">
                     <p className="text-[10px] text-muted-foreground">Zone</p>
                     <p className="font-bold">{(v.zones_transport as any)?.nom || '—'}</p>
+                  </div>
+                  <div className="p-2 rounded-xl bg-primary/5">
+                    <p className="text-[10px] text-muted-foreground">Élèves</p>
+                    <p className="font-bold text-primary">{totalAssigned}</p>
                   </div>
                 </div>
                 {v.assurance_expire && (
