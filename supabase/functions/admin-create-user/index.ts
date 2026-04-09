@@ -23,17 +23,20 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Use admin client to validate JWT (bypasses session check)
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user: caller }, error: userError } = await adminClient.auth.getUser(token);
-    if (userError || !caller) {
-      console.error("Auth error:", userError?.message);
+    
+    // Use getClaims to validate JWT without needing an active session
+    const { data: claimsData, error: claimsError } = await adminClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      console.error("Auth error:", claimsError?.message);
       return new Response(JSON.stringify({ error: "Non autorisé" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    
+    const caller = { id: claimsData.claims.sub as string, email: (claimsData.claims.email as string) || "" };
 
     const callerId = caller.id;
     const callerEmail = caller.email || "";
