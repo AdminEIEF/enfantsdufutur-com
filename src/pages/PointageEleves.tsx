@@ -26,7 +26,13 @@ export default function PointageEleves() {
   const scannerActiveRef = useRef(false);
   const { data: schoolConfig } = useSchoolConfig();
 
-  const today = format(new Date(), 'yyyy-MM-dd');
+  // Fetch niveaux + classes + total élèves for progress bars
+  const [niveauxData, setNiveauxData] = useState<any[]>([]);
+  useEffect(() => {
+    supabase.from('niveaux').select('id, nom, classes(id, nom)').order('nom').then(({ data }) => {
+      if (data) setNiveauxData(data);
+    });
+  }, []);
 
   const mapPointages = (data: any[]) => data.map((p: any) => ({
     eleve_nom: p.eleves?.nom || '',
