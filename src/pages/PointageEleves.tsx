@@ -239,6 +239,22 @@ export default function PointageEleves() {
   const presentCount = todayPointages.filter(p => p.heure_arrivee && !p.heure_depart).length;
   const lateCount = todayPointages.filter(p => p.en_retard).length;
 
+  // Compute presence by niveau
+  const niveauPresence = useMemo(() => {
+    if (!niveauxData.length || !todayPointages.length) return [];
+    return niveauxData.map((niveau: any) => {
+      const classeIds = (niveau.classes || []).map((c: any) => c.id);
+      const arrived = todayPointages.filter(p => {
+        const classeId = (p.eleves as any)?.classe_id || p.classe_id;
+        return classeIds.includes(classeId) && p.heure_arrivee;
+      }).length;
+      return { nom: niveau.nom, nbClasses: (niveau.classes || []).length, arrived };
+    }).filter(n => n.arrived > 0 || n.nbClasses > 0).sort((a, b) => b.arrived - a.arrived);
+  }, [niveauxData, todayPointages]);
+
+  const totalArrivedAllNiveaux = niveauPresence.reduce((s, n) => s + n.arrived, 0);
+  const maxArrived = Math.max(...niveauPresence.map(n => n.arrived), 1);
+
   const schoolObj = {
     nom: schoolConfig?.nom || 'École',
     soustitre: schoolConfig?.soustitre,
