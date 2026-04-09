@@ -598,12 +598,13 @@ export default function ChauffeurDashboard() {
             </Card>
           ) : (
             <div className="space-y-2">
-              {validationsWithTrajet.map((v: any) => (
-                <PassagerCard
-                  key={v.id}
-                  v={v}
-                  eleve={v.eleves}
-                  recharge={getActiveRecharge(v.eleve_id)}
+              {groupedByEleve.map((g) => (
+                <PassagerGroupCard
+                  key={g.eleve?.id || g.montee?.id || g.descente?.id}
+                  eleve={g.eleve}
+                  montee={g.montee}
+                  descente={g.descente}
+                  recharge={getActiveRecharge(g.montee?.eleve_id || g.descente?.eleve_id)}
                 />
               ))}
             </div>
