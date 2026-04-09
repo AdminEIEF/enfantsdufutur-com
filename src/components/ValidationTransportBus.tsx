@@ -1,11 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useBarcodeScanner, extractMatriculeFromScan } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bus, CheckCircle, XCircle, ScanLine, Search, AlertTriangle, ArrowLeftRight, WifiOff, Wifi, Download, RefreshCw, CloudOff, Smartphone, Info } from 'lucide-react';
+import { Bus, CheckCircle, XCircle, ScanLine, Search, AlertTriangle, ArrowLeftRight, WifiOff, Wifi, Download, RefreshCw, CloudOff, Smartphone, Info, ArrowUp, ArrowDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -118,6 +118,19 @@ export default function ValidationTransportBus() {
         valide: isValid, motif_rejet: isValid ? null : 'Carte non rechargée (1er passage autorisé)',
       } as any);
       if (error) throw error;
+
+      // Notification parent : montée/descente
+      const trajetType = count === 0 ? 'monté dans' : 'descendu du';
+      const heureNow = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      if (eleve.famille_id) {
+        await supabase.from('parent_notifications').insert({
+          famille_id: eleve.famille_id,
+          titre: count === 0 ? '🚌 Votre enfant est monté dans le bus' : '🏠 Votre enfant est descendu du bus',
+          message: `Votre enfant ${eleve.prenom} ${eleve.nom} est bien ${trajetType} le bus à ${heureNow}.`,
+          type: 'info',
+        } as any);
+      }
+
       return { eleve, status: isValid ? 'valid' : 'first_free', trajet, message: isValid ? `${trajet === 'aller' ? '🚌 Aller' : '🏠 Retour'} — Accès autorisé` : '⚠️ 1er passage autorisé — Recharge requise', recharge };
     },
     onSuccess: (result) => {
@@ -166,6 +179,27 @@ export default function ValidationTransportBus() {
 
   const validCount = validations.filter((v: any) => v.valide).length;
   const rejectCount = validations.filter((v: any) => !v.valide).length;
+
+  // Compteur montées vs descentes
+  const monteeCount = useMemo(() => {
+    const seen = new Set<string>();
+    let count = 0;
+    for (const v of [...validations].sort((a: any, b: any) => new Date(a.validated_at).getTime() - new Date(b.validated_at).getTime())) {
+      if (!seen.has(v.eleve_id)) { seen.add(v.eleve_id); count++; }
+    }
+    return count;
+  }, [validations]);
+
+  const descenteCount = useMemo(() => {
+    const seen = new Set<string>();
+    let count = 0;
+    const sorted = [...validations].sort((a: any, b: any) => new Date(a.validated_at).getTime() - new Date(b.validated_at).getTime());
+    for (const v of sorted) {
+      if (seen.has(v.eleve_id)) { count++; }
+      else { seen.add(v.eleve_id); }
+    }
+    return count;
+  }, [validations]);
 
   return (
     <div className="space-y-4">
@@ -281,24 +315,46 @@ export default function ValidationTransportBus() {
         </div>
       )}
 
-      {/* Stats Cards - Glass */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-4 gap-2">
         {[
           { icon: Bus, label: 'Passages', value: validations.length, color: 'text-primary', bg: 'from-primary/10 to-primary/5' },
-          { icon: CheckCircle, label: 'Validés', value: validCount, color: 'text-emerald-600', bg: 'from-emerald-500/10 to-emerald-500/5' },
+          { icon: ArrowUp, label: 'Montés', value: monteeCount, color: 'text-emerald-600', bg: 'from-emerald-500/10 to-emerald-500/5' },
+          { icon: ArrowDown, label: 'Descendus', value: descenteCount, color: 'text-blue-600', bg: 'from-blue-500/10 to-blue-500/5' },
           { icon: XCircle, label: 'Refusés', value: rejectCount, color: 'text-destructive', bg: 'from-destructive/10 to-destructive/5' },
         ].map(({ icon: Icon, label, value, color, bg }) => (
-          <div key={label} className={`rounded-2xl bg-gradient-to-br ${bg} border p-3.5 flex items-center gap-2.5`}>
-            <div className={`h-10 w-10 rounded-xl bg-card/80 flex items-center justify-center ${color} shrink-0`}>
-              <Icon className="h-5 w-5" />
+          <div key={label} className={`rounded-2xl bg-gradient-to-br ${bg} border p-3 flex flex-col items-center gap-1`}>
+            <div className={`h-9 w-9 rounded-xl bg-card/80 flex items-center justify-center ${color} shrink-0`}>
+              <Icon className="h-4 w-4" />
             </div>
-            <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
-              <p className={`text-xl font-bold ${color}`}>{value}</p>
-            </div>
+            <p className={`text-lg font-bold ${color}`}>{value}</p>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wider">{label}</p>
           </div>
         ))}
       </div>
+
+      {/* Comparaison montée vs descente */}
+      {monteeCount > 0 && (
+        <div className="rounded-2xl border p-3 bg-card/80 backdrop-blur-sm space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground flex items-center gap-1"><ArrowUp className="h-3 w-3 text-emerald-600" /> Montés</span>
+            <span className="font-bold text-emerald-600">{monteeCount}</span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground flex items-center gap-1"><ArrowDown className="h-3 w-3 text-blue-600" /> Descendus</span>
+            <span className="font-bold text-blue-600">{descenteCount}</span>
+          </div>
+          <div className="h-2 rounded-full bg-muted overflow-hidden flex">
+            <div className="h-full bg-emerald-500 transition-all" style={{ width: `${(monteeCount / (monteeCount + descenteCount || 1)) * 100}%` }} />
+            <div className="h-full bg-blue-500 transition-all" style={{ width: `${(descenteCount / (monteeCount + descenteCount || 1)) * 100}%` }} />
+          </div>
+          {monteeCount !== descenteCount ? (
+            <p className="text-[10px] text-orange-500 font-medium">⚠️ {monteeCount - descenteCount} élève(s) encore dans le bus</p>
+          ) : (
+            <p className="text-[10px] text-emerald-600 font-medium">✅ Tous les élèves sont descendus</p>
+          )}
+        </div>
+      )}
 
       {/* Tabs */}
       <Tabs defaultValue="historique">
@@ -324,11 +380,11 @@ export default function ValidationTransportBus() {
                 <p className="text-center py-10 text-muted-foreground text-sm">{isOnline ? 'Aucun passage aujourd\'hui' : 'Données visibles en ligne'}</p>
               ) : validations.map((v: any) => {
                 const trajetCount = validations.filter((x: any) => x.eleve_id === v.eleve_id && new Date(x.validated_at) <= new Date(v.validated_at)).length;
-                const trajetLabel = trajetCount <= 1 ? 'Aller' : 'Retour';
+                const isMontee = trajetCount <= 1;
                 return (
                   <div key={v.id} className="px-4 py-3 flex items-center gap-3 hover:bg-muted/30 transition-colors">
-                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${v.valide ? 'bg-emerald-500/10' : 'bg-destructive/10'}`}>
-                      {v.valide ? <CheckCircle className="h-5 w-5 text-emerald-600" /> : <XCircle className="h-5 w-5 text-destructive" />}
+                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${isMontee ? 'bg-emerald-500/10' : 'bg-blue-500/10'}`}>
+                      {isMontee ? <ArrowUp className="h-5 w-5 text-emerald-600" /> : <ArrowDown className="h-5 w-5 text-blue-600" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate">{v.eleves?.prenom} {v.eleves?.nom}</p>
@@ -338,7 +394,7 @@ export default function ValidationTransportBus() {
                     </div>
                     <div className="text-right shrink-0 space-y-0.5">
                       <Badge variant={v.valide ? 'default' : 'destructive'} className="text-[10px] rounded-full">
-                        {v.valide ? `✅ ${trajetLabel}` : '❌ Refusé'}
+                        {v.valide ? (isMontee ? '⬆️ Montée' : '⬇️ Descente') : '❌ Refusé'}
                       </Badge>
                       <p className="text-[10px] text-muted-foreground font-mono">
                         {new Date(v.validated_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}

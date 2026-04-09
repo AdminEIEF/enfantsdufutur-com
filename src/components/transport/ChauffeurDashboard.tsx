@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Bus, Users, AlertTriangle, CheckCircle, MapPin, ScanLine, Clock, FileWarning, Truck, Phone, Shield, XCircle, ArrowRight, User, Calendar, Hash, Timer, MessageCircle } from 'lucide-react';
+import { Bus, Users, AlertTriangle, CheckCircle, MapPin, ScanLine, Clock, FileWarning, Truck, Phone, Shield, XCircle, ArrowRight, User, Calendar, Hash, Timer, MessageCircle, ArrowUp, ArrowDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -67,9 +67,18 @@ function PassagerCard({ v, eleve, recharge }: { v: any; eleve: any; recharge: an
   const isValid = recharge && jours > 0;
   const trajetCount = v._trajetCount || 1;
   const trajetLabel = trajetCount <= 1 ? 'Aller' : 'Retour';
+  const isMontee = trajetCount <= 1;
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-2xl bg-card border hover:shadow-md transition-shadow">
+      {/* Flèche montée/descente */}
+      <div className={`shrink-0 h-10 w-10 rounded-xl flex items-center justify-center ${isMontee ? 'bg-emerald-500/10' : 'bg-blue-500/10'}`}>
+        {isMontee ? (
+          <ArrowUp className="h-5 w-5 text-emerald-600" />
+        ) : (
+          <ArrowDown className="h-5 w-5 text-blue-600" />
+        )}
+      </div>
       <div className="relative shrink-0">
         {eleve?.photo_url || eleve?.photo_thumbnail_url ? (
           <img src={eleve.photo_thumbnail_url || eleve.photo_url} alt="" className="w-12 h-12 rounded-xl object-cover border-2 border-background" />
@@ -86,7 +95,7 @@ function PassagerCard({ v, eleve, recharge }: { v: any; eleve: any; recharge: an
       </div>
       <div className="text-right shrink-0 space-y-1">
         <Badge variant={v.valide ? 'default' : 'destructive'} className="text-[10px] rounded-full">
-          {v.valide ? `✅ ${trajetLabel}` : '❌ Refusé'}
+          {isMontee ? '⬆️ Montée' : '⬇️ Descente'}
         </Badge>
         {isValid ? (
           <p className={`text-[10px] font-bold ${jours <= 5 ? 'text-orange-500' : jours <= 10 ? 'text-amber-500' : 'text-emerald-600'}`}>
@@ -241,6 +250,27 @@ export default function ChauffeurDashboard() {
   const uniqueEleves = new Set(validations.map((v: any) => v.eleve_id)).size;
   const totalAssigned = elevesZone.length;
 
+  // Compteur montées (aller = 1er scan) et descentes (retour = 2e scan)
+  const monteeCount = useMemo(() => {
+    const seen = new Set<string>();
+    let count = 0;
+    for (const v of [...validations].sort((a: any, b: any) => new Date(a.validated_at).getTime() - new Date(b.validated_at).getTime())) {
+      if (!seen.has(v.eleve_id)) { seen.add(v.eleve_id); count++; }
+    }
+    return count;
+  }, [validations]);
+
+  const descenteCount = useMemo(() => {
+    const seen = new Set<string>();
+    let count = 0;
+    const sorted = [...validations].sort((a: any, b: any) => new Date(a.validated_at).getTime() - new Date(b.validated_at).getTime());
+    for (const v of sorted) {
+      if (seen.has(v.eleve_id)) { count++; }
+      else { seen.add(v.eleve_id); }
+    }
+    return count;
+  }, [validations]);
+
   // ─── Scan logic ───
   function playBeep(freq: number) {
     try { const ctx = new AudioContext(); const osc = ctx.createOscillator(); osc.frequency.value = freq; osc.connect(ctx.destination); osc.start(); setTimeout(() => osc.stop(), 150); } catch {}
@@ -323,6 +353,18 @@ export default function ChauffeurDashboard() {
     } as any).then(() => {
       queryClient.invalidateQueries({ queryKey: ['chauffeur-validations-full'] });
     });
+
+    // Notification parent : enfant monté/descendu du bus
+    const trajetType = count === 0 ? 'monté dans' : 'descendu du';
+    const heureNow = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    if (eleve.famille_id) {
+      supabase.from('parent_notifications').insert({
+        famille_id: eleve.famille_id,
+        titre: count === 0 ? '🚌 Votre enfant est monté dans le bus' : '🏠 Votre enfant est descendu du bus',
+        message: `Votre enfant ${eleve.prenom} ${eleve.nom} est bien ${trajetType} le bus à ${heureNow}.`,
+        type: 'info',
+      } as any).then(() => {});
+    }
 
     if (isValid) {
       playBeep(800);
@@ -437,8 +479,8 @@ export default function ChauffeurDashboard() {
       <div className="grid grid-cols-4 gap-2">
         {[
           { icon: Users, label: 'Affectés', value: totalAssigned, color: 'text-primary', bg: 'from-primary/10 to-primary/5' },
-          { icon: CheckCircle, label: 'Montés', value: uniqueEleves, color: 'text-emerald-600', bg: 'from-emerald-500/10 to-emerald-500/5' },
-          { icon: CheckCircle, label: 'Validés', value: validCount, color: 'text-blue-600', bg: 'from-blue-500/10 to-blue-500/5' },
+          { icon: ArrowUp, label: 'Montés', value: monteeCount, color: 'text-emerald-600', bg: 'from-emerald-500/10 to-emerald-500/5' },
+          { icon: ArrowDown, label: 'Descendus', value: descenteCount, color: 'text-blue-600', bg: 'from-blue-500/10 to-blue-500/5' },
           { icon: XCircle, label: 'Refusés', value: rejectCount, color: 'text-destructive', bg: 'from-destructive/10 to-destructive/5' },
         ].map(({ icon: Icon, label, value, color, bg }) => (
           <div key={label} className={`rounded-2xl bg-gradient-to-br ${bg} border p-2.5 flex flex-col items-center gap-1`}>
@@ -450,6 +492,34 @@ export default function ChauffeurDashboard() {
           </div>
         ))}
       </div>
+
+      {/* Comparaison montée vs descente */}
+      {monteeCount > 0 && (
+        <div className="rounded-2xl border p-3 bg-card space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground flex items-center gap-1"><ArrowUp className="h-3 w-3 text-emerald-600" /> Montés</span>
+            <span className="font-bold text-emerald-600">{monteeCount}</span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground flex items-center gap-1"><ArrowDown className="h-3 w-3 text-blue-600" /> Descendus</span>
+            <span className="font-bold text-blue-600">{descenteCount}</span>
+          </div>
+          <div className="h-2.5 rounded-full bg-muted overflow-hidden flex">
+            <div className="h-full bg-emerald-500 transition-all" style={{ width: `${monteeCount > 0 ? (monteeCount / (monteeCount + descenteCount || 1)) * 100 : 50}%` }} />
+            <div className="h-full bg-blue-500 transition-all" style={{ width: `${descenteCount > 0 ? (descenteCount / (monteeCount + descenteCount || 1)) * 100 : 0}%` }} />
+          </div>
+          {monteeCount !== descenteCount && (
+            <p className="text-[10px] text-orange-500 font-medium">
+              ⚠️ {monteeCount - descenteCount} élève(s) encore dans le bus
+            </p>
+          )}
+          {monteeCount === descenteCount && monteeCount > 0 && (
+            <p className="text-[10px] text-emerald-600 font-medium">
+              ✅ Tous les élèves sont descendus
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Progress: montés / affectés */}
       {totalAssigned > 0 && (
