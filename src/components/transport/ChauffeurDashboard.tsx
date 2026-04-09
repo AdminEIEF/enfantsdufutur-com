@@ -243,6 +243,21 @@ export default function ChauffeurDashboard() {
     },
   });
 
+  // Realtime subscription for live updates on validations_transport
+  useEffect(() => {
+    const channel = supabase
+      .channel('chauffeur-validations-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'validations_transport' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['chauffeur-validations-full'] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
   const getActiveRecharge = (eleveId: string) => {
     return recharges.find(
       (r: any) => r.eleve_id === eleveId && r.actif && new Date(r.date_expiration) > new Date()
