@@ -32,7 +32,9 @@ export default function PointageEleves() {
     supabase.from('niveaux').select('id, nom, classes(id, nom)').order('nom').then(({ data }) => {
       if (data) setNiveauxData(data);
     });
-  }, []);
+
+  const today = format(new Date(), 'yyyy-MM-dd');
+
 
   const mapPointages = (data: any[]) => data.map((p: any) => ({
     eleve_nom: p.eleves?.nom || '',
