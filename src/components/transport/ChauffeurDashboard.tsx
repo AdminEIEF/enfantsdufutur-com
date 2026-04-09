@@ -62,23 +62,12 @@ function CardValidityBig({ recharge }: { recharge: any }) {
   );
 }
 
-function PassagerCard({ v, eleve, recharge }: { v: any; eleve: any; recharge: any }) {
+function PassagerGroupCard({ eleve, montee, descente, recharge }: { eleve: any; montee: any; descente: any; recharge: any }) {
   const jours = recharge ? getDaysRemaining(recharge.date_expiration) : 0;
   const isValid = recharge && jours > 0;
-  const trajetCount = v._trajetCount || 1;
-  const trajetLabel = trajetCount <= 1 ? 'Aller' : 'Retour';
-  const isMontee = trajetCount <= 1;
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-2xl bg-card border hover:shadow-md transition-shadow">
-      {/* Flèche montée/descente */}
-      <div className={`shrink-0 h-10 w-10 rounded-xl flex items-center justify-center ${isMontee ? 'bg-emerald-500/10' : 'bg-blue-500/10'}`}>
-        {isMontee ? (
-          <ArrowUp className="h-5 w-5 text-emerald-600" />
-        ) : (
-          <ArrowDown className="h-5 w-5 text-blue-600" />
-        )}
-      </div>
       <div className="relative shrink-0">
         {eleve?.photo_url || eleve?.photo_thumbnail_url ? (
           <img src={eleve.photo_thumbnail_url || eleve.photo_url} alt="" className="w-12 h-12 rounded-xl object-cover border-2 border-background" />
@@ -92,11 +81,6 @@ function PassagerCard({ v, eleve, recharge }: { v: any; eleve: any; recharge: an
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm truncate">{eleve?.prenom} {eleve?.nom}</p>
         <p className="text-[11px] text-muted-foreground">{eleve?.classes?.nom || '—'} • {eleve?.matricule || '—'}</p>
-      </div>
-      <div className="text-right shrink-0 space-y-1">
-        <Badge variant={v.valide ? 'default' : 'destructive'} className="text-[10px] rounded-full">
-          {isMontee ? '⬆️ Montée' : '⬇️ Descente'}
-        </Badge>
         {isValid ? (
           <p className={`text-[10px] font-bold ${jours <= 5 ? 'text-orange-500' : jours <= 10 ? 'text-amber-500' : 'text-emerald-600'}`}>
             <Timer className="h-3 w-3 inline mr-0.5" />{jours}j restants
@@ -104,9 +88,29 @@ function PassagerCard({ v, eleve, recharge }: { v: any; eleve: any; recharge: an
         ) : (
           <p className="text-[10px] font-bold text-destructive">Expirée</p>
         )}
-        <p className="text-[10px] text-muted-foreground font-mono">
-          {new Date(v.validated_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-        </p>
+      </div>
+      {/* Montée & Descente côte à côte */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        {/* Montée */}
+        <div className={`flex flex-col items-center gap-0.5 p-1.5 rounded-xl min-w-[56px] ${montee ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-muted/30 border border-dashed border-muted-foreground/20'}`}>
+          <ArrowUp className={`h-4 w-4 ${montee ? 'text-emerald-600' : 'text-muted-foreground/40'}`} />
+          <span className={`text-[9px] font-semibold ${montee ? 'text-emerald-700' : 'text-muted-foreground/40'}`}>Montée</span>
+          {montee && (
+            <span className="text-[9px] text-emerald-600 font-mono">
+              {new Date(montee.validated_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </div>
+        {/* Descente */}
+        <div className={`flex flex-col items-center gap-0.5 p-1.5 rounded-xl min-w-[56px] ${descente ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-muted/30 border border-dashed border-muted-foreground/20'}`}>
+          <ArrowDown className={`h-4 w-4 ${descente ? 'text-blue-600' : 'text-muted-foreground/40'}`} />
+          <span className={`text-[9px] font-semibold ${descente ? 'text-blue-700' : 'text-muted-foreground/40'}`}>Descente</span>
+          {descente && (
+            <span className="text-[9px] text-blue-600 font-mono">
+              {new Date(descente.validated_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
