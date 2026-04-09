@@ -380,11 +380,11 @@ export default function ValidationTransportBus() {
                 <p className="text-center py-10 text-muted-foreground text-sm">{isOnline ? 'Aucun passage aujourd\'hui' : 'Données visibles en ligne'}</p>
               ) : validations.map((v: any) => {
                 const trajetCount = validations.filter((x: any) => x.eleve_id === v.eleve_id && new Date(x.validated_at) <= new Date(v.validated_at)).length;
-                const trajetLabel = trajetCount <= 1 ? 'Aller' : 'Retour';
+                const isMontee = trajetCount <= 1;
                 return (
                   <div key={v.id} className="px-4 py-3 flex items-center gap-3 hover:bg-muted/30 transition-colors">
-                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${v.valide ? 'bg-emerald-500/10' : 'bg-destructive/10'}`}>
-                      {v.valide ? <CheckCircle className="h-5 w-5 text-emerald-600" /> : <XCircle className="h-5 w-5 text-destructive" />}
+                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${isMontee ? 'bg-emerald-500/10' : 'bg-blue-500/10'}`}>
+                      {isMontee ? <ArrowUp className="h-5 w-5 text-emerald-600" /> : <ArrowDown className="h-5 w-5 text-blue-600" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate">{v.eleves?.prenom} {v.eleves?.nom}</p>
@@ -394,7 +394,7 @@ export default function ValidationTransportBus() {
                     </div>
                     <div className="text-right shrink-0 space-y-0.5">
                       <Badge variant={v.valide ? 'default' : 'destructive'} className="text-[10px] rounded-full">
-                        {v.valide ? `✅ ${trajetLabel}` : '❌ Refusé'}
+                        {v.valide ? (isMontee ? '⬆️ Montée' : '⬇️ Descente') : '❌ Refusé'}
                       </Badge>
                       <p className="text-[10px] text-muted-foreground font-mono">
                         {new Date(v.validated_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
