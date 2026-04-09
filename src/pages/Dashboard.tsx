@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, UserPlus, CreditCard, BookOpen, GraduationCap, TrendingUp, Utensils, AlertTriangle, Wallet, ArrowUpRight, ArrowDownRight, DollarSign, UserX, ScanBarcode } from 'lucide-react';
+import { Users, UserPlus, CreditCard, BookOpen, GraduationCap, TrendingUp, Utensils, AlertTriangle, Wallet, ArrowUpRight, ArrowDownRight, DollarSign, UserX, ScanBarcode, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -45,162 +45,75 @@ export default function Dashboard() {
 
   useBarcodeScanner({ onScan: handleSearchStudent });
 
-  const { data: eleves = [] } = useQuery({
-    queryKey: ['dashboard-eleves'],
+  // ─── SINGLE optimized query ──────────────────────────
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['dashboard-stats'],
     queryFn: async () => {
-      const selectFields = 'id, nom, prenom, statut, option_cantine, solde_cantine, classe_id, famille_id, created_at, classes(nom, niveau_id, niveaux:niveau_id(nom, frais_scolarite, cycles:cycle_id(nom)))';
-      const allData: any[] = [];
-      const pageSize = 1000;
-      for (let from = 0; ; from += pageSize) {
-        const { data, error } = await supabase
-          .from('eleves')
-          .select(selectFields)
-          .is('deleted_at', null)
-          .order('nom')
-          .range(from, from + pageSize - 1);
-        if (error) throw error;
-        allData.push(...(data ?? []));
-        if (!data || data.length < pageSize) break;
-      }
-      return allData;
+      const { data, error } = await supabase.rpc('get_dashboard_stats');
+      if (error) throw error;
+      return data as any;
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: paiements = [] } = useQuery({
-    queryKey: ['dashboard-paiements'],
-    queryFn: async () => {
-      const allData: any[] = [];
-      const pageSize = 1000;
-      for (let from = 0; ; from += pageSize) {
-        const { data, error } = await supabase
-          .from('paiements')
-          .select('id, montant, type_paiement, date_paiement, canal, eleve_id')
-          .order('date_paiement', { ascending: false })
-          .range(from, from + pageSize - 1);
-        if (error) throw error;
-        allData.push(...(data ?? []));
-        if (!data || data.length < pageSize) break;
-      }
-      return allData;
-    },
-    staleTime: 5 * 60 * 1000,
-    enabled: canSeeFinance,
-  });
+  // ─── Extract all KPIs from single response ──────────
+  const totalEleves = stats?.total_eleves ?? 0;
+  const totalAbandons = stats?.total_abandons ?? 0;
+  const newInscriptions = stats?.new_inscriptions_mois ?? 0;
+  const totalInscriptions = stats?.total_inscriptions_paiements ?? 0;
+  const totalReinscriptions = stats?.total_reinscriptions_paiements ?? 0;
+  const totalFamilles = stats?.total_familles ?? 0;
+  const cantineInscrits = stats?.cantine_inscrits ?? 0;
+  const cantineSoldeFaible = stats?.cantine_solde_faible ?? 0;
+  const totalRecettes = Number(stats?.total_recettes ?? 0);
+  const totalDepenses = Number(stats?.total_depenses ?? 0);
+  const totalRecettesMois = Number(stats?.recettes_mois ?? 0);
+  const totalDepensesMois = Number(stats?.depenses_mois ?? 0);
+  const caLibrairie = Number(stats?.ca_librairie ?? 0);
+  const caScolarite = Number(stats?.ca_scolarite ?? 0);
+  const effectifParCycle = stats?.effectif_par_cycle ?? [];
+  const recettesParType = stats?.recettes_par_type ?? [];
+  const depensesParService = stats?.depenses_par_service ?? [];
+  const monthlyTrend = stats?.monthly_trend ?? [];
+  const recouvrementParClasse = (stats?.recouvrement_par_classe ?? []).map((c: any) => ({
+    ...c,
+    effectif: Number(c.effectif),
+    totalAttendu: Number(c.total_attendu),
+    totalPaye: Number(c.total_paye),
+    taux: Number(c.taux),
+    reste: Number(c.total_attendu) - Number(c.total_paye),
+    nom: c.nom,
+    cycleNom: c.cycle_nom,
+  }));
 
-  const { data: depenses = [] } = useQuery({
-    queryKey: ['dashboard-depenses'],
-    queryFn: async () => {
-      const allData: any[] = [];
-      const pageSize = 1000;
-      for (let from = 0; ; from += pageSize) {
-        const { data, error } = await supabase
-          .from('depenses')
-          .select('id, montant, service, date_depense')
-          .order('date_depense', { ascending: false })
-          .range(from, from + pageSize - 1);
-        if (error) throw error;
-        allData.push(...(data ?? []));
-        if (!data || data.length < pageSize) break;
-      }
-      return allData;
-    },
-    staleTime: 5 * 60 * 1000,
-    enabled: canSeeFinance,
-  });
-
-  const { data: notesCount = 0 } = useQuery({
-    queryKey: ['dashboard-notes-count'],
-    queryFn: async () => {
-      const { count, error } = await supabase.from('notes').select('id', { count: 'exact', head: true });
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
-
-  const { data: familles = [] } = useQuery({
-    queryKey: ['dashboard-familles'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('familles').select('id, nom_famille');
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: ventesArticles = [] } = useQuery({
-    queryKey: ['dashboard-ventes'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('ventes_articles' as any).select('id, prix_unitaire, quantite');
-      if (error) throw error;
-      return data as any[];
-    },
-    enabled: canSeeFinance,
-  });
-
-  // ─── KPIs ──────────────────────────────────────────────
-  const totalEleves = eleves.length;
-  const totalAbandons = eleves.filter((e: any) => e.statut === 'abandon').length;
-  const now = new Date();
-  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
-  const newInscriptions = eleves.filter((e: any) => e.created_at?.startsWith(thisMonth)).length;
-
-  // Separate inscription vs réinscription counts
-  const { data: paiementsInscription = [] } = useQuery({
-    queryKey: ['dashboard-paiements-inscription'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('paiements')
-        .select('id, type_paiement')
-        .in('type_paiement', ['inscription', 'reinscription']);
-      if (error) throw error;
-      return data;
-    },
-  });
-  const totalInscriptions = paiementsInscription.filter((p: any) => p.type_paiement === 'inscription').length;
-  const totalReinscriptions = paiementsInscription.filter((p: any) => p.type_paiement === 'reinscription').length;
-
-  // Family KPIs
-  const totalFamilles = familles.length;
-  const enfantsEnFratrie = useMemo(() => {
-    const familleIds = new Set(eleves.filter((e: any) => e.famille_id).map((e: any) => e.famille_id));
-    let count = 0;
-    familleIds.forEach(fid => {
-      const kids = eleves.filter((e: any) => e.famille_id === fid);
-      if (kids.length > 1) count += kids.length;
-    });
-    return count;
-  }, [eleves]);
-
-  // CA Librairie
-  const caLibrairie = ventesArticles.reduce((s: number, v: any) => s + Number(v.prix_unitaire) * v.quantite, 0);
-  const caScolarite = paiements.filter((p: any) => p.type_paiement === 'scolarite').reduce((s: number, p: any) => s + Number(p.montant), 0);
-
-  // ─── Ordre pédagogique des cycles ──────────────────
   const CYCLE_ORDRE = ['Crèche', 'Maternelle', 'Primaire', 'Collège', 'Lycée'];
   const getCycleOrdre = (nom: string) => {
-    const idx = CYCLE_ORDRE.findIndex(n => nom.toUpperCase().includes(n.toUpperCase()));
+    const idx = CYCLE_ORDRE.findIndex(n => nom?.toUpperCase().includes(n.toUpperCase()));
     return idx >= 0 ? idx : 999;
   };
 
-  // Impayés par famille
-  const impayesFamilles = useMemo(() => {
-    const familleIds = new Set(eleves.filter((e: any) => e.famille_id).map((e: any) => e.famille_id));
-    const result: { nom: string; reste: number; cycle: string }[] = [];
-    familleIds.forEach(fid => {
-      const kids = eleves.filter((e: any) => e.famille_id === fid);
-      const fam = familles.find((f: any) => f.id === fid);
-      const annuel = kids.reduce((s: number, e: any) => s + Number(e.classes?.niveaux?.frais_scolarite || 0), 0);
-      const paye = kids.reduce((s: number, e: any) => s + paiements.filter((p: any) => p.eleve_id === e.id && p.type_paiement === 'scolarite').reduce((ss: number, p: any) => ss + Number(p.montant), 0), 0);
-      const reste = annuel - paye;
-      const cycles = kids.map((e: any) => e.classes?.niveaux?.cycles?.nom).filter(Boolean);
-      const cycle = cycles[0] || 'Non classé';
-      if (reste > 0) result.push({ nom: fam?.nom_famille || 'Inconnue', reste, cycle });
-    });
-    return result.sort((a, b) => b.reste - a.reste);
-  }, [eleves, paiements, familles]);
+  const tauxGlobal = useMemo(() => {
+    const totalAttendu = recouvrementParClasse.reduce((s: number, c: any) => s + c.totalAttendu, 0);
+    const totalPaye = recouvrementParClasse.reduce((s: number, c: any) => s + c.totalPaye, 0);
+    return totalAttendu > 0 ? Math.round((totalPaye / totalAttendu) * 100) : 0;
+  }, [recouvrementParClasse]);
 
-  // Group impayés by cycle
+  const recouvrementParNiveau = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    recouvrementParClasse.forEach((c: any) => {
+      if (!map[c.cycleNom]) map[c.cycleNom] = [];
+      map[c.cycleNom].push(c);
+    });
+    return Object.entries(map).sort(([a], [b]) => getCycleOrdre(a) - getCycleOrdre(b));
+  }, [recouvrementParClasse]);
+
+  // Impayés simplified (from recouvrement data)
+  const impayesFamilles = useMemo(() => {
+    return recouvrementParClasse
+      .filter((c: any) => c.reste > 0)
+      .map((c: any) => ({ nom: c.nom, reste: c.reste, cycle: c.cycleNom }));
+  }, [recouvrementParClasse]);
+
   const impayesParNiveau = useMemo(() => {
     const map: Record<string, typeof impayesFamilles> = {};
     impayesFamilles.forEach(f => {
@@ -210,125 +123,39 @@ export default function Dashboard() {
     return Object.entries(map).sort(([a], [b]) => getCycleOrdre(a) - getCycleOrdre(b));
   }, [impayesFamilles]);
 
-  const paiementsMois = paiements.filter((p: any) => p.date_paiement?.startsWith(thisMonth));
-  const totalRecettesMois = paiementsMois.reduce((s: number, p: any) => s + Number(p.montant), 0);
+  // ─── Charts & finance computations ──────────────────
+  const SERVICE_LABELS: Record<string, string> = {
+    scolarite: 'Scolarité', transport: 'Transport', cantine: 'Cantine',
+    uniforme: 'Boutique', fournitures: 'Fournitures', autre: 'Autre',
+  };
+  const DEP_TO_PAI: Record<string, string> = {
+    'Scolarité': 'scolarite', 'Transport': 'transport', 'Cantine': 'cantine',
+    'Boutique': 'uniforme', 'Librairie': 'fournitures', 'Fonctionnement': 'autre', 'Autre': 'autre',
+  };
 
-  const depensesMois = depenses.filter((d: any) => d.date_depense?.startsWith(thisMonth));
-  const totalDepensesMois = depensesMois.reduce((s: number, d: any) => s + Number(d.montant), 0);
+  const byService = useMemo(() => {
+    const recMap: Record<string, number> = {};
+    (recettesParType || []).forEach((r: any) => { recMap[r.name] = Number(r.value); });
+    const depMap: Record<string, number> = {};
+    (depensesParService || []).forEach((d: any) => { depMap[d.name] = Number(d.value); });
 
-  const cantineInscrits = eleves.filter((e: any) => e.option_cantine).length;
-  const cantineSoldeFaible = eleves.filter((e: any) => e.option_cantine && Number(e.solde_cantine || 0) < 1000).length;
+    const allLabels = [...new Set([
+      ...Object.keys(recMap).map(k => SERVICE_LABELS[k] || k),
+      ...Object.keys(depMap),
+    ])];
 
-  // ─── Taux de recouvrement par classe ──────────────────
-  const recouvrementParClasse = useMemo(() => {
-    const classeMap: Record<string, { nom: string; cycleNom: string; totalAttendu: number; totalPaye: number; effectif: number }> = {};
+    return allLabels.map(label => {
+      const paiKey = Object.entries(SERVICE_LABELS).find(([, v]) => v === label)?.[0] || label;
+      const recettes = recMap[paiKey] || 0;
+      const depKey = Object.entries(DEP_TO_PAI).find(([, v]) => v === paiKey)?.[0] || label;
+      const dep = depMap[depKey] || 0;
+      const ir = dep > 0 ? parseFloat((recettes / dep).toFixed(2)) : recettes > 0 ? 999 : 0;
+      return { service: label, recettes, depenses: dep, ir, marge: recettes - dep };
+    }).filter(s => s.recettes > 0 || s.depenses > 0);
+  }, [recettesParType, depensesParService]);
 
-    eleves.forEach((e: any) => {
-      if (!e.classe_id || !e.classes) return;
-      const classeNom = e.classes.nom;
-      const cycleNom = e.classes.niveaux?.cycles?.nom || 'Non classé';
-      const totalAnnuel = Number(e.classes.niveaux?.frais_scolarite || 0);
-
-      if (!classeMap[e.classe_id]) {
-        classeMap[e.classe_id] = { nom: classeNom, cycleNom, totalAttendu: 0, totalPaye: 0, effectif: 0 };
-      }
-      classeMap[e.classe_id].totalAttendu += totalAnnuel;
-      classeMap[e.classe_id].effectif += 1;
-    });
-
-    // Sum scolarité payments per class
-    paiements.filter((p: any) => p.type_paiement === 'scolarite').forEach((p: any) => {
-      const eleve = eleves.find((e: any) => e.id === p.eleve_id);
-      if (eleve?.classe_id && classeMap[eleve.classe_id]) {
-        classeMap[eleve.classe_id].totalPaye += Number(p.montant);
-      }
-    });
-
-    return Object.values(classeMap)
-      .filter(c => c.totalAttendu > 0)
-      .map(c => ({
-        ...c,
-        taux: Math.min(100, Math.round((c.totalPaye / c.totalAttendu) * 100)),
-        reste: c.totalAttendu - c.totalPaye,
-      }))
-      .sort((a, b) => getCycleOrdre(a.cycleNom) - getCycleOrdre(b.cycleNom) || a.nom.localeCompare(b.nom));
-  }, [eleves, paiements]);
-
-  // Group recouvrement by cycle
-  const recouvrementParNiveau = useMemo(() => {
-    const map: Record<string, typeof recouvrementParClasse> = {};
-    recouvrementParClasse.forEach(c => {
-      if (!map[c.cycleNom]) map[c.cycleNom] = [];
-      map[c.cycleNom].push(c);
-    });
-    return Object.entries(map).sort(([a], [b]) => getCycleOrdre(a) - getCycleOrdre(b));
-  }, [recouvrementParClasse]);
-
-  const tauxGlobal = useMemo(() => {
-    const totalAttendu = recouvrementParClasse.reduce((s, c) => s + c.totalAttendu, 0);
-    const totalPaye = recouvrementParClasse.reduce((s, c) => s + c.totalPaye, 0);
-    return totalAttendu > 0 ? Math.round((totalPaye / totalAttendu) * 100) : 0;
-  }, [recouvrementParClasse]);
-
-  // ─── Alertes cantine détaillées ──────────────────────
-  const alertesCantine = useMemo(() => {
-    return eleves
-      .filter((e: any) => e.option_cantine && Number(e.solde_cantine || 0) < 1000)
-      .map((e: any) => ({
-        id: e.id,
-        nom: `${e.prenom} ${e.nom}`,
-        classe: e.classes?.nom || '—',
-        solde: Number(e.solde_cantine || 0),
-      }))
-      .sort((a, b) => a.solde - b.solde);
-  }, [eleves]);
-
-  // ─── Charts data ──────────────────────────────────────
-  const recettesParType = useMemo(() => {
-    const map: Record<string, number> = {};
-    paiements.forEach((p: any) => {
-      const type = p.type_paiement || 'Autre';
-      map[type] = (map[type] || 0) + Number(p.montant);
-    });
-    return Object.entries(map).map(([name, value]) => ({ name, value }));
-  }, [paiements]);
-
-  const depensesParService = useMemo(() => {
-    const map: Record<string, number> = {};
-    depenses.forEach((d: any) => {
-      const svc = d.service || 'Autre';
-      map[svc] = (map[svc] || 0) + Number(d.montant);
-    });
-    return Object.entries(map).map(([name, value]) => ({ name, value }));
-  }, [depenses]);
-
-  const monthlyTrend = useMemo(() => {
-    const months: string[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-    }
-    return months.map(m => {
-      const recettes = paiements
-        .filter((p: any) => p.date_paiement?.startsWith(m))
-        .reduce((s: number, p: any) => s + Number(p.montant), 0);
-      const depensesM = depenses
-        .filter((d: any) => d.date_depense?.startsWith(m))
-        .reduce((s: number, d: any) => s + Number(d.montant), 0);
-      const [y, mo] = m.split('-');
-      const label = new Date(Number(y), Number(mo) - 1).toLocaleDateString('fr-FR', { month: 'short' });
-      return { mois: label, recettes, depenses: depensesM };
-    });
-  }, [paiements, depenses]);
-
-  const effectifParCycle = useMemo(() => {
-    const map: Record<string, number> = {};
-    eleves.forEach((e: any) => {
-      const cycle = e.classes?.niveaux?.cycles?.nom || 'Non affecté';
-      map[cycle] = (map[cycle] || 0) + 1;
-    });
-    return Object.entries(map).map(([name, value]) => ({ name, value }));
-  }, [eleves]);
+  const soldeNet = totalRecettes - totalDepenses;
+  const indiceRentabilite = totalDepenses > 0 ? (totalRecettes / totalDepenses).toFixed(2) : '∞';
 
   const COLORS = [
     'hsl(220, 70%, 45%)',
@@ -339,35 +166,14 @@ export default function Dashboard() {
     'hsl(280, 60%, 50%)',
   ];
 
-  const totalRecettes = paiements.reduce((s: number, p: any) => s + Number(p.montant), 0);
-  const totalDepenses = depenses.reduce((s: number, d: any) => s + Number(d.montant), 0);
-
-  // ─── Indice de Rentabilité par service ──────────────────
-  const SERVICE_LABELS: Record<string, string> = {
-    scolarite: 'Scolarité', transport: 'Transport', cantine: 'Cantine',
-    uniforme: 'Boutique', fournitures: 'Fournitures', autre: 'Autre',
-  };
-  const DEP_TO_PAI: Record<string, string> = {
-    'Scolarité': 'scolarite', 'Transport': 'transport', 'Cantine': 'cantine',
-    'Boutique': 'uniforme', 'Librairie': 'fournitures', 'Fonctionnement': 'autre', 'Autre': 'autre',
-  };
-  const SERVICES_PAI = ['scolarite', 'transport', 'cantine', 'uniforme', 'fournitures', 'autre'];
-  const SERVICES_DEP = ['Transport', 'Cantine', 'Librairie', 'Boutique', 'Fonctionnement', 'Autre'];
-  const allServices = [...new Set([...SERVICES_PAI.map(s => SERVICE_LABELS[s]), ...SERVICES_DEP])];
-
-  const byService = useMemo(() => {
-    return allServices.filter((_, i, arr) => arr.indexOf(arr[i]) === i).map(label => {
-      const paiKey = Object.entries(SERVICE_LABELS).find(([, v]) => v === label)?.[0];
-      const recettes = paiKey ? paiements.filter((p: any) => p.type_paiement === paiKey).reduce((sum: number, p: any) => sum + Number(p.montant), 0) : 0;
-      const depKey = Object.entries(DEP_TO_PAI).find(([, v]) => v === paiKey)?.[0] || label;
-      const dep = depenses.filter((d: any) => d.service === depKey).reduce((sum: number, d: any) => sum + Number(d.montant), 0);
-      const ir = dep > 0 ? parseFloat((recettes / dep).toFixed(2)) : recettes > 0 ? 999 : 0;
-      return { service: label, recettes, depenses: dep, ir, marge: recettes - dep };
-    }).filter(s => s.recettes > 0 || s.depenses > 0);
-  }, [paiements, depenses]);
-
-  const soldeNet = totalRecettes - totalDepenses;
-  const indiceRentabilite = totalDepenses > 0 ? (totalRecettes / totalDepenses).toFixed(2) : '∞';
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-3 text-muted-foreground">Chargement du tableau de bord…</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -478,7 +284,6 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="px-3 pb-3">
             <div className="text-lg font-bold text-amber-700 dark:text-amber-400 truncate">{totalRecettesMois.toLocaleString()} <span className="text-[10px] font-normal">GNF</span></div>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{paiementsMois.length} paiements</p>
           </CardContent>
         </Card>
         )}
@@ -526,7 +331,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="px-3 pb-3">
             <div className="text-lg font-bold text-red-600 truncate">{impayesFamilles.reduce((s, f) => s + f.reste, 0).toLocaleString()} <span className="text-[10px] font-normal">GNF</span></div>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{impayesFamilles.length} familles</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{impayesFamilles.length} classes</p>
           </CardContent>
         </Card>
         <Card className="overflow-hidden border border-indigo-200 dark:border-indigo-800 bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
@@ -538,17 +343,6 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="px-3 pb-3">
             <div className="text-xl font-bold text-indigo-700 dark:text-indigo-400">{totalFamilles}</div>
-          </CardContent>
-        </Card>
-        <Card className="overflow-hidden border border-cyan-200 dark:border-cyan-800 bg-gradient-to-br from-cyan-500/10 via-cyan-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
-            <CardTitle className="text-xs font-medium text-muted-foreground truncate">Enfants en fratrie</CardTitle>
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/15 flex items-center justify-center">
-              <Users className="h-4 w-4 text-cyan-600 shrink-0" />
-            </div>
-          </CardHeader>
-          <CardContent className="px-3 pb-3">
-            <div className="text-xl font-bold text-cyan-700 dark:text-cyan-400">{enfantsEnFratrie}</div>
           </CardContent>
         </Card>
         <Card className="overflow-hidden border border-sky-200 dark:border-sky-800 bg-gradient-to-br from-sky-500/10 via-sky-500/5 to-transparent shadow-sm hover:shadow-md transition-shadow">
@@ -586,15 +380,14 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           {(() => {
-            const caTransport = paiements.filter((p: any) => p.type_paiement === 'transport').reduce((s: number, p: any) => s + Number(p.montant), 0);
-            const caOptions = paiements.filter((p: any) => ['article', 'boutique', 'fournitures', 'uniforme', 'cantine'].includes(p.type_paiement)).reduce((s: number, p: any) => s + Number(p.montant), 0);
-            const caInscription = paiements.filter((p: any) => ['inscription', 'reinscription'].includes(p.type_paiement)).reduce((s: number, p: any) => s + Number(p.montant), 0);
+            const recMap: Record<string, number> = {};
+            (recettesParType || []).forEach((r: any) => { recMap[r.name] = Number(r.value); });
             const chartData = [
               { name: 'Scolarité', montant: caScolarite },
-              { name: 'Transport', montant: caTransport },
+              { name: 'Transport', montant: recMap['transport'] || 0 },
               { name: 'Librairie', montant: caLibrairie },
-              { name: 'Options/Boutique', montant: caOptions },
-              { name: 'Inscriptions', montant: caInscription },
+              { name: 'Options/Boutique', montant: (recMap['article'] || 0) + (recMap['boutique'] || 0) + (recMap['fournitures'] || 0) + (recMap['uniforme'] || 0) + (recMap['cantine'] || 0) },
+              { name: 'Inscriptions', montant: (recMap['inscription'] || 0) + (recMap['reinscription'] || 0) },
             ];
             const barColors = ['hsl(220, 70%, 45%)', 'hsl(38, 92%, 50%)', 'hsl(142, 71%, 45%)', 'hsl(280, 60%, 50%)', 'hsl(200, 80%, 50%)'];
             return chartData.some(d => d.montant > 0) ? (
@@ -644,15 +437,15 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-        <Card className={`border border-teal-200 dark:border-teal-800 shadow-sm bg-gradient-to-br from-teal-500/15 to-teal-500/5' : 'bg-gradient-to-br from-red-500/15 to-red-500/5'}`}>
+        <Card className={`border shadow-sm ${soldeNet >= 0 ? 'border-teal-200 dark:border-teal-800 bg-gradient-to-br from-teal-500/15 to-teal-500/5' : 'border-red-200 dark:border-red-800 bg-gradient-to-br from-red-500/15 to-red-500/5'}`}>
           <CardContent className="pt-6 flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${totalRecettes - totalDepenses >= 0 ? 'bg-teal-500/20' : 'bg-red-500/20'}`}>
-              <Wallet className={`h-6 w-6 ${totalRecettes - totalDepenses >= 0 ? 'text-teal-600' : 'text-red-600'}`} />
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${soldeNet >= 0 ? 'bg-teal-500/20' : 'bg-red-500/20'}`}>
+              <Wallet className={`h-6 w-6 ${soldeNet >= 0 ? 'text-teal-600' : 'text-red-600'}`} />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Solde net</p>
-              <p className={`text-xl font-bold ${totalRecettes - totalDepenses >= 0 ? 'text-teal-700 dark:text-teal-400' : 'text-red-600'}`}>
-                {(totalRecettes - totalDepenses).toLocaleString()} GNF
+              <p className={`text-xl font-bold ${soldeNet >= 0 ? 'text-teal-700 dark:text-teal-400' : 'text-red-600'}`}>
+                {soldeNet.toLocaleString()} GNF
               </p>
             </div>
           </CardContent>
@@ -735,35 +528,6 @@ export default function Dashboard() {
                 </p>
               </div>
             </div>
-            {alertesCantine.length > 0 && (
-              <div className="border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Élève</TableHead>
-                      <TableHead>Classe</TableHead>
-                      <TableHead className="text-right">Solde</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {alertesCantine.slice(0, 10).map((a) => (
-                      <TableRow key={a.id}>
-                        <TableCell className="font-medium">{a.nom}</TableCell>
-                        <TableCell>{a.classe}</TableCell>
-                        <TableCell className="text-right">
-                          <Badge variant="destructive">{a.solde.toLocaleString()} GNF</Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {alertesCantine.length > 10 && (
-                  <p className="text-xs text-muted-foreground text-center py-2">
-                    … et {alertesCantine.length - 10} autre(s)
-                  </p>
-                )}
-              </div>
-            )}
           </CardContent>
         </Card>
       )}
@@ -777,7 +541,7 @@ export default function Dashboard() {
             <CardTitle className="text-base">Tendance recettes / dépenses (6 mois)</CardTitle>
           </CardHeader>
           <CardContent>
-            {monthlyTrend.some(m => m.recettes > 0 || m.depenses > 0) ? (
+            {monthlyTrend.some((m: any) => Number(m.recettes) > 0 || Number(m.depenses) > 0) ? (
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={monthlyTrend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -808,7 +572,7 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie data={effectifParCycle} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
-                    {effectifParCycle.map((_, i) => (
+                    {effectifParCycle.map((_: any, i: number) => (
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
                   </Pie>
@@ -856,8 +620,8 @@ export default function Dashboard() {
             {depensesParService.length > 0 ? (
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
-                  <Pie data={depensesParService} cx="50%" cy="50%" outerRadius={100} paddingAngle={3} dataKey="value" label={({ name, value }) => `${name}: ${value.toLocaleString()}`}>
-                    {depensesParService.map((_, i) => (
+                  <Pie data={depensesParService} cx="50%" cy="50%" outerRadius={100} paddingAngle={3} dataKey="value" label={({ name, value }: any) => `${name}: ${Number(value).toLocaleString()}`}>
+                    {depensesParService.map((_: any, i: number) => (
                       <Cell key={i} fill={COLORS[(i + 2) % COLORS.length]} />
                     ))}
                   </Pie>
