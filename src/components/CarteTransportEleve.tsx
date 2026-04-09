@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -188,7 +189,7 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
 
   const toggleSelectAll = () => {
     const eligible = filteredEleves.filter((e: any) => !hasRechargeThisMonth(e.id) && hasTransportPaidThisMonth(e.id));
-    if (selectedIds.size === eligible.length) {
+    if (selectedIds.size === eligible.length && eligible.length > 0) {
       setSelectedIds(new Set());
     } else {
       setSelectedIds(new Set(eligible.map((e: any) => e.id)));
@@ -200,24 +201,32 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
     setBulkLoading(true);
     let success = 0;
     let errors = 0;
-    for (const id of selectedIds) {
-      const eleve = eleves.find((e: any) => e.id === id);
-      if (!eleve) continue;
-      const montant = (eleve as any).zones_transport?.prix_mensuel || 0;
-      try {
-        await supabase
-          .from('recharges_transport')
-          .update({ actif: false } as any)
-          .eq('eleve_id', id)
-          .eq('actif', true);
-        const { error } = await supabase.from('recharges_transport').insert({
-          eleve_id: id,
-          montant,
-          actif: true,
-        } as any);
-        if (error) { errors++; } else { success++; }
-      } catch { errors++; }
+    const ids = Array.from(selectedIds);
+    const BATCH_SIZE = 20;
+
+    for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+      const batch = ids.slice(i, i + BATCH_SIZE);
+      const promises = batch.map(async (id) => {
+        const eleve = eleves.find((e: any) => e.id === id);
+        if (!eleve) return;
+        const montant = (eleve as any).zones_transport?.prix_mensuel || 0;
+        try {
+          await supabase
+            .from('recharges_transport')
+            .update({ actif: false } as any)
+            .eq('eleve_id', id)
+            .eq('actif', true);
+          const { error } = await supabase.from('recharges_transport').insert({
+            eleve_id: id,
+            montant,
+            actif: true,
+          } as any);
+          if (error) { errors++; } else { success++; }
+        } catch { errors++; }
+      });
+      await Promise.all(promises);
     }
+
     setBulkLoading(false);
     queryClient.invalidateQueries({ queryKey: ['recharges-transport'] });
     setSelectedIds(new Set());
@@ -612,12 +621,13 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
               <TableRow>
                 {bulkMode && (
                   <TableHead className="w-10">
-                    <input
-                      type="checkbox"
-                      className="rounded border-muted-foreground"
-                      checked={selectedIds.size > 0 && selectedIds.size === filteredEleves.filter((e: any) => !hasRechargeThisMonth(e.id)).length}
-                      onChange={toggleSelectAll}
-                    />
+                    <div onClick={(e) => { e.stopPropagation(); toggleSelectAll(); }} className="cursor-pointer flex items-center justify-center">
+                      <Checkbox
+                        checked={selectedIds.size > 0 && selectedIds.size === filteredEleves.filter((e: any) => !hasRechargeThisMonth(e.id) && hasTransportPaidThisMonth(e.id)).length}
+                        onCheckedChange={() => {}}
+                        className="pointer-events-none"
+                      />
+                    </div>
                   </TableHead>
                 )}
                 <TableHead>Matricule</TableHead>
@@ -645,13 +655,20 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
                   <TableRow key={e.id} className={bulkMode && selectedIds.has(e.id) ? 'bg-primary/5' : ''}>
                     {bulkMode && (
                       <TableCell>
-                        <input
-                          type="checkbox"
-                          className="rounded border-muted-foreground"
-                          disabled={alreadyThisMonth || !parentPaid}
-                          checked={selectedIds.has(e.id)}
-                          onChange={() => toggleSelect(e.id)}
-                        />
+                        <div
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            if (!(alreadyThisMonth || !parentPaid)) toggleSelect(e.id);
+                          }}
+                          className={`cursor-pointer flex items-center justify-center ${(alreadyThisMonth || !parentPaid) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          <Checkbox
+                            checked={selectedIds.has(e.id)}
+                            disabled={alreadyThisMonth || !parentPaid}
+                            onCheckedChange={() => {}}
+                            className="pointer-events-none"
+                          />
+                        </div>
                       </TableCell>
                     )}
                     <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
