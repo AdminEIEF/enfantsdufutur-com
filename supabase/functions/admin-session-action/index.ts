@@ -27,12 +27,13 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authErr } = await supabaseAdmin.auth.getUser(token);
-    if (authErr || !user) {
+    const { data: claimsData, error: claimsErr } = await supabaseAdmin.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims?.sub) {
       return new Response(JSON.stringify({ error: "Non autorisé" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const user = { id: claimsData.claims.sub as string };
 
     // Check superviseur or admin role
     const { data: roles } = await supabaseAdmin
