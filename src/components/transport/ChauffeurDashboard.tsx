@@ -250,7 +250,7 @@ export default function ChauffeurDashboard() {
     if (!matricule) return;
 
     const { data: eleve } = await supabase.from('eleves')
-      .select('id, nom, prenom, matricule, photo_url, photo_thumbnail_url, zone_transport_id, classe_id, classes(nom)')
+      .select('id, nom, prenom, matricule, photo_url, photo_thumbnail_url, zone_transport_id, classe_id, classes(nom), famille_id')
       .eq('matricule', matricule).not('zone_transport_id', 'is', null).single();
 
     if (!eleve) {
@@ -280,6 +280,33 @@ export default function ChauffeurDashboard() {
     ]);
     const recharge = (rechargeRes.data as any[])?.[0];
     const count = (existingRes.data as any[])?.length || 0;
+    const isValid = !!recharge;
+
+    // Pas de recharge et déjà scanné une fois → croix rouge, pas d'insertion, notifications
+    if (!isValid && count >= 1) {
+      playBeep(300);
+      const displayRecharge = recharges.find((r: any) => r.eleve_id === eleve.id);
+      setLastScanResult({ status: 'blocked_no_recharge', eleve, recharge: displayRecharge });
+      toast({ title: '❌ Accès refusé', description: `${eleve.prenom} ${eleve.nom} — Carte non rechargée`, variant: 'destructive' });
+      
+      // Envoyer notifications en arrière-plan
+      supabase.from('student_notifications').insert({
+        eleve_id: eleve.id,
+        titre: '🚌 Carte transport non rechargée',
+        message: 'Votre carte de transport n\'est pas rechargée. Veuillez demander à vos parents de la recharger.',
+        type: 'alerte',
+      } as any).then(() => {});
+      if (eleve.famille_id) {
+        supabase.from('parent_notifications').insert({
+          famille_id: eleve.famille_id,
+          titre: '🚌 Carte transport à recharger',
+          message: `La carte transport de ${eleve.prenom} ${eleve.nom} n'est pas rechargée. Veuillez effectuer la recharge.`,
+          type: 'alerte',
+        } as any).then(() => {});
+      }
+      setTimeout(() => setLastScanResult(null), 5000);
+      return;
+    }
 
     if (count >= 2) {
       setLastScanResult({ status: 'already', eleve, recharge });
@@ -289,11 +316,10 @@ export default function ChauffeurDashboard() {
     }
 
     const trajet = count === 0 ? 'aller' : 'retour';
-    const isValid = !!recharge;
 
     supabase.from('validations_transport').insert({
       eleve_id: eleve.id, recharge_id: recharge?.id || null, zone_transport_id: eleve.zone_transport_id,
-      valide: isValid, motif_rejet: isValid ? null : 'Carte expirée ou non rechargée',
+      valide: isValid, motif_rejet: isValid ? null : 'Carte non rechargée (1er passage autorisé)',
     } as any).then(() => {
       queryClient.invalidateQueries({ queryKey: ['chauffeur-validations-full'] });
     });
@@ -302,16 +328,20 @@ export default function ChauffeurDashboard() {
       playBeep(800);
       if (navigator.vibrate) navigator.vibrate(150);
     } else {
-      playBeep(300);
+      playBeep(800); // Premier passage autorisé = beep positif
+      if (navigator.vibrate) navigator.vibrate(150);
     }
 
     const displayRecharge = recharge || recharges.find((r: any) => r.eleve_id === eleve.id);
-    setLastScanResult({ status: isValid ? 'valid' : 'invalid', eleve, recharge: displayRecharge, trajet });
+    setLastScanResult({ 
+      status: isValid ? 'valid' : 'first_free', 
+      eleve, recharge: displayRecharge, trajet 
+    });
 
     toast({
-      title: isValid ? `✅ ${trajet === 'aller' ? 'Aller' : 'Retour'} validé` : '❌ Carte expirée',
-      description: `${eleve.prenom} ${eleve.nom}`,
-      variant: isValid ? undefined : 'destructive',
+      title: isValid ? `✅ ${trajet === 'aller' ? 'Aller' : 'Retour'} validé` : '⚠️ 1er passage autorisé',
+      description: `${eleve.prenom} ${eleve.nom}${!isValid ? ' — Recharge requise' : ''}`,
+      variant: isValid ? undefined : undefined,
     });
 
     setTimeout(() => { setLastScanResult(null); }, 5000);
