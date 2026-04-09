@@ -498,29 +498,37 @@ export default function PointageEleves() {
           <div className="px-5 py-3 border-b border-border/30 flex items-center gap-2">
             <GraduationCap className="h-4 w-4 text-primary" />
             <h3 className="text-sm font-semibold text-foreground">Présence par niveau</h3>
-            <Badge variant="secondary" className="ml-auto text-[10px]">{totalArrivedAllNiveaux} élèves</Badge>
+            <Badge variant="secondary" className="ml-auto text-[10px]">{totalPresentAllNiveaux}/{totalAllNiveaux} présents</Badge>
           </div>
           <div className="p-4 space-y-3">
-            {niveauPresence.map((n) => (
-              <div key={n.nom} className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium text-foreground">{n.nom}</span>
-                  <div className="flex items-center gap-1.5">
-                    <TrendingUp className="h-3 w-3 text-primary" />
-                    <span className="font-bold text-primary">{n.arrived}</span>
-                    <span className="text-muted-foreground">élève{n.arrived > 1 ? 's' : ''}</span>
+            {niveauPresence.map((n) => {
+              const pct = n.total > 0 ? Math.round((n.present / n.total) * 100) : 0;
+              return (
+                <div key={n.nom} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-foreground">{n.nom}</span>
+                    <div className="flex items-center gap-2">
+                      {n.departed > 0 && (
+                        <span className="text-amber-500 flex items-center gap-0.5">
+                          <LogOut className="h-3 w-3" /> {n.departed}
+                        </span>
+                      )}
+                      <span className="font-bold text-primary">{n.present}</span>
+                      <span className="text-muted-foreground">/ {n.total}</span>
+                      <span className="text-muted-foreground text-[10px]">({pct}%)</span>
+                    </div>
+                  </div>
+                  <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.6, ease: 'easeOut' }}
+                      className={`h-full rounded-full ${pct > 70 ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : pct > 40 ? 'bg-gradient-to-r from-primary to-primary/70' : 'bg-gradient-to-r from-amber-500 to-amber-400'}`}
+                    />
                   </div>
                 </div>
-                <div className="h-2.5 rounded-full bg-muted overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(n.arrived / maxArrived) * 100}%` }}
-                    transition={{ duration: 0.6, ease: 'easeOut' }}
-                    className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70"
-                  />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
       )}
