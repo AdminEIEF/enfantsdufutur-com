@@ -3,3 +3,16 @@
 
 /registerSW.js
   Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.js
+  Cache-Control: public, max-age=86400
+
+/*.css
+  Cache-Control: public, max-age=86400
+
+/
+  Cache-Control: public, max-age=3600
+  X-Content-Type-Options: nosniff
