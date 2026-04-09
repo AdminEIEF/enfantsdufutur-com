@@ -105,7 +105,7 @@ function PassagerCard({ v, eleve, recharge }: { v: any; eleve: any; recharge: an
 
 export default function ChauffeurDashboard() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -138,11 +138,14 @@ export default function ChauffeurDashboard() {
         .maybeSingle();
       return { employe: emp, vehicule: veh };
     },
-    enabled: !!user?.email,
+    enabled: !!user?.email && !authLoading,
+    retry: 2,
+    retryDelay: 500,
   });
 
   const chauffeurVehicule = chauffeurInfo?.vehicule;
   const chauffeurEmploye = chauffeurInfo?.employe;
+  const isStillLoading = authLoading || loadingChauffeur;
 
   const myZoneId = chauffeurVehicule?.zone_transport_id;
   const myZoneName = (chauffeurVehicule?.zones_transport as any)?.nom;
@@ -351,7 +354,7 @@ export default function ChauffeurDashboard() {
   return (
     <div className="space-y-4">
       {/* Header with chauffeur identity and zone info */}
-      {loadingChauffeur ? (
+      {isStillLoading ? (
         <div className="flex items-center gap-3 p-4 rounded-2xl border bg-card">
           <Skeleton className="h-12 w-12 rounded-xl" />
           <div className="space-y-2">

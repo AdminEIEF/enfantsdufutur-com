@@ -282,9 +282,16 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       const matchSearch = `${e.nom} ${e.prenom} ${e.matricule || ''}`.toLowerCase().includes(search.toLowerCase());
       const matchZone = filterZone === 'all' || e.zone_transport_id === filterZone;
       const matchClasse = filterClasse === 'all' || e.classe_id === filterClasse;
-      const matchPrintTab = printTab === 'a_imprimer'
-        ? (e.print_status || 'en_attente') === 'en_attente'
-        : (e.print_status || 'en_attente') === 'imprime';
+      let matchPrintTab = true;
+      if (printTab === 'a_imprimer') {
+        matchPrintTab = (e.print_status || 'en_attente') === 'en_attente';
+      } else if (printTab === 'historique') {
+        matchPrintTab = (e.print_status || 'en_attente') === 'imprime';
+      } else if (printTab === 'chargees') {
+        matchPrintTab = !!getActiveRecharge(e.id);
+      } else if (printTab === 'en_attente_validation') {
+        matchPrintTab = !getActiveRecharge(e.id);
+      }
       return matchSearch && matchZone && matchClasse && matchPrintTab;
     });
     // Sort: pending validation (paid but not recharged) first, then not paid, then already recharged
@@ -293,7 +300,6 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
       const bPaid = hasTransportPaidThisMonth(b.id);
       const aRecharged = hasRechargeThisMonth(a.id);
       const bRecharged = hasRechargeThisMonth(b.id);
-      // Priority: paid & not recharged > not paid > recharged
       const aScore = aPaid && !aRecharged ? 0 : !aPaid ? 1 : 2;
       const bScore = bPaid && !bRecharged ? 0 : !bPaid ? 1 : 2;
       return aScore - bScore;
@@ -454,12 +460,26 @@ export default function CarteTransportEleve({ zones }: CarteTransportEleveProps)
 
       {/* Onglets statut impression */}
       <Tabs value={printTab} onValueChange={setPrintTab}>
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="a_imprimer" className="gap-1">
             <Clock className="h-3.5 w-3.5" />
             À Imprimer
             <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
               {eleves.filter((e: any) => (e.print_status || 'en_attente') === 'en_attente').length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="chargees" className="gap-1">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Chargées
+            <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 bg-emerald-500/10 text-emerald-600">
+              {eleves.filter((e: any) => !!getActiveRecharge(e.id)).length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="en_attente_validation" className="gap-1">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            En attente
+            <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 bg-orange-500/10 text-orange-600">
+              {eleves.filter((e: any) => !getActiveRecharge(e.id)).length}
             </Badge>
           </TabsTrigger>
           <TabsTrigger value="historique" className="gap-1">
