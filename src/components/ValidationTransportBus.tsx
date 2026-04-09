@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bus, CheckCircle, XCircle, ScanLine, Search, AlertTriangle, ArrowLeftRight, WifiOff, Wifi, Download, RefreshCw, CloudOff, Smartphone, Info } from 'lucide-react';
+import { Bus, CheckCircle, XCircle, ScanLine, Search, AlertTriangle, ArrowLeftRight, WifiOff, Wifi, Download, RefreshCw, CloudOff, Smartphone, Info, ArrowUp, ArrowDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -118,6 +118,19 @@ export default function ValidationTransportBus() {
         valide: isValid, motif_rejet: isValid ? null : 'Carte non rechargée (1er passage autorisé)',
       } as any);
       if (error) throw error;
+
+      // Notification parent : montée/descente
+      const trajetType = count === 0 ? 'monté dans' : 'descendu du';
+      const heureNow = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      if (eleve.famille_id) {
+        await supabase.from('parent_notifications').insert({
+          famille_id: eleve.famille_id,
+          titre: count === 0 ? '🚌 Votre enfant est monté dans le bus' : '🏠 Votre enfant est descendu du bus',
+          message: `Votre enfant ${eleve.prenom} ${eleve.nom} est bien ${trajetType} le bus à ${heureNow}.`,
+          type: 'info',
+        } as any);
+      }
+
       return { eleve, status: isValid ? 'valid' : 'first_free', trajet, message: isValid ? `${trajet === 'aller' ? '🚌 Aller' : '🏠 Retour'} — Accès autorisé` : '⚠️ 1er passage autorisé — Recharge requise', recharge };
     },
     onSuccess: (result) => {
@@ -166,6 +179,27 @@ export default function ValidationTransportBus() {
 
   const validCount = validations.filter((v: any) => v.valide).length;
   const rejectCount = validations.filter((v: any) => !v.valide).length;
+
+  // Compteur montées vs descentes
+  const monteeCount = useMemo(() => {
+    const seen = new Set<string>();
+    let count = 0;
+    for (const v of [...validations].sort((a: any, b: any) => new Date(a.validated_at).getTime() - new Date(b.validated_at).getTime())) {
+      if (!seen.has(v.eleve_id)) { seen.add(v.eleve_id); count++; }
+    }
+    return count;
+  }, [validations]);
+
+  const descenteCount = useMemo(() => {
+    const seen = new Set<string>();
+    let count = 0;
+    const sorted = [...validations].sort((a: any, b: any) => new Date(a.validated_at).getTime() - new Date(b.validated_at).getTime());
+    for (const v of sorted) {
+      if (seen.has(v.eleve_id)) { count++; }
+      else { seen.add(v.eleve_id); }
+    }
+    return count;
+  }, [validations]);
 
   return (
     <div className="space-y-4">
