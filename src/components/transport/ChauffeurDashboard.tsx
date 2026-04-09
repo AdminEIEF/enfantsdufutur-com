@@ -578,7 +578,9 @@ export default function ChauffeurDashboard() {
                 <Card className="overflow-hidden border-0 shadow-xl">
                   <div className={`h-20 relative ${
                     lastScanResult.status === 'valid' ? 'bg-gradient-to-r from-emerald-500 to-emerald-600' :
+                    lastScanResult.status === 'first_free' ? 'bg-gradient-to-r from-amber-500 to-amber-600' :
                     lastScanResult.status === 'wrong_zone' ? 'bg-gradient-to-r from-amber-500 to-amber-600' :
+                    lastScanResult.status === 'blocked_no_recharge' ? 'bg-gradient-to-r from-destructive to-destructive/80' :
                     lastScanResult.status === 'invalid' ? 'bg-gradient-to-r from-destructive to-destructive/80' :
                     'bg-gradient-to-r from-primary to-primary/80'
                   }`}>
@@ -616,8 +618,26 @@ export default function ChauffeurDashboard() {
                 </div>
               )}
 
-              {/* BIG Validity status */}
-              {lastScanResult.status !== 'wrong_zone' && (
+              {/* Blocked: carte non rechargée, 2e scan */}
+              {lastScanResult.status === 'blocked_no_recharge' && (
+                <div className="flex flex-col items-center gap-2 p-6 rounded-3xl bg-destructive/10 border-2 border-destructive/30">
+                  <XCircle className="h-20 w-20 text-destructive" />
+                  <p className="text-2xl font-black text-destructive">ACCÈS REFUSÉ</p>
+                  <p className="text-sm text-destructive/70 text-center">Carte non rechargée — Notification envoyée à l'élève et au parent</p>
+                </div>
+              )}
+
+              {/* First free pass: carte non rechargée, 1er scan autorisé */}
+              {lastScanResult.status === 'first_free' && (
+                <div className="flex flex-col items-center gap-2 p-6 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30">
+                  <AlertTriangle className="h-16 w-16 text-amber-500" />
+                  <p className="text-2xl font-black text-amber-600">1er PASSAGE AUTORISÉ</p>
+                  <p className="text-sm text-amber-600/70 text-center">Carte non rechargée — Le prochain scan sera refusé</p>
+                </div>
+              )}
+
+              {/* BIG Validity status - only for valid scans */}
+              {lastScanResult.status === 'valid' && (
                 <CardValidityBig recharge={lastScanResult.recharge && getDaysRemaining(lastScanResult.recharge.date_expiration) > 0 ? lastScanResult.recharge : null} />
               )}
 
