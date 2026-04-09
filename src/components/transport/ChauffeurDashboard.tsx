@@ -250,7 +250,7 @@ export default function ChauffeurDashboard() {
     if (!matricule) return;
 
     const { data: eleve } = await supabase.from('eleves')
-      .select('id, nom, prenom, matricule, photo_url, photo_thumbnail_url, zone_transport_id, classe_id, classes(nom)')
+      .select('id, nom, prenom, matricule, photo_url, photo_thumbnail_url, zone_transport_id, classe_id, classes(nom), famille_id')
       .eq('matricule', matricule).not('zone_transport_id', 'is', null).single();
 
     if (!eleve) {
@@ -280,6 +280,33 @@ export default function ChauffeurDashboard() {
     ]);
     const recharge = (rechargeRes.data as any[])?.[0];
     const count = (existingRes.data as any[])?.length || 0;
+    const isValid = !!recharge;
+
+    // Pas de recharge et déjà scanné une fois → croix rouge, pas d'insertion, notifications
+    if (!isValid && count >= 1) {
+      playBeep(300);
+      const displayRecharge = recharges.find((r: any) => r.eleve_id === eleve.id);
+      setLastScanResult({ status: 'blocked_no_recharge', eleve, recharge: displayRecharge });
+      toast({ title: '❌ Accès refusé', description: `${eleve.prenom} ${eleve.nom} — Carte non rechargée`, variant: 'destructive' });
+      
+      // Envoyer notifications en arrière-plan
+      supabase.from('student_notifications').insert({
+        eleve_id: eleve.id,
+        titre: '🚌 Carte transport non rechargée',
+        message: 'Votre carte de transport n\'est pas rechargée. Veuillez demander à vos parents de la recharger.',
+        type: 'alerte',
+      } as any).then(() => {});
+      if (eleve.famille_id) {
+        supabase.from('parent_notifications').insert({
+          famille_id: eleve.famille_id,
+          titre: '🚌 Carte transport à recharger',
+          message: `La carte transport de ${eleve.prenom} ${eleve.nom} n'est pas rechargée. Veuillez effectuer la recharge.`,
+          type: 'alerte',
+        } as any).then(() => {});
+      }
+      setTimeout(() => setLastScanResult(null), 5000);
+      return;
+    }
 
     if (count >= 2) {
       setLastScanResult({ status: 'already', eleve, recharge });
@@ -289,11 +316,10 @@ export default function ChauffeurDashboard() {
     }
 
     const trajet = count === 0 ? 'aller' : 'retour';
-    const isValid = !!recharge;
 
     supabase.from('validations_transport').insert({
       eleve_id: eleve.id, recharge_id: recharge?.id || null, zone_transport_id: eleve.zone_transport_id,
-      valide: isValid, motif_rejet: isValid ? null : 'Carte expirée ou non rechargée',
+      valide: isValid, motif_rejet: isValid ? null : 'Carte non rechargée (1er passage autorisé)',
     } as any).then(() => {
       queryClient.invalidateQueries({ queryKey: ['chauffeur-validations-full'] });
     });
@@ -302,16 +328,20 @@ export default function ChauffeurDashboard() {
       playBeep(800);
       if (navigator.vibrate) navigator.vibrate(150);
     } else {
-      playBeep(300);
+      playBeep(800); // Premier passage autorisé = beep positif
+      if (navigator.vibrate) navigator.vibrate(150);
     }
 
     const displayRecharge = recharge || recharges.find((r: any) => r.eleve_id === eleve.id);
-    setLastScanResult({ status: isValid ? 'valid' : 'invalid', eleve, recharge: displayRecharge, trajet });
+    setLastScanResult({ 
+      status: isValid ? 'valid' : 'first_free', 
+      eleve, recharge: displayRecharge, trajet 
+    });
 
     toast({
-      title: isValid ? `✅ ${trajet === 'aller' ? 'Aller' : 'Retour'} validé` : '❌ Carte expirée',
-      description: `${eleve.prenom} ${eleve.nom}`,
-      variant: isValid ? undefined : 'destructive',
+      title: isValid ? `✅ ${trajet === 'aller' ? 'Aller' : 'Retour'} validé` : '⚠️ 1er passage autorisé',
+      description: `${eleve.prenom} ${eleve.nom}${!isValid ? ' — Recharge requise' : ''}`,
+      variant: isValid ? undefined : undefined,
     });
 
     setTimeout(() => { setLastScanResult(null); }, 5000);
@@ -548,7 +578,9 @@ export default function ChauffeurDashboard() {
                 <Card className="overflow-hidden border-0 shadow-xl">
                   <div className={`h-20 relative ${
                     lastScanResult.status === 'valid' ? 'bg-gradient-to-r from-emerald-500 to-emerald-600' :
+                    lastScanResult.status === 'first_free' ? 'bg-gradient-to-r from-amber-500 to-amber-600' :
                     lastScanResult.status === 'wrong_zone' ? 'bg-gradient-to-r from-amber-500 to-amber-600' :
+                    lastScanResult.status === 'blocked_no_recharge' ? 'bg-gradient-to-r from-destructive to-destructive/80' :
                     lastScanResult.status === 'invalid' ? 'bg-gradient-to-r from-destructive to-destructive/80' :
                     'bg-gradient-to-r from-primary to-primary/80'
                   }`}>
@@ -586,8 +618,26 @@ export default function ChauffeurDashboard() {
                 </div>
               )}
 
-              {/* BIG Validity status */}
-              {lastScanResult.status !== 'wrong_zone' && (
+              {/* Blocked: carte non rechargée, 2e scan */}
+              {lastScanResult.status === 'blocked_no_recharge' && (
+                <div className="flex flex-col items-center gap-2 p-6 rounded-3xl bg-destructive/10 border-2 border-destructive/30">
+                  <XCircle className="h-20 w-20 text-destructive" />
+                  <p className="text-2xl font-black text-destructive">ACCÈS REFUSÉ</p>
+                  <p className="text-sm text-destructive/70 text-center">Carte non rechargée — Notification envoyée à l'élève et au parent</p>
+                </div>
+              )}
+
+              {/* First free pass: carte non rechargée, 1er scan autorisé */}
+              {lastScanResult.status === 'first_free' && (
+                <div className="flex flex-col items-center gap-2 p-6 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30">
+                  <AlertTriangle className="h-16 w-16 text-amber-500" />
+                  <p className="text-2xl font-black text-amber-600">1er PASSAGE AUTORISÉ</p>
+                  <p className="text-sm text-amber-600/70 text-center">Carte non rechargée — Le prochain scan sera refusé</p>
+                </div>
+              )}
+
+              {/* BIG Validity status - only for valid scans */}
+              {lastScanResult.status === 'valid' && (
                 <CardValidityBig recharge={lastScanResult.recharge && getDaysRemaining(lastScanResult.recharge.date_expiration) > 0 ? lastScanResult.recharge : null} />
               )}
 

@@ -82,26 +82,50 @@ export default function ValidationTransportBus() {
         .order('date_expiration', { ascending: false }).limit(1);
       const recharge = (recharges as any[])?.[0];
       const { data: eleve } = await supabase
-        .from('eleves').select('id, nom, prenom, matricule, zone_transport_id').eq('id', eleveId).single();
+        .from('eleves').select('id, nom, prenom, matricule, zone_transport_id, famille_id').eq('id', eleveId).single();
       if (!eleve) throw new Error('Élève introuvable');
       const { data: existing } = await supabase
-        .from('validations_transport').select('id').eq('eleve_id', eleveId)
+        .from('validations_transport').select('id, valide').eq('eleve_id', eleveId)
         .gte('validated_at', `${today}T00:00:00`).lte('validated_at', `${today}T23:59:59`);
       const count = (existing as any[])?.length || 0;
+      const isValid = !!recharge;
+
+      // Si pas de recharge et déjà scanné une fois → refuser et notifier
+      if (!isValid && count >= 1) {
+        // Envoyer notification élève
+        await supabase.from('student_notifications').insert({
+          eleve_id: eleveId,
+          titre: '🚌 Carte transport non rechargée',
+          message: 'Votre carte de transport n\'est pas rechargée. Veuillez demander à vos parents de la recharger pour continuer à utiliser le bus.',
+          type: 'alerte',
+        } as any);
+        // Envoyer notification parent
+        if (eleve.famille_id) {
+          await supabase.from('parent_notifications').insert({
+            famille_id: eleve.famille_id,
+            titre: '🚌 Carte transport à recharger',
+            message: `La carte transport de ${eleve.prenom} ${eleve.nom} n'est pas rechargée. Veuillez effectuer la recharge pour qu'il/elle puisse continuer à prendre le bus.`,
+            type: 'alerte',
+          } as any);
+        }
+        return { eleve, status: 'blocked_no_recharge', message: 'Carte non rechargée — Recharge requise' };
+      }
+
       if (count >= 2) return { eleve, status: 'already', message: 'Aller-retour déjà validé' };
       const trajet = count === 0 ? 'aller' : 'retour';
-      const isValid = !!recharge;
       const { error } = await supabase.from('validations_transport').insert({
         eleve_id: eleveId, recharge_id: recharge?.id || null, zone_transport_id: eleve.zone_transport_id,
-        valide: isValid, motif_rejet: isValid ? null : 'Carte expirée ou non rechargée',
+        valide: isValid, motif_rejet: isValid ? null : 'Carte non rechargée (1er passage autorisé)',
       } as any);
       if (error) throw error;
-      return { eleve, status: isValid ? 'valid' : 'invalid', trajet, message: isValid ? `${trajet === 'aller' ? '🚌 Aller' : '🏠 Retour'} — Accès autorisé` : 'Carte expirée — Accès refusé', recharge };
+      return { eleve, status: isValid ? 'valid' : 'first_free', trajet, message: isValid ? `${trajet === 'aller' ? '🚌 Aller' : '🏠 Retour'} — Accès autorisé` : '⚠️ 1er passage autorisé — Recharge requise', recharge };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['validations-transport'] });
       if (result.status === 'valid') { playBeep(800); toast({ title: `✅ ${result.trajet === 'aller' ? 'Aller' : 'Retour'} validé`, description: `${result.eleve.prenom} ${result.eleve.nom}` }); }
+      else if (result.status === 'first_free') { playBeep(800); toast({ title: '⚠️ 1er passage autorisé', description: `${result.eleve.prenom} ${result.eleve.nom} — Carte non rechargée, recharge requise` }); }
       else if (result.status === 'already') { toast({ title: 'ℹ️ Limite atteinte', description: `${result.eleve.prenom} ${result.eleve.nom} — Aller-retour déjà validé` }); }
+      else if (result.status === 'blocked_no_recharge') { playBeep(300); toast({ title: '❌ Accès refusé', description: `${result.eleve.prenom} ${result.eleve.nom} — Carte non rechargée, notification envoyée`, variant: 'destructive' }); }
       else { playBeep(300); toast({ title: '❌ Carte expirée', description: `${result.eleve.prenom} ${result.eleve.nom} — Recharge requise`, variant: 'destructive' }); }
     },
     onError: (err: any) => { toast({ title: 'Erreur', description: err.message, variant: 'destructive' }); },
