@@ -118,6 +118,7 @@ function PassagerGroupCard({ eleve, montee, descente, recharge }: { eleve: any; 
 
 export default function ChauffeurDashboard() {
   const { toast } = useToast();
+  const [nonMontePage, setNonMontePage] = useState(0);
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
