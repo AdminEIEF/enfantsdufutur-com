@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -243,6 +243,21 @@ export default function ChauffeurDashboard() {
     },
   });
 
+  // Realtime subscription for live updates on validations_transport
+  useEffect(() => {
+    const channel = supabase
+      .channel('chauffeur-validations-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'validations_transport' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['chauffeur-validations-full'] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
   const getActiveRecharge = (eleveId: string) => {
     return recharges.find(
       (r: any) => r.eleve_id === eleveId && r.actif && new Date(r.date_expiration) > new Date()
@@ -351,12 +366,11 @@ export default function ChauffeurDashboard() {
 
     const trajet = count === 0 ? 'aller' : 'retour';
 
-    supabase.from('validations_transport').insert({
+    await supabase.from('validations_transport').insert({
       eleve_id: eleve.id, recharge_id: recharge?.id || null, zone_transport_id: eleve.zone_transport_id,
       valide: isValid, motif_rejet: isValid ? null : 'Carte non rechargée (1er passage autorisé)',
-    } as any).then(() => {
-      queryClient.invalidateQueries({ queryKey: ['chauffeur-validations-full'] });
-    });
+    } as any);
+    queryClient.invalidateQueries({ queryKey: ['chauffeur-validations-full'] });
 
     // Notification parent : enfant monté/descendu du bus
     const trajetType = count === 0 ? 'monté dans' : 'descendu du';
