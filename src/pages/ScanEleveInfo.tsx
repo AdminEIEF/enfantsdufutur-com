@@ -1,11 +1,13 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { ScanLine, User, Users, BookOpenText, GraduationCap, Utensils, BusFront, Wrench, Phone, Mail, MapPin, Award, TrendingUp, Calendar, Hash, Loader2, AlertCircle, Wallet } from 'lucide-react';
+import { ScanLine, User, Users, BookOpenText, GraduationCap, Utensils, BusFront, Wrench, Phone, Mail, MapPin, Award, TrendingUp, Calendar, Hash, Loader2, AlertCircle, Wallet, Search } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 function parseScannedCode(raw: string): string | null {
@@ -39,6 +41,9 @@ export default function ScanEleveInfo() {
   const [matricule, setMatricule] = useState<string | null>(null);
   const [scanning, setScanning] = useState(true);
 
+  const [manualInput, setManualInput] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useBarcodeScanner({
     onScan: useCallback((code: string) => {
       const parsed = parseScannedCode(code);
@@ -48,7 +53,20 @@ export default function ScanEleveInfo() {
         toast.success('Badge scanné : ' + parsed);
       }
     }, []),
+    maxIntervalMs: 150,
   });
+
+  const handleManualSearch = () => {
+    const val = manualInput.trim();
+    if (val.length >= 3) {
+      const parsed = parseScannedCode(val);
+      if (parsed) {
+        setMatricule(parsed);
+        setScanning(false);
+        setManualInput('');
+      }
+    }
+  };
 
   const { data: eleve, isLoading, error } = useQuery({
     queryKey: ['scan-eleve-info', matricule],
@@ -157,7 +175,7 @@ export default function ScanEleveInfo() {
       {/* Scan zone */}
       {scanning && !matricule && (
         <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-accent/10">
-          <CardContent className="flex flex-col items-center justify-center py-20 gap-4">
+          <CardContent className="flex flex-col items-center justify-center py-12 gap-6" ref={containerRef} tabIndex={0} onClick={() => containerRef.current?.focus()}>
             <div className="relative">
               <div className="absolute inset-0 animate-ping rounded-full bg-primary/20" style={{ animationDuration: '2s' }} />
               <div className="relative p-6 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20">
@@ -167,6 +185,23 @@ export default function ScanEleveInfo() {
             <div className="text-center space-y-2">
               <p className="text-lg font-semibold">En attente de scan…</p>
               <p className="text-sm text-muted-foreground">Placez le badge élève devant la douchette</p>
+              <p className="text-xs text-muted-foreground/60">💡 Cliquez ici d'abord pour activer le focus clavier</p>
+            </div>
+
+            {/* Manual fallback input */}
+            <div className="w-full max-w-sm space-y-2">
+              <div className="relative flex items-center gap-2">
+                <Input
+                  placeholder="Ou saisir un matricule…"
+                  value={manualInput}
+                  onChange={(e) => setManualInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); handleManualSearch(); }}}
+                  className="pr-10"
+                />
+                <Button size="sm" onClick={handleManualSearch} disabled={manualInput.trim().length < 3}>
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
