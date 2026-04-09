@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Bus, Users, AlertTriangle, CheckCircle, MapPin, ScanLine, Clock, FileWarning, Truck, Phone, Shield, XCircle, ArrowRight, User, Calendar, Hash, Timer, MessageCircle } from 'lucide-react';
+import { Bus, Users, AlertTriangle, CheckCircle, MapPin, ScanLine, Clock, FileWarning, Truck, Phone, Shield, XCircle, ArrowRight, User, Calendar, Hash, Timer, MessageCircle, ArrowUp, ArrowDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
