@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     const caller = { id: claimsData.claims.sub as string, email: (claimsData.claims.email as string) || "" };
 
     const callerId = caller.id;
-    const callerEmail = caller.email || "";
+    const callerEmail = caller.email;
 
     // Check superviseur/admin role
     const { data: rolesData } = await adminClient
