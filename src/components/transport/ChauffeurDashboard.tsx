@@ -366,12 +366,11 @@ export default function ChauffeurDashboard() {
 
     const trajet = count === 0 ? 'aller' : 'retour';
 
-    supabase.from('validations_transport').insert({
+    await supabase.from('validations_transport').insert({
       eleve_id: eleve.id, recharge_id: recharge?.id || null, zone_transport_id: eleve.zone_transport_id,
       valide: isValid, motif_rejet: isValid ? null : 'Carte non rechargée (1er passage autorisé)',
-    } as any).then(() => {
-      queryClient.invalidateQueries({ queryKey: ['chauffeur-validations-full'] });
-    });
+    } as any);
+    queryClient.invalidateQueries({ queryKey: ['chauffeur-validations-full'] });
 
     // Notification parent : enfant monté/descendu du bus
     const trajetType = count === 0 ? 'monté dans' : 'descendu du';
