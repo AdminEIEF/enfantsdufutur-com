@@ -579,7 +579,7 @@ export default function ChauffeurDashboard() {
             <p className="text-sm font-semibold">
               {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
-            <Badge variant="outline" className="text-xs">{validationsWithTrajet.length} passages</Badge>
+            <Badge variant="outline" className="text-xs">{groupedByEleve.length} élève(s) • {validationsWithTrajet.length} passages</Badge>
           </div>
 
           {validationsWithTrajet.length === 0 ? (
