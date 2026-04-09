@@ -315,24 +315,46 @@ export default function ValidationTransportBus() {
         </div>
       )}
 
-      {/* Stats Cards - Glass */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-4 gap-2">
         {[
           { icon: Bus, label: 'Passages', value: validations.length, color: 'text-primary', bg: 'from-primary/10 to-primary/5' },
-          { icon: CheckCircle, label: 'Validés', value: validCount, color: 'text-emerald-600', bg: 'from-emerald-500/10 to-emerald-500/5' },
+          { icon: ArrowUp, label: 'Montés', value: monteeCount, color: 'text-emerald-600', bg: 'from-emerald-500/10 to-emerald-500/5' },
+          { icon: ArrowDown, label: 'Descendus', value: descenteCount, color: 'text-blue-600', bg: 'from-blue-500/10 to-blue-500/5' },
           { icon: XCircle, label: 'Refusés', value: rejectCount, color: 'text-destructive', bg: 'from-destructive/10 to-destructive/5' },
         ].map(({ icon: Icon, label, value, color, bg }) => (
-          <div key={label} className={`rounded-2xl bg-gradient-to-br ${bg} border p-3.5 flex items-center gap-2.5`}>
-            <div className={`h-10 w-10 rounded-xl bg-card/80 flex items-center justify-center ${color} shrink-0`}>
-              <Icon className="h-5 w-5" />
+          <div key={label} className={`rounded-2xl bg-gradient-to-br ${bg} border p-3 flex flex-col items-center gap-1`}>
+            <div className={`h-9 w-9 rounded-xl bg-card/80 flex items-center justify-center ${color} shrink-0`}>
+              <Icon className="h-4 w-4" />
             </div>
-            <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
-              <p className={`text-xl font-bold ${color}`}>{value}</p>
-            </div>
+            <p className={`text-lg font-bold ${color}`}>{value}</p>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wider">{label}</p>
           </div>
         ))}
       </div>
+
+      {/* Comparaison montée vs descente */}
+      {monteeCount > 0 && (
+        <div className="rounded-2xl border p-3 bg-card/80 backdrop-blur-sm space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground flex items-center gap-1"><ArrowUp className="h-3 w-3 text-emerald-600" /> Montés</span>
+            <span className="font-bold text-emerald-600">{monteeCount}</span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground flex items-center gap-1"><ArrowDown className="h-3 w-3 text-blue-600" /> Descendus</span>
+            <span className="font-bold text-blue-600">{descenteCount}</span>
+          </div>
+          <div className="h-2 rounded-full bg-muted overflow-hidden flex">
+            <div className="h-full bg-emerald-500 transition-all" style={{ width: `${(monteeCount / (monteeCount + descenteCount || 1)) * 100}%` }} />
+            <div className="h-full bg-blue-500 transition-all" style={{ width: `${(descenteCount / (monteeCount + descenteCount || 1)) * 100}%` }} />
+          </div>
+          {monteeCount !== descenteCount ? (
+            <p className="text-[10px] text-orange-500 font-medium">⚠️ {monteeCount - descenteCount} élève(s) encore dans le bus</p>
+          ) : (
+            <p className="text-[10px] text-emerald-600 font-medium">✅ Tous les élèves sont descendus</p>
+          )}
+        </div>
+      )}
 
       {/* Tabs */}
       <Tabs defaultValue="historique">
