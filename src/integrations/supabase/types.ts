@@ -4295,6 +4295,7 @@ export type Database = {
         Returns: Json
       }
       find_famille_by_code: { Args: { _code: string }; Returns: string }
+      get_dashboard_stats: { Args: never; Returns: Json }
       get_landing_stats: { Args: never; Returns: Json }
       get_my_roles: {
         Args: never
