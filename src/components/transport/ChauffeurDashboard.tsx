@@ -67,9 +67,18 @@ function PassagerCard({ v, eleve, recharge }: { v: any; eleve: any; recharge: an
   const isValid = recharge && jours > 0;
   const trajetCount = v._trajetCount || 1;
   const trajetLabel = trajetCount <= 1 ? 'Aller' : 'Retour';
+  const isMontee = trajetCount <= 1;
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-2xl bg-card border hover:shadow-md transition-shadow">
+      {/* Flèche montée/descente */}
+      <div className={`shrink-0 h-10 w-10 rounded-xl flex items-center justify-center ${isMontee ? 'bg-emerald-500/10' : 'bg-blue-500/10'}`}>
+        {isMontee ? (
+          <ArrowUp className="h-5 w-5 text-emerald-600" />
+        ) : (
+          <ArrowDown className="h-5 w-5 text-blue-600" />
+        )}
+      </div>
       <div className="relative shrink-0">
         {eleve?.photo_url || eleve?.photo_thumbnail_url ? (
           <img src={eleve.photo_thumbnail_url || eleve.photo_url} alt="" className="w-12 h-12 rounded-xl object-cover border-2 border-background" />
@@ -86,7 +95,7 @@ function PassagerCard({ v, eleve, recharge }: { v: any; eleve: any; recharge: an
       </div>
       <div className="text-right shrink-0 space-y-1">
         <Badge variant={v.valide ? 'default' : 'destructive'} className="text-[10px] rounded-full">
-          {v.valide ? `✅ ${trajetLabel}` : '❌ Refusé'}
+          {isMontee ? '⬆️ Montée' : '⬇️ Descente'}
         </Badge>
         {isValid ? (
           <p className={`text-[10px] font-bold ${jours <= 5 ? 'text-orange-500' : jours <= 10 ? 'text-amber-500' : 'text-emerald-600'}`}>
@@ -240,6 +249,27 @@ export default function ChauffeurDashboard() {
   const rejectCount = validations.filter((v: any) => !v.valide).length;
   const uniqueEleves = new Set(validations.map((v: any) => v.eleve_id)).size;
   const totalAssigned = elevesZone.length;
+
+  // Compteur montées (aller = 1er scan) et descentes (retour = 2e scan)
+  const monteeCount = useMemo(() => {
+    const seen = new Set<string>();
+    let count = 0;
+    for (const v of [...validations].sort((a: any, b: any) => new Date(a.validated_at).getTime() - new Date(b.validated_at).getTime())) {
+      if (!seen.has(v.eleve_id)) { seen.add(v.eleve_id); count++; }
+    }
+    return count;
+  }, [validations]);
+
+  const descenteCount = useMemo(() => {
+    const seen = new Set<string>();
+    let count = 0;
+    const sorted = [...validations].sort((a: any, b: any) => new Date(a.validated_at).getTime() - new Date(b.validated_at).getTime());
+    for (const v of sorted) {
+      if (seen.has(v.eleve_id)) { count++; }
+      else { seen.add(v.eleve_id); }
+    }
+    return count;
+  }, [validations]);
 
   // ─── Scan logic ───
   function playBeep(freq: number) {
