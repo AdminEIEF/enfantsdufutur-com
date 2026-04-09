@@ -427,6 +427,22 @@ export default function ChauffeurDashboard() {
     });
   }, [validations]);
 
+  // Group validations by student for side-by-side montée/descente display
+  const groupedByEleve = useMemo(() => {
+    const map = new Map<string, { eleve: any; montee: any; descente: any }>();
+    const sorted = [...validationsWithTrajet].sort((a, b) => new Date(a.validated_at).getTime() - new Date(b.validated_at).getTime());
+    for (const v of sorted) {
+      const id = v.eleve_id;
+      if (!map.has(id)) {
+        map.set(id, { eleve: v.eleves, montee: null, descente: null });
+      }
+      const entry = map.get(id)!;
+      if (v._trajetCount <= 1) entry.montee = v;
+      else entry.descente = v;
+    }
+    return Array.from(map.values());
+  }, [validationsWithTrajet]);
+
   return (
     <div className="space-y-4">
       {/* Header with chauffeur identity and zone info */}
