@@ -51,7 +51,7 @@ export default function PointageEleves() {
   const fetchTodayPointages = useCallback(async () => {
     const { data } = await supabase
       .from('pointages_eleves')
-      .select('*, eleves:eleve_id(nom, prenom, matricule, classes:classe_id(nom))')
+      .select('*, eleves:eleve_id(nom, prenom, matricule, classe_id, classes:classe_id(nom))')
       .eq('date_pointage', today)
       .order('created_at', { ascending: false });
     setTodayPointages(data || []);
