@@ -144,7 +144,7 @@ export function SupportChat() {
     <>
       {/* Floating button */}
       <motion.div
-        className="fixed bottom-6 right-6 z-50"
+        className="fixed bottom-20 right-4 z-50"
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 200, delay: 0.5 }}

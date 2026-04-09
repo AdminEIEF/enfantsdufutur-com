@@ -206,18 +206,18 @@ export default function ChauffeurDashboard() {
       return;
     }
 
-    // Check recharge
-    const { data: activeRecharges } = await supabase.from('recharges_transport')
-      .select('*').eq('eleve_id', eleve.id).eq('actif', true)
-      .gte('date_expiration', new Date().toISOString())
-      .order('date_expiration', { ascending: false }).limit(1);
-    const recharge = (activeRecharges as any[])?.[0];
-
-    // Check existing validations today
-    const { data: existing } = await supabase.from('validations_transport')
-      .select('id').eq('eleve_id', eleve.id)
-      .gte('validated_at', `${today}T00:00:00`).lte('validated_at', `${today}T23:59:59`);
-    const count = (existing as any[])?.length || 0;
+    // Parallel: check recharge + existing validations today
+    const [rechargeRes, existingRes] = await Promise.all([
+      supabase.from('recharges_transport')
+        .select('*').eq('eleve_id', eleve.id).eq('actif', true)
+        .gte('date_expiration', new Date().toISOString())
+        .order('date_expiration', { ascending: false }).limit(1),
+      supabase.from('validations_transport')
+        .select('id').eq('eleve_id', eleve.id)
+        .gte('validated_at', `${today}T00:00:00`).lte('validated_at', `${today}T23:59:59`),
+    ]);
+    const recharge = (rechargeRes.data as any[])?.[0];
+    const count = (existingRes.data as any[])?.length || 0;
 
     if (count >= 2) {
       setLastScanResult({ status: 'already', eleve, recharge });
@@ -228,10 +228,13 @@ export default function ChauffeurDashboard() {
     const trajet = count === 0 ? 'aller' : 'retour';
     const isValid = !!recharge;
 
-    await supabase.from('validations_transport').insert({
+    // Insert validation (don't await — fire and forget for speed)
+    supabase.from('validations_transport').insert({
       eleve_id: eleve.id, recharge_id: recharge?.id || null, zone_transport_id: eleve.zone_transport_id,
       valide: isValid, motif_rejet: isValid ? null : 'Carte expirée ou non rechargée',
-    } as any);
+    } as any).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['chauffeur-validations-full'] });
+    });
 
     if (isValid) {
       playBeep(800);
@@ -240,12 +243,9 @@ export default function ChauffeurDashboard() {
       playBeep(300);
     }
 
-    // Get full recharge info for display
-    const { data: allRecharges } = await supabase.from('recharges_transport')
-      .select('*').eq('eleve_id', eleve.id).order('date_expiration', { ascending: false }).limit(1);
-
-    setLastScanResult({ status: isValid ? 'valid' : 'invalid', eleve, recharge: recharge || (allRecharges as any[])?.[0], trajet });
-    queryClient.invalidateQueries({ queryKey: ['chauffeur-validations-full'] });
+    // Show result immediately with what we have
+    const displayRecharge = recharge || recharges.find((r: any) => r.eleve_id === eleve.id);
+    setLastScanResult({ status: isValid ? 'valid' : 'invalid', eleve, recharge: displayRecharge, trajet });
 
     toast({
       title: isValid ? `✅ ${trajet === 'aller' ? 'Aller' : 'Retour'} validé` : '❌ Carte expirée',
@@ -253,11 +253,8 @@ export default function ChauffeurDashboard() {
       variant: isValid ? undefined : 'destructive',
     });
 
-    // Auto-return to dashboard after 4s
-    setTimeout(() => {
-      setLastScanResult(null);
-    }, 5000);
-  }, [today, toast, queryClient]);
+    setTimeout(() => { setLastScanResult(null); }, 5000);
+  }, [today, toast, queryClient, recharges]);
 
   const handleScan = useCallback((text: string) => {
     const matricule = extractMatriculeFromScan(text) || text.trim();
