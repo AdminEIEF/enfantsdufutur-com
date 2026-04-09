@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ScanLine, Search, Clock, LogIn, LogOut, Users, Camera, Wifi, WifiOff, Download, RefreshCw, Loader2, AlertTriangle, CheckCircle2, ArrowRightLeft, Printer } from 'lucide-react';
+import { ScanLine, Search, Clock, LogIn, LogOut, Users, Camera, Wifi, WifiOff, Download, RefreshCw, Loader2, AlertTriangle, CheckCircle2, ArrowRightLeft, Printer, GraduationCap, TrendingUp } from 'lucide-react';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
@@ -26,7 +26,16 @@ export default function PointageEleves() {
   const scannerActiveRef = useRef(false);
   const { data: schoolConfig } = useSchoolConfig();
 
+  // Fetch niveaux + classes + total élèves for progress bars
+  const [niveauxData, setNiveauxData] = useState<any[]>([]);
+  useEffect(() => {
+    supabase.from('niveaux').select('id, nom, classes(id, nom)').order('nom').then(({ data }) => {
+      if (data) setNiveauxData(data);
+    });
+  }, []);
+
   const today = format(new Date(), 'yyyy-MM-dd');
+
 
   const mapPointages = (data: any[]) => data.map((p: any) => ({
     eleve_nom: p.eleves?.nom || '',
@@ -42,7 +51,7 @@ export default function PointageEleves() {
   const fetchTodayPointages = useCallback(async () => {
     const { data } = await supabase
       .from('pointages_eleves')
-      .select('*, eleves:eleve_id(nom, prenom, matricule, classes:classe_id(nom))')
+      .select('*, eleves:eleve_id(nom, prenom, matricule, classe_id, classes:classe_id(nom))')
       .eq('date_pointage', today)
       .order('created_at', { ascending: false });
     setTodayPointages(data || []);
@@ -229,6 +238,22 @@ export default function PointageEleves() {
   const departedCount = todayPointages.filter(p => p.heure_depart).length;
   const presentCount = todayPointages.filter(p => p.heure_arrivee && !p.heure_depart).length;
   const lateCount = todayPointages.filter(p => p.en_retard).length;
+
+  // Compute presence by niveau
+  const niveauPresence = useMemo(() => {
+    if (!niveauxData.length || !todayPointages.length) return [];
+    return niveauxData.map((niveau: any) => {
+      const classeIds = (niveau.classes || []).map((c: any) => c.id);
+      const arrived = todayPointages.filter(p => {
+        const classeId = (p.eleves as any)?.classe_id || p.classe_id;
+        return classeIds.includes(classeId) && p.heure_arrivee;
+      }).length;
+      return { nom: niveau.nom, nbClasses: (niveau.classes || []).length, arrived };
+    }).filter(n => n.arrived > 0 || n.nbClasses > 0).sort((a, b) => b.arrived - a.arrived);
+  }, [niveauxData, todayPointages]);
+
+  const totalArrivedAllNiveaux = niveauPresence.reduce((s, n) => s + n.arrived, 0);
+  const maxArrived = Math.max(...niveauPresence.map(n => n.arrived), 1);
 
   const schoolObj = {
     nom: schoolConfig?.nom || 'École',
@@ -449,7 +474,40 @@ export default function PointageEleves() {
         ))}
       </motion.div>
 
-      {/* Today's list */}
+      {/* Barre de progression de présence par niveau */}
+      {niveauPresence.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }}
+          className="rounded-2xl border border-border/40 bg-card overflow-hidden">
+          <div className="px-5 py-3 border-b border-border/30 flex items-center gap-2">
+            <GraduationCap className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Présence par niveau</h3>
+            <Badge variant="secondary" className="ml-auto text-[10px]">{totalArrivedAllNiveaux} élèves</Badge>
+          </div>
+          <div className="p-4 space-y-3">
+            {niveauPresence.map((n) => (
+              <div key={n.nom} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-foreground">{n.nom}</span>
+                  <div className="flex items-center gap-1.5">
+                    <TrendingUp className="h-3 w-3 text-primary" />
+                    <span className="font-bold text-primary">{n.arrived}</span>
+                    <span className="text-muted-foreground">élève{n.arrived > 1 ? 's' : ''}</span>
+                  </div>
+                </div>
+                <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(n.arrived / maxArrived) * 100}%` }}
+                    transition={{ duration: 0.6, ease: 'easeOut' }}
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
         className="rounded-2xl border border-border/40 bg-card overflow-hidden">
         <div className="px-5 py-3.5 border-b border-border/30 flex items-center justify-between">

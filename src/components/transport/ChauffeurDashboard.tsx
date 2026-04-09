@@ -118,6 +118,7 @@ function PassagerGroupCard({ eleve, montee, descente, recharge }: { eleve: any; 
 
 export default function ChauffeurDashboard() {
   const { toast } = useToast();
+  const [nonMontePage, setNonMontePage] = useState(0);
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
@@ -624,17 +625,19 @@ export default function ChauffeurDashboard() {
             </div>
           )}
 
-          {/* Élèves non encore montés */}
-          {totalAssigned > 0 && uniqueEleves < totalAssigned && (
-            <div className="space-y-2">
-              <p className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
-                <Clock className="h-4 w-4" /> Pas encore montés ({totalAssigned - uniqueEleves})
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {elevesZone
-                  .filter((e: any) => !validations.some((v: any) => v.eleve_id === e.id))
-                  .slice(0, 10)
-                  .map((e: any) => (
+          {/* Élèves non encore montés — pagination de 10 */}
+          {totalAssigned > 0 && uniqueEleves < totalAssigned && (() => {
+            const nonMontes = elevesZone.filter((e: any) => !validations.some((v: any) => v.eleve_id === e.id));
+            const PAGE_SIZE = 10;
+            const totalPages = Math.ceil(nonMontes.length / PAGE_SIZE);
+            const pageItems = nonMontes.slice(nonMontePage * PAGE_SIZE, (nonMontePage + 1) * PAGE_SIZE);
+            return (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-4 w-4" /> Pas encore montés ({nonMontes.length})
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {pageItems.map((e: any) => (
                     <div key={e.id} className="flex items-center gap-2 p-2 rounded-xl bg-muted/40 border border-dashed">
                       {e.photo_thumbnail_url || e.photo_url ? (
                         <img src={e.photo_thumbnail_url || e.photo_url} alt="" className="w-8 h-8 rounded-lg object-cover" />
@@ -649,14 +652,17 @@ export default function ChauffeurDashboard() {
                       </div>
                     </div>
                   ))}
+                </div>
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 pt-1">
+                    <Button variant="ghost" size="sm" className="h-7 text-[10px] rounded-lg px-2" disabled={nonMontePage <= 0} onClick={() => setNonMontePage(p => p - 1)}>← Préc</Button>
+                    <span className="text-[10px] text-muted-foreground">{nonMontePage + 1}/{totalPages}</span>
+                    <Button variant="ghost" size="sm" className="h-7 text-[10px] rounded-lg px-2" disabled={nonMontePage >= totalPages - 1} onClick={() => setNonMontePage(p => p + 1)}>Suiv →</Button>
+                  </div>
+                )}
               </div>
-              {(totalAssigned - uniqueEleves) > 10 && (
-                <p className="text-[10px] text-muted-foreground text-center">
-                  + {totalAssigned - uniqueEleves - 10} autre(s)…
-                </p>
-              )}
-            </div>
-          )}
+            );
+          })()}
 
           {/* Incidents récents */}
           {incidents.length > 0 && (
