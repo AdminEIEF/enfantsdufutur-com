@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import QRCode from 'qrcode';
+import * as QRCode from 'qrcode';
 
 interface FamilleBadgeData {
   id: string;
