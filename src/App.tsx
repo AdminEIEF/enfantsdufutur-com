@@ -104,6 +104,7 @@ const CompositionGeometrie = lazy(() => import("./pages/CompositionGeometrie"));
 const AdminCompositionResults = lazy(() => import("./pages/AdminCompositionResults"));
 const CompositionCanvas = lazy(() => import("./pages/CompositionCanvas"));
 const ComposeDessin = lazy(() => import("./pages/ComposeDessin"));
+const EnveloppeGenerator = lazy(() => import("./pages/EnveloppeGenerator"));
 
 import { ParentAuthProvider } from "@/hooks/useParentAuth";
 import { StudentAuthProvider } from "@/hooks/useStudentAuth";
@@ -307,6 +308,7 @@ const App = () => (
             <Route path="/composition-geometrie" element={<ProtectedRoute><CompositionGeometrie /></ProtectedRoute>} />
             <Route path="/composition-canvas" element={<StudentAuthProvider><CompositionCanvas /></StudentAuthProvider>} />
             <Route path="/compose-dessin" element={<ProtectedRoute><ComposeDessin /></ProtectedRoute>} />
+            <Route path="/enveloppes" element={<ProtectedRoute><EnveloppeGenerator /></ProtectedRoute>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
