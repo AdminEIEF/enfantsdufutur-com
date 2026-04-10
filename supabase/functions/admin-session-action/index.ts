@@ -35,15 +35,15 @@ serve(async (req) => {
     }
     const user = { id: claimsData.claims.sub as string };
 
-    // Check superviseur or admin role
+    // Check superviseur role only
     const { data: roles } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
-      .in("role", ["superviseur", "admin"]);
+      .eq("role", "superviseur");
 
     if (!roles || roles.length === 0) {
-      return new Response(JSON.stringify({ error: "Accès réservé au superviseur ou admin" }), {
+      return new Response(JSON.stringify({ error: "Accès réservé au superviseur" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

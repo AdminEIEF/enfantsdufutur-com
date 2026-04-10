@@ -41,13 +41,13 @@ Deno.serve(async (req) => {
     const callerId = caller.id;
     const callerEmail = caller.email;
 
-    // Check superviseur/admin role
+    // Check superviseur role only
     const { data: rolesData } = await adminClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", callerId);
-    const roleList = (rolesData || []).map((r: any) => r.role);
-    if (!roleList.includes("superviseur")) {
+      .eq("user_id", callerId)
+      .eq("role", "superviseur");
+    if (!rolesData || rolesData.length === 0) {
       return new Response(JSON.stringify({ error: "Accès réservé au superviseur" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
