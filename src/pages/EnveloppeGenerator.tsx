@@ -358,7 +358,7 @@ export default function EnveloppeGenerator() {
     }
     setGenerating(true);
     try {
-      const siteUrl = window.location.origin;
+      const siteUrl = 'https://enfantsdufutur.com';
       await generateEnveloppesPDF(
         envelopeData,
         config?.nom || 'Ecole Internationale Les Enfants du Futur',
