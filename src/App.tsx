@@ -102,6 +102,8 @@ const GestionSessions = lazy(() => import("./pages/GestionSessions"));
 const ScanEleveInfo = lazy(() => import("./pages/ScanEleveInfo"));
 const CompositionGeometrie = lazy(() => import("./pages/CompositionGeometrie"));
 const AdminCompositionResults = lazy(() => import("./pages/AdminCompositionResults"));
+const CompositionCanvas = lazy(() => import("./pages/CompositionCanvas"));
+const ComposeDessin = lazy(() => import("./pages/ComposeDessin"));
 
 import { ParentAuthProvider } from "@/hooks/useParentAuth";
 import { StudentAuthProvider } from "@/hooks/useStudentAuth";
