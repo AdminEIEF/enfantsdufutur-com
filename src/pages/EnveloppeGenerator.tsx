@@ -18,9 +18,9 @@ const ENV_W = 229;
 const ENV_H = 324;
 const MARGIN = 15;
 
-const NAVY = { r: 15, g: 32, b: 65 };
-const BLUE = { r: 37, g: 99, b: 235 };
-const LIGHT_BLUE = { r: 219, g: 234, b: 254 };
+const GREEN = { r: 0, g: 128, b: 0 };
+const DARK_GREEN = { r: 0, g: 100, b: 0 };
+const LIGHT_GREEN = { r: 220, g: 245, b: 220 };
 const WHITE = { r: 255, g: 255, b: 255 };
 const GRAY = { r: 120, g: 120, b: 130 };
 const DARK = { r: 30, g: 30, b: 40 };
