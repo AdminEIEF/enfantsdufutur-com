@@ -10,11 +10,9 @@ interface FamilleBadgeData {
   enfants: { prenom: string; nom: string; classe?: string }[];
 }
 
-// Badge dimensions (mm) - portrait card like the model
 const CARD_W = 85.6;
-const CARD_H = 136; // portrait ratio matching the template
+const CARD_H = 136;
 
-// Colors
 const RED = { r: 192, g: 20, b: 20 };
 const GREEN = { r: 0, g: 140, b: 50 };
 const DARK = { r: 30, g: 30, b: 30 };
@@ -22,12 +20,7 @@ const GRAY = { r: 100, g: 100, b: 100 };
 const WHITE = { r: 255, g: 255, b: 255 };
 
 async function generateQRDataUrl(data: string): Promise<string> {
-  return QRCode.toDataURL(data, {
-    width: 400,
-    margin: 1,
-    color: { dark: '#1a1a1a', light: '#ffffff' },
-    errorCorrectionLevel: 'M',
-  });
+  return QRCode.toDataURL(data, { width: 400, margin: 1, color: { dark: '#1a1a1a', light: '#ffffff' }, errorCorrectionLevel: 'M' });
 }
 
 async function loadImageAsDataUrl(url: string): Promise<string | null> {
@@ -45,84 +38,12 @@ async function loadImageAsDataUrl(url: string): Promise<string | null> {
   }
 }
 
-function drawCardBackground(pdf: jsPDF) {
-  // White background
-  pdf.setFillColor(WHITE.r, WHITE.g, WHITE.b);
-  pdf.rect(0, 0, CARD_W, CARD_H, 'F');
-
-  // ── Top section: diagonal red/green design ──
-  const headerH = 32;
-
-  // Yellow triangle (left background)
-  pdf.setFillColor(230, 190, 30);
-  pdf.triangle(0, 0, CARD_W * 0.55, 0, 0, headerH + 8, 'F');
-
-  // Red diagonal band
-  pdf.setFillColor(RED.r, RED.g, RED.b);
-  pdf.triangle(CARD_W * 0.2, 0, CARD_W, 0, CARD_W, headerH - 4, 'F');
-  pdf.triangle(CARD_W * 0.2, 0, CARD_W, headerH - 4, CARD_W * 0.35, headerH + 8, 'F');
-
-  // Green block top-right
-  pdf.setFillColor(GREEN.r, GREEN.g, GREEN.b);
-  pdf.rect(CARD_W * 0.52, 0, CARD_W * 0.48, headerH * 0.45, 'F');
-
-  // Green triangle for "CARTE DE FAMILLE"
-  pdf.setFillColor(GREEN.r, GREEN.g, GREEN.b);
-  const ctY = headerH * 0.45;
-  pdf.triangle(CARD_W * 0.35, ctY, CARD_W, ctY, CARD_W, headerH + 2, 'F');
-  pdf.triangle(CARD_W * 0.35, ctY, CARD_W, headerH + 2, CARD_W * 0.48, headerH + 2, 'F');
-
-  // School name text in red/green area
-  pdf.setTextColor(WHITE.r, WHITE.g, WHITE.b);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(5.5);
-  pdf.text('ECOLE INTERNATIONALE', CARD_W * 0.75, 5, { align: 'center' });
-  pdf.setFontSize(7);
-  pdf.text('LES ENFANTS DU FUTUR', CARD_W * 0.75, 10, { align: 'center' });
-
-  // "CARTE DE FAMILLE" text
-  pdf.setFontSize(9);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('CARTE DE FAMILLE', CARD_W * 0.72, headerH * 0.45 + (headerH * 0.55) / 2 + 2, { align: 'center' });
-
-  // ── Bottom bar: red left + green right ──
-  const footerH = 4;
-  const footerY = CARD_H - footerH;
-  pdf.setFillColor(RED.r, RED.g, RED.b);
-  pdf.rect(0, footerY, CARD_W / 2, footerH, 'F');
-  pdf.setFillColor(GREEN.r, GREEN.g, GREEN.b);
-  pdf.rect(CARD_W / 2, footerY, CARD_W / 2, footerH, 'F');
-}
-
-async function drawLogoCircle(pdf: jsPDF, logoUrl?: string | null) {
-  const cx = 16;
-  const cy = 16;
-  const r = 12;
-
-  // White circle background
-  pdf.setFillColor(WHITE.r, WHITE.g, WHITE.b);
-  pdf.circle(cx, cy, r + 1, 'F');
-
-  // Green circle border
-  pdf.setDrawColor(GREEN.r, GREEN.g, GREEN.b);
-  pdf.setLineWidth(0.8);
-  pdf.circle(cx, cy, r, 'S');
-
-  if (logoUrl) {
-    const logoData = await loadImageAsDataUrl(logoUrl);
-    if (logoData) {
-      try {
-        const fmt = logoData.includes('image/png') ? 'PNG' : 'JPEG';
-        pdf.addImage(logoData, fmt, cx - r + 2, cy - r + 2, (r - 2) * 2, (r - 2) * 2);
-      } catch { /* fallback */ }
-    }
-  }
-
-  // "FAISONS PLUS !" text under logo
-  pdf.setTextColor(RED.r, RED.g, RED.b);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(4.5);
-  pdf.text('FAISONS PLUS !', cx, cy + r + 3, { align: 'center' });
+// Pre-load the background template once
+let bgCache: string | null = null;
+async function getBackgroundImage(): Promise<string | null> {
+  if (bgCache) return bgCache;
+  bgCache = await loadImageAsDataUrl('/images/carte-famille-bg.jpg');
+  return bgCache;
 }
 
 export async function generateBadgeFamillePDF(
@@ -131,26 +52,26 @@ export async function generateBadgeFamillePDF(
   logoUrl?: string | null,
 ): Promise<void> {
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [CARD_W, CARD_H] });
+  const bgImage = await getBackgroundImage();
 
   for (let i = 0; i < familles.length; i++) {
     if (i > 0) pdf.addPage([CARD_W, CARD_H], 'portrait');
     const f = familles[i];
 
-    // ── Draw background ──
-    drawCardBackground(pdf);
+    // ── Background image (the actual template) ──
+    if (bgImage) {
+      const fmt = bgImage.includes('image/png') ? 'PNG' : 'JPEG';
+      pdf.addImage(bgImage, fmt, 0, 0, CARD_W, CARD_H);
+    }
 
-    // ── Draw logo circle ──
-    await drawLogoCircle(pdf, logoUrl);
+    // ══════ OVERLAY DATA ══════
+    const M = 6;
+    const bodyTop = 40; // below the header design
 
-    // ══════ BODY AREA ══════
-    const bodyTop = 38;
-    const M = 5; // margin
-
-    // ── QR Code on the left ──
-    const qrSize = 24;
-    const qrX = M + 2;
-    const qrY = bodyTop + 2;
-
+    // ── QR Code ──
+    const qrSize = 22;
+    const qrX = M + 1;
+    const qrY = bodyTop;
     try {
       const qrData = JSON.stringify({ type: 'famille', id: f.id });
       const qrDataUrl = await generateQRDataUrl(qrData);
@@ -159,24 +80,24 @@ export async function generateBadgeFamillePDF(
       console.error('QR generation error:', err);
     }
 
-    // ── "Scanner pour accéder" under QR ──
     pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
     pdf.setFontSize(4);
     pdf.setFont('helvetica', 'normal');
     pdf.text('Scanner pour accéder', qrX + qrSize / 2, qrY + qrSize + 3, { align: 'center' });
 
-    // ── Right side: "Compte Famille" label ──
-    const infoX = qrX + qrSize + 5;
+    // ── Right side info ──
+    const infoX = qrX + qrSize + 4;
     const infoMaxW = CARD_W - infoX - M;
-    let yPos = bodyTop + 4;
+    let yPos = bodyTop + 3;
 
+    // "Compte Famille Individuel"
     pdf.setTextColor(GREEN.r, GREEN.g, GREEN.b);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(6);
     pdf.text('Compte Famille Individuel', infoX, yPos);
     yPos += 5;
 
-    // ── Family name ──
+    // Family name
     pdf.setTextColor(DARK.r, DARK.g, DARK.b);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(9);
@@ -184,7 +105,7 @@ export async function generateBadgeFamillePDF(
     pdf.text(famName, infoX, yPos);
     yPos += 5;
 
-    // ── Code ──
+    // Code
     if (f.code_plain) {
       pdf.setTextColor(RED.r, RED.g, RED.b);
       pdf.setFont('helvetica', 'bold');
@@ -193,7 +114,7 @@ export async function generateBadgeFamillePDF(
       yPos += 5;
     }
 
-    // ── Phone ──
+    // Phone
     pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
     pdf.setFontSize(6);
     pdf.setFont('helvetica', 'normal');
@@ -206,8 +127,8 @@ export async function generateBadgeFamillePDF(
       yPos += 3.5;
     }
 
-    // ── Children section (full width below QR + info) ──
-    const childrenTop = Math.max(yPos, qrY + qrSize + 8) + 4;
+    // ── Children ──
+    const childrenTop = Math.max(yPos, qrY + qrSize + 8) + 3;
     let cY = childrenTop;
 
     pdf.setTextColor(DARK.r, DARK.g, DARK.b);
@@ -233,7 +154,7 @@ export async function generateBadgeFamillePDF(
       pdf.text(`+ ${f.enfants.length - 5} autre(s)`, M + 4, cY);
     }
 
-    // ── Footer text ──
+    // ── Footer ID ──
     pdf.setTextColor(WHITE.r, WHITE.g, WHITE.b);
     pdf.setFontSize(3.5);
     pdf.setFont('helvetica', 'normal');
@@ -243,7 +164,6 @@ export async function generateBadgeFamillePDF(
   pdf.save(`badges_familles_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
-// Generate a single badge
 export async function generateSingleBadgeFamillePDF(
   famille: FamilleBadgeData,
   schoolName?: string,
