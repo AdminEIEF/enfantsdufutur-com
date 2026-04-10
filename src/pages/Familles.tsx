@@ -297,6 +297,7 @@ export default function Familles() {
               toast.success('Planche PVC générée !');
             }}>
               <Printer className="h-4 w-4" /> Planche PVC
+            </Button>
           )}
           <Button onClick={openCreate} className="rounded-2xl gap-2 h-10 shadow-sm">
             <Plus className="h-4 w-4" /> Nouvelle
