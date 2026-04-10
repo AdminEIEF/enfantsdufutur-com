@@ -486,7 +486,7 @@ export default function EnveloppeGenerator() {
 
             <Button
               onClick={handleGenerate}
-              disabled={!selectedClasse || generating || envelopeData.length === 0}
+              disabled={!selectedClasse || !selectedPeriode || generating || envelopeData.length === 0}
               className="gap-2"
             >
               {generating ? (
