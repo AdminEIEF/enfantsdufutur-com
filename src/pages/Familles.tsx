@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { generateBadgeFamillePDF, generateSingleBadgeFamillePDF } from '@/lib/generateBadgeFamillePDF';
 import QRScannerDialog from '@/components/QRScannerDialog';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
 
 // ─── Hooks ───────────────────────────────────────────────
