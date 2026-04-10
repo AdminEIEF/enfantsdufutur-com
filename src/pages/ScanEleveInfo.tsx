@@ -37,8 +37,24 @@ function PhotoWithSkeleton({ src }: { src: string }) {
 }
 
 export default function ScanEleveInfo() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [matricule, setMatricule] = useState<string | null>(null);
   const [scanning, setScanning] = useState(true);
+
+  // Process code from URL params (redirected from Dashboard)
+  useEffect(() => {
+    const codeParam = searchParams.get('code');
+    if (codeParam && !matricule) {
+      const parsed = parseScannedCode(codeParam);
+      if (parsed) {
+        setMatricule(parsed);
+        setScanning(false);
+        toast.success('Badge scanné : ' + parsed);
+        // Clean URL
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [searchParams, matricule, setSearchParams]);
 
   useBarcodeScanner({
     onScan: useCallback((code: string) => {
