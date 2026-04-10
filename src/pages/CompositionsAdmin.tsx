@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -335,7 +335,7 @@ export default function CompositionsAdmin() {
   const [results, setResults] = useState<any[]>([]);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [resultsByClassComp, setResultsByClassComp] = useState<string | null>(null);
-  const dessinCanvasRef = React.useRef<HTMLCanvasElement>(null);
+  const dessinCanvasRef = useRef<HTMLCanvasElement>(null);
   const [resultsByClassData, setResultsByClassData] = useState<any[]>([]);
   const [resultsByClassLoading, setResultsByClassLoading] = useState(false);
   const [resultsByClassEffectif, setResultsByClassEffectif] = useState<any[]>([]);
