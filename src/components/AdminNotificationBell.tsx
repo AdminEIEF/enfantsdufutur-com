@@ -3,7 +3,7 @@ import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -197,14 +197,14 @@ export function AdminNotificationBell({ roles }: Props) {
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 p-0" align="end">
+        <PopoverContent className="w-80 p-0 z-[9999]" align="end" sideOffset={8}>
           <div className="px-4 py-3 border-b">
             <h3 className="font-semibold text-sm">Notifications</h3>
             {unreadCount > 0 && (
               <p className="text-xs text-muted-foreground">{unreadCount} non lue{unreadCount > 1 ? 's' : ''}</p>
             )}
           </div>
-          <ScrollArea className="max-h-80">
+          <div className="overflow-y-auto" style={{ maxHeight: '320px' }}>
             {notifications.length === 0 ? (
               <p className="text-center text-muted-foreground text-sm py-8">Aucune notification</p>
             ) : (
@@ -212,8 +212,9 @@ export function AdminNotificationBell({ roles }: Props) {
                 {notifications.map((notif) => (
                   <button
                     key={notif.id}
-                    className={`w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors ${!notif.lu ? 'bg-primary/5' : ''}`}
-                    onClick={() => {
+                    className={`w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer ${!notif.lu ? 'bg-primary/5' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
                       if (!notif.lu) markAsRead(notif.id);
                       setSelectedNotif(notif);
                       setOpen(false);
@@ -236,7 +237,7 @@ export function AdminNotificationBell({ roles }: Props) {
                 ))}
               </div>
             )}
-          </ScrollArea>
+          </div>
           <div className="border-t px-4 py-2">
             <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => { setOpen(false); navigate('/notifications'); }}>
               Voir toutes les notifications
