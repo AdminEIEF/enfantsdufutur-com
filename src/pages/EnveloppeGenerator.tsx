@@ -184,59 +184,71 @@ async function generateEnveloppesPDF(
     }
 
     // ── QR Codes section ──
-    const qrSectionY = ENV_H - 110;
-    const qrSize = 35;
+    const qrSectionY = ENV_H - 130;
+    const qrSize = 40;
+    const qrFramePad = 6;
+    const labelGap = 5; // 5mm between QR and text
 
     // QR1 - Site web
-    const qr1X = MARGIN + 20;
+    const qr1CenterX = MARGIN + 10 + qrSize / 2 + qrFramePad;
+    const qr1X = qr1CenterX - qrSize / 2;
     try {
       const qr1Data = await generateQRDataUrl(siteUrl);
-      // Frame
-      pdf.setFillColor(LIGHT_BLUE.r, LIGHT_BLUE.g, LIGHT_BLUE.b);
-      pdf.roundedRect(qr1X - 5, qrSectionY - 5, qrSize + 10, qrSize + 22, 3, 3, 'F');
+      // White frame with border
+      pdf.setFillColor(WHITE.r, WHITE.g, WHITE.b);
+      pdf.roundedRect(qr1X - qrFramePad, qrSectionY - qrFramePad, qrSize + qrFramePad * 2, qrSize + qrFramePad * 2, 3, 3, 'F');
       pdf.setDrawColor(NAVY.r, NAVY.g, NAVY.b);
-      pdf.setLineWidth(0.3);
-      pdf.roundedRect(qr1X - 5, qrSectionY - 5, qrSize + 10, qrSize + 22, 3, 3, 'S');
+      pdf.setLineWidth(0.4);
+      pdf.roundedRect(qr1X - qrFramePad, qrSectionY - qrFramePad, qrSize + qrFramePad * 2, qrSize + qrFramePad * 2, 3, 3, 'S');
       pdf.addImage(qr1Data, 'PNG', qr1X, qrSectionY, qrSize, qrSize);
-      // Label
-      pdf.setFontSize(6.5);
+
+      // Legend below QR1 — 5mm gap
+      const lbl1Y = qrSectionY + qrSize + qrFramePad + labelGap;
       pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(9);
       pdf.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-      pdf.text('🌐 Site Web', qr1X + qrSize / 2, qrSectionY + qrSize + 5, { align: 'center' });
-      pdf.setFontSize(5);
+      pdf.text('DECOUVRIR NOTRE ECOLE', qr1CenterX, lbl1Y, { align: 'center' });
       pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7);
       pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
-      pdf.text('Accueil école', qr1X + qrSize / 2, qrSectionY + qrSize + 10, { align: 'center' });
+      pdf.text('Scannez pour visiter notre site', qr1CenterX, lbl1Y + 5, { align: 'center' });
+      pdf.setFontSize(6);
+      pdf.text(siteUrl.replace(/^https?:\/\//, ''), qr1CenterX, lbl1Y + 10, { align: 'center' });
     } catch { /* silent */ }
 
     // QR2 - Espace Parent
-    const qr2X = ENV_W - MARGIN - qrSize - 20;
+    const qr2CenterX = ENV_W - MARGIN - 10 - qrSize / 2 - qrFramePad;
+    const qr2X = qr2CenterX - qrSize / 2;
     try {
       const parentUrl = `${siteUrl}/parent`;
       const qr2Data = await generateQRDataUrl(parentUrl);
-      pdf.setFillColor(LIGHT_BLUE.r, LIGHT_BLUE.g, LIGHT_BLUE.b);
-      pdf.roundedRect(qr2X - 5, qrSectionY - 5, qrSize + 10, qrSize + 22, 3, 3, 'F');
+      pdf.setFillColor(WHITE.r, WHITE.g, WHITE.b);
+      pdf.roundedRect(qr2X - qrFramePad, qrSectionY - qrFramePad, qrSize + qrFramePad * 2, qrSize + qrFramePad * 2, 3, 3, 'F');
       pdf.setDrawColor(NAVY.r, NAVY.g, NAVY.b);
-      pdf.setLineWidth(0.3);
-      pdf.roundedRect(qr2X - 5, qrSectionY - 5, qrSize + 10, qrSize + 22, 3, 3, 'S');
+      pdf.setLineWidth(0.4);
+      pdf.roundedRect(qr2X - qrFramePad, qrSectionY - qrFramePad, qrSize + qrFramePad * 2, qrSize + qrFramePad * 2, 3, 3, 'S');
       pdf.addImage(qr2Data, 'PNG', qr2X, qrSectionY, qrSize, qrSize);
-      // Label with lock icon
-      pdf.setFontSize(6.5);
+
+      // Legend below QR2 — 5mm gap
+      const lbl2Y = qrSectionY + qrSize + qrFramePad + labelGap;
       pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(9);
       pdf.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-      pdf.text('🔒 Espace Parent', qr2X + qrSize / 2, qrSectionY + qrSize + 5, { align: 'center' });
-      pdf.setFontSize(5);
+      pdf.text('ESPACE PARENT SECURISE', qr2CenterX, lbl2Y, { align: 'center' });
       pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7);
       pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
-      pdf.text('Bulletins & suivi en ligne', qr2X + qrSize / 2, qrSectionY + qrSize + 10, { align: 'center' });
+      pdf.text('Bulletins & suivi scolaire en ligne', qr2CenterX, lbl2Y + 5, { align: 'center' });
+      pdf.setFontSize(6);
+      pdf.text('Acces confidentiel et securise', qr2CenterX, lbl2Y + 10, { align: 'center' });
     } catch { /* silent */ }
 
-    // Connector line between QR codes
+    // Connector dashed line between QR codes
     const connY = qrSectionY + qrSize / 2;
     pdf.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
     pdf.setLineWidth(0.2);
     pdf.setLineDashPattern([2, 2], 0);
-    pdf.line(qr1X + qrSize + 8, connY, qr2X - 8, connY);
+    pdf.line(qr1X + qrSize + qrFramePad + 5, connY, qr2X - qrFramePad - 5, connY);
     pdf.setLineDashPattern([], 0);
 
     // ── Bottom footer bar ──
