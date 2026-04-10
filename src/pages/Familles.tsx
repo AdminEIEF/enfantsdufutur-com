@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { generateBadgeFamillePDF, generateSingleBadgeFamillePDF } from '@/lib/generateBadgeFamillePDF';
+import { generateBadgeFamillePDF, generateSingleBadgeFamillePDF, generatePlancheBadgesFamillePDF } from '@/lib/generateBadgeFamillePDF';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
@@ -279,6 +279,24 @@ export default function Familles() {
               toast.success('Badges générés !');
             }}>
               <Printer className="h-4 w-4" /> Badges
+            </Button>
+          )}
+          {(isAdmin || isSuperviseur) && (
+            <Button variant="outline" className="rounded-2xl gap-2 h-10" onClick={async () => {
+              if (familles.length === 0) { toast.error('Aucune famille'); return; }
+              toast.info('Génération de la planche PVC…');
+              const badgeData = familles.map((f: any) => ({
+                id: f.id,
+                nom_famille: f.nom_famille,
+                telephone_pere: f.telephone_pere,
+                telephone_mere: f.telephone_mere,
+                code_plain: codesMap.get(f.id),
+                enfants: (f.eleves || []).map((e: any) => ({ prenom: e.prenom, nom: e.nom, classe: e.classes?.nom })),
+              }));
+              await generatePlancheBadgesFamillePDF(badgeData, schoolConfig?.nom, schoolConfig?.logo_url);
+              toast.success('Planche PVC générée !');
+            }}>
+              <Printer className="h-4 w-4" /> Planche PVC
             </Button>
           )}
           <Button onClick={openCreate} className="rounded-2xl gap-2 h-10 shadow-sm">
