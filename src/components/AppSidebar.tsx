@@ -2,7 +2,7 @@ import { useState, useEffect, useSyncExternalStore } from 'react';
 import {
   GraduationCap, UsersRound, UserRoundPlus, BookOpenText, Calculator, TriangleAlert,
   Cog, BellRing, QrCode, LibraryBig, ChartColumnStacked,
-  LayoutDashboard, Landmark, ClipboardCheck, Medal, RotateCcw, BusFront, Store, Download, TvMinimalPlay, BriefcaseBusiness, CalendarRange, Timer, FileCheck2, ShieldCheck, Sparkles, Trophy, Trash2, WalletCards, HandCoins, CircleDollarSign, ChevronDown, GraduationCap as GradCap, Wrench, ScanLine
+  LayoutDashboard, Landmark, ClipboardCheck, Medal, RotateCcw, BusFront, Store, Download, TvMinimalPlay, BriefcaseBusiness, CalendarRange, Timer, FileCheck2, ShieldCheck, Sparkles, Trophy, Trash2, WalletCards, HandCoins, CircleDollarSign, ChevronDown, GraduationCap as GradCap, Wrench, ScanLine, Mail
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Link, useLocation } from 'react-router-dom';
