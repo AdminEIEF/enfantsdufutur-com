@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { useBarcodeScanner, extractMatriculeFromScan } from '@/hooks/useBarcodeScanner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { ScanLine, User, Users, BookOpenText, GraduationCap, Utensils, BusFront, Wrench, Phone, Mail, MapPin, Award, TrendingUp, Calendar, Hash, Loader2, AlertCircle, Wallet } from 'lucide-react';
