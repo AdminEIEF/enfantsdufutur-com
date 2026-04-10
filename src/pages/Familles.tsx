@@ -796,6 +796,45 @@ export default function Familles() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* QR Scanner */}
+      <QRScannerDialog
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onScan={(raw: string) => {
+          setScannerOpen(false);
+          try {
+            // Try parsing as JSON famille QR
+            const parsed = JSON.parse(raw);
+            if (parsed?.type === 'famille' && parsed?.id) {
+              const found = familles.find((f: any) => f.id === parsed.id);
+              if (found) {
+                setSelectedFamille(found);
+                toast.success(`Famille "${found.nom_famille}" trouvée`);
+              } else {
+                toast.error('Famille introuvable');
+              }
+              return;
+            }
+          } catch {
+            // Not JSON, try matching by family name or code
+          }
+          // Fallback: search by name or code
+          const q = raw.trim().toLowerCase();
+          const found = familles.find((f: any) =>
+            f.nom_famille.toLowerCase() === q ||
+            f.id === q ||
+            codesMap.get(f.id)?.toLowerCase() === q
+          );
+          if (found) {
+            setSelectedFamille(found);
+            toast.success(`Famille "${found.nom_famille}" trouvée`);
+          } else {
+            toast.error('Aucune famille trouvée pour ce QR code');
+          }
+        }}
+        title="Scanner un badge famille"
+      />
     </div>
   );
 }
