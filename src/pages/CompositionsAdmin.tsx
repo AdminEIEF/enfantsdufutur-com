@@ -819,6 +819,18 @@ export default function CompositionsAdmin() {
                     <p className="text-muted-foreground text-xs">Uploadez un fichier sujet (PDF ou Word). Les élèves verront le document et répondront en texte libre avec possibilité d'insérer des images et formules mathématiques.</p>
                   </div>
                 )}
+                {form.type_composition === 'dessin_visuel' && (
+                  <div className="mt-2 p-3 rounded-lg bg-violet-500/10 border border-violet-500/20 text-sm space-y-1">
+                    <p className="font-semibold text-violet-700 dark:text-violet-400">🖌️ Dessin + Sujet Visuel</p>
+                    <p className="text-muted-foreground text-xs">Saisissez une consigne textuelle ci-dessous. Le système génère automatiquement un modèle visuel (forme + couleur) que l'élève devra reproduire sur un quadrillage interactif.</p>
+                    <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-0.5">
+                      <li>Mots-clés détectés : <strong>carré, rond, triangle, rectangle, étoile</strong></li>
+                      <li>Couleurs : <strong>rouge, bleu, vert, jaune, orange, violet, noir, rose</strong></li>
+                      <li>Ajoutez <strong>"rempli"</strong> pour une forme pleine (sinon contour)</li>
+                      <li>🔊 Synthèse vocale : la consigne sera lue à l'élève</li>
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
             <div><Label>Titre *</Label><Input value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} /></div>
