@@ -81,6 +81,7 @@ export default function Familles() {
   const isSuperviseur = hasRole('superviseur');
   const isAdmin = hasRole('admin');
   const { data: familles = [], isLoading } = useFamilles();
+  const { data: schoolConfig } = useSchoolConfig();
   const { data: paiementsMap = new Map() } = useFamillesPaiements();
   const [scannerOpen, setScannerOpen] = useState(false);
   const { data: allClasses = [] } = useClassesAll();
