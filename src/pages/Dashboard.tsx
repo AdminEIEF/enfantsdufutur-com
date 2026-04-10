@@ -19,31 +19,10 @@ export default function Dashboard() {
   const canSeeFinance = hasAnyRole(['superviseur', 'admin', 'comptable', 'tresorier', 'secretaire']);
   const [scanResult, setScanResult] = useState<any>(null);
 
-  const handleSearchStudent = useCallback(async (matricule: string) => {
-    toast.info(`🔍 Recherche: ${matricule}...`);
-    try {
-      const { data, error } = await supabase
-        .from('eleves')
-        .select('id, nom, prenom, matricule, qr_code, statut, classe_id, classes(nom, niveaux:niveau_id(nom))')
-        .is('deleted_at', null)
-        .or(`matricule.eq.${matricule},qr_code.eq.${matricule}`)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (data) {
-        setScanResult(data);
-        toast.success(`✅ ${data.prenom} ${data.nom} — ${(data as any).classes?.nom || ''}`);
-      } else {
-        setScanResult(null);
-        toast.error(`Aucun élève trouvé pour "${matricule}"`);
-      }
-    } catch (err: any) {
-      toast.error(err.message || 'Erreur de recherche');
-    }
-  }, []);
-
-  useBarcodeScanner({ onScan: handleSearchStudent });
+  // Redirect barcode scan to dedicated Scan Élève page
+  useBarcodeScanner({ onScan: useCallback((code: string) => {
+    navigate('/scan-eleve');
+  }, [navigate]) });
 
   // ─── SINGLE optimized query ──────────────────────────
   const { data: stats, isLoading } = useQuery({
