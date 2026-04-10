@@ -282,7 +282,7 @@ async function generateEnveloppesPDF(
     pdf.setFont('helvetica', 'normal');
     pdf.text(`Annee scolaire 2026-2027  •  ${schoolName}`, ENV_W / 2, footerY + 5, { align: 'center' });
     pdf.setFontSize(4.5);
-    pdf.text('Document genere par LinkScol — Gestion scolaire integree', ENV_W / 2, footerY + 9.5, { align: 'center' });
+    pdf.text('Gestion scolaire integree EduGestion Pro', ENV_W / 2, footerY + 9.5, { align: 'center' });
   }
 
   pdf.save(`enveloppes_${new Date().toISOString().slice(0, 10)}.pdf`);
