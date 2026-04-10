@@ -11,6 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { BarChart3, Users, Trophy, Award, Printer, Download, Loader2, FileCheck2, ChevronRight } from 'lucide-react';
 
 export default function AdminCompositionResults() {
+  const { roles } = useAuth();
+  const isCoordPrimaire = roles.includes('coordinateur');
+  const isCoordSecondaire = roles.includes('coordinateur_secondaire');
   const [selectedCompId, setSelectedCompId] = useState<string | null>(null);
   const [filterClasse, setFilterClasse] = useState('all');
 
