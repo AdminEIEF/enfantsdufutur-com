@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { usePagination } from '@/hooks/usePaginatedQuery';
 import PaginationControls from '@/components/PaginationControls';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
