@@ -107,6 +107,7 @@ const navSections = [
     items: [
       { title: 'Tableau de bord', url: '/dashboard', icon: LayoutDashboard },
       { title: 'Notifications', url: '/notifications', icon: BellRing },
+      { title: 'Scan Élève', url: '/scan-eleve', icon: ScanLine },
     ],
   },
   {
@@ -184,7 +185,7 @@ const navSections = [
   },
   {
     label: 'Finances',
-    roles: ['admin', 'comptable', 'superviseur'] as const,
+    roles: ['admin', 'comptable', 'secretaire', 'superviseur'] as const,
     items: [
       { title: 'Paiements', url: '/paiements', icon: Landmark },
       { title: 'Dépenses', url: '/depenses', icon: Calculator },
