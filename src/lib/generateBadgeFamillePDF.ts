@@ -10,17 +10,21 @@ interface FamilleBadgeData {
   enfants: { prenom: string; nom: string; classe?: string }[];
 }
 
+// ── PVC CR80 format (85.6 × 54mm) for planche A4 ──
+const PVC_W = 85.6;
+const PVC_H = 54;
+
+// ── Portrait format for single cards ──
 const CARD_W = 85.6;
 const CARD_H = 136;
 
 const RED = { r: 192, g: 20, b: 20 };
-const GREEN = { r: 0, g: 140, b: 50 };
 const DARK = { r: 30, g: 30, b: 30 };
 const GRAY = { r: 100, g: 100, b: 100 };
 const WHITE = { r: 255, g: 255, b: 255 };
 
 async function generateQRDataUrl(data: string): Promise<string> {
-  return QRCode.toDataURL(data, { width: 400, margin: 1, color: { dark: '#1a1a1a', light: '#ffffff' }, errorCorrectionLevel: 'M' });
+  return QRCode.toDataURL(data, { width: 600, margin: 1, color: { dark: '#1a1a1a', light: '#ffffff' }, errorCorrectionLevel: 'M' });
 }
 
 async function loadImageAsDataUrl(url: string): Promise<string | null> {
@@ -38,7 +42,6 @@ async function loadImageAsDataUrl(url: string): Promise<string | null> {
   }
 }
 
-// Pre-load the background template once
 let bgCache: string | null = null;
 async function getBackgroundImage(): Promise<string | null> {
   if (bgCache) return bgCache;
@@ -46,6 +49,103 @@ async function getBackgroundImage(): Promise<string | null> {
   return bgCache;
 }
 
+// ═══════════════════════════════════════════════
+// Draw a single PVC card (85.6×54mm) at offset
+// ═══════════════════════════════════════════════
+async function drawPVCCard(pdf: jsPDF, f: FamilleBadgeData, bgImage: string | null, ox = 0, oy = 0) {
+  // Background stretched to PVC dimensions
+  if (bgImage) {
+    const fmt = bgImage.includes('image/png') ? 'PNG' : 'JPEG';
+    pdf.addImage(bgImage, fmt, ox, oy, PVC_W, PVC_H);
+  }
+
+  const M = 3;
+
+  // ── QR Code (left side) ──
+  const qrSize = 18;
+  const qrX = ox + M + 1;
+  const qrY = oy + 14;
+  try {
+    const qrData = JSON.stringify({ type: 'famille', id: f.id });
+    const qrDataUrl = await generateQRDataUrl(qrData);
+    pdf.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+  } catch {}
+
+  pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
+  pdf.setFontSize(3);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text('Scanner', qrX + qrSize / 2, qrY + qrSize + 2, { align: 'center' });
+
+  // ── Info (right of QR) ──
+  const infoX = qrX + qrSize + 4;
+  let yPos = oy + 16;
+
+  // Family name
+  pdf.setTextColor(DARK.r, DARK.g, DARK.b);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(7);
+  const maxInfoW = ox + PVC_W - infoX - M;
+  const famName = pdf.splitTextToSize(f.nom_famille.toUpperCase(), maxInfoW)[0] || f.nom_famille.toUpperCase();
+  pdf.text(famName, infoX, yPos);
+  yPos += 4;
+
+  // Code
+  if (f.code_plain) {
+    pdf.setTextColor(RED.r, RED.g, RED.b);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(6);
+    pdf.text(f.code_plain, infoX, yPos);
+    yPos += 3.5;
+  }
+
+  // Phones
+  pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
+  pdf.setFontSize(4.5);
+  pdf.setFont('helvetica', 'normal');
+  if (f.telephone_pere) {
+    pdf.text(`P: ${f.telephone_pere}`, infoX, yPos);
+    yPos += 3;
+  }
+  if (f.telephone_mere) {
+    pdf.text(`M: ${f.telephone_mere}`, infoX, yPos);
+    yPos += 3;
+  }
+
+  // ── Children (bottom row) ──
+  let childY = oy + 37;
+  pdf.setTextColor(DARK.r, DARK.g, DARK.b);
+  pdf.setFontSize(4);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Enfant(s):', infoX, childY);
+  childY += 3;
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
+  pdf.setFontSize(4);
+  const maxKids = Math.min(f.enfants.length, 3);
+  for (let c = 0; c < maxKids; c++) {
+    const child = f.enfants[c];
+    let childText = `• ${child.prenom} ${child.nom}`;
+    if (child.classe) childText += ` (${child.classe})`;
+    const truncated = pdf.splitTextToSize(childText, maxInfoW)[0] || childText;
+    pdf.text(truncated, infoX, childY);
+    childY += 2.8;
+  }
+  if (f.enfants.length > 3) {
+    pdf.setFontSize(3.5);
+    pdf.text(`+ ${f.enfants.length - 3} autre(s)`, infoX, childY);
+  }
+
+  // ── Footer ID ──
+  pdf.setTextColor(WHITE.r, WHITE.g, WHITE.b);
+  pdf.setFontSize(2.5);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(`ID: ${f.id.slice(0, 8).toUpperCase()}`, ox + PVC_W / 2, oy + PVC_H - 1, { align: 'center' });
+}
+
+// ═══════════════════════════════════════════════
+// Single card (portrait 85.6×136mm) — original
+// ═══════════════════════════════════════════════
 export async function generateBadgeFamillePDF(
   familles: FamilleBadgeData[],
   schoolName = 'Ecole Internationale Les Enfants du Futur',
@@ -58,17 +158,14 @@ export async function generateBadgeFamillePDF(
     if (i > 0) pdf.addPage([CARD_W, CARD_H], 'portrait');
     const f = familles[i];
 
-    // ── Background image (the actual template) ──
     if (bgImage) {
       const fmt = bgImage.includes('image/png') ? 'PNG' : 'JPEG';
       pdf.addImage(bgImage, fmt, 0, 0, CARD_W, CARD_H);
     }
 
-    // ══════ OVERLAY DATA ══════
     const M = 6;
     const bodyTop = 38;
 
-    // ── QR Code (large, centered) ──
     const qrSize = 34;
     const qrX = (CARD_W - qrSize) / 2;
     const qrY = bodyTop;
@@ -85,10 +182,8 @@ export async function generateBadgeFamillePDF(
     pdf.setFont('helvetica', 'normal');
     pdf.text('Scanner pour accéder', CARD_W / 2, qrY + qrSize + 3, { align: 'center' });
 
-    // ── Info below QR ──
     let yPos = qrY + qrSize + 9;
 
-    // Family name
     pdf.setTextColor(DARK.r, DARK.g, DARK.b);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(10);
@@ -96,7 +191,6 @@ export async function generateBadgeFamillePDF(
     pdf.text(famName, CARD_W / 2, yPos, { align: 'center' });
     yPos += 5;
 
-    // Code
     if (f.code_plain) {
       pdf.setTextColor(RED.r, RED.g, RED.b);
       pdf.setFont('helvetica', 'bold');
@@ -105,7 +199,6 @@ export async function generateBadgeFamillePDF(
       yPos += 5;
     }
 
-    // Phone
     pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
     pdf.setFontSize(6);
     pdf.setFont('helvetica', 'normal');
@@ -118,7 +211,6 @@ export async function generateBadgeFamillePDF(
       yPos += 3.5;
     }
 
-    // ── Children ──
     yPos += 3;
     pdf.setTextColor(DARK.r, DARK.g, DARK.b);
     pdf.setFontSize(6);
@@ -143,7 +235,6 @@ export async function generateBadgeFamillePDF(
       pdf.text(`+ ${f.enfants.length - 5} autre(s)`, M + 4, yPos);
     }
 
-    // ── Footer ID ──
     pdf.setTextColor(WHITE.r, WHITE.g, WHITE.b);
     pdf.setFontSize(3.5);
     pdf.setFont('helvetica', 'normal');
@@ -151,6 +242,62 @@ export async function generateBadgeFamillePDF(
   }
 
   pdf.save(`badges_familles_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+// ═══════════════════════════════════════════════
+// Planche A4 — 2 colonnes × 5 lignes (PVC CR80)
+// ═══════════════════════════════════════════════
+export async function generatePlancheBadgesFamillePDF(
+  familles: FamilleBadgeData[],
+  schoolName = 'Ecole Internationale Les Enfants du Futur',
+  logoUrl?: string | null,
+): Promise<void> {
+  if (familles.length === 0) return;
+
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const bgImage = await getBackgroundImage();
+
+  const pageW = 210;
+  const pageH = 297;
+  const gap = 2;
+  const cols = 2;
+  const rows = 5;
+  const cardsPerPage = cols * rows;
+
+  const gridW = PVC_W * cols + gap * (cols - 1);
+  const gridH = PVC_H * rows + gap * (rows - 1);
+  const marginX = (pageW - gridW) / 2;
+  const marginY = (pageH - gridH) / 2;
+
+  for (let i = 0; i < familles.length; i++) {
+    const posOnPage = i % cardsPerPage;
+    const col = posOnPage % cols;
+    const row = Math.floor(posOnPage / cols);
+
+    if (i > 0 && posOnPage === 0) {
+      pdf.addPage();
+    }
+
+    const ox = marginX + col * (PVC_W + gap);
+    const oy = marginY + row * (PVC_H + gap);
+
+    await drawPVCCard(pdf, familles[i], bgImage, ox, oy);
+
+    // Crop marks
+    pdf.setDrawColor(180, 180, 180);
+    pdf.setLineWidth(0.1);
+    const m = 3;
+    pdf.line(ox - 1, oy, ox - 1 - m, oy);
+    pdf.line(ox, oy - 1, ox, oy - 1 - m);
+    pdf.line(ox + PVC_W + 1, oy, ox + PVC_W + 1 + m, oy);
+    pdf.line(ox + PVC_W, oy - 1, ox + PVC_W, oy - 1 - m);
+    pdf.line(ox - 1, oy + PVC_H, ox - 1 - m, oy + PVC_H);
+    pdf.line(ox, oy + PVC_H + 1, ox, oy + PVC_H + 1 + m);
+    pdf.line(ox + PVC_W + 1, oy + PVC_H, ox + PVC_W + 1 + m, oy + PVC_H);
+    pdf.line(ox + PVC_W, oy + PVC_H + 1, ox + PVC_W, oy + PVC_H + 1 + m);
+  }
+
+  pdf.save(`planche_badges_familles_${familles.length}.pdf`);
 }
 
 export async function generateSingleBadgeFamillePDF(
