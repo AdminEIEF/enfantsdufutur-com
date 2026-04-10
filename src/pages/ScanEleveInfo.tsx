@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { supabase } from '@/integrations/supabase/client';
