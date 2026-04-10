@@ -66,11 +66,11 @@ export async function generateBadgeFamillePDF(
 
     // ══════ OVERLAY DATA ══════
     const M = 6;
-    const bodyTop = 40; // below the header design
+    const bodyTop = 38;
 
-    // ── QR Code ──
-    const qrSize = 22;
-    const qrX = M + 1;
+    // ── QR Code (large, centered) ──
+    const qrSize = 34;
+    const qrX = (CARD_W - qrSize) / 2;
     const qrY = bodyTop;
     try {
       const qrData = JSON.stringify({ type: 'famille', id: f.id });
@@ -81,28 +81,19 @@ export async function generateBadgeFamillePDF(
     }
 
     pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
-    pdf.setFontSize(4);
+    pdf.setFontSize(4.5);
     pdf.setFont('helvetica', 'normal');
-    pdf.text('Scanner pour accéder', qrX + qrSize / 2, qrY + qrSize + 3, { align: 'center' });
+    pdf.text('Scanner pour accéder', CARD_W / 2, qrY + qrSize + 3, { align: 'center' });
 
-    // ── Right side info ──
-    const infoX = qrX + qrSize + 4;
-    const infoMaxW = CARD_W - infoX - M;
-    let yPos = bodyTop + 3;
-
-    // "Compte Famille Individuel"
-    pdf.setTextColor(GREEN.r, GREEN.g, GREEN.b);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(6);
-    pdf.text('Compte Famille Individuel', infoX, yPos);
-    yPos += 5;
+    // ── Info below QR ──
+    let yPos = qrY + qrSize + 9;
 
     // Family name
     pdf.setTextColor(DARK.r, DARK.g, DARK.b);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(9);
-    const famName = pdf.splitTextToSize(f.nom_famille.toUpperCase(), infoMaxW)[0] || f.nom_famille.toUpperCase();
-    pdf.text(famName, infoX, yPos);
+    pdf.setFontSize(10);
+    const famName = pdf.splitTextToSize(f.nom_famille.toUpperCase(), CARD_W - M * 2)[0] || f.nom_famille.toUpperCase();
+    pdf.text(famName, CARD_W / 2, yPos, { align: 'center' });
     yPos += 5;
 
     // Code
@@ -110,7 +101,7 @@ export async function generateBadgeFamillePDF(
       pdf.setTextColor(RED.r, RED.g, RED.b);
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(8);
-      pdf.text(f.code_plain, infoX, yPos);
+      pdf.text(f.code_plain, CARD_W / 2, yPos, { align: 'center' });
       yPos += 5;
     }
 
@@ -119,23 +110,21 @@ export async function generateBadgeFamillePDF(
     pdf.setFontSize(6);
     pdf.setFont('helvetica', 'normal');
     if (f.telephone_pere) {
-      pdf.text(`Père: ${f.telephone_pere}`, infoX, yPos);
+      pdf.text(`Père: ${f.telephone_pere}`, CARD_W / 2, yPos, { align: 'center' });
       yPos += 3.5;
     }
     if (f.telephone_mere) {
-      pdf.text(`Mère: ${f.telephone_mere}`, infoX, yPos);
+      pdf.text(`Mère: ${f.telephone_mere}`, CARD_W / 2, yPos, { align: 'center' });
       yPos += 3.5;
     }
 
     // ── Children ──
-    const childrenTop = Math.max(yPos, qrY + qrSize + 8) + 3;
-    let cY = childrenTop;
-
+    yPos += 3;
     pdf.setTextColor(DARK.r, DARK.g, DARK.b);
     pdf.setFontSize(6);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('Enfant(s) :', M + 2, cY);
-    cY += 4;
+    pdf.text('Enfant(s) :', M + 2, yPos);
+    yPos += 4;
 
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
@@ -146,12 +135,12 @@ export async function generateBadgeFamillePDF(
       let childText = `• ${child.prenom} ${child.nom}`;
       if (child.classe) childText += ` (${child.classe})`;
       const truncated = pdf.splitTextToSize(childText, CARD_W - M * 2 - 4)[0] || childText;
-      pdf.text(truncated, M + 4, cY);
-      cY += 3.5;
+      pdf.text(truncated, M + 4, yPos);
+      yPos += 3.5;
     }
     if (f.enfants.length > 5) {
       pdf.setFontSize(5);
-      pdf.text(`+ ${f.enfants.length - 5} autre(s)`, M + 4, cY);
+      pdf.text(`+ ${f.enfants.length - 5} autre(s)`, M + 4, yPos);
     }
 
     // ── Footer ID ──
