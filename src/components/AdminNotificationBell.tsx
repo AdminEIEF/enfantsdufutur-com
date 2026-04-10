@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -248,20 +248,52 @@ export function AdminNotificationBell({ roles }: Props) {
 
       <Dialog open={!!selectedNotif} onOpenChange={(v) => { if (!v) setSelectedNotif(null); }}>
         <DialogContent className="max-w-md w-[95vw]">
-          {selectedNotif && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-base">
-                  <span>{typeIcon(selectedNotif.type)}</span>
-                  {selectedNotif.titre}
-                </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
-                  {format(new Date(selectedNotif.created_at), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
-                </DialogDescription>
-              </DialogHeader>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{selectedNotif.message}</p>
-            </>
-          )}
+          {selectedNotif && (() => {
+            const currentIndex = notifications.findIndex(n => n.id === selectedNotif.id);
+            const hasPrev = currentIndex > 0;
+            const hasNext = currentIndex < notifications.length - 1;
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-base">
+                    <span>{typeIcon(selectedNotif.type)}</span>
+                    {selectedNotif.titre}
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-muted-foreground">
+                    {format(new Date(selectedNotif.created_at), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
+                    <span className="ml-2">({currentIndex + 1}/{notifications.length})</span>
+                  </DialogDescription>
+                </DialogHeader>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{selectedNotif.message}</p>
+                <div className="flex items-center justify-between pt-2 border-t mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!hasPrev}
+                    onClick={() => {
+                      const prev = notifications[currentIndex - 1];
+                      if (!prev.lu) markAsRead(prev.id);
+                      setSelectedNotif(prev);
+                    }}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" /> Précédent
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!hasNext}
+                    onClick={() => {
+                      const next = notifications[currentIndex + 1];
+                      if (!next.lu) markAsRead(next.id);
+                      setSelectedNotif(next);
+                    }}
+                  >
+                    Suivant <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </>
