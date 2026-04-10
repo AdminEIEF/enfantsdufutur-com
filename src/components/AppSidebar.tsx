@@ -177,6 +177,8 @@ const navSections = [
     items: [
       { title: 'Mes Classes', url: '/mes-classes', icon: UsersRound },
       { title: 'Saisie des notes', url: '/notes', icon: BookOpenText },
+      { title: 'Compositions', url: '/compositions-admin', icon: FileCheck2 },
+      { title: 'Résultats Compositions', url: '/resultats-compositions', icon: Trophy },
       { title: 'Cours & Devoirs', url: '/cours-admin', icon: TvMinimalPlay },
       { title: 'Emploi du temps', url: '/emploi-du-temps', icon: Timer },
       { title: 'Calendrier', url: '/calendrier', icon: CalendarRange },
