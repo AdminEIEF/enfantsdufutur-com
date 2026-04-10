@@ -62,6 +62,7 @@ export default function AdminUserManagement() {
   const [showResetPwd, setShowResetPwd] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [editForm, setEditForm] = useState({ nom: '', prenom: '', email: '', role: '' });
   const [form, setForm] = useState({
     email: '',
