@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { generateBadgeFamillePDF, generateSingleBadgeFamillePDF } from '@/lib/generateBadgeFamillePDF';
 import QRScannerDialog from '@/components/QRScannerDialog';
-import { useNavigate } from 'react-router-dom';
+
 
 // ─── Hooks ───────────────────────────────────────────────
 function useFamilles() {
