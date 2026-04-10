@@ -324,6 +324,10 @@ export default function EnveloppeGenerator() {
     return Array.from(familleMap.values());
   }, [eleves]);
 
+  if (!hasRole('superviseur')) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   const handleGenerate = async () => {
     if (envelopeData.length === 0) {
       toast.error('Aucune famille trouvée pour cette classe');
