@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { usePagination } from '@/hooks/usePaginatedQuery';
 import PaginationControls from '@/components/PaginationControls';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,11 +12,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Users, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, UserPlus, ChevronRight, KeyRound, Copy, RefreshCw, GraduationCap, User, Eye, EyeOff, Download, Heart, Wallet, CreditCard, TrendingUp } from 'lucide-react';
+import { Users, Plus, Search, Phone, Mail, MapPin, Edit, Trash2, UserPlus, ChevronRight, KeyRound, Copy, RefreshCw, GraduationCap, User, Eye, EyeOff, Download, Heart, Wallet, CreditCard, TrendingUp, Printer, QrCode } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { generateBadgeFamillePDF, generateSingleBadgeFamillePDF } from '@/lib/generateBadgeFamillePDF';
+import QRScannerDialog from '@/components/QRScannerDialog';
+
 
 // ─── Hooks ───────────────────────────────────────────────
 function useFamilles() {
@@ -72,11 +75,13 @@ function useClassesAll() {
 
 export default function Familles() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { hasRole } = useAuth();
   const isSuperviseur = hasRole('superviseur');
   const isAdmin = hasRole('admin');
   const { data: familles = [], isLoading } = useFamilles();
   const { data: paiementsMap = new Map() } = useFamillesPaiements();
+  const [scannerOpen, setScannerOpen] = useState(false);
   const { data: allClasses = [] } = useClassesAll();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('search') || '');
@@ -252,9 +257,32 @@ export default function Familles() {
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5 ml-[52px]">{totalFamilles} familles enregistrées</p>
         </div>
-        <Button onClick={openCreate} className="rounded-2xl gap-2 h-10 shadow-sm">
-          <Plus className="h-4 w-4" /> Nouvelle
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="rounded-2xl gap-2 h-10" onClick={() => setScannerOpen(true)}>
+            <QrCode className="h-4 w-4" /> Scanner
+          </Button>
+          {(isAdmin || isSuperviseur) && (
+            <Button variant="outline" className="rounded-2xl gap-2 h-10" onClick={async () => {
+              if (familles.length === 0) { toast.error('Aucune famille'); return; }
+              toast.info('Génération des badges…');
+              const badgeData = familles.map((f: any) => ({
+                id: f.id,
+                nom_famille: f.nom_famille,
+                telephone_pere: f.telephone_pere,
+                telephone_mere: f.telephone_mere,
+                code_plain: codesMap.get(f.id),
+                enfants: (f.eleves || []).map((e: any) => ({ prenom: e.prenom, nom: e.nom, classe: e.classes?.nom })),
+              }));
+              await generateBadgeFamillePDF(badgeData);
+              toast.success('Badges générés !');
+            }}>
+              <Printer className="h-4 w-4" /> Badges
+            </Button>
+          )}
+          <Button onClick={openCreate} className="rounded-2xl gap-2 h-10 shadow-sm">
+            <Plus className="h-4 w-4" /> Nouvelle
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards - Glass */}
@@ -512,9 +540,25 @@ export default function Familles() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white rounded-xl gap-1 h-8 text-xs" onClick={() => { openEdit(selectedFamille); setSelectedFamille(null); }}>
                       <Edit className="h-3 w-3" /> Modifier
+                    </Button>
+                    <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white rounded-xl gap-1 h-8 text-xs" onClick={async () => {
+                      await generateSingleBadgeFamillePDF({
+                        id: selectedFamille.id,
+                        nom_famille: selectedFamille.nom_famille,
+                        telephone_pere: selectedFamille.telephone_pere,
+                        telephone_mere: selectedFamille.telephone_mere,
+                        code_plain: codesMap.get(selectedFamille.id),
+                        enfants: (selectedFamille.eleves || []).map((e: any) => ({ prenom: e.prenom, nom: e.nom, classe: e.classes?.nom })),
+                      });
+                      toast.success('Badge généré !');
+                    }}>
+                      <Printer className="h-3 w-3" /> Badge
+                    </Button>
+                    <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white rounded-xl gap-1 h-8 text-xs" onClick={() => { navigate(`/paiements?familleId=${selectedFamille.id}&famille=${encodeURIComponent(selectedFamille.nom_famille)}`); }}>
+                      <CreditCard className="h-3 w-3" /> Paiement
                     </Button>
                     <Button size="sm" variant="destructive" className="rounded-xl gap-1 h-8 text-xs" onClick={() => setDeleteConfirmId(selectedFamille?.id)}>
                       <Trash2 className="h-3 w-3" /> Supprimer
@@ -752,6 +796,45 @@ export default function Familles() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* QR Scanner */}
+      <QRScannerDialog
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onScan={(raw: string) => {
+          setScannerOpen(false);
+          try {
+            // Try parsing as JSON famille QR
+            const parsed = JSON.parse(raw);
+            if (parsed?.type === 'famille' && parsed?.id) {
+              const found = familles.find((f: any) => f.id === parsed.id);
+              if (found) {
+                setSelectedFamille(found);
+                toast.success(`Famille "${found.nom_famille}" trouvée`);
+              } else {
+                toast.error('Famille introuvable');
+              }
+              return;
+            }
+          } catch {
+            // Not JSON, try matching by family name or code
+          }
+          // Fallback: search by name or code
+          const q = raw.trim().toLowerCase();
+          const found = familles.find((f: any) =>
+            f.nom_famille.toLowerCase() === q ||
+            f.id === q ||
+            codesMap.get(f.id)?.toLowerCase() === q
+          );
+          if (found) {
+            setSelectedFamille(found);
+            toast.success(`Famille "${found.nom_famille}" trouvée`);
+          } else {
+            toast.error('Aucune famille trouvée pour ce QR code');
+          }
+        }}
+        title="Scanner un badge famille"
+      />
     </div>
   );
 }
