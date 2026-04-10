@@ -319,7 +319,9 @@ interface Question {
 
 export default function CompositionsAdmin() {
   const { roles } = useAuth();
-  const isCoordinateur = roles.includes('coordinateur') || roles.includes('coordinateur_secondaire');
+  const isCoordPrimaire = roles.includes('coordinateur');
+  const isCoordSecondaire = roles.includes('coordinateur_secondaire');
+  const isCoordinateur = isCoordPrimaire || isCoordSecondaire;
   const [compositions, setCompositions] = useState<Composition[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [matieres, setMatieres] = useState<any[]>([]);
