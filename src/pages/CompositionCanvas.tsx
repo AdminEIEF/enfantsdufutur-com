@@ -15,7 +15,7 @@ const DRAW_COLOR = '#2563eb';
 const ERASER_SIZE = 20;
 
 export default function CompositionCanvas() {
-  const { eleve } = useStudentAuth();
+  const { session } = useStudentAuth();
   const [searchParams] = useSearchParams();
   const compositionId = searchParams.get('id');
   const modelData = searchParams.get('model'); // shape params from compose-dessin
