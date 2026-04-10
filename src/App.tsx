@@ -305,6 +305,8 @@ const App = () => (
             <Route path="/scan-eleve" element={<ProtectedRoute><ScanEleveInfo /></ProtectedRoute>} />
             <Route path="/sessions" element={<ProtectedRoute><GestionSessions /></ProtectedRoute>} />
             <Route path="/composition-geometrie" element={<ProtectedRoute><CompositionGeometrie /></ProtectedRoute>} />
+            <Route path="/composition-canvas" element={<StudentAuthProvider><CompositionCanvas /></StudentAuthProvider>} />
+            <Route path="/compose-dessin" element={<ProtectedRoute><ComposeDessin /></ProtectedRoute>} />
             <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
