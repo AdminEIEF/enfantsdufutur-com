@@ -835,7 +835,88 @@ export default function CompositionsAdmin() {
               </div>
             )}
             <div><Label>Titre *</Label><Input value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} /></div>
-            <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} /></div>
+            <div><Label>Description {form.type_composition === 'dessin_visuel' ? '/ Consigne visuelle *' : ''}</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} placeholder={form.type_composition === 'dessin_visuel' ? 'Ex: Dessine un grand rond rouge rempli' : ''} /></div>
+            {form.type_composition === 'dessin_visuel' && (() => {
+              const DESSIN_SHAPES: Record<string, string> = { 'carre': 'square', 'carré': 'square', 'rond': 'circle', 'cercle': 'circle', 'triangle': 'triangle', 'rectangle': 'rectangle', 'etoile': 'star', 'étoile': 'star' };
+              const DESSIN_COLORS: Record<string, string> = { 'rouge': '#ef4444', 'bleu': '#2563eb', 'vert': '#22c55e', 'jaune': '#eab308', 'orange': '#f97316', 'violet': '#8b5cf6', 'noir': '#1f2937', 'rose': '#ec4899' };
+              const lower = (form.description || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+              let detectedShape = '';
+              let detectedColor = '#2563eb';
+              let detectedColorName = 'bleu';
+              const isFilled = lower.includes('rempli') || lower.includes('plein');
+              for (const [kw, s] of Object.entries(DESSIN_SHAPES)) {
+                if (lower.includes(kw.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))) { detectedShape = s; break; }
+              }
+              for (const [kw, c] of Object.entries(DESSIN_COLORS)) {
+                if (lower.includes(kw)) { detectedColor = c; detectedColorName = kw; break; }
+              }
+              // Draw preview
+              const canvasEl = dessinCanvasRef.current;
+              if (canvasEl) {
+                const ctx = canvasEl.getContext('2d');
+                if (ctx) {
+                  const SIZE = 200;
+                  ctx.fillStyle = '#ffffff';
+                  ctx.fillRect(0, 0, SIZE, SIZE);
+                  // Grid
+                  ctx.strokeStyle = '#e2e8f0';
+                  ctx.lineWidth = 0.5;
+                  for (let i = 0; i <= 10; i++) {
+                    const pos = i * 20;
+                    ctx.beginPath(); ctx.moveTo(pos, 0); ctx.lineTo(pos, SIZE); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(0, pos); ctx.lineTo(SIZE, pos); ctx.stroke();
+                  }
+                  // Shape
+                  if (detectedShape) {
+                    const cx = SIZE / 2, cy = SIZE / 2, sz = 70;
+                    ctx.fillStyle = detectedColor;
+                    ctx.strokeStyle = detectedColor;
+                    ctx.lineWidth = 3;
+                    if (detectedShape === 'square') { isFilled ? ctx.fillRect(cx - sz/2, cy - sz/2, sz, sz) : ctx.strokeRect(cx - sz/2, cy - sz/2, sz, sz); }
+                    else if (detectedShape === 'circle') { ctx.beginPath(); ctx.arc(cx, cy, sz/2, 0, Math.PI*2); isFilled ? ctx.fill() : ctx.stroke(); }
+                    else if (detectedShape === 'triangle') { ctx.beginPath(); ctx.moveTo(cx, cy-sz/2); ctx.lineTo(cx-sz/2, cy+sz/2); ctx.lineTo(cx+sz/2, cy+sz/2); ctx.closePath(); isFilled ? ctx.fill() : ctx.stroke(); }
+                    else if (detectedShape === 'rectangle') { isFilled ? ctx.fillRect(cx-sz, cy-sz/3, sz*2, sz*2/3) : ctx.strokeRect(cx-sz, cy-sz/3, sz*2, sz*2/3); }
+                    else if (detectedShape === 'star') {
+                      let rot = Math.PI/2*3; const step = Math.PI/5;
+                      ctx.beginPath(); ctx.moveTo(cx, cy-sz/2);
+                      for (let i = 0; i < 5; i++) { ctx.lineTo(cx+Math.cos(rot)*sz/2, cy+Math.sin(rot)*sz/2); rot+=step; ctx.lineTo(cx+Math.cos(rot)*sz/4, cy+Math.sin(rot)*sz/4); rot+=step; }
+                      ctx.closePath(); isFilled ? ctx.fill() : ctx.stroke();
+                    }
+                  }
+                }
+              }
+              return (
+                <div className="border rounded-xl p-3 bg-violet-50/50 dark:bg-violet-900/10 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex flex-col items-center gap-1">
+                      <p className="text-[10px] font-bold text-muted-foreground">APERÇU</p>
+                      <canvas ref={dessinCanvasRef} width={200} height={200} className="rounded-xl border-2 border-dashed border-violet-300 bg-white" />
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      {detectedShape ? (
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold text-emerald-600">✅ Détecté :</p>
+                          <div className="flex flex-wrap gap-1">
+                            <Badge className="text-[10px] bg-violet-100 text-violet-700">Forme: {detectedShape}</Badge>
+                            <Badge className="text-[10px]" style={{ backgroundColor: detectedColor + '20', color: detectedColor }}>Couleur: {detectedColorName}</Badge>
+                            <Badge className={`text-[10px] ${isFilled ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{isFilled ? '● Rempli' : '○ Contour'}</Badge>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Saisissez une consigne dans la description pour voir l'aperçu (ex: "carré bleu rempli")</p>
+                      )}
+                      <div className="flex flex-wrap gap-1">
+                        {['carré bleu rempli', 'rond rouge', 'triangle vert rempli', 'étoile jaune'].map(ex => (
+                          <button key={ex} className="text-[10px] px-2 py-1 rounded-full bg-background border hover:bg-accent" onClick={() => setForm(f => ({ ...f, description: ex }))}>
+                            {ex}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
             <div>
               <Label className="mb-2 block">
                 Classes ciblées * 
