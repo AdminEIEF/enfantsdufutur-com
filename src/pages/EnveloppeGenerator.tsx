@@ -18,9 +18,9 @@ const ENV_W = 229;
 const ENV_H = 324;
 const MARGIN = 15;
 
-const GREEN = { r: 0, g: 128, b: 0 };
-const DARK_GREEN = { r: 0, g: 100, b: 0 };
-const LIGHT_GREEN = { r: 220, g: 245, b: 220 };
+const NAVY = { r: 0, g: 100, b: 0 };      // Dark green (logo color)
+const BLUE = { r: 34, g: 139, b: 34 };     // Forest green accent
+const LIGHT_BLUE = { r: 220, g: 245, b: 220 }; // Light green bg
 const WHITE = { r: 255, g: 255, b: 255 };
 const GRAY = { r: 120, g: 120, b: 130 };
 const DARK = { r: 30, g: 30, b: 40 };
