@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,11 +11,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { BarChart3, Users, Trophy, Award, Printer, Download, Loader2, FileCheck2, ChevronRight } from 'lucide-react';
 
 export default function AdminCompositionResults() {
+  const { roles } = useAuth();
+  const isCoordPrimaire = roles.includes('coordinateur');
+  const isCoordSecondaire = roles.includes('coordinateur_secondaire');
   const [selectedCompId, setSelectedCompId] = useState<string | null>(null);
   const [filterClasse, setFilterClasse] = useState('all');
 
   // Fetch compositions
-  const { data: compositions = [], isLoading: loadingComps } = useQuery({
+  const { data: rawCompositions = [], isLoading: loadingComps } = useQuery({
     queryKey: ['admin-compositions-list'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -26,14 +30,37 @@ export default function AdminCompositionResults() {
     },
   });
 
+  // Filter by coordinator scope
+  const compositions = useMemo(() => {
+    if (isCoordPrimaire) {
+      const allowed = ['Crèche', 'Maternelle', 'Primaire'];
+      return rawCompositions.filter((c: any) => allowed.includes(c.classes?.niveaux?.cycles?.nom));
+    }
+    if (isCoordSecondaire) {
+      const allowed = ['Collège', 'Lycée'];
+      return rawCompositions.filter((c: any) => allowed.includes(c.classes?.niveaux?.cycles?.nom));
+    }
+    return rawCompositions;
+  }, [rawCompositions, isCoordPrimaire, isCoordSecondaire]);
+
   // Fetch classes for filter
-  const { data: classes = [] } = useQuery({
+  const { data: allClasses = [] } = useQuery({
     queryKey: ['admin-comps-classes'],
     queryFn: async () => {
-      const { data } = await supabase.from('classes').select('id, nom').order('nom');
+      const { data } = await supabase.from('classes').select('id, nom, niveaux:niveau_id(cycles:cycle_id(nom))').order('nom');
       return data || [];
     },
   });
+
+  const classes = useMemo(() => {
+    if (isCoordPrimaire) {
+      return allClasses.filter((c: any) => ['Crèche', 'Maternelle', 'Primaire'].includes(c.niveaux?.cycles?.nom));
+    }
+    if (isCoordSecondaire) {
+      return allClasses.filter((c: any) => ['Collège', 'Lycée'].includes(c.niveaux?.cycles?.nom));
+    }
+    return allClasses;
+  }, [allClasses, isCoordPrimaire, isCoordSecondaire]);
 
   // Filter compositions
   const filteredComps = useMemo(() => {

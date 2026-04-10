@@ -319,7 +319,9 @@ interface Question {
 
 export default function CompositionsAdmin() {
   const { roles } = useAuth();
-  const isCoordinateur = roles.includes('coordinateur') || roles.includes('coordinateur_secondaire');
+  const isCoordPrimaire = roles.includes('coordinateur');
+  const isCoordSecondaire = roles.includes('coordinateur_secondaire');
+  const isCoordinateur = isCoordPrimaire || isCoordSecondaire;
   const [compositions, setCompositions] = useState<Composition[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [matieres, setMatieres] = useState<any[]>([]);
@@ -360,11 +362,19 @@ export default function CompositionsAdmin() {
     let allComps = (compRes.data || []) as any[];
 
     // Coordinateur primaire: filter to Crèche/Maternelle/Primaire only
-    if (isCoordinateur && roles.includes('coordinateur')) {
+    if (isCoordPrimaire) {
       const primaryCycles = ['Crèche', 'Maternelle', 'Primaire'];
       allClasses = allClasses.filter((c: any) => primaryCycles.includes(c.niveaux?.cycles?.nom));
       const primaryClassIds = new Set(allClasses.map((c: any) => c.id));
       allComps = allComps.filter((c: any) => primaryClassIds.has(c.classe_id));
+    }
+
+    // Coordinateur secondaire: filter to Collège/Lycée only
+    if (isCoordSecondaire) {
+      const secondaryCycles = ['Collège', 'Lycée'];
+      allClasses = allClasses.filter((c: any) => secondaryCycles.includes(c.niveaux?.cycles?.nom));
+      const secondaryClassIds = new Set(allClasses.map((c: any) => c.id));
+      allComps = allComps.filter((c: any) => secondaryClassIds.has(c.classe_id));
     }
 
     setCompositions(allComps);
@@ -771,10 +781,43 @@ export default function CompositionsAdmin() {
                     <SelectItem value="qcm">📝 QCM / Vrai-Faux</SelectItem>
                     <SelectItem value="texte">✍️ Questions texte — Réponse libre</SelectItem>
                     <SelectItem value="document">📄 Document (PDF/Word) — Réponse texte</SelectItem>
-                    <SelectItem value="primaire_interactif">🎨 Primaire Interactif — Dessin + Math + QCM Audio</SelectItem>
-                    <SelectItem value="geometrie_traces">📐 Géométrie & Tracés — Relier + Quadrillage</SelectItem>
+                    {!isCoordSecondaire && (
+                      <>
+                        <SelectItem value="primaire_interactif">🎨 Primaire Interactif — Dessin + Math + QCM Audio</SelectItem>
+                        <SelectItem value="geometrie_traces">📐 Géométrie & Tracés — Relier + Quadrillage</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
+                {/* Type-specific guidance */}
+                {form.type_composition === 'primaire_interactif' && (
+                  <div className="mt-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm space-y-1">
+                    <p className="font-semibold text-amber-700 dark:text-amber-400">🎨 Primaire Interactif</p>
+                    <p className="text-muted-foreground text-xs">Ce type combine dessin sur canvas, mathématiques visuelles et QCM avec assistance vocale. Après la création :</p>
+                    <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-0.5">
+                      <li>Ajoutez des <strong>questions QCM</strong> qui seront lues à voix haute aux élèves</li>
+                      <li>Les élèves pourront aussi dessiner sur un canvas interactif</li>
+                      <li>Les résultats (score QCM + dessin) seront sauvegardés automatiquement</li>
+                    </ul>
+                  </div>
+                )}
+                {form.type_composition === 'geometrie_traces' && (
+                  <div className="mt-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-sm space-y-1">
+                    <p className="font-semibold text-emerald-700 dark:text-emerald-400">📐 Géométrie & Tracés</p>
+                    <p className="text-muted-foreground text-xs">Ce type propose 2 exercices interactifs :</p>
+                    <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-0.5">
+                      <li><strong>Relier les formes</strong> — L'élève relie les formes géométriques à leur nom (feedback haptique)</li>
+                      <li><strong>Quadrillage Magique 5×5</strong> — L'élève reproduit une figure sur un quadrillage (magnétisme snap-to-grid)</li>
+                    </ul>
+                    <p className="text-xs text-muted-foreground mt-1">Après la création, ajoutez des <strong>questions QCM</strong> pour la partie théorique. Les exercices interactifs sont générés automatiquement.</p>
+                  </div>
+                )}
+                {form.type_composition === 'document' && (
+                  <div className="mt-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm space-y-1">
+                    <p className="font-semibold text-blue-700 dark:text-blue-400">📄 Document</p>
+                    <p className="text-muted-foreground text-xs">Uploadez un fichier sujet (PDF ou Word). Les élèves verront le document et répondront en texte libre avec possibilité d'insérer des images et formules mathématiques.</p>
+                  </div>
+                )}
               </div>
             )}
             <div><Label>Titre *</Label><Input value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} /></div>
