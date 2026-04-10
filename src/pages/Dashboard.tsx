@@ -19,9 +19,9 @@ export default function Dashboard() {
   const canSeeFinance = hasAnyRole(['superviseur', 'admin', 'comptable', 'tresorier', 'secretaire']);
   
 
-  // Redirect barcode scan to dedicated Scan Élève page
+  // Redirect barcode scan to dedicated Scan Élève page with scanned code
   useBarcodeScanner({ onScan: useCallback((code: string) => {
-    navigate('/scan-eleve');
+    navigate('/scan-eleve?code=' + encodeURIComponent(code));
   }, [navigate]) });
 
   // ─── SINGLE optimized query ──────────────────────────
