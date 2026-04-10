@@ -540,9 +540,25 @@ export default function Familles() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white rounded-xl gap-1 h-8 text-xs" onClick={() => { openEdit(selectedFamille); setSelectedFamille(null); }}>
                       <Edit className="h-3 w-3" /> Modifier
+                    </Button>
+                    <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white rounded-xl gap-1 h-8 text-xs" onClick={async () => {
+                      await generateSingleBadgeFamillePDF({
+                        id: selectedFamille.id,
+                        nom_famille: selectedFamille.nom_famille,
+                        telephone_pere: selectedFamille.telephone_pere,
+                        telephone_mere: selectedFamille.telephone_mere,
+                        code_plain: codesMap.get(selectedFamille.id),
+                        enfants: (selectedFamille.eleves || []).map((e: any) => ({ prenom: e.prenom, nom: e.nom, classe: e.classes?.nom })),
+                      });
+                      toast.success('Badge généré !');
+                    }}>
+                      <Printer className="h-3 w-3" /> Badge
+                    </Button>
+                    <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white rounded-xl gap-1 h-8 text-xs" onClick={() => { navigate(`/paiements?familleId=${selectedFamille.id}&famille=${encodeURIComponent(selectedFamille.nom_famille)}`); }}>
+                      <CreditCard className="h-3 w-3" /> Paiement
                     </Button>
                     <Button size="sm" variant="destructive" className="rounded-xl gap-1 h-8 text-xs" onClick={() => setDeleteConfirmId(selectedFamille?.id)}>
                       <Trash2 className="h-3 w-3" /> Supprimer
