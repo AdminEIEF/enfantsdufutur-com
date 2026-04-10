@@ -300,10 +300,6 @@ export default function EnveloppeGenerator() {
   const [generating, setGenerating] = useState(false);
   const { data: eleves, isLoading: loadingEleves } = useElevesByClasse(selectedClasse);
 
-  if (!hasRole('superviseur')) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   const selectedClasseInfo = classes?.find((c: any) => c.id === selectedClasse);
 
   const envelopeData: EnvelopeData[] = useMemo(() => {
