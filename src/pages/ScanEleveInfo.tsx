@@ -11,12 +11,31 @@ import { toast } from 'sonner';
 
 function parseScannedCode(raw: string): string | null {
   const trimmed = raw.trim();
-  // Direct matricule
-  if (/^EDU/i.test(trimmed)) return trimmed.toUpperCase();
-  // JSON-like {type:transport;matricule:EDU...;id:EDU...}
+  if (!trimmed) return null;
+
+  // Try to extract matricule from structured formats:
+  // {type:transport;matricule:EDU-XXX;id:EDU-XXX} or matricule=EDU-XXX or matricule:EDU-XXX
   const mMatch = trimmed.match(/matricule[=:]\s*([A-Za-z0-9\-]+)/i);
   if (mMatch) return mMatch[1].toUpperCase();
-  // Fallback
+
+  // Try to extract id field: {type:transport;id:EDU-XXX}
+  const idMatch = trimmed.match(/\bid[=:]\s*([A-Za-z0-9\-]+)/i);
+  if (idMatch) return idMatch[1].toUpperCase();
+
+  // Try JSON parse
+  try {
+    const obj = JSON.parse(trimmed);
+    if (obj.matricule) return String(obj.matricule).toUpperCase();
+    if (obj.id) return String(obj.id).toUpperCase();
+    if (obj.code) return String(obj.code).toUpperCase();
+  } catch {
+    // not JSON, continue
+  }
+
+  // Direct matricule (EDU-XXX)
+  if (/^EDU/i.test(trimmed)) return trimmed.toUpperCase();
+
+  // Fallback: return as-is
   return trimmed.toUpperCase();
 }
 
