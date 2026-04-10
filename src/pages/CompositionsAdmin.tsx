@@ -785,6 +785,7 @@ export default function CompositionsAdmin() {
                       <>
                         <SelectItem value="primaire_interactif">🎨 Primaire Interactif — Dessin + Math + QCM Audio</SelectItem>
                         <SelectItem value="geometrie_traces">📐 Géométrie & Tracés — Relier + Quadrillage</SelectItem>
+                        <SelectItem value="dessin_visuel">🖌️ Dessin + Sujet Visuel — Forme à reproduire</SelectItem>
                       </>
                     )}
                   </SelectContent>
