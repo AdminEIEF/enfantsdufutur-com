@@ -514,6 +514,10 @@ export default function CompositionsAdmin() {
         if (!count || count === 0) {
           toast.error('Ajoutez des questions avant de publier'); return;
         }
+      } else if (comp.type_composition === 'dessin_visuel') {
+        if (!comp.sujet_url) {
+          toast.error('La consigne visuelle est manquante'); return;
+        }
       } else if (!comp.sujet_url) {
         toast.error('Ajoutez un fichier sujet avant de publier'); return;
       }
