@@ -50,6 +50,7 @@ interface EnvelopeData {
   familleName: string;
   telephone: string;
   familleId: string;
+  codeAcces: string;
 }
 
 async function generateEnveloppesPDF(
@@ -183,16 +184,27 @@ async function generateEnveloppesPDF(
     });
     const familleEndY = destY + 15 + Math.min(familleLines.length, 2) * 8;
 
+    // Code d'accès under family name
+    let afterFamilleY = familleEndY;
+    if (env.codeAcces) {
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(11);
+      pdf.setTextColor(BLUE.r, BLUE.g, BLUE.b);
+      pdf.text(`Code d'acces : ${env.codeAcces}`, MARGIN + 8, afterFamilleY + 6);
+      afterFamilleY += 10;
+    }
+
     // Phone under family name
     if (env.telephone) {
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(11);
       pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
-      pdf.text(`Tel : ${env.telephone}`, MARGIN + 8, familleEndY + 5);
+      pdf.text(`Tel : ${env.telephone}`, MARGIN + 8, afterFamilleY + 5);
+      afterFamilleY += 8;
     }
 
     // Student name — BOLD and CENTERED
-    const studentY = familleEndY + (env.telephone ? 18 : 10);
+    const studentY = afterFamilleY + 12;
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(18);
     pdf.setTextColor(DARK.r, DARK.g, DARK.b);
@@ -357,11 +369,33 @@ export default function EnveloppeGenerator() {
   const [generating, setGenerating] = useState(false);
   const { data: eleves, isLoading: loadingEleves } = useElevesByClasse(selectedClasse);
 
+  // Fetch family codes
+  const familleIds = useMemo(() => {
+    if (!eleves) return [];
+    const ids = new Set<string>();
+    eleves.forEach((e: any) => { if (e.familles?.id) ids.add(e.familles.id); });
+    return Array.from(ids);
+  }, [eleves]);
+
+  const { data: familyCodes } = useQuery({
+    queryKey: ['enveloppe-family-codes', familleIds],
+    enabled: familleIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('generated_family_codes')
+        .select('famille_id, code_plain')
+        .in('famille_id', familleIds);
+      if (error) throw error;
+      const map = new Map<string, string>();
+      data?.forEach((r: any) => map.set(r.famille_id, r.code_plain));
+      return map;
+    },
+  });
+
   const selectedClasseInfo = classes?.find((c: any) => c.id === selectedClasse);
 
   const envelopeData: EnvelopeData[] = useMemo(() => {
     if (!eleves) return [];
-    // Deduplicate by famille
     const familleMap = new Map<string, EnvelopeData>();
     eleves.forEach((e: any) => {
       const famille = e.familles;
@@ -375,11 +409,12 @@ export default function EnveloppeGenerator() {
           familleName: famille.nom_famille,
           telephone: famille.telephone_pere || famille.telephone_mere || '',
           familleId: famille.id,
+          codeAcces: familyCodes?.get(famille.id) || '',
         });
       }
     });
     return Array.from(familleMap.values());
-  }, [eleves]);
+  }, [eleves, familyCodes]);
 
   if (!hasRole('superviseur')) {
     return <Navigate to="/dashboard" replace />;
