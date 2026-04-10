@@ -54,91 +54,77 @@ function containsAzertyArtifacts(text: string): boolean {
  * Extract matricule from any scanner output (QWERTY, AZERTY, partial text).
  * Tries multiple strategies in order of reliability.
  */
+/**
+ * Try to extract a matricule from a single text variant (raw or converted).
+ */
+function tryExtractFromText(text: string): string | null {
+  // Structured: matricule:XXX or matricule=XXX
+  const mMatch = text.match(/matricule[=:;\s]\s*([A-Za-z0-9\-]+)/i);
+  if (mMatch) return mMatch[1].toUpperCase();
+
+  // Structured: id:XXX or id=XXX
+  const idMatch = text.match(/\bid[=:;\s]\s*([A-Za-z0-9\-]+)/i);
+  if (idMatch) return idMatch[1].toUpperCase();
+
+  // JSON parse
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed.matricule) return String(parsed.matricule).toUpperCase();
+    if (parsed.id) return String(parsed.id).toUpperCase();
+    if (parsed.code) return String(parsed.code).toUpperCase();
+  } catch { /* not JSON */ }
+
+  // JSON with missing opening brace (dead key swallowed '{')
+  if (!text.startsWith('{')) {
+    const candidates = ['{' + text, '{' + text + '}'];
+    for (const c of candidates) {
+      try {
+        const parsed = JSON.parse(c);
+        if (parsed.matricule) return String(parsed.matricule).toUpperCase();
+        if (parsed.id) return String(parsed.id).toUpperCase();
+      } catch { /* skip */ }
+    }
+  }
+
+  // Matricule regex pattern: EDU-2602-0001, ABC-12-123, etc.
+  const matriculeMatch = text.match(/[A-Z]{2,5}-\d{2,4}-\d{3,6}/i);
+  if (matriculeMatch) return matriculeMatch[0].toUpperCase();
+
+  return null;
+}
+
 export function extractMatriculeFromScan(raw: string): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
 
   console.log('[Scanner] Raw input:', trimmed);
 
-  // Strategy 0: Extract from semicolon/comma-separated structured text
-  // e.g. type:transport;matricule:EDU-2602-0001;id:EDU-2602-0001
-  const structuredMatch = trimmed.match(/matricule[=:]\s*([A-Za-z0-9\-]+)/i);
-  if (structuredMatch) {
-    console.log('[Scanner] Structured match:', structuredMatch[1]);
-    return structuredMatch[1].toUpperCase();
-  }
-  // Also try 'id' field from structured text
-  const structuredIdMatch = trimmed.match(/\bid[=:]\s*([A-Za-z0-9\-]+)/i);
-  if (structuredIdMatch) {
-    console.log('[Scanner] Structured id match:', structuredIdMatch[1]);
-    return structuredIdMatch[1].toUpperCase();
+  // Always try on raw text first
+  const fromRaw = tryExtractFromText(trimmed);
+  if (fromRaw) {
+    console.log('[Scanner] Extracted from raw:', fromRaw);
+    return fromRaw;
   }
 
-  // Strategy 1: Direct JSON parse (QWERTY scanner, clean data)
-  try {
-    const parsed = JSON.parse(trimmed);
-    if (parsed.matricule) return parsed.matricule;
-    if (parsed.id) return String(parsed.id).toUpperCase();
-    if (parsed.code) return String(parsed.code).toUpperCase();
-  } catch {
-    // Not valid JSON
-  }
-
-  // Strategy 2: AZERTY conversion then try all strategies again
-  const isAzerty = containsAzertyArtifacts(trimmed);
+  // Always try AZERTY→QWERTY conversion (works on any keyboard layout)
   const converted = azertyToQwerty(trimmed);
-  console.log('[Scanner] Converted:', converted);
-
-  if (isAzerty) {
-    // Try structured text on converted
-    const convStructMatch = converted.match(/matricule[=:]\s*([A-Za-z0-9\-]+)/i);
-    if (convStructMatch) return convStructMatch[1].toUpperCase();
-    const convIdMatch = converted.match(/\bid[=:]\s*([A-Za-z0-9\-]+)/i);
-    if (convIdMatch) return convIdMatch[1].toUpperCase();
-
-    // Try JSON parse on converted text
-    try {
-      const parsed = JSON.parse(converted);
-      if (parsed.matricule) return parsed.matricule;
-      if (parsed.id) return String(parsed.id).toUpperCase();
-    } catch {
-      // Might be missing opening brace (dead key ¨ swallowed)
-    }
-
-    // Try adding missing opening brace (dead key issue on AZERTY)
-    if (!converted.startsWith('{')) {
-      try {
-        const parsed = JSON.parse('{' + converted);
-        if (parsed.matricule) return parsed.matricule;
-        if (parsed.id) return String(parsed.id).toUpperCase();
-      } catch {
-        // Still not valid
-      }
-      const wrapped = '{' + converted + (converted.endsWith('}') ? '' : '}');
-      try {
-        const parsed = JSON.parse(wrapped);
-        if (parsed.matricule) return parsed.matricule;
-        if (parsed.id) return String(parsed.id).toUpperCase();
-      } catch {
-        // fallback to regex
-      }
+  if (converted !== trimmed) {
+    console.log('[Scanner] Converted AZERTY→QWERTY:', converted);
+    const fromConverted = tryExtractFromText(converted);
+    if (fromConverted) {
+      console.log('[Scanner] Extracted from converted:', fromConverted);
+      return fromConverted;
     }
   }
 
-  // Strategy 3: Extract matricule pattern from converted text
-  const matriculeMatch = converted.match(/[A-Z]{2,5}-\d{2,4}-\d{3,6}/i);
-  if (matriculeMatch) return matriculeMatch[0].toUpperCase();
+  // Direct matricule match (already uppercase alphanumeric-dash)
+  if (/^[A-Z]{2,5}-\d{2,4}-\d{3,6}$/i.test(trimmed)) return trimmed.toUpperCase();
 
-  // Strategy 4: Also try on raw text
-  const rawMatriculeMatch = trimmed.match(/[A-Z]{2,5}-\d{2,4}-\d{3,6}/i);
-  if (rawMatriculeMatch) return rawMatriculeMatch[0].toUpperCase();
-
-  // Strategy 5: If it already looks like a matricule (no conversion needed)
-  const directMatch = trimmed.match(/^[A-Z]{2,5}-\d{2,4}-\d{3,6}$/i);
-  if (directMatch) return directMatch[0].toUpperCase();
-
-  // Strategy 6: Raw text might just be a plain matricule or ID
+  // Plain ID fallback
   if (/^[A-Z0-9\-]{5,20}$/i.test(trimmed)) return trimmed.toUpperCase();
+
+  // Last resort: try on converted text too
+  if (converted !== trimmed && /^[A-Z0-9\-]{5,20}$/i.test(converted)) return converted.toUpperCase();
 
   return null;
 }
