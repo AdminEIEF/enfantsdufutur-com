@@ -75,11 +75,13 @@ function useClassesAll() {
 
 export default function Familles() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { hasRole } = useAuth();
   const isSuperviseur = hasRole('superviseur');
   const isAdmin = hasRole('admin');
   const { data: familles = [], isLoading } = useFamilles();
   const { data: paiementsMap = new Map() } = useFamillesPaiements();
+  const [scannerOpen, setScannerOpen] = useState(false);
   const { data: allClasses = [] } = useClassesAll();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('search') || '');
