@@ -17,7 +17,7 @@ export default function Dashboard() {
   const { roles, hasAnyRole } = useAuth();
   const navigate = useNavigate();
   const canSeeFinance = hasAnyRole(['superviseur', 'admin', 'comptable', 'tresorier', 'secretaire']);
-  const [scanResult, setScanResult] = useState<any>(null);
+  
 
   // Redirect barcode scan to dedicated Scan Élève page
   useBarcodeScanner({ onScan: useCallback((code: string) => {
