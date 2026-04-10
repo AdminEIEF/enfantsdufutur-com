@@ -362,11 +362,19 @@ export default function CompositionsAdmin() {
     let allComps = (compRes.data || []) as any[];
 
     // Coordinateur primaire: filter to Crèche/Maternelle/Primaire only
-    if (isCoordinateur && roles.includes('coordinateur')) {
+    if (isCoordPrimaire) {
       const primaryCycles = ['Crèche', 'Maternelle', 'Primaire'];
       allClasses = allClasses.filter((c: any) => primaryCycles.includes(c.niveaux?.cycles?.nom));
       const primaryClassIds = new Set(allClasses.map((c: any) => c.id));
       allComps = allComps.filter((c: any) => primaryClassIds.has(c.classe_id));
+    }
+
+    // Coordinateur secondaire: filter to Collège/Lycée only
+    if (isCoordSecondaire) {
+      const secondaryCycles = ['Collège', 'Lycée'];
+      allClasses = allClasses.filter((c: any) => secondaryCycles.includes(c.niveaux?.cycles?.nom));
+      const secondaryClassIds = new Set(allClasses.map((c: any) => c.id));
+      allComps = allComps.filter((c: any) => secondaryClassIds.has(c.classe_id));
     }
 
     setCompositions(allComps);
