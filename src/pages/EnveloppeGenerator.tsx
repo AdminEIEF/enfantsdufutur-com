@@ -88,22 +88,25 @@ async function generateEnveloppesPDF(
       } catch { /* silent */ }
     }
 
+    // ── Bottom footer bar (define early for layout math) ──
+    const footerH = 14;
+    const footerY = ENV_H - footerH;
+
     // ── Top header bar ──
-    const headerH = 50;
+    const headerH = 48;
     pdf.setFillColor(NAVY.r, NAVY.g, NAVY.b);
     pdf.rect(0, 0, ENV_W, headerH, 'F');
 
     // Thin blue accent line below header
     pdf.setFillColor(BLUE.r, BLUE.g, BLUE.b);
-    pdf.rect(0, headerH, ENV_W, 2, 'F');
+    pdf.rect(0, headerH, ENV_W, 1.5, 'F');
 
     // ── Logo in header ──
-    const logoSize = 30;
+    const logoSize = 28;
     const logoX = MARGIN + 2;
     const logoY = (headerH - logoSize) / 2;
     if (logoData) {
       try {
-        // White circle background
         pdf.setFillColor(WHITE.r, WHITE.g, WHITE.b);
         pdf.circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2 + 1.5, 'F');
         const fmt = logoData.includes('image/png') ? 'PNG' : 'JPEG';
@@ -115,86 +118,96 @@ async function generateEnveloppesPDF(
     const textX = logoX + logoSize + 8;
     pdf.setTextColor(WHITE.r, WHITE.g, WHITE.b);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(13);
+    pdf.setFontSize(12);
     const nameLines = pdf.splitTextToSize(schoolName.toUpperCase(), ENV_W - textX - MARGIN - 5);
-    let nameY = nameLines.length > 2 ? 12 : nameLines.length > 1 ? 14 : 18;
+    let nameY = nameLines.length > 2 ? 11 : nameLines.length > 1 ? 13 : 16;
     nameLines.forEach((line: string, idx: number) => {
-      pdf.text(line, textX, nameY + idx * 6);
+      pdf.text(line, textX, nameY + idx * 5.5);
     });
 
     // Subtitle
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8);
-    pdf.text(schoolSubtitle, textX, nameY + nameLines.length * 6 + 3);
+    pdf.setFontSize(7.5);
+    pdf.text(schoolSubtitle, textX, nameY + nameLines.length * 5.5 + 3);
 
     // Ville + Tel
-    pdf.setFontSize(7);
+    pdf.setFontSize(6.5);
     const contactLine = [schoolVille, schoolTel].filter(Boolean).join(' • ');
-    pdf.text(contactLine, textX, nameY + nameLines.length * 6 + 9);
+    pdf.text(contactLine, textX, nameY + nameLines.length * 5.5 + 8);
 
-    // ── "CORRESPONDANCE SCOLAIRE" label ──
-    const labelY = headerH + 18;
-    pdf.setFillColor(LIGHT_BLUE.r, LIGHT_BLUE.g, LIGHT_BLUE.b);
-    pdf.roundedRect(MARGIN, labelY - 6, ENV_W - MARGIN * 2, 14, 3, 3, 'F');
-    pdf.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(11);
-    pdf.text('📬  CORRESPONDANCE SCOLAIRE', ENV_W / 2, labelY + 2, { align: 'center' });
+    // ── Content area boundaries ──
+    const contentTop = headerH + 6;
+    const contentBottom = footerY - 4;
 
-    // ── Decorative border ──
+    // ── Decorative border (within content area) ──
     pdf.setDrawColor(NAVY.r, NAVY.g, NAVY.b);
     pdf.setLineWidth(0.5);
-    pdf.roundedRect(MARGIN - 3, headerH + 8, ENV_W - (MARGIN - 3) * 2, ENV_H - headerH - 16, 4, 4, 'S');
+    pdf.roundedRect(MARGIN - 3, contentTop, ENV_W - (MARGIN - 3) * 2, contentBottom - contentTop, 4, 4, 'S');
 
     // Inner subtle border
     pdf.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
     pdf.setLineWidth(0.2);
-    pdf.roundedRect(MARGIN, headerH + 11, ENV_W - MARGIN * 2, ENV_H - headerH - 22, 3, 3, 'S');
+    pdf.roundedRect(MARGIN, contentTop + 3, ENV_W - MARGIN * 2, contentBottom - contentTop - 6, 3, 3, 'S');
+
+    // ── "CORRESPONDANCE SCOLAIRE" label ──
+    const labelY = contentTop + 14;
+    pdf.setFillColor(LIGHT_BLUE.r, LIGHT_BLUE.g, LIGHT_BLUE.b);
+    pdf.roundedRect(MARGIN + 5, labelY - 6, ENV_W - MARGIN * 2 - 10, 13, 3, 3, 'F');
+    pdf.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.text('CORRESPONDANCE SCOLAIRE', ENV_W / 2, labelY + 1.5, { align: 'center' });
 
     // ── Destinataire section ──
-    const destY = labelY + 25;
+    const destY = labelY + 20;
     pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8);
-    pdf.text('DESTINATAIRE', MARGIN + 5, destY);
+    pdf.setFontSize(7.5);
+    pdf.text('DESTINATAIRE', MARGIN + 8, destY);
 
     // Separator line
     pdf.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
     pdf.setLineWidth(0.3);
-    pdf.line(MARGIN + 5, destY + 2, ENV_W / 2 + 20, destY + 2);
+    pdf.line(MARGIN + 8, destY + 2, ENV_W / 2 + 20, destY + 2);
 
-    // Family name
+    // Family name (with truncation for long names)
     pdf.setTextColor(NAVY.r, NAVY.g, NAVY.b);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(16);
-    pdf.text(`Famille ${env.familleName}`, MARGIN + 5, destY + 14);
+    pdf.setFontSize(15);
+    const familleText = `Famille ${env.familleName}`;
+    const familleLines = pdf.splitTextToSize(familleText, ENV_W - MARGIN * 2 - 20);
+    familleLines.slice(0, 2).forEach((line: string, idx: number) => {
+      pdf.text(line, MARGIN + 8, destY + 13 + idx * 7);
+    });
+    const familleEndY = destY + 13 + Math.min(familleLines.length, 2) * 7;
 
     // Student info
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(11);
-    pdf.setTextColor(DARK.r, DARK.g, DARK.b);
-    pdf.text(`Élève : ${env.elevePrenom} ${env.eleveNom}`, MARGIN + 5, destY + 25);
-
     pdf.setFontSize(10);
+    pdf.setTextColor(DARK.r, DARK.g, DARK.b);
+    pdf.text(`Eleve : ${env.elevePrenom} ${env.eleveNom}`, MARGIN + 8, familleEndY + 5);
+
+    pdf.setFontSize(9);
     pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
-    pdf.text(`Classe : ${env.classe}`, MARGIN + 5, destY + 33);
+    pdf.text(`Classe : ${env.classe}`, MARGIN + 8, familleEndY + 13);
 
     if (env.telephone) {
-      pdf.text(`Tél : ${env.telephone}`, MARGIN + 5, destY + 41);
+      pdf.text(`Tel : ${env.telephone}`, MARGIN + 8, familleEndY + 21);
     }
 
-    // ── QR Codes section ──
-    const qrSectionY = ENV_H - 130;
-    const qrSize = 40;
-    const qrFramePad = 6;
-    const labelGap = 5; // 5mm between QR and text
+    // ── QR Codes section (anchored from bottom, above footer) ──
+    const qrSize = 38;
+    const qrFramePad = 5;
+    const labelGap = 5;
+    const qrLabelH = 18; // space for 3 lines of text
+    const qrBlockH = qrFramePad + qrSize + qrFramePad + labelGap + qrLabelH;
+    const qrSectionY = contentBottom - qrBlockH - 8 + qrFramePad; // QR image Y
 
-    // QR1 - Site web
-    const qr1CenterX = MARGIN + 10 + qrSize / 2 + qrFramePad;
+    // QR1 - Site web (left)
+    const qr1CenterX = MARGIN + 12 + qrFramePad + qrSize / 2;
     const qr1X = qr1CenterX - qrSize / 2;
     try {
       const qr1Data = await generateQRDataUrl(siteUrl);
-      // White frame with border
       pdf.setFillColor(WHITE.r, WHITE.g, WHITE.b);
       pdf.roundedRect(qr1X - qrFramePad, qrSectionY - qrFramePad, qrSize + qrFramePad * 2, qrSize + qrFramePad * 2, 3, 3, 'F');
       pdf.setDrawColor(NAVY.r, NAVY.g, NAVY.b);
@@ -202,22 +215,22 @@ async function generateEnveloppesPDF(
       pdf.roundedRect(qr1X - qrFramePad, qrSectionY - qrFramePad, qrSize + qrFramePad * 2, qrSize + qrFramePad * 2, 3, 3, 'S');
       pdf.addImage(qr1Data, 'PNG', qr1X, qrSectionY, qrSize, qrSize);
 
-      // Legend below QR1 — 5mm gap
+      // Legend
       const lbl1Y = qrSectionY + qrSize + qrFramePad + labelGap;
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(9);
+      pdf.setFontSize(8);
       pdf.setTextColor(NAVY.r, NAVY.g, NAVY.b);
       pdf.text('DECOUVRIR NOTRE ECOLE', qr1CenterX, lbl1Y, { align: 'center' });
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(7);
+      pdf.setFontSize(6.5);
       pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
-      pdf.text('Scannez pour visiter notre site', qr1CenterX, lbl1Y + 5, { align: 'center' });
-      pdf.setFontSize(6);
-      pdf.text(siteUrl.replace(/^https?:\/\//, ''), qr1CenterX, lbl1Y + 10, { align: 'center' });
+      pdf.text('Scannez pour visiter notre site', qr1CenterX, lbl1Y + 4.5, { align: 'center' });
+      pdf.setFontSize(5.5);
+      pdf.text(siteUrl.replace(/^https?:\/\//, ''), qr1CenterX, lbl1Y + 9, { align: 'center' });
     } catch { /* silent */ }
 
-    // QR2 - Espace Parent
-    const qr2CenterX = ENV_W - MARGIN - 10 - qrSize / 2 - qrFramePad;
+    // QR2 - Espace Parent (right)
+    const qr2CenterX = ENV_W - MARGIN - 12 - qrFramePad - qrSize / 2;
     const qr2X = qr2CenterX - qrSize / 2;
     try {
       const parentUrl = `${siteUrl}/parent`;
@@ -229,18 +242,18 @@ async function generateEnveloppesPDF(
       pdf.roundedRect(qr2X - qrFramePad, qrSectionY - qrFramePad, qrSize + qrFramePad * 2, qrSize + qrFramePad * 2, 3, 3, 'S');
       pdf.addImage(qr2Data, 'PNG', qr2X, qrSectionY, qrSize, qrSize);
 
-      // Legend below QR2 — 5mm gap
+      // Legend
       const lbl2Y = qrSectionY + qrSize + qrFramePad + labelGap;
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(9);
+      pdf.setFontSize(8);
       pdf.setTextColor(NAVY.r, NAVY.g, NAVY.b);
       pdf.text('ESPACE PARENT SECURISE', qr2CenterX, lbl2Y, { align: 'center' });
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(7);
+      pdf.setFontSize(6.5);
       pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
-      pdf.text('Bulletins & suivi scolaire en ligne', qr2CenterX, lbl2Y + 5, { align: 'center' });
-      pdf.setFontSize(6);
-      pdf.text('Acces confidentiel et securise', qr2CenterX, lbl2Y + 10, { align: 'center' });
+      pdf.text('Bulletins & suivi scolaire en ligne', qr2CenterX, lbl2Y + 4.5, { align: 'center' });
+      pdf.setFontSize(5.5);
+      pdf.text('Acces confidentiel et securise', qr2CenterX, lbl2Y + 9, { align: 'center' });
     } catch { /* silent */ }
 
     // Connector dashed line between QR codes
@@ -248,21 +261,19 @@ async function generateEnveloppesPDF(
     pdf.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
     pdf.setLineWidth(0.2);
     pdf.setLineDashPattern([2, 2], 0);
-    pdf.line(qr1X + qrSize + qrFramePad + 5, connY, qr2X - qrFramePad - 5, connY);
+    pdf.line(qr1X + qrSize + qrFramePad + 4, connY, qr2X - qrFramePad - 4, connY);
     pdf.setLineDashPattern([], 0);
 
-    // ── Bottom footer bar ──
-    const footerH = 16;
-    const footerY = ENV_H - footerH;
+    // ── Draw footer ──
     pdf.setFillColor(NAVY.r, NAVY.g, NAVY.b);
     pdf.rect(0, footerY, ENV_W, footerH, 'F');
 
     pdf.setTextColor(WHITE.r, WHITE.g, WHITE.b);
-    pdf.setFontSize(6);
+    pdf.setFontSize(5.5);
     pdf.setFont('helvetica', 'normal');
-    pdf.text(`Année scolaire 2026-2027  •  ${schoolName}`, ENV_W / 2, footerY + 6, { align: 'center' });
-    pdf.setFontSize(5);
-    pdf.text('Document généré par LinkScol — Gestion scolaire intégrée', ENV_W / 2, footerY + 11, { align: 'center' });
+    pdf.text(`Annee scolaire 2026-2027  •  ${schoolName}`, ENV_W / 2, footerY + 5, { align: 'center' });
+    pdf.setFontSize(4.5);
+    pdf.text('Document genere par LinkScol — Gestion scolaire integree', ENV_W / 2, footerY + 9.5, { align: 'center' });
   }
 
   pdf.save(`enveloppes_${new Date().toISOString().slice(0, 10)}.pdf`);
