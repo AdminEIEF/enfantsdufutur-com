@@ -18,9 +18,9 @@ const ENV_W = 229;
 const ENV_H = 324;
 const MARGIN = 15;
 
-const NAVY = { r: 15, g: 32, b: 65 };
-const BLUE = { r: 37, g: 99, b: 235 };
-const LIGHT_BLUE = { r: 219, g: 234, b: 254 };
+const NAVY = { r: 0, g: 100, b: 0 };      // Dark green (logo color)
+const BLUE = { r: 34, g: 139, b: 34 };     // Forest green accent
+const LIGHT_BLUE = { r: 220, g: 245, b: 220 }; // Light green bg
 const WHITE = { r: 255, g: 255, b: 255 };
 const GRAY = { r: 120, g: 120, b: 130 };
 const DARK = { r: 30, g: 30, b: 40 };
@@ -149,17 +149,19 @@ async function generateEnveloppesPDF(
     pdf.setLineWidth(0.2);
     pdf.roundedRect(MARGIN, contentTop + 3, ENV_W - MARGIN * 2, contentBottom - contentTop - 6, 3, 3, 'S');
 
-    // ── "CORRESPONDANCE SCOLAIRE" label ──
+    // ── "RESULTAT SCOLAIRE DE L'ENFANT" label ──
     const labelY = contentTop + 14;
     pdf.setFillColor(LIGHT_BLUE.r, LIGHT_BLUE.g, LIGHT_BLUE.b);
     pdf.roundedRect(MARGIN + 5, labelY - 6, ENV_W - MARGIN * 2 - 10, 13, 3, 3, 'F');
     pdf.setTextColor(NAVY.r, NAVY.g, NAVY.b);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(10);
-    pdf.text('CORRESPONDANCE SCOLAIRE', ENV_W / 2, labelY + 1.5, { align: 'center' });
+    pdf.text('RESULTAT SCOLAIRE DE L\'ENFANT', ENV_W / 2, labelY + 1.5, { align: 'center' });
 
     // ── Destinataire section ──
     const destY = labelY + 20;
+
+    // Family name
     pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(7.5);
@@ -170,30 +172,37 @@ async function generateEnveloppesPDF(
     pdf.setLineWidth(0.3);
     pdf.line(MARGIN + 8, destY + 2, ENV_W / 2 + 20, destY + 2);
 
-    // Family name (with truncation for long names)
+    // Family name (single, no duplicate)
     pdf.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(15);
-    const familleText = `Famille ${env.familleName}`;
-    const familleLines = pdf.splitTextToSize(familleText, ENV_W - MARGIN * 2 - 20);
-    familleLines.slice(0, 2).forEach((line: string, idx: number) => {
-      pdf.text(line, MARGIN + 8, destY + 13 + idx * 7);
-    });
-    const familleEndY = destY + 13 + Math.min(familleLines.length, 2) * 7;
-
-    // Student info
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(10);
-    pdf.setTextColor(DARK.r, DARK.g, DARK.b);
-    pdf.text(`Eleve : ${env.elevePrenom} ${env.eleveNom}`, MARGIN + 8, familleEndY + 5);
+    pdf.setFontSize(11);
+    const familleLines = pdf.splitTextToSize(`Famille ${env.familleName}`, ENV_W - MARGIN * 2 - 20);
+    familleLines.slice(0, 2).forEach((line: string, idx: number) => {
+      pdf.text(line, MARGIN + 8, destY + 13 + idx * 6);
+    });
+    const familleEndY = destY + 13 + Math.min(familleLines.length, 2) * 6;
 
+    // Student name — BOLD and CENTERED
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
+    pdf.setTextColor(DARK.r, DARK.g, DARK.b);
+    pdf.text(`${env.elevePrenom} ${env.eleveNom}`, ENV_W / 2, familleEndY + 8, { align: 'center' });
+
+    // Class
+    pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(9);
     pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
-    pdf.text(`Classe : ${env.classe}`, MARGIN + 8, familleEndY + 13);
+    pdf.text(`Classe : ${env.classe}`, ENV_W / 2, familleEndY + 16, { align: 'center' });
 
     if (env.telephone) {
-      pdf.text(`Tel : ${env.telephone}`, MARGIN + 8, familleEndY + 21);
+      pdf.text(`Tel : ${env.telephone}`, ENV_W / 2, familleEndY + 23, { align: 'center' });
     }
+
+    // ── Slogan ──
+    pdf.setFont('helvetica', 'bolditalic');
+    pdf.setFontSize(8);
+    pdf.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+    pdf.text('A EIEF nous faisons toujours plus !', ENV_W / 2, familleEndY + 34, { align: 'center' });
 
     // ── QR Codes section (anchored from bottom, above footer) ──
     const qrSize = 38;
@@ -273,7 +282,7 @@ async function generateEnveloppesPDF(
     pdf.setFont('helvetica', 'normal');
     pdf.text(`Annee scolaire 2026-2027  •  ${schoolName}`, ENV_W / 2, footerY + 5, { align: 'center' });
     pdf.setFontSize(4.5);
-    pdf.text('Document genere par LinkScol — Gestion scolaire integree', ENV_W / 2, footerY + 9.5, { align: 'center' });
+    pdf.text('Gestion scolaire integree EduGestion Pro', ENV_W / 2, footerY + 9.5, { align: 'center' });
   }
 
   pdf.save(`enveloppes_${new Date().toISOString().slice(0, 10)}.pdf`);
