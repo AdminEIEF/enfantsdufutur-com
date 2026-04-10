@@ -225,7 +225,7 @@ export default function CompositionCanvas() {
   };
 
   const handleSubmit = async () => {
-    if (!eleve || !canvasRef.current) return;
+    if (!session || !canvasRef.current) return;
     setSending(true);
     try {
       const dataUrl = canvasRef.current.toDataURL('image/png');
