@@ -335,6 +335,7 @@ export default function CompositionsAdmin() {
   const [results, setResults] = useState<any[]>([]);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [resultsByClassComp, setResultsByClassComp] = useState<string | null>(null);
+  const dessinCanvasRef = React.useRef<HTMLCanvasElement>(null);
   const [resultsByClassData, setResultsByClassData] = useState<any[]>([]);
   const [resultsByClassLoading, setResultsByClassLoading] = useState(false);
   const [resultsByClassEffectif, setResultsByClassEffectif] = useState<any[]>([]);
