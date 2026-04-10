@@ -275,7 +275,7 @@ export default function Familles() {
                 code_plain: codesMap.get(f.id),
                 enfants: (f.eleves || []).map((e: any) => ({ prenom: e.prenom, nom: e.nom, classe: e.classes?.nom })),
               }));
-              await generateBadgeFamillePDF(badgeData);
+              await generateBadgeFamillePDF(badgeData, schoolConfig?.nom, schoolConfig?.logo_url);
               toast.success('Badges générés !');
             }}>
               <Printer className="h-4 w-4" /> Badges
@@ -554,7 +554,7 @@ export default function Familles() {
                         telephone_mere: selectedFamille.telephone_mere,
                         code_plain: codesMap.get(selectedFamille.id),
                         enfants: (selectedFamille.eleves || []).map((e: any) => ({ prenom: e.prenom, nom: e.nom, classe: e.classes?.nom })),
-                      });
+                      }, schoolConfig?.nom, schoolConfig?.logo_url);
                       toast.success('Badge généré !');
                     }}>
                       <Printer className="h-3 w-3" /> Badge
