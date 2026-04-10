@@ -466,6 +466,24 @@ export default function EnveloppeGenerator() {
               </Select>
             </div>
 
+            <div className="flex-1">
+              <Select
+                value={selectedPeriode || ''}
+                onValueChange={(v) => setSelectedPeriode(v || null)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir une période..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {periodes?.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nom}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <Button
               onClick={handleGenerate}
               disabled={!selectedClasse || generating || envelopeData.length === 0}
