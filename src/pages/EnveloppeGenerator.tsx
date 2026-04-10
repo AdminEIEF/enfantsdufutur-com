@@ -415,7 +415,6 @@ export default function EnveloppeGenerator() {
     });
     return Array.from(familleMap.values());
   }, [eleves, familyCodes]);
-  }, [eleves]);
 
   if (!hasRole('superviseur')) {
     return <Navigate to="/dashboard" replace />;
