@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Printer, Mail, Loader2, Lock, QrCode, Globe, Users } from 'lucide-react';
+import { Printer, Mail, Loader2, Lock, QrCode, Globe, Users, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import * as QRCode from 'qrcode';
@@ -60,6 +60,7 @@ async function generateEnveloppesPDF(
   schoolTel: string,
   logoUrl: string | null,
   siteUrl: string,
+  periodeName: string,
 ): Promise<void> {
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [ENV_W, ENV_H] });
 
@@ -157,7 +158,7 @@ async function generateEnveloppesPDF(
     pdf.setTextColor(NAVY.r, NAVY.g, NAVY.b);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(13);
-    pdf.text('RESULTAT SCOLAIRE DE L\'ENFANT', ENV_W / 2, labelY + 2, { align: 'center' });
+    pdf.text(`RESULTAT SCOLAIRE DE L'ENFANT — ${periodeName.toUpperCase()}`, ENV_W / 2, labelY + 2, { align: 'center' });
 
     // ── Destinataire section ──
     const destY = labelY + 22;
@@ -312,6 +313,20 @@ function useClasses() {
   });
 }
 
+function usePeriodes() {
+  return useQuery({
+    queryKey: ['enveloppe-periodes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('periodes')
+        .select('id, nom')
+        .order('nom');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 function useElevesByClasse(classeId: string | null) {
   return useQuery({
     queryKey: ['enveloppe-eleves', classeId],
@@ -336,7 +351,9 @@ export default function EnveloppeGenerator() {
   const { hasRole } = useAuth();
   const { data: config } = useSchoolConfig();
   const { data: classes, isLoading: loadingClasses } = useClasses();
+  const { data: periodes } = usePeriodes();
   const [selectedClasse, setSelectedClasse] = useState<string | null>(null);
+  const [selectedPeriode, setSelectedPeriode] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const { data: eleves, isLoading: loadingEleves } = useElevesByClasse(selectedClasse);
 
@@ -373,6 +390,11 @@ export default function EnveloppeGenerator() {
       toast.error('Aucune famille trouvée pour cette classe');
       return;
     }
+    if (!selectedPeriode) {
+      toast.error('Veuillez sélectionner une période');
+      return;
+    }
+    const periodeName = periodes?.find((p: any) => p.id === selectedPeriode)?.nom || 'Période';
     setGenerating(true);
     try {
       const siteUrl = 'https://enfantsdufutur.com';
@@ -384,6 +406,7 @@ export default function EnveloppeGenerator() {
         config?.telephone || '',
         config?.logo_url || null,
         siteUrl,
+        periodeName,
       );
       toast.success(`${envelopeData.length} enveloppe(s) générée(s) avec succès`);
     } catch (err) {
@@ -412,7 +435,7 @@ export default function EnveloppeGenerator() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="h-4 w-4" />
-            Sélection de la classe
+            Sélection de la classe et période
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
