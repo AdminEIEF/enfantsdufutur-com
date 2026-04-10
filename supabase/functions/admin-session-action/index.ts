@@ -176,6 +176,37 @@ serve(async (req) => {
       });
     }
 
+    // === DELETE USER ===
+    if (action === "delete_user") {
+      const { user_id } = body;
+      if (!user_id) {
+        return new Response(JSON.stringify({ error: "user_id requis" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Prevent deleting yourself
+      if (user_id === user.id) {
+        return new Response(JSON.stringify({ error: "Vous ne pouvez pas supprimer votre propre compte" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Delete roles
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
+      // Delete profile
+      await supabaseAdmin.from("profiles").delete().eq("user_id", user_id);
+      // Delete active connections
+      await supabaseAdmin.from("active_connections").delete().eq("ref_id", user_id);
+      // Delete auth user
+      const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(user_id);
+      if (delErr) throw delErr;
+
+      return new Response(JSON.stringify({ success: true, message: "Utilisateur supprimé" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Action non reconnue" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
