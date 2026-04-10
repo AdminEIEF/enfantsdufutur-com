@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { useBarcodeScanner, extractMatriculeFromScan } from '@/hooks/useBarcodeScanner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { ScanLine, User, Users, BookOpenText, GraduationCap, Utensils, BusFront, Wrench, Phone, Mail, MapPin, Award, TrendingUp, Calendar, Hash, Loader2, AlertCircle, Wallet } from 'lucide-react';
@@ -9,28 +9,26 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
+/**
+ * Universal matricule extraction - uses the same robust engine as the barcode scanner.
+ * Handles AZERTY/QWERTY, JSON, structured text (type:transport;matricule:XXX), and plain matricules.
+ */
 function parseScannedCode(raw: string): string | null {
+  // First try the robust multi-strategy extractor (handles AZERTY, JSON, regex)
+  const extracted = extractMatriculeFromScan(raw);
+  if (extracted) return extracted;
+
   const trimmed = raw.trim();
   if (!trimmed) return null;
 
-  // Try to extract matricule from structured formats:
+  // Additional fallback: try to extract matricule from structured formats
   // {type:transport;matricule:EDU-XXX;id:EDU-XXX} or matricule=EDU-XXX or matricule:EDU-XXX
   const mMatch = trimmed.match(/matricule[=:]\s*([A-Za-z0-9\-]+)/i);
   if (mMatch) return mMatch[1].toUpperCase();
 
-  // Try to extract id field: {type:transport;id:EDU-XXX}
+  // Try to extract id field
   const idMatch = trimmed.match(/\bid[=:]\s*([A-Za-z0-9\-]+)/i);
   if (idMatch) return idMatch[1].toUpperCase();
-
-  // Try JSON parse
-  try {
-    const obj = JSON.parse(trimmed);
-    if (obj.matricule) return String(obj.matricule).toUpperCase();
-    if (obj.id) return String(obj.id).toUpperCase();
-    if (obj.code) return String(obj.code).toUpperCase();
-  } catch {
-    // not JSON, continue
-  }
 
   // Direct matricule (EDU-XXX)
   if (/^EDU/i.test(trimmed)) return trimmed.toUpperCase();
