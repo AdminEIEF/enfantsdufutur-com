@@ -245,7 +245,7 @@ export async function generateBadgeFamillePDF(
 }
 
 // ═══════════════════════════════════════════════
-// Planche A4 — 2 colonnes × 5 lignes (PVC CR80)
+// Planche A4 — 2 colonnes × 3 lignes (portrait)
 // ═══════════════════════════════════════════════
 export async function generatePlancheBadgesFamillePDF(
   familles: FamilleBadgeData[],
@@ -261,11 +261,17 @@ export async function generatePlancheBadgesFamillePDF(
   const pageH = 297;
   const gap = 2;
   const cols = 2;
-  const rows = 5;
+  const rows = 3;
   const cardsPerPage = cols * rows;
 
-  const gridW = PVC_W * cols + gap * (cols - 1);
-  const gridH = PVC_H * rows + gap * (rows - 1);
+  // Scale card to fit 3 rows on A4
+  const maxCardH = (pageH - gap * (rows - 1) - 8) / rows; // ~95mm
+  const scale = maxCardH / CARD_H;
+  const cW = CARD_W * scale;
+  const cH = maxCardH;
+
+  const gridW = cW * cols + gap * (cols - 1);
+  const gridH = cH * rows + gap * (rows - 1);
   const marginX = (pageW - gridW) / 2;
   const marginY = (pageH - gridH) / 2;
 
@@ -278,10 +284,96 @@ export async function generatePlancheBadgesFamillePDF(
       pdf.addPage();
     }
 
-    const ox = marginX + col * (PVC_W + gap);
-    const oy = marginY + row * (PVC_H + gap);
+    const ox = marginX + col * (cW + gap);
+    const oy = marginY + row * (cH + gap);
+    const f = familles[i];
 
-    await drawPVCCard(pdf, familles[i], bgImage, ox, oy);
+    // Background
+    if (bgImage) {
+      const fmt = bgImage.includes('image/png') ? 'PNG' : 'JPEG';
+      pdf.addImage(bgImage, fmt, ox, oy, cW, cH);
+    }
+
+    const M = 4 * scale;
+    const s = scale; // shorthand
+
+    // QR Code
+    const qrSize = 34 * s;
+    const qrX = ox + (cW - qrSize) / 2;
+    const qrY = oy + 38 * s;
+    try {
+      const qrData = JSON.stringify({ type: 'famille', id: f.id });
+      const qrDataUrl = await generateQRDataUrl(qrData);
+      pdf.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+    } catch {}
+
+    pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
+    pdf.setFontSize(4.5 * s);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Scanner pour accéder', ox + cW / 2, qrY + qrSize + 2.5 * s, { align: 'center' });
+
+    let yPos = qrY + qrSize + 7 * s;
+
+    // Family name
+    pdf.setTextColor(DARK.r, DARK.g, DARK.b);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10 * s);
+    const famName = pdf.splitTextToSize(f.nom_famille.toUpperCase(), cW - M * 2)[0] || f.nom_famille.toUpperCase();
+    pdf.text(famName, ox + cW / 2, yPos, { align: 'center' });
+    yPos += 4 * s;
+
+    // Code
+    if (f.code_plain) {
+      pdf.setTextColor(RED.r, RED.g, RED.b);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8 * s);
+      pdf.text(f.code_plain, ox + cW / 2, yPos, { align: 'center' });
+      yPos += 4 * s;
+    }
+
+    // Phones
+    pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
+    pdf.setFontSize(6 * s);
+    pdf.setFont('helvetica', 'normal');
+    if (f.telephone_pere) {
+      pdf.text(`Père: ${f.telephone_pere}`, ox + cW / 2, yPos, { align: 'center' });
+      yPos += 3 * s;
+    }
+    if (f.telephone_mere) {
+      pdf.text(`Mère: ${f.telephone_mere}`, ox + cW / 2, yPos, { align: 'center' });
+      yPos += 3 * s;
+    }
+
+    // Children
+    yPos += 2 * s;
+    pdf.setTextColor(DARK.r, DARK.g, DARK.b);
+    pdf.setFontSize(5.5 * s);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Enfant(s) :', ox + M + 2 * s, yPos);
+    yPos += 3.5 * s;
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(GRAY.r, GRAY.g, GRAY.b);
+    pdf.setFontSize(5.5 * s);
+    const maxKids = Math.min(f.enfants.length, 4);
+    for (let c = 0; c < maxKids; c++) {
+      const child = f.enfants[c];
+      let childText = `• ${child.prenom} ${child.nom}`;
+      if (child.classe) childText += ` (${child.classe})`;
+      const truncated = pdf.splitTextToSize(childText, cW - M * 2 - 4 * s)[0] || childText;
+      pdf.text(truncated, ox + M + 3 * s, yPos);
+      yPos += 3 * s;
+    }
+    if (f.enfants.length > 4) {
+      pdf.setFontSize(4.5 * s);
+      pdf.text(`+ ${f.enfants.length - 4} autre(s)`, ox + M + 3 * s, yPos);
+    }
+
+    // Footer
+    pdf.setTextColor(WHITE.r, WHITE.g, WHITE.b);
+    pdf.setFontSize(3 * s);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`ID: ${f.id.slice(0, 8).toUpperCase()}`, ox + cW / 2, oy + cH - 1 * s, { align: 'center' });
 
     // Crop marks
     pdf.setDrawColor(180, 180, 180);
@@ -289,12 +381,12 @@ export async function generatePlancheBadgesFamillePDF(
     const m = 3;
     pdf.line(ox - 1, oy, ox - 1 - m, oy);
     pdf.line(ox, oy - 1, ox, oy - 1 - m);
-    pdf.line(ox + PVC_W + 1, oy, ox + PVC_W + 1 + m, oy);
-    pdf.line(ox + PVC_W, oy - 1, ox + PVC_W, oy - 1 - m);
-    pdf.line(ox - 1, oy + PVC_H, ox - 1 - m, oy + PVC_H);
-    pdf.line(ox, oy + PVC_H + 1, ox, oy + PVC_H + 1 + m);
-    pdf.line(ox + PVC_W + 1, oy + PVC_H, ox + PVC_W + 1 + m, oy + PVC_H);
-    pdf.line(ox + PVC_W, oy + PVC_H + 1, ox + PVC_W, oy + PVC_H + 1 + m);
+    pdf.line(ox + cW + 1, oy, ox + cW + 1 + m, oy);
+    pdf.line(ox + cW, oy - 1, ox + cW, oy - 1 - m);
+    pdf.line(ox - 1, oy + cH, ox - 1 - m, oy + cH);
+    pdf.line(ox, oy + cH + 1, ox, oy + cH + 1 + m);
+    pdf.line(ox + cW + 1, oy + cH, ox + cW + 1 + m, oy + cH);
+    pdf.line(ox + cW, oy + cH + 1, ox + cW, oy + cH + 1 + m);
   }
 
   pdf.save(`planche_badges_familles_${familles.length}.pdf`);
