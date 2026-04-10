@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { generateBadgeFamillePDF, generateSingleBadgeFamillePDF } from '@/lib/generateBadgeFamillePDF';
+import { generateBadgeFamillePDF, generateSingleBadgeFamillePDF, generatePlancheBadgesFamillePDF } from '@/lib/generateBadgeFamillePDF';
 import QRScannerDialog from '@/components/QRScannerDialog';
 import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
