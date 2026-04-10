@@ -440,14 +440,30 @@ export default function CompositionsAdmin() {
     if (form.type_composition === 'document' && !form.sujet_url && !editComp?.sujet_url) {
       toast.error('Veuillez uploader un fichier sujet (PDF ou Word)'); return;
     }
+    // For dessin_visuel, generate shape params as sujet_url
+    let sujetUrl = form.sujet_url || null;
+    let sujetNom = form.sujet_nom || null;
+    if (form.type_composition === 'dessin_visuel') {
+      const DESSIN_SHAPES: Record<string, string> = { 'carre': 'square', 'carré': 'square', 'rond': 'circle', 'cercle': 'circle', 'triangle': 'triangle', 'rectangle': 'rectangle', 'etoile': 'star', 'étoile': 'star' };
+      const DESSIN_COLORS: Record<string, string> = { 'rouge': '#ef4444', 'bleu': '#2563eb', 'vert': '#22c55e', 'jaune': '#eab308', 'orange': '#f97316', 'violet': '#8b5cf6', 'noir': '#1f2937', 'rose': '#ec4899' };
+      const lower = (form.description || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      let shape = '';
+      let color = '#2563eb';
+      const filled = lower.includes('rempli') || lower.includes('plein');
+      for (const [kw, s] of Object.entries(DESSIN_SHAPES)) { if (lower.includes(kw.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))) { shape = s; break; } }
+      for (const [kw, c] of Object.entries(DESSIN_COLORS)) { if (lower.includes(kw)) { color = c; break; } }
+      if (!shape) { toast.error('Consigne non reconnue. Utilisez : carré, rond, triangle, etc.'); return; }
+      sujetUrl = `shape=${shape}&color=${encodeURIComponent(color)}&filled=${filled}`;
+      sujetNom = 'dessin_visuel';
+    }
     const basePayload = {
       titre: form.titre, description: form.description || null,
       matiere_id: form.matiere_id,
       duree_minutes: form.duree_minutes, date_debut: form.date_debut,
       date_fin: form.date_fin, bareme: form.bareme,
       type_composition: form.type_composition,
-      sujet_url: form.sujet_url || null,
-      sujet_nom: form.sujet_nom || null,
+      sujet_url: sujetUrl,
+      sujet_nom: sujetNom,
     };
 
     if (editComp) {
