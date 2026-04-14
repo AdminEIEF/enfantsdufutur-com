@@ -662,7 +662,53 @@ export default function CompositionsAdmin() {
     setResultsByClassLoading(false);
   }
 
-  const filtered = filterClasse === 'all' ? compositions : compositions.filter(c => c.classe_id === filterClasse);
+  // Build unique niveaux list from classes
+  const niveaux = useMemo(() => {
+    const map = new Map<string, string>();
+    classes.forEach((c: any) => {
+      if (c.niveau_id && c.niveaux?.nom) map.set(c.niveau_id, c.niveaux.nom);
+    });
+    return Array.from(map.entries()).map(([id, nom]) => ({ id, nom }));
+  }, [classes]);
+
+  // Filter classes by selected niveau
+  const filteredClassesByNiveau = useMemo(() => {
+    if (filterNiveau === 'all') return classes;
+    return classes.filter((c: any) => c.niveau_id === filterNiveau);
+  }, [classes, filterNiveau]);
+
+  const filtered = useMemo(() => {
+    let result = compositions;
+    if (filterNiveau !== 'all') {
+      const classeIdsInNiveau = new Set(filteredClassesByNiveau.map((c: any) => c.id));
+      result = result.filter(c => classeIdsInNiveau.has(c.classe_id));
+    }
+    if (filterClasse !== 'all') {
+      result = result.filter(c => c.classe_id === filterClasse);
+    }
+    return result;
+  }, [compositions, filterNiveau, filterClasse, filteredClassesByNiveau]);
+
+  // Group filtered compositions by niveau → class
+  const groupedCompositions = useMemo(() => {
+    const niveauMap = new Map<string, { niveauNom: string; classes: Map<string, { classeNom: string; comps: Composition[] }> }>();
+    filtered.forEach(comp => {
+      const niveauNom = (comp as any).classes?.niveaux?.nom || 'Sans niveau';
+      const classeNom = (comp as any).classes?.nom || 'Sans classe';
+      if (!niveauMap.has(niveauNom)) niveauMap.set(niveauNom, { niveauNom, classes: new Map() });
+      const nEntry = niveauMap.get(niveauNom)!;
+      if (!nEntry.classes.has(classeNom)) nEntry.classes.set(classeNom, { classeNom, comps: [] });
+      nEntry.classes.get(classeNom)!.comps.push(comp);
+    });
+    return Array.from(niveauMap.entries())
+      .sort((a, b) => a[0].localeCompare(b[0], 'fr', { numeric: true }))
+      .map(([_, data]) => ({
+        niveauNom: data.niveauNom,
+        classes: Array.from(data.classes.entries())
+          .sort((a, b) => a[0].localeCompare(b[0], 'fr', { numeric: true }))
+          .map(([_, cData]) => cData),
+      }));
+  }, [filtered]);
   const totalPoints = questions.reduce((s, q) => s + q.points, 0);
   const currentResultComp = compositions.find(c => c.id === showResults);
 
