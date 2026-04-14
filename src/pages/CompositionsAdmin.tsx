@@ -349,6 +349,7 @@ export default function CompositionsAdmin() {
     sujet_nom: '' as string,
   });
   const [filterClasse, setFilterClasse] = useState('all');
+  const [filterNiveau, setFilterNiveau] = useState('all');
 
   useEffect(() => { fetchAll(); }, []);
 
