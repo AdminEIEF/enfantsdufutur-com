@@ -302,7 +302,7 @@ interface Composition {
   type_composition: string;
   sujet_url: string | null;
   sujet_nom: string | null;
-  classes?: { nom: string };
+  classes?: { nom: string; niveaux?: { nom: string; cycle_id?: string; cycles?: { nom: string } } };
   matieres?: { nom: string };
 }
 
@@ -349,13 +349,14 @@ export default function CompositionsAdmin() {
     sujet_nom: '' as string,
   });
   const [filterClasse, setFilterClasse] = useState('all');
+  const [filterNiveau, setFilterNiveau] = useState('all');
 
   useEffect(() => { fetchAll(); }, []);
 
   async function fetchAll() {
     setLoading(true);
     const [compRes, classesRes, matieresRes] = await Promise.all([
-      supabase.from('compositions').select('*, classes:classe_id(nom), matieres:matiere_id(nom)').order('created_at', { ascending: false }),
+      supabase.from('compositions').select('*, classes:classe_id(nom, niveaux:niveau_id(nom, cycle_id, cycles:cycle_id(nom))), matieres:matiere_id(nom)').order('created_at', { ascending: false }),
       supabase.from('classes').select('id, nom, niveau_id, niveaux:niveau_id(nom, cycle_id, cycles:cycle_id(nom))').order('nom'),
       supabase.from('matieres').select('id, nom').order('nom'),
     ]);
@@ -661,7 +662,53 @@ export default function CompositionsAdmin() {
     setResultsByClassLoading(false);
   }
 
-  const filtered = filterClasse === 'all' ? compositions : compositions.filter(c => c.classe_id === filterClasse);
+  // Build unique niveaux list from classes
+  const niveaux = useMemo(() => {
+    const map = new Map<string, string>();
+    classes.forEach((c: any) => {
+      if (c.niveau_id && c.niveaux?.nom) map.set(c.niveau_id, c.niveaux.nom);
+    });
+    return Array.from(map.entries()).map(([id, nom]) => ({ id, nom }));
+  }, [classes]);
+
+  // Filter classes by selected niveau
+  const filteredClassesByNiveau = useMemo(() => {
+    if (filterNiveau === 'all') return classes;
+    return classes.filter((c: any) => c.niveau_id === filterNiveau);
+  }, [classes, filterNiveau]);
+
+  const filtered = useMemo(() => {
+    let result = compositions;
+    if (filterNiveau !== 'all') {
+      const classeIdsInNiveau = new Set(filteredClassesByNiveau.map((c: any) => c.id));
+      result = result.filter(c => classeIdsInNiveau.has(c.classe_id));
+    }
+    if (filterClasse !== 'all') {
+      result = result.filter(c => c.classe_id === filterClasse);
+    }
+    return result;
+  }, [compositions, filterNiveau, filterClasse, filteredClassesByNiveau]);
+
+  // Group filtered compositions by niveau → class
+  const groupedCompositions = useMemo(() => {
+    const niveauMap = new Map<string, { niveauNom: string; classes: Map<string, { classeNom: string; comps: Composition[] }> }>();
+    filtered.forEach(comp => {
+      const niveauNom = (comp as any).classes?.niveaux?.nom || 'Sans niveau';
+      const classeNom = (comp as any).classes?.nom || 'Sans classe';
+      if (!niveauMap.has(niveauNom)) niveauMap.set(niveauNom, { niveauNom, classes: new Map() });
+      const nEntry = niveauMap.get(niveauNom)!;
+      if (!nEntry.classes.has(classeNom)) nEntry.classes.set(classeNom, { classeNom, comps: [] });
+      nEntry.classes.get(classeNom)!.comps.push(comp);
+    });
+    return Array.from(niveauMap.entries())
+      .sort((a, b) => a[0].localeCompare(b[0], 'fr', { numeric: true }))
+      .map(([_, data]) => ({
+        niveauNom: data.niveauNom,
+        classes: Array.from(data.classes.entries())
+          .sort((a, b) => a[0].localeCompare(b[0], 'fr', { numeric: true }))
+          .map(([_, cData]) => cData),
+      }));
+  }, [filtered]);
   const totalPoints = questions.reduce((s, q) => s + q.points, 0);
   const currentResultComp = compositions.find(c => c.id === showResults);
 
@@ -691,22 +738,52 @@ export default function CompositionsAdmin() {
         </Button>
       </div>
 
-      <div className="flex gap-2 items-center">
-        <Label className="text-sm">Classe :</Label>
-        <Select value={filterClasse} onValueChange={setFilterClasse}>
-          <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes</SelectItem>
-            {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
-          </SelectContent>
-        </Select>
+      <div className="flex gap-3 items-center flex-wrap">
+        <div className="flex gap-2 items-center">
+          <Label className="text-sm whitespace-nowrap">Niveau :</Label>
+          <Select value={filterNiveau} onValueChange={v => { setFilterNiveau(v); setFilterClasse('all'); }}>
+            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les niveaux</SelectItem>
+              {niveaux.map(n => <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex gap-2 items-center">
+          <Label className="text-sm whitespace-nowrap">Classe :</Label>
+          <Select value={filterClasse} onValueChange={setFilterClasse}>
+            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes</SelectItem>
+              {filteredClassesByNiveau.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <Badge variant="secondary" className="text-xs">{filtered.length} composition{filtered.length > 1 ? 's' : ''}</Badge>
       </div>
 
       {filtered.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-muted-foreground">Aucune composition créée</CardContent></Card>
+        <Card><CardContent className="py-12 text-center text-muted-foreground">Aucune composition trouvée</CardContent></Card>
       ) : (
-        <div className="grid gap-4">
-          {filtered.map(comp => (
+        <div className="space-y-6">
+          {groupedCompositions.map(({ niveauNom, classes: niveauClasses }) => (
+            <div key={niveauNom}>
+              <div className="flex items-center gap-2 mb-3">
+                <h2 className="text-lg font-bold">{niveauNom}</h2>
+                <Badge variant="secondary" className="text-xs">
+                  {niveauClasses.reduce((s, c) => s + c.comps.length, 0)} composition{niveauClasses.reduce((s, c) => s + c.comps.length, 0) > 1 ? 's' : ''}
+                </Badge>
+              </div>
+              <div className="space-y-4">
+                {niveauClasses.map(({ classeNom, comps }) => (
+                  <div key={classeNom} className="space-y-2">
+                    <div className="flex items-center gap-2 pl-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                      <h3 className="text-sm font-semibold text-muted-foreground">{classeNom}</h3>
+                      <span className="text-xs text-muted-foreground">({comps.length})</span>
+                    </div>
+                    <div className="grid gap-3 pl-3 border-l-2 border-muted">
+                      {comps.map(comp => (
             <Card key={comp.id} className="overflow-hidden">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -723,7 +800,7 @@ export default function CompositionsAdmin() {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {(comp as any).classes?.nom} • {(comp as any).matieres?.nom} • {comp.duree_minutes} min • /{comp.bareme}
+                      {(comp as any).matieres?.nom} • {comp.duree_minutes} min • /{comp.bareme}
                     </p>
                     {comp.sujet_nom && (
                       <p className="text-xs text-muted-foreground mt-1">
@@ -781,6 +858,12 @@ export default function CompositionsAdmin() {
                 </div>
               </CardContent>
             </Card>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
