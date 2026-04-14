@@ -689,25 +689,24 @@ export default function CompositionsAdmin() {
     return result;
   }, [compositions, filterNiveau, filterClasse, filteredClassesByNiveau]);
 
-  // Group filtered compositions by niveau → class
-  const groupedCompositions = useMemo(() => {
-    const niveauMap = new Map<string, { niveauNom: string; classes: Map<string, { classeNom: string; comps: Composition[] }> }>();
+  // Group filtered compositions by unique title (merge same-title across classes)
+  const groupedByTitle = useMemo(() => {
+    const map = new Map<string, { comps: Composition[]; classNames: string[]; niveauNames: string[] }>();
     filtered.forEach(comp => {
-      const niveauNom = (comp as any).classes?.niveaux?.nom || 'Sans niveau';
-      const classeNom = (comp as any).classes?.nom || 'Sans classe';
-      if (!niveauMap.has(niveauNom)) niveauMap.set(niveauNom, { niveauNom, classes: new Map() });
-      const nEntry = niveauMap.get(niveauNom)!;
-      if (!nEntry.classes.has(classeNom)) nEntry.classes.set(classeNom, { classeNom, comps: [] });
-      nEntry.classes.get(classeNom)!.comps.push(comp);
+      const key = comp.titre;
+      if (!map.has(key)) map.set(key, { comps: [], classNames: [], niveauNames: [] });
+      const entry = map.get(key)!;
+      entry.comps.push(comp);
+      const cn = (comp as any).classes?.nom;
+      const nn = (comp as any).classes?.niveaux?.nom;
+      if (cn && !entry.classNames.includes(cn)) entry.classNames.push(cn);
+      if (nn && !entry.niveauNames.includes(nn)) entry.niveauNames.push(nn);
     });
-    return Array.from(niveauMap.entries())
-      .sort((a, b) => a[0].localeCompare(b[0], 'fr', { numeric: true }))
-      .map(([_, data]) => ({
-        niveauNom: data.niveauNom,
-        classes: Array.from(data.classes.entries())
-          .sort((a, b) => a[0].localeCompare(b[0], 'fr', { numeric: true }))
-          .map(([_, cData]) => cData),
-      }));
+    return Array.from(map.values()).sort((a, b) => {
+      const da = a.comps[0]?.created_at || '';
+      const db = b.comps[0]?.created_at || '';
+      return db.localeCompare(da);
+    });
   }, [filtered]);
   const totalPoints = questions.reduce((s, q) => s + q.points, 0);
   const currentResultComp = compositions.find(c => c.id === showResults);
