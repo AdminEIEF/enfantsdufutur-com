@@ -758,7 +758,7 @@ export default function CompositionsAdmin() {
             </SelectContent>
           </Select>
         </div>
-        <Badge variant="secondary" className="text-xs">{filtered.length} composition{filtered.length > 1 ? 's' : ''}</Badge>
+        <Badge variant="secondary" className="text-xs">{groupedByTitle.length} sujet{groupedByTitle.length > 1 ? 's' : ''} • {filtered.length} composition{filtered.length > 1 ? 's' : ''}</Badge>
       </div>
 
       {groupedByTitle.length === 0 ? (
