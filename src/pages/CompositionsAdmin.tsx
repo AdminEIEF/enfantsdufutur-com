@@ -761,39 +761,28 @@ export default function CompositionsAdmin() {
         <Badge variant="secondary" className="text-xs">{filtered.length} composition{filtered.length > 1 ? 's' : ''}</Badge>
       </div>
 
-      {filtered.length === 0 ? (
+      {groupedByTitle.length === 0 ? (
         <Card><CardContent className="py-12 text-center text-muted-foreground">Aucune composition trouvée</CardContent></Card>
       ) : (
-        <div className="space-y-6">
-          {groupedCompositions.map(({ niveauNom, classes: niveauClasses }) => (
-            <div key={niveauNom}>
-              <div className="flex items-center gap-2 mb-3">
-                <h2 className="text-lg font-bold">{niveauNom}</h2>
-                <Badge variant="secondary" className="text-xs">
-                  {niveauClasses.reduce((s, c) => s + c.comps.length, 0)} composition{niveauClasses.reduce((s, c) => s + c.comps.length, 0) > 1 ? 's' : ''}
-                </Badge>
-              </div>
-              <div className="space-y-4">
-                {niveauClasses.map(({ classeNom, comps }) => (
-                  <div key={classeNom} className="space-y-2">
-                    <div className="flex items-center gap-2 pl-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      <h3 className="text-sm font-semibold text-muted-foreground">{classeNom}</h3>
-                      <span className="text-xs text-muted-foreground">({comps.length})</span>
-                    </div>
-                    <div className="grid gap-3 pl-3 border-l-2 border-muted">
-                      {comps.map(comp => (
-            <Card key={comp.id} className="overflow-hidden">
+        <div className="space-y-3">
+          {groupedByTitle.map(({ comps, classNames, niveauNames }) => {
+            const comp = comps[0]; // representative comp
+            const allPublished = comps.every(c => c.publie);
+            const somePublished = comps.some(c => c.publie);
+            return (
+            <Card key={comp.titre + comp.matiere_id} className="overflow-hidden">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-lg">{comp.titre}</h3>
                           <Badge variant="outline" className="text-xs">
-                            {comp.type_composition === 'geometrie_traces' ? '📐 Géométrie & Tracés' : comp.type_composition === 'primaire_interactif' ? '🎨 Primaire Interactif' : comp.type_composition === 'document' ? '📄 Document' : comp.type_composition === 'texte' ? '✍️ Texte' : '📝 QCM'}
+                            {comp.type_composition === 'geometrie_traces' ? '📐 Géométrie & Tracés' : comp.type_composition === 'primaire_interactif' ? '🎨 Primaire Interactif' : comp.type_composition === 'document' ? '📄 Document' : comp.type_composition === 'texte' ? '✍️ Texte' : comp.type_composition === 'dessin_visuel' ? '🖌️ Dessin Visuel' : '📝 QCM'}
                           </Badge>
-                      {comp.publie ? (
+                      {allPublished ? (
                         <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Publiée</Badge>
+                      ) : somePublished ? (
+                        <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Partiellement publiée</Badge>
                       ) : (
                         <Badge variant="secondary">Brouillon</Badge>
                       )}
@@ -801,6 +790,15 @@ export default function CompositionsAdmin() {
                     <p className="text-sm text-muted-foreground mt-1">
                       {(comp as any).matieres?.nom} • {comp.duree_minutes} min • /{comp.bareme}
                     </p>
+                    {/* Classes & niveaux badges */}
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {niveauNames.map(n => (
+                        <Badge key={n} variant="default" className="text-[10px]">{n}</Badge>
+                      ))}
+                      {classNames.map(cn => (
+                        <Badge key={cn} variant="outline" className="text-[10px]">{cn}</Badge>
+                      ))}
+                    </div>
                     {comp.sujet_nom && (
                       <p className="text-xs text-muted-foreground mt-1">
                         <FileText className="h-3 w-3 inline mr-1" />
@@ -833,7 +831,7 @@ export default function CompositionsAdmin() {
                       setEditComp(comp);
                       setForm({
                         titre: comp.titre, description: comp.description || '',
-                        classe_id: comp.classe_id, classe_ids: [comp.classe_id], matiere_id: comp.matiere_id,
+                        classe_id: comp.classe_id, classe_ids: comps.map(c => c.classe_id), matiere_id: comp.matiere_id,
                         duree_minutes: comp.duree_minutes,
                         date_debut: comp.date_debut.slice(0, 16),
                         date_fin: comp.date_fin.slice(0, 16),
@@ -847,23 +845,46 @@ export default function CompositionsAdmin() {
                       <Edit className="h-4 w-4" />
                     </Button>
                     <div className="flex items-center gap-2">
-                      <Switch checked={comp.publie} onCheckedChange={() => togglePublie(comp)} />
-                      <span className="text-xs">{comp.publie ? 'En ligne' : 'Hors ligne'}</span>
+                      <Switch checked={allPublished} onCheckedChange={async () => {
+                        const newState = !allPublished;
+                        for (const c of comps) {
+                          if (c.publie !== newState) {
+                            if (newState) {
+                              // Validate before publishing
+                              if (c.type_composition === 'qcm' || c.type_composition === 'texte' || c.type_composition === 'primaire_interactif' || c.type_composition === 'geometrie_traces') {
+                                const { count } = await supabase.from('composition_questions').select('id', { count: 'exact', head: true }).eq('composition_id', c.id);
+                                if (!count || count === 0) {
+                                  toast.error('Ajoutez des questions avant de publier'); return;
+                                }
+                              } else if (c.type_composition === 'dessin_visuel' && !c.sujet_url) {
+                                toast.error('La consigne visuelle est manquante'); return;
+                              } else if (!c.sujet_url && c.type_composition === 'document') {
+                                toast.error('Ajoutez un fichier sujet avant de publier'); return;
+                              }
+                            }
+                            await supabase.from('compositions').update({ publie: newState }).eq('id', c.id);
+                          }
+                        }
+                        toast.success(newState ? 'Composition publiée pour toutes les classes' : 'Composition masquée');
+                        fetchAll();
+                      }} />
+                      <span className="text-xs">{allPublished ? 'En ligne' : 'Hors ligne'}</span>
                     </div>
-                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => deleteComp(comp.id)}>
+                    <Button variant="ghost" size="icon" className="text-destructive" onClick={async () => {
+                      if (!confirm(`Supprimer cette composition pour ${comps.length} classe(s) ?`)) return;
+                      for (const c of comps) {
+                        await supabase.from('compositions').delete().eq('id', c.id);
+                      }
+                      toast.success('Supprimée'); fetchAll();
+                    }}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
