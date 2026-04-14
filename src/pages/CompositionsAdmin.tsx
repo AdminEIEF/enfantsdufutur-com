@@ -738,15 +738,28 @@ export default function CompositionsAdmin() {
         </Button>
       </div>
 
-      <div className="flex gap-2 items-center">
-        <Label className="text-sm">Classe :</Label>
-        <Select value={filterClasse} onValueChange={setFilterClasse}>
-          <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes</SelectItem>
-            {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
-          </SelectContent>
-        </Select>
+      <div className="flex gap-3 items-center flex-wrap">
+        <div className="flex gap-2 items-center">
+          <Label className="text-sm whitespace-nowrap">Niveau :</Label>
+          <Select value={filterNiveau} onValueChange={v => { setFilterNiveau(v); setFilterClasse('all'); }}>
+            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les niveaux</SelectItem>
+              {niveaux.map(n => <SelectItem key={n.id} value={n.id}>{n.nom}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex gap-2 items-center">
+          <Label className="text-sm whitespace-nowrap">Classe :</Label>
+          <Select value={filterClasse} onValueChange={setFilterClasse}>
+            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes</SelectItem>
+              {filteredClassesByNiveau.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <Badge variant="secondary" className="text-xs">{filtered.length} composition{filtered.length > 1 ? 's' : ''}</Badge>
       </div>
 
       {filtered.length === 0 ? (
