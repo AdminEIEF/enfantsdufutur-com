@@ -763,10 +763,27 @@ export default function CompositionsAdmin() {
       </div>
 
       {filtered.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-muted-foreground">Aucune composition créée</CardContent></Card>
+        <Card><CardContent className="py-12 text-center text-muted-foreground">Aucune composition trouvée</CardContent></Card>
       ) : (
-        <div className="grid gap-4">
-          {filtered.map(comp => (
+        <div className="space-y-6">
+          {groupedCompositions.map(({ niveauNom, classes: niveauClasses }) => (
+            <div key={niveauNom}>
+              <div className="flex items-center gap-2 mb-3">
+                <h2 className="text-lg font-bold">{niveauNom}</h2>
+                <Badge variant="secondary" className="text-xs">
+                  {niveauClasses.reduce((s, c) => s + c.comps.length, 0)} composition{niveauClasses.reduce((s, c) => s + c.comps.length, 0) > 1 ? 's' : ''}
+                </Badge>
+              </div>
+              <div className="space-y-4">
+                {niveauClasses.map(({ classeNom, comps }) => (
+                  <div key={classeNom} className="space-y-2">
+                    <div className="flex items-center gap-2 pl-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                      <h3 className="text-sm font-semibold text-muted-foreground">{classeNom}</h3>
+                      <span className="text-xs text-muted-foreground">({comps.length})</span>
+                    </div>
+                    <div className="grid gap-3 pl-3 border-l-2 border-muted">
+                      {comps.map(comp => (
             <Card key={comp.id} className="overflow-hidden">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -783,7 +800,7 @@ export default function CompositionsAdmin() {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {(comp as any).classes?.nom} • {(comp as any).matieres?.nom} • {comp.duree_minutes} min • /{comp.bareme}
+                      {(comp as any).matieres?.nom} • {comp.duree_minutes} min • /{comp.bareme}
                     </p>
                     {comp.sujet_nom && (
                       <p className="text-xs text-muted-foreground mt-1">
@@ -841,6 +858,12 @@ export default function CompositionsAdmin() {
                 </div>
               </CardContent>
             </Card>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
