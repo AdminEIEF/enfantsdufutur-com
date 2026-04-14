@@ -356,7 +356,7 @@ export default function CompositionsAdmin() {
   async function fetchAll() {
     setLoading(true);
     const [compRes, classesRes, matieresRes] = await Promise.all([
-      supabase.from('compositions').select('*, classes:classe_id(nom), matieres:matiere_id(nom)').order('created_at', { ascending: false }),
+      supabase.from('compositions').select('*, classes:classe_id(nom, niveaux:niveau_id(nom, cycle_id, cycles:cycle_id(nom))), matieres:matiere_id(nom)').order('created_at', { ascending: false }),
       supabase.from('classes').select('id, nom, niveau_id, niveaux:niveau_id(nom, cycle_id, cycles:cycle_id(nom))').order('nom'),
       supabase.from('matieres').select('id, nom').order('nom'),
     ]);
