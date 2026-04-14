@@ -302,7 +302,7 @@ interface Composition {
   type_composition: string;
   sujet_url: string | null;
   sujet_nom: string | null;
-  classes?: { nom: string };
+  classes?: { nom: string; niveaux?: { nom: string; cycle_id?: string; cycles?: { nom: string } } };
   matieres?: { nom: string };
 }
 
