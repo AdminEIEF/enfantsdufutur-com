@@ -120,6 +120,21 @@ export default function AdminCompositionResults() {
     enabled: selectedCompIds.length > 0,
   });
 
+  // Fetch questions for the selected composition (for individual student detail)
+  const { data: questions = [] } = useQuery({
+    queryKey: ['admin-comp-questions', selectedCompIds],
+    queryFn: async () => {
+      if (selectedCompIds.length === 0) return [];
+      const { data } = await supabase
+        .from('composition_questions')
+        .select('id, composition_id, enonce, options, ordre, points, reponse_correcte, type_question')
+        .in('composition_id', selectedCompIds)
+        .order('ordre');
+      return data || [];
+    },
+    enabled: selectedCompIds.length > 0,
+  });
+
   // Group results by class
   const resultsByClass = useMemo(() => {
     const map = new Map<string, any[]>();
@@ -132,6 +147,56 @@ export default function AdminCompositionResults() {
   }, [results]);
 
   const selectedComp = selectedCompId ? compositions.find((c: any) => c.id === selectedCompId) : null;
+
+  // Generate individual student PDF report
+  const handleDownloadStudent = (r: any, className: string, students: any[]) => {
+    const sorted = [...students].sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
+    const rang = sorted.findIndex((s) => s.id === r.id) + 1;
+    const scored = students.filter((s) => s.score != null);
+    const moy = scored.length > 0 ? scored.reduce((s: number, x: any) => s + x.score, 0) / scored.length : null;
+
+    const compQuestions = questions.filter((q: any) => q.composition_id === r.composition_id);
+    const reponsesEleve = (r.reponses || {}) as Record<string, any>;
+
+    const detailQuestions = compQuestions.map((q: any) => {
+      const rep = reponsesEleve[q.id];
+      const repStr = rep == null ? '' : Array.isArray(rep) ? rep.join(', ') : String(rep);
+      const correctStr = String(q.reponse_correcte || '');
+      const isCorrect = repStr.trim().toLowerCase() === correctStr.trim().toLowerCase();
+      return {
+        enonce: q.enonce,
+        reponseCorrecte: correctStr,
+        reponseEleve: repStr,
+        points: q.points,
+        obtenu: isCorrect ? q.points : 0,
+        correct: rep != null ? isCorrect : undefined,
+      };
+    });
+
+    generateRapportEleveCompositionPDF({
+      eleve: {
+        nom: r.eleves?.nom || '',
+        prenom: r.eleves?.prenom || '',
+        matricule: r.eleves?.matricule,
+        classe: className,
+      },
+      composition: {
+        titre: selectedComp?.titre || '',
+        matiere: selectedComp?.matieres?.nom,
+        bareme: selectedComp?.bareme || 20,
+        date: selectedComp?.date_debut ? new Date(selectedComp.date_debut).toLocaleDateString('fr') : null,
+        type: selectedComp?.type_composition,
+      },
+      score: r.score,
+      rang,
+      totalEleves: students.length,
+      moyenneClasse: moy,
+      soumisAt: r.soumis_at ? new Date(r.soumis_at).toLocaleString('fr') : null,
+      questions: detailQuestions,
+      reponseTexte: r.reponse_texte,
+      schoolConfig: schoolConfig ? { nom: schoolConfig.nom, soustitre: schoolConfig.soustitre, logo_url: schoolConfig.logo_url } : undefined,
+    });
+  };
 
   return (
     <div className="space-y-6">
