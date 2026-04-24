@@ -8,10 +8,13 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BarChart3, Users, Trophy, Award, Printer, Download, Loader2, FileCheck2, ChevronRight } from 'lucide-react';
+import { BarChart3, Users, Trophy, Award, Printer, Download, Loader2, FileCheck2, ChevronRight, FileText } from 'lucide-react';
+import { generateRapportEleveCompositionPDF } from '@/lib/generateRapportEleveCompositionPDF';
+import { useSchoolConfig } from '@/hooks/useSchoolConfig';
 
 export default function AdminCompositionResults() {
   const { roles } = useAuth();
+  const { data: schoolConfig } = useSchoolConfig();
   const isCoordPrimaire = roles.includes('coordinateur');
   const isCoordSecondaire = roles.includes('coordinateur_secondaire');
   const [selectedCompId, setSelectedCompId] = useState<string | null>(null);
