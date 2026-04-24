@@ -414,6 +414,7 @@ export default function AdminCompositionResults() {
                             <TableHead>Matricule</TableHead>
                             <TableHead className="text-right">Note</TableHead>
                             <TableHead className="text-right">Soumis le</TableHead>
+                            <TableHead className="text-right w-24">Action</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -436,6 +437,17 @@ export default function AdminCompositionResults() {
                               </TableCell>
                               <TableCell className="text-right text-xs text-muted-foreground">
                                 {r.soumis_at ? new Date(r.soumis_at).toLocaleString('fr') : 'En cours...'}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2"
+                                  title="Télécharger le rapport individuel (PDF)"
+                                  onClick={() => handleDownloadStudent(r, className, students)}
+                                >
+                                  <FileText className="h-3.5 w-3.5" />
+                                </Button>
                               </TableCell>
                             </TableRow>
                           ))}
