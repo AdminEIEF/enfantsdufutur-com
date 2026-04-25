@@ -217,18 +217,32 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         return;
       }
 
-      // Identifier les colonnes Nom et Prénom (insensible à la casse / accents)
+      // Identifier les colonnes élève (Nom, Prénom ou Nom complet)
       const colKeys = Object.keys(rows[0]);
-      const nomKey = colKeys.find(k => ['nom', 'name', 'lastname', 'last name'].includes(normalize(k)));
-      const prenomKey = colKeys.find(k => ['prenom', 'firstname', 'first name', 'prénom'].includes(normalize(k)));
+      const isNomCol = (k: string) => ['nom', 'name', 'lastname', 'last name', 'nom eleve'].includes(normalize(k));
+      const isPrenomCol = (k: string) => ['prenom', 'prenoms', 'firstname', 'first name', 'prenom eleve'].includes(normalize(k));
+      const isFullNameCol = (k: string) => [
+        'nom prenom',
+        'nom et prenom',
+        'nom prenoms',
+        'nom et prenoms',
+        'nom complet',
+        'eleve',
+        'eleves',
+        'student',
+        'full name',
+      ].includes(normalize(k));
+      const nomKey = colKeys.find(isNomCol);
+      const prenomKey = colKeys.find(isPrenomCol);
+      const fullNameKey = colKeys.find(isFullNameCol);
 
       // Mapping colonnes -> matières (intelligent, sans modifier les notes)
       const matiereColMap: Record<string, any> = {};
       const matchInfo: { col: string; matiere: any | null }[] = [];
       colKeys.forEach((col) => {
-        // Ignorer les colonnes Nom/Prénom/Matricule
+        // Ignorer les colonnes d'identification élève
         const norm = normalize(col);
-        if (['nom', 'prenom', 'matricule', 'name', 'firstname', 'lastname', 'id'].includes(norm)) return;
+        if (isNomCol(col) || isPrenomCol(col) || isFullNameCol(col) || ['matricule', 'id'].includes(norm)) return;
         const matched = matchMatiere(col, matieres);
         if (matched) {
           matiereColMap[col] = matched;
@@ -240,27 +254,40 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
       setMatchedMatieres(matchInfo);
 
       const previewRows: PreviewRow[] = rows.map((row) => {
-        const nom = nomKey ? String(row[nomKey] || '').trim() : '';
+        const fullName = fullNameKey ? String(row[fullNameKey] || '').trim() : '';
+        const nom = nomKey ? String(row[nomKey] || '').trim() : fullName;
         const prenom = prenomKey ? String(row[prenomKey] || '').trim() : '';
+        const displayName = fullName || `${nom} ${prenom}`.trim();
         const errors: string[] = [];
 
-        // Trouver l'élève par nom + prénom (normalisé, ordre indifférent)
+        // Trouver l'élève par nom + prénom, nom complet, ou nom unique dans la classe
         let eleve: any = null;
-        if (nom || prenom) {
+        if (displayName) {
           const normFull = normalize(`${nom} ${prenom}`);
           const normReverse = normalize(`${prenom} ${nom}`);
+          const normDisplay = normalize(displayName);
           eleve = eleves.find((e: any) => {
             const candidate = normalize(`${e.nom} ${e.prenom}`);
-            return candidate === normFull || candidate === normReverse;
+            const reverseCandidate = normalize(`${e.prenom} ${e.nom}`);
+            return candidate === normFull || reverseCandidate === normFull || candidate === normReverse || candidate === normDisplay || reverseCandidate === normDisplay;
           });
-          // Fallback: au moins nom + prénom trouvés séparément
-          if (!eleve) {
+
+          if (!eleve && nom && prenom) {
             eleve = eleves.find((e: any) =>
               normalize(e.nom) === normalize(nom) && normalize(e.prenom) === normalize(prenom)
             );
           }
+
+          if (!eleve && nom && !prenom) {
+            const sameName = eleves.filter((e: any) => normalize(e.nom) === normalize(nom));
+            if (sameName.length === 1) {
+              eleve = sameName[0];
+            } else if (sameName.length > 1) {
+              errors.push('Prénom requis: plusieurs élèves ont ce nom');
+            }
+          }
         }
-        if (!eleve) errors.push('Élève non trouvé');
+        if (!eleve && !errors.length) errors.push('Élève non trouvé');
 
         // Conserver les notes EXACTEMENT telles que saisies (pas d'arrondi, pas de modification)
         const notes: Record<string, number | null> = {};
