@@ -313,7 +313,13 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         const filledCount = Object.values(notes).filter(v => v !== null).length;
         if (filledCount === 0 && eleve) errors.push('Aucune note');
 
-        return { nom, prenom, eleve_id: eleve?.id, notes, errors };
+        return {
+          nom: eleve?.nom || nom,
+          prenom: eleve?.prenom || prenom,
+          eleve_id: eleve?.id,
+          notes,
+          errors,
+        };
       });
 
       setPreview(previewRows);
