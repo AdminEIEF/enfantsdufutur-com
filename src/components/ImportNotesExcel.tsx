@@ -36,7 +36,7 @@ function normalize(str: string): string {
     .trim();
 }
 
-// Synonymes courants des matières scolaires
+// Synonymes courants des matières scolaires (clé canonique = forme normalisée)
 const MATIERE_ALIASES: Record<string, string[]> = {
   'mathematiques': ['math', 'maths', 'mathematique', 'mathematiques', 'mathematics'],
   'francais': ['francais', 'french', 'fr', 'lettres', 'francaise'],
@@ -49,7 +49,9 @@ const MATIERE_ALIASES: Record<string, string[]> = {
   'physique chimie': ['physique chimie', 'physique', 'chimie', 'pc', 'sciences physiques'],
   'eps': ['eps', 'sport', 'education physique', 'education physique et sportive'],
   'eveil': ['eveil', 'eveil scientifique'],
-  'education civique': ['education civique', 'civisme', 'ecm', 'eduction civique et morale'],
+  'education civique et morale': ['education civique et morale', 'education civique', 'civisme', 'ecm', 'e c m', 'edu civ', 'eduction civique et morale'],
+  'entrepreneuriat': ['entrepreneuriat', 'entrep', 'entreprenariat', 'entr', 'entreprise'],
+  'activite scout': ['activite scout', 'scout', 'scoutisme', 'activites scout'],
   'religion': ['religion', 'education religieuse', 'er'],
   'dessin': ['dessin', 'arts plastiques', 'arts'],
   'musique': ['musique', 'chant', 'education musicale'],
@@ -61,6 +63,11 @@ const MATIERE_ALIASES: Record<string, string[]> = {
   'calcul': ['calcul', 'calcul mental'],
   'philosophie': ['philosophie', 'philo'],
 };
+
+// Variante "compactée" (sans espaces) pour gérer "E C M" -> "ecm", "H G" -> "hg"
+function compact(str: string): string {
+  return normalize(str).replace(/\s+/g, '');
+}
 
 // Cherche le meilleur matching matière pour un nom de colonne
 function matchMatiere(colName: string, matieres: any[]): any | null {
