@@ -219,8 +219,8 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
 
       // Identifier les colonnes élève (Nom, Prénom ou Nom complet)
       const colKeys = Object.keys(rows[0]);
-      const isNomCol = (k: string) => ['nom', 'name', 'lastname', 'last name', 'nom eleve'].includes(normalize(k));
-      const isPrenomCol = (k: string) => ['prenom', 'prenoms', 'firstname', 'first name', 'prenom eleve'].includes(normalize(k));
+      const isNomCol = (k: string) => ['nom', 'noms', 'name', 'names', 'lastname', 'last name', 'nom eleve', 'nom de famille', 'nom famille'].includes(normalize(k));
+      const isPrenomCol = (k: string) => ['prenom', 'prenoms', 'firstname', 'first name', 'prenom eleve', 'prenoms eleve'].includes(normalize(k));
       const isFullNameCol = (k: string) => [
         'nom prenom',
         'nom et prenom',
