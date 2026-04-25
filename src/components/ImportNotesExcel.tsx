@@ -72,29 +72,38 @@ function compact(str: string): string {
 // Cherche le meilleur matching matière pour un nom de colonne
 function matchMatiere(colName: string, matieres: any[]): any | null {
   const normCol = normalize(colName);
+  const compactCol = compact(colName);
   if (!normCol) return null;
 
-  // Étape 1: match exact normalisé
+  // Étape 1: match exact normalisé (avec ou sans espaces)
   for (const m of matieres) {
     if (normalize(m.nom) === normCol) return m;
+    if (compact(m.nom) === compactCol) return m;
   }
 
-  // Étape 2: la colonne contient le nom de la matière OU vice-versa
+  // Étape 2: alias / synonymes (prioritaire pour abréviations courtes type ECM, HG, SCOUT)
   for (const m of matieres) {
     const normM = normalize(m.nom);
-    if (normCol.includes(normM) || normM.includes(normCol)) return m;
-  }
-
-  // Étape 3: alias / synonymes
-  for (const m of matieres) {
-    const normM = normalize(m.nom);
+    const compactM = compact(m.nom);
     for (const [canonical, aliases] of Object.entries(MATIERE_ALIASES)) {
-      if (normM.includes(canonical) || aliases.some(a => normM.includes(a))) {
-        if (aliases.some(a => normCol.includes(a)) || normCol.includes(canonical)) {
-          return m;
-        }
-      }
+      const matiereMatchesGroup =
+        normM === canonical ||
+        normM.includes(canonical) ||
+        canonical.includes(normM) ||
+        aliases.some(a => normM === a || normM.includes(a) || compactM === compact(a));
+      if (!matiereMatchesGroup) continue;
+      const colMatchesGroup =
+        normCol === canonical ||
+        compactCol === compact(canonical) ||
+        aliases.some(a => normCol === a || compactCol === compact(a) || normCol.includes(a));
+      if (colMatchesGroup) return m;
     }
+  }
+
+  // Étape 3: la colonne contient le nom de la matière OU vice-versa (fallback large)
+  for (const m of matieres) {
+    const normM = normalize(m.nom);
+    if (normM.length >= 4 && (normCol.includes(normM) || normM.includes(normCol))) return m;
   }
 
   return null;
