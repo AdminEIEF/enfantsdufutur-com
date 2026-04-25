@@ -1,10 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Download, FileSpreadsheet, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -18,7 +18,6 @@ interface ImportNotesExcelProps {
 }
 
 interface PreviewRow {
-  matricule: string;
   nom: string;
   prenom: string;
   eleve_id?: string;
@@ -26,11 +25,80 @@ interface PreviewRow {
   errors: string[];
 }
 
+// Normalisation: minuscules, sans accents, sans ponctuation, espaces simplifiés
+function normalize(str: string): string {
+  return String(str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Synonymes courants des matières scolaires
+const MATIERE_ALIASES: Record<string, string[]> = {
+  'mathematiques': ['math', 'maths', 'mathematique', 'mathematiques', 'mathematics'],
+  'francais': ['francais', 'french', 'fr', 'lettres', 'francaise'],
+  'anglais': ['anglais', 'english', 'eng', 'angl'],
+  'arabe': ['arabe', 'arabic', 'ar'],
+  'histoire geographie': ['histoire geographie', 'hist geo', 'histgeo', 'h g', 'hg', 'histoire et geographie'],
+  'histoire': ['histoire', 'history', 'hist'],
+  'geographie': ['geographie', 'geography', 'geo'],
+  'svt': ['svt', 'sciences de la vie et de la terre', 'sciences nat', 'sciences naturelles', 'biologie', 'bio'],
+  'physique chimie': ['physique chimie', 'physique', 'chimie', 'pc', 'sciences physiques'],
+  'eps': ['eps', 'sport', 'education physique', 'education physique et sportive'],
+  'eveil': ['eveil', 'eveil scientifique'],
+  'education civique': ['education civique', 'civisme', 'ecm', 'eduction civique et morale'],
+  'religion': ['religion', 'education religieuse', 'er'],
+  'dessin': ['dessin', 'arts plastiques', 'arts'],
+  'musique': ['musique', 'chant', 'education musicale'],
+  'informatique': ['informatique', 'tic', 'info', 'computer'],
+  'lecture': ['lecture', 'reading'],
+  'ecriture': ['ecriture', 'writing'],
+  'expression ecrite': ['expression ecrite', 'redaction', 'production ecrite'],
+  'expression orale': ['expression orale', 'oral', 'communication orale'],
+  'calcul': ['calcul', 'calcul mental'],
+  'philosophie': ['philosophie', 'philo'],
+};
+
+// Cherche le meilleur matching matière pour un nom de colonne
+function matchMatiere(colName: string, matieres: any[]): any | null {
+  const normCol = normalize(colName);
+  if (!normCol) return null;
+
+  // Étape 1: match exact normalisé
+  for (const m of matieres) {
+    if (normalize(m.nom) === normCol) return m;
+  }
+
+  // Étape 2: la colonne contient le nom de la matière OU vice-versa
+  for (const m of matieres) {
+    const normM = normalize(m.nom);
+    if (normCol.includes(normM) || normM.includes(normCol)) return m;
+  }
+
+  // Étape 3: alias / synonymes
+  for (const m of matieres) {
+    const normM = normalize(m.nom);
+    for (const [canonical, aliases] of Object.entries(MATIERE_ALIASES)) {
+      if (normM.includes(canonical) || aliases.some(a => normM.includes(a))) {
+        if (aliases.some(a => normCol.includes(a)) || normCol.includes(canonical)) {
+          return m;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: ImportNotesExcelProps) {
   const [cycleId, setCycleId] = useState('');
   const [classeId, setClasseId] = useState('');
   const [periodeId, setPeriodeId] = useState('');
   const [preview, setPreview] = useState<PreviewRow[] | null>(null);
+  const [matchedMatieres, setMatchedMatieres] = useState<{ col: string; matiere: any | null }[]>([]);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -101,14 +169,14 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
 
   const handleDownloadTemplate = async () => {
     if (!canAct) return;
+    // Modèle simplifié: Nom, Prénom, puis une colonne par matière (nom simple)
     const rows = eleves.map((e: any) => {
       const row: Record<string, any> = {
-        'Matricule': e.matricule || '',
         'Nom': e.nom,
         'Prénom': e.prenom,
       };
       matieres.forEach((m: any) => {
-        row[`${m.nom} (Coef.${m.coefficient})`] = '';
+        row[m.nom] = '';
       });
       return row;
     });
@@ -116,7 +184,10 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
     const className = selectedClasse?.nom || 'classe';
     const periodeName = periodes.find((p: any) => p.id === periodeId)?.nom || 'periode';
     await exportToExcel(rows, `Notes_${className}_${periodeName}`, 'Notes');
-    toast({ title: 'Modèle téléchargé', description: 'Remplissez les notes et réimportez le fichier.' });
+    toast({
+      title: 'Modèle téléchargé',
+      description: `Remplissez les notes (sur /${bareme}) et réimportez le fichier.`,
+    });
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,39 +201,60 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         return;
       }
 
-      // Map columns to matières
-      const matiereColMap: Record<string, any> = {};
+      // Identifier les colonnes Nom et Prénom (insensible à la casse / accents)
       const colKeys = Object.keys(rows[0]);
-      matieres.forEach((m: any) => {
-        const col = colKeys.find(k => k.toLowerCase().includes(m.nom.toLowerCase()));
-        if (col) matiereColMap[col] = m;
+      const nomKey = colKeys.find(k => ['nom', 'name', 'lastname', 'last name'].includes(normalize(k)));
+      const prenomKey = colKeys.find(k => ['prenom', 'firstname', 'first name', 'prénom'].includes(normalize(k)));
+
+      // Mapping colonnes -> matières (intelligent, sans modifier les notes)
+      const matiereColMap: Record<string, any> = {};
+      const matchInfo: { col: string; matiere: any | null }[] = [];
+      colKeys.forEach((col) => {
+        // Ignorer les colonnes Nom/Prénom/Matricule
+        const norm = normalize(col);
+        if (['nom', 'prenom', 'matricule', 'name', 'firstname', 'lastname', 'id'].includes(norm)) return;
+        const matched = matchMatiere(col, matieres);
+        if (matched) {
+          matiereColMap[col] = matched;
+          matchInfo.push({ col, matiere: matched });
+        } else {
+          matchInfo.push({ col, matiere: null });
+        }
       });
+      setMatchedMatieres(matchInfo);
 
       const previewRows: PreviewRow[] = rows.map((row) => {
-        const matricule = String(row['Matricule'] || row['matricule'] || '').trim();
-        const nom = String(row['Nom'] || row['nom'] || '').trim();
-        const prenom = String(row['Prénom'] || row['prenom'] || row['Prenom'] || '').trim();
+        const nom = nomKey ? String(row[nomKey] || '').trim() : '';
+        const prenom = prenomKey ? String(row[prenomKey] || '').trim() : '';
         const errors: string[] = [];
 
-        // Find matching student
+        // Trouver l'élève par nom + prénom (normalisé, ordre indifférent)
         let eleve: any = null;
-        if (matricule) {
-          eleve = eleves.find((e: any) => e.matricule === matricule);
-        }
-        if (!eleve && nom && prenom) {
-          eleve = eleves.find((e: any) =>
-            e.nom.toLowerCase() === nom.toLowerCase() && e.prenom.toLowerCase() === prenom.toLowerCase()
-          );
+        if (nom || prenom) {
+          const normFull = normalize(`${nom} ${prenom}`);
+          const normReverse = normalize(`${prenom} ${nom}`);
+          eleve = eleves.find((e: any) => {
+            const candidate = normalize(`${e.nom} ${e.prenom}`);
+            return candidate === normFull || candidate === normReverse;
+          });
+          // Fallback: au moins nom + prénom trouvés séparément
+          if (!eleve) {
+            eleve = eleves.find((e: any) =>
+              normalize(e.nom) === normalize(nom) && normalize(e.prenom) === normalize(prenom)
+            );
+          }
         }
         if (!eleve) errors.push('Élève non trouvé');
 
+        // Conserver les notes EXACTEMENT telles que saisies (pas d'arrondi, pas de modification)
         const notes: Record<string, number | null> = {};
         Object.entries(matiereColMap).forEach(([colName, matiere]) => {
           const val = row[colName];
           if (val === null || val === undefined || val === '') {
             notes[matiere.id] = null;
           } else {
-            const num = parseFloat(String(val));
+            const raw = String(val).replace(',', '.').trim();
+            const num = parseFloat(raw);
             if (isNaN(num)) {
               errors.push(`${matiere.nom}: valeur invalide`);
               notes[matiere.id] = null;
@@ -176,9 +268,9 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         });
 
         const filledCount = Object.values(notes).filter(v => v !== null).length;
-        if (filledCount === 0) errors.push('Aucune note');
+        if (filledCount === 0 && eleve) errors.push('Aucune note');
 
-        return { matricule, nom, prenom, eleve_id: eleve?.id, notes, errors };
+        return { nom, prenom, eleve_id: eleve?.id, notes, errors };
       });
 
       setPreview(previewRows);
@@ -186,11 +278,12 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
       toast({ title: 'Erreur de lecture', description: String(err), variant: 'destructive' });
     }
 
-    // Reset file input
     if (fileRef.current) fileRef.current.value = '';
   };
 
   const validRows = preview?.filter(r => r.eleve_id && r.errors.length === 0) || [];
+  const unmatchedCols = matchedMatieres.filter(m => !m.matiere);
+  const matchedCount = matchedMatieres.filter(m => m.matiere).length;
 
   const handleImport = async () => {
     if (validRows.length === 0) return;
@@ -211,7 +304,6 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         });
       });
 
-      // Upsert in batches of 500
       for (let i = 0; i < upserts.length; i += 500) {
         const batch = upserts.slice(i, i + 500);
         const { error } = await supabase
@@ -225,10 +317,11 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         description: `${validRows.length} élève(s) — ${upserts.length} note(s) importées.`,
       });
       setPreview(null);
+      setMatchedMatieres([]);
       onImportDone();
       onOpenChange(false);
     } catch (err: any) {
-      toast({ title: 'Erreur d\'import', description: err.message, variant: 'destructive' });
+      toast({ title: "Erreur d'import", description: err.message, variant: 'destructive' });
     } finally {
       setImporting(false);
     }
@@ -236,6 +329,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
 
   const resetState = () => {
     setPreview(null);
+    setMatchedMatieres([]);
     setCycleId('');
     setClasseId('');
     setPeriodeId('');
@@ -277,8 +371,14 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         </div>
 
         {canAct && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground border rounded-md p-3 bg-muted/30">
-            <span>{eleves.length} élève(s) — {matieres.length} matière(s) — Barème /{bareme}</span>
+          <div className="flex items-start gap-2 text-sm border rounded-md p-3 bg-muted/30">
+            <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-medium">{eleves.length} élève(s) — {matieres.length} matière(s) — Barème /{bareme}</p>
+              <p className="text-xs text-muted-foreground">
+                Modèle simplifié : <strong>Nom</strong>, <strong>Prénom</strong>, puis une colonne par matière. Les noms de matières sont reconnus automatiquement (accents, casse, synonymes).
+              </p>
+            </div>
           </div>
         )}
 
@@ -295,6 +395,33 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
           </div>
         )}
 
+        {/* Mapping info */}
+        {preview && matchedMatieres.length > 0 && (
+          <div className="border rounded-md p-3 bg-muted/20 space-y-2">
+            <p className="text-sm font-medium">
+              Correspondance des matières : {matchedCount}/{matieres.length} reconnues
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {matchedMatieres.map((mm, i) => (
+                <Badge
+                  key={i}
+                  variant={mm.matiere ? 'outline' : 'destructive'}
+                  className="text-xs"
+                  title={mm.matiere ? `→ ${mm.matiere.nom}` : 'Matière non reconnue (ignorée)'}
+                >
+                  {mm.col}
+                  {mm.matiere && <span className="ml-1 opacity-70">→ {mm.matiere.nom}</span>}
+                </Badge>
+              ))}
+            </div>
+            {unmatchedCols.length > 0 && (
+              <p className="text-xs text-destructive">
+                ⚠️ {unmatchedCols.length} colonne(s) ignorée(s). Vérifiez les noms ou utilisez le modèle officiel.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Preview */}
         {preview && (
           <div className="space-y-3">
@@ -302,7 +429,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
               <p className="text-sm font-medium">
                 Aperçu : {validRows.length}/{preview.length} ligne(s) valides
               </p>
-              <Button variant="ghost" size="sm" onClick={() => setPreview(null)}>Annuler</Button>
+              <Button variant="ghost" size="sm" onClick={() => { setPreview(null); setMatchedMatieres([]); }}>Annuler</Button>
             </div>
 
             <div className="border rounded-md overflow-auto max-h-[40vh]">
@@ -310,7 +437,6 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-10">#</TableHead>
-                    <TableHead>Matricule</TableHead>
                     <TableHead>Nom & Prénom</TableHead>
                     <TableHead className="text-center">Notes</TableHead>
                     <TableHead>Statut</TableHead>
@@ -323,10 +449,9 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
                     return (
                       <TableRow key={i} className={hasErrors ? 'bg-destructive/5' : ''}>
                         <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                        <TableCell className="font-mono text-xs">{row.matricule || '—'}</TableCell>
-                        <TableCell>{row.nom} {row.prenom}</TableCell>
+                        <TableCell className="font-medium">{row.nom} {row.prenom}</TableCell>
                         <TableCell className="text-center">
-                          <Badge variant="outline">{filledNotes}/{matieres.length}</Badge>
+                          <Badge variant="outline">{filledNotes}/{matchedCount}</Badge>
                         </TableCell>
                         <TableCell>
                           {hasErrors ? (
