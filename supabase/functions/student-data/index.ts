@@ -465,7 +465,7 @@ serve(async (req) => {
         await supabaseAdmin.from("student_notifications").insert({
           eleve_id: eleveId,
           titre: '📝 Composition soumise',
-          message: `Votre composition "${comp.titre}" en ${comp.matieres?.nom || 'matière'} a été soumise. En attente de correction.`,
+          message: `Votre composition "${comp.titre}" en ${(comp as any).matieres?.nom || 'matière'} a été soumise. En attente de correction.`,
           type: 'info',
         });
 
@@ -489,7 +489,7 @@ serve(async (req) => {
           });
         }
 
-        const normalizedAnswers = studentAnswers.map((entry: any) => ({
+        const normalizedAnswers = (studentAnswers as any[]).map((entry: any) => ({
           question_id: typeof entry?.question_id === 'string' ? entry.question_id : '',
           question: typeof entry?.question === 'string' ? entry.question.slice(0, 2000) : '',
           answer: typeof entry?.answer === 'string' ? entry.answer.slice(0, 12000) : '',
@@ -564,7 +564,7 @@ serve(async (req) => {
                   await supabaseAdmin.from("student_notifications").insert({
                     eleve_id: eleveId,
                     titre: '📝 Composition corrigée',
-                    message: `Votre composition "${comp.titre}" en ${comp.matieres?.nom || 'matière'} a été notée : ${scaledScore}/${comp.bareme}. ${gradeResult.commentaire}`,
+                    message: `Votre composition "${comp.titre}" en ${(comp as any).matieres?.nom || 'matière'} a été notée : ${scaledScore}/${comp.bareme}. ${gradeResult.commentaire}`,
                     type: 'info',
                   });
 
@@ -582,7 +582,7 @@ serve(async (req) => {
         await supabaseAdmin.from("student_notifications").insert({
           eleve_id: eleveId,
           titre: '📝 Composition soumise',
-          message: `Votre composition "${comp.titre}" en ${comp.matieres?.nom || 'matière'} a été soumise. En attente de correction.`,
+          message: `Votre composition "${comp.titre}" en ${(comp as any).matieres?.nom || 'matière'} a été soumise. En attente de correction.`,
           type: 'info',
         });
 
@@ -601,7 +601,7 @@ serve(async (req) => {
       const totalPossible = (questions || []).reduce((s: number, q: any) => s + q.points, 0);
 
       for (const q of (questions || [])) {
-        const studentAnswer = studentAnswers[q.id];
+        const studentAnswer = (studentAnswers as any)[q.id];
         // Check if this is a multi-answer question (reponse_correcte is a JSON array)
         let isMulti = false;
         let correctAnswers: string[] = [];
@@ -646,7 +646,7 @@ serve(async (req) => {
       await supabaseAdmin.from("student_notifications").insert({
         eleve_id: eleveId,
         titre: '📝 Composition corrigée',
-        message: `Votre composition "${comp.titre}" en ${comp.matieres?.nom || 'matière'} a été corrigée : ${score}/${comp.bareme}.`,
+        message: `Votre composition "${comp.titre}" en ${(comp as any).matieres?.nom || 'matière'} a été corrigée : ${score}/${comp.bareme}.`,
         type: 'info',
       });
 
@@ -858,7 +858,7 @@ serve(async (req) => {
               let totalPondere = 0;
               let totalCoeff = 0;
               for (const n of studentNotes) {
-                const coeff = n.matieres?.coefficient || 1;
+                const coeff = (n as any).matieres?.coefficient || 1;
                 totalPondere += (n.note || 0) * coeff;
                 totalCoeff += coeff;
               }

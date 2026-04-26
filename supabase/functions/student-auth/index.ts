@@ -136,9 +136,10 @@ serve(async (req) => {
 
     // Log connection for monitoring
     try {
-      const classeNom = eleve.classes?.nom || '';
-      const niveauNom = eleve.classes?.niveaux?.nom || '';
-      const cycleNom = eleve.classes?.niveaux?.cycles?.nom || '';
+      const classes = (eleve as any).classes;
+      const classeNom = classes?.nom || '';
+      const niveauNom = classes?.niveaux?.nom || '';
+      const cycleNom = classes?.niveaux?.cycles?.nom || '';
       await supabaseAdmin.from('active_connections').insert({
         type: 'eleve',
         ref_id: eleve.id,
