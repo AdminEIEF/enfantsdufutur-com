@@ -185,8 +185,11 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
 
   const handleDownloadTemplate = async () => {
     if (!canAct) return;
-    // Modèle simplifié: Nom, Prénom, puis une colonne par matière (nom simple)
-    const rows = eleves.map((e: any) => {
+    // Modèle simplifié trié alphabétiquement (cohérent avec le mode position à l'import)
+    const elevesSorted = [...eleves].sort((a: any, b: any) =>
+      `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' })
+    );
+    const rows = elevesSorted.map((e: any) => {
       const row: Record<string, any> = {
         'Nom': e.nom,
         'Prénom': e.prenom,
@@ -202,7 +205,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
     await exportToExcel(rows, `Notes_${className}_${periodeName}`, 'Notes');
     toast({
       title: 'Modèle téléchargé',
-      description: `Remplissez les notes (sur /${bareme}) et réimportez le fichier.`,
+      description: `Liste triée par ordre alphabétique. Remplissez les notes (sur /${bareme}) et réimportez.`,
     });
   };
 
