@@ -185,8 +185,11 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
 
   const handleDownloadTemplate = async () => {
     if (!canAct) return;
-    // Modèle simplifié: Nom, Prénom, puis une colonne par matière (nom simple)
-    const rows = eleves.map((e: any) => {
+    // Modèle simplifié trié alphabétiquement (cohérent avec le mode position à l'import)
+    const elevesSorted = [...eleves].sort((a: any, b: any) =>
+      `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' })
+    );
+    const rows = elevesSorted.map((e: any) => {
       const row: Record<string, any> = {
         'Nom': e.nom,
         'Prénom': e.prenom,
@@ -202,7 +205,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
     await exportToExcel(rows, `Notes_${className}_${periodeName}`, 'Notes');
     toast({
       title: 'Modèle téléchargé',
-      description: `Remplissez les notes (sur /${bareme}) et réimportez le fichier.`,
+      description: `Liste triée par ordre alphabétique. Remplissez les notes (sur /${bareme}) et réimportez.`,
     });
   };
 
@@ -253,7 +256,15 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
       });
       setMatchedMatieres(matchInfo);
 
-      const previewRows: PreviewRow[] = rows.map((row) => {
+      // Mode "position" : si le fichier a exactement le même nombre de lignes que d'élèves
+      // dans la classe ET que les noms correspondent globalement, on associe par ordre.
+      // Cela résout le cas des fichiers avec uniquement le nom de famille (BARRY, CAMARA…).
+      const elevesSorted = [...eleves].sort((a: any, b: any) =>
+        `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' })
+      );
+      const sameRowCount = rows.length === elevesSorted.length;
+
+      const previewRows: PreviewRow[] = rows.map((row, idx) => {
         const fullName = fullNameKey ? String(row[fullNameKey] || '').trim() : '';
         const nom = nomKey ? String(row[nomKey] || '').trim() : fullName;
         const prenom = prenomKey ? String(row[prenomKey] || '').trim() : '';
@@ -282,11 +293,25 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
             const sameName = eleves.filter((e: any) => normalize(e.nom) === normalize(nom));
             if (sameName.length === 1) {
               eleve = sameName[0];
+            } else if (sameName.length > 1 && sameRowCount) {
+              // Mode position : on prend l'élève à la même ligne (tri alpha)
+              const candidate = elevesSorted[idx];
+              if (candidate && normalize(candidate.nom) === normalize(nom)) {
+                eleve = candidate;
+              } else {
+                errors.push(`Ordre incohérent (attendu: ${candidate?.nom || '?'})`);
+              }
             } else if (sameName.length > 1) {
-              errors.push('Prénom requis: plusieurs élèves ont ce nom');
+              errors.push(`Doublon "${nom}" : ajoutez le prénom ou utilisez le modèle officiel`);
             }
           }
         }
+
+        // Fallback ultime : matching strict par position si tout le reste a échoué
+        if (!eleve && sameRowCount && !displayName) {
+          eleve = elevesSorted[idx];
+        }
+
         if (!eleve && !errors.length) errors.push('Élève non trouvé');
 
         // Conserver les notes EXACTEMENT telles que saisies (pas d'arrondi, pas de modification)
@@ -425,7 +450,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
             <div className="space-y-1">
               <p className="font-medium">{eleves.length} élève(s) — {matieres.length} matière(s) — Barème /{bareme}</p>
               <p className="text-xs text-muted-foreground">
-                Modèle simplifié : <strong>Nom</strong>, <strong>Prénom</strong>, puis une colonne par matière. Les noms de matières sont reconnus automatiquement (accents, casse, synonymes).
+                Téléchargez le <strong>modèle officiel</strong> (recommandé) : la liste est pré-remplie et triée. Vous pouvez aussi importer un fichier libre avec les colonnes <strong>Nom</strong> et <strong>Prénom</strong>. Si seul le nom est fourni et que la liste est complète et triée alphabétiquement, l'association se fait automatiquement par ordre.
               </p>
             </div>
           </div>
