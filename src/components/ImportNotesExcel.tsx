@@ -450,7 +450,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
             <div className="space-y-1">
               <p className="font-medium">{eleves.length} élève(s) — {matieres.length} matière(s) — Barème /{bareme}</p>
               <p className="text-xs text-muted-foreground">
-                Modèle simplifié : <strong>Nom</strong>, <strong>Prénom</strong>, puis une colonne par matière. Les noms de matières sont reconnus automatiquement (accents, casse, synonymes).
+                Téléchargez le <strong>modèle officiel</strong> (recommandé) : la liste est pré-remplie et triée. Vous pouvez aussi importer un fichier libre avec les colonnes <strong>Nom</strong> et <strong>Prénom</strong>. Si seul le nom est fourni et que la liste est complète et triée alphabétiquement, l'association se fait automatiquement par ordre.
               </p>
             </div>
           </div>
