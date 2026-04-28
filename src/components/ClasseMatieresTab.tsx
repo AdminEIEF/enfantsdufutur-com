@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { sortClasses } from '@/lib/utils';
-import { BookOpen, Loader2, Save, CheckCircle2 } from 'lucide-react';
+import { BookOpen, Loader2, Save, CheckCircle2, ArrowUp, ArrowDown } from 'lucide-react';
 
-type Assignment = { matiere_id: string; coefficient: number };
+type Assignment = { matiere_id: string; coefficient: number; ordre: number };
 
 export default function ClasseMatieresTab() {
   const qc = useQueryClient();
