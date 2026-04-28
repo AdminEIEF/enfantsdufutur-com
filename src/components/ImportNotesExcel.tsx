@@ -359,6 +359,54 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
   const validRows = preview?.filter(r => r.eleve_id && r.errors.length === 0) || [];
   const unmatchedCols = matchedMatieres.filter(m => !m.matiere);
   const matchedCount = matchedMatieres.filter(m => m.matiere).length;
+  const unmatchedRows = preview?.map((r, i) => ({ row: r, idx: i })).filter(x => !x.row.eleve_id) || [];
+
+  // Élèves de la classe non encore associés à une ligne du fichier
+  const usedEleveIds = new Set((preview || []).map(r => r.eleve_id).filter(Boolean));
+  const availableEleves = (eleves as any[]).filter(e => !usedEleveIds.has(e.id));
+
+  // Associer une ligne "non trouvée" à un élève existant
+  const assignEleveToRow = (rowIdx: number, eleveId: string) => {
+    const e = (eleves as any[]).find(x => x.id === eleveId);
+    if (!e || !preview) return;
+    const next = [...preview];
+    next[rowIdx] = {
+      ...next[rowIdx],
+      eleve_id: e.id,
+      nom: e.nom,
+      prenom: e.prenom,
+      errors: next[rowIdx].errors.filter(er => !er.toLowerCase().includes('élève') && !er.toLowerCase().includes('eleve') && !er.toLowerCase().includes('doublon') && !er.toLowerCase().includes('ordre')),
+    };
+    setPreview(next);
+    toast({ title: '✅ Élève associé', description: `${e.nom} ${e.prenom}` });
+  };
+
+  // Créer un nouvel élève dans la classe et l'associer à la ligne
+  const createEleveForRow = async (rowIdx: number) => {
+    if (!preview || !classeId) return;
+    const r = preview[rowIdx];
+    const nom = (r.nom || '').trim();
+    const prenom = (r.prenom || '').trim();
+    if (!nom) {
+      toast({ title: 'Nom manquant', description: 'Impossible de créer un élève sans nom.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from('eleves')
+        .insert({ nom, prenom: prenom || '—', classe_id: classeId, statut: 'inscrit' })
+        .select('id, nom, prenom, matricule')
+        .single();
+      if (error) throw error;
+      const next = [...preview];
+      next[rowIdx] = { ...next[rowIdx], eleve_id: data.id, nom: data.nom, prenom: data.prenom, errors: [] };
+      setPreview(next);
+      toast({ title: '✅ Élève créé', description: `${data.nom} ${data.prenom} (${data.matricule || 'sans matricule'})` });
+    } catch (err: any) {
+      toast({ title: 'Erreur création', description: err.message, variant: 'destructive' });
+    }
+  };
+
 
   const handleImport = async () => {
     if (validRows.length === 0) return;
