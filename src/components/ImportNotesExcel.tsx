@@ -110,6 +110,62 @@ function matchMatiere(colName: string, matieres: any[]): any | null {
   return null;
 }
 
+// Distance de Levenshtein pour le scoring de proximité
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const v0 = new Array(b.length + 1).fill(0).map((_, i) => i);
+  const v1 = new Array(b.length + 1).fill(0);
+  for (let i = 0; i < a.length; i++) {
+    v1[0] = i + 1;
+    for (let j = 0; j < b.length; j++) {
+      const cost = a[i] === b[j] ? 0 : 1;
+      v1[j + 1] = Math.min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
+    }
+    for (let k = 0; k <= b.length; k++) v0[k] = v1[k];
+  }
+  return v1[b.length];
+}
+
+// Similarité 0..1 entre deux chaînes normalisées
+function similarity(a: string, b: string): number {
+  const na = normalize(a);
+  const nb = normalize(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 1;
+  const maxLen = Math.max(na.length, nb.length);
+  const dist = levenshtein(na, nb);
+  return Math.max(0, 1 - dist / maxLen);
+}
+
+// Calcule le score de confiance entre une ligne (nom/prenom/matricule) et un élève
+function computeMatchScore(row: { nom: string; prenom: string; matricule?: string }, eleve: any): number {
+  // Match matricule = score parfait
+  if (row.matricule && eleve.matricule) {
+    if (normalize(row.matricule) === normalize(eleve.matricule)) return 1;
+  }
+  const rowNom = normalize(row.nom);
+  const rowPrenom = normalize(row.prenom);
+  const eNom = normalize(eleve.nom);
+  const ePrenom = normalize(eleve.prenom);
+
+  // Score combiné nom + prénom
+  const simNom = similarity(rowNom, eNom);
+  const simPrenom = rowPrenom && ePrenom ? similarity(rowPrenom, ePrenom) : 0;
+  const simCross = similarity(rowNom, ePrenom) * 0.9 + similarity(rowPrenom, eNom) * 0.9;
+
+  // Match plein nom (concat)
+  const simFull = similarity(`${rowNom} ${rowPrenom}`, `${eNom} ${ePrenom}`);
+  const simReverse = similarity(`${rowNom} ${rowPrenom}`, `${ePrenom} ${eNom}`);
+
+  if (rowNom && rowPrenom) {
+    return Math.max(simFull, simReverse, (simNom * 0.6 + simPrenom * 0.4), simCross / 2);
+  }
+  // Nom seul
+  return Math.max(simNom, simReverse * 0.8, simFull * 0.8);
+}
+
 export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: ImportNotesExcelProps) {
   const [cycleId, setCycleId] = useState('');
   const [classeId, setClasseId] = useState('');
@@ -155,15 +211,29 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
   const selectedCycle = cycles.find((c: any) => c.id === cycleId);
   const bareme = selectedCycle?.bareme ?? 20;
 
+  // Matières filtrées par celles COCHÉES pour la classe (classe_matieres).
+  // Fallback : si aucune affectation explicite, on prend toutes les matières du cycle/niveau.
   const { data: matieres = [] } = useQuery({
-    queryKey: ['matieres-import', cycleId, selectedNiveauId],
+    queryKey: ['matieres-import', cycleId, selectedNiveauId, classeId],
     enabled: !!cycleId,
     queryFn: async () => {
-      const { data, error } = await supabase.from('matieres').select('*').eq('cycle_id', cycleId).order('ordre');
+      const { data: all, error } = await supabase.from('matieres').select('*').eq('cycle_id', cycleId).order('ordre');
       if (error) throw error;
-      const all = data || [];
-      if (selectedNiveauId) return all.filter((m: any) => !m.niveau_id || m.niveau_id === selectedNiveauId);
-      return all;
+      const allMatieres = all || [];
+
+      if (classeId) {
+        const { data: cm } = await supabase
+          .from('classe_matieres')
+          .select('matiere_id')
+          .eq('classe_id', classeId);
+        const ids = new Set((cm || []).map((x: any) => x.matiere_id));
+        if (ids.size > 0) {
+          return allMatieres.filter((m: any) => ids.has(m.id));
+        }
+      }
+      // Fallback : matières du niveau ou du cycle
+      if (selectedNiveauId) return allMatieres.filter((m: any) => !m.niveau_id || m.niveau_id === selectedNiveauId);
+      return allMatieres;
     },
   });
 
@@ -557,40 +627,30 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
             <p className="text-xs text-muted-foreground">
               Associez chaque ligne à un élève existant de la classe, ou créez la fiche manquante en 1 clic.
             </p>
-            <div className="space-y-2 max-h-[35vh] overflow-y-auto">
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
               {unmatchedRows.map(({ row, idx }) => {
                 const filledNotes = Object.values(row.notes).filter(v => v !== null).length;
+                // Suggestions Top 3 (élèves disponibles, score ≥ 0.4)
+                const suggestions = availableEleves
+                  .map((e: any) => ({ e, score: computeMatchScore({ nom: row.nom, prenom: row.prenom, matricule: (row as any).matricule }, e) }))
+                  .filter(s => s.score >= 0.4)
+                  .sort((a, b) => b.score - a.score)
+                  .slice(0, 3);
                 return (
-                  <div key={idx} className="flex flex-col sm:flex-row gap-2 p-2 bg-background rounded border">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        Ligne {idx + 1} — <span className="text-foreground">{row.nom || '(vide)'} {row.prenom}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {filledNotes} note(s) — {row.errors.join(', ')}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Select onValueChange={(v) => assignEleveToRow(idx, v)}>
-                        <SelectTrigger className="h-8 w-[200px] text-xs">
-                          <SelectValue placeholder="🔗 Associer à…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableEleves.length === 0 ? (
-                            <SelectItem value="__none__" disabled>Aucun élève disponible</SelectItem>
-                          ) : (
-                            availableEleves.map((e: any) => (
-                              <SelectItem key={e.id} value={e.id} className="text-xs">
-                                {e.nom} {e.prenom} {e.matricule ? `(${e.matricule})` : ''}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
+                  <div key={idx} className="p-2 bg-background rounded border space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          Ligne {idx + 1} — <span className="text-foreground">{row.nom || '(vide)'} {row.prenom}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {filledNotes} note(s) — {row.errors.join(', ')}
+                        </p>
+                      </div>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 gap-1"
+                        className="h-8 gap-1 shrink-0"
                         onClick={() => createEleveForRow(idx)}
                         disabled={!row.nom?.trim()}
                         title="Créer la fiche élève dans cette classe"
@@ -599,6 +659,51 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
                         Créer
                       </Button>
                     </div>
+
+                    {/* Suggestions automatiques avec score */}
+                    {suggestions.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Search className="h-3 w-3" /> Suggestions :
+                        </span>
+                        {suggestions.map(({ e, score }) => {
+                          const pct = Math.round(score * 100);
+                          const color = pct >= 85 ? 'bg-green-100 text-green-800 hover:bg-green-200 border-green-300 dark:bg-green-950 dark:text-green-200'
+                            : pct >= 65 ? 'bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-300 dark:bg-blue-950 dark:text-blue-200'
+                            : 'bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-300 dark:bg-orange-950 dark:text-orange-200';
+                          return (
+                            <button
+                              key={e.id}
+                              type="button"
+                              onClick={() => assignEleveToRow(idx, e.id)}
+                              className={`text-xs px-2 py-1 rounded border transition-colors ${color}`}
+                              title={`Associer à ${e.nom} ${e.prenom} (confiance ${pct}%)`}
+                            >
+                              <Link2 className="h-3 w-3 inline mr-1" />
+                              {e.nom} {e.prenom} <span className="font-bold ml-1">{pct}%</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Sélection manuelle complète */}
+                    <Select onValueChange={(v) => assignEleveToRow(idx, v)}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="🔗 Ou choisir manuellement…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableEleves.length === 0 ? (
+                          <SelectItem value="__none__" disabled>Aucun élève disponible</SelectItem>
+                        ) : (
+                          availableEleves.map((e: any) => (
+                            <SelectItem key={e.id} value={e.id} className="text-xs">
+                              {e.nom} {e.prenom} {e.matricule ? `(${e.matricule})` : ''}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
                 );
               })}
