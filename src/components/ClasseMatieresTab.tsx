@@ -241,7 +241,7 @@ export default function ClasseMatieresTab() {
                   <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{pole}</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                     {(items as any[]).map((m: any) => {
-                      const isChecked = local[m.id] != null;
+                      const isChecked = !!local[m.id];
                       return (
                         <div
                           key={m.id}
@@ -263,7 +263,7 @@ export default function ClasseMatieresTab() {
                                 type="number"
                                 min={0.1}
                                 step={0.5}
-                                value={local[m.id] ?? 1}
+                                value={local[m.id]?.coef ?? 1}
                                 onChange={e => setCoef(m.id, e.target.value)}
                                 className="h-7 w-14 text-center px-1"
                               />
@@ -276,6 +276,29 @@ export default function ClasseMatieresTab() {
                 </div>
               ))}
             </div>
+
+            {orderedChecked.length > 0 && (
+              <div className="space-y-2 pt-2 border-t">
+                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Ordre des matières (utilisé partout : saisie, Excel, bulletins)
+                </h4>
+                <div className="space-y-1">
+                  {orderedChecked.map((o, i) => (
+                    <div key={o.id} className="flex items-center gap-2 p-2 rounded border bg-muted/30">
+                      <span className="text-xs font-mono w-6 text-muted-foreground">{i + 1}.</span>
+                      <span className="text-sm flex-1 truncate">{matiereById[o.id]?.nom || '—'}</span>
+                      <Badge variant="outline" className="text-xs">Coef {o.coef}</Badge>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={i === 0} onClick={() => move(o.id, -1)}>
+                        <ArrowUp className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" disabled={i === orderedChecked.length - 1} onClick={() => move(o.id, 1)}>
+                        <ArrowDown className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center gap-3 pt-2">
               <Button
