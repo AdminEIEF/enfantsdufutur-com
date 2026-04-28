@@ -93,7 +93,11 @@ export default function Notes() {
     queryKey: ['classe-matieres', classeId],
     enabled: !!classeId,
     queryFn: async () => {
-      const { data, error } = await supabase.from('classe_matieres').select('matiere_id').eq('classe_id', classeId);
+      const { data, error } = await supabase
+        .from('classe_matieres')
+        .select('matiere_id, ordre, coefficient')
+        .eq('classe_id', classeId)
+        .order('ordre');
       if (error) throw error;
       return data;
     },
@@ -115,8 +119,11 @@ export default function Notes() {
 
   const matieres = useMemo(() => {
     if (classeId && classeMatieres.length > 0) {
-      const allowedIds = new Set(classeMatieres.map((cm: any) => cm.matiere_id));
-      return allMatieresCycle.filter((m: any) => allowedIds.has(m.id));
+      const byId = new Map(allMatieresCycle.map((m: any) => [m.id, m]));
+      // Trier strictement selon classe_matieres.ordre
+      return classeMatieres
+        .map((cm: any) => byId.get(cm.matiere_id))
+        .filter(Boolean);
     }
     if (classeId && !isSecondaire) {
       return [];

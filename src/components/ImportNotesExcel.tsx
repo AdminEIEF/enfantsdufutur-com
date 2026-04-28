@@ -224,11 +224,13 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
       if (classeId) {
         const { data: cm } = await supabase
           .from('classe_matieres')
-          .select('matiere_id')
-          .eq('classe_id', classeId);
-        const ids = new Set((cm || []).map((x: any) => x.matiere_id));
-        if (ids.size > 0) {
-          return allMatieres.filter((m: any) => ids.has(m.id));
+          .select('matiere_id, ordre')
+          .eq('classe_id', classeId)
+          .order('ordre');
+        if (cm && cm.length > 0) {
+          const byId = new Map(allMatieres.map((m: any) => [m.id, m]));
+          // Respecter strictement l'ordre défini dans classe_matieres
+          return cm.map((c: any) => byId.get(c.matiere_id)).filter(Boolean);
         }
       }
       // Fallback : matières du niveau ou du cycle

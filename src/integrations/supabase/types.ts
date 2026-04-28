@@ -623,6 +623,7 @@ export type Database = {
           created_at: string
           id: string
           matiere_id: string
+          ordre: number
         }
         Insert: {
           classe_id: string
@@ -630,6 +631,7 @@ export type Database = {
           created_at?: string
           id?: string
           matiere_id: string
+          ordre?: number
         }
         Update: {
           classe_id?: string
@@ -637,6 +639,7 @@ export type Database = {
           created_at?: string
           id?: string
           matiere_id?: string
+          ordre?: number
         }
         Relationships: [
           {
