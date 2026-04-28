@@ -545,6 +545,67 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
           </div>
         )}
 
+        {/* Revue des lignes "élève non trouvé" */}
+        {preview && unmatchedRows.length > 0 && (
+          <div className="border-2 border-orange-300 dark:border-orange-700 rounded-md p-3 bg-orange-50/50 dark:bg-orange-950/20 space-y-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">
+                Revue : {unmatchedRows.length} ligne(s) à corriger
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Associez chaque ligne à un élève existant de la classe, ou créez la fiche manquante en 1 clic.
+            </p>
+            <div className="space-y-2 max-h-[35vh] overflow-y-auto">
+              {unmatchedRows.map(({ row, idx }) => {
+                const filledNotes = Object.values(row.notes).filter(v => v !== null).length;
+                return (
+                  <div key={idx} className="flex flex-col sm:flex-row gap-2 p-2 bg-background rounded border">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        Ligne {idx + 1} — <span className="text-foreground">{row.nom || '(vide)'} {row.prenom}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {filledNotes} note(s) — {row.errors.join(', ')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Select onValueChange={(v) => assignEleveToRow(idx, v)}>
+                        <SelectTrigger className="h-8 w-[200px] text-xs">
+                          <SelectValue placeholder="🔗 Associer à…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableEleves.length === 0 ? (
+                            <SelectItem value="__none__" disabled>Aucun élève disponible</SelectItem>
+                          ) : (
+                            availableEleves.map((e: any) => (
+                              <SelectItem key={e.id} value={e.id} className="text-xs">
+                                {e.nom} {e.prenom} {e.matricule ? `(${e.matricule})` : ''}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 gap-1"
+                        onClick={() => createEleveForRow(idx)}
+                        disabled={!row.nom?.trim()}
+                        title="Créer la fiche élève dans cette classe"
+                      >
+                        <UserPlus className="h-3.5 w-3.5" />
+                        Créer
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Preview */}
         {preview && (
           <div className="space-y-3">
