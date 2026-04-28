@@ -627,42 +627,86 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
             <p className="text-xs text-muted-foreground">
               Associez chaque ligne à un élève existant de la classe, ou créez la fiche manquante en 1 clic.
             </p>
-            <div className="space-y-2 max-h-[35vh] overflow-y-auto">
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
               {unmatchedRows.map(({ row, idx }) => {
                 const filledNotes = Object.values(row.notes).filter(v => v !== null).length;
+                // Suggestions Top 3 (élèves disponibles, score ≥ 0.4)
+                const suggestions = availableEleves
+                  .map((e: any) => ({ e, score: computeMatchScore({ nom: row.nom, prenom: row.prenom, matricule: (row as any).matricule }, e) }))
+                  .filter(s => s.score >= 0.4)
+                  .sort((a, b) => b.score - a.score)
+                  .slice(0, 3);
                 return (
-                  <div key={idx} className="flex flex-col sm:flex-row gap-2 p-2 bg-background rounded border">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        Ligne {idx + 1} — <span className="text-foreground">{row.nom || '(vide)'} {row.prenom}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {filledNotes} note(s) — {row.errors.join(', ')}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Select onValueChange={(v) => assignEleveToRow(idx, v)}>
-                        <SelectTrigger className="h-8 w-[200px] text-xs">
-                          <SelectValue placeholder="🔗 Associer à…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableEleves.length === 0 ? (
-                            <SelectItem value="__none__" disabled>Aucun élève disponible</SelectItem>
-                          ) : (
-                            availableEleves.map((e: any) => (
-                              <SelectItem key={e.id} value={e.id} className="text-xs">
-                                {e.nom} {e.prenom} {e.matricule ? `(${e.matricule})` : ''}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
+                  <div key={idx} className="p-2 bg-background rounded border space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          Ligne {idx + 1} — <span className="text-foreground">{row.nom || '(vide)'} {row.prenom}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {filledNotes} note(s) — {row.errors.join(', ')}
+                        </p>
+                      </div>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 gap-1"
+                        className="h-8 gap-1 shrink-0"
                         onClick={() => createEleveForRow(idx)}
                         disabled={!row.nom?.trim()}
+                        title="Créer la fiche élève dans cette classe"
+                      >
+                        <UserPlus className="h-3.5 w-3.5" />
+                        Créer
+                      </Button>
+                    </div>
+
+                    {/* Suggestions automatiques avec score */}
+                    {suggestions.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Search className="h-3 w-3" /> Suggestions :
+                        </span>
+                        {suggestions.map(({ e, score }) => {
+                          const pct = Math.round(score * 100);
+                          const color = pct >= 85 ? 'bg-green-100 text-green-800 hover:bg-green-200 border-green-300 dark:bg-green-950 dark:text-green-200'
+                            : pct >= 65 ? 'bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-300 dark:bg-blue-950 dark:text-blue-200'
+                            : 'bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-300 dark:bg-orange-950 dark:text-orange-200';
+                          return (
+                            <button
+                              key={e.id}
+                              type="button"
+                              onClick={() => assignEleveToRow(idx, e.id)}
+                              className={`text-xs px-2 py-1 rounded border transition-colors ${color}`}
+                              title={`Associer à ${e.nom} ${e.prenom} (confiance ${pct}%)`}
+                            >
+                              <Link2 className="h-3 w-3 inline mr-1" />
+                              {e.nom} {e.prenom} <span className="font-bold ml-1">{pct}%</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Sélection manuelle complète */}
+                    <Select onValueChange={(v) => assignEleveToRow(idx, v)}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="🔗 Ou choisir manuellement…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableEleves.length === 0 ? (
+                          <SelectItem value="__none__" disabled>Aucun élève disponible</SelectItem>
+                        ) : (
+                          availableEleves.map((e: any) => (
+                            <SelectItem key={e.id} value={e.id} className="text-xs">
+                              {e.nom} {e.prenom} {e.matricule ? `(${e.matricule})` : ''}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                );
+              })}
                         title="Créer la fiche élève dans cette classe"
                       >
                         <UserPlus className="h-3.5 w-3.5" />
