@@ -155,15 +155,29 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
   const selectedCycle = cycles.find((c: any) => c.id === cycleId);
   const bareme = selectedCycle?.bareme ?? 20;
 
+  // Matières filtrées par celles COCHÉES pour la classe (classe_matieres).
+  // Fallback : si aucune affectation explicite, on prend toutes les matières du cycle/niveau.
   const { data: matieres = [] } = useQuery({
-    queryKey: ['matieres-import', cycleId, selectedNiveauId],
+    queryKey: ['matieres-import', cycleId, selectedNiveauId, classeId],
     enabled: !!cycleId,
     queryFn: async () => {
-      const { data, error } = await supabase.from('matieres').select('*').eq('cycle_id', cycleId).order('ordre');
+      const { data: all, error } = await supabase.from('matieres').select('*').eq('cycle_id', cycleId).order('ordre');
       if (error) throw error;
-      const all = data || [];
-      if (selectedNiveauId) return all.filter((m: any) => !m.niveau_id || m.niveau_id === selectedNiveauId);
-      return all;
+      const allMatieres = all || [];
+
+      if (classeId) {
+        const { data: cm } = await supabase
+          .from('classe_matieres')
+          .select('matiere_id')
+          .eq('classe_id', classeId);
+        const ids = new Set((cm || []).map((x: any) => x.matiere_id));
+        if (ids.size > 0) {
+          return allMatieres.filter((m: any) => ids.has(m.id));
+        }
+      }
+      // Fallback : matières du niveau ou du cycle
+      if (selectedNiveauId) return allMatieres.filter((m: any) => !m.niveau_id || m.niveau_id === selectedNiveauId);
+      return allMatieres;
     },
   });
 
