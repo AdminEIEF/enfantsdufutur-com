@@ -110,6 +110,62 @@ function matchMatiere(colName: string, matieres: any[]): any | null {
   return null;
 }
 
+// Distance de Levenshtein pour le scoring de proximité
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const v0 = new Array(b.length + 1).fill(0).map((_, i) => i);
+  const v1 = new Array(b.length + 1).fill(0);
+  for (let i = 0; i < a.length; i++) {
+    v1[0] = i + 1;
+    for (let j = 0; j < b.length; j++) {
+      const cost = a[i] === b[j] ? 0 : 1;
+      v1[j + 1] = Math.min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
+    }
+    for (let k = 0; k <= b.length; k++) v0[k] = v1[k];
+  }
+  return v1[b.length];
+}
+
+// Similarité 0..1 entre deux chaînes normalisées
+function similarity(a: string, b: string): number {
+  const na = normalize(a);
+  const nb = normalize(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 1;
+  const maxLen = Math.max(na.length, nb.length);
+  const dist = levenshtein(na, nb);
+  return Math.max(0, 1 - dist / maxLen);
+}
+
+// Calcule le score de confiance entre une ligne (nom/prenom/matricule) et un élève
+function computeMatchScore(row: { nom: string; prenom: string; matricule?: string }, eleve: any): number {
+  // Match matricule = score parfait
+  if (row.matricule && eleve.matricule) {
+    if (normalize(row.matricule) === normalize(eleve.matricule)) return 1;
+  }
+  const rowNom = normalize(row.nom);
+  const rowPrenom = normalize(row.prenom);
+  const eNom = normalize(eleve.nom);
+  const ePrenom = normalize(eleve.prenom);
+
+  // Score combiné nom + prénom
+  const simNom = similarity(rowNom, eNom);
+  const simPrenom = rowPrenom && ePrenom ? similarity(rowPrenom, ePrenom) : 0;
+  const simCross = similarity(rowNom, ePrenom) * 0.9 + similarity(rowPrenom, eNom) * 0.9;
+
+  // Match plein nom (concat)
+  const simFull = similarity(`${rowNom} ${rowPrenom}`, `${eNom} ${ePrenom}`);
+  const simReverse = similarity(`${rowNom} ${rowPrenom}`, `${ePrenom} ${eNom}`);
+
+  if (rowNom && rowPrenom) {
+    return Math.max(simFull, simReverse, (simNom * 0.6 + simPrenom * 0.4), simCross / 2);
+  }
+  // Nom seul
+  return Math.max(simNom, simReverse * 0.8, simFull * 0.8);
+}
+
 export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: ImportNotesExcelProps) {
   const [cycleId, setCycleId] = useState('');
   const [classeId, setClasseId] = useState('');
