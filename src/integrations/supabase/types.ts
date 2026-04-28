@@ -619,18 +619,21 @@ export type Database = {
       classe_matieres: {
         Row: {
           classe_id: string
+          coefficient: number
           created_at: string
           id: string
           matiere_id: string
         }
         Insert: {
           classe_id: string
+          coefficient?: number
           created_at?: string
           id?: string
           matiere_id: string
         }
         Update: {
           classe_id?: string
+          coefficient?: number
           created_at?: string
           id?: string
           matiere_id?: string
