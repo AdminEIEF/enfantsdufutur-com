@@ -1,0 +1,1 @@
+ALTER TABLE public.classe_matieres ADD COLUMN IF NOT EXISTS coefficient numeric NOT NULL DEFAULT 1;

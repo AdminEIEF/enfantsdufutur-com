@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Download, FileSpreadsheet, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, AlertTriangle, CheckCircle, Info, UserPlus, Link2, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -358,6 +359,54 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
   const validRows = preview?.filter(r => r.eleve_id && r.errors.length === 0) || [];
   const unmatchedCols = matchedMatieres.filter(m => !m.matiere);
   const matchedCount = matchedMatieres.filter(m => m.matiere).length;
+  const unmatchedRows = preview?.map((r, i) => ({ row: r, idx: i })).filter(x => !x.row.eleve_id) || [];
+
+  // Élèves de la classe non encore associés à une ligne du fichier
+  const usedEleveIds = new Set((preview || []).map(r => r.eleve_id).filter(Boolean));
+  const availableEleves = (eleves as any[]).filter(e => !usedEleveIds.has(e.id));
+
+  // Associer une ligne "non trouvée" à un élève existant
+  const assignEleveToRow = (rowIdx: number, eleveId: string) => {
+    const e = (eleves as any[]).find(x => x.id === eleveId);
+    if (!e || !preview) return;
+    const next = [...preview];
+    next[rowIdx] = {
+      ...next[rowIdx],
+      eleve_id: e.id,
+      nom: e.nom,
+      prenom: e.prenom,
+      errors: next[rowIdx].errors.filter(er => !er.toLowerCase().includes('élève') && !er.toLowerCase().includes('eleve') && !er.toLowerCase().includes('doublon') && !er.toLowerCase().includes('ordre')),
+    };
+    setPreview(next);
+    toast({ title: '✅ Élève associé', description: `${e.nom} ${e.prenom}` });
+  };
+
+  // Créer un nouvel élève dans la classe et l'associer à la ligne
+  const createEleveForRow = async (rowIdx: number) => {
+    if (!preview || !classeId) return;
+    const r = preview[rowIdx];
+    const nom = (r.nom || '').trim();
+    const prenom = (r.prenom || '').trim();
+    if (!nom) {
+      toast({ title: 'Nom manquant', description: 'Impossible de créer un élève sans nom.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from('eleves')
+        .insert({ nom, prenom: prenom || '—', classe_id: classeId, statut: 'inscrit' })
+        .select('id, nom, prenom, matricule')
+        .single();
+      if (error) throw error;
+      const next = [...preview];
+      next[rowIdx] = { ...next[rowIdx], eleve_id: data.id, nom: data.nom, prenom: data.prenom, errors: [] };
+      setPreview(next);
+      toast({ title: '✅ Élève créé', description: `${data.nom} ${data.prenom} (${data.matricule || 'sans matricule'})` });
+    } catch (err: any) {
+      toast({ title: 'Erreur création', description: err.message, variant: 'destructive' });
+    }
+  };
+
 
   const handleImport = async () => {
     if (validRows.length === 0) return;
@@ -493,6 +542,67 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
                 ⚠️ {unmatchedCols.length} colonne(s) ignorée(s). Vérifiez les noms ou utilisez le modèle officiel.
               </p>
             )}
+          </div>
+        )}
+
+        {/* Revue des lignes "élève non trouvé" */}
+        {preview && unmatchedRows.length > 0 && (
+          <div className="border-2 border-orange-300 dark:border-orange-700 rounded-md p-3 bg-orange-50/50 dark:bg-orange-950/20 space-y-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">
+                Revue : {unmatchedRows.length} ligne(s) à corriger
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Associez chaque ligne à un élève existant de la classe, ou créez la fiche manquante en 1 clic.
+            </p>
+            <div className="space-y-2 max-h-[35vh] overflow-y-auto">
+              {unmatchedRows.map(({ row, idx }) => {
+                const filledNotes = Object.values(row.notes).filter(v => v !== null).length;
+                return (
+                  <div key={idx} className="flex flex-col sm:flex-row gap-2 p-2 bg-background rounded border">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        Ligne {idx + 1} — <span className="text-foreground">{row.nom || '(vide)'} {row.prenom}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {filledNotes} note(s) — {row.errors.join(', ')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Select onValueChange={(v) => assignEleveToRow(idx, v)}>
+                        <SelectTrigger className="h-8 w-[200px] text-xs">
+                          <SelectValue placeholder="🔗 Associer à…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableEleves.length === 0 ? (
+                            <SelectItem value="__none__" disabled>Aucun élève disponible</SelectItem>
+                          ) : (
+                            availableEleves.map((e: any) => (
+                              <SelectItem key={e.id} value={e.id} className="text-xs">
+                                {e.nom} {e.prenom} {e.matricule ? `(${e.matricule})` : ''}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 gap-1"
+                        onClick={() => createEleveForRow(idx)}
+                        disabled={!row.nom?.trim()}
+                        title="Créer la fiche élève dans cette classe"
+                      >
+                        <UserPlus className="h-3.5 w-3.5" />
+                        Créer
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

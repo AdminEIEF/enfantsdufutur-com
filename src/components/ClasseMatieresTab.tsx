@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,9 +7,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { sortClasses } from '@/lib/utils';
 import { BookOpen, Loader2, Save, CheckCircle2 } from 'lucide-react';
+
+type Assignment = { matiere_id: string; coefficient: number };
 
 export default function ClasseMatieresTab() {
   const qc = useQueryClient();
@@ -29,14 +32,11 @@ export default function ClasseMatieresTab() {
   const selectedNiveauId = (selectedClasse as any)?.niveau_id;
   const selectedCycleId = (selectedClasse as any)?.niveaux?.cycle_id;
 
-  // Get matières matching the classe's niveau or cycle
   const { data: matieres = [] } = useQuery({
     queryKey: ['config-matieres-for-classe', selectedNiveauId, selectedCycleId],
     queryFn: async () => {
       if (!selectedNiveauId && !selectedCycleId) return [];
-      let query = supabase.from('matieres').select('id, nom, pole, ordre, niveau_id, cycle_id').order('ordre');
-      // Get matières that match the niveau OR cycle (when niveau_id is null)
-      const { data } = await query;
+      const { data } = await supabase.from('matieres').select('id, nom, pole, ordre, niveau_id, cycle_id').order('ordre');
       return (data || []).filter((m: any) => {
         if (m.niveau_id === selectedNiveauId) return true;
         if (!m.niveau_id && m.cycle_id === selectedCycleId) return true;
@@ -46,64 +46,76 @@ export default function ClasseMatieresTab() {
     enabled: !!selectedNiveauId,
   });
 
-  // Get current assignments for selected classe
   const { data: assignments = [], isLoading: loadingAssignments } = useQuery({
     queryKey: ['classe-matieres', selectedClasseId],
     queryFn: async () => {
-      if (!selectedClasseId) return [];
+      if (!selectedClasseId) return [] as Assignment[];
       const { data } = await supabase
         .from('classe_matieres')
-        .select('matiere_id')
+        .select('matiere_id, coefficient')
         .eq('classe_id', selectedClasseId);
-      return (data || []).map((d: any) => d.matiere_id);
+      return (data || []).map((d: any) => ({ matiere_id: d.matiere_id, coefficient: Number(d.coefficient ?? 1) })) as Assignment[];
     },
     enabled: !!selectedClasseId,
   });
 
-  const [localChecked, setLocalChecked] = useState<string[]>([]);
-  const [initialized, setInitialized] = useState(false);
+  const [local, setLocal] = useState<Record<string, number | null>>({}); // matiere_id -> coefficient (null = non sélectionné)
 
-  // Sync when assignments load
-  if (assignments.length > 0 && !initialized) {
-    setLocalChecked(assignments);
-    setInitialized(true);
-  }
+  useEffect(() => {
+    const map: Record<string, number | null> = {};
+    assignments.forEach(a => { map[a.matiere_id] = a.coefficient; });
+    setLocal(map);
+  }, [assignments, selectedClasseId]);
 
   const handleClasseChange = (v: string) => {
     setSelectedClasseId(v);
-    setLocalChecked([]);
-    setInitialized(false);
+    setLocal({});
   };
 
   const toggleMatiere = (matiereId: string) => {
-    setLocalChecked(prev =>
-      prev.includes(matiereId) ? prev.filter(id => id !== matiereId) : [...prev, matiereId]
-    );
+    setLocal(prev => {
+      const next = { ...prev };
+      if (next[matiereId] != null) delete next[matiereId];
+      else next[matiereId] = 1;
+      return next;
+    });
   };
 
-  const selectAll = () => setLocalChecked(matieres.map((m: any) => m.id));
-  const deselectAll = () => setLocalChecked([]);
+  const setCoef = (matiereId: string, value: string) => {
+    const num = parseFloat(value.replace(',', '.'));
+    setLocal(prev => ({ ...prev, [matiereId]: isNaN(num) ? 1 : Math.max(0.1, num) }));
+  };
+
+  const selectAll = () => {
+    const map: Record<string, number> = {};
+    matieres.forEach((m: any) => { map[m.id] = local[m.id] ?? 1; });
+    setLocal(map);
+  };
+  const deselectAll = () => setLocal({});
+
+  const checkedIds = Object.keys(local).filter(id => local[id] != null);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!selectedClasseId) throw new Error('Choisir une classe');
-      // Delete existing then insert new
       await supabase.from('classe_matieres').delete().eq('classe_id', selectedClasseId);
-      if (localChecked.length > 0) {
-        const rows = localChecked.map(matiere_id => ({ classe_id: selectedClasseId, matiere_id }));
+      if (checkedIds.length > 0) {
+        const rows = checkedIds.map(matiere_id => ({
+          classe_id: selectedClasseId,
+          matiere_id,
+          coefficient: local[matiere_id] ?? 1,
+        }));
         const { error } = await supabase.from('classe_matieres').insert(rows);
         if (error) throw error;
       }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['classe-matieres', selectedClasseId] });
-      toast.success(`${localChecked.length} matière(s) affectée(s) à la classe`);
-      setInitialized(true);
+      toast.success(`${checkedIds.length} matière(s) affectée(s) avec coefficients`);
     },
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Group matières by pole
   const grouped = matieres.reduce((acc: Record<string, any[]>, m: any) => {
     const pole = m.pole || 'Autres';
     if (!acc[pole]) acc[pole] = [];
@@ -111,7 +123,15 @@ export default function ClasseMatieresTab() {
     return acc;
   }, {});
 
-  const hasChanges = JSON.stringify([...localChecked].sort()) !== JSON.stringify([...assignments].sort());
+  // Détection de changements (matière sélectionnée OU coefficient modifié)
+  const hasChanges = (() => {
+    const initialMap: Record<string, number> = {};
+    assignments.forEach(a => { initialMap[a.matiere_id] = a.coefficient; });
+    const initialKeys = Object.keys(initialMap).sort().join(',');
+    const currentKeys = checkedIds.slice().sort().join(',');
+    if (initialKeys !== currentKeys) return true;
+    return checkedIds.some(id => Number(initialMap[id]) !== Number(local[id]));
+  })();
 
   return (
     <Card>
@@ -122,7 +142,7 @@ export default function ClasseMatieresTab() {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Sélectionnez une classe puis cochez les matières enseignées dans cette classe.
+          Sélectionnez une classe puis cochez les matières et ajustez le coefficient (par défaut 1).
         </p>
 
         <div className="max-w-sm">
@@ -156,10 +176,10 @@ export default function ClasseMatieresTab() {
 
         {selectedClasseId && !loadingAssignments && matieres.length > 0 && (
           <>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={selectAll}>Tout cocher</Button>
               <Button variant="outline" size="sm" onClick={deselectAll}>Tout décocher</Button>
-              <Badge variant="secondary">{localChecked.length}/{matieres.length} sélectionnée(s)</Badge>
+              <Badge variant="secondary">{checkedIds.length}/{matieres.length} sélectionnée(s)</Badge>
             </div>
 
             <div className="space-y-4">
@@ -167,22 +187,38 @@ export default function ClasseMatieresTab() {
                 <div key={pole} className="space-y-2">
                   <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{pole}</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                    {(items as any[]).map((m: any) => (
-                      <label
-                        key={m.id}
-                        className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-colors ${
-                          localChecked.includes(m.id)
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:bg-muted/50'
-                        }`}
-                      >
-                        <Checkbox
-                          checked={localChecked.includes(m.id)}
-                          onCheckedChange={() => toggleMatiere(m.id)}
-                        />
-                        <span className="text-sm">{m.nom}</span>
-                      </label>
-                    ))}
+                    {(items as any[]).map((m: any) => {
+                      const isChecked = local[m.id] != null;
+                      return (
+                        <div
+                          key={m.id}
+                          className={`flex items-center gap-2 p-2 rounded-md border transition-colors ${
+                            isChecked ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'
+                          }`}
+                        >
+                          <div
+                            onClick={() => toggleMatiere(m.id)}
+                            className="flex items-center gap-2 flex-1 cursor-pointer min-w-0"
+                          >
+                            <Checkbox checked={isChecked} onCheckedChange={() => toggleMatiere(m.id)} />
+                            <span className="text-sm truncate">{m.nom}</span>
+                          </div>
+                          {isChecked && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="text-xs text-muted-foreground">Coef</span>
+                              <Input
+                                type="number"
+                                min={0.1}
+                                step={0.5}
+                                value={local[m.id] ?? 1}
+                                onChange={e => setCoef(m.id, e.target.value)}
+                                className="h-7 w-14 text-center px-1"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
