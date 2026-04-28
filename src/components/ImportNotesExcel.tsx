@@ -707,15 +707,6 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
                   </div>
                 );
               })}
-                        title="Créer la fiche élève dans cette classe"
-                      >
-                        <UserPlus className="h-3.5 w-3.5" />
-                        Créer
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           </div>
         )}
