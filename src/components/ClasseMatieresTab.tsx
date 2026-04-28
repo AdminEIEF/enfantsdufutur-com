@@ -74,8 +74,8 @@ export default function ClasseMatieresTab() {
   }, [assignments, selectedClasseId]);
 
   useEffect(() => {
-    const map: Record<string, number | null> = {};
-    assignments.forEach(a => { map[a.matiere_id] = a.coefficient; });
+    const map: Record<string, { coef: number; ordre: number }> = {};
+    assignments.forEach(a => { map[a.matiere_id] = { coef: a.coefficient, ordre: a.ordre }; });
     setLocal(map);
   }, [assignments, selectedClasseId]);
 
@@ -84,38 +84,73 @@ export default function ClasseMatieresTab() {
     setLocal({});
   };
 
+  const nextOrdre = (map: Record<string, { coef: number; ordre: number } | undefined>) => {
+    const vals = Object.values(map).filter(Boolean) as { coef: number; ordre: number }[];
+    return vals.length ? Math.max(...vals.map(v => v.ordre)) + 1 : 1;
+  };
+
   const toggleMatiere = (matiereId: string) => {
     setLocal(prev => {
       const next = { ...prev };
-      if (next[matiereId] != null) delete next[matiereId];
-      else next[matiereId] = 1;
+      if (next[matiereId]) delete next[matiereId];
+      else next[matiereId] = { coef: 1, ordre: nextOrdre(next) };
       return next;
     });
   };
 
   const setCoef = (matiereId: string, value: string) => {
     const num = parseFloat(value.replace(',', '.'));
-    setLocal(prev => ({ ...prev, [matiereId]: isNaN(num) ? 1 : Math.max(0.1, num) }));
+    setLocal(prev => {
+      const cur = prev[matiereId];
+      if (!cur) return prev;
+      return { ...prev, [matiereId]: { ...cur, coef: isNaN(num) ? 1 : Math.max(0.1, num) } };
+    });
   };
 
   const selectAll = () => {
-    const map: Record<string, number> = {};
-    matieres.forEach((m: any) => { map[m.id] = local[m.id] ?? 1; });
-    setLocal(map);
+    setLocal(prev => {
+      const next: Record<string, { coef: number; ordre: number }> = {};
+      let n = 1;
+      // Garder l'ordre existant en premier
+      const existing = Object.entries(prev).filter(([, v]) => v).sort((a, b) => a[1]!.ordre - b[1]!.ordre);
+      existing.forEach(([id, v]) => { next[id] = { coef: v!.coef, ordre: n++ }; });
+      matieres.forEach((m: any) => {
+        if (!next[m.id]) next[m.id] = { coef: 1, ordre: n++ };
+      });
+      return next;
+    });
   };
   const deselectAll = () => setLocal({});
 
-  const checkedIds = Object.keys(local).filter(id => local[id] != null);
+  const move = (matiereId: string, direction: -1 | 1) => {
+    setLocal(prev => {
+      const sorted = (Object.entries(prev).filter(([, v]) => v) as [string, { coef: number; ordre: number }][])
+        .sort((a, b) => a[1].ordre - b[1].ordre);
+      const idx = sorted.findIndex(([id]) => id === matiereId);
+      const swap = idx + direction;
+      if (idx < 0 || swap < 0 || swap >= sorted.length) return prev;
+      [sorted[idx], sorted[swap]] = [sorted[swap], sorted[idx]];
+      const next: Record<string, { coef: number; ordre: number }> = { ...prev };
+      sorted.forEach(([id, v], i) => { next[id] = { ...v, ordre: i + 1 }; });
+      return next;
+    });
+  };
+
+  const checkedIds = Object.keys(local).filter(id => local[id]);
+  const orderedChecked = checkedIds
+    .map(id => ({ id, ...(local[id] as { coef: number; ordre: number }) }))
+    .sort((a, b) => a.ordre - b.ordre);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!selectedClasseId) throw new Error('Choisir une classe');
       await supabase.from('classe_matieres').delete().eq('classe_id', selectedClasseId);
-      if (checkedIds.length > 0) {
-        const rows = checkedIds.map(matiere_id => ({
+      if (orderedChecked.length > 0) {
+        const rows = orderedChecked.map((o, i) => ({
           classe_id: selectedClasseId,
-          matiere_id,
-          coefficient: local[matiere_id] ?? 1,
+          matiere_id: o.id,
+          coefficient: o.coef,
+          ordre: i + 1,
         }));
         const { error } = await supabase.from('classe_matieres').insert(rows);
         if (error) throw error;
@@ -123,7 +158,7 @@ export default function ClasseMatieresTab() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['classe-matieres', selectedClasseId] });
-      toast.success(`${checkedIds.length} matière(s) affectée(s) avec coefficients`);
+      toast.success(`${orderedChecked.length} matière(s) enregistrée(s) dans l'ordre choisi`);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -135,14 +170,20 @@ export default function ClasseMatieresTab() {
     return acc;
   }, {});
 
-  // Détection de changements (matière sélectionnée OU coefficient modifié)
+  const matiereById = useMemo(() => {
+    const m: Record<string, any> = {};
+    matieres.forEach((x: any) => { m[x.id] = x; });
+    return m;
+  }, [matieres]);
+
   const hasChanges = (() => {
-    const initialMap: Record<string, number> = {};
-    assignments.forEach(a => { initialMap[a.matiere_id] = a.coefficient; });
-    const initialKeys = Object.keys(initialMap).sort().join(',');
-    const currentKeys = checkedIds.slice().sort().join(',');
-    if (initialKeys !== currentKeys) return true;
-    return checkedIds.some(id => Number(initialMap[id]) !== Number(local[id]));
+    const initial = assignments.slice().sort((a, b) => a.ordre - b.ordre);
+    if (initial.length !== orderedChecked.length) return true;
+    for (let i = 0; i < initial.length; i++) {
+      if (initial[i].matiere_id !== orderedChecked[i].id) return true;
+      if (Number(initial[i].coefficient) !== Number(orderedChecked[i].coef)) return true;
+    }
+    return false;
   })();
 
   return (
