@@ -52,14 +52,26 @@ export default function ClasseMatieresTab() {
       if (!selectedClasseId) return [] as Assignment[];
       const { data } = await supabase
         .from('classe_matieres')
-        .select('matiere_id, coefficient')
-        .eq('classe_id', selectedClasseId);
-      return (data || []).map((d: any) => ({ matiere_id: d.matiere_id, coefficient: Number(d.coefficient ?? 1) })) as Assignment[];
+        .select('matiere_id, coefficient, ordre')
+        .eq('classe_id', selectedClasseId)
+        .order('ordre');
+      return (data || []).map((d: any, i: number) => ({
+        matiere_id: d.matiere_id,
+        coefficient: Number(d.coefficient ?? 1),
+        ordre: Number(d.ordre ?? i + 1),
+      })) as Assignment[];
     },
     enabled: !!selectedClasseId,
   });
 
-  const [local, setLocal] = useState<Record<string, number | null>>({}); // matiere_id -> coefficient (null = non sélectionné)
+  // local: matiere_id -> { coef, ordre } (absent = non sélectionné)
+  const [local, setLocal] = useState<Record<string, { coef: number; ordre: number } | undefined>>({});
+
+  useEffect(() => {
+    const map: Record<string, { coef: number; ordre: number }> = {};
+    assignments.forEach(a => { map[a.matiere_id] = { coef: a.coefficient, ordre: a.ordre }; });
+    setLocal(map);
+  }, [assignments, selectedClasseId]);
 
   useEffect(() => {
     const map: Record<string, number | null> = {};
