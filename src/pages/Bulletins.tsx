@@ -157,13 +157,15 @@ export default function Bulletins() {
   const bareme = selectedCl?.niveaux?.cycles?.bareme ?? 20;
   const seuil = bareme / 2;
 
-  // Compute average for a given student and notes set
+  // Compute average for a given student and notes set (exclut les matières non cochées pour la classe)
   const computeAverage = (eleveId: string, notesSet: any[]) => {
-    const studentN = notesSet.filter((n: any) => n.eleve_id === eleveId && n.note !== null);
+    const studentN = notesSet.filter((n: any) => n.eleve_id === eleveId && n.note !== null && allowedMatiereIds.has(n.matiere_id));
     if (studentN.length === 0) return null;
     let totalW = 0, totalC = 0;
+    // Utiliser le coefficient configuré dans classe_matieres (via matieres résolu)
+    const coefMap = new Map(matieres.map((m: any) => [m.id, Number(m.coefficient) || 1]));
     studentN.forEach((n: any) => {
-      const coef = Number(n.matieres?.coefficient) || 1;
+      const coef = coefMap.get(n.matiere_id) ?? (Number(n.matieres?.coefficient) || 1);
       totalW += Number(n.note) * coef;
       totalC += coef;
     });
