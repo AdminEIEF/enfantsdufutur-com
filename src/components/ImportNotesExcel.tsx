@@ -23,8 +23,14 @@ interface PreviewRow {
   nom: string;
   prenom: string;
   eleve_id?: string;
+  eleve_classe_id?: string;
+  eleve_classe_nom?: string;
+  match_score?: number; // 0..1, 1 = exact, 0 = aucun
+  match_type?: 'exact' | 'reverse' | 'fuzzy' | 'manual' | 'none';
   notes: Record<string, number | null>;
   errors: string[];
+  duplicate_matieres?: string[]; // matieres avec note déjà existante en BDD
+  overwrite_duplicates?: boolean;
 }
 
 // Normalisation: minuscules, sans accents, sans ponctuation, espaces simplifiés
