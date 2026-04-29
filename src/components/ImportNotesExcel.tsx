@@ -838,23 +838,35 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
                       </div>
                     )}
 
-                    {/* Sélection manuelle complète */}
-                    <Select onValueChange={(v) => assignEleveToRow(idx, v)}>
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder="🔗 Ou choisir manuellement…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableEleves.length === 0 ? (
-                          <SelectItem value="__none__" disabled>Aucun élève disponible</SelectItem>
-                        ) : (
-                          availableEleves.map((e: any) => (
-                            <SelectItem key={e.id} value={e.id} className="text-xs">
-                              {e.nom} {e.prenom} {e.matricule ? `(${e.matricule})` : ''}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    {/* Sélection manuelle dans la classe */}
+                    <div className="flex gap-2">
+                      <Select onValueChange={(v) => assignEleveToRow(idx, v)}>
+                        <SelectTrigger className="h-8 text-xs flex-1">
+                          <SelectValue placeholder="🔗 Choisir dans la classe…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableEleves.length === 0 ? (
+                            <SelectItem value="__none__" disabled>Aucun élève disponible</SelectItem>
+                          ) : (
+                            availableEleves.map((e: any) => (
+                              <SelectItem key={e.id} value={e.id} className="text-xs">
+                                {e.nom} {e.prenom} {e.matricule ? `(${e.matricule})` : ''}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 gap-1 shrink-0"
+                        onClick={() => { setGlobalSearchOpen(idx); setGlobalSearchTerm(''); }}
+                        title="Chercher dans toutes les classes"
+                      >
+                        <Search className="h-3.5 w-3.5" />
+                        Toute la base
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
