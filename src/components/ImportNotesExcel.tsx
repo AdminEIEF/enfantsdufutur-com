@@ -525,9 +525,10 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
   const usedEleveIds = new Set((preview || []).map(r => r.eleve_id).filter(Boolean));
   const availableEleves = (eleves as any[]).filter(e => !usedEleveIds.has(e.id));
 
-  // Associer une ligne "non trouvée" à un élève existant
-  const assignEleveToRow = (rowIdx: number, eleveId: string) => {
-    const e = (eleves as any[]).find(x => x.id === eleveId);
+  // Associer une ligne à un élève existant (de la classe OU de toute la base)
+  const assignEleveToRow = (rowIdx: number, eleveId: string, fromGlobal = false) => {
+    const pool = fromGlobal ? (allEleves as any[]) : (eleves as any[]);
+    const e = pool.find(x => x.id === eleveId);
     if (!e || !preview) return;
     const next = [...preview];
     next[rowIdx] = {
@@ -535,10 +536,44 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
       eleve_id: e.id,
       nom: e.nom,
       prenom: e.prenom,
-      errors: next[rowIdx].errors.filter(er => !er.toLowerCase().includes('élève') && !er.toLowerCase().includes('eleve') && !er.toLowerCase().includes('doublon') && !er.toLowerCase().includes('ordre')),
+      eleve_classe_id: e.classe_id,
+      eleve_classe_nom: e.classes?.nom,
+      match_type: 'manual',
+      match_score: 1,
+      errors: next[rowIdx].errors.filter(er =>
+        !er.toLowerCase().includes('élève') &&
+        !er.toLowerCase().includes('eleve') &&
+        !er.toLowerCase().includes('doublon') &&
+        !er.toLowerCase().includes('ordre')
+      ),
     };
     setPreview(next);
-    toast({ title: '✅ Élève associé', description: `${e.nom} ${e.prenom}` });
+    setGlobalSearchOpen(null);
+    setGlobalSearchTerm('');
+    toast({ title: '✅ Élève associé', description: `${e.nom} ${e.prenom}${fromGlobal && e.classes?.nom ? ` (${e.classes.nom})` : ''}` });
+  };
+
+  // Désassocier une ligne (pour pouvoir rechoisir)
+  const unassignRow = (rowIdx: number) => {
+    if (!preview) return;
+    const next = [...preview];
+    next[rowIdx] = {
+      ...next[rowIdx],
+      eleve_id: undefined,
+      match_type: 'none',
+      match_score: 0,
+      errors: ['Élève non trouvé'],
+      duplicate_matieres: undefined,
+    };
+    setPreview(next);
+  };
+
+  // Toggle écrasement doublons
+  const toggleOverwrite = (rowIdx: number) => {
+    if (!preview) return;
+    const next = [...preview];
+    next[rowIdx] = { ...next[rowIdx], overwrite_duplicates: !next[rowIdx].overwrite_duplicates };
+    setPreview(next);
   };
 
   // Créer un nouvel élève dans la classe et l'associer à la ligne
@@ -559,7 +594,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         .single();
       if (error) throw error;
       const next = [...preview];
-      next[rowIdx] = { ...next[rowIdx], eleve_id: data.id, nom: data.nom, prenom: data.prenom, errors: [] };
+      next[rowIdx] = { ...next[rowIdx], eleve_id: data.id, nom: data.nom, prenom: data.prenom, match_type: 'manual', match_score: 1, errors: [] };
       setPreview(next);
       toast({ title: '✅ Élève créé', description: `${data.nom} ${data.prenom} (${data.matricule || 'sans matricule'})` });
     } catch (err: any) {
@@ -567,16 +602,37 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
     }
   };
 
+  // Filtre recherche globale
+  const globalSearchResults = useMemo(() => {
+    if (globalSearchOpen === null || !globalSearchTerm.trim()) return [];
+    const term = normalize(globalSearchTerm);
+    return (allEleves as any[])
+      .filter(e =>
+        normalize(e.nom).includes(term) ||
+        normalize(e.prenom).includes(term) ||
+        normalize(e.matricule || '').includes(term)
+      )
+      .slice(0, 20);
+  }, [globalSearchOpen, globalSearchTerm, allEleves]);
 
   const handleImport = async () => {
     if (validRows.length === 0) return;
     setImporting(true);
+    setImportProgress(0);
 
     try {
       const upserts: any[] = [];
       validRows.forEach(row => {
+        const skipMatieres = new Set<string>();
+        // Si l'utilisateur a refusé l'écrasement, on ignore les matières en doublon
+        if (row.duplicate_matieres && !row.overwrite_duplicates) {
+          row.duplicate_matieres.forEach(name => {
+            const m = matieres.find((x: any) => x.nom === name);
+            if (m) skipMatieres.add(m.id);
+          });
+        }
         Object.entries(row.notes).forEach(([matiere_id, note]) => {
-          if (note !== null) {
+          if (note !== null && !skipMatieres.has(matiere_id)) {
             upserts.push({
               eleve_id: row.eleve_id,
               matiere_id,
@@ -587,12 +643,16 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         });
       });
 
+      const total = upserts.length;
+      let done = 0;
       for (let i = 0; i < upserts.length; i += 500) {
         const batch = upserts.slice(i, i + 500);
         const { error } = await supabase
           .from('notes')
           .upsert(batch, { onConflict: 'eleve_id,matiere_id,periode_id', ignoreDuplicates: false });
         if (error) throw error;
+        done += batch.length;
+        setImportProgress(Math.round((done / total) * 100));
       }
 
       toast({
@@ -607,6 +667,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
       toast({ title: "Erreur d'import", description: err.message, variant: 'destructive' });
     } finally {
       setImporting(false);
+      setImportProgress(0);
     }
   };
 
