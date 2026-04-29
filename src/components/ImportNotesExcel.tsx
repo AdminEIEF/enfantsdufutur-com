@@ -889,33 +889,88 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-10">#</TableHead>
-                    <TableHead>Nom & Prénom</TableHead>
+                    <TableHead>Élève</TableHead>
                     <TableHead className="text-center">Notes</TableHead>
                     <TableHead>Statut</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {preview.map((row, i) => {
                     const filledNotes = Object.values(row.notes).filter(v => v !== null).length;
                     const hasErrors = row.errors.length > 0;
+                    const score = row.match_score ?? 0;
+                    const pct = Math.round(score * 100);
+                    // Couleur statut : Vert (exact/manual), Orange (fuzzy/reverse), Rouge (none)
+                    let statusColor = 'bg-red-50 dark:bg-red-950/30';
+                    let statusBadge: { label: string; cls: string; icon: any } = {
+                      label: 'Non trouvé', cls: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900 dark:text-red-100', icon: AlertTriangle,
+                    };
+                    if (row.eleve_id) {
+                      if (row.match_type === 'exact' || row.match_type === 'manual') {
+                        statusColor = '';
+                        statusBadge = { label: 'Exact', cls: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-100', icon: CheckCircle };
+                      } else {
+                        statusColor = 'bg-orange-50 dark:bg-orange-950/20';
+                        statusBadge = { label: `${pct}%`, cls: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900 dark:text-orange-100', icon: AlertTriangle };
+                      }
+                    }
+                    const Icon = statusBadge.icon;
                     return (
-                      <TableRow key={i} className={hasErrors ? 'bg-destructive/5' : ''}>
+                      <TableRow key={i} className={statusColor}>
                         <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                        <TableCell className="font-medium">{row.nom} {row.prenom}</TableCell>
+                        <TableCell className="font-medium">
+                          <div>{row.nom} {row.prenom}</div>
+                          {row.eleve_classe_nom && (
+                            <div className="text-xs text-muted-foreground">📚 {row.eleve_classe_nom}</div>
+                          )}
+                          {row.duplicate_matieres && row.duplicate_matieres.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => toggleOverwrite(i)}
+                              className={`mt-1 text-xs px-1.5 py-0.5 rounded border ${row.overwrite_duplicates ? 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-200' : 'bg-muted text-muted-foreground'}`}
+                              title={row.overwrite_duplicates ? 'Cliquer pour conserver les notes existantes' : 'Cliquer pour écraser les notes existantes'}
+                            >
+                              ⚠️ Doublon: {row.duplicate_matieres.length} note(s) — {row.overwrite_duplicates ? 'écraser' : 'ignorer'}
+                            </button>
+                          )}
+                        </TableCell>
                         <TableCell className="text-center">
                           <Badge variant="outline">{filledNotes}/{matchedCount}</Badge>
                         </TableCell>
                         <TableCell>
-                          {hasErrors ? (
-                            <div className="flex items-start gap-1">
-                              <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
-                              <span className="text-xs text-destructive">{row.errors.join(', ')}</span>
-                            </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${statusBadge.cls}`}>
+                              <Icon className="h-3 w-3" />
+                              {statusBadge.label}
+                            </span>
+                            {hasErrors && (
+                              <span className="text-xs text-destructive truncate max-w-[180px]" title={row.errors.join(', ')}>
+                                {row.errors.join(', ')}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {row.eleve_id ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => unassignRow(i)}
+                              title="Réassigner cette note à un autre élève"
+                            >
+                              <RefreshCw className="h-3 w-3 mr-1" /> Changer
+                            </Button>
                           ) : (
-                            <div className="flex items-center gap-1 text-green-600">
-                              <CheckCircle className="h-3.5 w-3.5" />
-                              <span className="text-xs">OK</span>
-                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => { setGlobalSearchOpen(i); setGlobalSearchTerm(''); }}
+                            >
+                              <Search className="h-3 w-3 mr-1" /> Chercher
+                            </Button>
                           )}
                         </TableCell>
                       </TableRow>
@@ -925,11 +980,58 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
               </Table>
             </div>
 
+            {importing && (
+              <div className="space-y-1">
+                <Progress value={importProgress} />
+                <p className="text-xs text-muted-foreground text-center">{importProgress}% — Insertion en base…</p>
+              </div>
+            )}
+
             <Button onClick={handleImport} disabled={validRows.length === 0 || importing} className="w-full">
-              {importing ? 'Import en cours...' : `Importer ${validRows.length} élève(s)`}
+              {importing ? `Import en cours… ${importProgress}%` : `✅ Confirmer l'importation totale (${validRows.length} élève(s))`}
             </Button>
           </div>
         )}
+
+        {/* Dialog recherche globale (toutes classes) */}
+        <Dialog open={globalSearchOpen !== null} onOpenChange={(o) => { if (!o) { setGlobalSearchOpen(null); setGlobalSearchTerm(''); } }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Search className="h-5 w-5 text-primary" />
+                Rechercher un élève (toutes classes)
+              </DialogTitle>
+            </DialogHeader>
+            <Input
+              autoFocus
+              placeholder="Nom, prénom ou matricule…"
+              value={globalSearchTerm}
+              onChange={(e) => setGlobalSearchTerm(e.target.value)}
+            />
+            <div className="max-h-[50vh] overflow-y-auto border rounded-md divide-y">
+              {globalSearchTerm.trim() === '' ? (
+                <p className="text-sm text-muted-foreground p-4 text-center">Tapez au moins 1 caractère…</p>
+              ) : globalSearchResults.length === 0 ? (
+                <p className="text-sm text-muted-foreground p-4 text-center">Aucun résultat</p>
+              ) : (
+                globalSearchResults.map((e: any) => (
+                  <button
+                    key={e.id}
+                    type="button"
+                    className="w-full text-left p-2 hover:bg-accent text-sm flex items-center justify-between gap-2"
+                    onClick={() => globalSearchOpen !== null && assignEleveToRow(globalSearchOpen, e.id, true)}
+                  >
+                    <span>
+                      <strong>{e.nom}</strong> {e.prenom}
+                      {e.matricule && <span className="text-xs text-muted-foreground ml-1">({e.matricule})</span>}
+                    </span>
+                    {e.classes?.nom && <Badge variant="outline" className="text-xs">{e.classes.nom}</Badge>}
+                  </button>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {!canAct && (
           <p className="text-sm text-muted-foreground text-center py-4">
