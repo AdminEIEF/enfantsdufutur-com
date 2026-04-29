@@ -107,7 +107,57 @@ export async function exportToExcel(data: Record<string, any>[], filename: strin
 }
 
 /**
- * Read an Excel file and return rows as objects
+ * Read all sheets of an Excel file. Returns a map { sheetName: rows[] }.
+ */
+export function readExcelFileAllSheets(file: File): Promise<Record<string, Record<string, any>[]>> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const buffer = e.target?.result as ArrayBuffer;
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buffer);
+        const result: Record<string, Record<string, any>[]> = {};
+        workbook.worksheets.forEach((worksheet) => {
+          let headerRowNumber = 0;
+          const headers: string[] = [];
+          worksheet.eachRow((row, rowNumber) => {
+            if (headerRowNumber > 0) return;
+            const cellValues: string[] = [];
+            row.eachCell((cell) => {
+              const val = String(cell.value ?? '').trim();
+              if (val && val.length > 0 && isNaN(Number(val))) cellValues.push(val);
+            });
+            if (cellValues.length >= 2) {
+              headerRowNumber = rowNumber;
+              row.eachCell((cell, colNumber) => {
+                headers[colNumber - 1] = String(cell.value ?? '').trim();
+              });
+            }
+          });
+          if (headerRowNumber === 0) { result[worksheet.name] = []; return; }
+          const rows: Record<string, any>[] = [];
+          worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber <= headerRowNumber) return;
+            const obj: Record<string, any> = {};
+            row.eachCell((cell, colNumber) => {
+              const key = headers[colNumber - 1];
+              if (key) obj[key] = cell.value;
+            });
+            if (Object.keys(obj).length > 0) rows.push(obj);
+          });
+          result[worksheet.name] = rows;
+        });
+        resolve(result);
+      } catch (err) { reject(err); }
+    };
+    reader.onerror = () => reject(new Error('Erreur de lecture du fichier'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+/**
+ * Read an Excel file and return rows as objects (first sheet only)
  */
 export function readExcelFile(file: File): Promise<Record<string, any>[]> {
   return new Promise((resolve, reject) => {
