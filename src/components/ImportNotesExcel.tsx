@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Download, FileSpreadsheet, AlertTriangle, CheckCircle, Info, UserPlus, Link2, Search } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Upload, Download, FileSpreadsheet, AlertTriangle, CheckCircle, Info, UserPlus, Link2, Search, RefreshCw, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { exportToExcel, readExcelFile } from '@/lib/excelUtils';
+import { exportToExcel, readExcelFile, readExcelFileAllSheets } from '@/lib/excelUtils';
 import { sortClasses } from '@/lib/utils';
 
 interface ImportNotesExcelProps {
@@ -22,8 +23,14 @@ interface PreviewRow {
   nom: string;
   prenom: string;
   eleve_id?: string;
+  eleve_classe_id?: string;
+  eleve_classe_nom?: string;
+  match_score?: number; // 0..1, 1 = exact, 0 = aucun
+  match_type?: 'exact' | 'reverse' | 'fuzzy' | 'manual' | 'none';
   notes: Record<string, number | null>;
   errors: string[];
+  duplicate_matieres?: string[]; // matieres avec note déjà existante en BDD
+  overwrite_duplicates?: boolean;
 }
 
 // Normalisation: minuscules, sans accents, sans ponctuation, espaces simplifiés
@@ -39,30 +46,31 @@ function normalize(str: string): string {
 
 // Synonymes courants des matières scolaires (clé canonique = forme normalisée)
 const MATIERE_ALIASES: Record<string, string[]> = {
-  'mathematiques': ['math', 'maths', 'mathematique', 'mathematiques', 'mathematics'],
-  'francais': ['francais', 'french', 'fr', 'lettres', 'francaise'],
+  'mathematiques': ['math', 'maths', 'mathematique', 'mathematiques', 'mathematics', 'calc'],
+  'francais': ['francais', 'french', 'fr', 'lettres', 'francaise', 'franc'],
   'anglais': ['anglais', 'english', 'eng', 'angl'],
   'arabe': ['arabe', 'arabic', 'ar'],
   'histoire geographie': ['histoire geographie', 'hist geo', 'histgeo', 'h g', 'hg', 'histoire et geographie'],
-  'histoire': ['histoire', 'history', 'hist'],
-  'geographie': ['geographie', 'geography', 'geo'],
-  'svt': ['svt', 'sciences de la vie et de la terre', 'sciences nat', 'sciences naturelles', 'biologie', 'bio'],
-  'physique chimie': ['physique chimie', 'physique', 'chimie', 'pc', 'sciences physiques'],
+  'histoire': ['histoire', 'history', 'hist', 'histo'],
+  'geographie': ['geographie', 'geography', 'geo', 'geog'],
+  'svt': ['svt', 'sciences de la vie et de la terre', 'sciences nat', 'sciences naturelles', 'biologie', 'bio', 'scienc'],
+  'physique chimie': ['physique chimie', 'physique', 'chimie', 'pc', 'sciences physiques', 'phys'],
   'eps': ['eps', 'sport', 'education physique', 'education physique et sportive'],
-  'eveil': ['eveil', 'eveil scientifique'],
-  'education civique et morale': ['education civique et morale', 'education civique', 'civisme', 'ecm', 'e c m', 'edu civ', 'eduction civique et morale'],
+  'eveil': ['eveil', 'eveil scientifique', 'evei'],
+  'education civique et morale': ['education civique et morale', 'education civique', 'civisme', 'ecm', 'e c m', 'edu civ', 'eduction civique et morale', 'ec m'],
   'entrepreneuriat': ['entrepreneuriat', 'entrep', 'entreprenariat', 'entr', 'entreprise'],
   'activite scout': ['activite scout', 'scout', 'scoutisme', 'activites scout'],
-  'religion': ['religion', 'education religieuse', 'er'],
-  'dessin': ['dessin', 'arts plastiques', 'arts'],
-  'musique': ['musique', 'chant', 'education musicale'],
+  'religion': ['religion', 'education religieuse', 'er', 'reli'],
+  'dessin': ['dessin', 'arts plastiques', 'arts', 'dess'],
+  'musique': ['musique', 'chant', 'education musicale', 'musi'],
   'informatique': ['informatique', 'tic', 'info', 'computer'],
-  'lecture': ['lecture', 'reading'],
-  'ecriture': ['ecriture', 'writing'],
-  'expression ecrite': ['expression ecrite', 'redaction', 'production ecrite'],
-  'expression orale': ['expression orale', 'oral', 'communication orale'],
-  'calcul': ['calcul', 'calcul mental'],
+  'lecture': ['lecture', 'reading', 'lectu', 'lect'],
+  'ecriture': ['ecriture', 'writing', 'ecri', 'ecrit'],
+  'expression ecrite': ['expression ecrite', 'redaction', 'production ecrite', 'expr ecr', 'ee'],
+  'expression orale': ['expression orale', 'oral', 'communication orale', 'expr or', 'eo'],
+  'calcul': ['calcul', 'calcul mental', 'calc'],
   'philosophie': ['philosophie', 'philo'],
+  'conduite': ['conduite', 'comportement', 'cond'],
 };
 
 // Variante "compactée" (sans espaces) pour gérer "E C M" -> "ecm", "H G" -> "hg"
@@ -173,6 +181,9 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
   const [preview, setPreview] = useState<PreviewRow[] | null>(null);
   const [matchedMatieres, setMatchedMatieres] = useState<{ col: string; matiere: any | null }[]>([]);
   const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [globalSearchOpen, setGlobalSearchOpen] = useState<number | null>(null);
+  const [globalSearchTerm, setGlobalSearchTerm] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: cycles = [] } = useQuery({
@@ -247,6 +258,21 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         .from('eleves')
         .select('id, nom, prenom, matricule')
         .eq('classe_id', classeId)
+        .eq('statut', 'inscrit')
+        .order('nom');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Tous les élèves (toutes classes) pour la recherche globale
+  const { data: allEleves = [] } = useQuery({
+    queryKey: ['eleves-all-import'],
+    enabled: !!preview,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('eleves')
+        .select('id, nom, prenom, matricule, classe_id, classes(nom)')
         .eq('statut', 'inscrit')
         .order('nom');
       if (error) throw error;
@@ -344,50 +370,73 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         const displayName = fullName || `${nom} ${prenom}`.trim();
         const errors: string[] = [];
 
-        // Trouver l'élève par nom + prénom, nom complet, ou nom unique dans la classe
         let eleve: any = null;
-        if (displayName) {
-          const normFull = normalize(`${nom} ${prenom}`);
-          const normReverse = normalize(`${prenom} ${nom}`);
-          const normDisplay = normalize(displayName);
+        let matchType: PreviewRow['match_type'] = 'none';
+        let matchScore = 0;
+
+        // Priorité 1 : correspondance EXACTE (Nom=Nom, Prénom=Prénom)
+        if (nom && prenom) {
+          eleve = eleves.find((e: any) =>
+            normalize(e.nom) === normalize(nom) && normalize(e.prenom) === normalize(prenom)
+          );
+          if (eleve) { matchType = 'exact'; matchScore = 1; }
+        }
+
+        // Priorité 2 : INVERSION (Nom↔Prénom)
+        if (!eleve && nom && prenom) {
+          eleve = eleves.find((e: any) =>
+            normalize(e.nom) === normalize(prenom) && normalize(e.prenom) === normalize(nom)
+          );
+          if (eleve) { matchType = 'reverse'; matchScore = 0.95; }
+        }
+
+        // Match plein nom (un seul champ)
+        if (!eleve && displayName) {
+          const normFull = normalize(displayName);
           eleve = eleves.find((e: any) => {
-            const candidate = normalize(`${e.nom} ${e.prenom}`);
-            const reverseCandidate = normalize(`${e.prenom} ${e.nom}`);
-            return candidate === normFull || reverseCandidate === normFull || candidate === normReverse || candidate === normDisplay || reverseCandidate === normDisplay;
+            const c1 = normalize(`${e.nom} ${e.prenom}`);
+            const c2 = normalize(`${e.prenom} ${e.nom}`);
+            return c1 === normFull || c2 === normFull;
           });
+          if (eleve) { matchType = 'exact'; matchScore = 1; }
+        }
 
-          if (!eleve && nom && prenom) {
-            eleve = eleves.find((e: any) =>
-              normalize(e.nom) === normalize(nom) && normalize(e.prenom) === normalize(prenom)
-            );
-          }
-
-          if (!eleve && nom && !prenom) {
-            const sameName = eleves.filter((e: any) => normalize(e.nom) === normalize(nom));
-            if (sameName.length === 1) {
-              eleve = sameName[0];
-            } else if (sameName.length > 1 && sameRowCount) {
-              // Mode position : on prend l'élève à la même ligne (tri alpha)
-              const candidate = elevesSorted[idx];
-              if (candidate && normalize(candidate.nom) === normalize(nom)) {
-                eleve = candidate;
-              } else {
-                errors.push(`Ordre incohérent (attendu: ${candidate?.nom || '?'})`);
-              }
-            } else if (sameName.length > 1) {
-              errors.push(`Doublon "${nom}" : ajoutez le prénom ou utilisez le modèle officiel`);
+        // Nom seul unique dans la classe
+        if (!eleve && nom && !prenom) {
+          const sameName = eleves.filter((e: any) => normalize(e.nom) === normalize(nom));
+          if (sameName.length === 1) {
+            eleve = sameName[0]; matchType = 'exact'; matchScore = 1;
+          } else if (sameName.length > 1 && sameRowCount) {
+            const candidate = elevesSorted[idx];
+            if (candidate && normalize(candidate.nom) === normalize(nom)) {
+              eleve = candidate; matchType = 'exact'; matchScore = 0.9;
             }
           }
         }
 
-        // Fallback ultime : matching strict par position si tout le reste a échoué
+        // Priorité 3 : FUZZY MATCHING
+        if (!eleve && displayName) {
+          const candidates = (eleves as any[])
+            .map((e: any) => ({ e, score: computeMatchScore({ nom, prenom }, e) }))
+            .sort((a, b) => b.score - a.score);
+          const best = candidates[0];
+          if (best && best.score >= 0.75) {
+            eleve = best.e;
+            matchType = 'fuzzy';
+            matchScore = best.score;
+          }
+        }
+
+        // Fallback : position
         if (!eleve && sameRowCount && !displayName) {
           eleve = elevesSorted[idx];
+          matchType = 'fuzzy';
+          matchScore = 0.6;
         }
 
         if (!eleve && !errors.length) errors.push('Élève non trouvé');
 
-        // Conserver les notes EXACTEMENT telles que saisies (pas d'arrondi, pas de modification)
+        // Conversion notes (virgule → point)
         const notes: Record<string, number | null> = {};
         Object.entries(matiereColMap).forEach(([colName, matiere]) => {
           const val = row[colName];
@@ -415,10 +464,49 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
           nom: eleve?.nom || nom,
           prenom: eleve?.prenom || prenom,
           eleve_id: eleve?.id,
+          match_score: matchScore,
+          match_type: matchType,
           notes,
           errors,
         };
       });
+
+      // Détection de doublons existants en BDD pour les lignes valides
+      const eleveIds = previewRows.map(r => r.eleve_id).filter(Boolean) as string[];
+      const matiereIds = Array.from(new Set(Object.values(matiereColMap).map((m: any) => m.id)));
+      if (eleveIds.length > 0 && matiereIds.length > 0 && periodeId) {
+        const { data: existing } = await supabase
+          .from('notes')
+          .select('eleve_id, matiere_id')
+          .in('eleve_id', eleveIds)
+          .in('matiere_id', matiereIds)
+          .eq('periode_id', periodeId);
+        if (existing && existing.length > 0) {
+          const dupMap = new Map<string, Set<string>>();
+          existing.forEach((n: any) => {
+            if (!dupMap.has(n.eleve_id)) dupMap.set(n.eleve_id, new Set());
+            dupMap.get(n.eleve_id)!.add(n.matiere_id);
+          });
+          previewRows.forEach(r => {
+            if (!r.eleve_id) return;
+            const dups = dupMap.get(r.eleve_id);
+            if (!dups) return;
+            const dupNames: string[] = [];
+            Object.entries(r.notes).forEach(([mid, val]) => {
+              if (val !== null && dups.has(mid)) {
+                const m = matieres.find((x: any) => x.id === mid);
+                if (m) dupNames.push(m.nom);
+              }
+            });
+            if (dupNames.length > 0) {
+              r.duplicate_matieres = dupNames;
+              r.overwrite_duplicates = true; // par défaut on écrase
+            }
+          });
+        }
+      }
+
+      setPreview(previewRows);
 
       setPreview(previewRows);
     } catch (err) {
@@ -437,9 +525,10 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
   const usedEleveIds = new Set((preview || []).map(r => r.eleve_id).filter(Boolean));
   const availableEleves = (eleves as any[]).filter(e => !usedEleveIds.has(e.id));
 
-  // Associer une ligne "non trouvée" à un élève existant
-  const assignEleveToRow = (rowIdx: number, eleveId: string) => {
-    const e = (eleves as any[]).find(x => x.id === eleveId);
+  // Associer une ligne à un élève existant (de la classe OU de toute la base)
+  const assignEleveToRow = (rowIdx: number, eleveId: string, fromGlobal = false) => {
+    const pool = fromGlobal ? (allEleves as any[]) : (eleves as any[]);
+    const e = pool.find(x => x.id === eleveId);
     if (!e || !preview) return;
     const next = [...preview];
     next[rowIdx] = {
@@ -447,10 +536,44 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
       eleve_id: e.id,
       nom: e.nom,
       prenom: e.prenom,
-      errors: next[rowIdx].errors.filter(er => !er.toLowerCase().includes('élève') && !er.toLowerCase().includes('eleve') && !er.toLowerCase().includes('doublon') && !er.toLowerCase().includes('ordre')),
+      eleve_classe_id: e.classe_id,
+      eleve_classe_nom: e.classes?.nom,
+      match_type: 'manual',
+      match_score: 1,
+      errors: next[rowIdx].errors.filter(er =>
+        !er.toLowerCase().includes('élève') &&
+        !er.toLowerCase().includes('eleve') &&
+        !er.toLowerCase().includes('doublon') &&
+        !er.toLowerCase().includes('ordre')
+      ),
     };
     setPreview(next);
-    toast({ title: '✅ Élève associé', description: `${e.nom} ${e.prenom}` });
+    setGlobalSearchOpen(null);
+    setGlobalSearchTerm('');
+    toast({ title: '✅ Élève associé', description: `${e.nom} ${e.prenom}${fromGlobal && e.classes?.nom ? ` (${e.classes.nom})` : ''}` });
+  };
+
+  // Désassocier une ligne (pour pouvoir rechoisir)
+  const unassignRow = (rowIdx: number) => {
+    if (!preview) return;
+    const next = [...preview];
+    next[rowIdx] = {
+      ...next[rowIdx],
+      eleve_id: undefined,
+      match_type: 'none',
+      match_score: 0,
+      errors: ['Élève non trouvé'],
+      duplicate_matieres: undefined,
+    };
+    setPreview(next);
+  };
+
+  // Toggle écrasement doublons
+  const toggleOverwrite = (rowIdx: number) => {
+    if (!preview) return;
+    const next = [...preview];
+    next[rowIdx] = { ...next[rowIdx], overwrite_duplicates: !next[rowIdx].overwrite_duplicates };
+    setPreview(next);
   };
 
   // Créer un nouvel élève dans la classe et l'associer à la ligne
@@ -471,7 +594,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         .single();
       if (error) throw error;
       const next = [...preview];
-      next[rowIdx] = { ...next[rowIdx], eleve_id: data.id, nom: data.nom, prenom: data.prenom, errors: [] };
+      next[rowIdx] = { ...next[rowIdx], eleve_id: data.id, nom: data.nom, prenom: data.prenom, match_type: 'manual', match_score: 1, errors: [] };
       setPreview(next);
       toast({ title: '✅ Élève créé', description: `${data.nom} ${data.prenom} (${data.matricule || 'sans matricule'})` });
     } catch (err: any) {
@@ -479,16 +602,37 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
     }
   };
 
+  // Filtre recherche globale
+  const globalSearchResults = useMemo(() => {
+    if (globalSearchOpen === null || !globalSearchTerm.trim()) return [];
+    const term = normalize(globalSearchTerm);
+    return (allEleves as any[])
+      .filter(e =>
+        normalize(e.nom).includes(term) ||
+        normalize(e.prenom).includes(term) ||
+        normalize(e.matricule || '').includes(term)
+      )
+      .slice(0, 20);
+  }, [globalSearchOpen, globalSearchTerm, allEleves]);
 
   const handleImport = async () => {
     if (validRows.length === 0) return;
     setImporting(true);
+    setImportProgress(0);
 
     try {
       const upserts: any[] = [];
       validRows.forEach(row => {
+        const skipMatieres = new Set<string>();
+        // Si l'utilisateur a refusé l'écrasement, on ignore les matières en doublon
+        if (row.duplicate_matieres && !row.overwrite_duplicates) {
+          row.duplicate_matieres.forEach(name => {
+            const m = matieres.find((x: any) => x.nom === name);
+            if (m) skipMatieres.add(m.id);
+          });
+        }
         Object.entries(row.notes).forEach(([matiere_id, note]) => {
-          if (note !== null) {
+          if (note !== null && !skipMatieres.has(matiere_id)) {
             upserts.push({
               eleve_id: row.eleve_id,
               matiere_id,
@@ -499,12 +643,16 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         });
       });
 
+      const total = upserts.length;
+      let done = 0;
       for (let i = 0; i < upserts.length; i += 500) {
         const batch = upserts.slice(i, i + 500);
         const { error } = await supabase
           .from('notes')
           .upsert(batch, { onConflict: 'eleve_id,matiere_id,periode_id', ignoreDuplicates: false });
         if (error) throw error;
+        done += batch.length;
+        setImportProgress(Math.round((done / total) * 100));
       }
 
       toast({
@@ -519,6 +667,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
       toast({ title: "Erreur d'import", description: err.message, variant: 'destructive' });
     } finally {
       setImporting(false);
+      setImportProgress(0);
     }
   };
 
@@ -689,23 +838,35 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
                       </div>
                     )}
 
-                    {/* Sélection manuelle complète */}
-                    <Select onValueChange={(v) => assignEleveToRow(idx, v)}>
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder="🔗 Ou choisir manuellement…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableEleves.length === 0 ? (
-                          <SelectItem value="__none__" disabled>Aucun élève disponible</SelectItem>
-                        ) : (
-                          availableEleves.map((e: any) => (
-                            <SelectItem key={e.id} value={e.id} className="text-xs">
-                              {e.nom} {e.prenom} {e.matricule ? `(${e.matricule})` : ''}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    {/* Sélection manuelle dans la classe */}
+                    <div className="flex gap-2">
+                      <Select onValueChange={(v) => assignEleveToRow(idx, v)}>
+                        <SelectTrigger className="h-8 text-xs flex-1">
+                          <SelectValue placeholder="🔗 Choisir dans la classe…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableEleves.length === 0 ? (
+                            <SelectItem value="__none__" disabled>Aucun élève disponible</SelectItem>
+                          ) : (
+                            availableEleves.map((e: any) => (
+                              <SelectItem key={e.id} value={e.id} className="text-xs">
+                                {e.nom} {e.prenom} {e.matricule ? `(${e.matricule})` : ''}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 gap-1 shrink-0"
+                        onClick={() => { setGlobalSearchOpen(idx); setGlobalSearchTerm(''); }}
+                        title="Chercher dans toutes les classes"
+                      >
+                        <Search className="h-3.5 w-3.5" />
+                        Toute la base
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
@@ -728,33 +889,88 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-10">#</TableHead>
-                    <TableHead>Nom & Prénom</TableHead>
+                    <TableHead>Élève</TableHead>
                     <TableHead className="text-center">Notes</TableHead>
                     <TableHead>Statut</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {preview.map((row, i) => {
                     const filledNotes = Object.values(row.notes).filter(v => v !== null).length;
                     const hasErrors = row.errors.length > 0;
+                    const score = row.match_score ?? 0;
+                    const pct = Math.round(score * 100);
+                    // Couleur statut : Vert (exact/manual), Orange (fuzzy/reverse), Rouge (none)
+                    let statusColor = 'bg-red-50 dark:bg-red-950/30';
+                    let statusBadge: { label: string; cls: string; icon: any } = {
+                      label: 'Non trouvé', cls: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900 dark:text-red-100', icon: AlertTriangle,
+                    };
+                    if (row.eleve_id) {
+                      if (row.match_type === 'exact' || row.match_type === 'manual') {
+                        statusColor = '';
+                        statusBadge = { label: 'Exact', cls: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-100', icon: CheckCircle };
+                      } else {
+                        statusColor = 'bg-orange-50 dark:bg-orange-950/20';
+                        statusBadge = { label: `${pct}%`, cls: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900 dark:text-orange-100', icon: AlertTriangle };
+                      }
+                    }
+                    const Icon = statusBadge.icon;
                     return (
-                      <TableRow key={i} className={hasErrors ? 'bg-destructive/5' : ''}>
+                      <TableRow key={i} className={statusColor}>
                         <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                        <TableCell className="font-medium">{row.nom} {row.prenom}</TableCell>
+                        <TableCell className="font-medium">
+                          <div>{row.nom} {row.prenom}</div>
+                          {row.eleve_classe_nom && (
+                            <div className="text-xs text-muted-foreground">📚 {row.eleve_classe_nom}</div>
+                          )}
+                          {row.duplicate_matieres && row.duplicate_matieres.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => toggleOverwrite(i)}
+                              className={`mt-1 text-xs px-1.5 py-0.5 rounded border ${row.overwrite_duplicates ? 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-200' : 'bg-muted text-muted-foreground'}`}
+                              title={row.overwrite_duplicates ? 'Cliquer pour conserver les notes existantes' : 'Cliquer pour écraser les notes existantes'}
+                            >
+                              ⚠️ Doublon: {row.duplicate_matieres.length} note(s) — {row.overwrite_duplicates ? 'écraser' : 'ignorer'}
+                            </button>
+                          )}
+                        </TableCell>
                         <TableCell className="text-center">
                           <Badge variant="outline">{filledNotes}/{matchedCount}</Badge>
                         </TableCell>
                         <TableCell>
-                          {hasErrors ? (
-                            <div className="flex items-start gap-1">
-                              <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
-                              <span className="text-xs text-destructive">{row.errors.join(', ')}</span>
-                            </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${statusBadge.cls}`}>
+                              <Icon className="h-3 w-3" />
+                              {statusBadge.label}
+                            </span>
+                            {hasErrors && (
+                              <span className="text-xs text-destructive truncate max-w-[180px]" title={row.errors.join(', ')}>
+                                {row.errors.join(', ')}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {row.eleve_id ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => unassignRow(i)}
+                              title="Réassigner cette note à un autre élève"
+                            >
+                              <RefreshCw className="h-3 w-3 mr-1" /> Changer
+                            </Button>
                           ) : (
-                            <div className="flex items-center gap-1 text-green-600">
-                              <CheckCircle className="h-3.5 w-3.5" />
-                              <span className="text-xs">OK</span>
-                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => { setGlobalSearchOpen(i); setGlobalSearchTerm(''); }}
+                            >
+                              <Search className="h-3 w-3 mr-1" /> Chercher
+                            </Button>
                           )}
                         </TableCell>
                       </TableRow>
@@ -764,11 +980,58 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
               </Table>
             </div>
 
+            {importing && (
+              <div className="space-y-1">
+                <Progress value={importProgress} />
+                <p className="text-xs text-muted-foreground text-center">{importProgress}% — Insertion en base…</p>
+              </div>
+            )}
+
             <Button onClick={handleImport} disabled={validRows.length === 0 || importing} className="w-full">
-              {importing ? 'Import en cours...' : `Importer ${validRows.length} élève(s)`}
+              {importing ? `Import en cours… ${importProgress}%` : `✅ Confirmer l'importation totale (${validRows.length} élève(s))`}
             </Button>
           </div>
         )}
+
+        {/* Dialog recherche globale (toutes classes) */}
+        <Dialog open={globalSearchOpen !== null} onOpenChange={(o) => { if (!o) { setGlobalSearchOpen(null); setGlobalSearchTerm(''); } }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Search className="h-5 w-5 text-primary" />
+                Rechercher un élève (toutes classes)
+              </DialogTitle>
+            </DialogHeader>
+            <Input
+              autoFocus
+              placeholder="Nom, prénom ou matricule…"
+              value={globalSearchTerm}
+              onChange={(e) => setGlobalSearchTerm(e.target.value)}
+            />
+            <div className="max-h-[50vh] overflow-y-auto border rounded-md divide-y">
+              {globalSearchTerm.trim() === '' ? (
+                <p className="text-sm text-muted-foreground p-4 text-center">Tapez au moins 1 caractère…</p>
+              ) : globalSearchResults.length === 0 ? (
+                <p className="text-sm text-muted-foreground p-4 text-center">Aucun résultat</p>
+              ) : (
+                globalSearchResults.map((e: any) => (
+                  <button
+                    key={e.id}
+                    type="button"
+                    className="w-full text-left p-2 hover:bg-accent text-sm flex items-center justify-between gap-2"
+                    onClick={() => globalSearchOpen !== null && assignEleveToRow(globalSearchOpen, e.id, true)}
+                  >
+                    <span>
+                      <strong>{e.nom}</strong> {e.prenom}
+                      {e.matricule && <span className="text-xs text-muted-foreground ml-1">({e.matricule})</span>}
+                    </span>
+                    {e.classes?.nom && <Badge variant="outline" className="text-xs">{e.classes.nom}</Badge>}
+                  </button>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {!canAct && (
           <p className="text-sm text-muted-foreground text-center py-4">
