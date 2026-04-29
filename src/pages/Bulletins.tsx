@@ -64,15 +64,43 @@ export default function Bulletins() {
   const cycleId = selectedCl?.niveaux?.cycle_id || '';
 
   const { data: matieres = [] } = useQuery({
-    queryKey: ['matieres-bulletin', cycleId],
+    queryKey: ['matieres-bulletin', cycleId, classeId],
     queryFn: async () => {
-      if (!cycleId) return [];
+      if (!cycleId || !classeId) return [];
+      // Récupérer uniquement les matières COCHÉES pour cette classe
+      const { data: cm, error: cmErr } = await supabase
+        .from('classe_matieres')
+        .select('matiere_id, coefficient, ordre')
+        .eq('classe_id', classeId)
+        .order('ordre');
+      if (cmErr) throw cmErr;
+
+      if (cm && cm.length > 0) {
+        const ids = cm.map((x: any) => x.matiere_id);
+        const { data: mats, error } = await supabase
+          .from('matieres')
+          .select('*')
+          .in('id', ids);
+        if (error) throw error;
+        // Préserver l'ordre de classe_matieres + appliquer le coefficient configuré pour la classe
+        return cm
+          .map((x: any) => {
+            const m = (mats || []).find((mm: any) => mm.id === x.matiere_id);
+            return m ? { ...m, coefficient: Number(x.coefficient) || Number(m.coefficient) || 1, ordre: x.ordre } : null;
+          })
+          .filter(Boolean);
+      }
+
+      // Fallback : aucune config -> matières du cycle
       const { data, error } = await supabase.from('matieres').select('*').eq('cycle_id', cycleId).order('ordre');
       if (error) throw error;
       return data;
     },
-    enabled: !!cycleId,
+    enabled: !!cycleId && !!classeId,
   });
+
+  // Set des matières autorisées (pour exclure des calculs toute note de matière non cochée)
+  const allowedMatiereIds = useMemo(() => new Set(matieres.map((m: any) => m.id)), [matieres]);
 
   // All notes for the entire class for this period (for ranking)
   const { data: allClassNotes = [] } = useQuery({
