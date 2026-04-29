@@ -202,11 +202,11 @@ export default function Bulletins() {
   const currentRanking = rankings.find(r => r.id === selectedEleve);
   const totalClasseEleves = eleves.length;
 
-  // Class averages per matiere (min, max, class avg)
+  // Class averages per matiere (min, max, class avg) — uniquement matières cochées
   const classMatiereStats = useMemo(() => {
     const stats: Record<string, { notes: number[] }> = {};
     allClassNotes.forEach((n: any) => {
-      if (n.note !== null) {
+      if (n.note !== null && allowedMatiereIds.has(n.matiere_id)) {
         if (!stats[n.matiere_id]) stats[n.matiere_id] = { notes: [] };
         stats[n.matiere_id].notes.push(Number(n.note));
       }
@@ -218,7 +218,7 @@ export default function Bulletins() {
         avg: s.notes.reduce((a, b) => a + b, 0) / s.notes.length,
       }])
     );
-  }, [allClassNotes]);
+  }, [allClassNotes, allowedMatiereIds]);
 
   const periode = periodes.find((p: any) => p.id === periodeId);
   const isP5 = periode?.nom === 'P5';
