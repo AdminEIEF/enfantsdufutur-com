@@ -370,50 +370,73 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         const displayName = fullName || `${nom} ${prenom}`.trim();
         const errors: string[] = [];
 
-        // Trouver l'élève par nom + prénom, nom complet, ou nom unique dans la classe
         let eleve: any = null;
-        if (displayName) {
-          const normFull = normalize(`${nom} ${prenom}`);
-          const normReverse = normalize(`${prenom} ${nom}`);
-          const normDisplay = normalize(displayName);
+        let matchType: PreviewRow['match_type'] = 'none';
+        let matchScore = 0;
+
+        // Priorité 1 : correspondance EXACTE (Nom=Nom, Prénom=Prénom)
+        if (nom && prenom) {
+          eleve = eleves.find((e: any) =>
+            normalize(e.nom) === normalize(nom) && normalize(e.prenom) === normalize(prenom)
+          );
+          if (eleve) { matchType = 'exact'; matchScore = 1; }
+        }
+
+        // Priorité 2 : INVERSION (Nom↔Prénom)
+        if (!eleve && nom && prenom) {
+          eleve = eleves.find((e: any) =>
+            normalize(e.nom) === normalize(prenom) && normalize(e.prenom) === normalize(nom)
+          );
+          if (eleve) { matchType = 'reverse'; matchScore = 0.95; }
+        }
+
+        // Match plein nom (un seul champ)
+        if (!eleve && displayName) {
+          const normFull = normalize(displayName);
           eleve = eleves.find((e: any) => {
-            const candidate = normalize(`${e.nom} ${e.prenom}`);
-            const reverseCandidate = normalize(`${e.prenom} ${e.nom}`);
-            return candidate === normFull || reverseCandidate === normFull || candidate === normReverse || candidate === normDisplay || reverseCandidate === normDisplay;
+            const c1 = normalize(`${e.nom} ${e.prenom}`);
+            const c2 = normalize(`${e.prenom} ${e.nom}`);
+            return c1 === normFull || c2 === normFull;
           });
+          if (eleve) { matchType = 'exact'; matchScore = 1; }
+        }
 
-          if (!eleve && nom && prenom) {
-            eleve = eleves.find((e: any) =>
-              normalize(e.nom) === normalize(nom) && normalize(e.prenom) === normalize(prenom)
-            );
-          }
-
-          if (!eleve && nom && !prenom) {
-            const sameName = eleves.filter((e: any) => normalize(e.nom) === normalize(nom));
-            if (sameName.length === 1) {
-              eleve = sameName[0];
-            } else if (sameName.length > 1 && sameRowCount) {
-              // Mode position : on prend l'élève à la même ligne (tri alpha)
-              const candidate = elevesSorted[idx];
-              if (candidate && normalize(candidate.nom) === normalize(nom)) {
-                eleve = candidate;
-              } else {
-                errors.push(`Ordre incohérent (attendu: ${candidate?.nom || '?'})`);
-              }
-            } else if (sameName.length > 1) {
-              errors.push(`Doublon "${nom}" : ajoutez le prénom ou utilisez le modèle officiel`);
+        // Nom seul unique dans la classe
+        if (!eleve && nom && !prenom) {
+          const sameName = eleves.filter((e: any) => normalize(e.nom) === normalize(nom));
+          if (sameName.length === 1) {
+            eleve = sameName[0]; matchType = 'exact'; matchScore = 1;
+          } else if (sameName.length > 1 && sameRowCount) {
+            const candidate = elevesSorted[idx];
+            if (candidate && normalize(candidate.nom) === normalize(nom)) {
+              eleve = candidate; matchType = 'exact'; matchScore = 0.9;
             }
           }
         }
 
-        // Fallback ultime : matching strict par position si tout le reste a échoué
+        // Priorité 3 : FUZZY MATCHING
+        if (!eleve && displayName) {
+          const candidates = (eleves as any[])
+            .map((e: any) => ({ e, score: computeMatchScore({ nom, prenom }, e) }))
+            .sort((a, b) => b.score - a.score);
+          const best = candidates[0];
+          if (best && best.score >= 0.75) {
+            eleve = best.e;
+            matchType = 'fuzzy';
+            matchScore = best.score;
+          }
+        }
+
+        // Fallback : position
         if (!eleve && sameRowCount && !displayName) {
           eleve = elevesSorted[idx];
+          matchType = 'fuzzy';
+          matchScore = 0.6;
         }
 
         if (!eleve && !errors.length) errors.push('Élève non trouvé');
 
-        // Conserver les notes EXACTEMENT telles que saisies (pas d'arrondi, pas de modification)
+        // Conversion notes (virgule → point)
         const notes: Record<string, number | null> = {};
         Object.entries(matiereColMap).forEach(([colName, matiere]) => {
           const val = row[colName];
@@ -441,10 +464,49 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
           nom: eleve?.nom || nom,
           prenom: eleve?.prenom || prenom,
           eleve_id: eleve?.id,
+          match_score: matchScore,
+          match_type: matchType,
           notes,
           errors,
         };
       });
+
+      // Détection de doublons existants en BDD pour les lignes valides
+      const eleveIds = previewRows.map(r => r.eleve_id).filter(Boolean) as string[];
+      const matiereIds = Array.from(new Set(Object.values(matiereColMap).map((m: any) => m.id)));
+      if (eleveIds.length > 0 && matiereIds.length > 0 && periodeId) {
+        const { data: existing } = await supabase
+          .from('notes')
+          .select('eleve_id, matiere_id')
+          .in('eleve_id', eleveIds)
+          .in('matiere_id', matiereIds)
+          .eq('periode_id', periodeId);
+        if (existing && existing.length > 0) {
+          const dupMap = new Map<string, Set<string>>();
+          existing.forEach((n: any) => {
+            if (!dupMap.has(n.eleve_id)) dupMap.set(n.eleve_id, new Set());
+            dupMap.get(n.eleve_id)!.add(n.matiere_id);
+          });
+          previewRows.forEach(r => {
+            if (!r.eleve_id) return;
+            const dups = dupMap.get(r.eleve_id);
+            if (!dups) return;
+            const dupNames: string[] = [];
+            Object.entries(r.notes).forEach(([mid, val]) => {
+              if (val !== null && dups.has(mid)) {
+                const m = matieres.find((x: any) => x.id === mid);
+                if (m) dupNames.push(m.nom);
+              }
+            });
+            if (dupNames.length > 0) {
+              r.duplicate_matieres = dupNames;
+              r.overwrite_duplicates = true; // par défaut on écrase
+            }
+          });
+        }
+      }
+
+      setPreview(previewRows);
 
       setPreview(previewRows);
     } catch (err) {
