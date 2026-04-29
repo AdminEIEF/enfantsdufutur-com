@@ -265,6 +265,21 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
     },
   });
 
+  // Tous les élèves (toutes classes) pour la recherche globale
+  const { data: allEleves = [] } = useQuery({
+    queryKey: ['eleves-all-import'],
+    enabled: !!preview,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('eleves')
+        .select('id, nom, prenom, matricule, classe_id, classes(nom)')
+        .eq('statut', 'inscrit')
+        .order('nom');
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const canAct = !!cycleId && !!classeId && !!periodeId && matieres.length > 0 && eleves.length > 0;
 
   const handleDownloadTemplate = async () => {
