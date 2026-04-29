@@ -25,7 +25,7 @@ const isSecondaireCycle = (cycleName: string) => SECONDAIRE_CYCLES.some(c => (cy
 export default function Notes() {
   const { hasRole } = useAuth();
   const isCoordSecondaire = hasRole('coordinateur_secondaire' as any);
-  const [selectedTab, setSelectedTab] = useState('secondaire');
+  const [selectedTab, setSelectedTab] = useState(hasRole('coordinateur_secondaire' as any) ? 'secondaire' : 'autres');
   const [cycleId, setCycleId] = useState('');
   const [classeId, setClasseId] = useState('');
   const [periodeId, setPeriodeId] = useState('');
@@ -272,13 +272,13 @@ export default function Notes() {
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         {!isCoordSecondaire && (
         <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
-          <TabsTrigger value="secondaire" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
-            <GraduationCap className="h-4 w-4 mr-1.5" />
-            Secondaire
-          </TabsTrigger>
           <TabsTrigger value="autres" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
             <Users className="h-4 w-4 mr-1.5" />
             Préscolaire & Primaire
+          </TabsTrigger>
+          <TabsTrigger value="secondaire" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
+            <GraduationCap className="h-4 w-4 mr-1.5" />
+            Secondaire
           </TabsTrigger>
         </TabsList>
         )}
