@@ -64,15 +64,43 @@ export default function Bulletins() {
   const cycleId = selectedCl?.niveaux?.cycle_id || '';
 
   const { data: matieres = [] } = useQuery({
-    queryKey: ['matieres-bulletin', cycleId],
+    queryKey: ['matieres-bulletin', cycleId, classeId],
     queryFn: async () => {
-      if (!cycleId) return [];
+      if (!cycleId || !classeId) return [];
+      // Récupérer uniquement les matières COCHÉES pour cette classe
+      const { data: cm, error: cmErr } = await supabase
+        .from('classe_matieres')
+        .select('matiere_id, coefficient, ordre')
+        .eq('classe_id', classeId)
+        .order('ordre');
+      if (cmErr) throw cmErr;
+
+      if (cm && cm.length > 0) {
+        const ids = cm.map((x: any) => x.matiere_id);
+        const { data: mats, error } = await supabase
+          .from('matieres')
+          .select('*')
+          .in('id', ids);
+        if (error) throw error;
+        // Préserver l'ordre de classe_matieres + appliquer le coefficient configuré pour la classe
+        return cm
+          .map((x: any) => {
+            const m = (mats || []).find((mm: any) => mm.id === x.matiere_id);
+            return m ? { ...m, coefficient: Number(x.coefficient) || Number(m.coefficient) || 1, ordre: x.ordre } : null;
+          })
+          .filter(Boolean);
+      }
+
+      // Fallback : aucune config -> matières du cycle
       const { data, error } = await supabase.from('matieres').select('*').eq('cycle_id', cycleId).order('ordre');
       if (error) throw error;
       return data;
     },
-    enabled: !!cycleId,
+    enabled: !!cycleId && !!classeId,
   });
+
+  // Set des matières autorisées (pour exclure des calculs toute note de matière non cochée)
+  const allowedMatiereIds = useMemo(() => new Set(matieres.map((m: any) => m.id)), [matieres]);
 
   // All notes for the entire class for this period (for ranking)
   const { data: allClassNotes = [] } = useQuery({
@@ -129,13 +157,15 @@ export default function Bulletins() {
   const bareme = selectedCl?.niveaux?.cycles?.bareme ?? 20;
   const seuil = bareme / 2;
 
-  // Compute average for a given student and notes set
+  // Compute average for a given student and notes set (exclut les matières non cochées pour la classe)
   const computeAverage = (eleveId: string, notesSet: any[]) => {
-    const studentN = notesSet.filter((n: any) => n.eleve_id === eleveId && n.note !== null);
+    const studentN = notesSet.filter((n: any) => n.eleve_id === eleveId && n.note !== null && allowedMatiereIds.has(n.matiere_id));
     if (studentN.length === 0) return null;
     let totalW = 0, totalC = 0;
+    // Utiliser le coefficient configuré dans classe_matieres (via matieres résolu)
+    const coefMap = new Map(matieres.map((m: any) => [m.id, Number(m.coefficient) || 1]));
     studentN.forEach((n: any) => {
-      const coef = Number(n.matieres?.coefficient) || 1;
+      const coef = coefMap.get(n.matiere_id) ?? (Number(n.matieres?.coefficient) || 1);
       totalW += Number(n.note) * coef;
       totalC += coef;
     });
@@ -172,11 +202,11 @@ export default function Bulletins() {
   const currentRanking = rankings.find(r => r.id === selectedEleve);
   const totalClasseEleves = eleves.length;
 
-  // Class averages per matiere (min, max, class avg)
+  // Class averages per matiere (min, max, class avg) — uniquement matières cochées
   const classMatiereStats = useMemo(() => {
     const stats: Record<string, { notes: number[] }> = {};
     allClassNotes.forEach((n: any) => {
-      if (n.note !== null) {
+      if (n.note !== null && allowedMatiereIds.has(n.matiere_id)) {
         if (!stats[n.matiere_id]) stats[n.matiere_id] = { notes: [] };
         stats[n.matiere_id].notes.push(Number(n.note));
       }
@@ -188,7 +218,7 @@ export default function Bulletins() {
         avg: s.notes.reduce((a, b) => a + b, 0) / s.notes.length,
       }])
     );
-  }, [allClassNotes]);
+  }, [allClassNotes, allowedMatiereIds]);
 
   const periode = periodes.find((p: any) => p.id === periodeId);
   const isP5 = periode?.nom === 'P5';
