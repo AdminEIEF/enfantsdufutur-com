@@ -1101,9 +1101,13 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         {/* Actions */}
         {canAct && !preview && (
           <div className="flex flex-col sm:flex-row gap-3">
-            {!multiMode && (
+            {!multiMode ? (
               <Button variant="outline" onClick={handleDownloadTemplate} className="flex-1">
                 <Download className="h-4 w-4 mr-2" /> Télécharger le modèle Excel
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={handleDownloadTemplateMulti} className="flex-1">
+                <Download className="h-4 w-4 mr-2" /> Télécharger le modèle multi-classes ({classes.length} onglets)
               </Button>
             )}
             <Button onClick={() => fileRef.current?.click()} className="flex-1">
