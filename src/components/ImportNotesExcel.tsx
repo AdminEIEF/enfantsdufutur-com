@@ -1133,7 +1133,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
                           Ligne {idx + 1} — <span className="text-foreground">{row.nom || '(vide)'} {row.prenom}</span>
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {filledNotes} note(s) — {row.errors.join(', ')}
+                          {filledNotes} note(s) — {row.errors.join(', ')}{row.source_classe_nom ? ` — 📚 ${row.source_classe_nom}` : ''}
                         </p>
                       </div>
                       <Button
