@@ -31,6 +31,10 @@ interface PreviewRow {
   errors: string[];
   duplicate_matieres?: string[]; // matieres avec note déjà existante en BDD
   overwrite_duplicates?: boolean;
+  // Multi-onglets : classe d'origine détectée depuis le nom de feuille
+  source_sheet?: string;
+  source_classe_id?: string;
+  source_classe_nom?: string;
 }
 
 // Normalisation: minuscules, sans accents, sans ponctuation, espaces simplifiés
