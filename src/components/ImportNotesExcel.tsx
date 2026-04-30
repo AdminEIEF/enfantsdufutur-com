@@ -345,6 +345,63 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
     });
   };
 
+  // Modèle Excel multi-classes : 1 onglet par classe du cycle
+  const handleDownloadTemplateMulti = async () => {
+    if (!multiMode || !cycleId || classes.length === 0) return;
+    const ExcelJS = (await import('exceljs')).default;
+    const workbook = new ExcelJS.Workbook();
+    const periodeName = periodes.find((p: any) => p.id === periodeId)?.nom || 'periode';
+    const cycleName = cycles.find((c: any) => c.id === cycleId)?.nom || 'cycle';
+
+    for (const cls of classes as any[]) {
+      const clsEleves = (allEleves as any[])
+        .filter((e: any) => e.classe_id === cls.id)
+        .sort((a: any, b: any) => `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' }));
+      const clsMatieres = (matieresByClasse as any)[cls.id] || [];
+
+      // Nom d'onglet : max 31 chars, sans caractères interdits
+      const safeName = String(cls.nom).replace(/[\\/?*[\]:]/g, '-').slice(0, 31);
+      const ws = workbook.addWorksheet(safeName);
+
+      const headers = ['NOMS', 'PRENOMS', ...clsMatieres.map((m: any) => m.nom)];
+      ws.addRow(headers);
+      ws.getRow(1).font = { bold: true };
+      ws.getRow(1).alignment = { horizontal: 'center' };
+
+      if (clsEleves.length === 0) {
+        ws.addRow(['(Aucun élève inscrit)', '', ...clsMatieres.map(() => '')]);
+      } else {
+        clsEleves.forEach((e: any) => {
+          ws.addRow([e.nom, e.prenom, ...clsMatieres.map(() => '')]);
+        });
+      }
+
+      // Largeurs colonnes
+      ws.getColumn(1).width = 22;
+      ws.getColumn(2).width = 22;
+      for (let i = 3; i <= headers.length; i++) ws.getColumn(i).width = 14;
+
+      // Ligne d'info en bas avec le nom de classe (utile pour réconciliation)
+      ws.addRow([]);
+      const infoRow = ws.addRow([`Classe : ${cls.nom}`]);
+      infoRow.font = { italic: true, color: { argb: 'FF888888' } };
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Modele_Notes_MultiClasses_${cycleName}_${periodeName}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: 'Modèle multi-classes téléchargé',
+      description: `${classes.length} onglet(s) générés. 1 onglet = 1 classe. Remplissez les notes et réimportez.`,
+    });
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
