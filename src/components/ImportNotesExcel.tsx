@@ -182,12 +182,14 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
   const [cycleId, setCycleId] = useState('');
   const [classeId, setClasseId] = useState('');
   const [periodeId, setPeriodeId] = useState('');
+  const [multiMode, setMultiMode] = useState(false);
   const [preview, setPreview] = useState<PreviewRow[] | null>(null);
   const [matchedMatieres, setMatchedMatieres] = useState<{ col: string; matiere: any | null }[]>([]);
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [globalSearchOpen, setGlobalSearchOpen] = useState<number | null>(null);
   const [globalSearchTerm, setGlobalSearchTerm] = useState('');
+  const [sheetsReport, setSheetsReport] = useState<{ sheet: string; classe?: string; rows: number; matched: number }[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: cycles = [] } = useQuery({
