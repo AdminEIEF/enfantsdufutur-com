@@ -1118,8 +1118,9 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
             <div className="space-y-2 max-h-[40vh] overflow-y-auto">
               {unmatchedRows.map(({ row, idx }) => {
                 const filledNotes = Object.values(row.notes).filter(v => v !== null).length;
+                const rowAvailable = getAvailableElevesForRow(row);
                 // Suggestions Top 3 (élèves disponibles, score ≥ 0.4)
-                const suggestions = availableEleves
+                const suggestions = rowAvailable
                   .map((e: any) => ({ e, score: computeMatchScore({ nom: row.nom, prenom: row.prenom, matricule: (row as any).matricule }, e) }))
                   .filter(s => s.score >= 0.4)
                   .sort((a, b) => b.score - a.score)
