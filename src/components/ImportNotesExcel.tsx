@@ -845,8 +845,15 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
 
   // Créer un nouvel élève dans la classe et l'associer à la ligne
   const createEleveForRow = async (rowIdx: number) => {
-    if (!preview || !classeId) return;
+    if (!preview) return;
     const r = preview[rowIdx];
+    // En multi-mode, on utilise la classe d'origine de la ligne ; sinon la classe sélectionnée.
+    const targetClasseId = multiMode ? r.source_classe_id : classeId;
+    const targetClasseNom = multiMode ? r.source_classe_nom : selectedClasse?.nom;
+    if (!targetClasseId) {
+      toast({ title: 'Classe manquante', description: 'Impossible de déterminer la classe pour cet élève.', variant: 'destructive' });
+      return;
+    }
     const nom = (r.nom || '').trim();
     const prenom = (r.prenom || '').trim();
     if (!nom) {
@@ -856,14 +863,14 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
     try {
       const { data, error } = await supabase
         .from('eleves')
-        .insert({ nom, prenom: prenom || '—', classe_id: classeId, statut: 'inscrit' })
+        .insert({ nom, prenom: prenom || '—', classe_id: targetClasseId, statut: 'inscrit' })
         .select('id, nom, prenom, matricule')
         .single();
       if (error) throw error;
       const next = [...preview];
-      next[rowIdx] = { ...next[rowIdx], eleve_id: data.id, nom: data.nom, prenom: data.prenom, match_type: 'manual', match_score: 1, errors: [] };
+      next[rowIdx] = { ...next[rowIdx], eleve_id: data.id, nom: data.nom, prenom: data.prenom, eleve_classe_id: targetClasseId, eleve_classe_nom: targetClasseNom, match_type: 'manual', match_score: 1, errors: [] };
       setPreview(next);
-      toast({ title: '✅ Élève créé', description: `${data.nom} ${data.prenom} (${data.matricule || 'sans matricule'})` });
+      toast({ title: '✅ Élève créé', description: `${data.nom} ${data.prenom} (${data.matricule || 'sans matricule'})${targetClasseNom ? ` — ${targetClasseNom}` : ''}` });
     } catch (err: any) {
       toast({ title: 'Erreur création', description: err.message, variant: 'destructive' });
     }
