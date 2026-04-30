@@ -1045,7 +1045,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
             <Button onClick={() => fileRef.current?.click()} className="flex-1">
               <Upload className="h-4 w-4 mr-2" /> {multiMode ? 'Importer le fichier multi-onglets' : 'Importer un fichier'}
             </Button>
-            <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileChange} />
+            <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={multiMode ? handleFileChangeMulti : handleFileChange} />
           </div>
         )}
 
