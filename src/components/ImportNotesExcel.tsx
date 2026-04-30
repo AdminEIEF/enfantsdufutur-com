@@ -1183,10 +1183,10 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
                           <SelectValue placeholder="🔗 Choisir dans la classe…" />
                         </SelectTrigger>
                         <SelectContent>
-                          {availableEleves.length === 0 ? (
+                          {rowAvailable.length === 0 ? (
                             <SelectItem value="__none__" disabled>Aucun élève disponible</SelectItem>
                           ) : (
-                            availableEleves.map((e: any) => (
+                            rowAvailable.map((e: any) => (
                               <SelectItem key={e.id} value={e.id} className="text-xs">
                                 {e.nom} {e.prenom} {e.matricule ? `(${e.matricule})` : ''}
                               </SelectItem>
