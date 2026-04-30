@@ -257,15 +257,52 @@ export default function Notes() {
     onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
   });
 
+  const publishAll = useMutation({
+    mutationFn: async () => {
+      const { data: allClasses, error: e1 } = await supabase.from('classes').select('id');
+      if (e1) throw e1;
+      const { data: allPeriodes, error: e2 } = await supabase.from('periodes').select('id');
+      if (e2) throw e2;
+      const now = new Date().toISOString();
+      const rows = (allClasses || []).flatMap((c: any) =>
+        (allPeriodes || []).map((p: any) => ({
+          classe_id: c.id,
+          periode_id: p.id,
+          visible_parent: true,
+          published_at: now,
+        }))
+      );
+      // Upsert par batches de 500 pour éviter les payloads trop gros
+      for (let i = 0; i < rows.length; i += 500) {
+        const batch = rows.slice(i, i + 500);
+        const { error } = await supabase
+          .from('bulletin_publications')
+          .upsert(batch, { onConflict: 'classe_id,periode_id' });
+        if (error) throw error;
+      }
+      return rows.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['bulletin-publication'] });
+      toast({ title: '🎉 Tous les bulletins sont visibles', description: `${count} combinaisons classe/période publiées.` });
+    },
+    onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
+  });
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
           <BookOpen className="h-7 w-7 text-primary" /> Saisie des Notes
         </h1>
-        <Button variant="outline" onClick={() => setImportOpen(true)}>
-          <FileSpreadsheet className="h-4 w-4 mr-2" /> Importer Excel
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="default" onClick={() => publishAll.mutate()} disabled={publishAll.isPending}>
+            <Eye className="h-4 w-4 mr-2" /> {publishAll.isPending ? 'Publication...' : 'Tout publier (parents)'}
+          </Button>
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <FileSpreadsheet className="h-4 w-4 mr-2" /> Importer Excel
+          </Button>
+        </div>
       </div>
 
       {/* Tabs Secondaire vs Préscolaire & Primaire */}
