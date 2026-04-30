@@ -968,8 +968,23 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
           </DialogTitle>
         </DialogHeader>
 
+        {/* Toggle multi-onglets */}
+        <div className="flex items-center gap-2 p-2 rounded-md border bg-muted/20">
+          <input
+            id="multi-mode"
+            type="checkbox"
+            className="h-4 w-4"
+            checked={multiMode}
+            onChange={(e) => { setMultiMode(e.target.checked); setClasseId(''); setPreview(null); setMatchedMatieres([]); setSheetsReport([]); }}
+          />
+          <label htmlFor="multi-mode" className="text-sm font-medium cursor-pointer flex-1">
+            📂 Mode multi-classes (1 onglet = 1 classe)
+          </label>
+          <span className="text-xs text-muted-foreground">Le nom de chaque feuille doit correspondre à une classe</span>
+        </div>
+
         {/* Filters */}
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className={`grid gap-3 ${multiMode ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
           <div>
             <label className="text-sm font-medium mb-1 block">Cycle</label>
             <Select value={cycleId} onValueChange={v => { setCycleId(v); setClasseId(''); setPreview(null); }}>
@@ -977,13 +992,15 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
               <SelectContent>{cycles.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom} (/{c.bareme})</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div>
-            <label className="text-sm font-medium mb-1 block">Classe</label>
-            <Select value={classeId} onValueChange={v => { setClasseId(v); setPreview(null); }} disabled={!cycleId}>
-              <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
-              <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom} ({(c as any).niveaux?.nom})</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
+          {!multiMode && (
+            <div>
+              <label className="text-sm font-medium mb-1 block">Classe</label>
+              <Select value={classeId} onValueChange={v => { setClasseId(v); setPreview(null); }} disabled={!cycleId}>
+                <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
+                <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom} ({(c as any).niveaux?.nom})</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          )}
           <div>
             <label className="text-sm font-medium mb-1 block">Période</label>
             <Select value={periodeId} onValueChange={v => { setPeriodeId(v); setPreview(null); }}>
@@ -993,7 +1010,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
           </div>
         </div>
 
-        {canAct && (
+        {canAct && !multiMode && (
           <div className="flex items-start gap-2 text-sm border rounded-md p-3 bg-muted/30">
             <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
             <div className="space-y-1">
@@ -1005,14 +1022,28 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
           </div>
         )}
 
+        {canAct && multiMode && (
+          <div className="flex items-start gap-2 text-sm border rounded-md p-3 bg-muted/30">
+            <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-medium">{classes.length} classe(s) disponibles dans ce cycle — Barème /{bareme}</p>
+              <p className="text-xs text-muted-foreground">
+                Importez un fichier Excel où <strong>chaque onglet est une classe</strong> (ex : "CE1 - A", "CM2 - B"). Le nom de l'onglet sera mappé automatiquement à la classe en BDD. Les notes sont placées en fonction du <strong>nom + prénom</strong> de chaque élève.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         {canAct && !preview && (
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button variant="outline" onClick={handleDownloadTemplate} className="flex-1">
-              <Download className="h-4 w-4 mr-2" /> Télécharger le modèle Excel
-            </Button>
+            {!multiMode && (
+              <Button variant="outline" onClick={handleDownloadTemplate} className="flex-1">
+                <Download className="h-4 w-4 mr-2" /> Télécharger le modèle Excel
+              </Button>
+            )}
             <Button onClick={() => fileRef.current?.click()} className="flex-1">
-              <Upload className="h-4 w-4 mr-2" /> Importer un fichier
+              <Upload className="h-4 w-4 mr-2" /> {multiMode ? 'Importer le fichier multi-onglets' : 'Importer un fichier'}
             </Button>
             <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileChange} />
           </div>
