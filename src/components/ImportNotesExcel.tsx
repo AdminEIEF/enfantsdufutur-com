@@ -1373,7 +1373,9 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
 
         {!canAct && (
           <p className="text-sm text-muted-foreground text-center py-4">
-            Sélectionnez un cycle, une classe et une période pour commencer.
+            {multiMode
+              ? 'Sélectionnez un cycle et une période pour commencer (les classes seront détectées depuis les noms d\'onglets).'
+              : 'Sélectionnez un cycle, une classe et une période pour commencer.'}
           </p>
         )}
       </DialogContent>
