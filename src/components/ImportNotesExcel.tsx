@@ -900,8 +900,11 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         const skipMatieres = new Set<string>();
         // Si l'utilisateur a refusé l'écrasement, on ignore les matières en doublon
         if (row.duplicate_matieres && !row.overwrite_duplicates) {
+          const pool = multiMode && row.source_classe_id
+            ? ((matieresByClasse as any)[row.source_classe_id] || [])
+            : (matieres as any[]);
           row.duplicate_matieres.forEach(name => {
-            const m = matieres.find((x: any) => x.nom === name);
+            const m = pool.find((x: any) => x.nom === name);
             if (m) skipMatieres.add(m.id);
           });
         }
