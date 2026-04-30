@@ -788,13 +788,20 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
   const matchedCount = matchedMatieres.filter(m => m.matiere).length;
   const unmatchedRows = preview?.map((r, i) => ({ row: r, idx: i })).filter(x => !x.row.eleve_id) || [];
 
-  // Élèves de la classe non encore associés à une ligne du fichier
+  // Élèves disponibles (non encore associés à une ligne du fichier)
   const usedEleveIds = new Set((preview || []).map(r => r.eleve_id).filter(Boolean));
   const availableEleves = (eleves as any[]).filter(e => !usedEleveIds.has(e.id));
 
+  // En multi-mode, le pool d'élèves dépend de la classe d'origine de la ligne
+  const getAvailableElevesForRow = (row: PreviewRow) => {
+    if (!multiMode) return availableEleves;
+    if (!row.source_classe_id) return [];
+    return (allEleves as any[]).filter(e => e.classe_id === row.source_classe_id && !usedEleveIds.has(e.id));
+  };
+
   // Associer une ligne à un élève existant (de la classe OU de toute la base)
   const assignEleveToRow = (rowIdx: number, eleveId: string, fromGlobal = false) => {
-    const pool = fromGlobal ? (allEleves as any[]) : (eleves as any[]);
+    const pool = (fromGlobal || multiMode) ? (allEleves as any[]) : (eleves as any[]);
     const e = pool.find(x => x.id === eleveId);
     if (!e || !preview) return;
     const next = [...preview];
