@@ -951,9 +951,11 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
   const resetState = () => {
     setPreview(null);
     setMatchedMatieres([]);
+    setSheetsReport([]);
     setCycleId('');
     setClasseId('');
     setPeriodeId('');
+    setMultiMode(false);
   };
 
   return (
