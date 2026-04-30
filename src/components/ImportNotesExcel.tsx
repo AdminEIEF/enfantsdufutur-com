@@ -1049,11 +1049,31 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
           </div>
         )}
 
+        {/* Rapport multi-onglets */}
+        {multiMode && sheetsReport.length > 0 && (
+          <div className="border rounded-md p-3 bg-muted/20 space-y-2">
+            <p className="text-sm font-medium">📊 Rapport par onglet ({sheetsReport.length} feuille(s))</p>
+            <div className="space-y-1 max-h-[200px] overflow-y-auto">
+              {sheetsReport.map((r, i) => (
+                <div key={i} className="flex items-center justify-between text-xs gap-2 p-1.5 rounded border bg-background">
+                  <span className="font-mono truncate flex-1">📄 {r.sheet}</span>
+                  {r.classe ? (
+                    <Badge variant="outline" className="text-xs">→ {r.classe}</Badge>
+                  ) : (
+                    <Badge variant="destructive" className="text-xs">Classe inconnue</Badge>
+                  )}
+                  <span className="text-muted-foreground shrink-0">{r.matched}/{r.rows} élèves</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Mapping info */}
         {preview && matchedMatieres.length > 0 && (
           <div className="border rounded-md p-3 bg-muted/20 space-y-2">
             <p className="text-sm font-medium">
-              Correspondance des matières : {matchedCount}/{matieres.length} reconnues
+              Correspondance des matières : {matchedCount}{!multiMode && ` / ${matieres.length}`} reconnues
             </p>
             <div className="flex flex-wrap gap-1.5">
               {matchedMatieres.map((mm, i) => (
