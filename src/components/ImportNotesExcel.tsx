@@ -31,6 +31,10 @@ interface PreviewRow {
   errors: string[];
   duplicate_matieres?: string[]; // matieres avec note déjà existante en BDD
   overwrite_duplicates?: boolean;
+  // Multi-onglets : classe d'origine détectée depuis le nom de feuille
+  source_sheet?: string;
+  source_classe_id?: string;
+  source_classe_nom?: string;
 }
 
 // Normalisation: minuscules, sans accents, sans ponctuation, espaces simplifiés
@@ -178,12 +182,14 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
   const [cycleId, setCycleId] = useState('');
   const [classeId, setClasseId] = useState('');
   const [periodeId, setPeriodeId] = useState('');
+  const [multiMode, setMultiMode] = useState(false);
   const [preview, setPreview] = useState<PreviewRow[] | null>(null);
   const [matchedMatieres, setMatchedMatieres] = useState<{ col: string; matiere: any | null }[]>([]);
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [globalSearchOpen, setGlobalSearchOpen] = useState<number | null>(null);
   const [globalSearchTerm, setGlobalSearchTerm] = useState('');
+  const [sheetsReport, setSheetsReport] = useState<{ sheet: string; classe?: string; rows: number; matched: number }[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: cycles = [] } = useQuery({
@@ -268,7 +274,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
   // Tous les élèves (toutes classes) pour la recherche globale
   const { data: allEleves = [] } = useQuery({
     queryKey: ['eleves-all-import'],
-    enabled: !!preview,
+    enabled: !!preview || multiMode,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
@@ -280,7 +286,38 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
     },
   });
 
-  const canAct = !!cycleId && !!classeId && !!periodeId && matieres.length > 0 && eleves.length > 0;
+  // Multi-mode : matières par classe (avec ordre depuis classe_matieres) pour TOUT le cycle
+  const { data: matieresByClasse = {} } = useQuery({
+    queryKey: ['matieres-by-classe', cycleId],
+    enabled: multiMode && !!cycleId && classes.length > 0,
+    queryFn: async () => {
+      const { data: allMat } = await supabase.from('matieres').select('*').eq('cycle_id', cycleId).order('ordre');
+      const allMatList = allMat || [];
+      const byMatId = new Map(allMatList.map((m: any) => [m.id, m]));
+      const classIds = classes.map((c: any) => c.id);
+      const { data: cm } = await supabase
+        .from('classe_matieres')
+        .select('classe_id, matiere_id, ordre')
+        .in('classe_id', classIds)
+        .order('ordre');
+      const map: Record<string, any[]> = {};
+      classes.forEach((c: any) => {
+        const rows = (cm || []).filter((x: any) => x.classe_id === c.id);
+        if (rows.length > 0) {
+          map[c.id] = rows.map((r: any) => byMatId.get(r.matiere_id)).filter(Boolean);
+        } else {
+          // Fallback : matières du niveau
+          const nivId = c.niveaux?.id || c.niveau_id;
+          map[c.id] = allMatList.filter((m: any) => !m.niveau_id || m.niveau_id === nivId);
+        }
+      });
+      return map;
+    },
+  });
+
+  const canAct = multiMode
+    ? (!!cycleId && !!periodeId && classes.length > 0)
+    : (!!cycleId && !!classeId && !!periodeId && matieres.length > 0 && eleves.length > 0);
 
   const handleDownloadTemplate = async () => {
     if (!canAct) return;
@@ -516,18 +553,255 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
     if (fileRef.current) fileRef.current.value = '';
   };
 
+  // ============================================================
+  // MODE MULTI-ONGLETS : chaque feuille = 1 classe (auto-détectée
+  // depuis le nom de l'onglet). Toutes les classes en 1 import.
+  // ============================================================
+  const handleFileChangeMulti = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const sheets = await readExcelFileAllSheets(file);
+      const sheetNames = Object.keys(sheets);
+      if (sheetNames.length === 0) {
+        toast({ title: 'Fichier vide', variant: 'destructive' });
+        return;
+      }
+
+      // Helper : matcher un nom d'onglet à une classe en BDD (normalisation flexible)
+      const matchClasse = (sheetName: string): any | null => {
+        const target = compact(sheetName);
+        // 1) compact strict
+        let best = (classes as any[]).find(c => compact(c.nom) === target);
+        if (best) return best;
+        // 2) inclusion
+        best = (classes as any[]).find(c => compact(c.nom).includes(target) || target.includes(compact(c.nom)));
+        if (best) return best;
+        // 3) fuzzy
+        let bestScore = 0;
+        for (const c of classes as any[]) {
+          const s = similarity(sheetName, c.nom);
+          if (s > bestScore) { bestScore = s; best = c; }
+        }
+        return bestScore >= 0.7 ? best : null;
+      };
+
+      const allPreview: PreviewRow[] = [];
+      const allMatchInfo: { col: string; matiere: any | null }[] = [];
+      const seenMatchKey = new Set<string>();
+      const report: { sheet: string; classe?: string; rows: number; matched: number }[] = [];
+
+      const isNomCol = (k: string) => ['nom', 'noms', 'nomsa', 'name', 'names', 'lastname', 'last name', 'nom eleve', 'nom de famille', 'nom famille'].includes(normalize(k));
+      const isPrenomCol = (k: string) => ['prenom', 'prenoms', 'firstname', 'first name', 'prenom eleve', 'prenoms eleve'].includes(normalize(k));
+      const isFullNameCol = (k: string) => ['nom prenom', 'nom et prenom', 'nom prenoms', 'nom et prenoms', 'nom complet', 'eleve', 'eleves', 'student', 'full name'].includes(normalize(k));
+
+      for (const sheetName of sheetNames) {
+        const rows = sheets[sheetName].filter(r => Object.values(r).some(v => v !== null && String(v).trim() !== ''));
+        if (rows.length === 0) {
+          report.push({ sheet: sheetName, rows: 0, matched: 0 });
+          continue;
+        }
+        const classe = matchClasse(sheetName);
+        if (!classe) {
+          report.push({ sheet: sheetName, rows: rows.length, matched: 0 });
+          continue;
+        }
+        const elevesClasse = (allEleves as any[]).filter(x => x.classe_id === classe.id);
+        const matieresClasse = (matieresByClasse as any)[classe.id] || [];
+        if (elevesClasse.length === 0 || matieresClasse.length === 0) {
+          report.push({ sheet: sheetName, classe: classe.nom, rows: rows.length, matched: 0 });
+          continue;
+        }
+
+        const colKeys = Object.keys(rows[0]);
+        const nomKey = colKeys.find(isNomCol);
+        const prenomKey = colKeys.find(isPrenomCol);
+        const fullNameKey = colKeys.find(isFullNameCol);
+
+        // Mapping colonnes -> matières pour cette classe
+        const matiereColMap: Record<string, any> = {};
+        colKeys.forEach((col) => {
+          const norm = normalize(col);
+          if (isNomCol(col) || isPrenomCol(col) || isFullNameCol(col) || ['matricule', 'id'].includes(norm)) return;
+          const matched = matchMatiere(col, matieresClasse);
+          if (matched) {
+            matiereColMap[col] = matched;
+            const key = `${classe.id}::${col}`;
+            if (!seenMatchKey.has(key)) {
+              allMatchInfo.push({ col: `[${classe.nom}] ${col}`, matiere: matched });
+              seenMatchKey.add(key);
+            }
+          } else {
+            const key = `${classe.id}::${col}::none`;
+            if (!seenMatchKey.has(key)) {
+              allMatchInfo.push({ col: `[${classe.nom}] ${col}`, matiere: null });
+              seenMatchKey.add(key);
+            }
+          }
+        });
+
+        let matchedInSheet = 0;
+        const elevesSorted = [...elevesClasse].sort((a, b) =>
+          `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' })
+        );
+        const sameRowCount = rows.length === elevesSorted.length;
+
+        rows.forEach((row, idx) => {
+          const fullName = fullNameKey ? String(row[fullNameKey] || '').trim() : '';
+          const nom = nomKey ? String(row[nomKey] || '').trim() : fullName;
+          const prenom = prenomKey ? String(row[prenomKey] || '').trim() : '';
+          const displayName = fullName || `${nom} ${prenom}`.trim();
+          const errors: string[] = [];
+
+          let eleve: any = null;
+          let matchType: PreviewRow['match_type'] = 'none';
+          let matchScore = 0;
+
+          if (nom && prenom) {
+            eleve = elevesClasse.find(e => normalize(e.nom) === normalize(nom) && normalize(e.prenom) === normalize(prenom));
+            if (eleve) { matchType = 'exact'; matchScore = 1; }
+          }
+          if (!eleve && nom && prenom) {
+            eleve = elevesClasse.find(e => normalize(e.nom) === normalize(prenom) && normalize(e.prenom) === normalize(nom));
+            if (eleve) { matchType = 'reverse'; matchScore = 0.95; }
+          }
+          if (!eleve && displayName) {
+            const normFull = normalize(displayName);
+            eleve = elevesClasse.find(e => {
+              const c1 = normalize(`${e.nom} ${e.prenom}`);
+              const c2 = normalize(`${e.prenom} ${e.nom}`);
+              return c1 === normFull || c2 === normFull;
+            });
+            if (eleve) { matchType = 'exact'; matchScore = 1; }
+          }
+          if (!eleve && displayName) {
+            const candidates = elevesClasse
+              .map(e => ({ e, score: computeMatchScore({ nom, prenom }, e) }))
+              .sort((a, b) => b.score - a.score);
+            const best = candidates[0];
+            if (best && best.score >= 0.75) {
+              eleve = best.e; matchType = 'fuzzy'; matchScore = best.score;
+            }
+          }
+          if (!eleve && sameRowCount && !displayName) {
+            eleve = elevesSorted[idx]; matchType = 'fuzzy'; matchScore = 0.6;
+          }
+          if (!eleve) errors.push('Élève non trouvé');
+          if (eleve) matchedInSheet++;
+
+          const notes: Record<string, number | null> = {};
+          Object.entries(matiereColMap).forEach(([colName, matiere]) => {
+            const val = row[colName];
+            if (val === null || val === undefined || val === '') {
+              notes[matiere.id] = null;
+            } else {
+              const raw = String(val).replace(',', '.').trim();
+              const num = parseFloat(raw);
+              if (isNaN(num)) {
+                errors.push(`${matiere.nom}: valeur invalide`);
+                notes[matiere.id] = null;
+              } else if (num < 0 || num > bareme) {
+                errors.push(`${matiere.nom}: hors barème (0-${bareme})`);
+                notes[matiere.id] = null;
+              } else {
+                notes[matiere.id] = num;
+              }
+            }
+          });
+
+          const filledCount = Object.values(notes).filter(v => v !== null).length;
+          if (filledCount === 0 && eleve) errors.push('Aucune note');
+
+          allPreview.push({
+            nom: eleve?.nom || nom,
+            prenom: eleve?.prenom || prenom,
+            eleve_id: eleve?.id,
+            eleve_classe_id: eleve?.classe_id || classe.id,
+            eleve_classe_nom: classe.nom,
+            match_score: matchScore,
+            match_type: matchType,
+            notes,
+            errors,
+            source_sheet: sheetName,
+            source_classe_id: classe.id,
+            source_classe_nom: classe.nom,
+          });
+        });
+
+        report.push({ sheet: sheetName, classe: classe.nom, rows: rows.length, matched: matchedInSheet });
+      }
+
+      // Détection doublons globale
+      const eleveIds = allPreview.map(r => r.eleve_id).filter(Boolean) as string[];
+      const matiereIds = Array.from(new Set(allPreview.flatMap(r => Object.keys(r.notes))));
+      if (eleveIds.length > 0 && matiereIds.length > 0 && periodeId) {
+        const { data: existing } = await supabase
+          .from('notes')
+          .select('eleve_id, matiere_id')
+          .in('eleve_id', eleveIds)
+          .in('matiere_id', matiereIds)
+          .eq('periode_id', periodeId);
+        if (existing && existing.length > 0) {
+          const dupMap = new Map<string, Set<string>>();
+          existing.forEach((n: any) => {
+            if (!dupMap.has(n.eleve_id)) dupMap.set(n.eleve_id, new Set());
+            dupMap.get(n.eleve_id)!.add(n.matiere_id);
+          });
+          allPreview.forEach(r => {
+            if (!r.eleve_id) return;
+            const dups = dupMap.get(r.eleve_id);
+            if (!dups) return;
+            const dupNames: string[] = [];
+            const matieresClasse = r.source_classe_id ? (matieresByClasse as any)[r.source_classe_id] || [] : [];
+            Object.entries(r.notes).forEach(([mid, val]) => {
+              if (val !== null && dups.has(mid)) {
+                const m = matieresClasse.find((x: any) => x.id === mid);
+                if (m) dupNames.push(m.nom);
+              }
+            });
+            if (dupNames.length > 0) {
+              r.duplicate_matieres = dupNames;
+              r.overwrite_duplicates = true;
+            }
+          });
+        }
+      }
+
+      setMatchedMatieres(allMatchInfo);
+      setSheetsReport(report);
+      setPreview(allPreview);
+
+      const totalMatched = report.reduce((s, x) => s + x.matched, 0);
+      const totalRows = report.reduce((s, x) => s + x.rows, 0);
+      const unknownSheets = report.filter(r => !r.classe).length;
+      toast({
+        title: '📂 Lecture multi-onglets terminée',
+        description: `${sheetNames.length} feuille(s) — ${totalMatched}/${totalRows} élève(s) reconnu(s)${unknownSheets > 0 ? ` — ⚠️ ${unknownSheets} feuille(s) sans classe` : ''}`,
+      });
+    } catch (err) {
+      toast({ title: 'Erreur de lecture', description: String(err), variant: 'destructive' });
+    }
+    if (fileRef.current) fileRef.current.value = '';
+  };
   const validRows = preview?.filter(r => r.eleve_id && r.errors.length === 0) || [];
   const unmatchedCols = matchedMatieres.filter(m => !m.matiere);
   const matchedCount = matchedMatieres.filter(m => m.matiere).length;
   const unmatchedRows = preview?.map((r, i) => ({ row: r, idx: i })).filter(x => !x.row.eleve_id) || [];
 
-  // Élèves de la classe non encore associés à une ligne du fichier
+  // Élèves disponibles (non encore associés à une ligne du fichier)
   const usedEleveIds = new Set((preview || []).map(r => r.eleve_id).filter(Boolean));
   const availableEleves = (eleves as any[]).filter(e => !usedEleveIds.has(e.id));
 
+  // En multi-mode, le pool d'élèves dépend de la classe d'origine de la ligne
+  const getAvailableElevesForRow = (row: PreviewRow) => {
+    if (!multiMode) return availableEleves;
+    if (!row.source_classe_id) return [];
+    return (allEleves as any[]).filter(e => e.classe_id === row.source_classe_id && !usedEleveIds.has(e.id));
+  };
+
   // Associer une ligne à un élève existant (de la classe OU de toute la base)
   const assignEleveToRow = (rowIdx: number, eleveId: string, fromGlobal = false) => {
-    const pool = fromGlobal ? (allEleves as any[]) : (eleves as any[]);
+    const pool = (fromGlobal || multiMode) ? (allEleves as any[]) : (eleves as any[]);
     const e = pool.find(x => x.id === eleveId);
     if (!e || !preview) return;
     const next = [...preview];
@@ -578,8 +852,15 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
 
   // Créer un nouvel élève dans la classe et l'associer à la ligne
   const createEleveForRow = async (rowIdx: number) => {
-    if (!preview || !classeId) return;
+    if (!preview) return;
     const r = preview[rowIdx];
+    // En multi-mode, on utilise la classe d'origine de la ligne ; sinon la classe sélectionnée.
+    const targetClasseId = multiMode ? r.source_classe_id : classeId;
+    const targetClasseNom = multiMode ? r.source_classe_nom : selectedClasse?.nom;
+    if (!targetClasseId) {
+      toast({ title: 'Classe manquante', description: 'Impossible de déterminer la classe pour cet élève.', variant: 'destructive' });
+      return;
+    }
     const nom = (r.nom || '').trim();
     const prenom = (r.prenom || '').trim();
     if (!nom) {
@@ -589,14 +870,14 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
     try {
       const { data, error } = await supabase
         .from('eleves')
-        .insert({ nom, prenom: prenom || '—', classe_id: classeId, statut: 'inscrit' })
+        .insert({ nom, prenom: prenom || '—', classe_id: targetClasseId, statut: 'inscrit' })
         .select('id, nom, prenom, matricule')
         .single();
       if (error) throw error;
       const next = [...preview];
-      next[rowIdx] = { ...next[rowIdx], eleve_id: data.id, nom: data.nom, prenom: data.prenom, match_type: 'manual', match_score: 1, errors: [] };
+      next[rowIdx] = { ...next[rowIdx], eleve_id: data.id, nom: data.nom, prenom: data.prenom, eleve_classe_id: targetClasseId, eleve_classe_nom: targetClasseNom, match_type: 'manual', match_score: 1, errors: [] };
       setPreview(next);
-      toast({ title: '✅ Élève créé', description: `${data.nom} ${data.prenom} (${data.matricule || 'sans matricule'})` });
+      toast({ title: '✅ Élève créé', description: `${data.nom} ${data.prenom} (${data.matricule || 'sans matricule'})${targetClasseNom ? ` — ${targetClasseNom}` : ''}` });
     } catch (err: any) {
       toast({ title: 'Erreur création', description: err.message, variant: 'destructive' });
     }
@@ -626,8 +907,11 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         const skipMatieres = new Set<string>();
         // Si l'utilisateur a refusé l'écrasement, on ignore les matières en doublon
         if (row.duplicate_matieres && !row.overwrite_duplicates) {
+          const pool = multiMode && row.source_classe_id
+            ? ((matieresByClasse as any)[row.source_classe_id] || [])
+            : (matieres as any[]);
           row.duplicate_matieres.forEach(name => {
-            const m = matieres.find((x: any) => x.nom === name);
+            const m = pool.find((x: any) => x.nom === name);
             if (m) skipMatieres.add(m.id);
           });
         }
@@ -674,9 +958,11 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
   const resetState = () => {
     setPreview(null);
     setMatchedMatieres([]);
+    setSheetsReport([]);
     setCycleId('');
     setClasseId('');
     setPeriodeId('');
+    setMultiMode(false);
   };
 
   return (
@@ -689,8 +975,23 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
           </DialogTitle>
         </DialogHeader>
 
+        {/* Toggle multi-onglets */}
+        <div className="flex items-center gap-2 p-2 rounded-md border bg-muted/20">
+          <input
+            id="multi-mode"
+            type="checkbox"
+            className="h-4 w-4"
+            checked={multiMode}
+            onChange={(e) => { setMultiMode(e.target.checked); setClasseId(''); setPreview(null); setMatchedMatieres([]); setSheetsReport([]); }}
+          />
+          <label htmlFor="multi-mode" className="text-sm font-medium cursor-pointer flex-1">
+            📂 Mode multi-classes (1 onglet = 1 classe)
+          </label>
+          <span className="text-xs text-muted-foreground">Le nom de chaque feuille doit correspondre à une classe</span>
+        </div>
+
         {/* Filters */}
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className={`grid gap-3 ${multiMode ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
           <div>
             <label className="text-sm font-medium mb-1 block">Cycle</label>
             <Select value={cycleId} onValueChange={v => { setCycleId(v); setClasseId(''); setPreview(null); }}>
@@ -698,13 +999,15 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
               <SelectContent>{cycles.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom} (/{c.bareme})</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div>
-            <label className="text-sm font-medium mb-1 block">Classe</label>
-            <Select value={classeId} onValueChange={v => { setClasseId(v); setPreview(null); }} disabled={!cycleId}>
-              <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
-              <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom} ({(c as any).niveaux?.nom})</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
+          {!multiMode && (
+            <div>
+              <label className="text-sm font-medium mb-1 block">Classe</label>
+              <Select value={classeId} onValueChange={v => { setClasseId(v); setPreview(null); }} disabled={!cycleId}>
+                <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
+                <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom} ({(c as any).niveaux?.nom})</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          )}
           <div>
             <label className="text-sm font-medium mb-1 block">Période</label>
             <Select value={periodeId} onValueChange={v => { setPeriodeId(v); setPreview(null); }}>
@@ -714,7 +1017,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
           </div>
         </div>
 
-        {canAct && (
+        {canAct && !multiMode && (
           <div className="flex items-start gap-2 text-sm border rounded-md p-3 bg-muted/30">
             <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
             <div className="space-y-1">
@@ -726,16 +1029,50 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
           </div>
         )}
 
+        {canAct && multiMode && (
+          <div className="flex items-start gap-2 text-sm border rounded-md p-3 bg-muted/30">
+            <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-medium">{classes.length} classe(s) disponibles dans ce cycle — Barème /{bareme}</p>
+              <p className="text-xs text-muted-foreground">
+                Importez un fichier Excel où <strong>chaque onglet est une classe</strong> (ex : "CE1 - A", "CM2 - B"). Le nom de l'onglet sera mappé automatiquement à la classe en BDD. Les notes sont placées en fonction du <strong>nom + prénom</strong> de chaque élève.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         {canAct && !preview && (
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button variant="outline" onClick={handleDownloadTemplate} className="flex-1">
-              <Download className="h-4 w-4 mr-2" /> Télécharger le modèle Excel
-            </Button>
+            {!multiMode && (
+              <Button variant="outline" onClick={handleDownloadTemplate} className="flex-1">
+                <Download className="h-4 w-4 mr-2" /> Télécharger le modèle Excel
+              </Button>
+            )}
             <Button onClick={() => fileRef.current?.click()} className="flex-1">
-              <Upload className="h-4 w-4 mr-2" /> Importer un fichier
+              <Upload className="h-4 w-4 mr-2" /> {multiMode ? 'Importer le fichier multi-onglets' : 'Importer un fichier'}
             </Button>
-            <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileChange} />
+            <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={multiMode ? handleFileChangeMulti : handleFileChange} />
+          </div>
+        )}
+
+        {/* Rapport multi-onglets */}
+        {multiMode && sheetsReport.length > 0 && (
+          <div className="border rounded-md p-3 bg-muted/20 space-y-2">
+            <p className="text-sm font-medium">📊 Rapport par onglet ({sheetsReport.length} feuille(s))</p>
+            <div className="space-y-1 max-h-[200px] overflow-y-auto">
+              {sheetsReport.map((r, i) => (
+                <div key={i} className="flex items-center justify-between text-xs gap-2 p-1.5 rounded border bg-background">
+                  <span className="font-mono truncate flex-1">📄 {r.sheet}</span>
+                  {r.classe ? (
+                    <Badge variant="outline" className="text-xs">→ {r.classe}</Badge>
+                  ) : (
+                    <Badge variant="destructive" className="text-xs">Classe inconnue</Badge>
+                  )}
+                  <span className="text-muted-foreground shrink-0">{r.matched}/{r.rows} élèves</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -743,7 +1080,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
         {preview && matchedMatieres.length > 0 && (
           <div className="border rounded-md p-3 bg-muted/20 space-y-2">
             <p className="text-sm font-medium">
-              Correspondance des matières : {matchedCount}/{matieres.length} reconnues
+              Correspondance des matières : {matchedCount}{!multiMode && ` / ${matieres.length}`} reconnues
             </p>
             <div className="flex flex-wrap gap-1.5">
               {matchedMatieres.map((mm, i) => (
@@ -781,8 +1118,9 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
             <div className="space-y-2 max-h-[40vh] overflow-y-auto">
               {unmatchedRows.map(({ row, idx }) => {
                 const filledNotes = Object.values(row.notes).filter(v => v !== null).length;
+                const rowAvailable = getAvailableElevesForRow(row);
                 // Suggestions Top 3 (élèves disponibles, score ≥ 0.4)
-                const suggestions = availableEleves
+                const suggestions = rowAvailable
                   .map((e: any) => ({ e, score: computeMatchScore({ nom: row.nom, prenom: row.prenom, matricule: (row as any).matricule }, e) }))
                   .filter(s => s.score >= 0.4)
                   .sort((a, b) => b.score - a.score)
@@ -795,7 +1133,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
                           Ligne {idx + 1} — <span className="text-foreground">{row.nom || '(vide)'} {row.prenom}</span>
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {filledNotes} note(s) — {row.errors.join(', ')}
+                          {filledNotes} note(s) — {row.errors.join(', ')}{row.source_classe_nom ? ` — 📚 ${row.source_classe_nom}` : ''}
                         </p>
                       </div>
                       <Button
@@ -845,10 +1183,10 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
                           <SelectValue placeholder="🔗 Choisir dans la classe…" />
                         </SelectTrigger>
                         <SelectContent>
-                          {availableEleves.length === 0 ? (
+                          {rowAvailable.length === 0 ? (
                             <SelectItem value="__none__" disabled>Aucun élève disponible</SelectItem>
                           ) : (
-                            availableEleves.map((e: any) => (
+                            rowAvailable.map((e: any) => (
                               <SelectItem key={e.id} value={e.id} className="text-xs">
                                 {e.nom} {e.prenom} {e.matricule ? `(${e.matricule})` : ''}
                               </SelectItem>
@@ -1035,7 +1373,9 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
 
         {!canAct && (
           <p className="text-sm text-muted-foreground text-center py-4">
-            Sélectionnez un cycle, une classe et une période pour commencer.
+            {multiMode
+              ? 'Sélectionnez un cycle et une période pour commencer (les classes seront détectées depuis les noms d\'onglets).'
+              : 'Sélectionnez un cycle, une classe et une période pour commencer.'}
           </p>
         )}
       </DialogContent>
