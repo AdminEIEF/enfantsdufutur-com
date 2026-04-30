@@ -274,7 +274,7 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
   // Tous les élèves (toutes classes) pour la recherche globale
   const { data: allEleves = [] } = useQuery({
     queryKey: ['eleves-all-import'],
-    enabled: !!preview,
+    enabled: !!preview || multiMode,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('eleves')
@@ -286,7 +286,38 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
     },
   });
 
-  const canAct = !!cycleId && !!classeId && !!periodeId && matieres.length > 0 && eleves.length > 0;
+  // Multi-mode : matières par classe (avec ordre depuis classe_matieres) pour TOUT le cycle
+  const { data: matieresByClasse = {} } = useQuery({
+    queryKey: ['matieres-by-classe', cycleId],
+    enabled: multiMode && !!cycleId && classes.length > 0,
+    queryFn: async () => {
+      const { data: allMat } = await supabase.from('matieres').select('*').eq('cycle_id', cycleId).order('ordre');
+      const allMatList = allMat || [];
+      const byMatId = new Map(allMatList.map((m: any) => [m.id, m]));
+      const classIds = classes.map((c: any) => c.id);
+      const { data: cm } = await supabase
+        .from('classe_matieres')
+        .select('classe_id, matiere_id, ordre')
+        .in('classe_id', classIds)
+        .order('ordre');
+      const map: Record<string, any[]> = {};
+      classes.forEach((c: any) => {
+        const rows = (cm || []).filter((x: any) => x.classe_id === c.id);
+        if (rows.length > 0) {
+          map[c.id] = rows.map((r: any) => byMatId.get(r.matiere_id)).filter(Boolean);
+        } else {
+          // Fallback : matières du niveau
+          const nivId = c.niveaux?.id || c.niveau_id;
+          map[c.id] = allMatList.filter((m: any) => !m.niveau_id || m.niveau_id === nivId);
+        }
+      });
+      return map;
+    },
+  });
+
+  const canAct = multiMode
+    ? (!!cycleId && !!periodeId && classes.length > 0)
+    : (!!cycleId && !!classeId && !!periodeId && matieres.length > 0 && eleves.length > 0);
 
   const handleDownloadTemplate = async () => {
     if (!canAct) return;
