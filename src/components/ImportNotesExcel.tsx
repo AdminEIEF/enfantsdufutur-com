@@ -553,6 +553,236 @@ export default function ImportNotesExcel({ open, onOpenChange, onImportDone }: I
     if (fileRef.current) fileRef.current.value = '';
   };
 
+  // ============================================================
+  // MODE MULTI-ONGLETS : chaque feuille = 1 classe (auto-détectée
+  // depuis le nom de l'onglet). Toutes les classes en 1 import.
+  // ============================================================
+  const handleFileChangeMulti = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const sheets = await readExcelFileAllSheets(file);
+      const sheetNames = Object.keys(sheets);
+      if (sheetNames.length === 0) {
+        toast({ title: 'Fichier vide', variant: 'destructive' });
+        return;
+      }
+
+      // Helper : matcher un nom d'onglet à une classe en BDD (normalisation flexible)
+      const matchClasse = (sheetName: string): any | null => {
+        const target = compact(sheetName);
+        // 1) compact strict
+        let best = (classes as any[]).find(c => compact(c.nom) === target);
+        if (best) return best;
+        // 2) inclusion
+        best = (classes as any[]).find(c => compact(c.nom).includes(target) || target.includes(compact(c.nom)));
+        if (best) return best;
+        // 3) fuzzy
+        let bestScore = 0;
+        for (const c of classes as any[]) {
+          const s = similarity(sheetName, c.nom);
+          if (s > bestScore) { bestScore = s; best = c; }
+        }
+        return bestScore >= 0.7 ? best : null;
+      };
+
+      const allPreview: PreviewRow[] = [];
+      const allMatchInfo: { col: string; matiere: any | null }[] = [];
+      const seenMatchKey = new Set<string>();
+      const report: { sheet: string; classe?: string; rows: number; matched: number }[] = [];
+
+      const isNomCol = (k: string) => ['nom', 'noms', 'nomsa', 'name', 'names', 'lastname', 'last name', 'nom eleve', 'nom de famille', 'nom famille'].includes(normalize(k));
+      const isPrenomCol = (k: string) => ['prenom', 'prenoms', 'firstname', 'first name', 'prenom eleve', 'prenoms eleve'].includes(normalize(k));
+      const isFullNameCol = (k: string) => ['nom prenom', 'nom et prenom', 'nom prenoms', 'nom et prenoms', 'nom complet', 'eleve', 'eleves', 'student', 'full name'].includes(normalize(k));
+
+      for (const sheetName of sheetNames) {
+        const rows = sheets[sheetName].filter(r => Object.values(r).some(v => v !== null && String(v).trim() !== ''));
+        if (rows.length === 0) {
+          report.push({ sheet: sheetName, rows: 0, matched: 0 });
+          continue;
+        }
+        const classe = matchClasse(sheetName);
+        if (!classe) {
+          report.push({ sheet: sheetName, rows: rows.length, matched: 0 });
+          continue;
+        }
+        const elevesClasse = (allEleves as any[]).filter(x => x.classe_id === classe.id);
+        const matieresClasse = (matieresByClasse as any)[classe.id] || [];
+        if (elevesClasse.length === 0 || matieresClasse.length === 0) {
+          report.push({ sheet: sheetName, classe: classe.nom, rows: rows.length, matched: 0 });
+          continue;
+        }
+
+        const colKeys = Object.keys(rows[0]);
+        const nomKey = colKeys.find(isNomCol);
+        const prenomKey = colKeys.find(isPrenomCol);
+        const fullNameKey = colKeys.find(isFullNameCol);
+
+        // Mapping colonnes -> matières pour cette classe
+        const matiereColMap: Record<string, any> = {};
+        colKeys.forEach((col) => {
+          const norm = normalize(col);
+          if (isNomCol(col) || isPrenomCol(col) || isFullNameCol(col) || ['matricule', 'id'].includes(norm)) return;
+          const matched = matchMatiere(col, matieresClasse);
+          if (matched) {
+            matiereColMap[col] = matched;
+            const key = `${classe.id}::${col}`;
+            if (!seenMatchKey.has(key)) {
+              allMatchInfo.push({ col: `[${classe.nom}] ${col}`, matiere: matched });
+              seenMatchKey.add(key);
+            }
+          } else {
+            const key = `${classe.id}::${col}::none`;
+            if (!seenMatchKey.has(key)) {
+              allMatchInfo.push({ col: `[${classe.nom}] ${col}`, matiere: null });
+              seenMatchKey.add(key);
+            }
+          }
+        });
+
+        let matchedInSheet = 0;
+        const elevesSorted = [...elevesClasse].sort((a, b) =>
+          `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, 'fr', { sensitivity: 'base' })
+        );
+        const sameRowCount = rows.length === elevesSorted.length;
+
+        rows.forEach((row, idx) => {
+          const fullName = fullNameKey ? String(row[fullNameKey] || '').trim() : '';
+          const nom = nomKey ? String(row[nomKey] || '').trim() : fullName;
+          const prenom = prenomKey ? String(row[prenomKey] || '').trim() : '';
+          const displayName = fullName || `${nom} ${prenom}`.trim();
+          const errors: string[] = [];
+
+          let eleve: any = null;
+          let matchType: PreviewRow['match_type'] = 'none';
+          let matchScore = 0;
+
+          if (nom && prenom) {
+            eleve = elevesClasse.find(e => normalize(e.nom) === normalize(nom) && normalize(e.prenom) === normalize(prenom));
+            if (eleve) { matchType = 'exact'; matchScore = 1; }
+          }
+          if (!eleve && nom && prenom) {
+            eleve = elevesClasse.find(e => normalize(e.nom) === normalize(prenom) && normalize(e.prenom) === normalize(nom));
+            if (eleve) { matchType = 'reverse'; matchScore = 0.95; }
+          }
+          if (!eleve && displayName) {
+            const normFull = normalize(displayName);
+            eleve = elevesClasse.find(e => {
+              const c1 = normalize(`${e.nom} ${e.prenom}`);
+              const c2 = normalize(`${e.prenom} ${e.nom}`);
+              return c1 === normFull || c2 === normFull;
+            });
+            if (eleve) { matchType = 'exact'; matchScore = 1; }
+          }
+          if (!eleve && displayName) {
+            const candidates = elevesClasse
+              .map(e => ({ e, score: computeMatchScore({ nom, prenom }, e) }))
+              .sort((a, b) => b.score - a.score);
+            const best = candidates[0];
+            if (best && best.score >= 0.75) {
+              eleve = best.e; matchType = 'fuzzy'; matchScore = best.score;
+            }
+          }
+          if (!eleve && sameRowCount && !displayName) {
+            eleve = elevesSorted[idx]; matchType = 'fuzzy'; matchScore = 0.6;
+          }
+          if (!eleve) errors.push('Élève non trouvé');
+          if (eleve) matchedInSheet++;
+
+          const notes: Record<string, number | null> = {};
+          Object.entries(matiereColMap).forEach(([colName, matiere]) => {
+            const val = row[colName];
+            if (val === null || val === undefined || val === '') {
+              notes[matiere.id] = null;
+            } else {
+              const raw = String(val).replace(',', '.').trim();
+              const num = parseFloat(raw);
+              if (isNaN(num)) {
+                errors.push(`${matiere.nom}: valeur invalide`);
+                notes[matiere.id] = null;
+              } else if (num < 0 || num > bareme) {
+                errors.push(`${matiere.nom}: hors barème (0-${bareme})`);
+                notes[matiere.id] = null;
+              } else {
+                notes[matiere.id] = num;
+              }
+            }
+          });
+
+          const filledCount = Object.values(notes).filter(v => v !== null).length;
+          if (filledCount === 0 && eleve) errors.push('Aucune note');
+
+          allPreview.push({
+            nom: eleve?.nom || nom,
+            prenom: eleve?.prenom || prenom,
+            eleve_id: eleve?.id,
+            eleve_classe_id: eleve?.classe_id || classe.id,
+            eleve_classe_nom: classe.nom,
+            match_score: matchScore,
+            match_type: matchType,
+            notes,
+            errors,
+            source_sheet: sheetName,
+            source_classe_id: classe.id,
+            source_classe_nom: classe.nom,
+          });
+        });
+
+        report.push({ sheet: sheetName, classe: classe.nom, rows: rows.length, matched: matchedInSheet });
+      }
+
+      // Détection doublons globale
+      const eleveIds = allPreview.map(r => r.eleve_id).filter(Boolean) as string[];
+      const matiereIds = Array.from(new Set(allPreview.flatMap(r => Object.keys(r.notes))));
+      if (eleveIds.length > 0 && matiereIds.length > 0 && periodeId) {
+        const { data: existing } = await supabase
+          .from('notes')
+          .select('eleve_id, matiere_id')
+          .in('eleve_id', eleveIds)
+          .in('matiere_id', matiereIds)
+          .eq('periode_id', periodeId);
+        if (existing && existing.length > 0) {
+          const dupMap = new Map<string, Set<string>>();
+          existing.forEach((n: any) => {
+            if (!dupMap.has(n.eleve_id)) dupMap.set(n.eleve_id, new Set());
+            dupMap.get(n.eleve_id)!.add(n.matiere_id);
+          });
+          allPreview.forEach(r => {
+            if (!r.eleve_id) return;
+            const dups = dupMap.get(r.eleve_id);
+            if (!dups) return;
+            const dupNames: string[] = [];
+            const matieresClasse = r.source_classe_id ? (matieresByClasse as any)[r.source_classe_id] || [] : [];
+            Object.entries(r.notes).forEach(([mid, val]) => {
+              if (val !== null && dups.has(mid)) {
+                const m = matieresClasse.find((x: any) => x.id === mid);
+                if (m) dupNames.push(m.nom);
+              }
+            });
+            if (dupNames.length > 0) {
+              r.duplicate_matieres = dupNames;
+              r.overwrite_duplicates = true;
+            }
+          });
+        }
+      }
+
+      setMatchedMatieres(allMatchInfo);
+      setSheetsReport(report);
+      setPreview(allPreview);
+
+      const totalMatched = report.reduce((s, x) => s + x.matched, 0);
+      const totalRows = report.reduce((s, x) => s + x.rows, 0);
+      const unknownSheets = report.filter(r => !r.classe).length;
+      toast({
+        title: '📂 Lecture multi-onglets terminée',
+        description: `${sheetNames.length} feuille(s) — ${totalMatched}/${totalRows} élève(s) reconnu(s)${unknownSheets > 0 ? ` — ⚠️ ${unknownSheets} feuille(s) sans classe` : ''}`,
+      });
+    } catch (err) {
+      toast({ title: 'Erreur de lecture', description: String(err), variant: 'destructive' });
+    }
+    if (fileRef.current) fileRef.current.value = '';
+  };
   const validRows = preview?.filter(r => r.eleve_id && r.errors.length === 0) || [];
   const unmatchedCols = matchedMatieres.filter(m => !m.matiere);
   const matchedCount = matchedMatieres.filter(m => m.matiere).length;
