@@ -690,7 +690,22 @@ export default function Notes() {
                                         return (
                                         <Tooltip key={m.id}>
                                           <TooltipTrigger asChild>
-                                            <th className="border-r border-primary-foreground/20 px-1 py-2 text-center w-[78px] min-w-[78px] font-bold cursor-help hover:bg-primary-foreground/10 transition-colors group">
+                                            <th
+                                              draggable={canReorder}
+                                              onDragStart={(e) => { if (!canReorder) return; setDragColIndex(mi); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', String(mi)); } catch {} }}
+                                              onDragOver={(e) => { if (canReorder && dragColIndex !== null && dragColIndex !== mi) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverColIndex(mi); } }}
+                                              onDragLeave={() => { if (dragOverColIndex === mi) setDragOverColIndex(null); }}
+                                              onDrop={(e) => {
+                                                e.preventDefault();
+                                                const from = dragColIndex;
+                                                setDragOverColIndex(null);
+                                                setDragColIndex(null);
+                                                if (from === null || from === mi) return;
+                                                reorderMatiere.mutate({ from, to: mi });
+                                              }}
+                                              onDragEnd={() => { setDragColIndex(null); setDragOverColIndex(null); }}
+                                              title={canReorder ? `${m.nom} — glissez pour réorganiser` : m.nom}
+                                              className={`border-r border-primary-foreground/20 px-1 py-2 text-center w-[78px] min-w-[78px] font-bold transition-all group ${canReorder ? 'cursor-grab active:cursor-grabbing' : 'cursor-help'} ${dragOverColIndex === mi ? 'bg-primary-foreground/30 ring-2 ring-primary-foreground/60 ring-inset' : 'hover:bg-primary-foreground/10'} ${dragColIndex === mi ? 'opacity-50' : ''}`}>
                                               <div className="flex items-center justify-center gap-0.5">
                                                 {canReorder && (
                                                   <button
