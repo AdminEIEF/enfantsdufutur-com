@@ -265,24 +265,66 @@ export default function Notes() {
     onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
   });
 
-  // Réordonnancement des colonnes matières (swap des ordres dans classe_matieres)
+  // Réordonnancement par glisser-déposer (chain shift, comme Excel)
   const reorderMatiere = useMutation({
     mutationFn: async ({ from, to }: { from: number; to: number }) => {
       if (from === to || from < 0 || to < 0 || from >= matieres.length || to >= matieres.length) return;
-      const a = matieres[from] as any;
-      const b = matieres[to] as any;
-      const cmA = (classeMatieres as any[]).find((c: any) => c.matiere_id === a.id);
-      const cmB = (classeMatieres as any[]).find((c: any) => c.matiere_id === b.id);
-      if (!cmA || !cmB) throw new Error('Réordonnancement disponible uniquement quand les matières sont assignées via Configuration > Classes.');
-      const ordreA = cmA.ordre, ordreB = cmB.ordre;
-      const { error: e1 } = await supabase.from('classe_matieres').update({ ordre: ordreB }).eq('classe_id', classeId).eq('matiere_id', a.id);
-      if (e1) throw e1;
-      const { error: e2 } = await supabase.from('classe_matieres').update({ ordre: ordreA }).eq('classe_id', classeId).eq('matiere_id', b.id);
-      if (e2) throw e2;
+      if (!classeMatieres || (classeMatieres as any[]).length === 0) {
+        throw new Error('Réordonnancement disponible uniquement quand les matières sont assignées via Configuration > Classes.');
+      }
+      const list = (matieres as any[]).slice();
+      const [moved] = list.splice(from, 1);
+      list.splice(to, 0, moved);
+      const cmByMat = new Map((classeMatieres as any[]).map((c: any) => [c.matiere_id, c]));
+      const lo = Math.min(from, to), hi = Math.max(from, to);
+      const updates: { matiere_id: string; ordre: number }[] = [];
+      for (let i = lo; i <= hi; i++) {
+        const cm = cmByMat.get(list[i].id);
+        if (!cm) continue;
+        updates.push({ matiere_id: list[i].id, ordre: cm.ordre });
+      }
+      // Réassigne les ordres dans l'ordre des positions originales
+      const originalOrdres = [];
+      for (let i = lo; i <= hi; i++) {
+        const origMat = (matieres as any[])[i];
+        const cm = cmByMat.get(origMat.id);
+        if (cm) originalOrdres.push(cm.ordre);
+      }
+      // Étape 1 : valeurs temporaires négatives uniques pour éviter tout conflit
+      for (let i = 0; i < updates.length; i++) {
+        const { error } = await supabase.from('classe_matieres')
+          .update({ ordre: -1000 - i })
+          .eq('classe_id', classeId)
+          .eq('matiere_id', updates[i].matiere_id);
+        if (error) throw error;
+      }
+      // Étape 2 : valeurs finales selon le nouvel ordre
+      for (let i = 0; i < updates.length; i++) {
+        const { error } = await supabase.from('classe_matieres')
+          .update({ ordre: originalOrdres[i] })
+          .eq('classe_id', classeId)
+          .eq('matiere_id', list[lo + i].id);
+        if (error) throw error;
+      }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['classe-matieres', classeId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classe-matieres', classeId] });
+      toast({ title: '✅ Ordre mis à jour', description: 'Les matières ont été réorganisées.' });
+    },
     onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
   });
+
+  // État pour le drag & drop des colonnes
+  const [dragColIndex, setDragColIndex] = useState<number | null>(null);
+  const [dragOverColIndex, setDragOverColIndex] = useState<number | null>(null);
+
+  // État pour l'aperçu d'import
+  const [importPreview, setImportPreview] = useState<null | {
+    notes: { eleve_id: string; eleve_label: string; matiere_id: string; matiere_label: string; value: string }[];
+    unmatched: { nom: string; prenom: string; matricule: string }[];
+    invalid: { eleve_label: string; matiere_label: string; raw: string }[];
+    unknownCols: string[];
+  }>(null);
 
   // Export direct du tableau en Excel
   const handleExportTable = async () => {
