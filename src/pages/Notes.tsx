@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BookOpen, Save, CheckCircle, Circle, ChevronRight, AlertTriangle, Eye, EyeOff, FileSpreadsheet, GraduationCap, Users } from 'lucide-react';
 import ImportNotesExcel from '@/components/ImportNotesExcel';
@@ -35,7 +36,21 @@ export default function Notes() {
   const [showOnlyMissing, setShowOnlyMissing] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [gridCells, setGridCells] = useState<Record<string, string>>({});
+  const [anchorCell, setAnchorCell] = useState<{ r: number; c: number } | null>(null);
+  const [focusCell, setFocusCell] = useState<{ r: number; c: number } | null>(null);
   const queryClient = useQueryClient();
+
+  // Abréviation intelligente d'un nom de matière (max 6 chars)
+  const abbrev = useCallback((name: string) => {
+    if (!name) return '—';
+    const clean = name.trim();
+    if (clean.length <= 6) return clean;
+    const words = clean.split(/[\s\-']+/).filter(Boolean);
+    if (words.length >= 2) {
+      return words.map(w => w[0]).join('').toUpperCase().slice(0, 5);
+    }
+    return clean.slice(0, 5) + '.';
+  }, []);
 
   const { data: cycles = [] } = useQuery({
     queryKey: ['cycles'],
@@ -487,25 +502,35 @@ export default function Notes() {
                           🎉 Tous les élèves ont leurs notes saisies !
                         </CardContent></Card>
                       ) : viewMode === 'table' ? (
-                        <Card className="overflow-hidden">
+                        <Card className="overflow-hidden border-2 shadow-xl rounded-2xl">
                           <CardContent className="p-0">
-                            <div className="overflow-auto max-h-[70vh]">
-                              <table className="w-full border-collapse text-sm">
-                                <thead className="sticky top-0 z-20 bg-primary text-primary-foreground">
-                                  <tr>
-                                    <th className="sticky left-0 z-30 bg-primary text-primary-foreground border border-primary-foreground/20 px-2 py-2 text-left w-10">#</th>
-                                    <th className="sticky left-10 z-30 bg-primary text-primary-foreground border border-primary-foreground/20 px-3 py-2 text-left min-w-[180px]">Élève</th>
-                                    {matieres.map((m: any) => (
-                                      <th key={m.id} className="border border-primary-foreground/20 px-2 py-2 text-center min-w-[90px] font-semibold">
-                                        {m.nom}
-                                      </th>
-                                    ))}
-                                    <th className="border border-primary-foreground/20 px-2 py-2 text-center min-w-[80px]">Moy /{bareme}</th>
+                            <div className="overflow-auto max-h-[72vh] rounded-t-2xl">
+                              <table className="w-full border-collapse text-sm select-none">
+                                <thead className="sticky top-0 z-20">
+                                  <tr className="bg-gradient-to-r from-primary via-primary to-primary/90 text-primary-foreground shadow-md">
+                                    <th className="sticky left-0 z-30 bg-primary border-r border-primary-foreground/30 px-2 py-3 text-center w-12 text-xs uppercase tracking-wider">#</th>
+                                    <th className="sticky left-12 z-30 bg-primary border-r border-primary-foreground/30 px-3 py-3 text-left min-w-[200px] text-xs uppercase tracking-wider">Élève</th>
+                                    <TooltipProvider delayDuration={150}>
+                                      {matieres.map((m: any) => (
+                                        <Tooltip key={m.id}>
+                                          <TooltipTrigger asChild>
+                                            <th className="border-r border-primary-foreground/20 px-1 py-3 text-center w-[68px] min-w-[68px] font-bold cursor-help hover:bg-primary-foreground/10 transition-colors">
+                                              <span className="block text-xs uppercase tracking-tight truncate" title={m.nom}>
+                                                {abbrev(m.nom)}
+                                              </span>
+                                            </th>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="bottom" className="font-semibold">
+                                            {m.nom}
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      ))}
+                                    </TooltipProvider>
+                                    <th className="sticky right-0 z-30 bg-primary border-l border-primary-foreground/30 px-2 py-3 text-center w-[80px] text-xs uppercase tracking-wider">Moy /{bareme}</th>
                                   </tr>
                                 </thead>
                                 <tbody>
                                   {visibleEleves.map((e: any, ri: number) => {
-                                    const eleveIdx = eleves.findIndex((x: any) => x.id === e.id);
                                     const notes = matieres.map((m: any) => {
                                       const v = gridCells[`${e.id}|${m.id}`];
                                       return v && v !== '' ? parseFloat(v) : null;
@@ -514,21 +539,39 @@ export default function Notes() {
                                     const prog = progressByEleve[e.id] || { done: 0, total: matieres.length };
                                     const isComplete = prog.done === prog.total && prog.total > 0;
                                     const isEmpty = prog.done === 0;
-                                    const rowBg = isComplete ? 'bg-green-500/5' : isEmpty ? 'bg-destructive/5' : 'bg-amber-500/5';
+                                    const rowBg = isComplete ? 'bg-green-500/[0.04]' : isEmpty ? 'bg-destructive/[0.04]' : 'bg-amber-500/[0.04]';
+                                    const stripe = ri % 2 === 0 ? '' : 'bg-muted/20';
                                     return (
-                                      <tr key={e.id} className={`${rowBg} hover:bg-accent/30`}>
-                                        <td className="sticky left-0 z-10 bg-inherit border border-border px-2 py-1 text-xs text-muted-foreground tabular-nums text-center">
+                                      <tr key={e.id} className={`${rowBg} ${stripe} hover:bg-accent/40 transition-colors group`}>
+                                        <td className="sticky left-0 z-10 bg-inherit border-r border-border px-2 py-1 text-xs font-semibold text-muted-foreground tabular-nums text-center">
                                           {ri + 1}
                                         </td>
-                                        <td className="sticky left-10 z-10 bg-inherit border border-border px-3 py-1">
-                                          <p className="font-semibold text-sm leading-tight">{e.nom} {e.prenom}</p>
+                                        <td className="sticky left-12 z-10 bg-inherit border-r border-border px-3 py-1.5">
+                                          <p className="font-semibold text-sm leading-tight truncate max-w-[200px]">{e.nom} {e.prenom}</p>
                                           <p className="font-mono text-[10px] text-muted-foreground">{e.matricule || '—'}</p>
                                         </td>
                                         {matieres.map((m: any, ci: number) => {
                                           const key = `${e.id}|${m.id}`;
                                           const val = gridCells[key] ?? '';
+                                          const inRange = anchorCell && focusCell && (() => {
+                                            const r1 = Math.min(anchorCell.r, focusCell.r), r2 = Math.max(anchorCell.r, focusCell.r);
+                                            const c1 = Math.min(anchorCell.c, focusCell.c), c2 = Math.max(anchorCell.c, focusCell.c);
+                                            return ri >= r1 && ri <= r2 && ci >= c1 && ci <= c2;
+                                          })();
+                                          const numVal = val !== '' ? parseFloat(val) : NaN;
+                                          const isPass = !isNaN(numVal) && numVal >= bareme / 2;
+                                          const isFail = !isNaN(numVal) && numVal < bareme / 2;
                                           return (
-                                            <td key={m.id} className="border border-border p-0">
+                                            <td
+                                              key={m.id}
+                                              className={`border-r border-border p-0 transition-all ${inRange ? 'bg-primary/15 ring-1 ring-primary/40 ring-inset' : ''}`}
+                                              onClick={(ev) => {
+                                                if (ev.shiftKey && anchorCell) {
+                                                  setFocusCell({ r: ri, c: ci });
+                                                  ev.preventDefault();
+                                                }
+                                              }}
+                                            >
                                               <input
                                                 type="number"
                                                 min={0}
@@ -537,6 +580,7 @@ export default function Notes() {
                                                 value={val}
                                                 data-row={ri}
                                                 data-col={ci}
+                                                onFocus={() => { setAnchorCell({ r: ri, c: ci }); setFocusCell({ r: ri, c: ci }); }}
                                                 onChange={(ev) => setGridCells((s) => ({ ...s, [key]: ev.target.value }))}
                                                 onBlur={(ev) => {
                                                   const original = allNotesForPeriod.find((n: any) => n.eleve_id === e.id && n.matiere_id === m.id);
@@ -545,30 +589,119 @@ export default function Notes() {
                                                     saveOneNote.mutate({ eleve_id: e.id, matiere_id: m.id, value: ev.target.value });
                                                   }
                                                 }}
+                                                onCopy={(ev) => {
+                                                  if (!anchorCell || !focusCell) return;
+                                                  const r1 = Math.min(anchorCell.r, focusCell.r), r2 = Math.max(anchorCell.r, focusCell.r);
+                                                  const c1 = Math.min(anchorCell.c, focusCell.c), c2 = Math.max(anchorCell.c, focusCell.c);
+                                                  if (r1 === r2 && c1 === c2) return;
+                                                  const lines: string[] = [];
+                                                  for (let r = r1; r <= r2; r++) {
+                                                    const row: string[] = [];
+                                                    for (let c = c1; c <= c2; c++) {
+                                                      const el = visibleEleves[r];
+                                                      const mt = matieres[c];
+                                                      row.push(el && mt ? (gridCells[`${el.id}|${mt.id}`] ?? '') : '');
+                                                    }
+                                                    lines.push(row.join('\t'));
+                                                  }
+                                                  ev.preventDefault();
+                                                  ev.clipboardData.setData('text/plain', lines.join('\n'));
+                                                  toast({ title: '📋 Copié', description: `${(r2 - r1 + 1)} × ${(c2 - c1 + 1)} cellule(s).` });
+                                                }}
+                                                onPaste={(ev) => {
+                                                  const text = ev.clipboardData.getData('text/plain');
+                                                  if (!text) return;
+                                                  const isMulti = text.includes('\t') || /\r?\n/.test(text.trim());
+                                                  if (!isMulti) return;
+                                                  ev.preventDefault();
+                                                  const rows = text.replace(/\r/g, '').replace(/\n+$/, '').split('\n').map(l => l.split('\t'));
+                                                  let pasted = 0, errors = 0;
+                                                  const updates: Record<string, string> = {};
+                                                  rows.forEach((cols, dr) => {
+                                                    cols.forEach((raw, dc) => {
+                                                      const tr = ri + dr, tc = ci + dc;
+                                                      const tEleve = visibleEleves[tr];
+                                                      const tMat = matieres[tc];
+                                                      if (!tEleve || !tMat) return;
+                                                      const v = (raw ?? '').trim().replace(',', '.');
+                                                      if (v === '') {
+                                                        updates[`${tEleve.id}|${tMat.id}`] = '';
+                                                        saveOneNote.mutate({ eleve_id: tEleve.id, matiere_id: tMat.id, value: '' });
+                                                        pasted++;
+                                                        return;
+                                                      }
+                                                      const n = parseFloat(v);
+                                                      if (isNaN(n) || n < 0 || n > bareme) { errors++; return; }
+                                                      updates[`${tEleve.id}|${tMat.id}`] = String(n);
+                                                      saveOneNote.mutate({ eleve_id: tEleve.id, matiere_id: tMat.id, value: String(n) });
+                                                      pasted++;
+                                                    });
+                                                  });
+                                                  setGridCells((s) => ({ ...s, ...updates }));
+                                                  toast({
+                                                    title: '📋 Collage effectué',
+                                                    description: `${pasted} note(s) collée(s)${errors > 0 ? ` — ${errors} ignorée(s) (hors barème)` : ''}.`,
+                                                    variant: errors > 0 ? 'destructive' : 'default',
+                                                  });
+                                                }}
                                                 onKeyDown={(ev) => {
                                                   const target = ev.currentTarget;
-                                                  const move = (dr: number, dc: number) => {
+                                                  const move = (dr: number, dc: number, extend = false) => {
+                                                    const nr = ri + dr, nc = ci + dc;
                                                     const next = document.querySelector<HTMLInputElement>(
-                                                      `input[data-row="${ri + dr}"][data-col="${ci + dc}"]`
+                                                      `input[data-row="${nr}"][data-col="${nc}"]`
                                                     );
-                                                    if (next) { ev.preventDefault(); next.focus(); next.select(); }
+                                                    if (next) {
+                                                      ev.preventDefault();
+                                                      if (extend && anchorCell) setFocusCell({ r: nr, c: nc });
+                                                      else { next.focus(); next.select(); }
+                                                    }
                                                   };
+                                                  if (ev.shiftKey && ev.key.startsWith('Arrow')) {
+                                                    if (ev.key === 'ArrowDown') move(1, 0, true);
+                                                    else if (ev.key === 'ArrowUp') move(-1, 0, true);
+                                                    else if (ev.key === 'ArrowRight') move(0, 1, true);
+                                                    else if (ev.key === 'ArrowLeft') move(0, -1, true);
+                                                    return;
+                                                  }
                                                   if (ev.key === 'Enter' || ev.key === 'ArrowDown') move(1, 0);
                                                   else if (ev.key === 'ArrowUp') move(-1, 0);
                                                   else if (ev.key === 'ArrowRight' && (target.selectionStart === target.value.length)) move(0, 1);
                                                   else if (ev.key === 'ArrowLeft' && (target.selectionStart === 0)) move(0, -1);
                                                   else if (ev.key === 'Tab' && !ev.shiftKey) {
                                                     if (ci === matieres.length - 1) { ev.preventDefault(); move(1, -(matieres.length - 1)); }
+                                                  } else if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'a') {
+                                                    ev.preventDefault();
+                                                    setAnchorCell({ r: 0, c: 0 });
+                                                    setFocusCell({ r: visibleEleves.length - 1, c: matieres.length - 1 });
+                                                  } else if (ev.key === 'Delete' && anchorCell && focusCell) {
+                                                    const r1 = Math.min(anchorCell.r, focusCell.r), r2 = Math.max(anchorCell.r, focusCell.r);
+                                                    const c1 = Math.min(anchorCell.c, focusCell.c), c2 = Math.max(anchorCell.c, focusCell.c);
+                                                    if (r1 !== r2 || c1 !== c2) {
+                                                      ev.preventDefault();
+                                                      const updates: Record<string, string> = {};
+                                                      for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) {
+                                                        const tE = visibleEleves[r], tM = matieres[c];
+                                                        if (!tE || !tM) continue;
+                                                        updates[`${tE.id}|${tM.id}`] = '';
+                                                        saveOneNote.mutate({ eleve_id: tE.id, matiere_id: tM.id, value: '' });
+                                                      }
+                                                      setGridCells((s) => ({ ...s, ...updates }));
+                                                    }
                                                   }
                                                 }}
-                                                className="w-full h-9 px-2 text-center text-sm bg-transparent outline-none focus:bg-primary/10 focus:ring-2 focus:ring-primary tabular-nums"
-                                                placeholder="—"
+                                                className={`w-full h-10 px-1 text-center text-sm font-semibold bg-transparent outline-none focus:bg-primary/15 focus:ring-2 focus:ring-primary focus:z-10 relative tabular-nums transition-colors ${
+                                                  isPass ? 'text-green-700 dark:text-green-400' : isFail ? 'text-destructive' : ''
+                                                }`}
+                                                placeholder="·"
                                               />
                                             </td>
                                           );
                                         })}
-                                        <td className="border border-border px-2 py-1 text-center font-bold tabular-nums bg-muted/30">
-                                          {moy}
+                                        <td className="sticky right-0 z-10 bg-muted/40 group-hover:bg-accent/60 border-l border-border px-2 py-1 text-center font-extrabold tabular-nums">
+                                          <span className={moy === '—' ? 'text-muted-foreground' : parseFloat(moy) >= bareme / 2 ? 'text-green-700 dark:text-green-400' : 'text-destructive'}>
+                                            {moy}
+                                          </span>
                                         </td>
                                       </tr>
                                     );
@@ -576,8 +709,13 @@ export default function Notes() {
                                 </tbody>
                               </table>
                             </div>
-                            <div className="px-4 py-2 text-xs text-muted-foreground border-t bg-muted/20">
-                              💡 Saisie directe — sauvegarde automatique au changement de cellule. Navigation : Entrée / flèches / Tab.
+                            <div className="px-4 py-2.5 text-xs text-muted-foreground border-t bg-muted/30 flex flex-wrap gap-x-4 gap-y-1 items-center">
+                              <span className="font-semibold text-foreground">💡 Astuces :</span>
+                              <span>↩ Entrée / ⇥ Tab / ↑↓←→ naviguer</span>
+                              <span>⇧ Maj+clic ou ⇧+flèches pour sélectionner</span>
+                              <span><kbd className="px-1.5 py-0.5 rounded bg-background border text-[10px] font-mono">Ctrl+C</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-background border text-[10px] font-mono">Ctrl+V</kbd> copier-coller</span>
+                              <span><kbd className="px-1.5 py-0.5 rounded bg-background border text-[10px] font-mono">Suppr</kbd> effacer la sélection</span>
+                              <span className="ml-auto opacity-70">Survolez l'en-tête d'une matière pour son nom complet</span>
                             </div>
                           </CardContent>
                         </Card>
