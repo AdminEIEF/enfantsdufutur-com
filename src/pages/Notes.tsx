@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BookOpen, Save, CheckCircle, Circle, ChevronRight, AlertTriangle, Eye, EyeOff, FileSpreadsheet, GraduationCap, Users } from 'lucide-react';
+import { BookOpen, Save, CheckCircle, Circle, ChevronRight, AlertTriangle, Eye, EyeOff, FileSpreadsheet, GraduationCap, Users, ChevronLeft, Upload, Download } from 'lucide-react';
+import { exportToExcel, readExcelFile } from '@/lib/excelUtils';
 import ImportNotesExcel from '@/components/ImportNotesExcel';
 import SaisieNotesParMatiere from '@/components/SaisieNotesParMatiere';
 import { supabase } from '@/integrations/supabase/client';
@@ -264,6 +265,98 @@ export default function Notes() {
     onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
   });
 
+  // Réordonnancement des colonnes matières (swap des ordres dans classe_matieres)
+  const reorderMatiere = useMutation({
+    mutationFn: async ({ from, to }: { from: number; to: number }) => {
+      if (from === to || from < 0 || to < 0 || from >= matieres.length || to >= matieres.length) return;
+      const a = matieres[from] as any;
+      const b = matieres[to] as any;
+      const cmA = (classeMatieres as any[]).find((c: any) => c.matiere_id === a.id);
+      const cmB = (classeMatieres as any[]).find((c: any) => c.matiere_id === b.id);
+      if (!cmA || !cmB) throw new Error('Réordonnancement disponible uniquement quand les matières sont assignées via Configuration > Classes.');
+      const ordreA = cmA.ordre, ordreB = cmB.ordre;
+      const { error: e1 } = await supabase.from('classe_matieres').update({ ordre: ordreB }).eq('classe_id', classeId).eq('matiere_id', a.id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from('classe_matieres').update({ ordre: ordreA }).eq('classe_id', classeId).eq('matiere_id', b.id);
+      if (e2) throw e2;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['classe-matieres', classeId] }),
+    onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
+  });
+
+  // Export direct du tableau en Excel
+  const handleExportTable = async () => {
+    if (matieres.length === 0 || eleves.length === 0) return;
+    const rows = (eleves as any[]).map((e: any, i: number) => {
+      const row: Record<string, any> = { 'N°': i + 1, 'Nom': e.nom, 'Prénom': e.prenom, 'Matricule': e.matricule || '' };
+      (matieres as any[]).forEach((m: any) => {
+        const v = gridCells[`${e.id}|${m.id}`];
+        row[m.nom] = v !== undefined && v !== '' ? parseFloat(v) : '';
+      });
+      return row;
+    });
+    const cls = (selectedClasse as any)?.nom || 'classe';
+    const per = (periodes as any[]).find((p: any) => p.id === periodeId)?.nom || 'periode';
+    await exportToExcel(rows, `Notes_${cls}_${per}`, 'Notes');
+    toast({ title: '📤 Export généré', description: `${rows.length} élève(s) × ${matieres.length} matière(s).` });
+  };
+
+  // Import direct depuis le tableau
+  const tableImportRef = useRef<HTMLInputElement>(null);
+  const handleTableImport = async (ev: React.ChangeEvent<HTMLInputElement>) => {
+    const file = ev.target.files?.[0];
+    if (!file) return;
+    ev.target.value = '';
+    if (!periodeId) { toast({ title: 'Sélectionnez d\'abord une période', variant: 'destructive' }); return; }
+    try {
+      const rows = await readExcelFile(file);
+      if (rows.length === 0) { toast({ title: 'Fichier vide', variant: 'destructive' }); return; }
+      const norm = (s: any) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+      const cols = Object.keys(rows[0]);
+      const colToMat: Record<string, any> = {};
+      cols.forEach(col => {
+        const nc = norm(col);
+        if (!nc) return;
+        const m = (matieres as any[]).find((x: any) => {
+          const nm = norm(x.nom);
+          return nm === nc || nm.startsWith(nc) || nc.startsWith(nm);
+        });
+        if (m) colToMat[col] = m;
+      });
+      if (Object.keys(colToMat).length === 0) { toast({ title: 'Aucune matière reconnue', description: 'Les en-têtes de colonnes doivent correspondre aux noms des matières.', variant: 'destructive' }); return; }
+      let count = 0, errors = 0, unmatched = 0;
+      const updates: Record<string, string> = {};
+      for (const r of rows) {
+        const nom = norm(r['Nom'] ?? r['nom'] ?? r['NOMS'] ?? r['Noms']);
+        const prenom = norm(r['Prénom'] ?? r['prenom'] ?? r['Prenom'] ?? r['PRENOMS'] ?? r['Prenoms']);
+        const mat = norm(r['Matricule'] ?? r['matricule']);
+        const eleve = (eleves as any[]).find((e: any) =>
+          (mat && norm(e.matricule) === mat) ||
+          (nom && norm(e.nom) === nom && (!prenom || norm(e.prenom) === prenom))
+        );
+        if (!eleve) { unmatched++; continue; }
+        for (const [col, m] of Object.entries(colToMat)) {
+          const raw = r[col];
+          if (raw === '' || raw === null || raw === undefined) continue;
+          const v = String(raw).replace(',', '.').trim();
+          const n = parseFloat(v);
+          if (isNaN(n) || n < 0 || n > bareme) { errors++; continue; }
+          updates[`${eleve.id}|${(m as any).id}`] = String(n);
+          saveOneNote.mutate({ eleve_id: eleve.id, matiere_id: (m as any).id, value: String(n) });
+          count++;
+        }
+      }
+      setGridCells((s) => ({ ...s, ...updates }));
+      toast({
+        title: '📥 Import effectué',
+        description: `${count} note(s) importée(s)${unmatched ? ` • ${unmatched} élève(s) introuvable(s)` : ''}${errors ? ` • ${errors} valeur(s) invalides` : ''}.`,
+        variant: (errors || unmatched) ? 'destructive' : 'default',
+      });
+    } catch (err: any) {
+      toast({ title: 'Erreur import', description: err.message, variant: 'destructive' });
+    }
+  };
+
   const canShowList = classeId && periodeId && eleves.length > 0 && matieres.length > 0;
 
   const { data: bulletinPub } = useQuery({
@@ -487,6 +580,15 @@ export default function Notes() {
                               >
                                 {showOnlyMissing ? '👁 Voir tous' : '🔍 Sans notes uniquement'}
                               </Button>
+                              <div className="inline-flex rounded-lg border bg-background p-0.5">
+                                <Button size="sm" variant="ghost" className="h-8 px-3 gap-1.5" onClick={handleExportTable} disabled={!canShowList}>
+                                  <Download className="h-3.5 w-3.5" /> Exporter
+                                </Button>
+                                <Button size="sm" variant="ghost" className="h-8 px-3 gap-1.5" onClick={() => tableImportRef.current?.click()} disabled={!canShowList}>
+                                  <Upload className="h-3.5 w-3.5" /> Importer
+                                </Button>
+                                <input ref={tableImportRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleTableImport} />
+                              </div>
                             </div>
                           </div>
                           <div className="mt-4 flex items-center gap-3">
@@ -511,20 +613,47 @@ export default function Notes() {
                                     <th className="sticky left-0 z-30 bg-primary border-r border-primary-foreground/30 px-2 py-3 text-center w-12 text-xs uppercase tracking-wider">#</th>
                                     <th className="sticky left-12 z-30 bg-primary border-r border-primary-foreground/30 px-3 py-3 text-left min-w-[200px] text-xs uppercase tracking-wider">Élève</th>
                                     <TooltipProvider delayDuration={150}>
-                                      {matieres.map((m: any) => (
+                                      {matieres.map((m: any, mi: number) => {
+                                        const canReorder = (classeMatieres as any[]).length > 0;
+                                        return (
                                         <Tooltip key={m.id}>
                                           <TooltipTrigger asChild>
-                                            <th className="border-r border-primary-foreground/20 px-1 py-3 text-center w-[68px] min-w-[68px] font-bold cursor-help hover:bg-primary-foreground/10 transition-colors">
-                                              <span className="block text-xs uppercase tracking-tight truncate" title={m.nom}>
-                                                {abbrev(m.nom)}
-                                              </span>
+                                            <th className="border-r border-primary-foreground/20 px-1 py-2 text-center w-[78px] min-w-[78px] font-bold cursor-help hover:bg-primary-foreground/10 transition-colors group">
+                                              <div className="flex items-center justify-center gap-0.5">
+                                                {canReorder && (
+                                                  <button
+                                                    type="button"
+                                                    aria-label="Déplacer à gauche"
+                                                    disabled={mi === 0 || reorderMatiere.isPending}
+                                                    onClick={(e) => { e.stopPropagation(); reorderMatiere.mutate({ from: mi, to: mi - 1 }); }}
+                                                    className="opacity-0 group-hover:opacity-100 disabled:opacity-20 hover:bg-primary-foreground/20 rounded p-0.5 transition-all"
+                                                  >
+                                                    <ChevronLeft className="h-3 w-3" />
+                                                  </button>
+                                                )}
+                                                <span className="block text-xs uppercase tracking-tight truncate flex-1" title={m.nom}>
+                                                  {abbrev(m.nom)}
+                                                </span>
+                                                {canReorder && (
+                                                  <button
+                                                    type="button"
+                                                    aria-label="Déplacer à droite"
+                                                    disabled={mi === matieres.length - 1 || reorderMatiere.isPending}
+                                                    onClick={(e) => { e.stopPropagation(); reorderMatiere.mutate({ from: mi, to: mi + 1 }); }}
+                                                    className="opacity-0 group-hover:opacity-100 disabled:opacity-20 hover:bg-primary-foreground/20 rounded p-0.5 transition-all"
+                                                  >
+                                                    <ChevronRight className="h-3 w-3" />
+                                                  </button>
+                                                )}
+                                              </div>
                                             </th>
                                           </TooltipTrigger>
                                           <TooltipContent side="bottom" className="font-semibold">
                                             {m.nom}
                                           </TooltipContent>
                                         </Tooltip>
-                                      ))}
+                                        );
+                                      })}
                                     </TooltipProvider>
                                     <th className="sticky right-0 z-30 bg-primary border-l border-primary-foreground/30 px-2 py-3 text-center w-[80px] text-xs uppercase tracking-wider">Moy /{bareme}</th>
                                   </tr>
