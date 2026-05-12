@@ -1121,6 +1121,109 @@ export default function Notes() {
         onOpenChange={setImportOpen}
         onImportDone={() => queryClient.invalidateQueries({ queryKey: ['all-notes-period'] })}
       />
+
+      {/* Aperçu d'import — confirmer avant d'enregistrer */}
+      <Dialog open={!!importPreview} onOpenChange={(o) => { if (!o) setImportPreview(null); }}>
+        <DialogContent className="max-w-4xl max-h-[88vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5 text-primary" /> Aperçu de l'import
+            </DialogTitle>
+          </DialogHeader>
+          {importPreview && (() => {
+            const byEleve = new Map<string, { label: string; items: { matiere_label: string; value: string }[] }>();
+            const byMatiere = new Map<string, { label: string; items: { eleve_label: string; value: string }[] }>();
+            importPreview.notes.forEach((n) => {
+              if (!byEleve.has(n.eleve_id)) byEleve.set(n.eleve_id, { label: n.eleve_label, items: [] });
+              byEleve.get(n.eleve_id)!.items.push({ matiere_label: n.matiere_label, value: n.value });
+              if (!byMatiere.has(n.matiere_id)) byMatiere.set(n.matiere_id, { label: n.matiere_label, items: [] });
+              byMatiere.get(n.matiere_id)!.items.push({ eleve_label: n.eleve_label, value: n.value });
+            });
+            return (
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div className="rounded-lg border bg-primary/5 p-3 text-center">
+                    <p className="text-2xl font-bold text-primary">{importPreview.notes.length}</p>
+                    <p className="text-xs text-muted-foreground">Notes valides</p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                    <p className="text-2xl font-bold">{byEleve.size}</p>
+                    <p className="text-xs text-muted-foreground">Élèves concernés</p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                    <p className="text-2xl font-bold">{byMatiere.size}</p>
+                    <p className="text-xs text-muted-foreground">Matières</p>
+                  </div>
+                  <div className={`rounded-lg border p-3 text-center ${(importPreview.unmatched.length + importPreview.invalid.length) > 0 ? 'bg-destructive/10 border-destructive/40' : 'bg-muted/30'}`}>
+                    <p className="text-2xl font-bold">{importPreview.unmatched.length + importPreview.invalid.length}</p>
+                    <p className="text-xs text-muted-foreground">Anomalies</p>
+                  </div>
+                </div>
+
+                {(importPreview.unmatched.length > 0 || importPreview.invalid.length > 0 || importPreview.unknownCols.length > 0) && (
+                  <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 space-y-1.5">
+                    <p className="text-sm font-semibold flex items-center gap-1.5"><AlertTriangle className="h-4 w-4 text-destructive" /> Anomalies détectées</p>
+                    {importPreview.unknownCols.length > 0 && (
+                      <p className="text-xs"><b>{importPreview.unknownCols.length} colonne(s) ignorée(s) :</b> {importPreview.unknownCols.join(', ')}</p>
+                    )}
+                    {importPreview.unmatched.length > 0 && (
+                      <p className="text-xs"><b>{importPreview.unmatched.length} élève(s) introuvable(s) :</b> {importPreview.unmatched.slice(0, 5).map(u => `${u.nom} ${u.prenom}`).join(' • ')}{importPreview.unmatched.length > 5 ? '…' : ''}</p>
+                    )}
+                    {importPreview.invalid.length > 0 && (
+                      <p className="text-xs"><b>{importPreview.invalid.length} valeur(s) hors barème (0-{bareme}) :</b> {importPreview.invalid.slice(0, 5).map(i => `${i.eleve_label}/${i.matiere_label}=${i.raw}`).join(' • ')}{importPreview.invalid.length > 5 ? '…' : ''}</p>
+                    )}
+                  </div>
+                )}
+
+                <Tabs defaultValue="eleve">
+                  <TabsList>
+                    <TabsTrigger value="eleve">📋 Par élève ({byEleve.size})</TabsTrigger>
+                    <TabsTrigger value="matiere">📚 Par matière ({byMatiere.size})</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="eleve" className="mt-3">
+                    <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                      {Array.from(byEleve.values()).map((g) => (
+                        <div key={g.label} className="rounded-lg border bg-card p-3">
+                          <p className="font-semibold text-sm mb-2">{g.label}</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {g.items.map((it, i) => (
+                              <Badge key={i} variant="outline" className="text-xs font-mono">
+                                {it.matiere_label}: <b className="ml-1">{it.value}</b>
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="matiere" className="mt-3">
+                    <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                      {Array.from(byMatiere.values()).map((g) => (
+                        <div key={g.label} className="rounded-lg border bg-card p-3">
+                          <p className="font-semibold text-sm mb-2">{g.label} <span className="text-xs text-muted-foreground">({g.items.length})</span></p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {g.items.map((it, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">
+                                {it.eleve_label}: <b className="ml-1 font-mono">{it.value}</b>
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+            );
+          })()}
+          <div className="flex justify-end gap-2 pt-3 border-t">
+            <Button variant="outline" onClick={() => setImportPreview(null)}>Annuler</Button>
+            <Button onClick={confirmImport} disabled={!importPreview || importPreview.notes.length === 0}>
+              <CheckCircle className="h-4 w-4 mr-1.5" /> Confirmer l'import ({importPreview?.notes.length ?? 0})
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
