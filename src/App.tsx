@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
 import { Loader2 } from "lucide-react";
 import ForcePasswordChange from "@/components/ForcePasswordChange";
+import { UpdateBanner } from "@/components/UpdateBanner";
 import { useState, useEffect, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Landing from "./pages/Landing";
