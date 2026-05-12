@@ -265,6 +265,98 @@ export default function Notes() {
     onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
   });
 
+  // Réordonnancement des colonnes matières (swap des ordres dans classe_matieres)
+  const reorderMatiere = useMutation({
+    mutationFn: async ({ from, to }: { from: number; to: number }) => {
+      if (from === to || from < 0 || to < 0 || from >= matieres.length || to >= matieres.length) return;
+      const a = matieres[from] as any;
+      const b = matieres[to] as any;
+      const cmA = (classeMatieres as any[]).find((c: any) => c.matiere_id === a.id);
+      const cmB = (classeMatieres as any[]).find((c: any) => c.matiere_id === b.id);
+      if (!cmA || !cmB) throw new Error('Réordonnancement disponible uniquement quand les matières sont assignées via Configuration > Classes.');
+      const ordreA = cmA.ordre, ordreB = cmB.ordre;
+      const { error: e1 } = await supabase.from('classe_matieres').update({ ordre: ordreB }).eq('classe_id', classeId).eq('matiere_id', a.id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from('classe_matieres').update({ ordre: ordreA }).eq('classe_id', classeId).eq('matiere_id', b.id);
+      if (e2) throw e2;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['classe-matieres', classeId] }),
+    onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
+  });
+
+  // Export direct du tableau en Excel
+  const handleExportTable = async () => {
+    if (matieres.length === 0 || eleves.length === 0) return;
+    const rows = (eleves as any[]).map((e: any, i: number) => {
+      const row: Record<string, any> = { 'N°': i + 1, 'Nom': e.nom, 'Prénom': e.prenom, 'Matricule': e.matricule || '' };
+      (matieres as any[]).forEach((m: any) => {
+        const v = gridCells[`${e.id}|${m.id}`];
+        row[m.nom] = v !== undefined && v !== '' ? parseFloat(v) : '';
+      });
+      return row;
+    });
+    const cls = (selectedClasse as any)?.nom || 'classe';
+    const per = (periodes as any[]).find((p: any) => p.id === periodeId)?.nom || 'periode';
+    await exportToExcel(rows, `Notes_${cls}_${per}`, 'Notes');
+    toast({ title: '📤 Export généré', description: `${rows.length} élève(s) × ${matieres.length} matière(s).` });
+  };
+
+  // Import direct depuis le tableau
+  const tableImportRef = useRef<HTMLInputElement>(null);
+  const handleTableImport = async (ev: React.ChangeEvent<HTMLInputElement>) => {
+    const file = ev.target.files?.[0];
+    if (!file) return;
+    ev.target.value = '';
+    if (!periodeId) { toast({ title: 'Sélectionnez d\'abord une période', variant: 'destructive' }); return; }
+    try {
+      const rows = await readExcelFile(file);
+      if (rows.length === 0) { toast({ title: 'Fichier vide', variant: 'destructive' }); return; }
+      const norm = (s: any) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+      const cols = Object.keys(rows[0]);
+      const colToMat: Record<string, any> = {};
+      cols.forEach(col => {
+        const nc = norm(col);
+        if (!nc) return;
+        const m = (matieres as any[]).find((x: any) => {
+          const nm = norm(x.nom);
+          return nm === nc || nm.startsWith(nc) || nc.startsWith(nm);
+        });
+        if (m) colToMat[col] = m;
+      });
+      if (Object.keys(colToMat).length === 0) { toast({ title: 'Aucune matière reconnue', description: 'Les en-têtes de colonnes doivent correspondre aux noms des matières.', variant: 'destructive' }); return; }
+      let count = 0, errors = 0, unmatched = 0;
+      const updates: Record<string, string> = {};
+      for (const r of rows) {
+        const nom = norm(r['Nom'] ?? r['nom'] ?? r['NOMS'] ?? r['Noms']);
+        const prenom = norm(r['Prénom'] ?? r['prenom'] ?? r['Prenom'] ?? r['PRENOMS'] ?? r['Prenoms']);
+        const mat = norm(r['Matricule'] ?? r['matricule']);
+        const eleve = (eleves as any[]).find((e: any) =>
+          (mat && norm(e.matricule) === mat) ||
+          (nom && norm(e.nom) === nom && (!prenom || norm(e.prenom) === prenom))
+        );
+        if (!eleve) { unmatched++; continue; }
+        for (const [col, m] of Object.entries(colToMat)) {
+          const raw = r[col];
+          if (raw === '' || raw === null || raw === undefined) continue;
+          const v = String(raw).replace(',', '.').trim();
+          const n = parseFloat(v);
+          if (isNaN(n) || n < 0 || n > bareme) { errors++; continue; }
+          updates[`${eleve.id}|${(m as any).id}`] = String(n);
+          saveOneNote.mutate({ eleve_id: eleve.id, matiere_id: (m as any).id, value: String(n) });
+          count++;
+        }
+      }
+      setGridCells((s) => ({ ...s, ...updates }));
+      toast({
+        title: '📥 Import effectué',
+        description: `${count} note(s) importée(s)${unmatched ? ` • ${unmatched} élève(s) introuvable(s)` : ''}${errors ? ` • ${errors} valeur(s) invalides` : ''}.`,
+        variant: (errors || unmatched) ? 'destructive' : 'default',
+      });
+    } catch (err: any) {
+      toast({ title: 'Erreur import', description: err.message, variant: 'destructive' });
+    }
+  };
+
   const canShowList = classeId && periodeId && eleves.length > 0 && matieres.length > 0;
 
   const { data: bulletinPub } = useQuery({
