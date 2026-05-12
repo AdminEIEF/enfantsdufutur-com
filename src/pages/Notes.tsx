@@ -32,6 +32,7 @@ export default function Notes() {
   const [selectedEleveId, setSelectedEleveId] = useState<string | null>(null);
   const [notesMap, setNotesMap] = useState<Record<string, string>>({});
   const [importOpen, setImportOpen] = useState(false);
+  const [showOnlyMissing, setShowOnlyMissing] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: cycles = [] } = useQuery({
