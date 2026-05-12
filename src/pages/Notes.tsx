@@ -613,20 +613,47 @@ export default function Notes() {
                                     <th className="sticky left-0 z-30 bg-primary border-r border-primary-foreground/30 px-2 py-3 text-center w-12 text-xs uppercase tracking-wider">#</th>
                                     <th className="sticky left-12 z-30 bg-primary border-r border-primary-foreground/30 px-3 py-3 text-left min-w-[200px] text-xs uppercase tracking-wider">Élève</th>
                                     <TooltipProvider delayDuration={150}>
-                                      {matieres.map((m: any) => (
+                                      {matieres.map((m: any, mi: number) => {
+                                        const canReorder = (classeMatieres as any[]).length > 0;
+                                        return (
                                         <Tooltip key={m.id}>
                                           <TooltipTrigger asChild>
-                                            <th className="border-r border-primary-foreground/20 px-1 py-3 text-center w-[68px] min-w-[68px] font-bold cursor-help hover:bg-primary-foreground/10 transition-colors">
-                                              <span className="block text-xs uppercase tracking-tight truncate" title={m.nom}>
-                                                {abbrev(m.nom)}
-                                              </span>
+                                            <th className="border-r border-primary-foreground/20 px-1 py-2 text-center w-[78px] min-w-[78px] font-bold cursor-help hover:bg-primary-foreground/10 transition-colors group">
+                                              <div className="flex items-center justify-center gap-0.5">
+                                                {canReorder && (
+                                                  <button
+                                                    type="button"
+                                                    aria-label="Déplacer à gauche"
+                                                    disabled={mi === 0 || reorderMatiere.isPending}
+                                                    onClick={(e) => { e.stopPropagation(); reorderMatiere.mutate({ from: mi, to: mi - 1 }); }}
+                                                    className="opacity-0 group-hover:opacity-100 disabled:opacity-20 hover:bg-primary-foreground/20 rounded p-0.5 transition-all"
+                                                  >
+                                                    <ChevronLeft className="h-3 w-3" />
+                                                  </button>
+                                                )}
+                                                <span className="block text-xs uppercase tracking-tight truncate flex-1" title={m.nom}>
+                                                  {abbrev(m.nom)}
+                                                </span>
+                                                {canReorder && (
+                                                  <button
+                                                    type="button"
+                                                    aria-label="Déplacer à droite"
+                                                    disabled={mi === matieres.length - 1 || reorderMatiere.isPending}
+                                                    onClick={(e) => { e.stopPropagation(); reorderMatiere.mutate({ from: mi, to: mi + 1 }); }}
+                                                    className="opacity-0 group-hover:opacity-100 disabled:opacity-20 hover:bg-primary-foreground/20 rounded p-0.5 transition-all"
+                                                  >
+                                                    <ChevronRight className="h-3 w-3" />
+                                                  </button>
+                                                )}
+                                              </div>
                                             </th>
                                           </TooltipTrigger>
                                           <TooltipContent side="bottom" className="font-semibold">
                                             {m.nom}
                                           </TooltipContent>
                                         </Tooltip>
-                                      ))}
+                                        );
+                                      })}
                                     </TooltipProvider>
                                     <th className="sticky right-0 z-30 bg-primary border-l border-primary-foreground/30 px-2 py-3 text-center w-[80px] text-xs uppercase tracking-wider">Moy /{bareme}</th>
                                   </tr>
