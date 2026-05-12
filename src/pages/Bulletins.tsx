@@ -199,6 +199,20 @@ export default function Bulletins() {
     });
   }, [eleves, allClassNotes]);
 
+  // Eleves sorted by rank for display / PDF generation
+  const sortedEleves = useMemo(() => {
+    if (!classeId || !periodeId || rankings.length === 0) return eleves;
+    const rankingMap = new Map(rankings.map(r => [r.id, r.rang]));
+    return [...eleves].sort((a: any, b: any) => {
+      const rankA = rankingMap.get(a.id);
+      const rankB = rankingMap.get(b.id);
+      if (rankA == null && rankB == null) return 0;
+      if (rankA == null) return 1;
+      if (rankB == null) return -1;
+      return rankA - rankB;
+    });
+  }, [eleves, rankings, classeId, periodeId]);
+
   const currentRanking = rankings.find(r => r.id === selectedEleve);
   const totalClasseEleves = eleves.length;
 
