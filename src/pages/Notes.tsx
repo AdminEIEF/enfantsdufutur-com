@@ -33,6 +33,8 @@ export default function Notes() {
   const [notesMap, setNotesMap] = useState<Record<string, string>>({});
   const [importOpen, setImportOpen] = useState(false);
   const [showOnlyMissing, setShowOnlyMissing] = useState(false);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
+  const [gridCells, setGridCells] = useState<Record<string, string>>({});
   const queryClient = useQueryClient();
 
   const { data: cycles = [] } = useQuery({
