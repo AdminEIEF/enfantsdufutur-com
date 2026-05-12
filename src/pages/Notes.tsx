@@ -388,84 +388,111 @@ export default function Notes() {
                   bareme={bareme}
                 />
               ) : (
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
-                  <CardTitle className="text-lg">
-                    {eleves.length} élève(s) — {matieres.length} matière(s)
-                    <span className="text-sm font-normal text-muted-foreground ml-2">(/{bareme})</span>
-                  </CardTitle>
-                  {(() => {
-                    const missingCount = eleves.filter((e: any) => {
-                      const p = progressByEleve[e.id];
-                      return !p || p.done < p.total;
-                    }).length;
-                    return (
-                      <div className="flex items-center gap-2">
-                        <Badge variant={missingCount > 0 ? 'destructive' : 'default'} className="gap-1">
-                          <AlertTriangle className="h-3 w-3" /> {missingCount} sans notes
-                        </Badge>
-                        <Button
-                          size="sm"
-                          variant={showOnlyMissing ? 'default' : 'outline'}
-                          onClick={() => setShowOnlyMissing((v) => !v)}
-                        >
-                          {showOnlyMissing ? 'Voir tous' : 'Voir uniquement sans notes'}
-                        </Button>
-                      </div>
-                    );
-                  })()}
-                </CardHeader>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">#</TableHead>
-                        <TableHead>Matricule</TableHead>
-                        <TableHead>Nom & Prénom</TableHead>
-                        <TableHead className="w-48 text-center">Progression</TableHead>
-                        <TableHead className="w-32 text-center">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {eleves
-                        .filter((e: any) => {
-                          if (!showOnlyMissing) return true;
-                          const p = progressByEleve[e.id];
-                          return !p || p.done < p.total;
-                        })
-                        .map((e: any, i: number) => {
-                        const prog = progressByEleve[e.id] || { done: 0, total: matieres.length };
-                        const pct = prog.total > 0 ? Math.round((prog.done / prog.total) * 100) : 0;
-                        const isComplete = prog.done === prog.total && prog.total > 0;
-                        return (
-                          <TableRow key={e.id} className={isComplete ? 'bg-accent/5' : ''}>
-                            <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                            <TableCell className="font-mono text-xs">{e.matricule || '—'}</TableCell>
-                            <TableCell className="font-medium">{e.nom} {e.prenom}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Progress value={pct} className="h-2 flex-1" />
-                                <span className="text-xs whitespace-nowrap">
-                                  {isComplete ? (
-                                    <Badge variant="default" className="text-xs gap-1"><CheckCircle className="h-3 w-3" /> {prog.done}/{prog.total}</Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="text-xs gap-1"><Circle className="h-3 w-3" /> {prog.done}/{prog.total}</Badge>
-                                  )}
-                                </span>
+              <>
+                {(() => {
+                  const missingCount = eleves.filter((e: any) => {
+                    const p = progressByEleve[e.id];
+                    return !p || p.done < p.total;
+                  }).length;
+                  const completeCount = eleves.length - missingCount;
+                  const globalPct = eleves.length > 0 ? Math.round((completeCount / eleves.length) * 100) : 0;
+                  const visibleEleves = eleves.filter((e: any) => {
+                    if (!showOnlyMissing) return true;
+                    const p = progressByEleve[e.id];
+                    return !p || p.done < p.total;
+                  });
+                  return (
+                    <>
+                      {/* Synthèse globale */}
+                      <Card className="bg-gradient-to-br from-primary/5 via-background to-accent/5 border-l-4 border-l-primary">
+                        <CardContent className="pt-6">
+                          <div className="flex flex-wrap items-center justify-between gap-4">
+                            <div className="flex items-center gap-4">
+                              <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                                <Users className="h-7 w-7 text-primary" />
                               </div>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Button size="sm" variant={isComplete ? 'outline' : 'default'} onClick={() => setSelectedEleveId(e.id)}>
-                                {isComplete ? 'Modifier' : 'Saisir'} <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                              <div>
+                                <p className="text-2xl font-bold">{completeCount}<span className="text-base font-normal text-muted-foreground">/{eleves.length}</span></p>
+                                <p className="text-xs text-muted-foreground">élèves complets — {matieres.length} matière(s) /{bareme}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <Badge variant={missingCount > 0 ? 'destructive' : 'default'} className="gap-1 px-3 py-1.5 text-sm">
+                                <AlertTriangle className="h-3.5 w-3.5" /> {missingCount} sans notes
+                              </Badge>
+                              <Button
+                                size="sm"
+                                variant={showOnlyMissing ? 'default' : 'outline'}
+                                onClick={() => setShowOnlyMissing((v) => !v)}
+                              >
+                                {showOnlyMissing ? '👁 Voir tous' : '🔍 Sans notes uniquement'}
                               </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+                            </div>
+                          </div>
+                          <div className="mt-4 flex items-center gap-3">
+                            <Progress value={globalPct} className="h-2 flex-1" />
+                            <span className="text-xs font-mono text-muted-foreground w-12 text-right">{globalPct}%</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Grille moderne d'élèves */}
+                      {visibleEleves.length === 0 ? (
+                        <Card><CardContent className="py-10 text-center text-muted-foreground">
+                          🎉 Tous les élèves ont leurs notes saisies !
+                        </CardContent></Card>
+                      ) : (
+                        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                          {visibleEleves.map((e: any, i: number) => {
+                            const prog = progressByEleve[e.id] || { done: 0, total: matieres.length };
+                            const pct = prog.total > 0 ? Math.round((prog.done / prog.total) * 100) : 0;
+                            const isComplete = prog.done === prog.total && prog.total > 0;
+                            const isEmpty = prog.done === 0;
+                            return (
+                              <button
+                                key={e.id}
+                                onClick={() => setSelectedEleveId(e.id)}
+                                className={`group text-left rounded-2xl border-2 p-4 transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] ${
+                                  isComplete
+                                    ? 'border-green-500/40 bg-green-500/5 hover:border-green-500'
+                                    : isEmpty
+                                      ? 'border-destructive/40 bg-destructive/5 hover:border-destructive'
+                                      : 'border-amber-500/40 bg-amber-500/5 hover:border-amber-500'
+                                }`}
+                              >
+                                <div className="flex items-start justify-between mb-3">
+                                  <div className="h-10 w-10 rounded-xl bg-background border flex items-center justify-center font-bold text-sm">
+                                    {(e.prenom?.[0] || '') + (e.nom?.[0] || '')}
+                                  </div>
+                                  {isComplete ? (
+                                    <Badge className="bg-green-600 hover:bg-green-700 gap-1"><CheckCircle className="h-3 w-3" /> Complet</Badge>
+                                  ) : isEmpty ? (
+                                    <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" /> Vide</Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="gap-1 border-amber-500 text-amber-700 dark:text-amber-400"><Circle className="h-3 w-3" /> Partiel</Badge>
+                                  )}
+                                </div>
+                                <p className="font-semibold text-sm leading-tight truncate">{e.nom} {e.prenom}</p>
+                                <p className="font-mono text-[10px] text-muted-foreground mt-0.5 truncate">{e.matricule || '—'}</p>
+                                <div className="mt-3 flex items-center gap-2">
+                                  <Progress value={pct} className="h-1.5 flex-1" />
+                                  <span className="text-[10px] font-mono text-muted-foreground tabular-nums">{prog.done}/{prog.total}</span>
+                                </div>
+                                <div className="mt-3 flex items-center justify-between text-xs">
+                                  <span className="text-muted-foreground">#{i + 1}</span>
+                                  <span className="text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                                    {isComplete ? 'Modifier' : 'Saisir'} <ChevronRight className="h-3 w-3" />
+                                  </span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </>
               )
             ) : (
               <Card>
