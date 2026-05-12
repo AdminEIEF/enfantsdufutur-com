@@ -456,7 +456,7 @@ export default function Bulletins() {
               </Select>
             </div>
           </div>
-          {classeId && periodeId && eleves.length > 0 && (
+          {classeId && periodeId && sortedEleves.length > 0 && (
             <div className="mt-4 pt-4 border-t flex items-center gap-3">
               <Button
                 size="sm"
@@ -464,7 +464,7 @@ export default function Bulletins() {
                 disabled={pdfLoading}
                 onClick={async () => {
                   setPdfLoading(true);
-                  toast.info(`Génération des ${eleves.length} bulletins en cours...`);
+                  toast.info(`Génération des ${sortedEleves.length} bulletins en cours...`);
                   try {
                     // Wait for all custom fonts to be fully loaded
                     await document.fonts.ready;
@@ -477,9 +477,9 @@ export default function Bulletins() {
                     const pdfWidth = 210;
                     const pdfHeight = 297;
                     
-                    for (let i = 0; i < eleves.length; i++) {
+                    for (let i = 0; i < sortedEleves.length; i++) {
                       // Select the student to render their bulletin
-                      setSelectedEleve(eleves[i].id);
+                      setSelectedEleve(sortedEleves[i].id);
                       setShowPrintView(true);
                       // Wait for React to render
                       await new Promise(r => setTimeout(r, 800));
