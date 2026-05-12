@@ -389,11 +389,31 @@ export default function Notes() {
                 />
               ) : (
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
                   <CardTitle className="text-lg">
                     {eleves.length} élève(s) — {matieres.length} matière(s)
                     <span className="text-sm font-normal text-muted-foreground ml-2">(/{bareme})</span>
                   </CardTitle>
+                  {(() => {
+                    const missingCount = eleves.filter((e: any) => {
+                      const p = progressByEleve[e.id];
+                      return !p || p.done < p.total;
+                    }).length;
+                    return (
+                      <div className="flex items-center gap-2">
+                        <Badge variant={missingCount > 0 ? 'destructive' : 'default'} className="gap-1">
+                          <AlertTriangle className="h-3 w-3" /> {missingCount} sans notes
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant={showOnlyMissing ? 'default' : 'outline'}
+                          onClick={() => setShowOnlyMissing((v) => !v)}
+                        >
+                          {showOnlyMissing ? 'Voir tous' : 'Voir uniquement sans notes'}
+                        </Button>
+                      </div>
+                    );
+                  })()}
                 </CardHeader>
                 <CardContent className="p-0">
                   <Table>
@@ -407,7 +427,13 @@ export default function Notes() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {eleves.map((e: any, i: number) => {
+                      {eleves
+                        .filter((e: any) => {
+                          if (!showOnlyMissing) return true;
+                          const p = progressByEleve[e.id];
+                          return !p || p.done < p.total;
+                        })
+                        .map((e: any, i: number) => {
                         const prog = progressByEleve[e.id] || { done: 0, total: matieres.length };
                         const pct = prog.total > 0 ? Math.round((prog.done / prog.total) * 100) : 0;
                         const isComplete = prog.done === prog.total && prog.total > 0;
