@@ -528,7 +528,7 @@ export default function Bulletins() {
                     const className = selectedCl?.nom || 'classe';
                     const periodName = periode?.nom || '';
                     pdf.save(`Bulletins_${className}_${periodName}.pdf`.replace(/\s+/g, '_'));
-                    toast.success(`${eleves.length} bulletins générés avec succès`);
+                    toast.success(`${sortedEleves.length} bulletins générés avec succès`);
                   } catch (e: any) {
                     toast.error(e.message || 'Erreur lors de la génération');
                   } finally {
@@ -537,7 +537,7 @@ export default function Bulletins() {
                 }}
               >
                 <Printer className="h-4 w-4 mr-1.5" />
-                {pdfLoading ? 'Génération...' : `Imprimer tous les bulletins (${eleves.length})`}
+                {pdfLoading ? 'Génération...' : `Imprimer tous les bulletins (${sortedEleves.length})`}
               </Button>
             </div>
           )}
