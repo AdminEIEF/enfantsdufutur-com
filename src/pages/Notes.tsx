@@ -265,24 +265,66 @@ export default function Notes() {
     onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
   });
 
-  // Réordonnancement des colonnes matières (swap des ordres dans classe_matieres)
+  // Réordonnancement par glisser-déposer (chain shift, comme Excel)
   const reorderMatiere = useMutation({
     mutationFn: async ({ from, to }: { from: number; to: number }) => {
       if (from === to || from < 0 || to < 0 || from >= matieres.length || to >= matieres.length) return;
-      const a = matieres[from] as any;
-      const b = matieres[to] as any;
-      const cmA = (classeMatieres as any[]).find((c: any) => c.matiere_id === a.id);
-      const cmB = (classeMatieres as any[]).find((c: any) => c.matiere_id === b.id);
-      if (!cmA || !cmB) throw new Error('Réordonnancement disponible uniquement quand les matières sont assignées via Configuration > Classes.');
-      const ordreA = cmA.ordre, ordreB = cmB.ordre;
-      const { error: e1 } = await supabase.from('classe_matieres').update({ ordre: ordreB }).eq('classe_id', classeId).eq('matiere_id', a.id);
-      if (e1) throw e1;
-      const { error: e2 } = await supabase.from('classe_matieres').update({ ordre: ordreA }).eq('classe_id', classeId).eq('matiere_id', b.id);
-      if (e2) throw e2;
+      if (!classeMatieres || (classeMatieres as any[]).length === 0) {
+        throw new Error('Réordonnancement disponible uniquement quand les matières sont assignées via Configuration > Classes.');
+      }
+      const list = (matieres as any[]).slice();
+      const [moved] = list.splice(from, 1);
+      list.splice(to, 0, moved);
+      const cmByMat = new Map((classeMatieres as any[]).map((c: any) => [c.matiere_id, c]));
+      const lo = Math.min(from, to), hi = Math.max(from, to);
+      const updates: { matiere_id: string; ordre: number }[] = [];
+      for (let i = lo; i <= hi; i++) {
+        const cm = cmByMat.get(list[i].id);
+        if (!cm) continue;
+        updates.push({ matiere_id: list[i].id, ordre: cm.ordre });
+      }
+      // Réassigne les ordres dans l'ordre des positions originales
+      const originalOrdres = [];
+      for (let i = lo; i <= hi; i++) {
+        const origMat = (matieres as any[])[i];
+        const cm = cmByMat.get(origMat.id);
+        if (cm) originalOrdres.push(cm.ordre);
+      }
+      // Étape 1 : valeurs temporaires négatives uniques pour éviter tout conflit
+      for (let i = 0; i < updates.length; i++) {
+        const { error } = await supabase.from('classe_matieres')
+          .update({ ordre: -1000 - i })
+          .eq('classe_id', classeId)
+          .eq('matiere_id', updates[i].matiere_id);
+        if (error) throw error;
+      }
+      // Étape 2 : valeurs finales selon le nouvel ordre
+      for (let i = 0; i < updates.length; i++) {
+        const { error } = await supabase.from('classe_matieres')
+          .update({ ordre: originalOrdres[i] })
+          .eq('classe_id', classeId)
+          .eq('matiere_id', list[lo + i].id);
+        if (error) throw error;
+      }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['classe-matieres', classeId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classe-matieres', classeId] });
+      toast({ title: '✅ Ordre mis à jour', description: 'Les matières ont été réorganisées.' });
+    },
     onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
   });
+
+  // État pour le drag & drop des colonnes
+  const [dragColIndex, setDragColIndex] = useState<number | null>(null);
+  const [dragOverColIndex, setDragOverColIndex] = useState<number | null>(null);
+
+  // État pour l'aperçu d'import
+  const [importPreview, setImportPreview] = useState<null | {
+    notes: { eleve_id: string; eleve_label: string; matiere_id: string; matiere_label: string; value: string }[];
+    unmatched: { nom: string; prenom: string; matricule: string }[];
+    invalid: { eleve_label: string; matiere_label: string; raw: string }[];
+    unknownCols: string[];
+  }>(null);
 
   // Export direct du tableau en Excel
   const handleExportTable = async () => {
@@ -301,7 +343,7 @@ export default function Notes() {
     toast({ title: '📤 Export généré', description: `${rows.length} élève(s) × ${matieres.length} matière(s).` });
   };
 
-  // Import direct depuis le tableau
+  // Import direct depuis le tableau — construit un aperçu avant validation
   const tableImportRef = useRef<HTMLInputElement>(null);
   const handleTableImport = async (ev: React.ChangeEvent<HTMLInputElement>) => {
     const file = ev.target.files?.[0];
@@ -313,19 +355,26 @@ export default function Notes() {
       if (rows.length === 0) { toast({ title: 'Fichier vide', variant: 'destructive' }); return; }
       const norm = (s: any) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
       const cols = Object.keys(rows[0]);
+      const reservedCols = new Set(['n°', 'no', 'nom', 'prenom', 'prénom', 'matricule', 'noms', 'prenoms']);
       const colToMat: Record<string, any> = {};
+      const unknownCols: string[] = [];
       cols.forEach(col => {
         const nc = norm(col);
-        if (!nc) return;
+        if (!nc || reservedCols.has(nc)) return;
         const m = (matieres as any[]).find((x: any) => {
           const nm = norm(x.nom);
           return nm === nc || nm.startsWith(nc) || nc.startsWith(nm);
         });
         if (m) colToMat[col] = m;
+        else unknownCols.push(col);
       });
-      if (Object.keys(colToMat).length === 0) { toast({ title: 'Aucune matière reconnue', description: 'Les en-têtes de colonnes doivent correspondre aux noms des matières.', variant: 'destructive' }); return; }
-      let count = 0, errors = 0, unmatched = 0;
-      const updates: Record<string, string> = {};
+      if (Object.keys(colToMat).length === 0) {
+        toast({ title: 'Aucune matière reconnue', description: 'Les en-têtes doivent correspondre aux noms des matières.', variant: 'destructive' });
+        return;
+      }
+      const previewNotes: { eleve_id: string; eleve_label: string; matiere_id: string; matiere_label: string; value: string }[] = [];
+      const unmatched: { nom: string; prenom: string; matricule: string }[] = [];
+      const invalid: { eleve_label: string; matiere_label: string; raw: string }[] = [];
       for (const r of rows) {
         const nom = norm(r['Nom'] ?? r['nom'] ?? r['NOMS'] ?? r['Noms']);
         const prenom = norm(r['Prénom'] ?? r['prenom'] ?? r['Prenom'] ?? r['PRENOMS'] ?? r['Prenoms']);
@@ -334,27 +383,50 @@ export default function Notes() {
           (mat && norm(e.matricule) === mat) ||
           (nom && norm(e.nom) === nom && (!prenom || norm(e.prenom) === prenom))
         );
-        if (!eleve) { unmatched++; continue; }
+        if (!eleve) {
+          unmatched.push({ nom: String(r['Nom'] ?? r['nom'] ?? ''), prenom: String(r['Prénom'] ?? r['prenom'] ?? ''), matricule: String(r['Matricule'] ?? r['matricule'] ?? '') });
+          continue;
+        }
         for (const [col, m] of Object.entries(colToMat)) {
           const raw = r[col];
           if (raw === '' || raw === null || raw === undefined) continue;
           const v = String(raw).replace(',', '.').trim();
           const n = parseFloat(v);
-          if (isNaN(n) || n < 0 || n > bareme) { errors++; continue; }
-          updates[`${eleve.id}|${(m as any).id}`] = String(n);
-          saveOneNote.mutate({ eleve_id: eleve.id, matiere_id: (m as any).id, value: String(n) });
-          count++;
+          const eleveLabel = `${eleve.nom} ${eleve.prenom}`;
+          if (isNaN(n) || n < 0 || n > bareme) {
+            invalid.push({ eleve_label: eleveLabel, matiere_label: (m as any).nom, raw: String(raw) });
+            continue;
+          }
+          previewNotes.push({
+            eleve_id: eleve.id,
+            eleve_label: eleveLabel,
+            matiere_id: (m as any).id,
+            matiere_label: (m as any).nom,
+            value: String(n),
+          });
         }
       }
-      setGridCells((s) => ({ ...s, ...updates }));
-      toast({
-        title: '📥 Import effectué',
-        description: `${count} note(s) importée(s)${unmatched ? ` • ${unmatched} élève(s) introuvable(s)` : ''}${errors ? ` • ${errors} valeur(s) invalides` : ''}.`,
-        variant: (errors || unmatched) ? 'destructive' : 'default',
-      });
+      if (previewNotes.length === 0 && unmatched.length === 0 && invalid.length === 0) {
+        toast({ title: 'Rien à importer', variant: 'destructive' });
+        return;
+      }
+      setImportPreview({ notes: previewNotes, unmatched, invalid, unknownCols });
     } catch (err: any) {
       toast({ title: 'Erreur import', description: err.message, variant: 'destructive' });
     }
+  };
+
+  const confirmImport = async () => {
+    if (!importPreview) return;
+    const { notes } = importPreview;
+    const updates: Record<string, string> = {};
+    for (const n of notes) {
+      updates[`${n.eleve_id}|${n.matiere_id}`] = n.value;
+      saveOneNote.mutate({ eleve_id: n.eleve_id, matiere_id: n.matiere_id, value: n.value });
+    }
+    setGridCells((s) => ({ ...s, ...updates }));
+    toast({ title: '✅ Import validé', description: `${notes.length} note(s) appliquée(s).` });
+    setImportPreview(null);
   };
 
   const canShowList = classeId && periodeId && eleves.length > 0 && matieres.length > 0;
@@ -618,7 +690,22 @@ export default function Notes() {
                                         return (
                                         <Tooltip key={m.id}>
                                           <TooltipTrigger asChild>
-                                            <th className="border-r border-primary-foreground/20 px-1 py-2 text-center w-[78px] min-w-[78px] font-bold cursor-help hover:bg-primary-foreground/10 transition-colors group">
+                                            <th
+                                              draggable={canReorder}
+                                              onDragStart={(e) => { if (!canReorder) return; setDragColIndex(mi); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', String(mi)); } catch {} }}
+                                              onDragOver={(e) => { if (canReorder && dragColIndex !== null && dragColIndex !== mi) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverColIndex(mi); } }}
+                                              onDragLeave={() => { if (dragOverColIndex === mi) setDragOverColIndex(null); }}
+                                              onDrop={(e) => {
+                                                e.preventDefault();
+                                                const from = dragColIndex;
+                                                setDragOverColIndex(null);
+                                                setDragColIndex(null);
+                                                if (from === null || from === mi) return;
+                                                reorderMatiere.mutate({ from, to: mi });
+                                              }}
+                                              onDragEnd={() => { setDragColIndex(null); setDragOverColIndex(null); }}
+                                              title={canReorder ? `${m.nom} — glissez pour réorganiser` : m.nom}
+                                              className={`border-r border-primary-foreground/20 px-1 py-2 text-center w-[78px] min-w-[78px] font-bold transition-all group ${canReorder ? 'cursor-grab active:cursor-grabbing' : 'cursor-help'} ${dragOverColIndex === mi ? 'bg-primary-foreground/30 ring-2 ring-primary-foreground/60 ring-inset' : 'hover:bg-primary-foreground/10'} ${dragColIndex === mi ? 'opacity-50' : ''}`}>
                                               <div className="flex items-center justify-center gap-0.5">
                                                 {canReorder && (
                                                   <button
@@ -1034,6 +1121,109 @@ export default function Notes() {
         onOpenChange={setImportOpen}
         onImportDone={() => queryClient.invalidateQueries({ queryKey: ['all-notes-period'] })}
       />
+
+      {/* Aperçu d'import — confirmer avant d'enregistrer */}
+      <Dialog open={!!importPreview} onOpenChange={(o) => { if (!o) setImportPreview(null); }}>
+        <DialogContent className="max-w-4xl max-h-[88vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5 text-primary" /> Aperçu de l'import
+            </DialogTitle>
+          </DialogHeader>
+          {importPreview && (() => {
+            const byEleve = new Map<string, { label: string; items: { matiere_label: string; value: string }[] }>();
+            const byMatiere = new Map<string, { label: string; items: { eleve_label: string; value: string }[] }>();
+            importPreview.notes.forEach((n) => {
+              if (!byEleve.has(n.eleve_id)) byEleve.set(n.eleve_id, { label: n.eleve_label, items: [] });
+              byEleve.get(n.eleve_id)!.items.push({ matiere_label: n.matiere_label, value: n.value });
+              if (!byMatiere.has(n.matiere_id)) byMatiere.set(n.matiere_id, { label: n.matiere_label, items: [] });
+              byMatiere.get(n.matiere_id)!.items.push({ eleve_label: n.eleve_label, value: n.value });
+            });
+            return (
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div className="rounded-lg border bg-primary/5 p-3 text-center">
+                    <p className="text-2xl font-bold text-primary">{importPreview.notes.length}</p>
+                    <p className="text-xs text-muted-foreground">Notes valides</p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                    <p className="text-2xl font-bold">{byEleve.size}</p>
+                    <p className="text-xs text-muted-foreground">Élèves concernés</p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                    <p className="text-2xl font-bold">{byMatiere.size}</p>
+                    <p className="text-xs text-muted-foreground">Matières</p>
+                  </div>
+                  <div className={`rounded-lg border p-3 text-center ${(importPreview.unmatched.length + importPreview.invalid.length) > 0 ? 'bg-destructive/10 border-destructive/40' : 'bg-muted/30'}`}>
+                    <p className="text-2xl font-bold">{importPreview.unmatched.length + importPreview.invalid.length}</p>
+                    <p className="text-xs text-muted-foreground">Anomalies</p>
+                  </div>
+                </div>
+
+                {(importPreview.unmatched.length > 0 || importPreview.invalid.length > 0 || importPreview.unknownCols.length > 0) && (
+                  <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 space-y-1.5">
+                    <p className="text-sm font-semibold flex items-center gap-1.5"><AlertTriangle className="h-4 w-4 text-destructive" /> Anomalies détectées</p>
+                    {importPreview.unknownCols.length > 0 && (
+                      <p className="text-xs"><b>{importPreview.unknownCols.length} colonne(s) ignorée(s) :</b> {importPreview.unknownCols.join(', ')}</p>
+                    )}
+                    {importPreview.unmatched.length > 0 && (
+                      <p className="text-xs"><b>{importPreview.unmatched.length} élève(s) introuvable(s) :</b> {importPreview.unmatched.slice(0, 5).map(u => `${u.nom} ${u.prenom}`).join(' • ')}{importPreview.unmatched.length > 5 ? '…' : ''}</p>
+                    )}
+                    {importPreview.invalid.length > 0 && (
+                      <p className="text-xs"><b>{importPreview.invalid.length} valeur(s) hors barème (0-{bareme}) :</b> {importPreview.invalid.slice(0, 5).map(i => `${i.eleve_label}/${i.matiere_label}=${i.raw}`).join(' • ')}{importPreview.invalid.length > 5 ? '…' : ''}</p>
+                    )}
+                  </div>
+                )}
+
+                <Tabs defaultValue="eleve">
+                  <TabsList>
+                    <TabsTrigger value="eleve">📋 Par élève ({byEleve.size})</TabsTrigger>
+                    <TabsTrigger value="matiere">📚 Par matière ({byMatiere.size})</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="eleve" className="mt-3">
+                    <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                      {Array.from(byEleve.values()).map((g) => (
+                        <div key={g.label} className="rounded-lg border bg-card p-3">
+                          <p className="font-semibold text-sm mb-2">{g.label}</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {g.items.map((it, i) => (
+                              <Badge key={i} variant="outline" className="text-xs font-mono">
+                                {it.matiere_label}: <b className="ml-1">{it.value}</b>
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="matiere" className="mt-3">
+                    <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                      {Array.from(byMatiere.values()).map((g) => (
+                        <div key={g.label} className="rounded-lg border bg-card p-3">
+                          <p className="font-semibold text-sm mb-2">{g.label} <span className="text-xs text-muted-foreground">({g.items.length})</span></p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {g.items.map((it, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">
+                                {it.eleve_label}: <b className="ml-1 font-mono">{it.value}</b>
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+            );
+          })()}
+          <div className="flex justify-end gap-2 pt-3 border-t">
+            <Button variant="outline" onClick={() => setImportPreview(null)}>Annuler</Button>
+            <Button onClick={confirmImport} disabled={!importPreview || importPreview.notes.length === 0}>
+              <CheckCircle className="h-4 w-4 mr-1.5" /> Confirmer l'import ({importPreview?.notes.length ?? 0})
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
