@@ -343,7 +343,7 @@ export default function Notes() {
     toast({ title: '📤 Export généré', description: `${rows.length} élève(s) × ${matieres.length} matière(s).` });
   };
 
-  // Import direct depuis le tableau
+  // Import direct depuis le tableau — construit un aperçu avant validation
   const tableImportRef = useRef<HTMLInputElement>(null);
   const handleTableImport = async (ev: React.ChangeEvent<HTMLInputElement>) => {
     const file = ev.target.files?.[0];
@@ -355,19 +355,26 @@ export default function Notes() {
       if (rows.length === 0) { toast({ title: 'Fichier vide', variant: 'destructive' }); return; }
       const norm = (s: any) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
       const cols = Object.keys(rows[0]);
+      const reservedCols = new Set(['n°', 'no', 'nom', 'prenom', 'prénom', 'matricule', 'noms', 'prenoms']);
       const colToMat: Record<string, any> = {};
+      const unknownCols: string[] = [];
       cols.forEach(col => {
         const nc = norm(col);
-        if (!nc) return;
+        if (!nc || reservedCols.has(nc)) return;
         const m = (matieres as any[]).find((x: any) => {
           const nm = norm(x.nom);
           return nm === nc || nm.startsWith(nc) || nc.startsWith(nm);
         });
         if (m) colToMat[col] = m;
+        else unknownCols.push(col);
       });
-      if (Object.keys(colToMat).length === 0) { toast({ title: 'Aucune matière reconnue', description: 'Les en-têtes de colonnes doivent correspondre aux noms des matières.', variant: 'destructive' }); return; }
-      let count = 0, errors = 0, unmatched = 0;
-      const updates: Record<string, string> = {};
+      if (Object.keys(colToMat).length === 0) {
+        toast({ title: 'Aucune matière reconnue', description: 'Les en-têtes doivent correspondre aux noms des matières.', variant: 'destructive' });
+        return;
+      }
+      const previewNotes: { eleve_id: string; eleve_label: string; matiere_id: string; matiere_label: string; value: string }[] = [];
+      const unmatched: { nom: string; prenom: string; matricule: string }[] = [];
+      const invalid: { eleve_label: string; matiere_label: string; raw: string }[] = [];
       for (const r of rows) {
         const nom = norm(r['Nom'] ?? r['nom'] ?? r['NOMS'] ?? r['Noms']);
         const prenom = norm(r['Prénom'] ?? r['prenom'] ?? r['Prenom'] ?? r['PRENOMS'] ?? r['Prenoms']);
@@ -376,27 +383,50 @@ export default function Notes() {
           (mat && norm(e.matricule) === mat) ||
           (nom && norm(e.nom) === nom && (!prenom || norm(e.prenom) === prenom))
         );
-        if (!eleve) { unmatched++; continue; }
+        if (!eleve) {
+          unmatched.push({ nom: String(r['Nom'] ?? r['nom'] ?? ''), prenom: String(r['Prénom'] ?? r['prenom'] ?? ''), matricule: String(r['Matricule'] ?? r['matricule'] ?? '') });
+          continue;
+        }
         for (const [col, m] of Object.entries(colToMat)) {
           const raw = r[col];
           if (raw === '' || raw === null || raw === undefined) continue;
           const v = String(raw).replace(',', '.').trim();
           const n = parseFloat(v);
-          if (isNaN(n) || n < 0 || n > bareme) { errors++; continue; }
-          updates[`${eleve.id}|${(m as any).id}`] = String(n);
-          saveOneNote.mutate({ eleve_id: eleve.id, matiere_id: (m as any).id, value: String(n) });
-          count++;
+          const eleveLabel = `${eleve.nom} ${eleve.prenom}`;
+          if (isNaN(n) || n < 0 || n > bareme) {
+            invalid.push({ eleve_label: eleveLabel, matiere_label: (m as any).nom, raw: String(raw) });
+            continue;
+          }
+          previewNotes.push({
+            eleve_id: eleve.id,
+            eleve_label: eleveLabel,
+            matiere_id: (m as any).id,
+            matiere_label: (m as any).nom,
+            value: String(n),
+          });
         }
       }
-      setGridCells((s) => ({ ...s, ...updates }));
-      toast({
-        title: '📥 Import effectué',
-        description: `${count} note(s) importée(s)${unmatched ? ` • ${unmatched} élève(s) introuvable(s)` : ''}${errors ? ` • ${errors} valeur(s) invalides` : ''}.`,
-        variant: (errors || unmatched) ? 'destructive' : 'default',
-      });
+      if (previewNotes.length === 0 && unmatched.length === 0 && invalid.length === 0) {
+        toast({ title: 'Rien à importer', variant: 'destructive' });
+        return;
+      }
+      setImportPreview({ notes: previewNotes, unmatched, invalid, unknownCols });
     } catch (err: any) {
       toast({ title: 'Erreur import', description: err.message, variant: 'destructive' });
     }
+  };
+
+  const confirmImport = async () => {
+    if (!importPreview) return;
+    const { notes } = importPreview;
+    const updates: Record<string, string> = {};
+    for (const n of notes) {
+      updates[`${n.eleve_id}|${n.matiere_id}`] = n.value;
+      saveOneNote.mutate({ eleve_id: n.eleve_id, matiere_id: n.matiere_id, value: n.value });
+    }
+    setGridCells((s) => ({ ...s, ...updates }));
+    toast({ title: '✅ Import validé', description: `${notes.length} note(s) appliquée(s).` });
+    setImportPreview(null);
   };
 
   const canShowList = classeId && periodeId && eleves.length > 0 && matieres.length > 0;
