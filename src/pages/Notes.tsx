@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BookOpen, Save, CheckCircle, Circle, ChevronRight, AlertTriangle, Eye, EyeOff, FileSpreadsheet, GraduationCap, Users } from 'lucide-react';
 import ImportNotesExcel from '@/components/ImportNotesExcel';
