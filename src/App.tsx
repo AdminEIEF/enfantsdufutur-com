@@ -215,6 +215,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <UpdateBanner />
       <BrowserRouter>
         <AuthProvider>
           <Suspense fallback={<LazyFallback />}>
