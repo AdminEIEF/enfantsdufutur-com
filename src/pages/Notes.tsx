@@ -36,7 +36,21 @@ export default function Notes() {
   const [showOnlyMissing, setShowOnlyMissing] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [gridCells, setGridCells] = useState<Record<string, string>>({});
+  const [anchorCell, setAnchorCell] = useState<{ r: number; c: number } | null>(null);
+  const [focusCell, setFocusCell] = useState<{ r: number; c: number } | null>(null);
   const queryClient = useQueryClient();
+
+  // Abréviation intelligente d'un nom de matière (max 6 chars)
+  const abbrev = useCallback((name: string) => {
+    if (!name) return '—';
+    const clean = name.trim();
+    if (clean.length <= 6) return clean;
+    const words = clean.split(/[\s\-']+/).filter(Boolean);
+    if (words.length >= 2) {
+      return words.map(w => w[0]).join('').toUpperCase().slice(0, 5);
+    }
+    return clean.slice(0, 5) + '.';
+  }, []);
 
   const { data: cycles = [] } = useQuery({
     queryKey: ['cycles'],
