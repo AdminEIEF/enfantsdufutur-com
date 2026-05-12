@@ -20,25 +20,7 @@ if (isPreviewHost || isInIframe) {
   });
 }
 
-// --- SW registration (production only) ---
-if (import.meta.env.PROD && !isPreviewHost && !isInIframe && "serviceWorker" in navigator) {
-  import("virtual:pwa-register").then(({ registerSW }) => {
-    const updateSW = registerSW({
-      immediate: true,
-      onNeedRefresh() {
-        void updateSW(true);
-      },
-      onRegisteredSW(_swUrl, registration) {
-        if (!registration) return;
-        const check = () => void registration.update().catch(() => undefined);
-        check();
-        window.addEventListener("focus", check);
-        document.addEventListener("visibilitychange", () => {
-          if (document.visibilityState === "visible") check();
-        });
-      },
-    });
-  });
-}
+// SW registration is handled centrally by <UpdateBanner /> so the user
+// gets a visible "new version available" prompt instead of a silent reload.
 
 createRoot(document.getElementById("root")!).render(<App />);
