@@ -210,7 +210,7 @@ export default function ParentEnfant() {
                 {activeTab === 'commandes' && <ParentEnfantCommandes commandesArticles={data?.commandesArticles || []} enfant={enfant} />}
                 {activeTab === 'cantine' && <ParentEnfantCantine repas={data?.repas || []} soldeCantine={data?.solde_cantine ?? enfant.solde_cantine ?? 0} />}
                 
-                {activeTab === 'bulletins' && <ParentEnfantBulletins bulletinPublications={data?.bulletinPublications || []} />}
+                {activeTab === 'bulletins' && <ParentEnfantBulletins bulletinPublications={data?.bulletinPublications || []} notes={data?.notes || []} periodes={data?.periodes || []} eleve={enfant} schoolConfig={schoolConfig} />}
                 {activeTab === 'profil' && <ParentEnfantProfilRadar notes={data?.notes || []} periodes={data?.periodes || []} bareme={enfant.classes?.niveaux?.cycles?.bareme || 20} eleve={enfant} schoolConfig={schoolConfig} famille={session?.famille} />}
               </motion.div>
             </AnimatePresence>
