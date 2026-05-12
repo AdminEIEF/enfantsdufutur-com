@@ -444,6 +444,24 @@ export default function Notes() {
                               </div>
                             </div>
                             <div className="flex items-center gap-3 flex-wrap">
+                              <div className="inline-flex rounded-lg border bg-background p-0.5">
+                                <Button
+                                  size="sm"
+                                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                                  className="h-8 px-3"
+                                  onClick={() => setViewMode('table')}
+                                >
+                                  📊 Tableau
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                                  className="h-8 px-3"
+                                  onClick={() => setViewMode('cards')}
+                                >
+                                  🗂 Cartes
+                                </Button>
+                              </div>
                               <Badge variant={missingCount > 0 ? 'destructive' : 'default'} className="gap-1 px-3 py-1.5 text-sm">
                                 <AlertTriangle className="h-3.5 w-3.5" /> {missingCount} sans notes
                               </Badge>
