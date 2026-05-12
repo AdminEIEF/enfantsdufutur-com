@@ -199,6 +199,20 @@ export default function Bulletins() {
     });
   }, [eleves, allClassNotes]);
 
+  // Eleves sorted by rank for display / PDF generation
+  const sortedEleves = useMemo(() => {
+    if (!classeId || !periodeId || rankings.length === 0) return eleves;
+    const rankingMap = new Map(rankings.map(r => [r.id, r.rang]));
+    return [...eleves].sort((a: any, b: any) => {
+      const rankA = rankingMap.get(a.id);
+      const rankB = rankingMap.get(b.id);
+      if (rankA == null && rankB == null) return 0;
+      if (rankA == null) return 1;
+      if (rankB == null) return -1;
+      return rankA - rankB;
+    });
+  }, [eleves, rankings, classeId, periodeId]);
+
   const currentRanking = rankings.find(r => r.id === selectedEleve);
   const totalClasseEleves = eleves.length;
 
@@ -428,16 +442,21 @@ export default function Bulletins() {
               <Select value={selectedEleve} onValueChange={setSelectedEleve}>
                 <SelectTrigger><SelectValue placeholder="Sélectionner l'élève" /></SelectTrigger>
                 <SelectContent>
-                  {eleves.length === 0 ? (
+                  {sortedEleves.length === 0 ? (
                     <SelectItem value="__empty__" disabled>Aucun élève</SelectItem>
-                  ) : eleves.map((e: any) => (
-                    <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>
-                  ))}
+                  ) : sortedEleves.map((e: any) => {
+                    const rank = rankings.find((r: any) => r.id === e.id)?.rang;
+                    return (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.prenom} {e.nom}{rank != null ? ` (Rang ${rank})` : ''}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
           </div>
-          {classeId && periodeId && eleves.length > 0 && (
+          {classeId && periodeId && sortedEleves.length > 0 && (
             <div className="mt-4 pt-4 border-t flex items-center gap-3">
               <Button
                 size="sm"
@@ -445,7 +464,7 @@ export default function Bulletins() {
                 disabled={pdfLoading}
                 onClick={async () => {
                   setPdfLoading(true);
-                  toast.info(`Génération des ${eleves.length} bulletins en cours...`);
+                  toast.info(`Génération des ${sortedEleves.length} bulletins en cours...`);
                   try {
                     // Wait for all custom fonts to be fully loaded
                     await document.fonts.ready;
@@ -458,9 +477,9 @@ export default function Bulletins() {
                     const pdfWidth = 210;
                     const pdfHeight = 297;
                     
-                    for (let i = 0; i < eleves.length; i++) {
+                    for (let i = 0; i < sortedEleves.length; i++) {
                       // Select the student to render their bulletin
-                      setSelectedEleve(eleves[i].id);
+                      setSelectedEleve(sortedEleves[i].id);
                       setShowPrintView(true);
                       // Wait for React to render
                       await new Promise(r => setTimeout(r, 800));
@@ -509,7 +528,7 @@ export default function Bulletins() {
                     const className = selectedCl?.nom || 'classe';
                     const periodName = periode?.nom || '';
                     pdf.save(`Bulletins_${className}_${periodName}.pdf`.replace(/\s+/g, '_'));
-                    toast.success(`${eleves.length} bulletins générés avec succès`);
+                    toast.success(`${sortedEleves.length} bulletins générés avec succès`);
                   } catch (e: any) {
                     toast.error(e.message || 'Erreur lors de la génération');
                   } finally {
@@ -518,7 +537,7 @@ export default function Bulletins() {
                 }}
               >
                 <Printer className="h-4 w-4 mr-1.5" />
-                {pdfLoading ? 'Génération...' : `Imprimer tous les bulletins (${eleves.length})`}
+                {pdfLoading ? 'Génération...' : `Imprimer tous les bulletins (${sortedEleves.length})`}
               </Button>
             </div>
           )}
