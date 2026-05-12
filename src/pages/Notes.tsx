@@ -580,6 +580,15 @@ export default function Notes() {
                               >
                                 {showOnlyMissing ? '👁 Voir tous' : '🔍 Sans notes uniquement'}
                               </Button>
+                              <div className="inline-flex rounded-lg border bg-background p-0.5">
+                                <Button size="sm" variant="ghost" className="h-8 px-3 gap-1.5" onClick={handleExportTable} disabled={!canShowList}>
+                                  <Download className="h-3.5 w-3.5" /> Exporter
+                                </Button>
+                                <Button size="sm" variant="ghost" className="h-8 px-3 gap-1.5" onClick={() => tableImportRef.current?.click()} disabled={!canShowList}>
+                                  <Upload className="h-3.5 w-3.5" /> Importer
+                                </Button>
+                                <input ref={tableImportRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleTableImport} />
+                              </div>
                             </div>
                           </div>
                           <div className="mt-4 flex items-center gap-3">
