@@ -608,42 +608,89 @@ export default function Notes() {
                                                   ev.clipboardData.setData('text/plain', lines.join('\n'));
                                                   toast({ title: '📋 Copié', description: `${(r2 - r1 + 1)} × ${(c2 - c1 + 1)} cellule(s).` });
                                                 }}
-                                                onPaste={(ev) => {
-                                                  const text = ev.clipboardData.getData('text/plain');
-                                                  if (!text) return;
-                                                  const isMulti = text.includes('\t') || /\r?\n/.test(text.trim());
-                                                  if (!isMulti) return;
-                                                  ev.preventDefault();
-                                                  const rows = text.replace(/\r/g, '').replace(/\n+$/, '').split('\n').map(l => l.split('\t'));
-                                                  let pasted = 0, errors = 0;
-                                                  const updates: Record<string, string> = {};
-                                                  rows.forEach((cols, dr) => {
-                                                    cols.forEach((raw, dc) => {
-                                                      const tr = ri + dr, tc = ci + dc;
-                                                      const tEleve = visibleEleves[tr];
-                                                      const tMat = matieres[tc];
-                                                      if (!tEleve || !tMat) return;
-                                                      const v = (raw ?? '').trim().replace(',', '.');
-                                                      if (v === '') {
-                                                        updates[`${tEleve.id}|${tMat.id}`] = '';
-                                                        saveOneNote.mutate({ eleve_id: tEleve.id, matiere_id: tMat.id, value: '' });
-                                                        pasted++;
-                                                        return;
-                                                      }
-                                                      const n = parseFloat(v);
-                                                      if (isNaN(n) || n < 0 || n > bareme) { errors++; return; }
-                                                      updates[`${tEleve.id}|${tMat.id}`] = String(n);
-                                                      saveOneNote.mutate({ eleve_id: tEleve.id, matiere_id: tMat.id, value: String(n) });
-                                                      pasted++;
-                                                    });
-                                                  });
-                                                  setGridCells((s) => ({ ...s, ...updates }));
-                                                  toast({
-                                                    title: '📋 Collage effectué',
-                                                    description: `${pasted} note(s) collée(s)${errors > 0 ? ` — ${errors} ignorée(s) (hors barème)` : ''}.`,
-                                                    variant: errors > 0 ? 'destructive' : 'default',
-                                                  });
-                                                }}
+                                                 onPaste={(ev) => {
+                                                   const text = ev.clipboardData.getData('text/plain');
+                                                   if (!text) return;
+                                                   const isMulti = text.includes('\t') || /\r?\n/.test(text.trim());
+                                                   if (!isMulti) return;
+                                                   ev.preventDefault();
+                                                   const rawRows = text.replace(/\r/g, '').replace(/\n+$/, '').split('\n').map(l => l.split('\t'));
+                                                   const srcRows = rawRows.length;
+                                                   const srcCols = Math.max(...rawRows.map(r => r.length));
+                                                   // Normalize ragged rows (auto-align: pad short rows with empty cells)
+                                                   const ragged = rawRows.some(r => r.length !== srcCols);
+                                                   const rows = rawRows.map(r => r.length === srcCols ? r : [...r, ...Array(srcCols - r.length).fill('')]);
+
+                                                   // Selection target range (if any)
+                                                   const hasSelection = !!(anchorCell && focusCell && (anchorCell.r !== focusCell.r || anchorCell.c !== focusCell.c));
+                                                   let startR = ri, startC = ci;
+                                                   let dstRows = srcRows, dstCols = srcCols;
+                                                   if (hasSelection) {
+                                                     const r1 = Math.min(anchorCell!.r, focusCell!.r), r2 = Math.max(anchorCell!.r, focusCell!.r);
+                                                     const c1 = Math.min(anchorCell!.c, focusCell!.c), c2 = Math.max(anchorCell!.c, focusCell!.c);
+                                                     startR = r1; startC = c1;
+                                                     dstRows = r2 - r1 + 1; dstCols = c2 - c1 + 1;
+                                                   }
+
+                                                   // Tiling logic (Excel-style): broadcast 1×N or N×1 or 1×1 over selection
+                                                   const tile = hasSelection && (
+                                                     (srcRows === 1 && srcCols === 1) ||
+                                                     (srcRows === 1 && dstCols === srcCols) ||
+                                                     (srcCols === 1 && dstRows === srcRows) ||
+                                                     (dstRows % srcRows === 0 && dstCols % srcCols === 0)
+                                                   );
+                                                   const effRows = tile ? dstRows : srcRows;
+                                                   const effCols = tile ? dstCols : srcCols;
+
+                                                   // Bounds available
+                                                   const availRows = visibleEleves.length - startR;
+                                                   const availCols = matieres.length - startC;
+                                                   const truncRows = Math.max(0, effRows - availRows);
+                                                   const truncCols = Math.max(0, effCols - availCols);
+
+                                                   // Mismatch with selection (when not tiling)
+                                                   const mismatch = hasSelection && !tile && (srcRows !== dstRows || srcCols !== dstCols);
+
+                                                   let pasted = 0, errors = 0, skipped = 0;
+                                                   const updates: Record<string, string> = {};
+                                                   const useRows = Math.min(effRows, availRows);
+                                                   const useCols = Math.min(effCols, availCols);
+                                                   for (let dr = 0; dr < useRows; dr++) {
+                                                     for (let dc = 0; dc < useCols; dc++) {
+                                                       const tEleve = visibleEleves[startR + dr];
+                                                       const tMat = matieres[startC + dc];
+                                                       if (!tEleve || !tMat) { skipped++; continue; }
+                                                       const raw = rows[dr % srcRows]?.[dc % srcCols] ?? '';
+                                                       const v = String(raw).trim().replace(',', '.');
+                                                       if (v === '') {
+                                                         updates[`${tEleve.id}|${tMat.id}`] = '';
+                                                         saveOneNote.mutate({ eleve_id: tEleve.id, matiere_id: tMat.id, value: '' });
+                                                         pasted++;
+                                                         continue;
+                                                       }
+                                                       const n = parseFloat(v);
+                                                       if (isNaN(n) || n < 0 || n > bareme) { errors++; continue; }
+                                                       updates[`${tEleve.id}|${tMat.id}`] = String(n);
+                                                       saveOneNote.mutate({ eleve_id: tEleve.id, matiere_id: tMat.id, value: String(n) });
+                                                       pasted++;
+                                                     }
+                                                   }
+                                                   setGridCells((s) => ({ ...s, ...updates }));
+
+                                                   // Build alert
+                                                   const warns: string[] = [];
+                                                   if (ragged) warns.push('lignes de tailles inégales auto-complétées');
+                                                   if (tile && (srcRows !== dstRows || srcCols !== dstCols)) warns.push(`source ${srcRows}×${srcCols} étendue à ${dstRows}×${dstCols}`);
+                                                   if (mismatch) warns.push(`sélection ${dstRows}×${dstCols} ≠ source ${srcRows}×${srcCols} — alignée depuis le coin haut-gauche`);
+                                                   if (truncRows > 0 || truncCols > 0) warns.push(`débordement tronqué (${truncRows} ligne(s), ${truncCols} colonne(s))`);
+                                                   if (errors > 0) warns.push(`${errors} valeur(s) hors barème /${bareme} ignorée(s)`);
+
+                                                   toast({
+                                                     title: warns.length > 0 ? '⚠️ Collage avec ajustements' : '📋 Collage effectué',
+                                                     description: `${pasted} note(s) collée(s)${warns.length ? ' — ' + warns.join(' ; ') : ''}.`,
+                                                     variant: (truncRows > 0 || truncCols > 0 || errors > 0 || mismatch) ? 'destructive' : 'default',
+                                                   });
+                                                 }}
                                                 onKeyDown={(ev) => {
                                                   const target = ev.currentTarget;
                                                   const move = (dr: number, dc: number, extend = false) => {
