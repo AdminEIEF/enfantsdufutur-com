@@ -510,18 +510,8 @@ export default function Notes() {
       </Tabs>
 
       {/* Student Notes Dialog */}
-      <Dialog open={!!selectedEleveId} onOpenChange={(open) => {
-        if (!open && !allFilled && matieres.length > 0) {
-          toast({ title: 'Saisie incomplète', description: `Il reste ${matieres.length - filledCount} matière(s) à saisir.`, variant: 'destructive' });
-          return;
-        }
-        if (!open) setSelectedEleveId(null);
-      }}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto" onPointerDownOutside={(e) => {
-          if (!allFilled && matieres.length > 0) e.preventDefault();
-        }} onEscapeKeyDown={(e) => {
-          if (!allFilled && matieres.length > 0) e.preventDefault();
-        }}>
+      <Dialog open={!!selectedEleveId} onOpenChange={(open) => { if (!open) setSelectedEleveId(null); }}>
+        <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
               <span>{selectedEleve?.prenom} {selectedEleve?.nom}</span>
@@ -529,54 +519,59 @@ export default function Notes() {
             </DialogTitle>
             <div className="flex items-center gap-2 mt-2">
               <Progress value={matieres.length > 0 ? (filledCount / matieres.length) * 100 : 0} className="h-2 flex-1" />
-              <span className="text-xs text-muted-foreground">{filledCount}/{matieres.length}</span>
+              <span className="text-xs text-muted-foreground tabular-nums">{filledCount}/{matieres.length}</span>
             </div>
-            {!allFilled && (
-              <p className="text-xs text-warning flex items-center gap-1 mt-1">
-                <AlertTriangle className="h-3 w-3" /> Toutes les notes doivent être saisies avant de valider
-              </p>
-            )}
             {currentIndex >= 0 && (
-              <p className="text-xs text-muted-foreground">Élève {currentIndex + 1}/{eleves.length}</p>
+              <p className="text-xs text-muted-foreground">Élève {currentIndex + 1}/{eleves.length} • /{bareme}</p>
             )}
           </DialogHeader>
 
           <div className="space-y-2 mt-2">
-            {matieres.map((m: any) => (
-              <div key={m.id} className="flex items-center justify-between gap-3 p-2 rounded border">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{m.nom}</p>
-                  <p className="text-xs text-muted-foreground">Coef. {m.coefficient}</p>
+            {matieres.map((m: any, idx: number) => {
+              const hasNote = notesMap[m.id] !== undefined && notesMap[m.id] !== '';
+              return (
+                <div key={m.id} className={`flex items-center justify-between gap-3 p-2.5 rounded-lg border-2 transition-colors ${hasNote ? 'border-green-500/30 bg-green-500/5' : 'border-border'}`}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{m.nom}</p>
+                    <p className="text-xs text-muted-foreground">Coef. {m.coefficient}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      max={bareme}
+                      step="0.5"
+                      autoFocus={idx === 0 && !hasNote}
+                      className="w-20 text-center font-semibold"
+                      value={notesMap[m.id] || ''}
+                      onChange={ev => setNotesMap(prev => ({ ...prev, [m.id]: ev.target.value }))}
+                      onKeyDown={(ev) => {
+                        if (ev.key === 'Enter') {
+                          ev.preventDefault();
+                          const inputs = (ev.currentTarget.closest('.space-y-2') as HTMLElement)?.querySelectorAll('input');
+                          const next = inputs?.[idx + 1] as HTMLInputElement | undefined;
+                          if (next) next.focus();
+                          else saveStudentNotes.mutate();
+                        }
+                      }}
+                      placeholder="—"
+                    />
+                    <span className="text-xs text-muted-foreground">/{bareme}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min="0"
-                    max={bareme}
-                    step="0.5"
-                    className="w-20 text-center"
-                    value={notesMap[m.id] || ''}
-                    onChange={ev => setNotesMap(prev => ({ ...prev, [m.id]: ev.target.value }))}
-                    placeholder="—"
-                  />
-                  <span className="text-xs text-muted-foreground">/{bareme}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <Button
             onClick={() => saveStudentNotes.mutate()}
-            disabled={!allFilled || saveStudentNotes.isPending}
+            disabled={saveStudentNotes.isPending}
             className="w-full mt-4"
           >
             <Save className="h-4 w-4 mr-2" />
-            {allFilled
-              ? nextEleve
-                ? `Enregistrer & passer à ${nextEleve.prenom} ${nextEleve.nom}`
-                : 'Enregistrer & terminer'
-              : `Il reste ${matieres.length - filledCount} note(s) à saisir`
-            }
+            {nextEleve
+              ? `Enregistrer & passer à ${nextEleve.prenom} ${nextEleve.nom}`
+              : 'Enregistrer & terminer'}
           </Button>
         </DialogContent>
       </Dialog>
