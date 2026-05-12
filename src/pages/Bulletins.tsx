@@ -442,11 +442,16 @@ export default function Bulletins() {
               <Select value={selectedEleve} onValueChange={setSelectedEleve}>
                 <SelectTrigger><SelectValue placeholder="Sélectionner l'élève" /></SelectTrigger>
                 <SelectContent>
-                  {eleves.length === 0 ? (
+                  {sortedEleves.length === 0 ? (
                     <SelectItem value="__empty__" disabled>Aucun élève</SelectItem>
-                  ) : eleves.map((e: any) => (
-                    <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>
-                  ))}
+                  ) : sortedEleves.map((e: any) => {
+                    const rank = rankings.find((r: any) => r.id === e.id)?.rang;
+                    return (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.prenom} {e.nom}{rank != null ? ` (Rang ${rank})` : ''}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
