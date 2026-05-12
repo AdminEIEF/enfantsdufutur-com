@@ -224,6 +224,31 @@ export default function Notes() {
     onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
   });
 
+  // Initialiser la grille à partir des notes existantes
+  useEffect(() => {
+    const map: Record<string, string> = {};
+    allNotesForPeriod.forEach((n: any) => {
+      map[`${n.eleve_id}|${n.matiere_id}`] = n.note !== null && n.note !== undefined ? String(n.note) : '';
+    });
+    setGridCells(map);
+  }, [allNotesForPeriod]);
+
+  const saveOneNote = useMutation({
+    mutationFn: async ({ eleve_id, matiere_id, value }: { eleve_id: string; matiere_id: string; value: string }) => {
+      const note = value === '' ? null : parseFloat(value);
+      if (value !== '' && (isNaN(note as number) || (note as number) < 0 || (note as number) > bareme)) {
+        throw new Error(`Note invalide (0-${bareme})`);
+      }
+      const { error } = await supabase.from('notes').upsert(
+        { eleve_id, matiere_id, periode_id: periodeId, note },
+        { onConflict: 'eleve_id,matiere_id,periode_id' }
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['all-notes-period'] }),
+    onError: (err: Error) => toast({ title: 'Erreur', description: err.message, variant: 'destructive' }),
+  });
+
   const canShowList = classeId && periodeId && eleves.length > 0 && matieres.length > 0;
 
   const { data: bulletinPub } = useQuery({
