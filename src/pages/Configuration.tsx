@@ -1752,6 +1752,7 @@ export default function Configuration() {
         {canManageUsers && <TabsContent value="theme"><ThemeTab /></TabsContent>}
         <TabsContent value="corbeille"><CorbeilleTab /></TabsContent>
         <TabsContent value="fiches"><FichesRenseignementsAdmin /></TabsContent>
+        {canManageUsers && <TabsContent value="medias"><LandingMediaAdmin /></TabsContent>}
       </Tabs>
     </div>
   );
