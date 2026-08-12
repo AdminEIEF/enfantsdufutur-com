@@ -39,7 +39,7 @@ export default function PlancheBadgesScolaires({ eleves, onClose, schoolName, sc
   const [qrCache, setQrCache] = useState<Record<string, { id: string; site: string }>>({});
   const [ready, setReady] = useState(false);
 
-  const sName = schoolName || 'Groupe Scolaire Les Enfants du Futur';
+  const sName = schoolName || 'Groupe Scolaire La Mame Plus';
   const logoUrl = schoolLogo || '';
 
   // Generate all QR codes on mount
@@ -209,10 +209,10 @@ export default function PlancheBadgesScolaires({ eleves, onClose, schoolName, sc
           <div className="motto-contact">
             <div className="motto-line">Faisons plus !</div>
             <div className="contact-line">📞 (+224) 628 84 84 37 / 625 54 95 79</div>
-            <div className="contact-line">✉ eiefinfos@enfantsdufutur.com</div>
+            <div className="contact-line">✉ contact@lamameplus.com</div>
           </div>
           <div className="card-footer-bar">
-            <span>Carte obligatoire — Accès aux services scolaires — www.enfantsdufutur.com</span>
+            <span>Carte obligatoire — Accès aux services scolaires — www.lamameplus.com</span>
           </div>
         </div>
       </div>

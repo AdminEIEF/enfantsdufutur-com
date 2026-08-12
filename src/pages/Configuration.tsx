@@ -3,6 +3,7 @@ import { useTheme } from 'next-themes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, Plus, Trash2, Pencil, GraduationCap, BookOpen, School, Tag, Calendar, Bus, Ruler, RotateCcw, Archive, Sun, Moon, Monitor, Palette, FileText } from 'lucide-react';
 import FichesRenseignementsAdmin from '@/components/FichesRenseignementsAdmin';
+import LandingMediaAdmin from '@/components/LandingMediaAdmin';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1402,7 +1403,7 @@ function TranchesTab() {
 // ─── Tab: École (Config) ─────────────────────────────────
 function EcoleTab() {
   const qc = useQueryClient();
-  const [nom, setNom] = useState('Ecole Internationale Les Enfants du Futur');
+  const [nom, setNom] = useState('Les Ecoles la Mame Plus');
   const [soustitre, setSoustitre] = useState('Enseignement Général et Technique');
   const [ville, setVille] = useState('Conakry, Guinée');
   const [telephone, setTelephone] = useState('');
@@ -1509,7 +1510,7 @@ function EcoleTab() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Nom de l'établissement</Label>
-            <Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Ecole Internationale Les Enfants du Futur" />
+            <Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Les Ecoles la Mame Plus" />
           </div>
           <div>
             <Label>Sous-titre</Label>
@@ -1568,20 +1569,20 @@ const MENU_STYLES = [
 function ThemeTab() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [sidebarTheme, setSidebarTheme] = useState(() => localStorage.getItem('eief-sidebar-theme') || 'default');
-  const [menuStyle, setMenuStyle] = useState(() => localStorage.getItem('eief-menu-style') || 'collapsible');
+  const [sidebarTheme, setSidebarTheme] = useState(() => localStorage.getItem('lmp-sidebar-theme') || 'default');
+  const [menuStyle, setMenuStyle] = useState(() => localStorage.getItem('lmp-menu-style') || 'collapsible');
 
   useEffect(() => setMounted(true), []);
 
   const handleSidebarTheme = (id: string) => {
     setSidebarTheme(id);
-    localStorage.setItem('eief-sidebar-theme', id);
+    localStorage.setItem('lmp-sidebar-theme', id);
     window.dispatchEvent(new Event('sidebar-theme-change'));
   };
 
   const handleMenuStyle = (id: string) => {
     setMenuStyle(id);
-    localStorage.setItem('eief-menu-style', id);
+    localStorage.setItem('lmp-menu-style', id);
     window.dispatchEvent(new Event('menu-style-change'));
   };
 
@@ -1738,6 +1739,7 @@ export default function Configuration() {
           {canManageUsers && <TabsTrigger value="theme" className="text-xs sm:text-sm gap-1"><Palette className="h-4 w-4" /> Thème</TabsTrigger>}
           <TabsTrigger value="corbeille" className="text-xs sm:text-sm gap-1">🗑️ Corbeille</TabsTrigger>
           <TabsTrigger value="fiches" className="text-xs sm:text-sm gap-1">📄 Fiches</TabsTrigger>
+          {canManageUsers && <TabsTrigger value="medias" className="text-xs sm:text-sm gap-1">🖼️ Médias site</TabsTrigger>}
         </TabsList>
         <TabsContent value="ecole"><EcoleTab /></TabsContent>
         {canManageUsers && <TabsContent value="utilisateurs"><AdminUserManagement /></TabsContent>}
@@ -1751,6 +1753,7 @@ export default function Configuration() {
         {canManageUsers && <TabsContent value="theme"><ThemeTab /></TabsContent>}
         <TabsContent value="corbeille"><CorbeilleTab /></TabsContent>
         <TabsContent value="fiches"><FichesRenseignementsAdmin /></TabsContent>
+        {canManageUsers && <TabsContent value="medias"><LandingMediaAdmin /></TabsContent>}
       </Tabs>
     </div>
   );

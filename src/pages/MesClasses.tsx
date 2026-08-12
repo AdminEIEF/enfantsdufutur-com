@@ -356,7 +356,7 @@ export default function MesClasses() {
                                                 'Matricule': e.matricule || '',
                                                 'Sexe': e.sexe || '',
                                               }));
-                                              const schoolName = schoolConfig?.nom || 'École Internationale Les Enfants du Futur';
+                                              const schoolName = schoolConfig?.nom || 'Les Écoles la Mame Plus';
                                               exportToExcel(data, `Liste_${cls.nom.replace(/\s+/g, '_')}`, cls.nom, {
                                                 schoolName,
                                                 niveau: niveau.nom,

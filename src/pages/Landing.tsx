@@ -16,23 +16,10 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 import Autoplay from 'embla-carousel-autoplay';
 import { motion } from 'framer-motion';
 import LandingTarifs from '@/components/LandingTarifs';
+import { useLandingMedia, toEmbedUrl } from '@/hooks/useLandingMedia';
 import SplashScreen from '@/components/SplashScreen';
 import heroImage from '@/assets/hero-school.jpg';
 import schoolLogo from '@/assets/school-logo.png';
-import schoolAnglais from '@/assets/school-anglais.jpg';
-import schoolBepc from '@/assets/school-bepc.jpg';
-import schoolDrapeau from '@/assets/school-drapeau.jpg';
-import schoolGraduation from '@/assets/school-graduation.jpg';
-import schoolCantine from '@/assets/school-cantine.jpg';
-import schoolJeux from '@/assets/school-jeux.jpg';
-import schoolMaternelle from '@/assets/school-maternelle.jpg';
-import schoolClasse from '@/assets/school-classe.jpg';
-import schoolEvent1 from '@/assets/school-event1.jpg';
-import schoolEvent2 from '@/assets/school-event2.jpg';
-import schoolEvent3 from '@/assets/school-event3.jpg';
-import schoolEvent4 from '@/assets/school-event4.jpg';
-import schoolEvent5 from '@/assets/school-event5.jpg';
-import schoolEvent6 from '@/assets/school-event6.jpg';
 
 // Logo-inspired color palette
 const COLORS = {
@@ -101,6 +88,9 @@ function FichesFooterDropdown() {
 
 export default function Landing() {
   const { data: schoolConfig } = useSchoolConfig();
+  const { data: landingMedia } = useLandingMedia();
+  const galleryImages = landingMedia?.images ?? [];
+  const galleryVideos = landingMedia?.videos ?? [];
   const [showSplash, setShowSplash] = useState(() => {
     const seen = sessionStorage.getItem('splash-landing-seen');
     return !seen;
@@ -162,23 +152,6 @@ export default function Landing() {
     { to: '/auth', icon: Shield, label: 'Admin', sub: 'Gestion', gradient: 'linear-gradient(135deg, #2563EB, #1D4ED8)', shadow: 'rgba(37,99,235,0.4)' },
   ];
 
-  const carouselImages = [
-    { src: schoolAnglais, alt: "Anglais et Informatique dès la maternelle" },
-    { src: schoolCantine, alt: "La cantine scolaire" },
-    { src: schoolMaternelle, alt: "Activités en maternelle" },
-    { src: schoolClasse, alt: "Salle de classe décorée" },
-    { src: schoolJeux, alt: "Espace jeux et détente" },
-    { src: schoolBepc, alt: "100% d'admission au BEPC" },
-    { src: schoolDrapeau, alt: "Cérémonie du drapeau" },
-    { src: schoolGraduation, alt: "Cérémonie de graduation" },
-    { src: schoolEvent1, alt: "Présentation et conférence" },
-    { src: schoolEvent2, alt: "Notre équipe pédagogique" },
-    { src: schoolEvent3, alt: "Intervention du directeur" },
-    { src: schoolEvent4, alt: "Réunion avec les parents" },
-    { src: schoolEvent5, alt: "Membre de l'équipe" },
-    { src: schoolEvent6, alt: "Accueil des familles" },
-  ];
-
   return (
     <div className="min-h-screen bg-background">
       {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
@@ -188,9 +161,9 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
             <Link to="/" onClick={() => window.scrollTo(0, 0)} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <img src={schoolConfig?.logo_url || schoolLogo} alt="Logo EIEF" className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl object-contain bg-white shadow-sm border border-border/30 p-0.5" />
+              <img src={schoolConfig?.logo_url || schoolLogo} alt="Logo La Mame Plus" className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl object-contain bg-white shadow-sm border border-border/30 p-0.5" />
               <span className="hidden md:block font-bold text-sm" style={{ color: COLORS.green, fontFamily: 'Space Grotesk, sans-serif' }}>
-                E.I.E.F
+                G.S.M.P
               </span>
             </Link>
             <div className="flex items-center gap-1.5 sm:gap-2">
@@ -342,7 +315,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ─── Image Carousel ─── */}
+      {/* ─── Image Carousel (dynamique) ─── */}
+      {galleryImages.length > 0 && (
       <section className="py-10 sm:py-16">
         <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
@@ -359,13 +333,13 @@ export default function Landing() {
             className="w-full"
           >
             <CarouselContent>
-              {carouselImages.map((img, i) => (
-                <CarouselItem key={i} className="basis-full sm:basis-1/2 lg:basis-1/3">
+              {galleryImages.map((img, i) => (
+                <CarouselItem key={img.url + i} className="basis-full sm:basis-1/2 lg:basis-1/3">
                   <div className="p-1.5">
                     <div className="overflow-hidden rounded-3xl shadow-lg group">
                       <img
-                        src={img.src}
-                        alt={img.alt}
+                        src={img.url}
+                        alt={img.alt || 'Photo de l\'école'}
                         className="w-full h-48 sm:h-56 lg:h-64 object-cover transition-transform duration-700 group-hover:scale-110"
                         loading="lazy"
                         decoding="async"
@@ -378,6 +352,7 @@ export default function Landing() {
           </Carousel>
         </div>
       </section>
+      )}
 
       {/* ─── Services (Android Material Cards) ─── */}
       <section id="services" className="py-16 sm:py-24" style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(27,139,61,0.03) 50%, transparent 100%)' }}>
@@ -421,7 +396,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ─── Vidéos ─── */}
+      {/* ─── Vidéos (dynamique) ─── */}
+      {galleryVideos.length > 0 && (
       <section className="py-12 sm:py-20 bg-muted/30">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12">
@@ -432,31 +408,27 @@ export default function Landing() {
               Notre école en vidéo
             </h2>
             <p className="text-muted-foreground text-sm sm:text-lg max-w-2xl mx-auto">
-              Découvrez l'ambiance et les activités de l'École Internationale Les Enfants du Futur.
+              Découvrez l'ambiance et les activités des Écoles la Mame Plus.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
-            {[
-              { id: '3512882682204390', title: "Vidéo de l'école 1" },
-              { id: '1617863476248678', title: "Vidéo de l'école 2" },
-              { id: '3843230585974453', title: "Vidéo de l'école 3" },
-            ].map((video) => (
-              <div key={video.id} className="rounded-3xl overflow-hidden shadow-xl border border-border/30">
+            {galleryVideos.map((video, i) => (
+              <div key={video.url + i} className="rounded-3xl overflow-hidden shadow-xl border border-border/30">
                 <iframe
-                  src={`https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F${video.id}&show_text=false&width=300&height=265`}
+                  src={toEmbedUrl(video.url)}
                   className="w-full"
-                  style={{ border: 'none', overflow: 'hidden', height: '265px', objectFit: 'cover' }}
+                  style={{ border: 'none', overflow: 'hidden', height: '265px' }}
                   scrolling="no"
-                  frameBorder="0"
                   allowFullScreen
                   allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                  title={video.title}
+                  title={video.title || `Vidéo ${i + 1}`}
                 />
               </div>
             ))}
           </div>
         </div>
       </section>
+      )}
 
       {/* ─── Tarifs ─── */}
       <LandingTarifs />
@@ -542,7 +514,7 @@ export default function Landing() {
                   <span className="font-bold text-sm text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     École Internationale
                   </span>
-                  <p className="text-xs font-semibold" style={{ color: COLORS.greenLight }}>Les Enfants du Futur</p>
+                  <p className="text-xs font-semibold" style={{ color: COLORS.greenLight }}>La Mame Plus</p>
                 </div>
               </div>
               <p className="text-white/50 text-sm leading-relaxed">
@@ -584,7 +556,7 @@ export default function Landing() {
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: COLORS.redBg }}>
                     <Mail className="h-3.5 w-3.5" style={{ color: COLORS.redLight }} />
                   </div>
-                  <span>eiefinfos@enfantsdufutur.com</span>
+                  <span>contact@lamameplus.com</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: COLORS.goldBg }}>

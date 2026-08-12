@@ -107,7 +107,7 @@ export default function PerformanceExcellence({ isPublic = false }: { isPublic?:
     : periodes.find(p => p.id === selectedPeriode)?.nom || '';
 
   const config = {
-    nom: schoolConfig?.nom || 'Ecole Internationale Les Enfants du Futur',
+    nom: schoolConfig?.nom || 'Les Ecoles la Mame Plus',
     ville: schoolConfig?.ville || 'Sanoyah',
   };
 
