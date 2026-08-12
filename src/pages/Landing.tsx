@@ -16,23 +16,10 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 import Autoplay from 'embla-carousel-autoplay';
 import { motion } from 'framer-motion';
 import LandingTarifs from '@/components/LandingTarifs';
+import { useLandingMedia, toEmbedUrl } from '@/hooks/useLandingMedia';
 import SplashScreen from '@/components/SplashScreen';
 import heroImage from '@/assets/hero-school.jpg';
 import schoolLogo from '@/assets/school-logo.png';
-import schoolAnglais from '@/assets/school-anglais.jpg';
-import schoolBepc from '@/assets/school-bepc.jpg';
-import schoolDrapeau from '@/assets/school-drapeau.jpg';
-import schoolGraduation from '@/assets/school-graduation.jpg';
-import schoolCantine from '@/assets/school-cantine.jpg';
-import schoolJeux from '@/assets/school-jeux.jpg';
-import schoolMaternelle from '@/assets/school-maternelle.jpg';
-import schoolClasse from '@/assets/school-classe.jpg';
-import schoolEvent1 from '@/assets/school-event1.jpg';
-import schoolEvent2 from '@/assets/school-event2.jpg';
-import schoolEvent3 from '@/assets/school-event3.jpg';
-import schoolEvent4 from '@/assets/school-event4.jpg';
-import schoolEvent5 from '@/assets/school-event5.jpg';
-import schoolEvent6 from '@/assets/school-event6.jpg';
 
 // Logo-inspired color palette
 const COLORS = {
@@ -101,6 +88,9 @@ function FichesFooterDropdown() {
 
 export default function Landing() {
   const { data: schoolConfig } = useSchoolConfig();
+  const { data: landingMedia } = useLandingMedia();
+  const galleryImages = landingMedia?.images ?? [];
+  const galleryVideos = landingMedia?.videos ?? [];
   const [showSplash, setShowSplash] = useState(() => {
     const seen = sessionStorage.getItem('splash-landing-seen');
     return !seen;
@@ -160,23 +150,6 @@ export default function Landing() {
     { to: '/parent', icon: Users, label: 'Espace Parent', sub: 'Suivi scolaire', gradient: 'linear-gradient(135deg, #F59E0B, #D97706)', shadow: 'rgba(245,158,11,0.4)' },
     { to: '/employe', icon: Briefcase, label: 'Employé', sub: 'Espace RH', gradient: 'linear-gradient(135deg, #059669, #047857)', shadow: 'rgba(5,150,105,0.4)' },
     { to: '/auth', icon: Shield, label: 'Admin', sub: 'Gestion', gradient: 'linear-gradient(135deg, #2563EB, #1D4ED8)', shadow: 'rgba(37,99,235,0.4)' },
-  ];
-
-  const carouselImages = [
-    { src: schoolAnglais, alt: "Anglais et Informatique dès la maternelle" },
-    { src: schoolCantine, alt: "La cantine scolaire" },
-    { src: schoolMaternelle, alt: "Activités en maternelle" },
-    { src: schoolClasse, alt: "Salle de classe décorée" },
-    { src: schoolJeux, alt: "Espace jeux et détente" },
-    { src: schoolBepc, alt: "100% d'admission au BEPC" },
-    { src: schoolDrapeau, alt: "Cérémonie du drapeau" },
-    { src: schoolGraduation, alt: "Cérémonie de graduation" },
-    { src: schoolEvent1, alt: "Présentation et conférence" },
-    { src: schoolEvent2, alt: "Notre équipe pédagogique" },
-    { src: schoolEvent3, alt: "Intervention du directeur" },
-    { src: schoolEvent4, alt: "Réunion avec les parents" },
-    { src: schoolEvent5, alt: "Membre de l'équipe" },
-    { src: schoolEvent6, alt: "Accueil des familles" },
   ];
 
   return (
