@@ -315,7 +315,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ─── Image Carousel ─── */}
+      {/* ─── Image Carousel (dynamique) ─── */}
+      {galleryImages.length > 0 && (
       <section className="py-10 sm:py-16">
         <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
@@ -332,13 +333,13 @@ export default function Landing() {
             className="w-full"
           >
             <CarouselContent>
-              {carouselImages.map((img, i) => (
-                <CarouselItem key={i} className="basis-full sm:basis-1/2 lg:basis-1/3">
+              {galleryImages.map((img, i) => (
+                <CarouselItem key={img.url + i} className="basis-full sm:basis-1/2 lg:basis-1/3">
                   <div className="p-1.5">
                     <div className="overflow-hidden rounded-3xl shadow-lg group">
                       <img
-                        src={img.src}
-                        alt={img.alt}
+                        src={img.url}
+                        alt={img.alt || 'Photo de l\'école'}
                         className="w-full h-48 sm:h-56 lg:h-64 object-cover transition-transform duration-700 group-hover:scale-110"
                         loading="lazy"
                         decoding="async"
@@ -351,6 +352,7 @@ export default function Landing() {
           </Carousel>
         </div>
       </section>
+      )}
 
       {/* ─── Services (Android Material Cards) ─── */}
       <section id="services" className="py-16 sm:py-24" style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(27,139,61,0.03) 50%, transparent 100%)' }}>
