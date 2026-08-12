@@ -3,6 +3,7 @@ import { useTheme } from 'next-themes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, Plus, Trash2, Pencil, GraduationCap, BookOpen, School, Tag, Calendar, Bus, Ruler, RotateCcw, Archive, Sun, Moon, Monitor, Palette, FileText } from 'lucide-react';
 import FichesRenseignementsAdmin from '@/components/FichesRenseignementsAdmin';
+import LandingMediaAdmin from '@/components/LandingMediaAdmin';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
