@@ -396,7 +396,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ─── Vidéos ─── */}
+      {/* ─── Vidéos (dynamique) ─── */}
+      {galleryVideos.length > 0 && (
       <section className="py-12 sm:py-20 bg-muted/30">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12">
@@ -407,31 +408,27 @@ export default function Landing() {
               Notre école en vidéo
             </h2>
             <p className="text-muted-foreground text-sm sm:text-lg max-w-2xl mx-auto">
-              Découvrez l'ambiance et les activités de l'Les Écoles la Mame Plus.
+              Découvrez l'ambiance et les activités des Écoles la Mame Plus.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
-            {[
-              { id: '3512882682204390', title: "Vidéo de l'école 1" },
-              { id: '1617863476248678', title: "Vidéo de l'école 2" },
-              { id: '3843230585974453', title: "Vidéo de l'école 3" },
-            ].map((video) => (
-              <div key={video.id} className="rounded-3xl overflow-hidden shadow-xl border border-border/30">
+            {galleryVideos.map((video, i) => (
+              <div key={video.url + i} className="rounded-3xl overflow-hidden shadow-xl border border-border/30">
                 <iframe
-                  src={`https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F${video.id}&show_text=false&width=300&height=265`}
+                  src={toEmbedUrl(video.url)}
                   className="w-full"
-                  style={{ border: 'none', overflow: 'hidden', height: '265px', objectFit: 'cover' }}
+                  style={{ border: 'none', overflow: 'hidden', height: '265px' }}
                   scrolling="no"
-                  frameBorder="0"
                   allowFullScreen
                   allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                  title={video.title}
+                  title={video.title || `Vidéo ${i + 1}`}
                 />
               </div>
             ))}
           </div>
         </div>
       </section>
+      )}
 
       {/* ─── Tarifs ─── */}
       <LandingTarifs />
