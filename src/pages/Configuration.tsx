@@ -1738,6 +1738,7 @@ export default function Configuration() {
           {canManageUsers && <TabsTrigger value="theme" className="text-xs sm:text-sm gap-1"><Palette className="h-4 w-4" /> Thème</TabsTrigger>}
           <TabsTrigger value="corbeille" className="text-xs sm:text-sm gap-1">🗑️ Corbeille</TabsTrigger>
           <TabsTrigger value="fiches" className="text-xs sm:text-sm gap-1">📄 Fiches</TabsTrigger>
+          {canManageUsers && <TabsTrigger value="medias" className="text-xs sm:text-sm gap-1">🖼️ Médias site</TabsTrigger>}
         </TabsList>
         <TabsContent value="ecole"><EcoleTab /></TabsContent>
         {canManageUsers && <TabsContent value="utilisateurs"><AdminUserManagement /></TabsContent>}
