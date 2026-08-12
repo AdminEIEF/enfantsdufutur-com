@@ -56,7 +56,7 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData) {
   const cw = w - m * 2;
   let y = m;
 
-  const schoolName = (data.schoolName || 'ECOLE INTERNATIONALE LES ENFANTS DU FUTUR').toUpperCase();
+  const schoolName = (data.schoolName || 'LES ECOLES LA MAME PLUS').toUpperCase();
   const schoolSub = data.schoolSubtitle || 'Enseignement Général et Technique';
   const schoolCity = data.schoolCity || 'Conakry, Guinée';
   const periode = `${MOIS_NOMS[data.mois]} ${data.annee}`;

@@ -10,7 +10,7 @@ export interface SchoolConfig {
 }
 
 const DEFAULT_CONFIG: SchoolConfig = {
-  nom: 'Ecole Internationale Les Enfants du Futur',
+  nom: 'Les Ecoles la Mame Plus',
   soustitre: 'Enseignement Général et Technique',
   ville: 'Conakry, Guinée',
   telephone: '',

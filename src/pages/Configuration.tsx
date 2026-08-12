@@ -1402,7 +1402,7 @@ function TranchesTab() {
 // ─── Tab: École (Config) ─────────────────────────────────
 function EcoleTab() {
   const qc = useQueryClient();
-  const [nom, setNom] = useState('Ecole Internationale Les Enfants du Futur');
+  const [nom, setNom] = useState('Les Ecoles la Mame Plus');
   const [soustitre, setSoustitre] = useState('Enseignement Général et Technique');
   const [ville, setVille] = useState('Conakry, Guinée');
   const [telephone, setTelephone] = useState('');
@@ -1509,7 +1509,7 @@ function EcoleTab() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Nom de l'établissement</Label>
-            <Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Ecole Internationale Les Enfants du Futur" />
+            <Input value={nom} onChange={e => setNom(e.target.value)} placeholder="Ex: Les Ecoles la Mame Plus" />
           </div>
           <div>
             <Label>Sous-titre</Label>
@@ -1568,20 +1568,20 @@ const MENU_STYLES = [
 function ThemeTab() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [sidebarTheme, setSidebarTheme] = useState(() => localStorage.getItem('eief-sidebar-theme') || 'default');
-  const [menuStyle, setMenuStyle] = useState(() => localStorage.getItem('eief-menu-style') || 'collapsible');
+  const [sidebarTheme, setSidebarTheme] = useState(() => localStorage.getItem('lmp-sidebar-theme') || 'default');
+  const [menuStyle, setMenuStyle] = useState(() => localStorage.getItem('lmp-menu-style') || 'collapsible');
 
   useEffect(() => setMounted(true), []);
 
   const handleSidebarTheme = (id: string) => {
     setSidebarTheme(id);
-    localStorage.setItem('eief-sidebar-theme', id);
+    localStorage.setItem('lmp-sidebar-theme', id);
     window.dispatchEvent(new Event('sidebar-theme-change'));
   };
 
   const handleMenuStyle = (id: string) => {
     setMenuStyle(id);
-    localStorage.setItem('eief-menu-style', id);
+    localStorage.setItem('lmp-menu-style', id);
     window.dispatchEvent(new Event('menu-style-change'));
   };
 

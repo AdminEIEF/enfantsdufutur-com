@@ -92,7 +92,7 @@ async function sendEmail(email: string, subject: string, text: string): Promise<
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'EI Enfants du Futur <noreply@eienfantdufutur.lovable.app>',
+        from: 'Les Ecoles la Mame Plus <noreply@eienfantdufutur.lovable.app>',
         to: [email],
         subject,
         text,
@@ -140,9 +140,9 @@ serve(async (req) => {
       hour: '2-digit', minute: '2-digit',
     });
 
-    const smsMessage = `EI Enfants du Futur: RDV fixé pour ${preInsc.prenom_eleve} ${preInsc.nom_eleve} le ${dateStr}. Présentez-vous à l'accueil. Cordialement.`;
+    const smsMessage = `Les Ecoles la Mame Plus: RDV fixé pour ${preInsc.prenom_eleve} ${preInsc.nom_eleve} le ${dateStr}. Présentez-vous à l'accueil. Cordialement.`;
 
-    const emailMessage = `Bonjour ${preInsc.nom_parent},\n\nVotre demande de pré-inscription pour ${preInsc.prenom_eleve} ${preInsc.nom_eleve}${preInsc.niveaux?.nom ? ` en ${preInsc.niveaux.nom}` : ''} a été prise en compte.\n\nUn rendez-vous a été fixé le ${dateStr}.\n\nMerci de vous présenter à l'accueil de l'établissement EI Enfants du Futur à l'heure indiquée.\n\nCordialement,\nL'administration`;
+    const emailMessage = `Bonjour ${preInsc.nom_parent},\n\nVotre demande de pré-inscription pour ${preInsc.prenom_eleve} ${preInsc.nom_eleve}${preInsc.niveaux?.nom ? ` en ${preInsc.niveaux.nom}` : ''} a été prise en compte.\n\nUn rendez-vous a été fixé le ${dateStr}.\n\nMerci de vous présenter à l'accueil de l'établissement Les Ecoles la Mame Plus à l'heure indiquée.\n\nCordialement,\nL'administration`;
 
     // Send SMS and Email in parallel
     const [smsResult, emailSent] = await Promise.all([

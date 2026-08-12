@@ -376,7 +376,7 @@ export default function TresorierGestionSalaires() {
       : filterMode ? filterMode.label : 'Tout le personnel';
     return {
       title: catLabel,
-      schoolName: schoolConfig?.nom || 'Ecole Internationale Les Enfants du Futur',
+      schoolName: schoolConfig?.nom || 'Les Ecoles la Mame Plus',
       logoUrl: schoolConfig?.logo_url,
       employes: filtered.map(e => ({
         nom: e.nom,

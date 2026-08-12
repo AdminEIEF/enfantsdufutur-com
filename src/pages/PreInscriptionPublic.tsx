@@ -404,7 +404,7 @@ export default function PreInscriptionPublic() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center shadow-md">
               <GraduationCap className="h-5 w-5" />
             </div>
-            <span className="font-bold text-sm">EI Enfants du Futur</span>
+            <span className="font-bold text-sm">Les Ecoles la Mame Plus</span>
           </Link>
           <Link to="/">
             <Button variant="ghost" size="sm" className="rounded-xl">

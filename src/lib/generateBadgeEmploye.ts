@@ -69,7 +69,7 @@ function drawSingleBadge(
   doc.setGState(new (doc as any).GState({ opacity: 0.04 }));
   for (let wy = 0; wy < CARD_H; wy += 5) {
     for (let wx = -10; wx < CARD_W + 10; wx += 22) {
-      doc.text('Enfants du Futur • Personnel •', x + wx, y + wy, { angle: 15 });
+      doc.text('La Mame Plus • Personnel •', x + wx, y + wy, { angle: 15 });
     }
   }
   doc.setGState(new (doc as any).GState({ opacity: 1 }));
@@ -93,7 +93,7 @@ function drawSingleBadge(
   }
 
   // School name on RIGHT side
-  const displayName = schoolName || 'ECOLE INTERNATIONALE\nLES ENFANTS DU FUTUR';
+  const displayName = schoolName || 'LES ECOLES\nLA MAME PLUS';
   doc.setTextColor(WHITE.r, WHITE.g, WHITE.b);
   const schoolLines = displayName.split('\n');
   const textBlockX = logoCX + logoCircleR + 2;

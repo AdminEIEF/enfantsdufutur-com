@@ -188,9 +188,9 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
             <Link to="/" onClick={() => window.scrollTo(0, 0)} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <img src={schoolConfig?.logo_url || schoolLogo} alt="Logo EIEF" className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl object-contain bg-white shadow-sm border border-border/30 p-0.5" />
+              <img src={schoolConfig?.logo_url || schoolLogo} alt="Logo La Mame Plus" className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl object-contain bg-white shadow-sm border border-border/30 p-0.5" />
               <span className="hidden md:block font-bold text-sm" style={{ color: COLORS.green, fontFamily: 'Space Grotesk, sans-serif' }}>
-                E.I.E.F
+                G.S.M.P
               </span>
             </Link>
             <div className="flex items-center gap-1.5 sm:gap-2">
@@ -432,7 +432,7 @@ export default function Landing() {
               Notre école en vidéo
             </h2>
             <p className="text-muted-foreground text-sm sm:text-lg max-w-2xl mx-auto">
-              Découvrez l'ambiance et les activités de l'École Internationale Les Enfants du Futur.
+              Découvrez l'ambiance et les activités de l'Les Écoles la Mame Plus.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
@@ -542,7 +542,7 @@ export default function Landing() {
                   <span className="font-bold text-sm text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                     École Internationale
                   </span>
-                  <p className="text-xs font-semibold" style={{ color: COLORS.greenLight }}>Les Enfants du Futur</p>
+                  <p className="text-xs font-semibold" style={{ color: COLORS.greenLight }}>La Mame Plus</p>
                 </div>
               </div>
               <p className="text-white/50 text-sm leading-relaxed">
@@ -584,7 +584,7 @@ export default function Landing() {
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: COLORS.redBg }}>
                     <Mail className="h-3.5 w-3.5" style={{ color: COLORS.redLight }} />
                   </div>
-                  <span>eiefinfos@enfantsdufutur.com</span>
+                  <span>contact@lamameplus.com</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: COLORS.goldBg }}>

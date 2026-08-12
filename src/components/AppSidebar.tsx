@@ -298,8 +298,8 @@ export function AppSidebar() {
   const { hasAnyRole, user } = useAuth();
   const { isInstallable, install } = usePWAInstall();
   const location = useLocation();
-  const sidebarTheme = useLocalStorageEvent('eief-sidebar-theme', 'default');
-  const menuStyle = useLocalStorageEvent('eief-menu-style', 'collapsible');
+  const sidebarTheme = useLocalStorageEvent('lmp-sidebar-theme', 'default');
+  const menuStyle = useLocalStorageEvent('lmp-menu-style', 'collapsible');
 
   const { data: activeSession } = useQuery({
     queryKey: ['active-session-sidebar'],

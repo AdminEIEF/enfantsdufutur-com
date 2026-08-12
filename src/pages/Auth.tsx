@@ -74,7 +74,7 @@ export default function Auth() {
             transition={{ type: 'spring', stiffness: 150, damping: 15, delay: 0.3 }}
           >
             <div className="w-44 h-44 rounded-full bg-white flex items-center justify-center shadow-2xl">
-              <img src={schoolLogo} alt="Logo EIEF" className="w-36 h-36 object-contain" />
+              <img src={schoolLogo} alt="Logo La Mame Plus" className="w-36 h-36 object-contain" />
             </div>
           </motion.div>
 
@@ -83,7 +83,7 @@ export default function Auth() {
               ÉCOLE INTERNATIONALE
             </h2>
             <h3 className="text-xl font-extrabold text-white/90 uppercase tracking-wide mt-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              LES ENFANTS DU FUTUR
+              LA MAME PLUS
             </h3>
             <p className="text-blue-100/70 mt-3 text-sm max-w-xs mx-auto italic">
               Faisons Plus !
@@ -122,7 +122,7 @@ export default function Auth() {
               transition={{ type: 'spring', stiffness: 150, damping: 15 }}
             >
               <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center">
-                <img src={schoolLogo} alt="Logo EIEF" className="w-16 h-16 object-contain" />
+                <img src={schoolLogo} alt="Logo La Mame Plus" className="w-16 h-16 object-contain" />
               </div>
             </motion.div>
           </div>
@@ -139,7 +139,7 @@ export default function Auth() {
               Connexion
             </h1>
             <p className="text-blue-300/50 text-sm mt-1">
-              {schoolConfig?.nom || 'École Internationale Les Enfants du Futur'}
+              {schoolConfig?.nom || 'Les Écoles la Mame Plus'}
             </p>
           </div>
 
