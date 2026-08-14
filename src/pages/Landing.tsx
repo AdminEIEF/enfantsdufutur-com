@@ -414,15 +414,27 @@ export default function Landing() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
             {galleryVideos.map((video, i) => (
               <div key={video.url + i} className="rounded-3xl overflow-hidden shadow-xl border border-border/30">
-                <iframe
-                  src={toEmbedUrl(video.url)}
-                  className="w-full"
-                  style={{ border: 'none', overflow: 'hidden', height: '265px' }}
-                  scrolling="no"
-                  allowFullScreen
-                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                  title={video.title || `Vidéo ${i + 1}`}
-                />
+                {isDirectVideo(video.url) ? (
+                  <video
+                    src={video.url}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="w-full bg-black"
+                    style={{ height: '265px', objectFit: 'cover' }}
+                    title={video.title || `Vidéo ${i + 1}`}
+                  />
+                ) : (
+                  <iframe
+                    src={toEmbedUrl(video.url)}
+                    className="w-full"
+                    style={{ border: 'none', overflow: 'hidden', height: '265px' }}
+                    scrolling="no"
+                    allowFullScreen
+                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                    title={video.title || `Vidéo ${i + 1}`}
+                  />
+                )}
               </div>
             ))}
           </div>
