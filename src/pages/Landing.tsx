@@ -220,12 +220,13 @@ export default function Landing() {
               className="mb-2"
             >
               <p className="text-lg sm:text-2xl lg:text-3xl font-extrabold uppercase tracking-[0.15em]" style={{ color: COLORS.redLight, fontFamily: 'Space Grotesk, sans-serif' }}>
-                Ecole Internationale
+                Les Ecoles
               </p>
               <h1 className="text-2xl sm:text-4xl lg:text-[3.2rem] font-extrabold leading-none" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                <span style={{ color: COLORS.goldLight }}>LES ENFANTS </span>
-                <span style={{ color: '#4ADE80' }}>DU FUTUR</span>
+                <span style={{ color: COLORS.goldLight }}>LA MAME </span>
+                <span style={{ color: '#4ADE80' }}>PLUS</span>
               </h1>
+
             </motion.div>
 
             <motion.p
