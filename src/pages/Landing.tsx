@@ -195,10 +195,8 @@ export default function Landing() {
           <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(27,139,61,0.85) 0%, rgba(26,26,46,0.80) 50%, rgba(196,30,58,0.70) 100%)' }} />
         </div>
 
-        {/* Floating logo watermark */}
-        <div className="absolute top-20 right-8 sm:right-16 w-32 h-32 sm:w-48 sm:h-48 opacity-10 pointer-events-none z-[1]">
-          <img src={schoolLogo} alt="" className="w-full h-full object-contain" />
-        </div>
+
+
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 lg:py-28 z-[2]">
           <div className="max-w-3xl">
