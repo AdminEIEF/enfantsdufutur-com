@@ -10,12 +10,6 @@ export interface LandingMedia {
 
 export const LANDING_MEDIA_KEY = 'landing_media';
 
-/** Vrai si l'URL pointe vers un fichier vidéo lisible directement (mp4/webm/ogg/mov). */
-export function isDirectVideo(raw: string): boolean {
-  const url = (raw || '').split('?')[0].toLowerCase();
-  return /\.(mp4|webm|ogg|ogv|mov|m4v)$/.test(url);
-}
-
 export function toEmbedUrl(raw: string): string {
   const url = (raw || '').trim();
   if (!url) return '';
