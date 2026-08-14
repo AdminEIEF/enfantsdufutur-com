@@ -131,7 +131,7 @@ const BORDEREAU_STYLES = `
 export default function BordereauRemiseCartes({
   eleves,
   onClose,
-  schoolName = 'Les Écoles la Mame Plus',
+  schoolName = 'École Internationale Les Enfants du Futur',
   anneeScolaire = '2026-2027',
 }: Props) {
   const printRef = useRef<HTMLDivElement>(null);

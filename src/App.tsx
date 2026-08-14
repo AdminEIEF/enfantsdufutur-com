@@ -210,7 +210,7 @@ function AuthRoute() {
 }
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="light" storageKey="lmp-theme">
+  <ThemeProvider attribute="class" defaultTheme="light" storageKey="eief-theme">
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />

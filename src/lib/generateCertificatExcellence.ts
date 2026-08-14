@@ -302,7 +302,7 @@ export async function generateTableauHonneurPDF(
   ]);
 
   const baseUrl = window.location.origin;
-  const config = schoolConfig || { nom: 'Les Ecoles la Mame Plus', ville: 'Sanoyah' };
+  const config = schoolConfig || { nom: 'Ecole Internationale Les Enfants du Futur', ville: 'Sanoyah' };
 
   await generateSingleTableauHonneur(doc, eleve, logoBase64, bgBase64, wreathBase64, medalBase64, baseUrl, periodeName, config);
 
@@ -327,7 +327,7 @@ export async function generateAllTableauxHonneurPDF(
   ]);
 
   const baseUrl = window.location.origin;
-  const config = schoolConfig || { nom: 'Les Ecoles la Mame Plus', ville: 'Sanoyah' };
+  const config = schoolConfig || { nom: 'Ecole Internationale Les Enfants du Futur', ville: 'Sanoyah' };
 
   for (let i = 0; i < eleves.length; i++) {
     if (i > 0) doc.addPage();

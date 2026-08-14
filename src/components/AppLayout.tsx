@@ -33,7 +33,7 @@ function LogoRefreshButton() {
     >
       <motion.img
         src={schoolLogo}
-        alt="Logo La Mame Plus"
+        alt="Logo EIEF"
         className="w-full h-full object-contain p-0.5"
         animate={spinning ? { rotate: 360 } : { rotate: 0 }}
         transition={spinning ? { duration: 0.8, ease: 'easeInOut' } : {}}

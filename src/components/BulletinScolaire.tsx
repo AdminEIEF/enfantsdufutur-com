@@ -99,7 +99,7 @@ export default function BulletinScolaire({
   previousPeriods,
   cycleName,
   anneeScolaire = '2026 - 2027',
-  schoolName = 'Les Ecoles la Mame Plus',
+  schoolName = 'Ecole Internationale Les Enfants du Futur',
   schoolSubtitle = 'Enseignement Général et Technique',
   schoolCity = 'Conakry, Guinée',
   schoolPhone = '',
@@ -436,7 +436,7 @@ export default function BulletinScolaire({
             {eleve.matricule && (
               <>
                 <QRCodeSVG
-                  value="https://lamameplus.com/"
+                  value="https://enfantsdufutur.com/"
                   size={56}
                   level="M"
                   includeMargin={false}

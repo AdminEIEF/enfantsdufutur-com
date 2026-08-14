@@ -20,7 +20,7 @@ export default function SplashScreen({ onComplete, subtitle }: SplashScreenProps
     return () => clearTimeout(timer);
   }, [onComplete]);
 
-  const schoolName = config?.nom || 'Les Ecoles la Mame Plus';
+  const schoolName = config?.nom || 'Ecole Internationale Les Enfants du Futur';
   const logoUrl = config?.logo_url;
 
   return (

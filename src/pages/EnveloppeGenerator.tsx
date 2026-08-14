@@ -220,7 +220,7 @@ async function generateEnveloppesPDF(
     pdf.setFont('helvetica', 'bolditalic');
     pdf.setFontSize(10);
     pdf.setTextColor(NAVY.r, NAVY.g, NAVY.b);
-    pdf.text('Aux Ecoles la Mame Plus nous faisons toujours plus !', ENV_W / 2, studentY + 24, { align: 'center' });
+    pdf.text('A EIEF nous faisons toujours plus !', ENV_W / 2, studentY + 24, { align: 'center' });
 
     // ── QR Codes section (anchored from bottom, above footer) ──
     const qrSize = 38;
@@ -432,10 +432,10 @@ export default function EnveloppeGenerator() {
     const periodeName = periodes?.find((p: any) => p.id === selectedPeriode)?.nom || 'Période';
     setGenerating(true);
     try {
-      const siteUrl = 'https://lamameplus.com';
+      const siteUrl = 'https://enfantsdufutur.com';
       await generateEnveloppesPDF(
         envelopeData,
-        config?.nom || 'Les Ecoles la Mame Plus',
+        config?.nom || 'Ecole Internationale Les Enfants du Futur',
         config?.soustitre || 'Enseignement Général et Technique',
         config?.ville || 'Conakry, Guinée',
         config?.telephone || '',

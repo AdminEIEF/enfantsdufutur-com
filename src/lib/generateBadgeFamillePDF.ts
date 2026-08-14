@@ -148,7 +148,7 @@ async function drawPVCCard(pdf: jsPDF, f: FamilleBadgeData, bgImage: string | nu
 // ═══════════════════════════════════════════════
 export async function generateBadgeFamillePDF(
   familles: FamilleBadgeData[],
-  schoolName = 'Les Ecoles la Mame Plus',
+  schoolName = 'Ecole Internationale Les Enfants du Futur',
   logoUrl?: string | null,
 ): Promise<void> {
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [CARD_W, CARD_H] });
@@ -249,7 +249,7 @@ export async function generateBadgeFamillePDF(
 // ═══════════════════════════════════════════════
 export async function generatePlancheBadgesFamillePDF(
   familles: FamilleBadgeData[],
-  schoolName = 'Les Ecoles la Mame Plus',
+  schoolName = 'Ecole Internationale Les Enfants du Futur',
   logoUrl?: string | null,
 ): Promise<void> {
   if (familles.length === 0) return;
