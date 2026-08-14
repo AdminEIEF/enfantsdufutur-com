@@ -7,7 +7,7 @@ import { Image as ImageIcon, Video, Trash2, ArrowLeft, ArrowRight, Plus, Save } 
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useLandingMedia, toEmbedUrl, LANDING_MEDIA_KEY, type LandingImage, type LandingVideo } from '@/hooks/useLandingMedia';
+import { useLandingMedia, toEmbedUrl, isDirectVideo, LANDING_MEDIA_KEY, type LandingImage, type LandingVideo } from '@/hooks/useLandingMedia';
 
 export default function LandingMediaAdmin() {
   const qc = useQueryClient();
