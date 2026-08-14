@@ -53,6 +53,37 @@ export default function LandingMediaAdmin() {
     }
   };
 
+  const handleUploadVideo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingVideo(true);
+    try {
+      const added: LandingVideo[] = [];
+      for (const file of files) {
+        if (file.size > 100 * 1024 * 1024) {
+          toast.error(`${file.name} dépasse 100 Mo`);
+          continue;
+        }
+        const ext = file.name.split('.').pop();
+        const path = `landing/videos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error } = await supabase.storage.from('support-images').upload(path, file, { upsert: true, contentType: file.type || 'video/mp4' });
+        if (error) throw error;
+        const { data: pub } = supabase.storage.from('support-images').getPublicUrl(path);
+        added.push({ url: pub.publicUrl, title: file.name.replace(/\.[^.]+$/, '') });
+      }
+      if (added.length) {
+        setVideos(prev => [...prev, ...added]);
+        toast.success(`${added.length} vidéo(s) ajoutée(s) — pensez à enregistrer`);
+      }
+    } catch (err: any) {
+      toast.error('Erreur upload vidéo: ' + err.message);
+    } finally {
+      setUploadingVideo(false);
+      e.target.value = '';
+    }
+  };
+
+
   const move = <T,>(arr: T[], i: number, dir: -1 | 1): T[] => {
     const j = i + dir;
     if (j < 0 || j >= arr.length) return arr;
