@@ -162,8 +162,14 @@ export default function LandingMediaAdmin() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Collez un lien YouTube ou Facebook. La conversion en lecteur intégré est automatique.
+            Téléversez un fichier vidéo (MP4/WebM, 100 Mo max) ou collez un lien YouTube / Facebook.
           </p>
+          <Button variant="outline" size="sm" asChild disabled={uploadingVideo}>
+            <label className="cursor-pointer">
+              {uploadingVideo ? 'Téléversement…' : '🎬 Téléverser des vidéos (MP4/WebM)'}
+              <input type="file" accept="video/mp4,video/webm,video/quicktime,video/*" multiple className="hidden" onChange={handleUploadVideo} />
+            </label>
+          </Button>
           <div className="grid grid-cols-1 sm:grid-cols-[1fr,1fr,auto] gap-2 items-end">
             <div>
               <Label className="text-xs">Lien de la vidéo</Label>
@@ -187,7 +193,11 @@ export default function LandingMediaAdmin() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {videos.map((v, i) => (
               <div key={v.url + i} className="rounded-xl border overflow-hidden">
-                <iframe src={toEmbedUrl(v.url)} className="w-full h-40 border-0" allowFullScreen title={v.title || `Vidéo ${i + 1}`} />
+                {isDirectVideo(v.url) ? (
+                  <video src={v.url} controls preload="metadata" className="w-full h-40 bg-black object-cover" />
+                ) : (
+                  <iframe src={toEmbedUrl(v.url)} className="w-full h-40 border-0" allowFullScreen title={v.title || `Vidéo ${i + 1}`} />
+                )}
                 <div className="p-2 flex items-center justify-between">
                   <span className="text-xs truncate">{v.title || `Vidéo ${i + 1}`}</span>
                   <div className="flex gap-1">
