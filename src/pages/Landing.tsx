@@ -256,8 +256,9 @@ export default function Landing() {
               transition={{ duration: 0.5, delay: 0.9 }}
               className="text-sm sm:text-lg text-white/75 mb-8 max-w-lg leading-relaxed"
             >
-              L'École Internationale Enfant du Futur offre un enseignement d'excellence
+              Les Ecoles la Mame Plus offrent un enseignement d'excellence
               dans un environnement moderne et bienveillant, de la Crèche au Lycée.
+
             </motion.p>
 
             <motion.div
