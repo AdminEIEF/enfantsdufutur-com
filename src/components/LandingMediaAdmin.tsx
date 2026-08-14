@@ -16,6 +16,7 @@ export default function LandingMediaAdmin() {
   const [videos, setVideos] = useState<LandingVideo[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newVideo, setNewVideo] = useState('');
   const [newVideoTitle, setNewVideoTitle] = useState('');
